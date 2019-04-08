@@ -1,0 +1,602 @@
+{
+  "file" : "SystemAnimator_cef.html",
+  "general" : 
+  {
+    "properties" : 
+    {
+      "schemecolor" : 
+      {
+        "order" : 1000,
+        "text" : "ui_browse_properties_scheme_color",
+        "type" : "color",
+        "value" : "0 0 0"
+      }
+
+     ,"SA_visualizer_INFO":
+      {
+        "order": 9,
+        "text" : "<h4>Music Visualizer</h4><small>If the audio output level is low and the music animation is too subtle, use the scale option to scale the animation output.</small>",
+        "type" : "text"
+      }
+
+     ,"SA_visualizer_scale":
+      {
+        "order": 10,
+        "max": 10,
+        "min": 1,
+        "text": "Scale x ",
+        "type": "slider",
+        "value": 1
+      }
+
+     ,"SA_visualizer_sensitivity_INFO":
+      {
+        "order": 19,
+        "text" : "<small>Use the sensitivity option to change the sensitivity of the audio meter, which may yield better results than the scale option above.</small>",
+        "type" : "text"
+      }
+
+     ,"SA_visualizer_sensitivity":
+      {
+        "order" : 20,
+        "options": [
+        {
+          "label": "Default",
+          "value": 0
+        },
+        {
+          "label": "Low",
+          "value": 2
+        },
+        {
+          "label": "Normal",
+          "value": 1
+        },
+        {
+          "label": "High",
+          "value": 0.5
+        },
+        {
+          "label": "Very High",
+          "value": 0.25
+        }
+        ],
+        "text": "Sensitivity",
+        "type": "combo",
+        "value": 0
+      }
+
+     ,"SA_visualizer_beat_detection" : 
+      {
+        "order" : 21,
+        "text" : "Beat detection",
+        "type" : "bool",
+        "value" : true
+      }
+
+
+     ,"SPACE29":
+      {
+        "order": 29,
+        "text" : "",
+        "type" : "text"
+      }
+
+     ,"SA_animation_combo_INFO":
+      {
+        "order": 30,
+        "text" : "<h4>Wallpaper Presets</h4><small>This wallpaper has several &quot;presets&quot;, each with a different background image and customized visual effects. If you want to make your own, choose &quot;Custom&quot;. You need to restart the wallpaper afterwards for any change to take effect.</small>",
+        "type" : "text"
+      }
+
+     ,"SA_animation_combo" : 
+      {
+        "order" : 31,
+        "options": [
+        {
+          "label": "Default",
+          "value": ""
+        },
+        {
+          "label": "2B - Boss Battle",
+          "value": "TEMP/Visual Effect Showcase/Nier Automata - Boss Battle.EQP-gallery"
+        },
+        {
+          "label": "Azusa",
+          "value": "TEMP/Visual Effect Showcase/Azusa"
+        },
+        {
+          "label": "Better Tomorrow",
+          "value": "TEMP/Visual Effect Showcase/Better Tomorrow"
+        },
+        {
+          "label": "Emilia",
+          "value": "TEMP/Visual Effect Showcase/Emilia"
+        },
+        {
+          "label": "Miku",
+          "value": "TEMP/Visual Effect Showcase/Miku"
+        },
+        {
+          "label": "Rainy Lady",
+          "value": "TEMP/Visual Effect Showcase/Rainy Lady"
+        },
+        {
+          "label": "Saber Excalibur",
+          "value": "TEMP/Visual Effect Showcase/Saber Excalibur"
+        },
+        {
+          "label": "CUSTOM",
+          "value": "TEMP/Visual Effect Showcase/Custom"
+        }
+        ],
+        "text": "",
+        "type": "combo",
+        "value" : ""
+      }
+
+
+     ,"SPACE39":
+      {
+        "order": 39,
+        "text" : "",
+        "type" : "text"
+      }
+
+     ,"SA_position_x_ratio":
+      {
+        "order": 40,
+        "max": 100,
+        "min": 0,
+        "text": "Position X ",
+        "type": "slider",
+        "value": 50
+      }
+
+     ,"SA_position_y_ratio":
+      {
+        "order": 41,
+        "max": 100,
+        "min": 0,
+        "text": "Position Y ",
+        "type": "slider",
+        "value": 50
+      }
+
+
+     ,"SPACE109":
+      {
+        "order": 109,
+        "text" : "",
+        "type" : "text"
+      }
+
+     ,"SA_BG_INFO":
+      {
+        "order": 110,
+        "text" : "<h4>Wallpaper Background</h4>",
+        "type" : "text"
+      }
+
+     ,"SA_BG_url" : 
+      {
+        "order" : 111,
+        "text" : "Image",
+        "type" : "file"
+      }
+
+     ,"SA_BG_style":
+      {
+        "order" : 121,
+        "options": [
+        {
+          "label": "Center",
+          "value": "0"
+        },
+        {
+          "label": "Fill",
+          "value": "2"
+        },
+        {
+          "label": "Fit (aspect ratio kept)",
+          "value": "6"
+        },
+        {
+          "label": "Fill (aspect ratio kept)",
+          "value": "10"
+        }
+        ],
+        "text": "Style",
+        "type": "combo",
+        "value": "10"
+      }
+
+     ,"SA_BG_animation_opacity" : 
+      {
+        "order" : 130,
+        "max" : 100,
+        "min" : 10,
+        "text" : "Animation opacity",
+        "type" : "slider",
+        "value" : 100
+      }
+
+
+     ,"SPACE149":
+      {
+        "order": 149,
+        "text" : "",
+        "type" : "text"
+      }
+
+     ,"SA_video_overlay_effect_INFO":
+      {
+        "order": 150,
+        "text" : "<h4>Video Overlay Effect</h4><small>This option allows you to load a video on top of the wallpaper, providing various overlay effects such as snow, rain, fire, bubbles, smokes, etc.</small>",
+        "type" : "text"
+      }
+
+     ,"SA_video_overlay_effect_type" : 
+      {
+        "order" : 151,
+        "options": [
+        {
+          "label": "None",
+          "value": "None"
+        },
+        {
+          "label": "Default",
+          "value": "Default"
+        },
+        {
+          "label": "Bats",
+          "value": "IgniteMotion_Bats_Animation_2_720p.webm"
+        },
+        {
+          "label": "Blue Bubbles",
+          "value": "IgniteMotion_Blue_Bubbles_720p.webm"
+        },
+        {
+          "label": "Blue Flare",
+          "value": "motionbackgroundsforfree_flare.webm"
+        },
+        {
+          "label": "Drops & Flares",
+          "value": "drops_flares_-_FREE_Video_Background_HD_Loops_1080.webm"
+        },
+        {
+          "label": "Firewall",
+          "value": "IgniteMotion_Firewall_720p.webm"
+        },
+        {
+          "label": "Golden Dust",
+          "value": "BackgroundsLoops_-_GoldenDust_-_FREE_Video_Backgro.webm"
+        },
+        {
+          "label": "Green Scanline",
+          "value": "Scan_Line_-_video_designed_by_dreamscene.webm"
+        },
+        {
+          "label": "Multi Fire",
+          "value": "MULTIfire_-_video_designed_by_MysticMarks_720p.webm"
+        },
+        {
+          "label": "Rain",
+          "value": "Rain_Animation_-_Free_Royalty_Footage_-_YouTube_72.webm"
+        },
+        {
+          "label": "Smoke",
+          "value": "Smoke_Loop_Slow_-_YouTube_720p_.webm"
+        },
+        {
+          "label": "Snow",
+          "value": "Falling_Snow_Realistic_Overlay_Loop_-_YouTube_720p.webm"
+        },
+        {
+          "label": "Underwater",
+          "value": "BackgroundsLoops_-_Underwater_-_FREE_Video_Backgro.webm"
+        }
+        ],
+        "text": "Effect",
+        "type": "combo",
+        "value" : "Default"
+      }
+
+     ,"SA_video_overlay_effect_0_use_default" : 
+      {
+        "order": 152,
+        "condition" : "SA_video_overlay_effect_type.value != 'None'",
+        "text" : "- Use default settings",
+        "type" : "bool",
+        "value" : true
+      }
+
+     ,"SA_video_overlay_effect_video_compositeOperation":
+      {
+        "order" : 153,
+        "condition" : "SA_video_overlay_effect_type.value != 'None' && SA_video_overlay_effect_0_use_default.value == false",
+        "options": [
+        {
+          "label": "Default",
+          "value": "Default"
+        },
+        {
+          "label": "Lighter",
+          "value": "lighter"
+        },
+        {
+          "label": "Screen",
+          "value": "screen"
+        },
+        {
+          "label": "Lighten",
+          "value": "lighten"
+        },
+        {
+          "label": "Hard-light",
+          "value": "hard-light"
+        }
+        ],
+        "text": "- Composition mode",
+        "type": "combo",
+        "value": "Default"
+      }
+
+     ,"SA_video_overlay_effect_video_alpha" : 
+      {
+        "order" : 154,
+        "condition" : "SA_video_overlay_effect_type.value != 'None' && SA_video_overlay_effect_0_use_default.value == false",
+        "max" : 100,
+        "min" : 10,
+        "text" : "- Opacity",
+        "type" : "slider",
+        "value" : 80
+      }
+
+     ,"SA_video_overlay_effect_bg_darken_by" : 
+      {
+        "order" : 155,
+        "condition" : "SA_video_overlay_effect_type.value != 'None' && SA_video_overlay_effect_0_use_default.value == false",
+        "max" : 90,
+        "min" : 0,
+        "text" : "- Black background",
+        "type" : "slider",
+        "value" : 0
+      }
+
+
+     ,"SPACE199":
+      {
+        "order": 199,
+        "text" : "",
+        "type" : "text"
+      }
+
+     ,"SA_canvas_effect_INFO":
+      {
+        "order": 200,
+        "text" : "<h4>Canvas Effect</h4><small>These options provide extra visual effects, such as Matrix digital rain, fireworks and beat-driven motion blur. You need to restart the animation afterwards for these settings to take effect.</small>",
+        "type" : "text"
+      }
+
+     ,"SA_canvas_effect_matrix_rain" : 
+      {
+        "order" : 201,
+        "text" : "Matrix digital rain",
+        "type" : "bool",
+        "value" : true
+      }
+     ,"SA_canvas_effect_matrix_rain_color" : 
+      {
+        "order" : 202,
+        "condition" : "SA_canvas_effect_matrix_rain.value == true",
+        "text" : "- Colorful",
+        "type" : "bool",
+        "value" : true
+      }
+     ,"SA_canvas_effect_matrix_rain_play_on_idle" : 
+      {
+        "order" : 203,
+        "condition" : "SA_canvas_effect_matrix_rain.value == true",
+        "text" : "- Play on idle",
+        "type" : "bool",
+        "value" : false
+      }
+     ,"SA_canvas_effect_matrix_rain_musical" : 
+      {
+        "order" : 204,
+        "condition" : "SA_canvas_effect_matrix_rain.value == true",
+        "text" : "- Musical",
+        "type" : "bool",
+        "value" : true
+      }
+     ,"SA_canvas_effect_fireworks_ripples" : 
+      {
+        "order" : 210,
+        "options": [
+        {
+          "label": "None",
+          "value": "None"
+        },
+        {
+          "label": "Fireworks",
+          "value": "Fireworks"
+        },
+        {
+          "label": "Ripples",
+          "value": "Ripples"
+        }
+        ],
+        "text": "Fireworks/Ripples",
+        "type": "combo",
+        "value" : "None"
+      }
+     ,"SA_canvas_effect_fireworks_0_use_default":
+      {
+        "order" : 211,
+        "condition" : "SA_canvas_effect_fireworks_ripples.value == 'Fireworks'",
+        "text" : "- Use default settings",
+        "type" : "bool",
+        "value" : true
+      }
+     ,"SA_canvas_effect_fireworks_type" : 
+      {
+        "order" : 212,
+        "condition" : "SA_canvas_effect_fireworks_ripples.value == 'Fireworks' && SA_canvas_effect_fireworks_0_use_default.value == false",
+        "options": [
+        {
+          "label": "Default",
+          "value": 99
+        },
+        {
+          "label": "Mixed",
+          "value": 0
+        },
+        {
+          "label": "Music",
+          "value": 1
+        },
+        {
+          "label": "Stars",
+          "value": 2
+        },
+        {
+          "label": "Hearts",
+          "value": 3
+        },
+        {
+          "label": "Sparks",
+          "value": 4
+        }
+        ],
+        "text": "- Fireworks type",
+        "type": "combo",
+        "value" : 99
+      }
+     ,"SA_canvas_effect_fireworks_start_x":
+      {
+        "order": 213,
+        "condition" : "SA_canvas_effect_fireworks_ripples.value == 'Fireworks' && SA_canvas_effect_fireworks_0_use_default.value == false",
+        "max": 100,
+        "min": -100,
+        "text": "- Start X ",
+        "type": "slider",
+        "value": 0
+      }
+     ,"SA_canvas_effect_fireworks_start_y":
+      {
+        "order": 214,
+        "condition" : "SA_canvas_effect_fireworks_ripples.value == 'Fireworks' && SA_canvas_effect_fireworks_0_use_default.value == false",
+        "max": 100,
+        "min": -100,
+        "text": "- Start Y ",
+        "type": "slider",
+        "value": 0
+      }
+     ,"SA_canvas_effect_fireworks_gravity" : 
+      {
+        "order" : 215,
+        "condition" : "SA_canvas_effect_fireworks_ripples.value == 'Fireworks' && SA_canvas_effect_fireworks_0_use_default.value == false",
+        "options": [
+        {
+          "label": "0",
+          "value": 0
+        },
+        {
+          "label": "x 0.5",
+          "value": 1
+        },
+        {
+          "label": "x 1.0",
+          "value": 2
+        },
+        {
+          "label": "x 1.5",
+          "value": 3
+        }
+        ],
+        "text": "- Gravity",
+        "type": "combo",
+        "value" : 1
+      }
+     ,"SA_canvas_effect_motion_blur" : 
+      {
+        "order" : 220,
+        "condition" : "SA_visualizer_beat_detection.value == true",
+        "text" : "Motion blur (beat-driven)",
+        "type" : "bool",
+        "value" : false
+      }
+
+
+     ,"SPACE299":
+      {
+        "order": 299,
+        "text" : "",
+        "type" : "text"
+      }
+
+     ,"SA_MMD_INFO":
+      {
+        "order": 300,
+        "text" : "<h4>MikuMikuDance</h4><small>These options allow some controls over how MikuMikuDance (MMD) characters and motions work on System Animator.</small>",
+        "type" : "text"
+      }
+     ,"SA_MMD_look_at_camera" : 
+      {
+        "order" : 301,
+        "text" : "Look at camera",
+        "type" : "bool",
+        "value" : true
+      }
+     ,"SA_MMD_look_at_mouse" : 
+      {
+        "order" : 302,
+        "condition" : "SA_MMD_look_at_camera.value == true",
+        "text" : "Look at mouse",
+        "type" : "bool",
+        "value" : true
+      }
+     ,"SA_MMD_trackball_camera" : 
+      {
+        "order" : 303,
+        "text" : "Trackball camera",
+        "type" : "bool",
+        "value" : true
+      }
+     ,"SA_MMD_random_camera" : 
+      {
+        "order" : 304,
+        "text" : "Random camera (if available)",
+        "type" : "bool",
+        "value" : true
+      }
+
+     ,"SPACE899":
+      {
+        "order": 899,
+        "text" : "",
+        "type" : "text"
+      }
+
+     ,"SA_hide_UI" : 
+      {
+        "order" : 900,
+        "text" : "Hide System Animator UI",
+        "type" : "bool",
+        "value" : false
+      }
+
+     ,"SPACE999":
+      {
+        "order": 999,
+        "text" : "",
+        "type" : "text"
+      }
+    },
+    "supportsaudioprocessing" : true
+  },
+  "title" : "System Animator LITE",
+  "preview" : "preview.jpg",
+  "type" : "web"
+}

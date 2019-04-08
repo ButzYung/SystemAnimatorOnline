@@ -1,0 +1,26 @@
+<html>
+<head>
+<script src="js/Silverlight.js"></script>
+<script>
+onload = function () {
+  var timerID
+  var f = function () {
+    if (!self.SL_XUL_onload)
+      return
+
+    clearInterval(timerID)
+    timerID = null
+
+    SL_XUL_onload()
+  }
+  timerID = setInterval(f, 100)
+
+  self.addEventListener("dragover", function (e) {SL_DragOver()}, true);
+}
+</script>
+</head>
+<body style="overflow:hidden">
+<div id="WMP_Host" style="position:absolute; top:0px; left:0px"></div>
+<div id="SL_Host" style="position:absolute; top:0px; left:0px"></div>
+</body>
+</html>

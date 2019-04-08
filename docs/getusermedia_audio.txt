@@ -1,0 +1,52 @@
+How to configure your computer system to use the "Use audio FFT" live input featurte
+
+(document version 1.1.0)
+
+
+---------------------------------------------
+
+
+  Chromium/XUL mode of System Animator supports direct sound spectrum analysis via Web Audio API. By enabling "live input", this feature works not only on media file playing on
+the animation, but also ANY sound playing on your computer, just like Spectrum Analyser. This feature also opens some future possibilities beyond the Spectrum Analyser.
+
+  The "live input" feature is implemented via the HTML5 "getUserMedia" API, which picks an audio input from the user's computer. Such audio input is usually a microphone by
+default, or it can be any other audio source. For System Animator, the "live input" feature requires the "Stereo Mix" input to be ON, and is the DEFAULT input device.
+
+
+1. (RECOMMENDED) Check out the following page and see how you can turn "Stereo Mix" on, and make it the default input/recording device.
+
+http://www.howtogeek.com/howto/39532/how-to-enable-stereo-mix-in-windows-7-to-record-audio/
+
+
+2. On some systems, it is impossible to enable "Stereo Mix". In this case, you can use some kind of virtual cable or virtual soundcard software to establish a virtual link
+between any audio source and the microphone input. Below are some softwares you may try.
+
+Virtual Audio Cable - http://software.muzychenko.net/eng/vac.htm
+Virtual Sound Card - http://www.e2esoft.cn/vsc/
+JACK - http://jackaudio.org/
+
+
+3. If none of the above works, there is still a final way. You can use an audio cable to connect the headphone output to the microphone input.
+
+http://www.ehow.com/how_7813922_connect-headphone-output-mic-input.html
+
+
+4. Lastly, the current implementation of getUserMedia requires that the input and output device are using the SAME sample rate. Follow step 1 and check out the playback and
+recording devices on your computer. Choose Properties => Advanced, and make sure the output and input device use the same sample rate.
+
+
+  The getUserMedia API is still a new and experimental feature, and the live input feature may not work on every system. In fact, for those System Animator animations that
+support direct playback of audio/video files, the live input feature is NOT required at all. For such animations, simply enable "Use audio FFT" without "live input", and the
+audio part will still be analysed properly.
+
+
+  In the worst case, you still have Spectrum Analyser :P
+
+
+---------------------------------------------
+
+
+  Questions? Problems? Suggestions? Let me know!
+
+  Email: webmaster@animetheme.com
+  System Animator Homepage: http://www.animetheme.com/sidebar/

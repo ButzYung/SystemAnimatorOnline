@@ -1,0 +1,101 @@
+<Canvas
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	x:Name="C_root"
+
+	MouseLeftButtonDown="SL_MouseDown"
+	MouseLeftButtonUp="SL_MouseUp"
+	MouseEnter="SL_MouseEnter"
+	MouseLeave="SL_MouseLeave"
+	MouseMove="SL_MouseMove"
+
+	KeyDown="SL_KeyDown"
+>
+
+	<Canvas x:Name="C_content_parent">
+		<Canvas.OpacityMask>
+			<ImageBrush x:Name="content_mask" />
+		</Canvas.OpacityMask>
+		<Canvas.Projection>
+			<PlaneProjection x:Name="content_PP" />
+		</Canvas.Projection>
+		<Canvas x:Name="C_content">
+			<Canvas.RenderTransform>
+				<TransformGroup>
+					<TranslateTransform x:Name="content_TT" />
+					<ScaleTransform x:Name="content_ST" />
+				</TransformGroup>
+			</Canvas.RenderTransform>
+		</Canvas>
+	</Canvas>
+
+	<Canvas x:Name="C_Ldebug" Visibility="Collapsed">
+		<Rectangle x:Name="R_Ldebug" Width="0" Height="0" Fill="White" Stroke="Black" StrokeThickness="1" />
+		<TextBlock x:Name="Ldebug" Canvas.Top="3" Canvas.Left="3" Foreground="black" FontSize="8" Text="" />
+	</Canvas>
+
+	<Polygon x:Name="B_scale_down" Visibility="Collapsed"
+		Canvas.Top="5" Canvas.Left="5" 
+		Points="0,0, 16,0, 8,16, 0,0"
+		Stroke="black"
+		StrokeThickness="1">
+		<Polygon.Fill>
+			<SolidColorBrush Color="white" Opacity="0.5"/>
+		</Polygon.Fill>
+	</Polygon>
+
+	<Polygon x:Name="B_scale_up" Visibility="Collapsed"
+		Points="0,16, 16,16, 8,0, 0,16"
+		Stroke="black"
+		StrokeThickness="1">
+		<Polygon.Fill>
+			<SolidColorBrush Color="white" Opacity="0.5"/>
+		</Polygon.Fill>
+	</Polygon>
+
+	<Canvas x:Name="B_fullscreen" Visibility="Collapsed">
+		<Rectangle Width="16" Height="16" Stroke="black" StrokeThickness="1">
+			<Rectangle.Fill>
+				<SolidColorBrush Color="white" Opacity="0.5"/>
+			</Rectangle.Fill>
+		</Rectangle>
+		<Rectangle Width="16" Height="3" Fill="black" Opacity="0.66" />
+	</Canvas>
+
+	<Canvas x:Name="C_media_control" Visibility="Collapsed"
+		MouseEnter="SL_MC_MouseEnter"
+		MouseLeave="SL_MC_MouseLeave"
+	>
+		<Canvas.RenderTransform>
+			<ScaleTransform x:Name="MC_ST" CenterX="75" CenterY="15" />
+		</Canvas.RenderTransform>
+		<Rectangle Width="150" Height="30" Fill="White" Stroke="Black" StrokeThickness="1" Opacity="0.5" />
+		<Grid Width="150" Height="30">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="30" />
+				<ColumnDefinition Width="30" />
+				<ColumnDefinition Width="30" />
+				<ColumnDefinition Width="30" />
+				<ColumnDefinition Width="30" />
+			</Grid.ColumnDefinitions>
+			<TextBlock x:Name="MC_play"     MouseEnter="SL_MC_MouseEnter" MouseLeftButtonDown="SL_MC_Play"     Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand" Foreground="black" FontSize="20" FontFamily="Webdings" Text="&#59;" />
+			<TextBlock x:Name="MC_stop"     MouseEnter="SL_MC_MouseEnter" MouseLeftButtonDown="SL_MC_Stop"     Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand" Foreground="black" FontSize="20" FontFamily="Webdings" Text="&#60;" />
+			<TextBlock x:Name="MC_backward" MouseEnter="SL_MC_MouseEnter" MouseLeftButtonDown="SL_MC_Backward" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand" Foreground="black" FontSize="20" FontFamily="Webdings" Text="&#57;" />
+			<TextBlock x:Name="MC_forward"  MouseEnter="SL_MC_MouseEnter" MouseLeftButtonDown="SL_MC_Forward"  Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand" Foreground="black" FontSize="20" FontFamily="Webdings" Text="&#58;" />
+			<TextBlock x:Name="MC_sound"    MouseEnter="SL_MC_MouseEnter" MouseLeftButtonDown="SL_MC_Sound"    Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand" Foreground="black" FontSize="20" FontFamily="Webdings" Text="&#85;" />
+		</Grid>
+	</Canvas>
+
+	<Canvas x:Name="C_tooltip" Visibility="Collapsed">
+		<Rectangle x:Name="R_tooltip" Width="0" Height="0" Fill="White" Stroke="#646464" StrokeThickness="1" />
+		<TextBlock x:Name="C_tooltip_text" Canvas.Top="3" Canvas.Left="3" Foreground="#646464" FontSize="8" Text="" />
+	</Canvas>
+
+	<Canvas x:Name="C_lock_panel" Cursor="Hand" Visibility="Collapsed"
+		MouseLeftButtonDown="SL_LockClick"
+	>
+		<Rectangle Width="116" Height="24" Fill="White" Stroke="Black" StrokeThickness="1" />
+		<TextBlock x:Name="C_lock_panel_text" Canvas.Top="3" Canvas.Left="3" Foreground="black" FontSize="12" FontWeight="Bold" Text="(Click to UNLOCK)" />
+	</Canvas>
+
+</Canvas>

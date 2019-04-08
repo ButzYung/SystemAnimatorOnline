@@ -1,0 +1,14 @@
+{
+  "name": "System Animator (NW.js)"
+ ,"main": "SystemAnimator_webkit.html"
+ ,"single-instance": false
+ ,"chromium-args" : "--enable-webaudio-input --ignore-gpu-blacklist"
+ ,"node-remote" : "<local>"
+ ,"window": {
+    "frame": false
+   ,"toolbar": false
+   ,"resizable": false
+   ,"icon": "icon_teto_512x512.png"
+   ,"transparent": true
+  }
+}

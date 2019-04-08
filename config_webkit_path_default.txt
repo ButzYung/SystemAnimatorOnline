@@ -1,0 +1,12 @@
+electron-v4.0.0-win32-x64_SA\electron.exe
+electron-v1.7.9-win32-ia32_SA\electron.exe
+electron-v1.7.2-win32-ia32_SA\electron.exe
+electron-v1.4.15-win32-ia32_SA\electron.exe
+electron-v1.4.11-win32-ia32_SA\electron.exe
+electron-v1.4.4-win32-ia32_SA\electron.exe
+electron-v1.4.0-win32-ia32_SA\electron.exe
+electron-v1.3.0-win32-ia32_SA\electron.exe
+electron-v1.2.2-win32-ia32_SA\electron.exe
+electron-v1.0.1-win32-ia32_SA\electron.exe
+nwjs-v0.12.3-win-ia32_SA\nw.exe
+node-webkit-v0.11.6-win-ia32_SA\nw.exe

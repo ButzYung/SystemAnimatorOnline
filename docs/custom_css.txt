@@ -1,0 +1,32 @@
+Using customized 3D transform and general CSS for System Animator
+
+(document version 1.0.0)
+
+
+---------------------------------------------
+
+
+  On the Advanced => HTML5 => Transform => 3D tab of the settings panel, you can define a direct CSS "transform" property for the animation. In the case of 3D transform, often
+you will define a perspective and a translation along the z-axis. Below is an example.
+
+
+perspective(960px) translateZ(-1120px)
+
+
+  If this is not enough, you can define a CSS rule for the animation containing more than one CSS properties, which allows more flexibilities. Below is an example.
+
+
+{transform-origin:100% 50%; transform:perspective(960px) translateZ(-1120px) scale3d(1,1.4628,1.4508) rotateY(90deg)}
+
+
+  If this is still not enough, you can even define a complete CSS file named "animate.css" and put it inside the animation folder. You have to know the DOM structure of
+System Animator well enough to make good use of this feature.
+
+
+---------------------------------------------
+
+
+  Questions? Problems? Suggestions? Let me know!
+
+  Email: webmaster@animetheme.com
+  System Animator Homepage: http://www.animetheme.com/sidebar/

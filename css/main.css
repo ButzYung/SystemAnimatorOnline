@@ -1,0 +1,207 @@
+body {
+  margin: 0px;
+  width: 130px;
+  height: 130px;
+  overflow: hidden;
+  background-color: transparent;
+}
+
+.CPU_bar {
+  position:absolute; width:130px; height:8px;
+  border-style:solid; border-width:1px; border-color:black;
+  background-color:#81858A;
+}
+
+.CPU_bar_content {
+  position:absolute; top:0px; left:0px; height:6px; overflow:hidden;
+}
+
+.CPU_bar_up {
+  position:absolute; top:0px; left:0px; width:100%; height:3px;
+  background-color:#51C6E2;
+}
+
+.CPU_bar_down {
+  position:absolute; top:3px; left:0px; width:100%; height:3px;
+  background-color:#0A809B;
+}
+
+.QuickMenu_button {
+  position:absolute; width:18px; height:18px; top:0px;
+}
+
+.QuickMenu_button:hover {
+  background-color:#51C6E2;
+}
+
+.MC_button_s:hover:after, .QuickMenu_button:hover:after{
+background: #333;
+background: rgba(0,0,0,.8);
+border-radius: 5px;
+color: #fff;
+padding: 5px 5px;
+position: absolute;
+bottom: 26px;
+left: 20%;
+z-index: 999;
+width: 80px;
+font-size:10px;
+content: attr(data-title);
+}
+
+.Tooltip_LR:hover:after{
+background: #333;
+background: rgba(0,0,0,.8);
+border-radius: 5px;
+color: #fff;
+padding: 5px 5px;
+position: absolute;
+bottom: 26px;
+left: -80px;
+z-index: 999;
+width: 80px;
+font-size:10px;
+content: attr(data-title);
+}
+
+.Tooltip_TR:hover:after{
+background: #333;
+background: rgba(0,0,0,.8);
+border-radius: 5px;
+color: #fff;
+padding: 5px 5px;
+position: absolute;
+top: 26px;
+left: -80px;
+z-index: 999;
+width: 80px;
+font-size:10px;
+content: attr(data-title);
+}
+
+.QuickMenu_image {
+  position:absolute; width:16px; height:16px; top:1px; left:1px;
+}
+
+@font-face {
+  font-family: Symbola;
+  src: url(Symbola605.ttf) format("truetype");
+}
+
+.MC_button { position:absolute; top:0px; width:30px; height:30px; text-align:center; padding-top:4px }
+.MC_button_s { cursor:pointer }
+
+.Filter_option {
+  background-color:white;
+  padding:3px;
+  border-color:black; border-width:1px; border-style:solid;
+  cursor:pointer;
+  visibility:hidden;
+  opacity:0.75;
+  filter:progid:DXImageTransform.Microsoft.Alpha(opacity=75);
+}
+
+div {
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+#Lbody3D, #Lbody3D_camera, #Lbody3D_main, #Lbody3D_navigation, #Lbody , #Lchild_animation_parent {
+  width:100%; height:100%; -webkit-transform-style:preserve-3d; -moz-transform-style:preserve-3d;
+}
+
+
+/* http://cssbuttoncreator.com/ */
+.StartButton {
+   background: #3D94F6;
+   background-image: -webkit-linear-gradient(top, #3D94F6, #1E62D0);
+   background-image: -moz-linear-gradient(top, #3D94F6, #1E62D0);
+   background-image: -ms-linear-gradient(top, #3D94F6, #1E62D0);
+   background-image: -o-linear-gradient(top, #3D94F6, #1E62D0);
+   background-image: linear-gradient(to bottom, #3D94F6, #1E62D0);
+   -webkit-border-radius: 20px;
+   -moz-border-radius: 20px;
+   border-radius: 20px;
+   color: #FFFFFF;
+   font-family: Arial;
+   font-size: 40px;
+   font-weight: 900;
+   padding: 20px 40px;
+   box-shadow: 1px 1px 20px 0px #000000;
+   -webkit-box-shadow: 1px 1px 20px 0px #000000;
+   -moz-box-shadow: 1px 1px 20px 0px #000000;
+   text-shadow: 1px 1px 8px #000000;
+   border: solid #337FED 4px;
+   text-decoration: none;
+   display: inline-block;
+   cursor: pointer;
+
+/* https://css-tricks.com/centering-css-complete-guide/ */
+
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+}
+
+.StartButton:hover {
+   background: #1E62D0;
+   background-image: -webkit-linear-gradient(top, #1E62D0, #3D94F6);
+   background-image: -moz-linear-gradient(top, #1E62D0, #3D94F6);
+   background-image: -ms-linear-gradient(top, #1E62D0, #3D94F6);
+   background-image: -o-linear-gradient(top, #1E62D0, #3D94F6);
+   background-image: linear-gradient(to bottom, #1E62D0, #3D94F6);
+   text-decoration: none;
+}
+
+
+/* https://css-tricks.com/styling-cross-browser-compatible-range-inputs-css/ */
+/* http://www.oxxostudio.tw/articles/201503/html5-input-range-style.html */
+
+		input[type="range"]{
+		  -webkit-appearance: none;
+		  overflow:hidden;     /* 限定範圍 */
+		  width:140px;
+		  height:20px;
+		  outline : none;      /* 避免點選會有藍線或虛線 */
+		  background:none;
+margin-top:-4px;
+margin-left:4px;
+		}
+		input[type="range"]::-webkit-slider-thumb{
+		  -webkit-appearance: none;
+		  width:10px;
+		  height:10px;
+margin-top:-4px;
+		  background:#000000;
+		  border-radius:50%;
+/*		  transition:.2s;*/
+		}
+		input[type="range"]::-webkit-slider-thumb:before,
+		input[type="range"]::-webkit-slider-thumb:after
+		{
+		  position: absolute;
+		  top: 3px;
+		  width: 2000px;          /* 長度很長沒關係，因為剛剛有用 overflow:hidden 了 */
+		  height: 4px;
+/*		  transition:.2s;*/
+		}
+		input[type="range"]:active::-webkit-slider-thumb{
+margin-top:-8px;
+		  width:16px;
+		  height:16px;
+		}
+		input[type="range"]:active::-webkit-slider-thumb:after {
+		  left: 16px;
+		}
+
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 2px;
+  cursor: pointer;
+  animate: 0.2s;
+  background: #404040;
+}
+

@@ -1,0 +1,95 @@
+<html>
+
+<head>
+
+<style>
+
+body {
+	font-family:Segoe UI;
+	overflow:hidden;
+}
+
+div {
+	-moz-user-select: none;
+	-webkit-user-select: none;
+	-ms-user-select: none;
+}
+
+#Ldrop_area {
+	position:absolute;
+	top:0px;
+	left:0px;
+	width:240px;
+	height:240px;
+	background-color:white;
+	display:flex;
+	justify-content:center;
+	flex-direction:column;
+	text-align:center;
+	font-size:48px;
+	font-weight:bold;
+	color:black;
+	border:8px dashed black;
+	border-radius: 24px;
+	opacity:0.5;
+}
+
+</style>
+
+<script>
+window.onload = function () {
+  document.ondblclick = function () { window.close() }
+
+  var _dragCancelDefault = function (e) {
+e.stopPropagation();
+e.preventDefault();
+  }
+
+  var _dragEnter = function (e) {
+_dragCancelDefault(e)
+  }
+
+  var _dragExit = function (e) {
+_dragCancelDefault(e)
+  }
+
+  var _dragOver = function (e) {
+_dragCancelDefault(e)
+  }
+
+  var _drop = function (e) {
+_dragCancelDefault(e)
+
+var path = e.dataTransfer.files[0].path
+/*
+var item = new System.Shell._FolderItem(new WebKit_object["Shell.Application"]._FolderItem({path:path}))
+
+if (DragDrop.validate_func(item))
+  DragDrop.onDrop_finish(item)
+*/
+
+require('electron').remote.getGlobal("DropArea_drop")(path)
+  }
+
+  document.addEventListener("dragenter", _dragEnter, false);
+  document.addEventListener("dragexit",  _dragExit, false);
+  document.addEventListener("dragover",  _dragOver, false);
+  document.addEventListener("drop",      _drop, false);
+}
+</script>
+
+</head>
+
+<body>
+
+<!--
+<div style="position:absolute; top:5px; left:5px; width:240px; height:240px; background-color:blue;" ></div>
+-->
+
+<div id="Ldrop_area">
+<p style="cursor:default;">DROP<br/>AREA</p>
+</div>
+
+</body>
+
+</html>

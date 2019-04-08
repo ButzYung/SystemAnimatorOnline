@@ -1,0 +1,113 @@
+System Animator - HTA mode
+
+(document version 1.7.1)
+
+
+---------------------------------------------
+
+
+Introduction:
+
+  Since version 5.0, System Animator can be run as a standalone application (HTA / HTML Application) WITHOUT the sidebar platform. Running System Animator
+in HTA mode has the following advantages.
+
+1) consumes LESS CPU power (especially with GPU acceleration enabled)
+2) allows child animations
+3) uses HTML5 Canvas (effectively replacing Silverlight) and other advanced Web technologies to allow more visual effects and possibilities
+4) supports using video file (MP4) directly as animation (this type of System Animator animation is called "SEQ Video"), with chroma key support (ie. transparent background)
+
+  Check out the following video introducing HTA/XUL mode with more details.
+http://www.youtube.com/watch?v=2GYYtt-AbZY
+
+
+---------------------------------------------
+
+
+System requirements:
+
+- Internet Explorer 9 (or above) installed
+  http://windows.microsoft.com/en-US/internet-explorer/download-ie
+
+
+---------------------------------------------
+
+
+Laucnh System Animator in HTA mode:
+
+  To laucnh System Animator in HTA mode, go to the "Mode" tab of the settings panel, and click "Launch HTA". Once an animation is configured to run in
+HTA mode, you can run the animation again by clicking "Launch System Animator.js" in the animation folder.
+
+
+---------------------------------------------
+
+
+Keyboard shortcuts:
+
+- A: Toggle the "Animation Appened Mode", which is used to add child animations. Any animation changing operation (pressing D or F, or via settings
+  panel) during the animation appened mode will become the addition of child animation inside the current animation.
+
+- C: Close the gadget (or click on the lower-left corner of the gadget).
+
+- D: Pick a file (usually for image, music or video file). This basically equals the file dropping operation on the gadget version.
+
+- E: Bring up the settings panel.
+
+- F: Pick a folder (usually for changing animation). This basically equals the folder dropping operation on the gadget version.
+
+- G: Toggle the "Gallery Append Mode", which allows you to display random pictures from any folder you selected inside some supported "Animated Picture" animations.
+  Check out this video for demonstration (http://www.youtube.com/watch?v=I_pR6gaBG9k).
+
+- O: Change the opacity of the current animation (applied in child animation, or when "Use wallpaper as BG" option is ON).
+
+- S: Change the docking state of the animation. This usually changes the animation size.
+
+- 0-9 (num pad): Show/hide the child animation represented by the number (1-9). 0 toggles the visibility of all child animations simultaneously.
+
+- 1-9 (keyboard): Toggle the input focus of the child animation represented by the number (1-9). This is often needed when a child animation doesn't respond to mouse action
+(sometimes in 3D animation).
+
+
+  Note that an animation (or any child animation within) needs to have the input focus for the keyboard shortcuts to work. The simplest way to confirm input
+focus is to click on the target animation.
+
+
+HINT: A small quick menu will be shown on the lower-left corner of most animations when you place the mouse pointer over the animation, which provides a convenient alternative
+for some of the commonly used keyboard shortcut functions.
+
+
+---------------------------------------------
+
+
+Feature comparison (vs XUL/WebKit mode):
+
+1) HTA mode consumes the least amount of memory and CPU power (this may vary across different systems)
+
+2) "Spectrum Analyser" gadget, required for monitoring sound output, can be embedded directly inside any HTA animation.
+
+3) MP4 (video) and MP3 (audio) are supported by default, which are the most common types of media on the Internet.
+
+4) Both Windows Media Player (WMP) and Silverlight plugins are supported, which may be needed by some animations.
+
+5) IE10 is available on Windows 8 by default.
+
+
+---------------------------------------------
+
+
+Known issues:
+
+1) Transparent background is not supported. However, a similar effect can be achieved with the "Use desktop wallpaper as background" option.
+
+2) File/folder dropping is not supported. Some keyboard shortcuts are available to provide corresponding functions.
+
+3) Battery-related monitors are currently not supported. Fixed values are used in the mean time.
+
+
+---------------------------------------------
+
+
+
+  Questions? Problems? Suggestions? Let me know!
+
+  Email: webmaster@animetheme.com
+  System Animator Homepage: http://www.animetheme.com/sidebar/

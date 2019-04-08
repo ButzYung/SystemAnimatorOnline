@@ -1,0 +1,10 @@
+{
+
+  "folder_list": ["animate.js"]
+
+ ,"config_default": {
+    "DisableTransparency": "non_default"
+   ,"MMDShadow":"0.5"
+  }
+
+}

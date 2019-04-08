@@ -1,0 +1,47 @@
+<html>
+<body>
+<script>
+    var options = {
+      client_id: '1837630969807148',
+      scopes: "public_profile",//",user_videos",
+      redirect_uri: "https://www.facebook.com/connect/login_success.html"
+    };
+
+    var facebookAuthURL = "https://www.facebook.com/dialog/oauth?client_id=" + options.client_id + "&redirect_uri=" + options.redirect_uri + "&response_type=token,granted_scopes&scope=" + options.scopes + "&display=popup";
+
+document.write('<webview id="wv" src="' + facebookAuthURL + '" style="display:inline-flex; position:absolute; top:0px; left:0px; width:100%; height:100%;"></webview>')
+</script>
+<script>
+var w = document.getElementById("wv")
+var e_remote = require("electron").remote
+var w_browser = e_remote.getCurrentWindow()
+
+w.addEventListener('did-get-redirect-request', function (event) {
+//alert(event.newURL)
+  var newUrl = event.newURL
+
+      var raw_code = /access_token=([^&]*)/.exec(newUrl) || null;
+      access_token = (raw_code && raw_code.length > 1) ? raw_code[1] : null;
+      error = /\?error=(.+)$/.exec(newUrl);
+      if(access_token) {
+        e_remote.getGlobal("FB_login_succeed")(newUrl, access_token)
+//console.log(newUrl);
+//        FB.setAccessToken(access_token);
+//        FB.api('/me', { fields: ['id', 'name', 'picture.width(800).height(800)'] }, function (res) {
+//console.log(newUrl);
+//console.log(res.name);
+//console.log(res.id);
+//console.log(res.picture.data.url);
+//        });
+//        w_browser.hide()
+        w_browser.close()
+      }
+});
+
+w.addEventListener('did-finish-load', function (event) {
+  w_browser.show()
+});
+//alert(999)
+</script>
+</body>
+</html>

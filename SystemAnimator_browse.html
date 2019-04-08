@@ -1,0 +1,99 @@
+<html>
+<head>
+<script type="text/javascript" language="javascript" src="js/SA_dialog.js"></script>
+
+<script type="text/javascript">
+/*
+Native dialog in WebKit mode (v0.8.0-rc1):
+- "self.xxx" and "var xxx" are messed up sometimes. Some variables declared in a bloack may disappear in another block for unknown reasons.
+*/
+self.returnValue = null
+if (opener)
+  opener.returnValue = null
+
+var webkit_mode = /WebKit/i.test(navigator.userAgent)
+
+function _ok() {
+  if (parent.use_inline_dialog) {
+    self.returnValue = LBFF_browse.value
+    self.location.replace("z_blank.html")
+  }
+  else {
+    self.returnValue = LBFF_browse.value; if (opener) opener.returnValue = LBFF_browse.value; self.close()
+  }
+}
+
+function _cancel() {
+  if (parent.use_inline_dialog) {
+    self.location.replace("z_blank.html")
+  }
+  else {
+    self.close()
+  }
+}
+</script>
+
+</head>
+<body style="font-family: Segoe UI; overflow:hidden">
+<div id="Lsettings_main" style="position:absolute; top:0px; left:0px;">
+
+<div id="Lbrowse_for_file" style="position:absolute; left:0px; top:0px; height:24px; width:100%; background-color:white; z-index:999; padding:5px">
+<span style="position:relative">
+<span id="Stitle" style="font-family:Arial; font-size:12px; font-weight:bold"></span>&nbsp;
+<script type="text/javascript">
+var title = (/title\=([^\&]+)$/.test(location.search)) ? decodeURIComponent(RegExp.$1) : "Dialog"
+document.write('<input style="font-family:Arial; font-size:12px; width:150px" id="LBFF_browse" type="file" ' + ((webkit_mode && /folder/.test(title)) ? 'nwdirectory ' : '') + '/>')
+</script>
+</span>
+
+<span id="Lbuttons" style="position:relative">
+<input style="font-family:Arial; font-size:12px" type="button" value="OK" onclick="_ok()">
+<input style="font-family:Arial; font-size:12px" type="button" value="Cancel" onclick="_cancel()">
+</span>
+</div>
+
+</div>
+
+<script type="text/javascript">
+if (opener)
+  Lbuttons.style.left = "60px"
+if (webkit_mode)
+  Lbrowse_for_file.style.top = "20px"
+
+var w = 405+((opener)?60:0)
+var h = 24+((opener)?0:14)
+
+document.getElementById("Lsettings_main").style.width = w + "px"
+
+SA_dialog_resize(w, h + ((parent.use_inline_dialog) ? 50 : 0))
+
+if (parent.use_inline_dialog) {
+  self.onbeforeunload = function () {
+    SA_dialog_restore_parent_size()
+
+    self.onbeforeunload = null
+    parent.document.getElementById("Idialog").style.visibility = "hidden"
+
+    parent.AudioFFT_active && parent.AudioFFT_active.restartCaptureAudioWE && parent.AudioFFT_active.restartCaptureAudioWE()
+
+    var v = self.returnValue
+    if (v) {
+      if (/folder/.test(title))
+        parent.SA_DragDropEMU((new parent.Shell_OBJ._Folder({path:v})).Self.Path)
+      else {
+        var file
+        if (parent.WallpaperEngine_CEF_mode)
+          file = LBFF_browse.files[0]
+        parent.SA_DragDropEMU(v, file)
+      }
+    }
+  }
+}
+
+onload = function () {
+  document.getElementById("Stitle").innerHTML = title
+}
+</script>
+
+</body>
+</html>

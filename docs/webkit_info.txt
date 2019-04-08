@@ -1,0 +1,128 @@
+System Animator - Chromium mode (formerly known as "WebKit mode")
+
+(document version 1.3.1)
+
+
+---------------------------------------------
+
+
+Introduction:
+
+  NOTE: System Animator 8+ runs on Chromium mode by default.
+
+  Since version 5.0, System Animator can be run as a standalone application (Chromium) WITHOUT the sidebar platform. Running System Animator
+in Chromium mode has the following advantages.
+
+1) consumes LESS CPU power (especially with GPU acceleration enabled)
+2) supports REAL background transparency
+3) allows child animations
+4) uses HTML5 Canvas (effectively replacing Silverlight) and other advanced Web technologies to allow more visual effects and possibilities
+5) supports using video file (MP4/WebM) directly as animation (this type of System Animator animation is called "SEQ Video"), with chroma key support (ie. transparent background)
+6) supports true 3D animations (including MMD)
+
+  Check out the following video introducing System Animator running in Chromium mode with more details.
+https://www.youtube.com/watch?v=lQGCHMNJeXs
+
+
+---------------------------------------------
+
+
+System Requirements:
+
+- Electron v1.4.15 (customized for System Animator) installed
+  http://www.animetheme.com/dl.htm?url=http%3A%2F%2Fwww.animetheme.com%2Fsidebar%2Felectron-v1.4.15-win32-ia32_SA.zp
+
+NOTE: Simply download the ZIP file and unzip it under the same parent folder of System Animator. No installation is required.
+
+Electron homepage:
+http://electron.atom.io/
+
+
+---------------------------------------------
+
+
+Laucnh System Animator in Chromium mode:
+
+  NOTE: System Animator 8+ runs on Chromium mode by default.
+
+  To laucnh System Animator in Chromium mode, go to the "Mode" tab of the settings panel, and click "Launch Chromium". Once an animation is configured to run in
+Chromium mode, you can run the animation again by clicking "Launch System Animator Chromium.js" in the animation folder.
+
+
+---------------------------------------------
+
+
+Keyboard Shortcuts:
+
+- A: Toggle the "Animation Appened Mode", which is used to add child animations. Any animation changing operation (drag-and-drop, or via settings
+  panel) during the animation appened mode will become the addition of child animation inside the current animation.
+
+- C: Close the gadget (or click on the lower-left corner of the gadget).
+
+- E: Bring up the settings panel.
+
+- G: Toggle the "Gallery Append Mode", which allows you to display random pictures from any folder you selected inside some supported "Animated Picture" animations.
+  Check out this video for demonstration (http://www.youtube.com/watch?v=I_pR6gaBG9k).
+
+- I: (Electron only) Toggle the mouse event temporarily on or off when "Click-thru" mode is in use.
+
+- M: Toggle the WMP mask for supported "Animated Picture" animations.
+
+- O: Change the opacity of the current animation.
+
+- S: Change the docking state of the animation. This usually changes the animation size.
+
+- T: Toggle the "3D Navigation Mode".
+
+- 0-9 (num pad): Show/hide the child animation represented by the number (1-9). 0 toggles the visibility of all child animations simultaneously.
+
+- 1-9 (keyboard): Toggle the input focus of the child animation represented by the number (1-9). This is often needed when a child animation doesn't respond to mouse action
+(sometimes in 3D animation).
+
+
+  Note that an animation (or any child animation within) needs to have the input focus for the keyboard shortcuts to work. The simplest way to confirm input
+focus is to click on the target animation.
+
+  Since Chromium mode supports file/folder dropping, you can change animation simply by drag-and-drop just like the gadget version, even though those keyboard
+shorcuts to provide similar functions in HTA mode (D and F) are also supported in Chromium mode.
+
+
+HINT: A small quick menu will be shown on the lower-left corner of most animations when you place the mouse pointer over the animation, which provides a convenient alternative
+for some of the commonly used keyboard shortcut functions.
+
+
+---------------------------------------------
+
+
+Feature comparison (vs HTA/XUL mode):
+
+1) GPU acceleration is enabled by default for supported systems.
+
+2) REAL background transparency is supported while maintaining GPU acceleration.
+
+3) Direct file/folder dropping is supported, which is convenient for changing animation and some other operations.
+
+4) Chromium mode has the best support for media files, including all media formats supported by both HTA (eg. MP4) and XUL mode (eg. WebM).
+
+5) CSS 3D transforms are supported.
+
+6) CPU and RAM monitors are natively supported without relying on WMI (which requires more system resources).
+
+
+---------------------------------------------
+
+
+Known issues:
+
+1) Windows Media Player (WMP) and Silverlight plugins are not supported.
+
+2) Chromium mode requires more memory usage in general, especially for certain types of animations.
+
+
+---------------------------------------------
+
+
+  Questions? Problems? Suggestions? Let me know!
+
+  Email: webmaster@animetheme.com
+  System Animator Homepage: http://www.animetheme.com/sidebar/

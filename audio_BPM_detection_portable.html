@@ -1,0 +1,120 @@
+<html>
+
+<head>
+
+<script src="js/audio_BPM_detection_portable.js"></script>
+
+<script>
+
+// For debug START
+var DEBUG_count = 0
+var DEBUG_timerID
+var DEBUG_always_visible
+var DEBUG_hide_sec = 0
+var DEBUG_last_display_time = 0
+
+function DEBUG_show(msg, hide_sec, always_visible) {
+  if (always_visible)
+    DEBUG_always_visible = true
+//DEBUG_always_visible = true
+  if (DEBUG_timerID || DEBUG_always_visible)
+    msg = Ldebug.innerText + " | " + msg// + '(' + DEBUG_hide_sec + ')'
+
+  var time = Date.now()
+  if (Ldebug.style.visibility != "inherit") {
+    DEBUG_hide_sec = 0
+    DEBUG_last_display_time = time
+  }
+
+  if (DEBUG_timerID) {
+    clearTimeout(DEBUG_timerID)
+    DEBUG_timerID = null
+
+    if (hide_sec && (msg != null) && !DEBUG_always_visible) {
+      DEBUG_hide_sec += hide_sec
+      if (DEBUG_hide_sec > hide_sec + 1)
+        DEBUG_hide_sec -= 1
+      var time_diff = parseInt(DEBUG_hide_sec - (time - DEBUG_last_display_time)/1000)
+      if (time_diff < hide_sec)
+        time_diff = hide_sec
+      hide_sec = time_diff
+    }
+  }
+
+  if (msg != null) {
+    Ldebug.innerText = msg
+
+    if (!self.use_Silverlight || !self.SL_DEBUG_show || self.SL_windowless || !self.SL_loaded)
+      Ldebug.style.visibility = "inherit"
+
+    if (hide_sec && !DEBUG_always_visible) {
+      DEBUG_timerID = setTimeout('DEBUG_timerID=null; DEBUG_show()', hide_sec*1000)
+    }
+  }
+  else {
+    DEBUG_always_visible = false
+    Ldebug.style.visibility = "hidden"
+  }
+
+// Silverlight START
+  if (self.SL_DEBUG_show)
+    SL_DEBUG_show(msg)
+}
+// For debug END
+
+function toFileProtocol(url) {
+  return "file:///" + url.replace(/^(\w)\:/, "$1|").replace(/\\/g, "/").replace(/ /g, "%20").replace(/\&/g, "%26");
+}
+
+/*
+// for standalone testing
+require('electron').ipcRenderer.on('audio_BPM_detection_finished', function (event, message) {
+  alert(message)
+});
+*/
+
+onload = function () {
+  var e_remote = require('electron').remote
+//  var e_window = e_remote.getCurrentWindow()
+
+  if (/file\=([^\&]+)/.test(self.location.search)) {
+    var path = toFileProtocol(decodeURIComponent(RegExp.$1))
+//"C:\\Users\\user\\Desktop\\Youthful Days' Graffiti (Extended Mix).mp3"
+
+    var BPM_by_id3 = (/BPM_by_id3\=([^\&]+)/.test(self.location.search)) ? parseFloat(RegExp.$1) : 0
+//alert(BPM_by_id3)
+    var window_id = (/window_id\=([^\&]+)/.test(self.location.search)) ? parseInt(RegExp.$1) : -1
+
+    Audio_BPM_detection_portable(path, {BPM_by_id3:BPM_by_id3}, function (data) {
+var data_all = { data:data, window_id:window_id }
+e_remote.getGlobal("mainWindow_postMessage")("audio_BPM_detection_finished", JSON.stringify(data_all))
+setTimeout(function () { self.close() }, 500)
+    });
+  }
+  else {
+    DEBUG_show("ERROR: No file specified")
+  }
+}
+
+</script>
+
+<style>
+body {
+  margin: 0px;
+  overflow:hidden;
+  font-family: Segoe UI;
+  background-color:transparent;
+}
+</style>
+
+</head>
+
+<body>
+
+<div style="position:absolute; top:0px; left:0px; width:300px">
+<div id="Ldebug" style="position:absolute; top:0px; left:0px; color:black; font-size:xx-small; visibility:hidden; background-color:white; padding:3px; border-color:black; border-width:1px; border-style:solid; z-index:99"></div>
+</div>
+
+</body>
+
+</html>

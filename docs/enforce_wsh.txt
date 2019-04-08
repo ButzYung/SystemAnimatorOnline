@@ -1,0 +1,28 @@
+Change the file association of ".js" files back to Windows Script Host (WSH)
+
+
+----------------------------------------
+
+
+(source - http://stackoverflow.com/questions/3136356/cannot-execute-a-javascript-script-file-from-windows-explorer-or-the-dos-prompt)
+
+In an explorer window go to the Tools Menu and Folder Options, File Types Tab
+
+Go to JS - JScript File
+
+    Set Edit as C:\WINDOWS\System32\Notepad.exe %1
+    Set Open as C:\WINDOWS\System32\WScript.exe "%1" %*
+
+
+----------------------------------------
+
+
+NOTE:
+
+  The Folder Options window in Windows Vista and later versions is missing the File Types tab found in earlier versions of Windows.
+  So how do you edit file type associations and change icons in Windows Vista & Windows 7?
+
+http://www.annoyances.org/exec/show/article02-500
+
+
+----------------------------------------

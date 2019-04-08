@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<gadget>
+  <name>System Animator</name>
+  <version>10.99.0.0</version>
+  <author name="Anime Theme">
+    <info url="www.animetheme.com" />
+    <logo src="logo.gif" />
+  </author>
+  <copyright>&#169; 2018</copyright>
+  <description>Design your own animation for a system event (CPU/network usage, drive activity, etc)! Several animation demos are included.</description>
+  <icons>
+    <icon src="icon.png" />
+  </icons>
+  <hosts>
+    <host name="sidebar">
+      <base type="HTML" apiVersion="1.0.0" src="SystemAnimator.html" />
+      <permissions>Full</permissions>
+      <platform minPlatformVersion="1.0" />
+      <defaultImage src="icon.png" />
+    </host>
+  </hosts>
+</gadget>

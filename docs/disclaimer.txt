@@ -1,0 +1,19 @@
+System Animator - Disclaimer
+
+(document version 2.0)
+
+---------------------------------------------
+
+Disclaimer:
+
+1) THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+2) System Animator may contain some animated effects which may cause eye strains and discomfort to some users.
+
+3) All third-party materials used in System Animator (online or offline) are for personal and non-commercial purposes only, following the guidelines and licenses stated by the authors, to the best of my knowledge. However, if you are the author of any of these materials, and you do not agree with the usage here, please contact me and I will remove them promptly.
+
+---------------------------------------------
+
+
+  Email: webmaster@animetheme.com
+  System Animator Homepage: http://www.animetheme.com/sidebar/

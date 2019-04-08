@@ -1,0 +1,343 @@
+System Animator - Changelog
+
+-------------------------------
+
+v10.7.1.0
+
+- Add "Custom wallpaper" and "Custom wallpaper mask" options.
+
+- Update RegRead in Windows to use REG QUERY (CMD) instead.
+
+- Update error handling for child_process.execSync (Node.js).
+
+- Update the "Load at Windows startup" option to apply to all System Animator modes (including XUL mode).
+
+- Fix some XUL issues by disabling "XUL Host" mode (i.e. all XUL animations are now separated windows).
+
+-------------------------------
+
+v10.7.0.0
+
+- Add beta support for Linux OS
+
+- Add option to override default MMD model path when external model is used.
+
+- Add option to change edge scale for MMD models.
+
+- Update BPM detection algorithm.
+
+- Update the "Auto Pause" mode for stay-on-desktop MMD animation, which now supports mouse camera control (zoom-in/out by moving mouse with middle button pressed).
+
+- Fix some visual glitches near the edge of the mirror plane when viewed at certain angles (MMD)
+
+-------------------------------
+
+v10.6.1.0
+
+- Add a new demo animation "3D Musical Spacetime", based on "[NV15] Space Curvature" by "iq" (codes modified by me to add the music interactive parts)
+  https://www.shadertoy.com/view/llj3Rz
+
+-------------------------------
+
+v10.6.0.0
+
+- Add option to enabled MMD model shadow.
+
+- Add option to disable dragging for child animations.
+
+- Add option to enable "partial" click-thru.
+
+- Update support for MMD material morph.
+
+- Fix a bug in the MMD light position option with broken accuracy.
+
+-------------------------------
+
+v10.5.0.1
+
+- Fix a regression which broke MMD post-processing effects.
+
+-------------------------------
+
+v10.5.0.0
+
+- Add beta support for WebGL 2.0 (Electron v1.6 or above required).
+
+- Add beta support for multisampled framebuffer object (WebGL 2.0), which provides native MSAA (when post-processing effect is used) instead of the slower FSAA.
+
+- Add more composition mode for video overlay effect.
+
+- Add "Move within primary screen" option to restrict the gadget from moving beyond the primary screen boundary.
+
+- Update support for MMD models with missing textures.
+
+- Update support for MMD models with complicated "deformHierachy" and IK bone combination.
+
+- Update support for MMD physics.
+
+- Update support for multi-model MMD animations.
+
+- Update support for multi-monitor environment.
+
+- Update "Animated Pitcure" to be more optimized when used as stay-on-desktop wallpaper.
+
+- Update "3D Navigation Mode" to be ON by default when CSS 3D transform is used.
+
+- Update getUserMedia to use the latest Web standard, and more error-tolerant for live input.
+
+-------------------------------
+
+v10.2.0.1
+
+- Add support for System Animator "Lite" mode, which allows System Animator to work purely as a Web wallpaper on Wallpaper Engine.
+  This also opens the possibility of running System Animator online in the future.
+
+- Add support for moving the gadget window beyond the primary screen size and possibly across multiple monitors.
+
+- Add support of using AAC music on MMD animations.
+
+- Add options to limit the viewing position of MMD trackball camera.
+
+- Update the double-click function of MMD animation to include a short "gravity reset" / "random wind" effect.
+
+- Fix the repeating of texture when its dimension is non-power-of-two.
+
+- Fix the render depth of speech bubbles and mirrors (in some cases) in MMD animations.
+
+- Fix a bug when loading more than 3 MMD character models.
+
+- Fix a bug when using MMD model with no rigid body.
+
+- Fix a bug in canvas fireworks effect which causes the animation to flash sometimes.
+
+-------------------------------
+
+v10.1.0.1
+
+- Fix a bug in VMD file dropping.
+
+-------------------------------
+
+v10.1.0.0
+
+- Add support for using multiple MMD models on the same animation.
+
+- Add several new models and demo animations demonstrating the multi-model feature.
+
+- Add support for using random camera in MMD animations.
+
+- Add support for MMD model scaling.
+
+- Update the "Diffusion" post-processing effect to become more visible.
+
+-------------------------------
+
+v10.0.0.1
+
+- Fix "Stay on desktop" mode to work on Windows 7
+
+-------------------------------
+
+v10.0.0.0
+
+- Update the "Stay on desktop" feature which allows System Animator to be used as an ANIMATED wallpaper behind the desktop icons.
+
+- Update support for using System Animator as a simple MP4 player.
+
+- Update support for single-file animations.
+
+- Update the "Show/Hide Gadget" option on tray menu to automatically pause/resume any media control if necessary.
+
+- Update the "Click-thru" mode, so that the gadget window is no longer focusable when this mode is on.
+
+- Update the buttons to be always within visible area even if the animation is bigger than the screen.
+
+- Update the gagdget closing function to be immediate without confirm dialog when activated from button or tray menu.
+
+- Add support for "Wallpaper Engine".
+
+- Add seek bar to the media control panel.
+
+- Add "Audio EQ Circles" shader effect for MMD animations.
+
+- Add "Disable transparency" option for animations that don't need transparency (for performance gain)
+
+- Add "Settings" option to tray menu, which is important for "Click-thru" and "Stay on desktop" modes as they don't conveniently accept mouse/keyboard inputs.
+
+- Add "Restart" option to tray menu.
+
+- Add "Trackball camera" option for MMD animation to toggle whether to use mouse-controlled camera or not.
+
+- Add "YouTube Canvas Player" demo which allows System Animator effects to be applied on a YouTube video.
+
+- Fix the "capturePage" function to reduce CPU usage, by adding a delay on the main process and enabling it only when "50% opacity on hover" option is on.
+
+- Fix the broken "process" function on child animations (Electron).
+
+- Fix the "Just Snow" shader effect to display properly on top of everything else.
+
+- Fix some tooltip messages for the media control panel.
+
+- Fix some bugs on the media control of "EQP-gallery" animations.
+
+- Fix "EnableMotionEffectForAnimatedPicture" by properly reflecting the status of "EnableBeatDetection".
+
+- Fix "Create Shortcut" to work with single-file animations and path names containing certain special character.
+
+- Fix the file/folder dropping feature in XUL mode for newer versions of Firefox.
+
+-------------------------------
+
+v9.0.0.1
+
+- Fix the bug which displays an unnecessary dialog after settings update when Firefox is not installed.
+
+-------------------------------
+
+v9.0.0.0
+
+- Change the default rendering platform of System Animator from NW.js to Electron, which is also based on Chromium and Node.js with some extra features for System Animator.
+
+- Change the name of "WebKit mode" to "Chromium mode" to better reflect the actual rendering engine used.
+
+- Change the layout of settings panel and the locations of some options to better reflect their actual functions.
+
+- Change the default audio BPM (beats per minute) detection method to Web Audio API.
+
+- Change the default BPM to 120 if no BPM/beat is detected.
+
+- Update the battery monitor to comply with the latest version of Battery Status API.
+
+- (Electron) Add the "window click-through" feature, which allows System Animator to ignore all mouse events without blocking any content/window below it.
+
+- (Electron) Add the tray menu feature to provide shortcuts to some commonly used functions.
+
+- (Electron) Add support of "perfmon" Node.js module to replace the use of external WMI script for the monitoring of some system activities.
+
+- (Electron) Add the option to register any Electron executable as the default handler for the "system-animator://" protocol (aka URI scheme).
+
+- (Electron) Add the "look at cursor" feature for MMD animations.
+
+- Add SAO (Scalable Ambient Obscurance) and other visual effects support for MMD animations.
+
+- Add speed control for MMD animation (replacing the seek function).
+
+- Improve handling of missing textures in MMD models.
+
+- Fix occasional MMD model corruption during music changes.
+
+- Fix the error that occurs when a MMD model has no morph transform.
+
+- Fix maximize window to use proper screen size and position.
+
+- Fix various bugs and interface glitches.
+
+-------------------------------
+
+v8.4.0.2
+
+- Fix the error when a MMD animation has only one motion.
+
+- Add experimental support for "Electron" platform, which may be an alternative/replacement of NW.js in the future.
+
+-------------------------------
+
+v8.4.0.1
+
+- Add a workaround to reduce the chaos in MMD physics simulation during motion change.
+
+-------------------------------
+
+v8.4.0.0
+
+- Add support of dropping any folder with supported music files (MP3/WAV) as a randomized playlist for MMD and "SEQ Video" animations.
+
+- Add support of all morph types for MMD models, including the newly added group morph and bone morph.
+
+- Fix the bug of redundant/inaccurate calculations in MMD physics when certain visual effects are used.
+
+- Fix some alpha-blending issues for certain 3D visual effects.
+
+- Fix the bug in which the "always on top" option, once activated, would become unchangeable without closing the window.
+
+-------------------------------
+
+v8.3.0.3
+
+- Fix a bug in repeated dropping of VMD motion file.
+
+-------------------------------
+
+v8.3.0.2
+
+- Update MMD animation support to allow drag-n-drop of VMD motion file, regardless of whether it has been loaded or not (in previous versions, existing motions are ignored).
+
+-------------------------------
+
+v8.3.0.1
+
+- Change the filenames of some files from Japanese to ASCII, to fix the issue in which some systems can't unzip files with Japanese filenames properly.
+
+-------------------------------
+
+v8.3.0.0
+
+- Add support of "SEQ Video" animations as 3D child animation.
+
+- Add support of NW.js (node-webkit) v0.12.3 (previous version v0.11.6 still works).
+
+- Add support of control from external applications by writing JSON commands to a secific file monitored by System Animator.
+
+-------------------------------
+
+v8.2.0.0
+
+- Change the gadget restart procedure to a simple page refresh whenever applicable, which fixes some issues and is faster.
+
+- Add a new 3D animation demo on the default animation list demonstrating the new feature which allows using 2D System Animator animations (as textures) inside a 3D space.
+
+- Add several new WebGL shader backgrounds for MMD animations.
+
+- Fix the alpha transparency and various other issues regarding WebGL shader backgrounds for MMD animations.
+
+- Fix the custom folder button on the settings panel.
+
+-------------------------------
+
+v8.1.1.0
+
+- Fix a few MMD-related bugs and syntax issues, required by the following video tutorial.
+  MMD Desktop Mascot with uSystem Animatorv(Tutorial Part I)
+  https://youtu.be/MriY2-EzEnQ
+
+- Update the MMD animation demos to include the "kissing" custom actions. 
+
+-------------------------------
+
+v8.1.0.0
+
+- Add "Web Audio API"-based BPM/beat detection method, as an alternative to the existing method using external BASS audio library, which may yield better results
+  in some cases. You can test/enable it under the "Advanced => Beat detection" tab on the settings panel.
+
+- Fix various bugs regarding MMD support.
+
+- Fix a bug which unexpectedly increased frame rate in some cases.
+
+- Rename "Fullscreen" button to "Maximize" to better fit its actual purpose.
+
+- Change the activation method of Maximize/Restore buttons from double-click to single-click.
+
+- Add tooltip descriptions for various buttons.
+
+-------------------------------
+
+v8.0.0.0
+
+- The first version of System Animator to begin keeping changelog :P
+
+-------------------------------
+
+
+System Animator - Homepage
+
+http://www.animetheme.com/sidebar/

@@ -1,0 +1,179 @@
+<package>
+  <job>
+    <script language="JScript" src="wmi_al_core.js"></script>
+    <script language="JScript">
+// WMI Anit-leak workarounds (v1.2.0)
+
+var objArgs = WScript.Arguments;
+try {
+  var temp_path = new ActiveXObject("WScript.Shell").ExpandEnvironmentStrings("%TEMP%"); //WScript.ScriptFullName.replace(/\\[^\\]+$/, "\\TEMP")
+  var temp_filename = decodeURIComponent(objArgs(0))
+  var temp_filepath = temp_path + '\\' + temp_filename
+  var paras = decodeURIComponent(objArgs(1)).split("|")
+
+  var one_time_result
+
+  var refresher_by_id = []
+  var class_used = []
+  for (var i = 0; i < paras.length; i++) {
+    var p = paras[i].split(",")
+    var class_name = p[0]
+    var refresher_id = p[1]
+    var timer_interval = parseInt(p[2])
+
+    if (!timer_interval)
+      one_time_result = true
+
+    var r = refresher_by_id[refresher_id]
+    if (!r)
+      r = refresher_by_id[refresher_id] = { obj:null, id:refresher_id, class_exists:{}, objs_by_class:{}, timer_interval:99, timer_count:0 }
+    r.class_exists[class_name] = class_used[class_name] = true
+    if (r.timer_interval > timer_interval)
+      r.timer_interval = timer_interval
+    r.timer_count = r.timer_interval
+  }
+}
+catch (err) {
+  WScript.Echo("Invalid arguments!")
+  WScript.Quit()
+}
+
+
+// Main
+var WMI_obj = GetObject("winmgmts:");
+var FSO_OBJ = new ActiveXObject("Scripting.FileSystemObject");
+var oShell = new ActiveXObject("Shell.Application");
+
+if (!one_time_result) {
+  for (id in refresher_by_id) {
+    var r_obj = refresher_by_id[id]
+    var r
+    r = r_obj.obj = new ActiveXObject("WbemScripting.SWbemRefresher")
+
+    for (c in r_obj.class_exists) {
+      r_obj.objs_by_class[c] = r.AddEnum(WMI_obj, c)
+    }
+  }
+}
+
+var tmp_file_detele_try_max = 3
+var tmp_file_mtime_check_count = 0
+
+while (1) {
+  if (!one_time_result) {
+    WScript.Sleep(100)
+
+    var delete_ext = []
+    if (!FSO_OBJ.FileExists(temp_filepath + '.tmp')) {
+      delete_ext.push('.txt')
+    }
+    else {
+      // check every 3 seconds
+      if (++tmp_file_mtime_check_count >= 30) {
+        try {
+          var mtime = new Date(oShell.NameSpace(temp_path).ParseName(temp_filename + '.tmp').ModifyDate).getTime()
+          if (new Date().getTime() > mtime + 60*1000)
+            delete_ext.push('.tmp', '.txt')
+          else
+            tmp_file_mtime_check_count = 0
+        }
+        catch (err) {}
+      }
+    }
+
+    if (delete_ext.length) {
+      try {
+        for (var i = 0; i < delete_ext.length; i++)
+          FSO_OBJ.DeleteFile(temp_filepath + delete_ext[i])
+        break
+      }
+      catch (err) {
+        if (--tmp_file_detele_try_max <= 0)
+          break
+        else
+          continue
+      }
+    }
+  }
+
+  var update_file = false
+  for (id in refresher_by_id) {
+    var r = refresher_by_id[id]
+    if (--r.timer_count > 0)
+      continue
+    r.timer_count = r.timer_interval
+
+    update_file = true
+
+    if (!one_time_result)
+      r.obj.Refresh()
+
+    for (c in r.class_exists) {
+      var en_objs
+      if (one_time_result)
+        en_objs = WMI_obj.InstancesOf(c)
+      else
+        en_objs = r.objs_by_class[c].ObjectSet
+
+      var collection = []
+      var en = new Enumerator(en_objs)
+      for (; !en.atEnd(); en.moveNext())
+        collection.push(en.item())
+
+      var c_ref = WMI_AL_ref[c]
+      var c_list = []
+      for (var i = 0; i < collection.length; i++) {
+        var cc = collection[i]
+
+        var obj = {}
+        for (p in c_ref.properties)
+          obj[p] = cc[p]
+
+        c_list.push(obj)
+      }
+      c_ref.collection = c_list
+    }
+  }
+
+  if (!update_file)
+    continue
+
+  var wmi_str = []
+  for (c in class_used) {
+    var c_ref = WMI_AL_ref[c]
+
+    var collection = c_ref.collection
+    if (!collection) {
+      collection = c_ref.collection = []
+      for (var i = 0; i < c_ref.collection_length_default; i++)
+        collection.push(c_ref.properties)
+    }
+
+    var q = '"'
+    var c_str = []
+    for (var i = 0; i < collection.length; i++) {
+      var cc = collection[i]
+
+      var p_str = []
+      for (p in cc)
+        p_str.push((q + p + q) + ':' + ((typeof c_ref.properties[p] == "number") ? cc[p] : q + cc[p].toString().replace(/"\s/g, " ") + q))
+
+      c_str.push('{' + p_str.join(",") + '}')
+    }
+
+    wmi_str.push((q + c + q) + ':[' + c_str.join(",") + ']')
+  }
+
+  var js = '{' + wmi_str.join(",") + '}'
+//WScript.Echo(js)
+  var f = FSO_OBJ.OpenTextFile(temp_filepath + '.txt', 2, true);
+  f.Write(js)
+  f.Close()
+
+  if (one_time_result)
+    break
+}
+
+    </script>
+  </job>
+</package>

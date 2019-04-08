@@ -1,0 +1,40 @@
+body
+{
+    width:300px;
+    height:400px;
+    margin:0px;
+    overflow:hidden;
+    font-family: Segoe UI;
+    background-color: white;
+}
+
+ul
+{
+	list-style-position:outside;
+	padding-left:15px;
+}
+
+a  { text-decoration:none; }
+a:hover { text-decoration:underline; }
+
+.titleHeader 
+{
+    font-size: 12px;
+    font-family: Verdana, Arial, sans-serif;
+}
+
+.settingName 
+{
+    font-size: 12px;
+}
+
+.normal 
+{
+    font-size: 12px;
+}
+
+.textBox
+{
+    font-size: 12px;
+    font-weight:normal;
+}

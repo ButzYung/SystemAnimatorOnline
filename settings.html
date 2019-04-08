@@ -1,0 +1,2859 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=unicode" />
+<title>System Animator - Settings</title>
+<link href="css/settings.css" rel="stylesheet" type="text/css" />
+<link href="css/tabber.css" rel="stylesheet" type="text/css" />
+
+<script type="text/javascript" language="javascript" src="js/core.js"></script>
+<script type="text/javascript" language="javascript" src="js/SA_system_emulation_settings.js"></script>
+<script type="text/javascript" language="javascript" src="js/SA_dialog.js"></script>
+
+<script type="text/javascript">
+var tabberOptions = {manualStartup:true};
+//onerror = function (msg, filename, line) { alert([msg, filename, line]) }
+//alert(parseInt("777",8)+'/'+0o777)
+</script>
+<script type="text/javascript" language="javascript" src="js/tabber-minimized.js"></script>
+
+<script type="text/javascript">
+
+if (!oShell)
+  oShell = new ActiveXObject("WScript.Shell");
+if (!FSO_OBJ)
+  FSO_OBJ = new ActiveXObject("Scripting.FileSystemObject");
+
+function hidemacface() {
+  if (test_mode(Folder.value)) {
+     showid("L_EventToMonitorVF_TEXT");
+     showid("EventToMonitorVF");
+     showid("L_Monitor2Sensitivity_TEXT");
+     showid("Monitor2Sensitivity");
+     toggleElement(L_UseMarkers, true)
+  } else {
+     hideid("L_EventToMonitorVF_TEXT");
+     hideid("EventToMonitorVF");
+     hideid("L_Monitor2Sensitivity_TEXT");
+     hideid("Monitor2Sensitivity");
+     toggleElement(L_UseMarkers, false)
+  }
+}
+
+function toggleElement(d, state) {
+  var disabled = !state
+
+  d.disabled = disabled
+  if (w3c_mode)
+    d.style.color = (disabled) ? "gray" : "inherit"
+
+  var children = d.children
+  for (var i = 0; i < children.length; i++) {
+    children[i].disabled = disabled
+  }
+}
+
+function test_mode(path) {
+  if (/^demo/.test(path))
+    path = System.Gadget.document.parentWindow.path_demo[path]
+
+  return /\.mcface$/i.test(path);
+}
+
+function hideid(name) {
+  document.getElementById(name).style.visibility = 'hidden'
+} 
+
+function showid(name) { 
+  document.getElementById(name).style.visibility = 'inherit'
+} 
+
+function writeCPUOptions() {
+  var html = ""
+  var max = (use_SA_browser_mode) ? 8 : System.Machine.CPUs.count
+  for (var i = 0; i < max; i++)
+    html += '<option value="CPU' + i + '">CPU usage (core' + ((i > 3) ? '' : '/meter') + ' ' + (i+1) + ')</option>\n'
+  document.write(html)
+}
+
+function AutoConfig() {
+  var v = EventToMonitor.value
+  if (/SOUND/.test(v)) {
+    UpdateInterval.value = 1
+    if (use_SA_browser_mode) {
+      UseFullFrameRate.checked = true
+      UseHTML5Canvas.checked = true
+      if (!is_SA_child_animation && (w3c_mode) && (parent_window.use_EQP_core || parent_window.MMD_SA)) {
+        UseAudioFFT.checked = true
+        UseAudioFFT.onclick()
+      }
+    }
+  }
+  else if (!/FIXED|RANDOM|TIMER/.test(v)) {
+    UpdateInterval.value = 10
+  }
+}
+
+function BrowseFolder() {
+  if (webkit_mode) {
+    parent_window.document.getElementById("Idialog").style.visibility = "hidden"
+    parent_window.SA_OnFolder()
+    return
+  }
+
+  var shellFolder = System.Shell.chooseFolder("Choose a folder with animation supported by System Animator.", 0);
+  if (shellFolder) {
+    Folder.options[0].value = Folder.options[0].innerText = shellFolder.path
+    Folder.options[0].selected = true
+  }
+  hidemacface();
+}
+
+function loadBD() {
+  var state = EnableBeatDetection.checked
+  toggleElement(L_EnableMotionEffect, state)
+  toggleElement(L_BDScale, state)
+  toggleElement(L_BDOpacity, state)
+  toggleElement(L_BDBassKick, state)
+}
+
+function setFolderValue() {
+  var v = System.Gadget.Settings.readString("Folder")
+  if (v && !/^demo\d+/.test(v)) {
+    Folder.options[0].value = Folder.options[0].innerText = v
+    Folder.options[0].selected = true
+  }
+  else {
+    if (!v)
+      v = Settings_default.Folder
+    for (var i = 0; i < Folder.options.length; i++) {
+      var o = Folder.options[i]
+      var vv = o.value
+      if (vv == v) {
+        o.selected = true
+        break
+      }
+    }
+  }
+}
+
+var SA_wallpaper_path, SA_wallpaper_src
+var SA_wallpaper_mask_path, SA_wallpaper_mask_src
+
+function customWallpaper() {
+  if (SAWallpaperSrc.value) {
+    var path = (webkit_mode) ? SAWallpaperSrc.files[0].path : SAWallpaperSrc.value
+    if (SA_wallpaper_src) {
+      if (SA_wallpaper_src == path) {
+        SA_alert("Wallpaper path already saved.")
+        return
+      }
+      if (!confirm("Overwrite existing custom wallpaper path?"))
+        return
+    }
+
+    SA_wallpaper_src = path
+    var f = FSO_OBJ.OpenTextFile(SA_wallpaper_path, 2, true);
+    f.Write(SA_wallpaper_src)
+    f.Close()
+
+    LSAWallpaperSrc.innerText = SA_wallpaper_src
+    SA_alert("Custom wallpaper path saved")
+  }
+  else {
+    if (SA_wallpaper_src) {
+      if (confirm("Delete existing custom wallpaper path?")) {
+        FSO_OBJ.DeleteFile(SA_wallpaper_path)
+        LSAWallpaperSrc.innerText = "(no custom wallpaper selected)"
+        SA_alert("Custom wallpaper path deleted")
+      }
+    }
+  }
+}
+
+function customWallpaperMask() {
+  if (SAWallpaperMaskSrc.value) {
+    var path = (webkit_mode) ? SAWallpaperMaskSrc.files[0].path : SAWallpaperMaskSrc.value
+    if (SA_wallpaper_mask_src) {
+      if (SA_wallpaper_mask_src == path) {
+        SA_alert("Wallpaper mask path already saved.")
+        return
+      }
+      if (!confirm("Overwrite existing custom wallpaper mask path?"))
+        return
+    }
+
+    SA_wallpaper_mask_src = path
+    var f = FSO_OBJ.OpenTextFile(SA_wallpaper_mask_path, 2, true);
+    f.Write(SA_wallpaper_mask_src)
+    f.Close()
+
+    LSAWallpaperMaskSrc.innerText = SA_wallpaper_mask_src
+    SA_alert("Custom wallpaper mask path saved")
+  }
+  else {
+    if (SA_wallpaper_mask_src) {
+      if (confirm("Delete existing custom wallpaper path?")) {
+        FSO_OBJ.DeleteFile(SA_wallpaper_mask_path)
+        LSAWallpaperMaskSrc.innerText = "(no custom wallpaper mask selected)"
+        SA_alert("Custom wallpaper mask path deleted")
+      }
+    }
+  }
+}
+
+function loadSettings() {
+// Delegate for the settings closing event. 
+System.Gadget.onSettingsClosing = SettingsClosing;
+
+  var v
+
+  setFolderValue()
+
+  v = System.Gadget.Settings.readString("EventToMonitor")
+  if (!v)
+    v = Settings_default.EventToMonitor
+  for (var i = 0; i < EventToMonitor.options.length; i++) {
+    var o = EventToMonitor.options[i]
+    var vv = o.value
+    if (vv == v) {
+      o.selected = true
+      break
+    }
+  }
+
+  v = System.Gadget.Settings.readString("EventToMonitorVF")
+  if (!v)
+    v = Settings_default.EventToMonitorVF
+  for (var i = 0; i < EventToMonitorVF.options.length; i++) {
+    var o = EventToMonitorVF.options[i]
+    var vv = o.value
+    if (vv == v) {
+      o.selected = true
+      break
+    }
+  }
+
+  v = System.Gadget.Settings.readString("MonitorSensitivity")
+  if (!v)
+    v = Settings_default.MonitorSensitivity
+  for (var i = 0; i < MonitorSensitivity.options.length; i++) {
+    var o = MonitorSensitivity.options[i]
+    var vv = o.value
+    if (vv == v) {
+      o.selected = true
+      break
+    }
+  }
+
+  v = System.Gadget.Settings.readString("Monitor2Sensitivity")
+  if (!v)
+    v = Settings_default.Monitor2Sensitivity
+  for (var i = 0; i < Monitor2Sensitivity.options.length; i++) {
+    var o = Monitor2Sensitivity.options[i]
+    var vv = o.value
+    if (vv == v) {
+      o.selected = true
+      break
+    }
+  }
+
+  v = System.Gadget.Settings.readString("UpdateInterval")
+  if (!v)
+    v = Settings_default.UpdateInterval
+  for (var i = 0; i < UpdateInterval.options.length; i++) {
+    var o = UpdateInterval.options[i]
+    var vv = o.value
+    if (vv == v) {
+      o.selected = true
+      break
+    }
+  }
+
+  v = System.Gadget.Settings.readString("Display")
+  if (!v)
+    v = Settings_default.Display
+  for (var i = 0; i < Display.options.length; i++) {
+    var o = Display.options[i]
+    var vv = o.value
+    if (vv == v) {
+      o.selected = true
+      break
+    }
+  }
+
+  ReverseAnimation.checked = returnBoolean("ReverseAnimation")
+  UseFilters.checked = returnBoolean("UseFilters")
+  UseMarkers.checked = returnBoolean("UseMarkers")
+  UseImgCache.checked = returnBoolean("UseImgCache")
+  UseFullFrameRate.checked = parent_window.use_full_fps_registered || returnBoolean("UseFullFrameRate")
+  UseFullFrameRate.onclick()
+  Use60FPS.checked = returnBoolean("Use60FPS")
+  if (returnBoolean("IgnoreMouseEvents")) {
+    IgnoreMouseEvents.checked = true
+  }
+  else if (returnBoolean("IgnoreMouseEventsPartial")) {
+    IgnoreMouseEvents.checked = true
+    IgnoreMouseEventsPartial.checked = true
+  }
+  else {
+    toggleElement(L_IgnoreMouseEventsPartial, false)
+  }
+/*
+  UseSilverlight.checked = returnBoolean("UseSilverlight")
+  UseSL_windowless.checked = returnBoolean("UseSL_windowless")
+  UseSilverlight.onclick()
+*/
+  HTAUseGPUAcceleration.checked = parent_window.HTA_use_GPU_acceleration
+  HTALoadSpectrumAnalyser.checked = returnBoolean("HTALoadSpectrumAnalyser")
+  UseAudioFFT.checked = returnBoolean("UseAudioFFT")
+  UseAudioFFT.onclick()
+  UseAudioFFTLiveInput.checked = returnBoolean("UseAudioFFTLiveInput")
+  UseAudioFFTLiveInput.onclick()
+
+  v = System.Gadget.Settings.readString("UseAudioFFTLiveInputGain")
+  if (!v)
+    v = Settings_default.UseAudioFFTLiveInputGain
+  UseAudioFFTLiveInputGain.value = v
+
+  WallpaperAsBG.checked = returnBoolean("WallpaperAsBG")
+  WallpaperAsBG.onclick()
+  DisableWallpaperMask.checked = returnBoolean("DisableWallpaperMask")
+  DisableTransparency.checked = returnBoolean("DisableTransparency")
+  MoveWithinPrimaryScreen.checked = returnBoolean("MoveWithinPrimaryScreen")
+//  XULSilverlightAuto.checked = returnBoolean("XULSilverlightAuto")
+  XULTransparentBG.checked = returnBoolean("XULTransparentBG")
+  ChildDragDisabled.checked = returnBoolean("ChildDragDisabled")
+
+  v = System.Gadget.Settings.readString("CSSTransformScale")
+  if (!v)
+    v = Settings_default.CSSTransformScale
+  CSSTransformScale.value = v
+
+  v = System.Gadget.Settings.readString("CSSTransformRotate")
+  if (!v)
+    v = Settings_default.CSSTransformRotate
+  CSSTransformRotate.value = v
+
+  CSSTransformFullscreen.checked = returnBoolean("CSSTransformFullscreen")
+  CSSTransformFlipH.checked = returnBoolean("CSSTransformFlipH")
+  CSSTransformFlipV.checked = returnBoolean("CSSTransformFlipV")
+  CSSTransformToChildAnimation.checked = returnBoolean("CSSTransformToChildAnimation")
+
+  v = System.Gadget.Settings.readString("CSSTransform3D")
+  if (!v)
+    v = Settings_default.CSSTransform3D
+  CSSTransform3D.value = v
+
+  CSSTransform3DBillboard.checked = System.Gadget.Settings.readString("CSSTransform3DBillboard")
+  CSSTransform3DDisabledForContent.checked = System.Gadget.Settings.readString("CSSTransform3DDisabledForContent")
+  CSSTransform3DBoxAnimate.checked = System.Gadget.Settings.readString("CSSTransform3DBoxAnimate")
+  UseWebcamHeadtracking.checked = System.Gadget.Settings.readString("UseWebcamHeadtracking")
+
+  UseHTML5Canvas.checked = returnBoolean("UseHTML5Canvas")
+  UseWebGLForCanvas2D.checked = returnBoolean("UseWebGLForCanvas2D")
+  UseMatrixRain.checked = returnBoolean("UseMatrixRain")
+  UseMatrixRain.onclick()
+  MatrixRainColor.checked = returnBoolean("MatrixRainColor")
+  MatrixRainPlayOnIdle.checked = returnBoolean("MatrixRainPlayOnIdle")
+  MatrixRainMusical.checked = returnBoolean("MatrixRainMusical")
+
+  UseCanvasRipple.checked = returnBoolean("UseCanvasRipple")
+  UseCanvasFireworks.checked = returnBoolean("UseCanvasFireworks")
+
+  v = System.Gadget.Settings.readString("UseCanvasNotebookDrawings_Style")
+  if (!v)
+    v = Settings_default.UseCanvasNotebookDrawings_Style
+  document.getElementById("UseCanvasNotebookDrawings_Style" + v).checked = true
+
+  UseCanvasNotebookDrawings.checked = returnBoolean("UseCanvasNotebookDrawings")
+  UseCanvasNotebookDrawings.onclick()
+
+  UseCanvasWatercolor.checked = returnBoolean("UseCanvasWatercolor")
+  UseCanvasVanGogh.checked = returnBoolean("UseCanvasVanGogh")
+  UseCanvasPPEQuality.value = UseCanvasPPEQuality_VALUE.innerText = System.Gadget.Settings.readString("UseCanvasPPEQuality") || Settings_default.UseCanvasPPEQuality
+  UseCanvasPPEContrast.value = UseCanvasPPEContrast_VALUE.innerText = System.Gadget.Settings.readString("UseCanvasPPEContrast") || Settings_default.UseCanvasPPEContrast
+  UseCanvasPPEBrightness.value = UseCanvasPPEBrightness_VALUE.innerText = System.Gadget.Settings.readString("UseCanvasPPEBrightness") || Settings_default.UseCanvasPPEBrightness
+
+  UseSVGClock.checked = returnBoolean("UseSVGClock")
+
+  AutoItRunAsAU3.checked = returnBoolean("AutoItRunAsAU3")
+  AutoItAlwaysOnTop.checked = returnBoolean("AutoItAlwaysOnTop")
+  AutoItStayOnDesktop.checked = returnBoolean("AutoItStayOnDesktop")
+  AutoItAutoPause.disabled = !AutoItStayOnDesktop.checked
+  AutoItAutoPause.checked = returnBoolean("AutoItAutoPause")
+  AutoItWinampMode.checked = returnBoolean("AutoItWinampMode")
+  AutoItBPMByBASS.checked = returnBoolean("AutoItBPMByBASS")
+
+  v = System.Gadget.Settings.readString("CCPU")
+  if (!v)
+    v = Settings_default.CCPU
+  document.getElementById("CCPU" + v).checked = true
+
+  v = System.Gadget.Settings.readString("BDSpectrumToBeat")
+  if (!v)
+    v = Settings_default.BDSpectrumToBeat
+  document.getElementById("BDSpectrumToBeat" + v).checked = true
+
+  Use32BandSpectrum.checked = returnBoolean("Use32BandSpectrum")
+//  BPMByWebAudioAPI.checked = returnBoolean("BPMByWebAudioAPI")
+
+  EnableBeatDetection.checked = returnBoolean("EnableBeatDetection")
+  EnableMotionEffectForAnimatedPicture.checked = returnBoolean("EnableMotionEffectForAnimatedPicture")
+  EnableMotionEffectForSEQVideo.checked = returnBoolean("EnableMotionEffectForSEQVideo")
+  v = System.Gadget.Settings.readString("BDScale")
+  if (!v)
+    v = Settings_default.BDScale
+  document.getElementById("BDScale" + v).checked = true
+  v = System.Gadget.Settings.readString("BDOpacity")
+  if (!v)
+    v = Settings_default.BDOpacity
+  document.getElementById("BDOpacity" + v).checked = true
+  v = System.Gadget.Settings.readString("BDBassKick")
+  if (!v)
+    v = Settings_default.BDBassKick
+  document.getElementById("BDBassKick" + v).checked = true
+
+  AllowExternalCommand.checked = returnBoolean("AllowExternalCommand")
+
+  EnforceWSH.checked = SystemEXT.enforce_WSH
+// obsolete
+//  SwapRegistryCheck.checked = returnBoolean("SwapRegistryCheck")
+
+
+// hiding and showing stuff
+  hidemacface()
+
+  loadBD()
+
+  // Electron, Windows only
+  if (!webkit_electron_mode || !windows_mode) {
+    toggleElement(AutoItStayOnDesktop)
+    toggleElement(AutoItAutoPause)
+  }
+
+  // Silverlight is obsolete for non-gadget mode
+  if (use_SA_browser_mode || ie_64bit) {
+//    toggleElement(L_UseSL)
+//    toggleElement(L_UseSL_windowless)
+  }
+
+  if (!xul_mode) {
+    toggleElement(L_XULTransparentBG)
+  }
+  if (!webkit_mode && (xul_version < 26)) {
+    toggleElement(L_UseAudioFFT)
+    toggleElement(L_UseAudioFFTLiveInput)
+    toggleElement(L_Use32BandSpectrum)
+//    toggleElement(L_BPMByWebAudioAPI)
+  }
+  if (webkit_nwjs_mode) {
+    toggleElement(L_WallpaperAsBG)
+    toggleElement(L_DisableWallpaperMask)
+  }
+  if (!webkit_transparent_mode) {
+    toggleElement(L_UseWebGLForCanvas2D)
+  }
+  if (!webkit_electron_mode) {
+    toggleElement(L_IgnoreMouseEvents)
+    toggleElement(L_DisableTransparency)
+    toggleElement(L_MoveWithinPrimaryScreen)
+    L_GPU_check.style.display = "none"
+    toggleElement(L_electron_register)
+  }
+  if (!UseAudioFFT.checked) {
+    toggleElement(L_Use32BandSpectrum, parent_window.is_SA_child_animation)
+  }
+  if (!use_SA_browser_mode || !ie9_native) {
+    toggleElement(L_HTAUseGPUAcceleration)
+    toggleElement(L_HTALoadSpectrumAnalyser)
+// Once for XUL, "XULSilverlightAuto" is actually a HTA option now, since HTML5 canvas mode is always on for XUL/Chromium mode.
+//    toggleElement(L_XULSilverlightAuto)
+  }
+  if (!use_SA_browser_mode || ie9_native) {
+    toggleElement(T_Transform3D)
+  }
+  if (!use_SA_browser_mode || !(ie9_native || w3c_mode) || parent_window.is_SA_child_animation || !windows_mode)
+    toggleElement(L_HTALoadAnimationAtStartup)
+  if (!use_SA_browser_mode || !(ie9_native || webkit_mode)) {
+    L_Misc_TEMP.style.visibility = "hidden"
+  }
+  if (!windows_mode) {
+    toggleElement(T_AutoIt)
+    toggleElement(L_EnforceWSH)
+    toggleElement(T_XUL)
+    toggleElement(T_HTA)
+  }
+  if (!use_SA_browser_mode) {
+    toggleElement(T_HTA_XUL)
+    toggleElement(T_HTML5Canvas)
+    toggleElement(T_HTML5CanvasPPE)
+    toggleElement(T_Transform)
+    toggleElement(T_Transform3D)
+    toggleElement(T_AutoIt)
+    toggleElement(L_BDVisualEffects0)
+    toggleElement(L_BDVisualEffects1)
+  }
+  if (!w3c_mode) {
+    toggleElement(T_HTML5CanvasPPE)
+  }
+  if (!parent_window.is_SA_child_animation) {
+    toggleElement(L_CSSTransform3DBillboard)
+  }
+  B_electron_register.value = ((electronRegisterCheck()) ? "Unregister" : "Register") + " System Animator"
+
+  if (!use_SA_browser_mode || !parent_window.MMD_SA) {
+    toggleElement(T_3D_General)
+    toggleElement(T_3D_MMD)
+  }
+  else {
+    var PPE = parent_window.MMD_SA_options.MME.PostProcessingEffects
+    Use3DPPE.checked = PPE.enabled
+    Use3DSAO.checked = PPE.use_SAO
+    Use3DDiffusion.checked = PPE.use_Diffusion
+    Use3DPPE.onchange()
+    MMDLookAtCamera.checked = parent_window.MMD_SA_options._look_at_screen
+    if (!webkit_electron_mode) {
+      toggleElement(L_MMDLookAtMouse)
+    }
+    else {
+      MMDLookAtMouse.checked = parent_window.MMD_SA_options._look_at_mouse
+    }
+    MMDTrackballCamera.checked = returnBoolean("MMDTrackballCamera")
+    MMDRandomCamera.checked = returnBoolean("MMDRandomCamera")
+    MMDOverrideDefaultForExternalModel.checked = returnBoolean("MMDOverrideDefaultForExternalModel")
+    MMDEdgeScale.value = MMDEdgeScale_VALUE.innerText = parseFloat(System.Gadget.Settings.readString("MMDEdgeScale") || Settings_default.MMDEdgeScale) * 100
+  }
+
+
+// HTA and XUL
+  var w = System.Gadget.document.parentWindow
+
+  var startup_path = (xul_mode) ? XPCOM_object._getSpecialPath("Progs") : System.Environment.getEnvironmentVariable("USERPROFILE") + ((Vista_or_above) ? '\\AppData\\Roaming\\Microsoft\\Windows' : '') + '\\Start Menu\\Programs';
+  startup_path += '\\Startup'
+
+  var script_name = startup_path + '\\System Animator XUL - Host'
+  LoadXULAtStartup.checked = !!(w.ValidatePath(script_name + '.js') || w.ValidatePath(script_name + ' - WSH.lnk'))
+
+  if (!use_SA_browser_mode)
+    return
+
+  SA_wallpaper_path = System.Gadget.path + toLocalPath('\\TEMP\\SA_wallpaper_src.txt')
+  SA_wallpaper_src = ""
+  if (FSO_OBJ.FileExists(SA_wallpaper_path)) {
+    try {
+      var f = FSO_OBJ.OpenTextFile(SA_wallpaper_path, 1);
+      SA_wallpaper_src = f.ReadLine()
+      f.Close()
+      LSAWallpaperSrc.innerText = SA_wallpaper_src
+    }
+    catch (err) {}
+  }
+
+  SA_wallpaper_mask_path = System.Gadget.path + toLocalPath('\\TEMP\\SA_wallpaper_mask_src.txt')
+  SA_wallpaper_mask_src = ""
+  if (FSO_OBJ.FileExists(SA_wallpaper_mask_path)) {
+    try {
+      var f = FSO_OBJ.OpenTextFile(SA_wallpaper_mask_path, 1);
+      SA_wallpaper_mask_src = f.ReadLine()
+      f.Close()
+      LSAWallpaperMaskSrc.innerText = SA_wallpaper_mask_src
+    }
+    catch (err) {}
+  }
+
+  var host_path = System.Gadget.path + '\\TEMP\\_hosted_SA_HTA.txt'
+  if (FSO_OBJ.FileExists(host_path)) {
+    try {
+      var file = FSO_OBJ.OpenTextFile(host_path, 1);
+      var txt = file.ReadAll()
+      file.Close()
+
+      if (txt)
+        hosted_SA_HTA = (webkit_mode) ? JSON.parse('{"a":'+txt+'}').a : eval(txt)
+    }
+    catch (err) {}
+  }
+
+  var path = w.Settings.f_path_folder
+  for (var i = 0; i < hosted_SA_HTA.length; i++) {
+    if (path == decodeURIComponent(hosted_SA_HTA[i])) {
+      HTALoadAnimationAtStartup.checked = true
+      break
+    }
+  }
+}
+
+var hosted_SA_HTA = []
+
+function saveSettings() {
+  var v
+
+  v = Folder.value
+  if (v == Settings_default.Folder)
+    v = ""
+  System.Gadget.Settings.writeString("Folder", v)
+
+v = System.Gadget.Settings.readString("Folder")
+/*
+if (use_SA_system_emulation && (!v || /^demo/.test(v))) {
+  self.returnValue = return_window.returnValue = false
+  parent_window.DEBUG_show("NOTE: Settings are not saved for default demo animations in HTA/XUL/Chromium mode. Use other animations instead.", 3)
+}
+*/
+
+  v = EventToMonitor.value
+  if (v == Settings_default.EventToMonitor)
+    v = ""
+  System.Gadget.Settings.writeString("EventToMonitor", v)
+
+  v = EventToMonitorVF.value
+  if (v == Settings_default.EventToMonitorVF)
+    v = ""
+  System.Gadget.Settings.writeString("EventToMonitorVF", v)
+
+  v = MonitorSensitivity.value
+  if (v == Settings_default.MonitorSensitivity)
+    v = ""
+  System.Gadget.Settings.writeString("MonitorSensitivity", v)
+
+  v = Monitor2Sensitivity.value
+  if (v == Settings_default.Monitor2Sensitivity)
+    v = ""
+  System.Gadget.Settings.writeString("Monitor2Sensitivity", v)
+
+
+  v = UpdateInterval.value
+  if (v == Settings_default.UpdateInterval)
+    v = ""
+  System.Gadget.Settings.writeString("UpdateInterval", v)
+
+  v = Display.value
+  if (v == Settings_default.Display)
+    v = ""
+  System.Gadget.Settings.writeString("Display", v)
+
+// obsolete
+//v = ""
+//System.Gadget.Settings.writeString("HandleOversize", v)
+
+  System.Gadget.Settings.writeString("ReverseAnimation", returnYesNo("ReverseAnimation", ReverseAnimation.checked))
+  System.Gadget.Settings.writeString("UseFilters", returnYesNo("UseFilters", UseFilters.checked))
+  System.Gadget.Settings.writeString("UseMarkers", returnYesNo("UseMarkers", UseMarkers.checked))
+  System.Gadget.Settings.writeString("UseImgCache", returnYesNo("UseImgCache", UseImgCache.checked))
+  System.Gadget.Settings.writeString("UseFullFrameRate", returnYesNo("UseFullFrameRate", UseFullFrameRate.checked))
+// Use30FPS now equals UseFullFrameRate.
+  System.Gadget.Settings.writeString("Use30FPS", returnYesNo("UseFullFrameRate", UseFullFrameRate.checked))
+  System.Gadget.Settings.writeString("Use60FPS", returnYesNo("Use60FPS", Use60FPS.checked))
+  System.Gadget.Settings.writeString("IgnoreMouseEvents", returnYesNo("IgnoreMouseEvents", IgnoreMouseEvents.checked && !IgnoreMouseEventsPartial.checked))
+  System.Gadget.Settings.writeString("IgnoreMouseEventsPartial", returnYesNo("IgnoreMouseEvents", IgnoreMouseEvents.checked && IgnoreMouseEventsPartial.checked))
+
+  System.Gadget.Settings.writeString("HTALoadSpectrumAnalyser", returnYesNo("HTALoadSpectrumAnalyser", HTALoadSpectrumAnalyser.checked))
+  System.Gadget.Settings.writeString("UseAudioFFT", returnYesNo("UseAudioFFT", UseAudioFFT.checked))
+  System.Gadget.Settings.writeString("UseAudioFFTLiveInput", returnYesNo("UseAudioFFTLiveInput", UseAudioFFTLiveInput.checked))
+
+  v = parseFloat(UseAudioFFTLiveInputGain.value)
+  if (!v || (v == parseFloat(Settings_default.UseAudioFFTLiveInputGain)) || (v < 0))
+    v = ""
+  System.Gadget.Settings.writeString("UseAudioFFTLiveInputGain", v)
+
+  System.Gadget.Settings.writeString("WallpaperAsBG", returnYesNo("WallpaperAsBG", WallpaperAsBG.checked))
+  System.Gadget.Settings.writeString("DisableWallpaperMask", returnYesNo("DisableWallpaperMask", DisableWallpaperMask.checked))
+  System.Gadget.Settings.writeString("DisableTransparency", returnYesNo("DisableTransparency", DisableTransparency.checked))
+  System.Gadget.Settings.writeString("MoveWithinPrimaryScreen", returnYesNo("MoveWithinPrimaryScreen", MoveWithinPrimaryScreen.checked))
+//  System.Gadget.Settings.writeString("XULSilverlightAuto", returnYesNo("XULSilverlightAuto", XULSilverlightAuto.checked))
+  System.Gadget.Settings.writeString("XULTransparentBG", returnYesNo("XULTransparentBG", XULTransparentBG.checked))
+  System.Gadget.Settings.writeString("ChildDragDisabled", returnYesNo("ChildDragDisabled", ChildDragDisabled.checked))
+
+  Box3D()
+  if (!CSSTransform3DBoxAnimate.checked)
+    System.Gadget.Settings.writeString("CSSTransform3DBoxAnimate", "")
+
+  System.Gadget.Settings.writeString("CSSTransformFullscreen", returnYesNo("CSSTransformFullscreen", CSSTransformFullscreen.checked))
+  if (CSSTransformFullscreen.checked)
+    CSSTransformScale.value = 1
+
+  System.Gadget.Settings.writeString("CSSTransformFlipH", returnYesNo("CSSTransformFlipH", CSSTransformFlipH.checked))
+  System.Gadget.Settings.writeString("CSSTransformFlipV", returnYesNo("CSSTransformFlipV", CSSTransformFlipV.checked))
+  System.Gadget.Settings.writeString("CSSTransformToChildAnimation", returnYesNo("CSSTransformToChildAnimation", CSSTransformToChildAnimation.checked))
+
+  var CSSTransformed = (CSSTransformFullscreen.checked || CSSTransformFlipH.checked || CSSTransformFlipV.checked)
+
+  v = parseFloat(CSSTransformScale.value)
+  if (!v || (v == Settings_default.CSSTransformScale))
+    v = ""
+  if (v && (v != 1))
+    CSSTransformed = true
+  System.Gadget.Settings.writeString("CSSTransformScale", v)
+
+  v = parseFloat(CSSTransformRotate.value)
+  if (!v || (v == Settings_default.CSSTransformRotate))
+    v = ""
+  if (v)
+    CSSTransformed = true
+  System.Gadget.Settings.writeString("CSSTransformRotate", v)
+
+  v = CSSTransform3D.value.trim()
+  if (!v || (v == Settings_default.CSSTransform3D))
+    v = ""
+  if (v)
+    CSSTransformed = true
+  System.Gadget.Settings.writeString("CSSTransform3D", v)
+
+  System.Gadget.Settings.writeString("CSSTransform3DBillboard", returnYesNo("CSSTransform3DBillboard", CSSTransform3DBillboard.checked))
+  System.Gadget.Settings.writeString("CSSTransform3DDisabledForContent", returnYesNo("CSSTransform3DDisabledForContent", CSSTransform3DDisabledForContent.checked))
+  System.Gadget.Settings.writeString("UseWebcamHeadtracking", returnYesNo("UseWebcamHeadtracking", UseWebcamHeadtracking.checked))
+
+  if (CSSTransformed)
+    UseHTML5Canvas.checked = true
+
+  System.Gadget.Settings.writeString("UseHTML5Canvas", returnYesNo("UseHTML5Canvas", UseHTML5Canvas.checked))
+  System.Gadget.Settings.writeString("UseWebGLForCanvas2D", returnYesNo("UseWebGLForCanvas2D", UseWebGLForCanvas2D.checked))
+  System.Gadget.Settings.writeString("UseMatrixRain", returnYesNo("UseMatrixRain", UseMatrixRain.checked))
+  System.Gadget.Settings.writeString("MatrixRainColor", returnYesNo("MatrixRainColor", MatrixRainColor.checked))
+  System.Gadget.Settings.writeString("MatrixRainPlayOnIdle", returnYesNo("MatrixRainPlayOnIdle", MatrixRainPlayOnIdle.checked))
+  System.Gadget.Settings.writeString("MatrixRainMusical", returnYesNo("MatrixRainMusical", MatrixRainMusical.checked))
+
+  System.Gadget.Settings.writeString("UseCanvasRipple", returnYesNo("UseCanvasRipple", UseCanvasRipple.checked))
+  System.Gadget.Settings.writeString("UseCanvasFireworks", returnYesNo("UseCanvasFireworks", UseCanvasFireworks.checked))
+
+  System.Gadget.Settings.writeString("UseCanvasNotebookDrawings", returnYesNo("UseCanvasNotebookDrawings", UseCanvasNotebookDrawings.checked))
+  for (var i = 1; i <= 3; i++) {
+    var d = document.getElementById("UseCanvasNotebookDrawings_Style" + i)
+    if (d.checked) {
+      System.Gadget.Settings.writeString("UseCanvasNotebookDrawings_Style", i)
+      break
+    }
+  }
+
+  System.Gadget.Settings.writeString("UseCanvasWatercolor", returnYesNo("UseCanvasWatercolor", UseCanvasWatercolor.checked))
+  System.Gadget.Settings.writeString("UseCanvasVanGogh", returnYesNo("UseCanvasVanGogh", UseCanvasVanGogh.checked))
+
+  v = UseCanvasPPEQuality.value
+  if (v == Settings_default.UseCanvasPPEQuality)
+    v = ""
+  System.Gadget.Settings.writeString("UseCanvasPPEQuality", v)
+
+  v = UseCanvasPPEContrast.value
+  if (v == Settings_default.UseCanvasPPEContrast)
+    v = ""
+  System.Gadget.Settings.writeString("UseCanvasPPEContrast", v)
+
+  v = UseCanvasPPEBrightness.value
+  if (v == Settings_default.UseCanvasPPEBrightness)
+    v = ""
+  System.Gadget.Settings.writeString("UseCanvasPPEBrightness", v)
+
+  System.Gadget.Settings.writeString("UseSVGClock", returnYesNo("UseSVGClock", UseSVGClock.checked))
+
+  System.Gadget.Settings.writeString("AutoItRunAsAU3", returnYesNo("AutoItRunAsAU3", AutoItRunAsAU3.checked))
+  System.Gadget.Settings.writeString("AutoItAlwaysOnTop", returnYesNo("AutoItAlwaysOnTop", AutoItAlwaysOnTop.checked))
+  System.Gadget.Settings.writeString("AutoItStayOnDesktop", returnYesNo("AutoItStayOnDesktop", AutoItStayOnDesktop.checked))
+  System.Gadget.Settings.writeString("AutoItAutoPause", returnYesNo("AutoItAutoPause", AutoItAutoPause.checked))
+  System.Gadget.Settings.writeString("AutoItWinampMode", returnYesNo("AutoItWinampMode", AutoItWinampMode.checked))
+  System.Gadget.Settings.writeString("AutoItBPMByBASS", returnYesNo("AutoItBPMByBASS", AutoItBPMByBASS.checked))
+/*
+  System.Gadget.Settings.writeString("UseSilverlight", returnYesNo("UseSilverlight", UseSilverlight.checked))
+  System.Gadget.Settings.writeString("UseSL_windowless", returnYesNo("UseSL_windowless", UseSL_windowless.checked))
+*/
+  for (var i = 1; i <= 4; i++) {
+    var d = document.getElementById("CCPU" + i)
+    if (d.checked) {
+      System.Gadget.Settings.writeString("CCPU", i)
+      break
+    }
+  }
+
+  for (var i = 0; i < 3; i++) {
+    var d = document.getElementById("BDSpectrumToBeat" + i)
+    if (d.checked) {
+      System.Gadget.Settings.writeString("BDSpectrumToBeat", i)
+      break
+    }
+  }
+  System.Gadget.Settings.writeString("Use32BandSpectrum", returnYesNo("Use32BandSpectrum", Use32BandSpectrum.checked))
+//  System.Gadget.Settings.writeString("BPMByWebAudioAPI", returnYesNo("BPMByWebAudioAPI", BPMByWebAudioAPI.checked))
+  System.Gadget.Settings.writeString("EnableBeatDetection", returnYesNo("EnableBeatDetection", EnableBeatDetection.checked))
+  if (EnableBeatDetection.checked) {
+    System.Gadget.Settings.writeString("EnableMotionEffectForAnimatedPicture", returnYesNo("EnableMotionEffectForAnimatedPicture", EnableMotionEffectForAnimatedPicture.checked))
+    System.Gadget.Settings.writeString("EnableMotionEffectForSEQVideo", returnYesNo("EnableMotionEffectForSEQVideo", EnableMotionEffectForSEQVideo.checked))
+    for (var i = 0; i < 3; i++) {
+      var d = document.getElementById("BDScale" + i)
+      if (d.checked) {
+        System.Gadget.Settings.writeString("BDScale", i)
+        break
+      }
+    }
+    for (var i = 0; i < 3; i++) {
+      var d = document.getElementById("BDOpacity" + i)
+      if (d.checked) {
+        System.Gadget.Settings.writeString("BDOpacity", i)
+        break
+      }
+    }
+    for (var i = 0; i < 3; i++) {
+      var d = document.getElementById("BDBassKick" + i)
+      if (d.checked) {
+        System.Gadget.Settings.writeString("BDBassKick", i)
+        break
+      }
+    }
+  }
+
+  SystemEXT.enforce_WSH = EnforceWSH.checked
+  System.Gadget.Settings.writeString("AllowExternalCommand", returnYesNo("AllowExternalCommand", AllowExternalCommand.checked))
+
+// obsolete
+//  System.Gadget.Settings.writeString("SwapRegistryCheck", returnYesNo("SwapRegistryCheck", SwapRegistryCheck.checked))
+
+
+// XUL
+// LoadXULAtStartup is not used for now
+  createXULStartupShortcut(true)//!LoadXULAtStartup.checked)
+
+  try {
+    var bv = (webkit_mode) ? (LXUL_browse.value && LXUL_browse.files[0].path) : LXUL_browse.value
+    if ((LXUL_browse.style.visibility != "hidden") && bv) {
+      if (bv != SystemEXT.GetXULPath_USER()) {
+        SystemEXT.GetXULPath_USER(bv)
+      }
+    }
+    else if (LXUL_browse.style.visibility == "hidden") {
+      var temp_config_xul_path = System.Gadget.path + '\\TEMP\\_config_xul_path.tmp'
+      if (FSO_OBJ.FileExists(temp_config_xul_path)) {
+        FSO_OBJ.DeleteFile(temp_config_xul_path)
+      }
+    }
+  }
+  catch (err) {}
+
+// WebKit
+  try {
+    if (LWebKit_browse.value) {
+      var temp_config_webkit_path = System.Gadget.path + '\\TEMP\\_config_webkit_path.tmp'
+      var f = FSO_OBJ.OpenTextFile(temp_config_webkit_path, 2, true);
+      f.Write(LWebKit_browse.value)
+      f.Close()
+    }
+  }
+  catch (err) {}
+
+// HTA (GPU Acceleration)
+  if (use_SA_browser_mode && ie9_native) {
+    if (HTAUseGPUAcceleration.checked != parent_window.HTA_use_GPU_acceleration) {
+
+//http://msdn.microsoft.com/en-us/library/ee330731(VS.85).aspx#gpu_rendering
+var reg_v = (HTAUseGPUAcceleration.checked) ? 1 : 0
+var reg_updated
+
+var reg_root = ['HKLM', 'HKCU']
+for (var i = 0; i < 2; i++) {
+  var root = reg_root[i]
+  try {
+    oShell.RegWrite(root + '\\SOFTWARE\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\FEATURE_GPU_RENDERING\\mshta.exe', reg_v, "REG_DWORD")
+  }
+  catch (err) {}
+
+  if (HTAUseGPUAcceleration.checked == getHTAUseGPUAcceleration()) {
+    reg_updated = true
+    break
+  }
+}
+
+if (!reg_updated)
+  SA_alert("ERROR: Unable to update registry (HTAUseGPUAcceleration)")
+    }
+  }
+
+// HTA/WebKit
+  if (!use_SA_browser_mode || !(ie9_native || w3c_mode) || !windows_mode)
+    return
+
+  var w = System.Gadget.document.parentWindow
+  var path = Folder.value
+  if (/^demo/.test(path))
+    path = w.path_demo[path]
+  if (path == w.Settings.f_path)
+    path = w.Settings.f_path_folder
+
+  var existed
+  var _hosted_SA_HTA = []
+  for (var i = 0; i < hosted_SA_HTA.length; i++) {
+    var p = hosted_SA_HTA[i]
+    if (decodeURIComponent(p) == path)
+      existed = true
+    else
+      _hosted_SA_HTA.push(p)
+  }
+  if (existed && HTALoadAnimationAtStartup.checked)
+    return
+
+  hosted_SA_HTA = _hosted_SA_HTA
+  if (HTALoadAnimationAtStartup.checked)
+    hosted_SA_HTA.push(encodeURIComponent(path))
+
+  var host_path = System.Gadget.path + '\\TEMP\\_hosted_SA_HTA.txt'
+  var startup_folder = ((xul_mode) ? XPCOM_object._getSpecialPath("Progs") : System.Environment.getEnvironmentVariable("USERPROFILE") + ((Vista_or_above) ? '\\AppData\\Roaming\\Microsoft\\Windows' : '') + '\\Start Menu\\Programs') + '\\Startup';
+  var script_name = 'System Animator HTA - Host'
+  var startup_path = startup_folder + '\\' + script_name + ((EnforceWSH.checked) ? ' - WSH.lnk' : '.js')
+  if (!hosted_SA_HTA.length) {
+    try {
+      if (FSO_OBJ.FileExists(host_path))
+        FSO_OBJ.DeleteFile(host_path)
+      if (FSO_OBJ.FileExists(startup_path))
+        FSO_OBJ.DeleteFile(startup_path)
+    }
+    catch (err) {}
+    return
+  }
+
+  var f = FSO_OBJ.OpenTextFile(host_path, 2, true);
+  f.Write('["' + hosted_SA_HTA.join('","') + '"]')
+  f.Close()
+
+
+  var rn = '\r\n'
+
+  var js =
+  checkGadgetJS()
+
+  var ER_check = electronRegisterCheck()
+  if (xul_mode) {
+    js +=
+  rn
++ SystemEXT.CheckXULJS()
+  }
+  else if (webkit_mode && !ER_check) {
+    js +=
+  rn
++ SystemEXT.CheckWebKitJS()
+  }
+
+  js +=
+  rn
++ 'var host_path = hta + "\\TEMP\\_hosted_SA_HTA.txt";' + rn
++ 'if (fso.FileExists(host_path)) {' + rn
++ '  var file = fso.OpenTextFile(host_path, 1);' + rn
++ '  var txt = file.ReadAll();' + rn
++ '  file.Close();' + rn
++ rn
++ '  var hosted_SA_HTA = [];' + rn
++ '  if (txt)' + rn
++ '    hosted_SA_HTA = eval(txt);' + rn
++ rn
++ '  for (var i = 0; i < hosted_SA_HTA.length; i++) {' + rn
++ '    var f = decodeURIComponent(hosted_SA_HTA[i]);' + rn
+
+  if (ie9_native) {
+    js +=
+  '    oShell.ShellExecute(hta + "\\SystemAnimator_ie.hta", \'"\' + f + \'"\');' + rn
+  }
+  else if (xul_mode) {
+    js +=
+  '    oShell.ShellExecute(XUL_path, ((/firefox.exe/i.test(XUL_path)) ? "-app " : "") + \'"\' + hta + \'\\_xul_gadget\\application.ini" "\' + f + \'"\');' + rn
+  }
+  else {
+    if (ER_check) {
+      js +=
+  '    oShell.ShellExecute("system-animator://" + encodeURIComponent(f));' + rn
+    }
+    else {
+      js +=
+  '    oShell.ShellExecute(WebKit_path, \'"\' + hta + \'" "\' + f + \'"\');' + rn
+    }
+  }
+
+  js +=
+  '  }' + rn
++ '}' + rn
+
+  js = js.replace(/\\/g, "\\\\");
+
+
+  var doc_path, startup_js
+  if (EnforceWSH.checked) {
+    doc_path = System.Environment.getEnvironmentVariable("USERPROFILE") + '\\Documents';
+    startup_js = doc_path + '\\' + script_name + '.js'
+  }
+  else
+    startup_js = startup_path
+
+  var f = FSO_OBJ.OpenTextFile(startup_js, 2, true);
+  f.Write(js)
+  f.Close()
+//} catch (err) {webkit_electron_remote.dialog.showMessageBox(null, {type:"info", buttons:["OK"], message:startup_js+'\n'+navigator.userAgent})}
+
+  if (EnforceWSH.checked)
+    SystemEXT.CreateShortcut([System.Environment.getEnvironmentVariable("SystemRoot") + "\\System32\\WScript.exe", startup_path, doc_path, '"' + script_name + '.js"'])
+}
+
+function returnYesNo(name, b) {
+  var d = Settings_default[name]
+  var non_default = "non_default" //(d) ? "no" : "yes"
+
+  return ((!b == !!d) ? non_default : "")
+}
+
+function launchHTA() {
+  System.Shell.execute(System.Gadget.path + '\\SystemAnimator_ie.hta', ((EnforceWSH.checked)?'"wsh"':null))
+}
+
+function getXULPath(no_warning) {
+  var bv = (webkit_mode) ? (LXUL_browse.value && LXUL_browse.files[0].path) : LXUL_browse.value
+  if (!bv && !SystemEXT.GetXULPath()) {
+    if (!no_warning)
+      SA_alert("Please specifiy a path to Firefox/XULRunner first.")
+    return ""
+  }
+
+  var _xul_path = bv
+  if (!_xul_path)
+    _xul_path = SystemEXT.GetXULPath()
+
+  return _xul_path
+}
+
+function launchXUL() {
+  var w = System.Gadget.document.parentWindow.SA_top_window
+  if (w.is_SA_hosted) {
+    w.opener.openSA()
+    return
+  }
+
+  var _xul_path = getXULPath()
+  if (_xul_path) {
+    System.Shell.execute(_xul_path, ((/firefox/i.test(_xul_path)) ? '-app ' : '') + '"' + System.Gadget.path + '\\_xul_gadget\\application.ini"');//'\\_xul_gadget_host\\application.ini"' + ((EnforceWSH.checked)?' wsh':''));//
+  }
+}
+
+function getWebKitPath(path) {
+  if (!webkit_mode && !LWebKit_browse.value && !SystemEXT.GetWebKitPath(null)) {
+    SA_alert("Please specifiy a path to Electron/node-webkit first.")
+    return ""
+  }
+
+  var _webkit_path = LWebKit_browse.value
+  if (!_webkit_path)
+    _webkit_path = SystemEXT.GetWebKitPath(path)
+
+  return _webkit_path
+}
+
+function launchWebKit() {
+  var _webkit_path = getWebKitPath()
+  if (_webkit_path) {
+    System.Shell.execute(_webkit_path, '"' + System.Gadget.path + '"' + ((EnforceWSH.checked)?' wsh':''))
+  }
+}
+
+function resetLoadAtStartup() {
+  if (non_windows_native_mode)
+    return
+
+  if (!confirm("This will reset all startup animation settings for System Animator."))
+    return
+
+  var host_path = System.Gadget.path + '\\TEMP\\_hosted_SA_HTA.txt'
+  var startup_folder = ((xul_mode) ? XPCOM_object._getSpecialPath("Progs") : System.Environment.getEnvironmentVariable("USERPROFILE") + ((Vista_or_above) ? '\\AppData\\Roaming\\Microsoft\\Windows' : '') + '\\Start Menu\\Programs') + '\\Startup';
+  var script_name = 'System Animator HTA - Host'
+  var startup_path = startup_folder + '\\' + script_name + ((EnforceWSH.checked) ? ' - WSH.lnk' : '.js')
+
+  hosted_SA_HTA = []
+  HTALoadAnimationAtStartup.checked = false
+
+  var deleted = 0
+  try {
+    if (FSO_OBJ.FileExists(host_path)) {
+      FSO_OBJ.DeleteFile(host_path)
+      deleted++
+    }
+    if (FSO_OBJ.FileExists(startup_path)) {
+      FSO_OBJ.DeleteFile(startup_path)
+      deleted++
+    }
+  }
+  catch (err) {}
+
+  SA_alert((deleted)?"All startup animation settings have been cleared.":"No existing animation has been scheduled to load at startup.")
+}
+
+function createAnimationShortcut() {
+  var f_path = parent_window.Settings.f_path
+  f_path = System.Gadget.document.parentWindow.path_demo_by_url[f_path] || f_path
+
+  var script_name = 'SA' + System.Gadget.version.replace(/\..+$/, "") + ' - ' + parent_window.Settings.f_path.replace(/^.+[\/\\]/, "")
+
+  if (linux_mode) {
+    var webkit_shortcut
+    if (electronRegisterCheck()) {
+      webkit_shortcut = process.env.HOME + "/Documents/system-animator"
+    }
+    else {
+      SA_alert('NOTE: You have not registered System Animator to the OS. The current Electron path will be used to create the animation shortcut, which may become broken whenever Electron is upgraded in the future. Registration ensures that all animation shortcuts will remain valid as long as you register System Animator again whenever you upgrade Electron.\n\nTo register System Animator, go to the "Mode" tab and click the corresponding button.');
+      webkit_shortcut = webkit_path.replace(/[\/\\][^\/\\]+$/, "");
+    }
+
+    var data = [
+  '[Desktop Entry]'
+ ,'Version=1.0'
+ ,'Name=' + script_name
+ ,'Comment=System Animator - animation shortcut'
+ ,'Exec="' + webkit_shortcut + '/electron" "' + f_path + '"'
+ ,'Icon='  + webkit_shortcut + '/resources/icon_teto_512x512.png'
+ ,'Terminal=false'
+ ,'Type=Application'
+ ,'Categories=Utility;Application;'
+    ];
+//console.log(data)
+    var shortcut_path = process.env.HOME + "/Desktop/" + script_name + ".desktop";
+
+    var fs = SA_require('fs');
+// use parseInt to avoid problems for older browsers (0o777)
+    fs.writeFileSync(shortcut_path, data.join("\n"), {mode: parseInt("777",8)});
+
+    return
+  }
+
+  var shortcut
+  var desktop_path = (xul_mode) ? XPCOM_object._getSpecialPath("Desk") : System.Environment.getEnvironmentVariable("USERPROFILE") + '\\Desktop';
+
+  if (webkit_mode) {
+    shortcut = oShell.CreateShortcut(desktop_path + '\\' + script_name + ' - ' + ((webkit_electron_mode) ? 'EE' : 'NW') + '.lnk')
+    if (electronRegisterCheck()) {
+// use encodeURI instead of encodeURIComponent
+      shortcut.TargetPath = "system-animator://" + encodeURI(f_path)
+    }
+    else {
+      SA_alert('NOTE: You have not registered System Animator to the OS. The current Electron path will be used to create the animation shortcut, which may become broken whenever Electron is upgraded in the future. Registration ensures that all animation shortcuts will remain valid as long as you register System Animator again whenever you upgrade Electron.\n\nTo register System Animator, go to the "Mode" tab and click the corresponding button.');
+      shortcut.TargetPath = getWebKitPath(webkit_path);
+      shortcut.Arguments = '"' + f_path + '"';
+    }
+//getWebKitPath().replace(/[^\/\\]+$/, "") + 'icon_teto.ico, 0'
+  }
+  else if (xul_mode) {
+    shortcut = oShell.CreateShortcut(desktop_path + '\\' + script_name + ' - XUL.lnk')
+    var XUL_path = getXULPath()
+    shortcut.TargetPath = XUL_path
+    shortcut.Arguments = ((/firefox.exe/i.test(XUL_path)) ? "-app " : "") + '"' + System.Gadget.path + '\\_xul_gadget\\application.ini" "' + f_path + '"'
+  }
+  else {
+    shortcut = oShell.CreateShortcut(desktop_path + '\\' + script_name + ' - HTA.lnk')
+    shortcut.TargetPath = System.Gadget.path + '\\SystemAnimator_ie.hta'
+    shortcut.Arguments = '"' + f_path + '"'
+  }
+  shortcut.IconLocation = System.Gadget.path + '\\icon_teto.ico, 0'
+
+  shortcut.WorkingDirectory = ""
+  shortcut.Save()
+}
+
+function createXULDesktopShortcut() {
+  if (!getXULPath())
+    return
+
+  var desktop_path = (xul_mode) ? XPCOM_object._getSpecialPath("Desk") : System.Environment.getEnvironmentVariable("USERPROFILE") + '\\Desktop';
+
+  if (EnforceWSH.checked && !xul_mode) {
+    var doc_path = System.Environment.getEnvironmentVariable("USERPROFILE") + '\\Documents';
+    createXULHostShortcut(doc_path)
+
+    var script_name = 'System Animator XUL - Host'
+    var shortcut = oShell.CreateShortcut(desktop_path + '\\' + script_name + ' - WSH.lnk')
+    shortcut.TargetPath = System.Environment.getEnvironmentVariable("SystemRoot") + "\\System32\\WScript.exe"
+    shortcut.WorkingDirectory = doc_path
+    shortcut.Arguments = '"' + script_name + '.js"'
+    shortcut.Save()
+  }
+  else
+    createXULHostShortcut(desktop_path)
+}
+
+function createXULStartupShortcut(remove_file) {
+// set "no_warning" to true to suppress the dialog when Firefox is not installed, since "createXULStartupShortcut" is always run after settings update
+  if (!getXULPath(true))
+    return
+
+  var startup_path = (xul_mode) ? XPCOM_object._getSpecialPath("Progs") : System.Environment.getEnvironmentVariable("USERPROFILE") + ((Vista_or_above) ? '\\AppData\\Roaming\\Microsoft\\Windows' : '') + '\\Start Menu\\Programs';
+  startup_path += '\\Startup'
+
+  if (EnforceWSH.checked && !xul_mode) {
+    var doc_path = System.Environment.getEnvironmentVariable("USERPROFILE") + '\\Documents';
+//    createXULHostShortcut(doc_path, remove_file)
+
+    var script_name = 'System Animator XUL - Host'
+    var lnk_path = startup_path + '\\' + script_name + ' - WSH.lnk'
+    if (remove_file) {
+      if (FSO_OBJ.FileExists(lnk_path)) {
+        try {
+          FSO_OBJ.DeleteFile(lnk_path)
+        }
+        catch (err) {}
+      }
+      return
+    }
+
+    var shortcut = oShell.CreateShortcut(lnk_path)
+    shortcut.TargetPath = System.Environment.getEnvironmentVariable("SystemRoot") + "\\System32\\WScript.exe"
+    shortcut.WorkingDirectory = doc_path
+    shortcut.Arguments = '"' + script_name + '.js"'
+    shortcut.Save()
+  }
+  else {
+    createXULHostShortcut(startup_path, remove_file)
+  }
+}
+
+function checkGadgetJS() {
+  var rn = '\r\n'
+  var js_check_gadget =
+  '/* System Animator HTA/XUL Host Launcher (v1.1.0) */' + rn
++ SystemEXT.CheckGadgetJS()
+
+  return js_check_gadget
+}
+
+function createXULHostShortcut(path, remove_file) {
+  path += '\\System Animator XUL - Host.js'
+
+  if (remove_file) {
+    if (FSO_OBJ.FileExists(path)) {
+      try {
+        FSO_OBJ.DeleteFile(path)
+      }
+      catch (err) {}
+    }
+    return
+  }
+
+
+  var rn = '\r\n'
+
+  var js =
+  checkGadgetJS()
++ rn
++ SystemEXT.CheckXULJS()
++ rn
++ 'oShell.ShellExecute(XUL_path, ((/firefox.exe/i.test(XUL_path)) ? "-app " : "") + \'"\' + hta + \'\\_xul_gadget_host\\application.ini"\');' + rn
+
+  js = js.replace(/\\/g, "\\\\");
+
+
+  var f = FSO_OBJ.OpenTextFile(path, 2, true);
+  f.Write(js)
+  f.Close()
+}
+
+function Box3D(check_mode) {
+  if (!(w3c_mode)) {
+    if (check_mode)
+      DEBUG_show('ERROR: This function works only on XUL or Chromium mode.', 10)
+    return
+  }
+
+  if (parent_window.is_SA_child_animation) {
+    if (check_mode)
+      DEBUG_show('ERROR: This function works only on parent animation.', 10)
+    return
+  }
+
+  var depth = parseInt(CSSTransform3DBoxDepth.value.trim())
+  if (depth < 0) {
+    if (check_mode) {
+      DEBUG_show('NOTE: This will reset the 3D status of all child animations.', 10)
+      return
+    }
+
+    for (var i = 0; i < SA_child_animation_max; i++) {
+      if (!parent_window.SA_child_animation[i])
+        continue
+
+      var w = parent_window.document.getElementById("Ichild_animation" + i).contentWindow
+      if (/\{.+\}/.test(w.Settings.CSSTransform3D))
+        w.System.Gadget.Settings.writeString("CSSTransform3D", "")
+    }
+    return
+  }
+
+  if (!depth || (depth < 32)) {
+    if (check_mode)
+      DEBUG_show('ERROR: Depth must be larger than 32.', 10)
+    return
+  }
+
+  var active_child = []
+  for (var i = 0; i < SA_child_animation_max; i++) {
+    if (parent_window.SA_child_animation[i])
+      active_child.push(i)
+  }
+
+  if (active_child.length < 1) {
+    if (check_mode)
+      DEBUG_show('ERROR: At least 1 child animation is required.', 10)
+    return
+  }
+
+  if (check_mode) {
+    DEBUG_show('SUCCESS: 3D box can be generated.', 10)
+    return
+  }
+
+// main
+  var base_id = active_child.shift()
+  var base_ani = parent_window.SA_child_animation[base_id]
+  var base_win = parent_window.document.getElementById("Ichild_animation" + base_id).contentWindow
+  var base_x = base_ani.x
+  var base_y = base_ani.y
+  var base_w = base_win.B_content_width
+  var base_h = base_win.B_content_height
+
+  var LR_aspect = depth / base_h
+  var TB_aspect = base_w / depth
+  var C_aspect  = base_w / base_h
+
+  var face = {}
+  for (var i = 0; i < active_child.length; i++) {
+    var id = active_child[i]
+    var ani = parent_window.SA_child_animation[id]
+    var win = parent_window.document.getElementById("Ichild_animation" + id).contentWindow
+    var x = ani.x
+    var y = ani.y
+    var w = win.B_content_width
+    var h = win.B_content_height
+    var aspect = w/h
+
+    if (!face.L && (x <= base_x - w)) {
+      var obj = face.L = { id:id }
+      obj.x = base_x - w
+      obj.y = base_y + (base_h - h) / 2
+
+      if (((LR_aspect >= 1) && (aspect >= 1)) || ((LR_aspect < 1) && (aspect < 1))) {
+        obj.css = '{transform-origin:100% 50%; transform:scale3d(1,'+(base_h/h)+','+(depth/w)+') rotateY(90deg)}'
+      }
+      else {
+        obj.css = '{transform-origin:50% 50%; transform:scale3d(1,'+(base_h/w)+','+(depth/h)+') translate3d(50%,0%,'+(h/2)+'px) rotateY(90deg) rotateZ(90deg)}'
+      }
+    }
+    else if (!face.R && (x >= base_x + base_w)) {
+      var obj = face.R = { id:id }
+      obj.x = base_x + base_w
+      obj.y = base_y + (base_h - h) / 2
+
+      if (((LR_aspect >= 1) && (aspect >= 1)) || ((LR_aspect < 1) && (aspect < 1))) {
+        obj.css = '{transform-origin:0% 50%; transform:scale3d(1,'+(base_h/h)+','+(depth/w)+') rotateY(-90deg)}'
+      }
+      else {
+        obj.css = '{transform-origin:50% 50%; transform:scale3d(1,'+(base_h/w)+','+(depth/h)+') translate3d(-50%,0%,'+(h/2)+'px) rotateY(-90deg) rotateZ(-90deg)}'
+      }
+    }
+    else if (!face.T && (y <= base_y - h)) {
+      var obj = face.T = { id:id }
+      obj.x = base_x + (base_w - w) / 2
+      obj.y = base_y - h
+
+      if (((TB_aspect >= 1) && (aspect >= 1)) || ((TB_aspect < 1) && (aspect < 1))) {
+        obj.css = '{transform-origin:50% 100%; transform:scale3d('+(base_w/w)+',1,'+(depth/h)+') rotateX(-90deg)}'
+      }
+      else {
+        obj.css = '{transform-origin:50% 50%; transform:scale3d('+(base_w/h)+',1,'+(depth/w)+') translate3d(0%,50%,'+(w/2)+'px) rotateX(-90deg) rotateZ(90deg)}'
+      }
+    }
+    else if (!face.B && (y >= base_y + base_h)) {
+      var obj = face.B = { id:id }
+      obj.x = base_x + (base_w - w) / 2
+      obj.y = base_y + base_h
+
+      if (((TB_aspect >= 1) && (aspect >= 1)) || ((TB_aspect < 1) && (aspect < 1))) {
+        obj.css = '{transform-origin:50% 0%; transform:scale3d('+(base_w/w)+',1,'+(depth/h)+') rotateX(90deg)}'
+      }
+      else {
+        obj.css = '{transform-origin:50% 50%; transform:scale3d('+(base_w/h)+',1,'+(depth/w)+') translate3d(0%,-50%,'+(w/2)+'px) rotateX(90deg) rotateZ(-90deg)}'
+      }
+    }
+    else if (!face.C) {
+      var obj = face.C = { id:id }
+      obj.x = base_x + (base_w - w) / 2
+      obj.y = base_y + (base_h - h) / 2
+
+      if (((C_aspect >= 1) && (aspect >= 1)) || ((C_aspect < 1) && (aspect < 1))) {
+        obj.css = '{transform-origin:50% 50% '+depth+'px; transform:scale3d('+(base_w/w)+','+(base_h/h)+',1) translateZ('+(-depth)+'px) rotateY(180deg)}'
+      }
+      else {
+        obj.css = '{transform-origin:50% 50% '+depth+'px; transform:scale3d('+(base_w/h)+','+(base_h/w)+',1) translateZ('+(-depth)+'px) rotateY(180deg) rotateZ(90deg)}'
+      }
+    }
+  }
+
+  var w = parent_window.B_content_width
+  var h = parent_window.B_content_height
+
+  var x_shift = (w - base_w) / 2 - base_x
+  var y_shift = (h - base_h) / 2 - base_y
+  base_ani.x += x_shift
+  base_ani.y += y_shift
+  base_win.System.Gadget.Settings.writeString("CSSTransformToChildAnimation", "non_default")
+
+  if (!CSSTransform3D.value)
+    CSSTransform3D.value = 'perspective(800px) translateZ(-'+depth+'px)'
+
+  if (CSSTransform3DBoxAnimate.checked)
+    System.Gadget.Settings.writeString("CSSTransform3DBoxAnimate", depth)
+
+  for (var name in face) {
+    var obj = face[name]
+    obj.x += x_shift
+    obj.y += y_shift
+
+    var id = obj.id
+    var ani = parent_window.SA_child_animation[id]
+    ani.x = obj.x
+    ani.y = obj.y
+
+    var settings = parent_window.document.getElementById("Ichild_animation" + id).contentWindow.System.Gadget.Settings
+    settings.writeString("CSSTransformToChildAnimation", "non_default")
+    settings.writeString("CSSTransform3D", obj.css)
+  }
+
+//  DEBUG_show(JSON.stringify(face), 0,1)
+}
+
+function XUL_openURL(url) {
+//https://developer.mozilla.org/en-US/docs/Opening_a_Link_in_the_Default_Browser
+var ioservice = Components.classes["@mozilla.org/network/io-service;1"]
+                          .getService(Components.interfaces.nsIIOService);
+
+var uriToOpen = ioservice.newURI(url, null, null);
+
+var extps = Components.classes["@mozilla.org/uriloader/external-protocol-service;1"]
+                      .getService(Components.interfaces.nsIExternalProtocolService);
+
+extps.loadURI(uriToOpen, null);
+}
+
+if (w3c_mode) {
+  document.addEventListener("click", function (e) {
+var target = e.target
+
+if ((target.tagName != "A") && target.parentElement)
+  target = target.parentElement
+
+if ((target.tagName == "A") && /^http/.test(target.href)) {
+  if (webkit_mode) {
+    if (webkit_electron_mode)
+      webkit_electron_remote.shell.openExternal(target.href)
+    else
+      require('nw.gui').Shell.openExternal(target.href)
+  }
+  else
+    XUL_openURL(target.href)
+
+  e.preventDefault()
+  e.stopPropagation()
+}
+  }, true)
+}
+
+function electronRegister() {
+  if (windows_mode) {
+    if (electronRegisterCheck()) {
+      webkit_electron_remote.app.removeAsDefaultProtocolClient("system-animator")
+      B_electron_register.value = "Register System Animator"
+      SA_alert("System Animator has been unregistered.")
+    }
+    else {
+      webkit_electron_remote.app.setAsDefaultProtocolClient("system-animator")
+      B_electron_register.value = "Unregister System Animator"
+      SA_alert(
+  "System Animator has been registered.\n\n"
++ "Protocol:\n"
++ "system-animator://\n\n"
++ "Electron (v" + webkit_version + ") path:\n"
++ webkit_path
+      );
+    }
+  }
+  else if (linux_mode) {
+// https://help.ubuntu.com/community/UnityLaunchersAndDesktopFiles
+
+// https://superuser.com/questions/167221/can-i-add-a-shortcut-to-replace-a-path-in-linux
+// Symbolic Links
+    var SA_link = process.env.HOME + "/Documents/system-animator"
+    if (electronRegisterCheck()) {
+      FSO_OBJ.DeleteFile(SA_link)
+      B_electron_register.value = "Register System Animator"
+      SA_alert("System Animator has been unregistered.")
+    }
+    else {
+      if (FSO_OBJ.FileExists(SA_link))
+        FSO_OBJ.DeleteFile(SA_link)
+
+      var webkit_folder = webkit_path.replace(/[\/\\][^\/\\]+$/, "")
+      SA_require('child_process').exec('ln -s "' + webkit_folder + '" ' + SA_link)
+      B_electron_register.value = "Unregister System Animator"
+      SA_alert(
+  "System Animator has been registered.\n\n"
++ "Symbolic link:\n"
++ SA_link + "\n\n"
++ "Electron (v" + webkit_version + ") path:\n"
++ webkit_folder
+      );
+    }
+  }
+}
+
+function electronRegisterCheck() {
+  if (!webkit_electron_mode)
+    return false
+
+  if (windows_mode) {
+    var registered
+    try {
+      registered = webkit_electron_remote.app.isDefaultProtocolClient("system-animator")
+    }
+    catch (err) {}
+    return registered
+  }
+  else if (linux_mode) {
+    var SA_link = process.env.HOME + "/Documents/system-animator"
+    if (FSO_OBJ.FileExists(SA_link)) {
+      var result = SA_require('child_process').execSync('readlink -f ' + SA_link)
+      return (result && (webkit_path.indexOf(result.toString().replace(/\s+$/, "")) == 0))
+    }
+    return false
+  }
+}
+
+
+// --------------------------------------------------------------------
+// Handle the Settings dialog closing event.
+// Parameters:
+// event - event arguments.
+// --------------------------------------------------------------------
+function SettingsClosing(event)
+{
+    // Save the settings if the user clicked OK.
+    if (event.closeAction == event.Action.commit)
+    {
+saveSettings()
+    }
+    // Allow the Settings dialog to close.
+    event.cancel = false;
+
+  if (use_inline_dialog) {
+    SA_dialog_restore_parent_size()
+
+    parent.document.getElementById("Idialog").style.visibility = "hidden"
+    parent.System._browser.onSettingsClosed(self.returnValue)
+  }
+}
+
+</script>
+
+</head>
+<body onload="loadSettings()">
+<div id="Lsettings_main" style="position:absolute; top:0px; left:0px;">
+	<table border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:3px; font-size:16px; font-weight:bold">
+<script>
+(function () {
+var html = 'Version ' + System.Gadget.version;//.replace(/\.\d+$/, "")
+document.write(html)
+})();
+</script>
+				<input name="updates" type="button" id="updates" style="width:50px" value="Update" onclick="if (xul_mode) { XUL_openURL('http://www.animetheme.com/sidebar/') } else if (webkit_nwjs_mode) { require('nw.gui').Shell.openExternal('http://www.animetheme.com/sidebar/') } else { self.open('http://www.animetheme.com/sidebar/') }" class="textBox" />
+				<a href="#" onclick="System.Shell.execute(System.Gadget.path + '\\changelog.txt'); return false">(changelog)</a>
+			</td>
+		</tr>
+	</table>
+
+<div class="tabber">
+
+<div class="tabbertab">
+<h2>General</h2>
+	<table border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
+		<tr>
+			<td>&nbsp;</td>
+			<td class="titleHeader" style="padding-top:14px;">
+				<label id="L_EventToMonitor_TEXT" for="EventToMonitor">System activity to monitor <a href="#" onclick="return false" title="To monitor &quot;Sound output&quot;, you need to either enable the &quot;Use audio FFT&quot; option under the &quot;Advanced =&gt; HTML5&quot; tab (Chromuim/XUL), or install the legacy &quot;Spectrum Analyser&quot; gadget (HTA).">(*)</a>:</label>
+			</td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td>
+			<td class="normal" style="padding-top:1px;">
+<select id="EventToMonitor" style="width:270px;font-size:12px;" onchange="AutoConfig()">
+<option value="CPU">CPU usage (general)</option>
+<option value="CPU999">CPU usage (general + cores as bars)</option>
+
+<script language="JavaScript">
+writeCPUOptions()
+</script>
+
+<option value="RAM">RAM usage</option>
+<option value="HDD">Drive activity (system drive)</option>
+<option value="HDD_ALL">Drive activity (all drives total)</option>
+<option value="HDD_ALL999">Drive activity (total + drives as bars)</option>
+<option value="NET">Network usage (general)</option>
+<option value="NET999">Network usage (general + DL/UL as bars)</option>
+<option value="SOUND_ALL">(*) Sound output (all frequencies)</option>
+<option value="SOUND_LOW">(*) Sound output (bass)</option>
+<option value="SOUND_MID">(*) Sound output (mid-tones)</option>
+<option value="SOUND_HIGH">(*) Sound output (treble)</option>
+<option value="BATTERY_CHARGE">Battery Charge</option>
+<option value="BATTERY_REMAINING">Battery Charge Remaining</option>
+<option value="BATTERY_STATE">Battery State</option>
+<option value="BATTERY_STATE_CHARGE">Battery State + Charge</option>
+<option value="BATTERY_STATE_REMAINING">Battery State + Remaining</option>
+<option value="TIMER_60_SECONDS">Timer (60 seconds)</option>
+<option value="TIMER_60_MINUTES">Timer (60 minutes)</option>
+<option value="TIMER_24_HOURS">Timer (24 hours)</option>
+<option value="FIXED_VALUE_0">Fixed value (0%)</option>
+<option value="FIXED_VALUE_50">Fixed value (50%)</option>
+<option value="FIXED_VALUE_100">Fixed value (100%)</option>
+<option value="RANDOM_VALUE">Random value (0-100%)</option>
+</select>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td class="titleHeader" style="padding-top:7px;">
+				<label id="L_EventToMonitorVF_TEXT" for="EventToMonitorVF">2nd activity monitor for MacFace <a href="#" onclick="return false" title="Same as &quot;System activity to monitor&quot;, but is only applied to MacFace files. It serves as the second monitor.">(note)</a>:</label>
+			</td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td>
+			<td class="normal" style="padding-top:1px;">
+
+<select id="EventToMonitorVF" style="width:270px;font-size:12px;">
+<option value="">(None)</option>
+<option value="CPU">CPU usage (general)</option>
+
+<script language="JavaScript">
+writeCPUOptions()
+</script>
+
+<option value="RAM">RAM usage</option>
+<option value="HDD">Drive activity (system drive)</option>
+<option value="HDD_ALL">Drive activity (all drives total)</option>
+<option value="NET">Network usage (general)</option>
+<option value="SOUND_ALL">Sound output (all frequencies)</option>
+<option value="SOUND_LOW">Sound output (bass)</option>
+<option value="SOUND_MID">Sound output (mid-tones)</option>
+<option value="SOUND_HIGH">Sound output (treble)</option>
+<option value="BATTERY_CHARGE">Battery Charge</option>
+<option value="BATTERY_REMAINING">Battery Charge Remaining</option>
+<option value="BATTERY_STATE">Battery State</option>
+<option value="BATTERY_STATE_CHARGE">Battery State + Charge</option>
+<option value="BATTERY_STATE_REMAINING">Battery State + Remaining</option>
+<option value="TIMER_60_SECONDS">Timer (60 seconds)</option>
+<option value="TIMER_60_MINUTES">Timer (60 minutes)</option>
+<option value="TIMER_24_HOURS">Timer (24 hours)</option>
+<option value="FIXED_VALUE_0">Fixed value (0%)</option>
+<option value="FIXED_VALUE_50">Fixed value (50%)</option>
+<option value="FIXED_VALUE_100">Fixed value (100%)</option>
+<option value="RANDOM_VALUE">Random value (0-100%)</option>
+</select>
+
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td class="titleHeader" style="padding-top:7px;">
+				<label id="L_MonitorSensitivity_TEXT" for="MonitorSensitivity">Monitor sensitivity <a href="#" onclick="return false" title="Higher sensitivity makes the animation more sensitive to data changes.">(?)</a>:</label>
+			</td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td>
+			<td class="normal" style="padding-top:1px;">
+<label id="L_Monitor1Sensitivity_TEXT" for="MonitorSensitivity">Main:</label>
+<select id="MonitorSensitivity" style="width:102px;font-size:12px;">
+<option value="2">Low</option>
+<option value="1">Normal</option>
+<option value="0.5">High</option>
+<option value="0.25">Very High</option>
+</select>
+<label id="L_Monitor2Sensitivity_TEXT" for="MonitorSensitivity">2nd:</label>
+<select id="Monitor2Sensitivity" style="width:102px;font-size:12px;">
+<option value="3.8">MacFace</option>
+<option value="2">Low</option>
+<option value="1">Normal</option>
+<option value="0.5">High</option>
+<option value="0.25">Very High</option>
+</select>
+
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td class="titleHeader" style="padding-top:7px;">
+				<label id="L_UpdateInterval_TEXT" for="UpdateInterval">Update interval <a href="#" onclick="return false" title="In most cases, you are recommended to use &quot;0.1 second&quot; for &quot;Sound output&quot;. For other system activities, &quot;1 second&quot; is usually enough.">(?)</a>:</label>
+			</td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td>
+			<td class="normal" style="padding-top:1px;">
+
+<select id="UpdateInterval" style="width:270px;font-size:12px;">
+<option value="10">1 second</option>
+<option value="5">0.5 second</option>
+<option value="2">0.2 second</option>
+<option value="1">0.1 second</option>
+</select>
+
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td class="titleHeader" style="padding-top:7px;">
+				<label id="L_FOLDER_TEXT" for="Folder">Folder for animation <a href="http://www.youtube.com/playlist?list=PLLpwhHMvOCSuwAEMJsFPw5VIvzdHjua3X&feature=view_all" target="_blank">(make your own)</a>:</label>
+			</td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td>
+			<td class="normal" style="padding-top:1px; white-space: nowrap;">
+
+<select id="Folder" style="width:250px;font-size:12px;" onchange="hidemacface(); if (/^demo1\d/.test(this.value) && !(w3c_mode)) {SA_alert('NOTE: This animation is for XUL/Chromium mode only.'); setFolderValue();}">
+<option value="">(Browse)</option>
+<option value="demo1">Demo 01 - XPMCE Gal</option>
+<option value="demo2">Demo 02 - 2K Gal</option>
+<option value="demo3">Demo 03 - Flag (USA)</option>
+<option value="demo4">Demo 04 - Matrix digital rain + PC Meter</option>
+<option value="demo5">Demo 05 - Mac Face 01 (by Mayuki Sawatari)</option>
+<option value="demo6">Demo 06 - CaramellDansen Animation: Popotan</option>
+<option value="demo7">Demo 07 - StickyPic Slideshow/Player</option>
+<option value="demo8">Demo 08 - Miku x Luka - Animated Picture & Music Visualizer</option>
+<option value="demo9">Demo 09 - Mio - Animated Picture & Music Visualizer</option>
+<option value="demo10">Demo 10 - 3D Slideshow and Music Visualizer</option>
+<option value="demo11">Demo 11 - 3D Miku (MMD)</option>
+<option value="demo12">Demo 12 - 3D Miku (MMD) - Extra FX</option>
+<option value="demo13">Demo 13 - 3D Miku (MMD) - Deluxe FX</option>
+<option value="demo14">Demo 14 - 3D Miku (MMD) - Child Animations</option>
+<option value="demo15">Demo 15 - YouTube Canvas Player</option>
+<option value="demo16">Demo 16 - 3D Multi-Model (MMD) - Teto & Miku</option>
+<option value="demo17">Demo 17 - 3D Multi-Model (MMD) - Miku The Cheerlader</option>
+<option value="demo18">Demo 18 - 3D Multi-Model (MMD) - Teto, Miku & Clock</option>
+<option value="demo19">Demo 19 - 3D Shader - Musical Spacetime</option>
+</select><input value=" ... " onclick="BrowseFolder()" type="button" class="textBox" onchange="hidemacface();" title="Use the dropdown menu on the left for demo animations, or click here to choose a custom animation folder."/>
+
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td class="titleHeader" style="padding-top:7px;">
+				<label id="L_Display_TEXT" for="Display">Display:</label>
+			</td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td>
+			<td class="normal" style="padding-top:1px;">
+<select id="Display" style="width:270px;font-size:12px;">
+<option value="1">Animation + Bar (color A)</option>
+<option value="2">Animation + Bar (color B)</option>
+<option value="3">Animation + Bar (color C)</option>
+<option value="4">Animation + Bar (color D)</option>
+<option value="5">Animation + Bar (Hiiragi Futago-tachi)</option>
+<option value="6">Animation + Bar (Izumi Konata)</option>
+<option value="7">Animation + Bar (Takara Miyuki)</option>
+<option value="8">Animation + Bar (Hatsune Miku)</option>
+<option value="-1">Animation only (i.e. no bar)</option>
+</select>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<script>
+if (use_SA_browser_mode)
+  document.write('<input type="button" value="Desktop shortcut" onclick="createAnimationShortcut()" title="Create a shortcut to this animation on your desktop." class="textBox" />')
+</script>
+			</td>
+		</tr>
+
+	</table>
+</div>
+
+<div class="tabbertab">
+<h2>Advanced</h2>
+
+<div class="tabber" id="T_Advanced">
+
+<div class="tabbertab" title="Main">
+
+<div class="tabber">
+<div class="tabbertab" title="General">
+	<table border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+				<input name="ReverseAnimation" type="checkbox" id="ReverseAnimation" value="checkbox" />
+				<label id="L_ReverseAnimation_TEXT" for="ReverseAnimation">Reverse animation <a href="#" onclick="return false" title="Invert the reading of the system activity monitored so that the animation behavior is reversed.">(?)</a></label>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+	<input name="UseFullFrameRate" type="checkbox" id="UseFullFrameRate" onclick="toggleElement(L_Use30FPS, this.checked)" value="checkbox" />
+	<label id="L_UseFullFrameRate_TEXT" for="UseFullFrameRate">Use full frame rate <a href="#" onclick="return false" title="Enable this option to allow some animations (mainly &quot;Animated Picture&quot; and HTML5 visual effects), set to monitor &quot;Sound output&quot; with update interval at 0.1 second, to display smoother animation at full frame rate (effectively 30fps), at the expense of extra CPU/GPU usage. Note that some animations (e.g. MMD) always run at full frame rate regardless of this option.">(?)</a></label>
+<span id="L_Use30FPS">
+	<input name="Use60FPS" type="checkbox" id="Use60FPS" value="checkbox" />
+	<label id="L_Use60FPS_TEXT" for="Use60FPS">Unlimited fps <a href="#" onclick="return false" title="Enable this option to allow UNLIMITED frame rate (effectively 60fps).">(?)</a></label>
+</span>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<span id="L_IgnoreMouseEvents">
+	<input name="IgnoreMouseEvents" type="checkbox" id="IgnoreMouseEvents" value="checkbox" onclick="if (!this.checked) IgnoreMouseEventsPartial.checked=false; toggleElement(L_IgnoreMouseEventsPartial, this.checked)" />
+	<label id="L_IgnoreMouseEvents_TEXT" for="IgnoreMouseEvents">Click-thru (Electron) <a href="#" onclick="return false" title="Enable this option to ignore all mouse events on the gadget (i.e. click-through) so that it can be displayed anywhere without blocking the control of any other window/content below it. This option is for Chromium mode (Electron) only.\n\nTo disable click-thru again while this option is on, use the tray menu (located on the right side of Windows task bar).">(?)</a></label>
+<span id="L_IgnoreMouseEventsPartial">
+	<input name="IgnoreMouseEventsPartial" type="checkbox" id="IgnoreMouseEventsPartial" value="checkbox" />
+	<label id="L_IgnoreMouseEventsPartial_TEXT" for="IgnoreMouseEventsPartial">Partial <a href="#" onclick="return false" title="Enable this option to allow &quot;partial&quot; click-through, only on areas that are completely transparent.">(?)</a></label>
+</span>
+</span>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+	<input name="AutoItAlwaysOnTop" type="checkbox" id="AutoItAlwaysOnTop" value="checkbox" />
+	<label id="L_AutoItAlwaysOnTop_TEXT" for="AutoItAlwaysOnTop">Always on top <a href="#" onclick="return false" title="Enable this option to allow the animation to always stay on top of all other windows.">(?)</a></label>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+				<input name="ChildDragDisabled" type="checkbox" id="ChildDragDisabled" value="checkbox" />
+				<label id="L_ChildDragDisabled_TEXT" for="ChildDragDisabled">Disable dragging for child animations <a href="#" onclick="return false" title="By default, child animations are draggable. Enable this option to disable dragging for child animations.">(?)</a></label>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<span id="L_MoveWithinPrimaryScreen">
+	<input name="MoveWithinPrimaryScreen" type="checkbox" id="MoveWithinPrimaryScreen" value="checkbox" />
+	<label id="L_MoveWithinPrimaryScreen_TEXT" for="MoveWithinPrimaryScreen">Move within primary screen (Electron) <a href="#" onclick="return false" title="By default, the gadget window can be moved freely beyond the primary screen boundary. This can be useful for multi-monitor environment. Enable this option if you want to restrict the gadget window to move only within the primary screen (especially if you have only one monitor).">(?)</a></label>
+</span>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<span id="L_HTALoadAnimationAtStartup">
+	<input name="HTALoadAnimationAtStartup" type="checkbox" id="HTALoadAnimationAtStartup" value="checkbox" />
+	<label id="L_HTALoadAnimationAtStartup_TEXT" for="HTALoadAnimationAtStartup">Load at Windows startup <a href="#" onclick="return false" title="Load the current animation at Windows startup. Use the &quot;Reset&quot; button to reset all startup animation settings.">(?)</a></label>
+	<input type="button" value="Reset" class="textBox" onclick="resetLoadAtStartup()" />
+</span>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<hr size=1 noshade style="position:relative; left:-10px; width:90%" />
+Number of meters for CPU monitor <a href="#" onclick="return false" title="This setting evenly divides the readings of CPU cores into the specified number of meters. This can be useful if your CPU has a lot of cores (say 8) and you want only 2-4 meters to represent the activities of all cores. The default value is the native number of CPU cores.">(?)</a>:<br/>
+<label id="L_CCPU4_TEXT" for="CCPU4"><input name="CCPU" id="CCPU4" type="radio" />4</label>
+<label id="L_CCPU3_TEXT" for="CCPU3"><input name="CCPU" id="CCPU3" type="radio" />3</label>
+<label id="L_CCPU2_TEXT" for="CCPU2"><input name="CCPU" id="CCPU2" type="radio" />2</label>
+<label id="L_CCPU1_TEXT" for="CCPU1"><input name="CCPU" id="CCPU1" type="radio" />default</label>
+			</td>
+		</tr>
+
+	</table>
+</div>
+
+<div class="tabbertab" title="General2">
+	<table border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<span id="L_WallpaperAsBG">
+	<input name="WallpaperAsBG" type="checkbox" id="WallpaperAsBG" value="checkbox" onclick="if (this.checked) XULTransparentBG.checked = false; toggleElement(L_DisableWallpaperMask, this.checked);" />
+	<label id="L_WallpaperAsBG_TEXT" for="WallpaperAsBG">Use wallpaper as BG <a href="#" onclick="return false" title="By default, animation in Linux/HTA/XUL mode has a solid background, which may not look good for animations designed for transparent background. Enable this option to emulate background transparency by filling the gadget background with the desktop wallpaper.\n\nNOTE: This option has no effect for animations with transparent background.">(?)</a></label>
+<span id="L_DisableWallpaperMask">
+	<input name="DisableWallpaperMask" type="checkbox" id="DisableWallpaperMask" value="checkbox" onclick="if (this.checked) XULTransparentBG.checked = false;" />
+	<label id="L_DisableWallpaperMask_TEXT" for="DisableWallpaperMask">Disable mask <a href="#" onclick="return false" title="System Animator allows you to use a &quot;mask&quot; for any wallpaper. A wallpaper mask is a separate PNG image file of the same resolution as the wallpaper, using its alpha channel data (opacity) to define the opacity mask for any System Animator animations displayed over the wallpaper.\n\nBy default, wallpaper mask is used when availavle. Enable this option if you need to disable it for a specific animation.">(?)</a></label>
+</span>
+</span>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<span id="L_DisableTransparency">
+	<input name="DisableTransparency" type="checkbox" id="DisableTransparency" value="checkbox" onclick="if (this.checked) IgnoreMouseEventsPartial.checked=false" />
+	<label id="L_DisableTransparency_TEXT" for="DisableTransparency">Disable transparency (Electron) <a href="#" onclick="return false" title="Background transparency is enabled by default for System Animator running on Electron, at the expense of extra CPU usage. If you really do not need transparency (e.g. your animation is fully opaque), disable transparency for a potential performance gain.\n\nNOTE: Transparency is automatically disabled for some animation types, or when &quot;Stay on desktop&quot; is on.">(?)</a></label>
+</span>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<hr size=1 noshade style="position:relative; left:-10px; width:90%" />
+
+<div>Custom wallpaper <a href="#" onclick="return false" title="This option allows you to choose a custom wallpaper image, possibly useful in some cases for System Animator animation in &quot;Stay on desktop&quot mode (wallpaper mode) or Linux mode when the default wallpaper path cannot be retrieved for any reason.">(?)</a>:</div>
+<div id="LSAWallpaperSrc">(no custom wallpaper selected)</div>
+<input id="SAWallpaperSrc" class="textBox" style="width:220px" type="file" />
+<input type="button" value="Apply" onclick="customWallpaper()" class="textBox" />
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<div>Custom wallpaper mask<a href="#" onclick="return false" title="System Animator allows you to use a &quot;mask&quot; for any wallpaper. A wallpaper mask is a separate PNG image file of the same resolution as the wallpaper, using its alpha channel data (opacity) to define the opacity mask for any System Animator animations displayed over the wallpaper.\n\nBy default, System Animator searches for a pre-defined PNG image inside the wallpaper image folder with the same filename plus &quot;_mask&quot; at the end of the filename (e.g. xxx_mask.png). Use this option to select a wallpaper mask image from elsewhere.">(?)</a>:</div>
+<div id="LSAWallpaperMaskSrc">(no custom wallpaper mask selected)</div>
+<input id="SAWallpaperMaskSrc" class="textBox" style="width:220px" type="file" />
+<input type="button" value="Apply" onclick="customWallpaperMask()" class="textBox" />
+			</td>
+		</tr>
+
+	</table>
+</div>
+
+<div class="tabbertab" title="AutoIt">
+	<table id="T_AutoIt" border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<h5>AutoIt Options
+<a href="#" onclick="return false" title="AutoIt is a BASIC-like scripting language which provides some OS-level functions not available in System Animator. All AutoIt scripts used by System Animator have been compiled into standalone executables for users' convenience. Check out AutoIt homepage for more info and download regarding AutoIt.">(?)</a>
+<a href="http://www.autoitscript.com/site/" target="_blank">(homepage)</a>
+:</h5>
+
+	<input name="AutoItRunAsAU3" type="checkbox" id="AutoItRunAsAU3" value="checkbox" />
+	<label id="L_AutoItRunAsAU3_TEXT" for="AutoItRunAsAU3">Run script (.au3) instead of executable <a href="#" onclick="return false" title="All AutoIt scripts used by System Animator have been compiled into standalone executables so that users don't have to install Autoit to run them. Enable this option to run the script version (.au3) instead, which may be convenient for debug or other purposes. You need to have AutoIt installed for this function to work.">(?)</a></label>
+
+<hr size=1 noshade style="position:relative; left:-10px; width:90%" />
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+	<input name="AutoItStayOnDesktop" type="checkbox" id="AutoItStayOnDesktop" value="checkbox" onclick="AutoItAutoPause.disabled=!this.checked; if (this.checked) {WallpaperAsBG.checked=true;IgnoreMouseEventsPartial.checked=false;} else {AutoItAutoPause.checked=false}" />
+	<label id="L_AutoItStayOnDesktop_TEXT" for="AutoItStayOnDesktop">Stay on desktop (Electron) <a href="#" onclick="return false" title="System Animator can be configured to &quot;stay on desktop&quot; (wallpaper mode), covering the desktop wallpaper but behind the desktop icons. This feature resembles the once famous &quot;DreamScene&quot; and the recently popular &quot;Wallpaper Engine&quot; which allows videos and other types of 2D/3D animations as your ANIMATED wallpaper.\n\nNOTE: This features works on Electron and Windows only.">(?)</a></label>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+	<input name="AutoItAutoPause" type="checkbox" id="AutoItAutoPause" value="checkbox" />
+	<label id="L_AutoItAutoPause_TEXT" for="AutoItAutoPause">Auto pause (Electron) <a href="#" onclick="return false" title="When System Animator is used as a wallpaper (i.e. &quot;Stay on desktop&quot; ON), enable this option to allow the animation to automatically pause when you are working on another maximized/fullscreen window, to save CPU/GPU usage.">(?)</a></label>
+
+<hr size=1 noshade style="position:relative; left:-10px; width:90%" />
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+	<input name="AutoItBPMByBASS" type="checkbox" id="AutoItBPMByBASS" value="checkbox" />
+	<label id="L_AutoItBPMByBASS_TEXT" for="AutoItBPMByBASS">BPM detection using BASS <a href="#" onclick="return false" title="Some animations (such as SEQ Video and MMD animations) require the detection of BPM (beats per minute) of the music file used. By default, System Animator (Chromium/XUL) uses the internal Web Audio API to detect BPM. Enable this option to use external BASS audio library instead, which may yield different/better results in some cases.">(?)</a></label>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+	<input name="AutoItWinampMode" type="checkbox" id="AutoItWinampMode" value="checkbox" />
+	<label id="L_AutoItWinampMode_TEXT" for="AutoItWinampMode">Winamp mode <a href="#" onclick="return false" title="Enable this option to allow &quot;SEQ Video&quot; animation to respond to any MP3 music playing on your Winamp player.">(?)</a></label>
+<a href="http://www.winamp.com/" target="_blank">(Winamp homepage)</a>
+			</td>
+		</tr>
+	</table>
+</div>
+
+<div class="tabbertab" title="Legacy">
+	<table border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<span id="L_UseMarkers">
+	<input name="UseMarkers" type="checkbox" id="UseMarkers" value="checkbox" />
+	<label id="L_UseMarkers_TEXT" for="UseMarkers">MacFace markers <a href="#" onclick="return false" title="Enable MacFace markers for loaded MacFace sets.  The markers indicate Paging activity.">(?)</a></label>
+</span>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+				<input name="UseFilters" type="checkbox" id="UseFilters" value="checkbox" />
+				<label id="L_UseFilters_TEXT" for="UseFilters">Use visual filters <a href="#" onclick="return false" title="Enable the options of visual filters such as Spotlight, Motionblur and Matrix for some animation types.">(?)</a></label>
+
+				<input name="UseImgCache" type="checkbox" id="UseImgCache" value="checkbox" />
+				<label id="L_UseImgCache_TEXT" for="UseImgCache">Image caching <a href="#" onclick="return false" title="Enable this option for frame-based animation (.SEQ) to reduce HDD access. This option requires more memory at startup and the gadget display may flash while caching.">(?)</a></label>
+			</td>
+		</tr>
+<!--
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<span id="L_UseSL">
+	<input name="UseSilverlight" type="checkbox" id="UseSilverlight" onclick="toggleElement(L_UseSL_windowless, this.checked)" value="checkbox" />
+	<label id="L_UseSilverlight_TEXT" for="UseSilverlight">Use Silverlight</label>
+</span>
+<a href="#" onclick="System.Shell.execute(System.Gadget.path + '\\docs\\silverlight.txt'); return false" title="Enable &quot;Silverlight&quot; for FASTER rendering and more options (recommended). Click for details.">(?)</a>
+<span id="L_UseSL_windowless">
+	<input name="UseSL_windowless" type="checkbox" id="UseSL_windowless" value="checkbox" />
+	<label id="L_UseSL_windowless_TEXT" for="UseSL_windowless">Windowless mode <a href="#" onclick="System.Shell.execute(System.Gadget.path + '\\docs\\silverlight.txt'); return false" title="Enable &quot;Windowless&quot; mode for Silverlight (recommended). Click for details.">(?)</a></label>
+</span>
+			</td>
+		</tr>
+-->
+<!--
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<span id="L_XULSilverlightAuto">
+	<input name="XULSilverlightAuto" type="checkbox" id="XULSilverlightAuto" value="checkbox" />
+	<label id="L_XULSilverlightAuto_TEXT" for="XULSilverlightAuto">Use Silverlight only when needed (HTA) <a href="#" onclick="return false" title="This option is left for backward compatibility and testing purpose, as &quot;HTML5 Canvas&quot; mode is recommended over Silverlight for animation rendering. In XUL/Chromium mode, HTML5 Canvas mode is always on as Silverlight is not supported on these platforms. Uncheck this option to allow HTA animation to render in Silverlight mode.">(?)</a></label>
+</span>
+			</td>
+		</tr>
+-->
+	</table>
+</div>
+</div>
+
+</div>
+
+<div class="tabbertab" title="HTML5">
+
+<div class="tabber">
+<div class="tabbertab" title="General">
+	<table id="T_HTA_XUL" border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<span id="L_UseAudioFFT">
+	<input name="UseAudioFFT" type="checkbox" id="UseAudioFFT" onclick="toggleElement(L_UseAudioFFTLiveInput, this.checked); toggleElement(L_Use32BandSpectrum, (this.checked || parent_window.is_SA_child_animation))" value="checkbox" />
+	<label id="L_UseAudioFFT_TEXT" for="UseAudioFFT">Use audio FFT (Chromium/XUL) <a href="#" onclick="return false" title="Enable this option to allow animations that support video/audio playback (e.g. Animated Picture, SEQ Video) to calculate the sound spectrum directly using Web Audio API, WITHOUT the need of Spectrum Analyser.">(?)</a></label>
+</span>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+	<span id="L_UseAudioFFTLiveInput" style="position:relative; left:20px">
+				<input name="UseAudioFFTLiveInput" type="checkbox" id="UseAudioFFTLiveInput" onclick="toggleElement(L_UseAudioFFTLiveInputGain, this.checked)" value="checkbox" />
+				<label id="L_UseAudioFFTLiveInput_TEXT" for="UseAudioFFTLiveInput">Live input <a href="#" onclick="System.Shell.execute(System.Gadget.path + '\\docs\\getusermedia_audio.txt'); return false" title="Enable this option to allow System Animator to pick a live audio input on your computer and do the sound spectrum analysis on that source instead. Such audio source can be a microphone, or better, the &quot;Stereo Mix&quot; device which makes it possible to monitor ANY sound on your computer, just like Spectrum Analyser. Click for details.">(?)</a></label>
+/
+				<span id="L_UseAudioFFTLiveInputGain"><input name="UseAudioFFTLiveInputGain" type="text" id="UseAudioFFTLiveInputGain" value="1" style="font-size:10px; width:30px" /> Gain <a href="#" onclick="return false" title="Use this option to raise the signal level of the live input, especially when the animation is flat because the signal level is low. Any value above 1 raises the signal level. Note that this does NOT affect the output volume you hear. It merely affects the animations.">(?)</a></span>
+	</span>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<span id="L_UseSVGClock">
+	<input name="UseSVGClock" type="checkbox" id="UseSVGClock" value="checkbox" />
+	<label id="L_UseSVGClock_TEXT" for="UseSVGClock">Enable SVG Clock <a href="#" onclick="return false" title="Enable this option to display a SVG (Scalable Vector Graphics) clock on the current animation.">(?)</a></label>
+</span>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<input name="CSSTransformToChildAnimation" type="checkbox" id="CSSTransformToChildAnimation" value="checkbox" />
+<label id="L_CSSTransformToChildAnimation_TEXT" for="CSSTransformToChildAnimation">CSS transform/opacity to child animations <a href="#" onclick="return false" title="Apply CSS transforms and opacity to child animations.">(?)</a></label>
+			</td>
+		</tr>
+	</table>
+</div>
+
+<div class="tabbertab" title="Canvas">
+
+<div class="tabber">
+<div class="tabbertab" title="General">
+	<table id="T_HTML5Canvas" border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<h5 style="padding:0px; margin-bottom:8px">HTML5 Canvas:
+<a href="#" onclick="return false" title="The canvas element is part of HTML5 and allows for dynamic, scriptable rendering of 2D shapes and bitmap images. It can be used to draw graphics, on the fly, with features and performance comparable to (or even better than) plugins like Flash and Silverlight. System Animator supports using canvas to render some types of animations.">(?)</a>
+:</h5>
+
+	<input name="UseHTML5Canvas" type="checkbox" id="UseHTML5Canvas" value="checkbox" />
+	<label id="L_UseHTML5Canvas_TEXT" for="UseHTML5Canvas">Render in "HTML5 Canvas" mode <a href="#" onclick="return false" title="Enable this option to render &quot;Animated Picture&quot;,&quot;SEQ Video&quot; and some other supported animations in HTML5 Canvas mode (replacing Silverlight). Note that some animations are always rendered in HTML5 Canvas mode, regardless of this option.">(?)</a></label>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<span id="L_UseWebGLForCanvas2D">
+	<input name="UseWebGLForCanvas2D" type="checkbox" id="UseWebGLForCanvas2D" value="checkbox" />
+	<label id="L_UseWebGLForCanvas2D_TEXT" for="UseWebGLForCanvas2D">Use WebGL for Canvas 2D <a href="#" onclick="return false" title="In some cases, especially when running System Animator in Chromium mode, the rendering speed of HTML5 Canvas 2D is slow and causes high CPU usage. Enable this option to fix the problem by using WebGL to display Canvas 2D content.">(?)</a></label>
+</span>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+	<input name="UseMatrixRain" type="checkbox" id="UseMatrixRain" onclick="toggleElement(L_MatrixRainColor, this.checked); toggleElement(L_MatrixRainOptions, this.checked);" />
+	<label id="L_UseMatrixRain_TEXT" for="UseMatrixRain">Use Matrix rain <a href="#" onclick="return false" title="Enable the famous Matrix digital rain effect on any animation running in HTML5 Canvas mode.">(?)</a></label>
+<span id="L_MatrixRainColor">
+	<input name="MatrixRainColor" type="checkbox" id="MatrixRainColor" value="checkbox" />
+	<label id="L_MatrixRainColor_TEXT" for="MatrixRainColor">Colorful <a href="#" onclick="return false" title="Enable this option to allow full-color digital rain. Disable it to use the classic green effect.">(?)</a></label>
+</span>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<div id="L_MatrixRainOptions" style="position:relative; left:20px">
+	<input name="MatrixRainPlayOnIdle" type="checkbox" id="MatrixRainPlayOnIdle" value="checkbox" />
+	<label id="L_MatrixRainPlayOnIdle_TEXT" for="MatrixRainPlayOnIdle">Play on idle <a href="#" onclick="return false" title="By default, Matrix rain shows only when the monitored activity is above certain level. Enable this option to always show Matrix rain, even when the system is idle.">(?)</a></label>
+	<input name="MatrixRainMusical" type="checkbox" id="MatrixRainMusical" value="checkbox" />
+	<label id="L_MatrixRainMusical_TEXT" for="MatrixRainMusical">Musical <a href="#" onclick="return false" title="Enable this option to allow the Matrix rain to react to music.">(?)</a></label>
+</div>
+
+<hr size=1 noshade style="position:relative; left:-10px; width:90%" />
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<span id="L_UseCanvasEffect">
+	<input name="UseCanvasRipple" type="checkbox" id="UseCanvasRipple" value="checkbox" onclick="if (this.checked) UseCanvasFireworks.checked=false" />
+	<label id="L_UseCanvasRipple_TEXT" for="UseCanvasRipple">Ripple effect</label>
+	<input name="UseCanvasFireworks" type="checkbox" id="UseCanvasFireworks" value="checkbox" onclick="if (this.checked) UseCanvasRipple.checked=false" />
+	<label id="L_UseCanvasFireworks_TEXT" for="UseCanvasFireworks">Fireworks effect <a href="#" onclick="return false" title="Enable either the ripple or fireworks effect. This option works with most animations.">(?)</a></label>
+</span>
+			</td>
+		</tr>
+	</table>
+</div>
+
+<div class="tabbertab" title="Post-Processing">
+	<table id="T_HTML5CanvasPPE" border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<h5 style="padding:0px; margin-bottom:8px">Post-processing effects:
+<a href="#" onclick="return false" title="Post-processing effects allow various artstic effects to be applied to any video or canvas 2D animations (e.g. Animated Picture).">(?)</a>
+:</h5>
+
+	<input name="UseCanvasNotebookDrawings" type="checkbox" id="UseCanvasNotebookDrawings" value="checkbox" onclick="if (this.checked) { UseWebGLForCanvas2D.checked=true; UseCanvasWatercolor.checked=UseCanvasVanGogh.checked=false; L_UseCanvasNotebookDrawings_Style.style.visibility='inherit'; L_UseCanvasPPEQuality.style.visibility=(UseCanvasNotebookDrawings_Style1.checked)?'inherit':'hidden'; } else { L_UseCanvasNotebookDrawings_Style.style.visibility='hidden'; L_UseCanvasPPEQuality.style.visibility='inherit'; }" />
+	<label id="L_UseCanvasNotebookDrawings_TEXT" for="UseCanvasNotebookDrawings">Sketch</label>
+<span id="L_UseCanvasNotebookDrawings_Style"> - style
+<label id="L_UseCanvasNotebookDrawings_Style1_TEXT" for="UseCanvasNotebookDrawings_Style1"><input name="UseCanvasNotebookDrawings_Style" id="UseCanvasNotebookDrawings_Style1" type="radio" onclick="UseCanvasNotebookDrawings.onclick();" />1</label>
+<label id="L_UseCanvasNotebookDrawings_Style2_TEXT" for="UseCanvasNotebookDrawings_Style2"><input name="UseCanvasNotebookDrawings_Style" id="UseCanvasNotebookDrawings_Style2" type="radio" onclick="UseCanvasNotebookDrawings.onclick();" />2</label>
+<label id="L_UseCanvasNotebookDrawings_Style3_TEXT" for="UseCanvasNotebookDrawings_Style3"><input name="UseCanvasNotebookDrawings_Style" id="UseCanvasNotebookDrawings_Style3" type="radio" onclick="UseCanvasNotebookDrawings.onclick();" />3</label>
+</span>
+<br/>
+	<input name="UseCanvasWatercolor" type="checkbox" id="UseCanvasWatercolor" value="checkbox" onclick="if (this.checked) { UseWebGLForCanvas2D.checked=true; UseCanvasNotebookDrawings.checked=UseCanvasVanGogh.checked=false; }; UseCanvasNotebookDrawings.onclick();" />
+	<label id="L_UseCanvasWatercolor_TEXT" for="UseCanvasWatercolor">Watercolor</label>
+	<input name="UseCanvasVanGogh" type="checkbox" id="UseCanvasVanGogh" value="checkbox" onclick="if (this.checked) { UseWebGLForCanvas2D.checked=true; UseCanvasNotebookDrawings.checked=UseCanvasWatercolor.checked=false; }; UseCanvasNotebookDrawings.onclick();" />
+	<label id="L_UseCanvasVanGogh_TEXT" for="UseCanvasVanGogh">Van Gogh</label>
+
+<table border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
+	<tr id="L_UseCanvasPPEQuality">
+		<td width="25%">
+Quality <a href="#" onclick="return false" title="Some of these effects require quite a lot of GPU power, especially when the image resolution is high. This option determines whether to use lower quality rendering for high resolution image to reduce GPU usage (0=min quality for all resolution, 100=max quality for all resolution).">(?)</a>:
+		</td>
+		<td width="75%">
+<input type="range" id="UseCanvasPPEQuality" min="0" max="100" step="5" value="50" onchange="UseCanvasPPEQuality_VALUE.innerText=this.value;">
+<span id="UseCanvasPPEQuality_VALUE">50</span>
+		</td>
+	</tr>
+	<tr>
+		<td width="25%">
+Contrast <a href="#" onclick="return false" title="Set the contrast and brightness for image source before applying the effects (that said, these settings apply only when post-processing effect is used). For example, a common practice for dark image is to raise contrast by a certain amount and then raise brightness by half of that amount.">(?)</a>:
+		</td>
+		<td width="75%">
+<input type="range" id="UseCanvasPPEContrast" min="-100" max="100" step="5" value="0" onchange="UseCanvasPPEContrast_VALUE.innerText=this.value;">
+<span id="UseCanvasPPEContrast_VALUE">0</span>
+		</td>
+	</tr>
+	<tr>
+		<td width="25%">
+Brightness:
+		</td>
+		<td width="75%">
+<input type="range" id="UseCanvasPPEBrightness" min="-100" max="100" step="5" value="0" onchange="UseCanvasPPEBrightness_VALUE.innerText=this.value;">
+<span id="UseCanvasPPEBrightness_VALUE">0</span>
+		</td>
+	</tr>
+</table>
+
+			</td>
+		</tr>
+	</table>
+</div>
+</div>
+
+</div>
+
+<div class="tabbertab" title="Transform">
+
+<div class="tabber">
+<div class="tabbertab" title="General">
+	<table id="T_Transform" border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<h5>CSS3 Transforms
+<a href="#" onclick="return false" title="System Animator uses the CSS transform property to scale, flip and rotate an animation.">(?)</a>
+:</h5>
+
+<table width="95%" style="font-size:12px">
+	<tr>
+		<td width="22%" align="right">Scale <a href="#" onclick="return false" title="Scale the animation to a different size. Any value below 1 scales down the animation, while any value above 1 scales up the animation. Default is 1.">(?)</a>:</td>
+		<td width="28%" align="left">
+<input name="CSSTransformScale" type="text" id="CSSTransformScale" value="1" style="font-size:10px; width:50px" />
+		</td>
+		<td width="50%" align="left">
+<input name="CSSTransformFullscreen" type="checkbox" id="CSSTransformFullscreen" value="checkbox" />
+<label id="L_CSSTransformFullscreen_TEXT" for="CSSTransformFullscreen">Maximize <a href="#" onclick="return false" title="This option automatically scales the animation to fit the whole screen.">(?)</a></label>
+		</td>
+	</tr>
+	<tr>
+		<td width="22%" align="right">Rotate <a href="#" onclick="return false" title="Rotate the animation by degrees, clockwise. Default is 0.">(?)</a>:</td>
+		<td width="28%" align="left">
+<input name="CSSTransformRotate" type="text" id="CSSTransformRotate" value="0" style="font-size:10px; width:50px" />
+		</td>
+		<td width="50%" align="left"></td>
+	</tr>
+	<tr>
+		<td width="50%" colspan="2" align="left">
+<input name="CSSTransformFlipH" type="checkbox" id="CSSTransformFlipH" value="checkbox" />
+<label id="L_CSSTransformFlipH_TEXT" for="CSSTransformFlipH">Flip horizontally <a href="#" onclick="return false" title="Flip the animation horizontally.">(?)</a></label>
+		</td>
+		<td width="50%" align="left">
+<input name="CSSTransformFlipV" type="checkbox" id="CSSTransformFlipV" value="checkbox" />
+<label id="L_CSSTransformFlipV_TEXT" for="CSSTransformFlipV">Flip vertically <a href="#" onclick="return false" title="Flip the animation vertically.">(?)</a></label>
+		</td>
+	</tr>
+<!--
+	<tr>
+		<td width="50%" colspan="3" align="left">
+<input name="CSSTransformToChildAnimation" type="checkbox" id="CSSTransformToChildAnimation" value="checkbox" />
+<label id="L_CSSTransformToChildAnimation_TEXT" for="CSSTransformToChildAnimation">Apply transforms to child animations <a href="#" onclick="return false" title="Apply transforms to child animations.">(?)</a></label>
+		</td>
+	<tr>
+-->
+</table>
+			</td>
+		</tr>
+	</table>
+</div>
+<div class="tabbertab" title="3D">
+	<table id="T_Transform3D" border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<h5>CSS3 3D Transforms (XUL/Chromium)
+<a href="#" onclick="System.Shell.execute(System.Gadget.path + '\\docs\\custom_css.txt'); return false" title="Define a direct CSS &quot;transform&quot; property to apply to the animation body. CSS 3D transforms are supported. Click for info on advanced usage.">(?)</a>
+:</h5>
+<input name="CSSTransform3D" type="text" id="CSSTransform3D" value="" style="font-size:10px; width:250px" />
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<span id="L_CSSTransform3DBillboard">
+<input name="CSSTransform3DBillboard" type="checkbox" id="CSSTransform3DBillboard" value="checkbox" />
+<label id="L_CSSTransform3DBillboard_TEXT" for="CSSTransform3DBillboard">Billboard <a href="#" onclick="return false" title="Enable this option to render the child animation as 3D &quot;billboard&quot;, which always faces the camera no matter how the 3D space is rotated.">(?)</a></label>
+</span>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<input name="CSSTransform3DDisabledForContent" type="checkbox" id="CSSTransform3DDisabledForContent" value="checkbox" />
+<label id="L_CSSTransform3DDisabledForContent_TEXT" for="CSSTransform3DDisabledForContent">3D disabled for content <a href="#" onclick="return false" title="Enable this option to disable 3D for main content. This is useful if you want to enable 3D on child animations while the content on the host animation stays flat.">(?)</a></label>
+
+<hr size=1 noshade style="position:relative; left:-10px; width:90%" />
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+3D box
+<a href="http://www.youtube.com/watch?v=oJp3bMkO34g" onclick="return false" title="This option turns one or more child animations into a 3D box animation automatically. Click to watch the video tutorial for details.">(?)</a>
+<a href="#" onclick="Box3D(true); return false" title="Click to check whether all the conditions are fulfilled to generate a 3D box.">(check)</a>:
+<input name="CSSTransform3DBoxDepth" type="text" id="CSSTransform3DBoxDepth" value="0" style="font-size:10px; width:30px" /> Depth / <input name="CSSTransform3DBoxAnimate" type="checkbox" id="CSSTransform3DBoxAnimate" value="checkbox" />
+<label id="L_CSSTransform3DBoxAnimate_TEXT" for="CSSTransform3DBoxAnimate">Animate</label>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<input name="UseWebcamHeadtracking" type="checkbox" id="UseWebcamHeadtracking" value="checkbox" />
+<label id="L_UseWebcamHeadtracking_TEXT" for="UseWebcamHeadtracking">Webcam headtracking (Chromium/XUL) <a href="#" onclick="return false" title="Enable this option to allow headtracking controls via your webcam. For those 3D animations that support this feature, press H to turn the camera on.">(?)</a></label>
+			</td>
+		</tr>
+	</table>
+</div>
+</div>
+
+</div>
+
+<div class="tabbertab" title="3D">
+
+<div class="tabber">
+<div class="tabbertab" title="General">
+	<table id="T_3D_General" border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<h5 style="padding:0px; margin-bottom:8px">Post-processing shader effects:
+<a href="#" onclick="return false" title="Optional shader effects are available for MMD/3D animations which improves visuals in various ways, at the expense of extra GPU usage.\n\nNOTE: These options take effect immediately once you click the checkboxes. You may press Cancel and close the settings panel, and the effects will still be active.">(?)</a>
+:</h5>
+
+<span id="L_Use3DPPE">
+	<input name="Use3DPPE" type="checkbox" id="Use3DPPE" value="checkbox" onclick="parent.MMD_SA_options.MME.PostProcessingEffects.enabled=this.checked; System.Gadget.Settings.writeString('Use3DPPE', returnYesNo('Use3DPPE', this.checked)); parent_window.System._browser.update_tray();" onchange="toggleElement(L_Use3DSAO, this.checked); toggleElement(L_Use3DDiffusion, this.checked);" />
+	<label id="L_Use3DPPE_TEXT" for="Use3DPPE">Enabled <a href="#" onclick="return false" title="This option must be enabled for any post-processing shader to take effect.">(?)</a></label>
+</span>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<span id="L_Use3DSAO">
+	<input name="Use3DSAO" type="checkbox" id="Use3DSAO" value="checkbox" onclick="parent.MMD_SA_options.MME.PostProcessingEffects.use_SAO=this.checked; System.Gadget.Settings.writeString('Use3DSAO', returnYesNo('Use3DSAO', this.checked)); parent_window.System._browser.update_tray();" />
+	<label id="L_Use3DSAO_TEXT" for="Use3DSAO">SAO (Scalable Ambient Obscurance) <a href="#" onclick="return false" title="&quot;Ambient Occlusion&quot; is a shading and rendering technique used to calculate how exposed each point in a scene is to ambient lighting. In short, it makes the lighting of a 3D scene look more realistic, by darkening areas where they should be (besides normal shadowing). SAO is an advanced AO technique which produces high-quality results in real time.">(?)</a></label>
+</span>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<span id="L_Use3DDiffusion">
+	<input name="Use3DDiffusion" type="checkbox" id="Use3DDiffusion" value="checkbox" onclick="parent_window.MMD_SA_options.MME.PostProcessingEffects.use_Diffusion=this.checked; System.Gadget.Settings.writeString('Use3DDiffusion', returnYesNo('Use3DDiffusion', this.checked)); parent_window.System._browser.update_tray();" />
+	<label id="L_Use3DDiffusion_TEXT" for="Use3DDiffusion">Diffusion <a href="#" onclick="return false" title="&quot;Diffusion&quot; generally softens a 3D scene with slight bloom effects.">(?)</a></label>
+</span>
+
+<hr size=1 noshade style="position:relative; left:-10px; width:90%" />
+			</td>
+		</tr>
+	</table>
+</div>
+<div class="tabbertab" title="MikuMikuDance">
+	<table id="T_3D_MMD" border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<h5 style="padding:0px; margin-bottom:8px">MMD-specific:
+<a href="#" onclick="return false" title="The following options apply to MikuMikuDance (MMD) animations, mainly the 3D character(s).\n\nNOTE: These options take effect immediately once you click a checkbox/slider. You may press Cancel and close the settings panel (i.e. without restarting the animation), and the effects will still be applied.">(?)</a>
+:</h5>
+
+	<input name="MMDLookAtCamera" type="checkbox" id="MMDLookAtCamera" value="checkbox" onclick="if (this.checked) { parent_window.MMD_SA_options.look_at_screen=true } else { parent_window.MMD_SA_options.look_at_screen=parent_window.MMD_SA_options.look_at_mouse=MMDLookAtMouse.checked=false }; System.Gadget.Settings.writeString('MMDLookAtCamera', returnYesNo('MMDLookAtCamera', parent_window.MMD_SA_options.look_at_screen)); System.Gadget.Settings.writeString('MMDLookAtMouse', returnYesNo('MMDLookAtMouse', parent_window.MMD_SA_options.look_at_mouse)); parent_window.System._browser.update_tray();" />
+	<label id="L_MMDLookAtCamera_TEXT" for="MMDLookAtCamera">Look at camera <a href="#" onclick="return false" title="Enable this option to make the character follow and look at the camera.">(?)</a></label>
+
+<span id="L_MMDLookAtMouse">
+	<input name="MMDLookAtMouse" type="checkbox" id="MMDLookAtMouse" value="checkbox" onclick="if (this.checked) { parent_window.MMD_SA_options.look_at_screen=parent_window.MMD_SA_options.look_at_mouse=MMDLookAtCamera.checked=true } else { parent_window.MMD_SA_options.look_at_mouse=false }; System.Gadget.Settings.writeString('MMDLookAtCamera', returnYesNo('MMDLookAtCamera', parent_window.MMD_SA_options.look_at_screen)); System.Gadget.Settings.writeString('MMDLookAtMouse', returnYesNo('MMDLookAtMouse', parent_window.MMD_SA_options.look_at_mouse)); parent_window.System._browser.update_tray();" />
+	<label id="L_MMDLookAtMouse_TEXT" for="MMDLookAtMouse">Look at mouse <a href="#" onclick="return false" title="Enable this option to make the character follow and look at the mouse cursor.">(?)</a></label>
+</span>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+	<input name="MMDTrackballCamera" type="checkbox" id="MMDTrackballCamera" value="checkbox" onclick="parent_window.MMD_SA._trackball_camera.enabled=this.checked; System.Gadget.Settings.writeString('MMDTrackballCamera', returnYesNo('MMDTrackballCamera', this.checked)); parent_window.System._browser.update_tray();" />
+	<label id="L_MMDTrackballCamera_TEXT" for="MMDTrackballCamera">Trackball camera <a href="#" onclick="return false" title="Enable this option to allow mouse-controlled camera.">(?)</a></label>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+	<input name="MMDRandomCamera" type="checkbox" id="MMDRandomCamera" value="checkbox" onclick="System.Gadget.Settings.writeString('MMDRandomCamera', returnYesNo('MMDRandomCamera', this.checked)); parent_window.MMD_SA.reset_camera(); parent_window.System._browser.update_tray();" />
+	<label id="L_MMDRandomCamera_TEXT" for="MMDRandomCamera">Random camera <a href="#" onclick="return false" title="Enable this option to allow random camera during music playback for animations that support it.">(?)</a></label>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+	<input name="MMDOverrideDefaultForExternalModel" type="checkbox" id="MMDOverrideDefaultForExternalModel" value="checkbox" onclick="System.Gadget.Settings.writeString('MMDOverrideDefaultForExternalModel', returnYesNo('MMDOverrideDefaultForExternalModel', this.checked)); if (!this.checked) System.Gadget.Settings.writeString('LABEL_MMD_model_path', ''); parent_window.System._browser.update_tray();" />
+	<label id="L_MMDOverrideDefaultForExternalModel_TEXT" for="MMDOverrideDefaultForExternalModel">Override default for external model <a href="#" onclick="return false" title="Enable this option to allow external model path to be saved and override the default one for the current animation. Otherwise, external model path will be reset after animation restart.">(?)</a></label>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<table border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
+<tr>
+<td width="25%">
+Edge scale <a href="#" onclick="return false" title="Change the edge scale for MMD models. 0 means no edge is drawn. Default is 150%.">(?)</a>:
+</td>
+<td width="75%">
+<input type="range" id="MMDEdgeScale" min="0" max="450" step="10" value="150" onchange="if (!parent_window.MMD_SA) return; System.Gadget.Settings.writeString('MMDEdgeScale', ((this.value==parseFloat(Settings_default.MMDEdgeScale)*100)?'':this.value/100)); parent_window.jThree.MMD.edgeScale = this.value/100 * parent_window.MMD_SA_options.edgeScale; MMDEdgeScale_VALUE.innerText=this.value;">
+<span id="MMDEdgeScale_VALUE">150</span>%
+</td>
+</tr>
+</table>
+			</td>
+		</tr>
+
+	</table>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+
+<div class="tabbertab" title="Beat detection">
+	<table border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<h5>Frequencies and beats
+<a href="#" onclick="return false" title="By default, the &quot;Sound output&quot; monitor uses FFT frequency spectrum analysis (done via &quot;Spectrum Analyser&quot; gadget). This option replaces the frequncy spectrums with beat levels (or a mix of both), resulting in different animated effects.">(?)</a>
+:</h5>
+<label id="L_BDSpectrumToBeat2_TEXT" for="BDSpectrumToBeat2"><input name="BDSpectrumToBeat" id="BDSpectrumToBeat2" type="radio" />beats only</label>
+<label id="L_BDSpectrumToBeat1_TEXT" for="BDSpectrumToBeat1"><input name="BDSpectrumToBeat" id="BDSpectrumToBeat1" type="radio" />mixed</label>
+<label id="L_BDSpectrumToBeat0_TEXT" for="BDSpectrumToBeat0"><input name="BDSpectrumToBeat" id="BDSpectrumToBeat0" type="radio" />frequencies only</label>
+			</td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<span id="L_Use32BandSpectrum">
+	<input name="Use32BandSpectrum" type="checkbox" id="Use32BandSpectrum" value="checkbox" onclick="if (this.checked) {BDSpectrumToBeat0.checked = true};" />
+	<label id="L_Use32BandSpectrum_TEXT" for="Use32BandSpectrum">Enable 32-band spectrum <a href="#" onclick="return false" title="Spectrum Analyser provides a 16-band sound spectrum analysis. Enable this option to use 32-band spectrum (via Web Audio API instead), which improves the animated effects for some &quot;Animated Picture&quot; animations. The &quot;audio FFT&quot; option must be enabled as well.">(?)</a></label>
+</span>
+			</td>
+		</tr>
+<!--
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<span id="L_BPMByWebAudioAPI">
+	<input name="BPMByWebAudioAPI" type="checkbox" id="BPMByWebAudioAPI" value="checkbox" />
+	<label id="L_BPMByWebAudioAPI_TEXT" for="BPMByWebAudioAPI">BPM detection using Web Audio API <a href="#" onclick="return false" title="Some animations (such as SEQ Video and MMD animations) require the detection of BPM (beats per minute) of the music file used. By default, System Animator uses the external BASS library for BPM detection. Enable this option to use the internal Web Audio API instead, which may yield better results in some cases.">(?)</a></label>
+</span>
+			</td>
+		</tr>
+-->
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<hr size=1 noshade style="position:relative; left:-10px; width:90%" />
+<div id="L_BDVisualEffects0">
+<h5>Visual effects
+<a href="#" onclick="return false" title="Beat detection on sound output generates some special visual effects on certain animations, such as Animated Pictures (rendered in HTML5 Canvas mode) and movie playback. Enable this option if you want to enable such effects.">(?)</a>
+:</h5>
+				<input name="EnableBeatDetection" type="checkbox" id="EnableBeatDetection" value="checkbox" onclick="loadBD()" />
+				<label id="L_EnableBeatDetection_TEXT" for="EnableBeatDetection">Enable visual effects</label>
+
+	<ol id="L_EnableMotionEffect" style="list-style-type:none; padding:0px; margin:0px 23px">
+		<li>Motion effect:
+				<input name="EnableMotionEffectForAnimatedPicture" type="checkbox" id="EnableMotionEffectForAnimatedPicture" value="checkbox" />
+				<label id="L_EnableMotionEffectForAnimatedPicture_TEXT" for="EnableMotionEffectForAnimatedPicture">AP <a href="#" onclick="return false" title="Enable beat-driven motion effect for &quot;Animated Picture&quot; animation (rendered in HTML5 Canvas mode).">(?)</a></label>
+
+				<input name="EnableMotionEffectForSEQVideo" type="checkbox" id="EnableMotionEffectForSEQVideo" value="checkbox" />
+				<label id="L_EnableMotionEffectForSEQVideo_TEXT" for="EnableMotionEffectForSEQVideo">SEQ Video <a href="#" onclick="return false" title="Enable beat-driven motion effect for &quot;SEQ Video&quot; animation.">(?)</a></label>
+		</li>
+	</ol>
+</div>
+			</td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<div id="L_BDVisualEffects1">
+<table width="95%" style="font-size:11px">
+	<tr id="L_BDScale">
+		<td width="22%" align="right">Scale:</td>
+		<td width="26%" align="left"><label id="L_BDScale2_TEXT" for="BDScale2"><input name="BDScale" id="BDScale2" type="radio" />large</label></td>
+		<td width="26%" align="left"><label id="L_BDScale1_TEXT" for="BDScale1"><input name="BDScale" id="BDScale1" type="radio" />medium</label></td>
+		<td width="26%" align="left"><label id="L_BDScale0_TEXT" for="BDScale0"><input name="BDScale" id="BDScale0" type="radio" />small</label></td>
+	<tr>
+	<tr id="L_BDOpacity">
+		<td width="22%" align="right">Opacity:</td>
+		<td width="26%" align="left"><label id="L_BDOpacity2_TEXT" for="BDOpacity2"><input name="BDOpacity" id="BDOpacity2" type="radio" />high</label></td>
+		<td width="26%" align="left"><label id="L_BDOpacity1_TEXT" for="BDOpacity1"><input name="BDOpacity" id="BDOpacity1" type="radio" />medium</label></td>
+		<td width="26%" align="left"><label id="L_BDOpacity0_TEXT" for="BDOpacity0"><input name="BDOpacity" id="BDOpacity0" type="radio" />low</label></td>
+	<tr>
+	<tr id="L_BDBassKick">
+		<td width="22%" align="right">Bass kick:</td>
+		<td width="26%" align="left"><label id="L_BDBassKick2_TEXT" for="BDBassKick2"><input name="BDBassKick" id="BDBassKick2" type="radio" />exclusive</label></td>
+		<td width="26%" align="left"><label id="L_BDBassKick1_TEXT" for="BDBassKick1"><input name="BDBassKick" id="BDBassKick1" type="radio" />normal</label></td>
+		<td width="26%" align="left"><label id="L_BDBassKick0_TEXT" for="BDBassKick0"><input name="BDBassKick" id="BDBassKick0" type="radio" />ignored</label></td>
+	<tr>
+</table>
+</div>
+			</td>
+		</tr>
+	</table>
+</div>
+</div>
+</div>
+
+<div class="tabbertab">
+<h2>Mode</h2>
+
+<div class="tabber">
+<div class="tabbertab" title="Chromium">
+	<table border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<h5>System Animator (Chromium mode)
+<a href="#" onclick="System.Shell.execute(System.Gadget.path + '\\docs\\webkit_info.txt'); return false" title="Click here for more info regarding the usage of System Animator in Chromium mode.">(info)</a>
+<span id="L_GPU_check">
+/
+<a href="#" onclick="webkit_window.setAlwaysOnTop(false); (new webkit_electron_remote.BrowserWindow({width:640, height:480, resizable:true, frame:true, transparent:false})).loadURL('chrome://gpu'); return false" title="Click to perform a GPU check on the current Electron, basically for debugging purpose.">(GPU check)</a>
+</span>
+:</h5>
+
+<ul>
+<li><a href="http://www.animetheme.com/dl.htm?url=http%3A%2F%2Fwww.animetheme.com%2Fsidebar%2Felectron-v1.7.9-win32-ia32_SA.zp" target="_blank">Download Electron v1.7.9</a> / <a href="http://electron.atom.io/" target="_blank">Homepage</a>
+<!--
+<li><a href="http://www.animetheme.com/dl.htm?url=http%3A%2F%2Fwww.animetheme.com%2Fsidebar%2Felectron-v1.4.15-win32-ia32_SA.zp" target="_blank">Download Electron v1.4.15</a> / <a href="http://electron.atom.io/" target="_blank">Homepage</a>
+<li><a href="http://www.mediafire.com/download/69pncbbs7bgag96/nwjs-v0.12.3-win-ia32_SA.zip" target="_blank">Download NW.js v0.12.3</a> / <a href="https://github.com/rogerwang/node-webkit" target="_blank">Homepage</a>
+<ul>
+<li><a href="http://www.mediafire.com/download/c66vxbru8muicn7/node-webkit-v0.11.6-win-ia32_SA.zip" target="_blank">v0.11.6</a> (previous version)</li>
+</ul>
+</li>
+-->
+</ul>
+
+<div style="font-size:10px;">
+<p>Enter the path of Electron/NW.js to enable launching<br/>System Animator in Chromium mode.</p>
+
+<script>
+// WebKit
+(function () {
+var html = ""
+if (SystemEXT.GetWebKitPath()) {
+  html +=
+  '<p>The last selected path is:<br/>\n'
++ '<span style="white-space: nowrap;">' + SystemEXT.GetWebKitPath() + '</span></p>\n'
+}
+else {
+  html += '<p>(The last selected path is empty.)</p>'
+}
+document.write(html)
+})();
+</script>
+
+<p><input class="textBox" style="width:220px" id="LWebKit_browse" type="file" /></p>
+
+<div>
+<input type="button" value="Launch Chromium" onclick="launchWebKit()" title="Click to run a new instance of System Animator as a standalone application (Chromium) WITHOUT the sidebar platform." class="textBox" />
+</div>
+
+<div id="L_electron_register">
+<br/>
+<input id="B_electron_register" type="button" value="Register System Animator" onclick="electronRegister()" title="Click to register (or unregister) the current Electron executable as the default handler for the &quot;system-animator://&quot; protocol (aka URI scheme). Registration allows you to launch System Animator via the &quot;system-animator://&quot; protocol, which can be used by any animation shortcut/launcher created by System Animator, to ensure that they will never break for any future updates on Electron (as long as you register again on newer version of Electron)." />
+</div>
+
+</div>
+			</td>
+		</tr>
+	</table>
+</div>
+
+<div class="tabbertab" title="XUL">
+	<table id="T_XUL" border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<h5>System Animator (XUL mode)
+<a href="#" onclick="System.Shell.execute(System.Gadget.path + '\\docs\\xul_info.txt'); return false" title="Click here for more info regarding the usage of System Animator in XUL mode.">(info)</a>
+:</h5>
+
+<ul>
+<li><a href="http://www.mozilla.org/en-US/firefox/fx/#desktop" target="_blank">Download Firefox</a> / <a href="https://developer.mozilla.org/en-US/docs/XULRunner" target="_blank">XULRunner</a></li>
+</ul>
+
+<div style="font-size:10px;">
+<p>Enter the path of "firefox.exe" or "xulrunner.exe" to enable launching System Animator in XUL mode.</p>
+
+<script>
+// XUL
+(function () {
+var html = ""
+if (SystemEXT.GetXULPath_USER()) {
+  html +=
+  '<p>The last selected path is:<br/>\n'
++ '<span style="white-space: nowrap;">' + SystemEXT.GetXULPath_USER() + '</span></p>\n'
+}
+else if (SystemEXT.GetXULPath_DEFAULT()) {
+  html +=
+  '<p>The default path is:<br/>\n'
++ '<span style="white-space: nowrap;">' + SystemEXT.GetXULPath_DEFAULT() + '</span></p>\n'
+}
+else if (parseInt(SystemEXT.GetFirefoxVersion()) < 4) {
+  html +=
+'<p>(You need Firefox/XULRunner to launch System Animator in XUL mode.)</p>\n'
+}
+
+document.write(html)
+})();
+</script>
+
+<p><input class="textBox" style="width:220px" id="LXUL_browse" type="file" /> <input type="button" id="LXUL_default" value="Default" onclick="if (LXUL_browse.style.visibility=='hidden') { LXUL_browse.style.visibility='inherit'; LXUL_default.value='Default'; } else  { LXUL_browse.style.visibility='hidden'; LXUL_default.value='Change'; }" class="textBox" /></p>
+
+<script>
+if (!SystemEXT.GetXULPath_USER() && SystemEXT.GetXULPath_DEFAULT())
+  LXUL_default.onclick()
+</script>
+
+<div>
+<input type="button" value="Launch XUL" onclick="launchXUL()" title="Click to run a new instance of System Animator as a standalone application (XUL) WITHOUT the sidebar platform." class="textBox" />
+<!--
+<input type="button" value="Desktop shortcut" onclick="createXULDesktopShortcut()" title="Create a shortcut to System Animator XUL (Host) on your desktop." class="textBox" />
+-->
+</div>
+
+</div>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<hr size=1 noshade style="position:relative; left:-10px; width:90%" />
+<span id="L_XULTransparentBG">
+	<input name="XULTransparentBG" type="checkbox" id="XULTransparentBG" value="checkbox" onclick="if (this.checked) { WallpaperAsBG.checked = false; toggleElement(DisableWallpaperMask, false); }" />
+	<label id="L_XULTransparentBG_TEXT" for="XULTransparentBG">Transparent background (XUL) <a href="#" onclick="return false" title="Enable this option to enable a real transparent background for animation that requires it. Note that animation using this option usually requires more CPU power and memory usage. Use the &quot;Use desktop wallpaper as background&quot; option instead if possible.">(?)</a></label>
+</span>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px">
+<input name="LoadXULAtStartup" type="checkbox" id="LoadXULAtStartup" value="checkbox" disabled />
+<label id="L_LoadXULAtStartup_TEXT" for="LoadXULAtStartup">Load XUL (host) at Windows startup <a href="#" onclick="return false" title="Load System Animator XUL (Host) at Windows startup. This includes ALL animations opened in the XUL &quot;host&quot; mode.">(?)</a></label>
+			</td>
+		</tr>
+
+	</table>
+</div>
+
+<div class="tabbertab" title="HTA">
+	<table  id="T_HTA" border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<h5>System Animator (HTA mode)
+<a href="#" onclick="System.Shell.execute(System.Gadget.path + '\\docs\\hta_info.txt'); return false" title="Click here for more info regarding the usage of System Animator in HTA mode.">(info)</a>
+:</h5>
+
+<ul>
+<li><a href="http://windows.microsoft.com/en-US/internet-explorer/download-ie" target="_blank">Download Internet Explorer</a></li>
+</ul>
+
+<div style="font-size:10px;">
+<div id="Llaunch_HTA" style="display:none"><input type="button" value="Launch HTA" onclick="launchHTA()" title="Click to run a new instance of System Animator as a standalone application (HTA) WITHOUT the sidebar platform." class="textBox" /></div>
+
+<script>
+(function () {
+var html = ""
+if (ie9_native || (parseInt(SystemEXT.GetIEVersion()) >= 9)) {
+  Llaunch_HTA.style.display = "block"
+}
+else {
+  html +=
+'<p><a href="http://www.beautyoftheweb.com/" target="_blank">(Download Internet Explorer 9 for more options!)</a></p>\n'
+}
+
+document.write(html)
+})();
+</script>
+
+</div>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<hr size=1 noshade style="position:relative; left:-10px; width:90%" />
+<span id="L_HTAUseGPUAcceleration">
+	<input name="HTAUseGPUAcceleration" type="checkbox" id="HTAUseGPUAcceleration" value="checkbox" />
+	<label id="L_HTAUseGPUAcceleration_TEXT" for="HTAUseGPUAcceleration">Use GPU acceleration (HTA) <a href="#" onclick="return false" title="GPU acceleration is OFF by default for applications that use Web Browser control, including HTA. Enable this option to enforce GPU acceleration on HTA for FASTER rendering. This feature requires an up-to-date video driver, and affects ALL System Animator animations.">(?)</a></label>
+</span>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<span id="L_HTALoadSpectrumAnalyser">
+	<input name="HTALoadSpectrumAnalyser" type="checkbox" id="HTALoadSpectrumAnalyser" value="checkbox" />
+	<label id="L_HTALoadSpectrumAnalyser_TEXT" for="HTALoadSpectrumAnalyser">Load Spectrum Analyser (HTA) <a href="#" onclick="return false" title="Enable this option to load Spectrum Analyser gadget (needed for most sound-related functions) directly inside System Animator, instead of loading it separately as usual. You need to have Spectrum Analyser installed for this option to work. Avoid running more than one instance of Spectrum Analyser at the same time.">(?)</a></label>
+</span>
+			</td>
+		</tr>
+
+	</table>
+</div>
+</div>
+
+</div>
+
+<div class="tabbertab">
+<h2>Others</h2>
+
+<div class="tabber">
+<div class="tabbertab" title="Misc">
+	<table border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<h5>Misc:</h5>
+<script>
+function createAnimationHost() {
+  var desktop_path
+  if (windows_mode) {
+    desktop_path = (xul_mode) ? XPCOM_object._getSpecialPath("Desk") : System.Environment.getEnvironmentVariable("USERPROFILE") + '\\Desktop';
+  }
+  else if (linux_mode) {
+    desktop_path = process.env.HOME + "/Desktop"
+  }
+  var path_parent = desktop_path + toLocalPath('\\SA') + System.Gadget.version.replace(/\..+$/, "") + ' - Animation Host '
+
+  var index = 0
+  var path_destination
+  do {
+    path_destination = path_parent + (++index)
+  }
+  while (FSO_OBJ.FolderExists(path_destination))
+
+  FSO_OBJ.CopyFolder(System.Gadget.path + toLocalPath("\\images\\Animation Host"), path_destination)
+}
+</script>
+
+<input type="button" value="Create &quot;Animation Host&quot;" onclick="createAnimationHost()" title="Generate an &quot;empty&quot; animation which can be used as a host for child animations." class="textBox" />
+
+<div id="L_Misc_TEMP">
+<br/>
+<input type="button" value="Explore TEMP folder" onclick="System.Shell.execute(System.Gadget.path + '\\TEMP')" title="In some cases, some universal settings are saved inside the TEMP folder for use by some animations. These settings are removed whenever you uninstall System Animator or install a new version. Exploring this folder allows you to backup any file inside so that you may restore them by copying them back to the TEMP folder." class="textBox" />
+</div>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<span id="L_AllowExternalCommand">
+	<input name="AllowExternalCommand" type="checkbox" id="AllowExternalCommand" value="checkbox" />
+	<label id="L_AllowExternalCommand_TEXT" for="AllowExternalCommand">Allow external command <a href="#" onclick="return false" title="This option allows external applications to control System Animator by writing JSON commands to a specific file monitored by System Animator. This feature is still under testing and development, and is basically for developers only.">(?)</a></label>
+</span>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<hr size=1 noshade style="position:relative; left:-10px; width:90%" />
+<h5>Troubleshooting:</h5>
+<span id="L_EnforceWSH">
+				<input name="EnforceWSH" type="checkbox" id="EnforceWSH" value="checkbox" />
+				<label id="L_EnforceWSH_TEXT" for="EnforceWSH">Enfore script running in WSH
+<a href="#" onclick="return false" title="By default, Windows Script Host (WSH) is the application used to run &quot;.js&quot; script files (e.g. when you click it). However, this may change if you have installed other applications that also handle JS script files. You can manually reassign the default application for JS script files back to WSH (see &quot;manual fix&quot;), OR enable this option for a quick and simple workaround to enfore script running in WSH.">(?)</a>
+<a href="#" onclick="System.Shell.execute(System.Gadget.path + '\\docs\\enforce_wsh.txt'); return false">(manual fix)</a></label>
+</span>
+			</td>
+		</tr>
+<!--
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<span id="L_SwapRegistryCheck">
+	<input name="SwapRegistryCheck" type="checkbox" id="SwapRegistryCheck" value="checkbox" />
+	<label id="L_SwapRegistryCheck_TEXT" for="SwapRegistryCheck">Swap registry check (Spectrum Analyser) <a href="#" onclick="return false" title="When using System Animator to monitor sound output, in some cases it may not respond to any sound even though Spectrum Analyser is working. Enabling this option may fix the problem.">(?)</a></label>
+</span>
+			</td>
+		</tr>
+-->
+	</table>
+</div>
+<div class="tabbertab" title="Copyright/License" style="height:270px; width:280px; overflow-y:scroll">
+	<table border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px">
+<h5>Copyright/License:</h5>
+<ul>
+<li>System Animator &#169; <a href="http://www.animetheme.com/sidebar/" target="_blank">Butz Yung/Anime Theme</a>
+<ul>
+<li>License - <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank"><img alt="Creative Commons License" style="border-width:0" align="absmiddle" src="images/cc4-by-nc-sa-80x15.png" /></a></li>
+<li><a href="#" onclick="System.Shell.execute(System.Gadget.path + '\\docs\\disclaimer.txt'); return false">Disclaimer</a></li>
+</ul>
+</li>
+</ul>
+
+<ul>
+<li><a href="http://electron.atom.io/" target="_blank">Electron</a></li>
+<li><a href="https://github.com/GrimoireGL/GrimoireJS" target="_blank">jThree</a></li>
+<li>"Appearance Miku" 3D Model <a href="#" onclick="System.Shell.execute(System.Gadget.path + '\\jThree\\model\\Appearance Miku\\Readme.txt'); return false">(readme/license)</a></li>
+<li>Various 3D background effects ported and modified from codes found on <a href="https://www.shadertoy.com/" target="_blank">Shadertoy</a></li>
+<li>For some third-party programming libraries/3D data/etc used in System Animator, please refer to the corresponding script/readme for license and terms.</li>
+<li>Credits are given to the authors of any other image/media files used in System Animator.</li>
+</ul>
+			</td>
+		</tr>
+
+	</table>
+</div>
+</div>
+</div>
+
+</div>
+
+<script type="text/javascript">
+tabberAutomatic(tabberOptions);
+</script>
+
+<script>
+SA_Settings_writeButtons(300, 400);
+</script>
+
+<div style="position:absolute; top:0px; left:0px; width:300px">
+<div id="Ldebug" style="position:absolute; top:0px; left:0px; color:black; font-size:xx-small; visibility:hidden; background-color:white; padding:3px; border-color:black; border-width:1px; border-style:solid; z-index:99"></div>
+</div>
+
+</div>
+
+<script>
+SA_dialog_resize(300, 400 + ((webkit_mode && !use_inline_dialog) ? 100 : 50))
+</script>
+
+</body>
+</html>
+
+
+
