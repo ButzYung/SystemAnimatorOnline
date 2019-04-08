@@ -5243,6 +5243,7 @@ console.log("three.core.min.js")
   else {
 
     js.push(
+//  "js/XMLHttpRequestZIP_.js"
   "_private/js/XMLHttpRequestZIP.js"
  ,"js/jszip.js"
 
