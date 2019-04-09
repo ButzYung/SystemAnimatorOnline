@@ -6,7 +6,7 @@
 
 <meta property="og:title" content="System Animator (Online)" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="http://www.animetheme.com/system_animator_online/SystemAnimator_online.html" />
+<meta property="og:url" content="https://sao.animetheme.com/" />
 <meta property="og:image" content="http://www.animetheme.com/sidebar/sc_sys_ani_02_full.jpg" />
 <meta property="og:site_name" content="Anime Theme" />
 <meta property="og:description" content="System Animator (Online)" />
@@ -27,7 +27,7 @@ function G_tracker_init() {
   G_tracker_loaded = true
 }
 
-if (/^http/i.test(self.location.href)) {
+if (/^http/i.test(self.location.href) && !/localhost|192\.168\./.test(self.location.hostname)) {
   var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
   document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
 
