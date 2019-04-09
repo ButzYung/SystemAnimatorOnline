@@ -1,4 +1,4 @@
-﻿(Document version 1.2)
+﻿(Document version 1.3)
 
 Introduction:
 
@@ -6,6 +6,21 @@ Introduction:
 
   For more information about System Animator, please visit the following page.
   http://www.animetheme.com/sidebar/
+
+----------------------------
+
+Demo (via GitHub):
+
+- 3D Miku The Dancer (drop any MP3 and she will dance for you)
+  https://sao.animetheme.com/
+
+- 3D Miku RPG
+  https://sao.animetheme.com/?cmd_line=/TEMP/DEMO/miku_rpg01
+
+- 3D Vocaloid Fighters - Miku vs Teto
+  https://sao.animetheme.com/?cmd_line=/TEMP/DEMO/miku_battle_arena01
+
+  All demos support the use of custom MMD (MikuMikuDance) model. Drop a zip of your favorite MMD model at the beginning, press the START button, and the demo will proceed with your model instead of the default one.
 
 ----------------------------
 
@@ -35,7 +50,7 @@ Copyright/License/Credits:
 
 - "Appearance Miku" 3D Model
   - Readme/License:
-    http://www.animetheme.com/system_animator_online/jThree/model/Appearance Miku/Readme.txt
+    http://www.animetheme.com/system_animator_online/jThree/model/Appearance%20Miku/Readme.txt
 
 - ローポリ雑魚敵 by 黒胡椒 さん
   http://www.nicovideo.jp/watch/sm11196123
