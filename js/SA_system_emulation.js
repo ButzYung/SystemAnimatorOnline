@@ -1840,7 +1840,7 @@ if (System.Gadget.onSettingsClosed)
     }
 
    ,onkeydown: function (event) {
-var have_child = (is_SA_child_animation ||　document.getElementById("Lchild_animation_parent"))
+var have_child = (is_SA_child_animation || document.getElementById("Lchild_animation_parent"))
 
 var k = event.keyCode
 if (k == 67) {
