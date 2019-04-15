@@ -78,6 +78,10 @@ Copyright/License/Credits:
   https://freesound.org/people/RSilveira_88/sounds/216198/
 
 
+- もぐ式りょう/もぐ式りく by Mogg
+  https://3d.nicovideo.jp/works/td55798
+  https://3d.nicovideo.jp/works/td55973
+
 - Dragon Ball Super I Ultra Instinct OST I Clash of Gods Remix I Hip Hop Instrumental I @AndrezoWorks
   https://www.youtube.com/watch?v=KJ71dY4mkNo
 
