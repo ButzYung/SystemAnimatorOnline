@@ -3,8 +3,7 @@
 MMD_SA_options.Dungeon = (function () {
 
 function CombatStats(stats) {
-  if (!stats)
-    Object.assign(this, stats)
+  Object.assign(this, stats)
 
   if (!this.weapon)
     this.weapon = {}
@@ -13,12 +12,12 @@ function CombatStats(stats) {
 
   if (!this.attack)
     this.attack = {}
-  if (!this.attack.scale)
+  if (this.attack.scale == null)
     this.attack.scale = 1
 
   if (!this.defense)
     this.defense = {}
-  if (!this.defense.scale)
+  if (this.defense.scale == null)
     this.defense.scale = 1
 }
 
@@ -2504,7 +2503,7 @@ return !occupied
     obj.hp = obj.hp_max
   }
   if (obj.hp) {
-    obj.combat_stats = new CombatStats(obj.combat_stats || obj_base.combat_stats)
+    obj.combat_stats = new CombatStats(Object.assign({}, obj_base.combat_stats, obj.combat_stats))
     obj.hp_add = hp_add
   }
 
@@ -2519,7 +2518,8 @@ return !occupied
   obj.collision_by_mesh_sort_range = obj_base.collision_by_mesh_sort_range
   if (obj.collision_by_mesh_sort_range) {
 //    obj.collision_by_mesh_sort_range /= placement.scale
-    obj.mesh_sorted = { position:null, index_list:null }
+    obj.mesh_sorted_list = {}
+    obj.mesh_sorted = null//{ position:null, index_list:null }
   }
 
   obj.oncreate = obj.oncreate || obj_base.oncreate
@@ -4345,7 +4345,8 @@ if (dis < (moved_dis_max + r) + ((that.use_local_mesh_sorting && local_mesh_sort
   cache.updateMatrixWorld()
   if (obj.collision_by_mesh_sort_range && !para.collision_by_mesh_disabled) {
     _v3.copy(s_bb).applyMatrix4(_m4.getInverse(cache.matrixWorld))
-    let mesh_sorted = obj.mesh_sorted
+    let _index = (_subject.obj._index != null) ? _subject.obj._index+1 : 0;
+    let mesh_sorted = obj.mesh_sorted = obj.mesh_sorted_list[_index] = obj.mesh_sorted_list[_index] || {};
 if (that.use_local_mesh_sorting) {
   _dis = (mesh_sorted.position) ? Math.sqrt(Math.pow(mesh_sorted.position.x-_v3.x,2)+Math.pow(mesh_sorted.position.z-_v3.z,2)) + mov_delta_length/object_scale : 9999
   if (_dis > local_mesh_sorting_range_buffer/object_scale) {
@@ -5699,7 +5700,7 @@ var damage = combat_para.damage
 if (damage == null) {
   damage = (d._states.combat.enemy_list.length) ? Math.min(hit_level * 5, 20) * Math.min(1 + this.combat_para.index*0.2, 2) : 0
 }
-damage *= attacker_combat_stats.attack.scale / obj.combat_stats.defense.scale * ((super_armor_hit) ? (motion_para.super_armor.damage_scale || 0) : 1)
+damage *= attacker_combat_stats.attack.scale * obj.combat_stats.defense.scale * ((super_armor_hit) ? (motion_para.super_armor.damage_scale || 0) : 1)
 obj.hp_add(-damage)
 //DEBUG_show(damage+'/'+Date.now())
 if (damage && (obj.hp == 0)) {
@@ -5711,7 +5712,7 @@ if ((damage > 0) || (!super_armor_hit && (damage == 0)))
         }
 
         if (vfx && combat_para.SFX) {
-var para = {}
+var para = { scale:1, speed:1 }
 if (combat_para.SFX.bone_to_pos) {
   var bone_to_pos = MMD_SA.get_bone_position(this.combat_para.attacker.obj._mesh, combat_para.SFX.bone_to_pos)
 //console.log(bone_to_pos)
@@ -5725,26 +5726,31 @@ if (combat_para.SFX.visual && combat_para.SFX.visual[vfx]) {
   Object.assign(para, combat_para.SFX.visual[vfx])
 }
 else {
-  switch (vfx) {
-    case "hit":
-      para.name = "blood_01"
-      break
-    case "blocked":
-      para.name = "hit_yellow_01"
-      break
+  if (obj.combat_stats.hurt_vfx) {
+    Object.assign(para, obj.combat_stats.hurt_vfx)
+  }
+  else {
+    switch (vfx) {
+      case "hit":
+        para.name = "blood_01"
+        break
+      case "blocked":
+        para.name = "hit_yellow_01"
+        break
+    }
   }
 //  para.name = "blood_01"//"explosion_purple_01"//"hit_yellow_01"//
   if (hit_level == 1) {
-    para.scale = 0.5
-    para.speed = 2
+    para.scale *= 0.5
+    para.speed *= 2
   }
   else if (hit_level == 2) {
-    para.scale = 0.75
-    para.speed = 1.5
+    para.scale *= 0.75
+    para.speed *= 1.5
   }
   else if (hit_level > 3) {
-    para.scale = 1.5
-    para.speed = 1
+    para.scale *= 1.5
+    para.speed *= 1
   }
 }
 
@@ -10202,9 +10208,13 @@ continue
       _obj.zone_of_movement.copy(zom).translate(zom.center_position || pos_center || mesh.position)
     }
 
-    if ((id != "PC") && (_obj.hp != null)) {
+    if (obj.combat_stats) {
+      Object.append(_obj.combat_stats, obj.combat_stats)
+    }
+
+    if (this._states.combat && (id != "PC") && (_obj.hp > 0) && (this._states.combat.enemy_list.indexOf(_obj) == -1)) {
       this._states.combat.enemy_list.push(_obj)
-      if (this._states.combat && this._states.combat.show_HP_bar) {
+      if (this._states.combat.show_HP_bar) {
 this.sprite.display(new this.sprite.TextureObject_HP_bar(++enemy_index), {
   pos_target: {
     mesh: mesh
@@ -10517,7 +10527,7 @@ para_SA.SFX.some(function (obj) {
     });
     window.addEventListener("jThree_ready", function () {
       listener = new THREE.AudioListener();
-      listener.setMasterVolume(0.25);
+      listener.setMasterVolume(0.5);
     });
     window.addEventListener("MMDStarted", function () { MMD_SA._trackball_camera.object.add(listener); });
 
@@ -11009,6 +11019,12 @@ sprite_obj_list.push(obj_free)
 console.log("sprite object count:" + sprite_obj_list.length)
 return obj_free
     }
+
+    window.addEventListener("SA_Dungeon_after_map_generation", function () {
+sprite_obj_list.forEach(function (ss) {
+  ss.sprite.visible = false
+});
+    });
 
     window.addEventListener("SA_MMD_model_all_process_bones", function () {
 var t = performance.now()
