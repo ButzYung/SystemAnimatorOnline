@@ -5487,8 +5487,6 @@ emitter.position.set(1312 , 20 , 992)
 
 // random dungeon test
 //  document.write('<script language="JavaScript" src="node_modules/index.umd.js"></scr'+'ipt>');
-if (xul_mode)
-  document.write('<script language="JavaScript" src="js/require1k.js"></scr'+'ipt>');
 document.write('<script language="JavaScript" src="js/dungeon.js"></scr'+'ipt>');
 
 

@@ -1098,7 +1098,7 @@ MMD_SA_options.Dungeon_options = {
 // ,emissive: "#808080"
  ,uDisplacementScale: 2
  ,uDisplacementBias: -0.5*2
- ,geo_by_lvl: [[1,1],[16,16],[32,32],[128,128]]//
+ ,geo_by_lvl: [[1,1],[16,16],[32,32],[64,64]]//,[128,128]]//
  ,distance_by_lvl: [1,2,4]//
     }
   ]
@@ -1275,7 +1275,7 @@ return (d._parry_level_ && random(d._parry_level_+1))||0
         }
        ,{
           message: {
-  content: "Miku: Where am I? What is this place?"
+  content: "Where am I? What is this place?"
           }
         }
        ,{
@@ -1310,21 +1310,43 @@ return (d._parry_level_ && random(d._parry_level_+1))||0
  ,para: { scale:1.5 }
           }
         }
+/*
        ,{
           message: {
   content: "Teto: As a combat training, we won't fight back. Feel free to try your attack combos~!"
  ,NPC: 1
           }
         }
+*/
        ,{
-  combat_mode: true
- ,ended: true
+//  combat_mode: true
+  combat: {
+    enabled: true
+   ,show_HP_bar: true
+  }
+ ,next_step: {}
+        }
+       ,{
+  objects: {
+    "object0_0": {}
+   ,"object1_0": {}
+   ,"object2_0": {}
+   ,"object3_0": {}
+   ,"object4_0": {}
+   ,"object5_0": {}
+   ,"object6_0": {}
+   ,"object7_0": {}
+   ,"object8_0": {}
+   ,"object9_0": {}
+  }
+ ,goto_event:{id:"arena_exit", branch_index:2}
+// ,ended:true
         }
       ]
     ]
    ,"arena_exit": [
-      [
 //0
+      [
         {
           message: {
   content: "Teto: Do you want to change the settings?"
@@ -1368,6 +1390,20 @@ var d = MMD_SA_options.Dungeon
 d._combat_seed_ = 2
 d._parry_level_ = 0
           }
+
+ ,objects: {
+    "object0_0": { combat_stats:{defense:{scale:0}} }
+   ,"object1_0": { combat_stats:{defense:{scale:0}} }
+   ,"object2_0": { combat_stats:{defense:{scale:0}} }
+   ,"object3_0": { combat_stats:{defense:{scale:0}} }
+   ,"object4_0": { combat_stats:{defense:{scale:0}} }
+   ,"object5_0": { combat_stats:{defense:{scale:0}} }
+   ,"object6_0": { combat_stats:{defense:{scale:0}} }
+   ,"object7_0": { combat_stats:{defense:{scale:0}} }
+   ,"object8_0": { combat_stats:{defense:{scale:0}} }
+   ,"object9_0": { combat_stats:{defense:{scale:0}} }
+  }
+
          ,set_event_flag: { branch_index:0 }
          ,ended: true
         }
@@ -1386,6 +1422,20 @@ var d = MMD_SA_options.Dungeon
 d._combat_seed_ = 2+10
 d._parry_level_ = 2
           }
+
+ ,objects: {
+    "object0_0": { combat_stats:{defense:{scale:0.5}} }
+   ,"object1_0": { combat_stats:{defense:{scale:1}} }
+   ,"object2_0": { combat_stats:{defense:{scale:1}} }
+   ,"object3_0": { combat_stats:{defense:{scale:1}} }
+   ,"object4_0": { combat_stats:{defense:{scale:1}} }
+   ,"object5_0": { combat_stats:{defense:{scale:1}} }
+   ,"object6_0": { combat_stats:{defense:{scale:1}} }
+   ,"object7_0": { combat_stats:{defense:{scale:1}} }
+   ,"object8_0": { combat_stats:{defense:{scale:1}} }
+   ,"object9_0": { combat_stats:{defense:{scale:1}} }
+  }
+
          ,set_event_flag: { branch_index:0 }
          ,ended: true
         }
@@ -1442,7 +1492,20 @@ MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.rotate.set(0, Math.PI * 2 * ((Dat
 MMD_SA_options.model_path_extra = [
 //  'F:\\MMD\\models\\セーラー服さんv1.3\\セーラー服さんv1.3長袖_v01.pmx'
 //  System.Gadget.path + "/TEMP/DEMO/models/mrs_ma.min.zip#/_0Ma_v06h_for_SA_v04.pmx"
+//'F:\\MMD\\models\\Riku_v050\\Riku.pmx'
   System.Gadget.path + '\\TEMP\\DEMO\\models\\Appearance Teto IS 1.0.5.min.zip#\\Appearance Teto_IS_1.0.5_v03.pmx'
+/*
+ ,'F:\\MMD\\models\\DFM.zip#\\DFman_v01.pmx'
+
+ ,'F:\\MMD\\models\\DFM.zip#\\DFman_v01#clone1.pmx'
+ ,'F:\\MMD\\models\\DFM.zip#\\DFman_v01#clone2.pmx'
+ ,'F:\\MMD\\models\\DFM.zip#\\DFman_v01#clone3.pmx'
+ ,'F:\\MMD\\models\\DFM.zip#\\DFman_v01#clone4.pmx'
+ ,'F:\\MMD\\models\\DFM.zip#\\DFman_v01#clone5.pmx'
+ ,'F:\\MMD\\models\\DFM.zip#\\DFman_v01#clone6.pmx'
+ ,'F:\\MMD\\models\\DFM.zip#\\DFman_v01#clone7.pmx'
+ ,'F:\\MMD\\models\\DFM.zip#\\DFman_v01#clone8.pmx'
+*/
 
  ,System.Gadget.path + "/jThree/model/pawn.zip#/pawn_v01.pmx"
 
@@ -1454,7 +1517,7 @@ MMD_SA_options.model_path_extra = [
  ,System.Gadget.path + "/jThree/model/pawn.zip#/pawn_v01#clone6.pmx"
  ,System.Gadget.path + "/jThree/model/pawn.zip#/pawn_v01#clone7.pmx"
  ,System.Gadget.path + "/jThree/model/pawn.zip#/pawn_v01#clone8.pmx"
-// ,System.Gadget.path + "/jThree/model/pawn.zip#/pawn_v01#clone9.pmx"
+
 ];
 for (var modion_id in MMD_SA_options.motion_para) {
   if (MMD_SA_options.motion_para[modion_id].model_index_list)
@@ -1708,8 +1771,6 @@ emitter.position.set(1312 , 20 , 992)
 
 // random dungeon test
 //  document.write('<script language="JavaScript" src="node_modules/index.umd.js"></scr'+'ipt>');
-if (xul_mode)
-  document.write('<script language="JavaScript" src="js/require1k.js"></scr'+'ipt>');
 document.write('<script language="JavaScript" src="js/dungeon.js"></scr'+'ipt>');
 
 
