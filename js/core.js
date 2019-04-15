@@ -295,7 +295,35 @@ return value
   _passthru = undefined;
 
   return obj_clone;
-}
+};
+
+Object.append = (function () {
+  function append(target, source) {
+    if ((target == null) || (source == null))
+      return 
+
+    for (var key in source) {
+      var value = source[key]
+      if (!target.hasOwnProperty(key) || value instanceof Function || typeof value == 'function' || value instanceof RegExp || value instanceof Array || typeof value != 'object') {
+        target[key] = value
+      }
+      else {
+        append(target[key], value)
+      }
+    }
+  }
+
+  return function (target) {
+    if (!target)
+      return null
+
+      for (var index = 1; index < arguments.length; index++) {
+        var source = arguments[index];
+        append(target, source)
+      }
+      return target;
+  };
+})();
 
 if (typeof Object.assign != 'function') {
   (function () {
