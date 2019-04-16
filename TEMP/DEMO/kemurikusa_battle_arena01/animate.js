@@ -3,7 +3,7 @@ var MMD_SA_options = {
 //  model_path: System.Gadget.path + '\\TEMP\\DEMO\\models\\chung.min.zip#\\_chung_v012_CLEANED-v03.pmx'
 //  model_path: System.Gadget.path + "/TEMP/DEMO/models/miss_foo.zip#/_MissFoo_v09b_for_SA-CLEANED_v01.pmx"
 //  model_path: System.Gadget.path + '\\TEMP\\DEMO\\models\\Appearance Miku.min.zip#\\Appearance Miku_BDEF_mod-v05.pmx'
-  model_path: System.Gadget.path + '/TEMP/DEMO/models/Ryou_v053.aes.zip#/Ryou.pmx'
+  model_path: System.Gadget.path + '/TEMP/DEMO/models/Ryou.aes.zip#/Ryou.pmx'
 
  ,model_path_extra: [
 
@@ -1529,7 +1529,7 @@ MMD_SA_options.model_path_extra = [
 //  System.Gadget.path + "/TEMP/DEMO/models/mrs_ma.min.zip#/_0Ma_v06h_for_SA_v04.pmx"
 //'F:\\MMD\\models\\Riku_v050\\Riku.pmx'
 //  System.Gadget.path + '\\TEMP\\DEMO\\models\\Appearance Teto IS 1.0.5.min.zip#\\Appearance Teto_IS_1.0.5_v03.pmx'
-  System.Gadget.path + '/TEMP/DEMO/models/Riku_v050.aes.zip#/Riku.pmx'
+  System.Gadget.path + '/TEMP/DEMO/models/Riku.aes.zip#/Riku.pmx'
 /*
  ,'F:\\MMD\\models\\DFM.zip#\\DFman_v01.pmx'
 
