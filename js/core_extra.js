@@ -52,7 +52,11 @@ function SA_load_scripts() {
 
   if (use_SA_browser_mode) {
     var p
-    if ((browser_native_mode && !webkit_window) || /cmd_line\=([^\&]+)/.test(self.location.search)) {
+    if (is_SA_child_animation && /f\=([^\&]+)/.test(self.location.search)) {
+      SA_HTA_folder = decodeURIComponent(RegExp.$1)
+      SA_child_animation_id = (/id\=(\d+)/.test(self.location.search)) ? parseInt(RegExp.$1) : 0
+    }
+    else if ((browser_native_mode && !webkit_window) || /cmd_line\=([^\&]+)/.test(self.location.search)) {
       p = (/cmd_line\=([^\&]+)/.test(self.location.search)) ? RegExp.$1.split("|") : ["/TEMP/DEMO/miku01"]
       for (var i = 0; i < p.length; i++)
         p[i] = decodeURIComponent(p[i])
@@ -76,10 +80,6 @@ function SA_load_scripts() {
         for (var i = 0, i_length = p.length; i < i_length; i++)
           p[i] = p[i].replace(/"/g, "")
       }
-    }
-    else if (/f\=([^\&]+)/.test(self.location.search)) {
-      SA_HTA_folder = decodeURIComponent(RegExp.$1)
-      SA_child_animation_id = (/id\=(\d+)/.test(self.location.search)) ? parseInt(RegExp.$1) : 0
     }
 
     if (is_SA_child_animation)

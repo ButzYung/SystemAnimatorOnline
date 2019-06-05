@@ -64,13 +64,13 @@ if (browser_native_mode) {
         return false
 
       path_relative = path_relative.substr(1)
-      if (SA_project_JSON.folder_list.indexOf(path_relative) == -1) {
-        console.error(((is_SA_child_animation)?(SA_child_animation_id+1):0) + ':SA_project_JSON-' + path_relative + ',' + existed)
-        return false
-      }
-      else {
+      if (SA_project_JSON.folder_list && SA_project_JSON.folder_list.some(function(p){ return ((p.charAt(p.length-1)=="/") ? (path_relative.indexOf(p)==0) : (path_relative==p)); })) {
 //        console.log(((is_SA_child_animation)?(SA_child_animation_id+1):0) + ':SA_project_JSON-' + path_relative + ',' + true)
         return true
+      }
+      else {
+        console.error(((is_SA_child_animation)?(SA_child_animation_id+1):0) + ':SA_project_JSON-' + path_relative + ',' + existed)
+        return false
       }
     }
     else {
