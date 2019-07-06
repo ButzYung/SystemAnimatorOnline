@@ -34,6 +34,10 @@ function _jump_physics(s, frame) {
   return {v:v, a:a}
 }
 
+function AreaDataSaved() {
+  this.object_by_index = {}
+}
+
 return {
 //https://github.com/Matthew-Burfield/random-dungeon-generator
   RDG: (function () {
@@ -124,7 +128,7 @@ return g
    ,camera_position_base_default: [0,10,-30]
    ,camera_position_base: null
    ,speed_scale: 1
-//   ,boundingBox_scale: {x:1.25, y:1, z:1.25}
+//   ,boundingBox_scale: {x:2, y:1, z:2}
 
    ,TPS_camera_lookAt_: null
 
@@ -136,6 +140,14 @@ return g
      ,update: function () {
 var mesh = THREE.MMD.getModels()[0].mesh
 this.z = 0.5 + (MMD_SA.get_bone_position(mesh, (mesh.bones_by_name["上半身2"] && "上半身2") || "上半身", mesh).z - MMD_SA.get_bone_position(mesh, "センター", mesh).z) / (mesh.geometry.boundingSphere.radius * (Math.max(mesh.scale.x, mesh.scale.y, mesh.scale.z) || 1))
+
+var para_SA = MMD_SA.MMD.motionManager.para_SA
+if (para_SA.bb_translate && para_SA.bb_translate.limit) {
+  if (para_SA.bb_translate.limit.max)
+    this.z = Math.min(this.z, para_SA.bb_translate.limit.max.z)
+  if (para_SA.bb_translate.limit.min)
+    this.z = Math.max(this.z, para_SA.bb_translate.limit.min.z)
+}
 //DEBUG_show(this.z)
       }
     }
@@ -218,7 +230,7 @@ d.PC_follower_list.forEach(function (para) {
     return
 
   if (obj.rot_base) {
-    obj._obj.rotation.copy(obj.rot_base).add(that.rot)
+    obj._obj.rotation.copy(obj.rot_base).multiplyScalar(Math.PI/180).add(that.rot)
     obj._obj.rotation.x
     if (that.about_turn)
       obj._obj.rotation.add(MMD_SA.TEMP_v3.set(0,Math.PI,0))
@@ -418,10 +430,12 @@ if (para.dismount_position) {
 }
 MMD_SA.reset_camera()
 
-var saved = MMD_SA_options.Dungeon_options.options_by_area_id[d.area_id]._saved
-if (!saved.object_by_index)
-  saved.object_by_index = {}
-saved.object_by_index[para.target._index] = { position:target.position.clone() }
+var saved = MMD_SA_options.Dungeon_options.options_by_area_id[d.area_id]._saved.object_by_index
+saved = saved[para.target._index] = saved[para.target._index] || {}
+if (!saved.position)
+  saved.position = {}
+if (!saved.rotation)
+  saved.rotation = {}
 
 this.mount_para = null
     }
@@ -438,6 +452,25 @@ if (!scale)
 var bb_scale = this.boundingBox_scale || MMD_SA._v3b.set(1,1,1)
 var size = this.boundingBox.size(MMD_SA.TEMP_v3)
 model_mesh.geometry.boundingBox.expandByVector(new THREE.Vector3(size.x*(bb_scale.x*scale.x-1)*0.5, size.y*(bb_scale.y*scale.y-1)*0.5, size.z*(bb_scale.z*scale.z-1)*0.5))
+    }
+
+   ,swap_character: function (character) {
+var is_NPC = (character.object_index != null)
+
+THREE.MMD.swapModels(0, character.character_index, function () {
+  if (!is_NPC)
+    return
+
+// hide the old mesh
+  character._obj_proxy.visible = false
+// show the new mesh
+  character._obj_proxy.visible = true
+});
+
+this.icon.getContext("2d").drawImage(MMD_SA_options.model_para_obj._icon_canvas, 0,0)
+MMD_SA_options.Dungeon.update_status_bar(true)
+
+this.update_boundingBox()
     }
 
    ,reset: function () {
@@ -1026,10 +1059,10 @@ var view_radius, radius_sq, d_options, w, h, d
 
 // directions are "inverted" on the default camera view (i.e. looking at the character's back)
 var TRBL = [
-  { id:"T", xy:[ 0,-1], rotY: Math.PI*1, posXZ:[0.5,0], curved_out:[[ 1,-1],[-1,-1]], curved_in:[1,3] }
- ,{ id:"R", xy:[ 1, 0], rotY: Math.PI/2, posXZ:[1,0.5], curved_out:[[ 1, 1],[ 1,-1]], curved_in:[2,0] }
- ,{ id:"B", xy:[ 0, 1], rotY: Math.PI*0, posXZ:[0.5,1], curved_out:[[-1, 1],[ 1, 1]], curved_in:[3,1] }
- ,{ id:"L", xy:[-1, 0], rotY:-Math.PI/2, posXZ:[0,0.5], curved_out:[[-1,-1],[-1, 1]], curved_in:[0,2] }
+  { id:"T", id_opposite:"B", xy:[ 0,-1], rotY: Math.PI*1, posXZ:[0.5,0], curved_out:[[ 1,-1],[-1,-1]], curved_in:[1,3] }
+ ,{ id:"R", id_opposite:"L", xy:[ 1, 0], rotY: Math.PI/2, posXZ:[1,0.5], curved_out:[[ 1, 1],[ 1,-1]], curved_in:[2,0] }
+ ,{ id:"B", id_opposite:"T", xy:[ 0, 1], rotY: Math.PI*0, posXZ:[0.5,1], curved_out:[[-1, 1],[ 1, 1]], curved_in:[3,1] }
+ ,{ id:"L", id_opposite:"R", xy:[-1, 0], rotY:-Math.PI/2, posXZ:[0,0.5], curved_out:[[-1,-1],[-1, 1]], curved_in:[0,2] }
 ];
 
 TRBL.forEach(function (dir) {
@@ -1041,8 +1074,9 @@ var flat_rotX_q = [Math.sin((-Math.PI/2)/2),0,0,Math.cos((-Math.PI/2)/2)]
 var no_wall
 
 function is_visible_wall(x, y) {
-  if (d[y][x] == 1)
+  if (d[y][x] == 1) {
     return true
+  }
 
   if (1||no_wall) return false
 
@@ -1139,6 +1173,8 @@ return function (forced) {
   c = this.character
 
   grid_size = this.grid_size
+  view_radius = this.view_radius
+  radius_sq = view_radius * view_radius
 
   var xx = ~~(c.pos.x/grid_size)
   var yy = ~~(c.pos.z/grid_size)
@@ -1161,6 +1197,37 @@ return function (forced) {
 
   compass.setTransform(1, 0, 0, 1, 0, 0);
 
+  var map_display_scale = this.map_display_scale
+  if (MMD_SA_options.Dungeon_options.multiplayer) {
+    let length = view_radius * grid_size
+    let lengthSq = length * length
+    for (var i = 1, i_max = MMD_SA_options.Dungeon_options.multiplayer.OPC_list.length; i <= i_max; i++) {
+      let ds = document.getElementById("Ldungeon_map_spot_OPC" + i).style
+      let OPC_index = i-1 + MMD_SA_options.Dungeon_options.multiplayer.OPC_index0
+      let OPC_mesh = THREE.MMD.getModels()[OPC_index].mesh
+      if (OPC_mesh.visible) {
+        ds.posLeft = 8+ ~~(OPC_mesh.position.x/grid_size)*map_display_scale + ~~(map_display_scale/4)
+        ds.posTop  = 8+ ~~(OPC_mesh.position.z/grid_size)*map_display_scale + ~~(map_display_scale/4)
+        ds.visibility = "inherit"
+      }
+      else
+        ds.visibility = "hidden"
+
+      let id = this.object_id_translated["OPC-"+(i-1)]
+      if (!/^object(\d+)_(\d+)$/.test(id))
+        continue
+      let obj_base_index = parseInt(RegExp.$1)
+      let obj_base = this.object_base_list[obj_base_index]
+      let obj = obj_base.object_list[parseInt(RegExp.$2)]
+
+      if (obj._obj_proxy.hidden)
+        continue
+      let cache = obj._obj
+      let d_sq = cache.position.distanceToSquared(c.pos)
+      obj._obj_proxy.visible = (d_sq < (lengthSq * obj.view_distance_sq))
+    }
+  }
+
   var _xx = c.xy[0]
   var _yy = c.xy[1]
   if (!forced && (_xx == xx) && (_yy == yy)) return
@@ -1179,8 +1246,6 @@ return function (forced) {
   if (grid_para_last.onexit && grid_para_last.onexit({x:_xx, y:_yy, grid_id_changed:grid_id_changed})) return
   if (grid_para_now.onenter && grid_para_now.onenter({x:xx,  y:yy,  grid_id_changed:grid_id_changed})) return
 
-  view_radius = this.view_radius
-  radius_sq = view_radius * view_radius
   d_options = this.RDG_options
   w = d_options.width
   h = d_options.height
@@ -1189,9 +1254,9 @@ return function (forced) {
   var m = this.map_grid_drawn
   var context = Cdungeon_map_canvas.getContext("2d")
 
-  var map_display_scale = this.map_display_scale
   Ldungeon_map_spot.style.posLeft = 8+ xx*map_display_scale + ~~(map_display_scale/4)
   Ldungeon_map_spot.style.posTop  = 8+ yy*map_display_scale + ~~(map_display_scale/4)
+
   Cdungeon_map_compass_canvas.style.posLeft = Ldungeon_map_spot.style.posLeft - 16 + (Ldungeon_map_spot.style.pixelWidth  - 1) * 0.5
   Cdungeon_map_compass_canvas.style.posTop  = Ldungeon_map_spot.style.posTop  - 16 + (Ldungeon_map_spot.style.pixelHeight - 1) * 0.5
 
@@ -1253,13 +1318,19 @@ return function (forced) {
       var ground_y = this.get_para(x,y,true).ground_y || 0
       var ground_y_visible = this.get_para(x,y,true).ground_y_visible || 0
       if ((y < 0) || (y >= h) || (x < 0) || (x >= w) || (is_visible_wall(x,y) && (x!=xx || y!=yy))) {
-        var _TRBL = []
         var has_visible_plane
+        var _TRBL = []
+        var _TRBL_grid_para = []
         TRBL.forEach(function (dir, idx) {
           var _x = x + dir.xy[0]
           var _y = y + dir.xy[1]
           if ((_y < 0) || (_y >= h) || (_x < 0) || (_x >= w) || (d[_y][_x]==1))//is_visible_wall(_x,_y))//
             return
+
+          var grid_para = _TRBL_grid_para[idx] = that.get_para(_x, _y)
+          if (grid_para.no_wall && (grid_para.no_wall.all || grid_para.no_wall[dir.id_opposite])) {
+            return
+          }
 
           _TRBL[idx] = has_visible_plane = true
         });
@@ -1275,7 +1346,7 @@ return function (forced) {
 //if (idx > 1) return
           var _x, _y
 
-          var grid_para = that.get_para(x + dir.xy[0], y + dir.xy[1])
+          var grid_para = _TRBL_grid_para[idx]
           var material_id = grid_para.wall_material_index
           if (material_id == null)
             material_id = that.wall_material_index_default
@@ -1470,6 +1541,8 @@ var _ground_y = ground_y_list[idx]
           return
 
         var _obj = obj_y_extended[idx] || obj_y_extended[0];
+        if (!_obj) return
+
         var obj = _obj.obj
         var obj_ground_y = _obj.ground_y
 
@@ -1595,6 +1668,10 @@ this._hidden = v;
 if (v) {
   MMD_SA_options.Dungeon.sound.detach_positional_audio(this._parent._obj);
 }
+  }
+
+ ,get useQuaternion() {
+return this._cache.list[0].useQuaternion;
   }
 
  ,visible: false
@@ -1935,6 +2012,19 @@ if (this.area_id) {
     if (ceil)
       ceil.visible = false
   }
+  // save current area data
+  for (var index in options._saved.object_by_index) {
+    var saved = options._saved.object_by_index[index]
+    var obj = this.object_list[index]
+    for (var p in saved) {
+      if (p == "position") {
+        saved.position.data = obj._obj.position.clone()
+      }
+      if (p == "rotation") {
+        saved.rotation.data = obj._obj[(obj._obj.useQuaternion)?"quaternion":"rotation"].clone()
+      }
+    }
+  }
 
 // refresh state
   if (refresh_state == 0) {
@@ -1949,7 +2039,7 @@ if (this.area_id) {
 // clear saved
     for (var id in MMD_SA_options.Dungeon_options.options_by_area_id) {
       var area_options = MMD_SA_options.Dungeon_options.options_by_area_id[id]
-      area_options._saved = {}
+      area_options._saved = new AreaDataSaved()
     }
   }
   else {
@@ -1993,13 +2083,6 @@ this.RDG_options = options.RDG_options || {
   maxRoomSize: 20
 };
 
-this.grid_size   = options.grid_size   || options_start.grid_size   || 64;
-this.view_radius = options.view_radius || options_start.view_radius || 8;
-
-this.ceil_height = options.ceil_height || this.grid_size;
-
-MMD_SA_options.trackball_camera_limit.max.length = this.grid_size * 3
-
 this.no_camera_collision = options.no_camera_collision
 this.camera_y_default_non_negative = (options.camera_y_default_non_negative !== false)
 
@@ -2018,6 +2101,21 @@ this.ceil_material_index_default  = (options.ceil_material_index_default != null
 this.floor_material_index_default = (options.floor_material_index_default != null) ? options.floor_material_index_default : 1;
 this.wall_material_index_default  = (options.wall_material_index_default != null)  ? options.wall_material_index_default  : 2;
 
+
+var d_options = this.RDG_options
+var grid_array = this.grid_array = (options._grid_array && options._grid_array.map(function (x) { return x.slice() })) || (this.RDG_options.grid_array && this.RDG_options.grid_array.map(function (x) { return x.slice() })) || this.RDG.NewDungeon(d_options);
+if (!options._grid_array)
+  options._grid_array = grid_array.map(function (x) { return x.slice() })
+//console.log(this.grid_array)
+
+
+this.grid_size   = options.grid_size   || options_start.grid_size   || 64;
+this.view_radius = options.view_radius || options_start.view_radius || 8;
+
+this.ceil_height = options.ceil_height || this.grid_size;
+
+MMD_SA_options.trackball_camera_limit.max.length = this.grid_size * 3
+
 this.grid_material_list.forEach(function (m, idx) {
   var x, y
   if (m.repeat_base) {
@@ -2027,7 +2125,6 @@ this.grid_material_list.forEach(function (m, idx) {
   else {
     x = y = 1
   }
-
 // save tons of headaches by using material.repeat hack
   m.lvl.forEach(function (m2) {
     var mtl = m2.list[0].material//jThree("#DungeonPlane" + idx + "MTL").three(0)//
@@ -2035,13 +2132,6 @@ this.grid_material_list.forEach(function (m, idx) {
     mtl.repeat = mtl.map.repeat.clone().set(x,y)
   });
 });
-
-
-var d_options = this.RDG_options
-var grid_array = this.grid_array = (options._grid_array && options._grid_array.map(function (x) { return x.slice() })) || (this.RDG_options.grid_array && this.RDG_options.grid_array.map(function (x) { return x.slice() })) || this.RDG.NewDungeon(d_options);
-if (!options._grid_array)
-  options._grid_array = grid_array.map(function (x) { return x.slice() })
-//console.log(this.grid_array)
 
 /*
 var DG = require("dungeon-generator")
@@ -2139,6 +2229,21 @@ for (var index in this.room_info) {
   room.height = (room.y_max - room.y_min) + 1
 }
 
+for (var id in this.para_by_grid_id) {
+  if (/^\d+$/.test(id)) {
+    let para = this.para_by_grid_id[id]
+    if (para.para_by_xy) {
+      let room = this.room_info[id]
+      para.para_by_xy.forEach(function (para_xy) {
+        let x = ~~(Math.min(para_xy.x, 0.9999) * room.width)  + room.x_min
+        let y = ~~(Math.min(para_xy.y, 0.9999) * room.height) + room.y_min
+        that.para_by_xy[x+"x"+y] = Object.assign(that.para_by_xy[x+"x"+y]||{}, para_xy.para)
+//console.log(x,y, para_xy, that.para_by_xy[x+"x"+y])
+      });
+    }
+  }
+}
+
 this.grid_by_index_free = []
 this.grid_by_index.forEach(function (g) {
   that.grid_by_index_free.push(g.slice())
@@ -2206,7 +2311,7 @@ if (options_base.skydome) {
   var dome_obj = MMD_SA_options.mesh_obj_by_id["DomeMESH"]
   if (options.skydome) {
     dome_obj._obj.visible = true
-    dome_obj.scale = (this.grid_size * (this.view_radius * 4)) / (64*4)
+    dome_obj.scale = MMD_SA._trackball_camera.object.far*0.5/(64*4)//(this.grid_size * (this.view_radius * 4)) / (64*4)
     if (!options.skydome.texture_setup)
       options.skydome.texture_setup = options_base.skydome.texture_setup
     options.skydome.texture_setup()
@@ -2286,9 +2391,14 @@ this.object_base_list.forEach(function (obj, idx) {
 var d = this
 
 var _object_list = this.object_list.map(function (obj) { return [obj] });
+if (MMD_SA_options.Dungeon_options.multiplayer) {
+  for (var i = 0, i_max = MMD_SA_options.Dungeon_options.multiplayer.OPC_list.length; i < i_max; i++) {
+    _object_list.push([{ object_id:"OPC-"+i }]);
+  }
+}
 _object_list.forEach(function (obj_list, i) {
   var obj = obj_list[0]
-  var obj_index = obj.object_index
+  var obj_index = obj.object_index = (obj.object_id) ? d.object_base_index_by_id[obj.object_id] : obj.object_index
   var obj_base  = d.object_base_list[obj_index]
 
   var placement = obj.placement || obj_base.placement || {}
@@ -2328,6 +2438,7 @@ _object_list.forEach(function (obj_list) {
 
 
 this.accessory_list = []
+this.object_id_translated = {}
 
 this.object_list.forEach(function (obj, idx) {
   obj._index = idx
@@ -2338,6 +2449,15 @@ this.object_list.forEach(function (obj, idx) {
     return
   }
 
+  var id = "object" + obj_index + "_" + obj_base.object_list.length
+  if (!obj.id && obj_base.id && (obj_base.object_list.length == 0))
+    obj.id = obj_base.id
+  if (obj.id) {
+    that.object_id_translated[obj.id] = id
+  }
+  else {
+    obj.id = id
+  }
   obj_base.object_list.push(obj)
 
   obj.path = obj_base.path
@@ -2345,6 +2465,8 @@ this.object_list.forEach(function (obj, idx) {
 
   if (obj._clone_index == null)
     obj._clone_index = -1
+
+  obj.is_OPC = obj_base.is_OPC
 
   var obj_mesh, obj_LOD_far_mesh
   obj_mesh = obj._obj = obj._mesh = obj._obj_proxy = new Object3D_proxy(obj, obj_base.cache)
@@ -2516,10 +2638,19 @@ return !occupied
   obj.collision_by_mesh_enforced = obj_base.collision_by_mesh_enforced
   obj.collision_by_mesh_face_grounded = obj_base.collision_by_mesh_face_grounded
   obj.collision_by_mesh_sort_range = obj_base.collision_by_mesh_sort_range
+  obj.collision_by_mesh_drop_limit = obj_base.collision_by_mesh_drop_limit
+  obj.collision_by_mesh_ground_limit = obj_base.collision_by_mesh_ground_limit
   if (obj.collision_by_mesh_sort_range) {
 //    obj.collision_by_mesh_sort_range /= placement.scale
     obj.mesh_sorted_list = {}
     obj.mesh_sorted = null//{ position:null, index_list:null }
+  }
+
+// this seems to fix a glitch when collision detection is done on the top-most point of the boundingBox, which may override mesh collision
+  if (obj.collision_by_mesh) {
+    if (!obj_base.cache.list[0].children[0].geometry._boundingBox)
+      obj_base.cache.list[0].children[0].geometry._boundingBox = obj_base.cache.list[0].children[0].geometry.boundingBox.clone()
+    obj_base.cache.list[0].children[0].geometry.boundingBox.max.y = obj_base.cache.list[0].children[0].geometry._boundingBox.max.y + 1
   }
 
   obj.oncreate = obj.oncreate || obj_base.oncreate
@@ -2545,16 +2676,27 @@ return !occupied
   }
 
   obj.user_data = obj.user_data || (obj_base.user_data && Object.clone(obj_base.user_data)) || {}
+
+  obj.data_to_save = obj.data_to_save || obj_base.data_to_save
+  if (obj.data_to_save) {
+    var saved = options._saved.object_by_index
+    saved = saved[idx] = saved[idx] || {}
+    for (var p in obj.data_to_save) {
+      if (!saved[p])
+        saved[p] = {}
+    }
+  }
 });
 
 //console.log(this.accessory_list)
 
-if (options._saved.object_by_index) {
-  for (var index in options._saved.object_by_index) {
-    var para = options._saved.object_by_index[index]
-    var obj = this.object_list[index]
-    if (para.position)
-      obj._obj.position.copy(para.position)
+for (var index in options._saved.object_by_index) {
+  var para = options._saved.object_by_index[index]
+  var obj = this.object_list[index]
+  if (para.position && para.position.data)
+    obj._obj.position.copy(para.position.data)
+  if (para.rotation && para.rotation.data) {
+    obj._obj[(obj._obj.useQuaternion)?"quaternion":"rotation"].copy(para.rotation.data)
   }
 }
 
@@ -2642,9 +2784,11 @@ this.update_dungeon_blocks()
 MMD_SA.reset_camera()
 //MMD_SA._trackball_camera.SA_adjust()
 
-if (!c.icon._drawn) {
-  c.icon._drawn = true
-
+if (MMD_SA_options.model_para_obj._icon_canvas) {
+  MMD_SA_options.Dungeon.character.icon.getContext("2d").drawImage(MMD_SA_options.model_para_obj._icon_canvas, 0,0)
+  MMD_SA_options.Dungeon.update_status_bar(true)
+}
+else {
   SL_Host.style.visibility = "hidden"
 
   let dir_light = jThree("#MMD_DirLight").three(0)
@@ -2739,6 +2883,10 @@ ctx.drawImage(SL, (SL.width-d_min)/2,(SL.height-d_min)/2,d_min,d_min, 0,0,canvas
 
     ctx.putImageData(dstData, 0, 0);
 })();
+
+MMD_SA_options.model_para_obj._icon_canvas = document.createElement("canvas")
+MMD_SA_options.model_para_obj._icon_canvas.width = MMD_SA_options.model_para_obj._icon_canvas.height = 64
+MMD_SA_options.model_para_obj._icon_canvas.getContext("2d").drawImage(canvas, 0,0)
 
 MMD_SA_options.Dungeon.update_status_bar(true)
 
@@ -2836,21 +2984,6 @@ SA_fullscreen_stretch_to_cover = true
 document.addEventListener("DOMContentLoaded", function(e) {
   document.body.style.backgroundColor = "black"
 
-  var c = MMD_SA_options.Dungeon.character.icon = document.createElement("canvas")
-  c.width = c.height = 64
-  if (0&& MMD_SA_options.model_para_obj.icon_path) {
-//System.Gadget.path + '\\icon_teto_512x512.png'
-    System._browser.load_file(MMD_SA_options.model_para_obj.icon_path, function (xhr) {
-      var icon = new Image()
-      icon.onload = function () {
-        c.getContext("2d").drawImage(icon, 0,0,64,64)
-        c._drawn = true
-        icon = undefined
-      };
-      icon.src = URL.createObjectURL(xhr.response)
-    });
-  }
-
   var d = MMD_SA_options.Dungeon
   for (var item_name in d.item_base) {
 console.log(item_name)
@@ -2876,6 +3009,27 @@ console.log(item_name)
   }
 });
 
+window.addEventListener("jThree_ready", function () {
+  var c = MMD_SA_options.Dungeon.character.icon = document.createElement("canvas")
+  c.width = c.height = 64
+
+  MMD_SA_options.model_para_obj_all.forEach(function (para_SA) {
+    if (!para_SA.icon_path)
+      return
+//System.Gadget.path + '\\icon_teto_512x512.png'
+
+    var icon_canvas = para_SA._icon_canvas = document.createElement("canvas")
+    icon_canvas.width = icon_canvas.height = 64
+    System._browser.load_file(para_SA.icon_path, function (xhr) {
+      var icon = new Image()
+      icon.onload = function () {
+        icon_canvas.getContext("2d").drawImage(icon, 0,0,64,64)
+        icon = undefined
+      };
+      icon.src = URL.createObjectURL(xhr.response)
+    });
+  });
+});
 
 // defaults for MMD_SA_options START
 if (!MMD_SA_options.GOML_head)
@@ -2925,6 +3079,14 @@ if (MMD_SA_options.ground_shadow_only == null)
 if (!MMD_SA_options.camera_param)
   MMD_SA_options.camera_param = "far:" + (128*16*8) + ";"
 // defaults for MMD_SA_options END
+
+
+if (!options.game_id)
+  options.game_id = Settings.f_path.replace(/^.+[\/\\]/, "")
+if (!options.game_version)
+  options.game_version = "1.0"
+if (!options.chapter_id)
+  options.chapter_id = "1"
 
 
 if (!options.sound)
@@ -3035,7 +3197,7 @@ return ((this.frame >= 27) ? 0 : (27 - this.frame)/27)
       }
     }
 
-   ,motion: {path:'MMD.js/motion/motion_rpg_pack01.zip#/hit/h01_何かにぶつかる小.vmd', match:{skin_jThree:{ test: function(name) { return !((name=='センター') || (name=='上半身') || (name=='下半身') || (name.indexOf("ＩＫ") != -1) || (/^(\u5DE6|\u53F3)(\u8DB3|\u3072\u3056)/.test(name))); } }, morph_jThree:true}}
+   ,motion: {path:'MMD.js/motion/motion_rpg_pack01.zip#/hit/h01_何かにぶつかる小.vmd', match:{skin_jThree:{ test: function(name) { return !((name=='センター') || (name=='上半身') || (name=='下半身') || (name.indexOf("ＩＫ") != -1) || (/^(\u5DE6|\u53F3)(\u8DB3|\u3072\u3056)/.test(name))); } }, morph_jThree:{test:function(name){ return (name!="瞳小") }} }}
 
    ,animation_check: MMD_SA.custom_action_default["cover_undies"].animation_check
   }
@@ -3272,13 +3434,14 @@ context.globalAlpha = 1
 context.clearRect(0,0,cw,ch)
 context.drawImage(img, 0,0,img.width,img.height, 0,0,cw,ch)
 
-if (!this.fog)
+var fog = this.fog
+if (!fog)
   return
 
-context.globalAlpha = this.fog.opacity || 1
-var fill_color = this.fog.color || (MMD_SA_options.Dungeon.fog && MMD_SA_options.Dungeon.fog.color) || "#000000"
+context.globalAlpha = fog.opacity || 1
+var fill_color = fog.color || (MMD_SA_options.Dungeon.fog && MMD_SA_options.Dungeon.fog.color) || "#000000"
 context.fillStyle = fill_color
-var h = Math.round(ch * (0.5 + (this.fog.height||0.025)))
+var h = Math.round(ch * (0.5 + (fog.height||0.025)))
 context.fillRect(0,(ch-h), cw,h)
 
 var h_gradient = Math.round(ch * 0.0125)
@@ -3629,6 +3792,18 @@ ds.position = "absolute"
 ds.zIndex = 2
 Ldungeon_map.appendChild(d)
 
+if (MMD_SA_options.Dungeon_options.multiplayer) {
+  for (var i = 1, i_max = MMD_SA_options.Dungeon_options.multiplayer.OPC_list.length; i <= i_max; i++) {
+    d = document.createElement("div")
+    ds = d.style
+    d.id = "Ldungeon_map_spot_OPC" + i
+    ds.position = "absolute"
+    ds.backgroundColor = "yellow"
+    ds.zIndex = 3
+    Ldungeon_map.appendChild(d)
+  }
+}
+
 d = document.createElement("div")
 ds = d.style
 d.id = "Ldungeon_map_spot"
@@ -3827,7 +4002,14 @@ var draw_dungeon_map = function (e) {
   ds.posLeft = B_content_width  - w - 8
   ds.posTop  = B_content_height - h - 8
 
-  Ldungeon_map_spot.style.pixelWidth = Ldungeon_map_spot.style.pixelHeight  = Math.min(scale/2, 2)
+  var spot_size = Math.min(scale/2, 2)
+  Ldungeon_map_spot.style.pixelWidth = Ldungeon_map_spot.style.pixelHeight = spot_size
+  if (MMD_SA_options.Dungeon_options.multiplayer) {
+    for (var i = 1, i_max = MMD_SA_options.Dungeon_options.multiplayer.OPC_list.length; i <= i_max; i++) {
+      ds = document.getElementById("Ldungeon_map_spot_OPC" + i).style
+      ds.pixelWidth = ds.pixelHeight = spot_size
+    }
+  }
 };
 
 MMD_SA_options.Dungeon.update_status_bar = (function () {
@@ -4199,6 +4381,7 @@ return function (_subject, mov_delta, skip_ground_obj_check, para) {
       use_bb_translate_offset = true
       bb_translate_offset.copy(para.bb_translate._default).sub(para.bb_translate)
     }
+//DEBUG_show([para.bb_translate.x,para.bb_translate.y,para.bb_translate.z].join("\n")+"\n\n"+ bb_translate_offset.toArray().join("\n")+"\n\n"+ Date.now())
   }
 
   var that = this
@@ -4212,8 +4395,9 @@ return function (_subject, mov_delta, skip_ground_obj_check, para) {
     bb_translate = _v3a.set(subject_bs.radius,subject_bs.radius,subject_bs.radius).multiply(para.bb_translate).applyQuaternion(subject.quaternion)
     bb_translate.add(subject.position)
   }
-  else
+  else {
     bb_translate = subject.position
+  }
 //var XYZ = bb_translate.clone()
 //var DEF = subject_bs.center.clone()
   subject_bs.center.add(bb_translate)
@@ -4375,7 +4559,7 @@ maxY: _v3.z+_collision_by_mesh_sort_range
 //    mesh_sorted.index_list = [0].concat(that.mesh_sorting_worker.tree[obj.object_index].nearest( [_v3.x,_v3.y,_v3.z,0,0], 1000, _collision_by_mesh_sort_range, THREE.TypedArrayUtils._result_func))
 //console.log(mesh_sorted.index_list)
 
-    console.log("Mesh sorted:" + obj._index + "," + mesh_sorted.index_list.length + "/" + (_collision_by_mesh_sort_range) + "-" + Math.round(performance.now()-_t) + "ms/" + Date.now())
+//    console.log("Mesh sorted:" + obj._index + "," + mesh_sorted.index_list.length + "/" + (_collision_by_mesh_sort_range) + "-" + Math.round(performance.now()-_t) + "ms/" + Date.now())
   }
 }
 else {
@@ -4626,6 +4810,10 @@ if (collision_by_mesh) {// && hit_moved_once) {
     if ((ground_y_current != null) && (ground_y_current > ground_y+(obj.collision_by_mesh_drop_limit||999))) {
       result.bb_static_collided = result.updated = false
     }
+// cancel drop if the ground is below certain limit
+    else if ((obj.collision_by_mesh_ground_limit != null) && (ground_y < obj.collision_by_mesh_ground_limit)) {
+      result.bb_static_collided = result.updated = false
+    }
 // ground_y+ fixes some possible glitches in ground level changes
     else if (!ground_obj || (ground_obj.bb_y_scale.mesh == null) || (ground_obj.bb_y_scale.mesh < ground_y+3)) {
 //if (ground_obj && ground_obj.bb_y_scale.mesh > ground_y) DEBUG_show(ground_y_current+'/'+ground_obj.bb_y_scale.mesh+'/'+ground_y+'/'+Date.now())
@@ -4713,11 +4901,17 @@ if (collision_by_mesh) {// && hit_moved_once) {
         break
       }
     }
-
+/*
+//DEBUG_show(Date.now());console.log(Date.now(),"x",mov.clone(),mov_pushed.clone(),ground_y,Object.clone(result)); 
+if ((mov.x>0 && mov_pushed.x<0) || (mov.x<0 && mov_pushed.x>0)) {mov.x=-mov.x*1;mov_pushed.x=0;}
+if ((mov.y>0 && mov_pushed.y<0) || (mov.y<0 && mov_pushed.y>0)) {mov.y=-mov.y*1;mov_pushed.y=0;}
+if ((mov.z>0 && mov_pushed.z<0) || (mov.z<0 && mov_pushed.z>0)) {mov.z=-mov.z*1;mov_pushed.z=0;}
+*/
 //blocked=true
     if (!blocked) {
-      if (mov_pushed.x || mov_pushed.y || mov_pushed.z)
+      if (mov_pushed.x || mov_pushed.y || mov_pushed.z) {
         mov.add(mov_pushed.negate().multiply(cache.scale))
+      }
       collision = true
       obj_hit = obj
       moved_final.copy(mov.applyQuaternion(cache.quaternion))
@@ -4735,6 +4929,7 @@ if (collision_by_mesh) {// && hit_moved_once) {
       collision = true
       obj_hit = obj
       moved_final.copy(obj._collided_.pos).sub(pos_in_obj).multiply(cache.scale)
+
       if (obj._collided_.ground_y != null)
         ground_obj = { obj:obj, bb_y_scale:{ mesh:obj._collided_.ground_y } }
     }
@@ -5136,23 +5331,23 @@ if (!cache.visible)
 
 var click_range = []
 obj.onclick.forEach(function (click) {
-  click_range.push((is_dblclick != !!click.is_dblclick) ? 0 : (click.click_range || click_range_default))
+  click_range.push((is_dblclick != !!click.is_dblclick) ? 0 : (click.click_range || click_range_default) + ((click.boundingSphere_included) ? obj._mesh.geometry.boundingSphere.radius*Math.max(cache.scale.x,cache.scale.y,cache.scale.z) : 0))
 });
 
 obj._click_index = -1
-var dis = PC_pos.distanceToSquared(_v3.copy(obj._mesh.geometry.boundingSphere.center).add(cache.position))
+var dis = PC_pos.distanceToSquared(_v3.copy(obj._mesh.geometry.boundingSphere.center).multiply(cache.scale).add(cache.position))
 for (var i = 0, i_max = click_range.length; i < i_max; i++) {
   if (dis <= click_range[i]*click_range[i]) {
     obj._click_index = i
     break
   }
 }
-
+//console.log(obj,dis,click_range)
 if (obj._click_index == -1)
   return
 
 obj_sorted.push(obj)
-obj._dis_from_PC_sqr = dis
+obj._dis_from_PC = dis
   });
 
   if (!obj_sorted.length) {
@@ -5160,7 +5355,7 @@ obj._dis_from_PC_sqr = dis
     return
   }
 
-  obj_sorted.sort(function (a,b) { return (a._sort_weight || b._sort_weight) ? (b._sort_weight||0)-(a._sort_weight||0): a._dis_from_PC_sqr - b._dis_from_PC_sqr; });
+  obj_sorted.sort(function (a,b) { return (a._sort_weight || b._sort_weight) ? (b._sort_weight||0)-(a._sort_weight||0): a._dis_from_PC - b._dis_from_PC; });
 
 // https://gamedev.stackexchange.com/questions/96459/fast-ray-sphere-collision-code
 // s: the start point of the ray
@@ -5525,8 +5720,8 @@ if (msg_branch_list) {
     var branch = msg_branch_list[i]
     if ((k == 96+branch.key) || (k == 48+branch.key)) {
       d._states.dialogue_branch_mode = null
-      if (branch.branch_index)
-        d.run_event(null, branch.branch_index, 0)
+      if ((branch.event_id != null) || (branch.branch_index != null))
+        d.run_event(branch.event_id, branch.branch_index, 0)
       else
         d.run_event()
       break
@@ -6854,7 +7049,8 @@ this.list.forEach(function (cache, idx) {
 
     var mesh
     if (obj.construction && !obj.path) {
-      obj._obj = (obj.character_index != null) ? MMD_SA_options.mesh_obj_by_id["mikuPmx"+obj.character_index] : MMD_SA_options.mesh_obj_by_id[obj.construction.mesh_obj.id]
+      obj._mesh_id = (obj.character_index != null) ? "mikuPmx"+obj.character_index : obj.construction.mesh_obj.id
+      obj._obj = MMD_SA_options.mesh_obj_by_id[obj._mesh_id]
       mesh = obj._obj._obj
 
       var geo_list = []
@@ -6898,7 +7094,8 @@ else {
         obj._obj = MMD_SA_options.x_object_by_name[obj.path.replace(/^.+[\/\\]/, "").replace(/\.x$/i, "")]
       }
       else {
-        obj._obj = MMD_SA_options.mesh_obj_by_id["mikuPmx"+obj.character_index]
+        obj._mesh_id = "mikuPmx"+obj.character_index
+        obj._obj = MMD_SA_options.mesh_obj_by_id[obj._mesh_id]
       }
       mesh = obj._obj._obj
     }
@@ -7078,6 +7275,16 @@ else {
  ,reset: _reset
     };
 
+// PC swap ready
+    if (obj.character_index != null) {
+Object.defineProperty(obj.cache.list, "0", {
+  get: function () {
+//console.log(Date.now())
+    return MMD_SA_options.mesh_obj_by_id[obj._mesh_id]._obj
+  }
+});
+    }
+
     if (obj.character_index != null) {
       THREE.MMD.getModels()[obj.character_index]._clone_cache = obj.cache
     }
@@ -7214,7 +7421,7 @@ return function (pos) {
   }
 
   for (var id in MMD_SA_options.Dungeon_options.options_by_area_id) {
-    MMD_SA_options.Dungeon_options.options_by_area_id[id]._saved = {}
+    MMD_SA_options.Dungeon_options.options_by_area_id[id]._saved = new AreaDataSaved()
   }
 
   d.restart()
@@ -7294,7 +7501,6 @@ mesh_obj.material.needsUpdate = true;
 });
 
 
-//this.GOML_dungeon_full()
 this.GOML_dungeon_blocks()
 
 this.object_base_list = options.object_base_list || []
@@ -7304,8 +7510,39 @@ if (MMD_SA_options.model_path_extra) {
   if (_model_path) {
     var index = MMD_SA_options.model_path_extra.indexOf(_model_path)
     if (index != -1)
-      MMD_SA_options.model_path_extra[index] = System.Gadget.path + "\\jThree\\model\\Appearance Miku\\Appearance Miku_BDEF_mod-v03.pmx"
+      MMD_SA_options.model_path_extra[index] = System.Gadget.path + "\\jThree\\model\\Appearance Miku\\Appearance Miku_BDEF_mod-v04.pmx"
   }
+}
+
+if (options.multiplayer) {
+  if (!MMD_SA_options.model_para)
+    MMD_SA_options.model_para = {}
+  if (!MMD_SA_options.model_path_extra)
+    MMD_SA_options.model_path_extra = []
+
+  let that = this
+  let OPC_index = options.multiplayer.OPC_index0 = 1 + MMD_SA_options.model_path_extra.length
+  options.multiplayer.OPC_list.forEach(function (opc, idx) {
+    MMD_SA_options.model_path_extra.push(opc.path)
+
+    var path = toLocalPath(opc.path)
+    var model_filename_raw = path.replace(/^.+[\/\\]/, "")
+    var para = MMD_SA_options.model_para[model_filename_raw] = opc.para || MMD_SA_options.model_para[model_filename_raw] || {}
+    para.is_PC_candidate = true
+    para.is_OPC = true
+
+    that.object_base_list.push({
+  character_index: OPC_index++
+ ,is_OPC: true
+ ,id: "OPC-" + idx
+ ,placement: {
+    grid_id: 2
+   ,can_overlap: true
+   ,hidden: true
+  }
+ ,no_collision: true
+    });
+  });
 }
 
 if (options.character) {
@@ -7413,6 +7650,7 @@ return [
 //   ,{ frame:34, sound:{} }
   ]
  ,playbackRate_by_model_index: {}
+ ,bb_translate: { limit:{ max:{x:0, y:0, z:0.75} } }
     }
   };
 }
@@ -7472,6 +7710,7 @@ if (loop_end) {
    ,{ frame:20, sound:{} }
   ]
  ,bone_to_position: [{ name:"センター", frame_range:[[0,16]], scale:{x:0,y:1,z:0}, position_disabled:true }]
+// ,bb_translate: { limit:{ min:{x:0, y:0, z:0.75} } }
     }
   };
 }
@@ -8843,8 +9082,7 @@ if (MMD_SA_options.model_path_extra) {
     }
 
     model_para.look_at_character = (model_para.look_at_character == -1) ? null : (model_para.look_at_character || 0)
-    if (!model_para.rigid_filter)
-      model_para.rigid_filter = /^DISABLED$/
+//    if (!model_para.rigid_filter) model_para.rigid_filter = /^DISABLED$/
   });
 }
 
@@ -9506,10 +9744,14 @@ this.PC_follower_list_default = this.PC_follower_list.slice()
 if (!MMD_SA_options.x_object)
   MMD_SA_options.x_object = []
 
+this.object_base_index_by_id = {}
 this.object_base_list.forEach(function (obj, idx) {
   if (obj.is_dummy) return
 
   obj.index = idx
+
+  if (obj.id)
+    MMD_SA_options.Dungeon.object_base_index_by_id[obj.id] = idx
 
   if (obj.character_index)
     return
@@ -10000,7 +10242,7 @@ else {
 }
 
 if (e.turn_to_character) {
-  var target_pos = (obj && obj._obj.position) || THREE.MMD.getModels()[e.turn_to_character].mesh.position
+  var target_pos = (obj && obj._obj.position && (typeof e.turn_to_character != "number")) || THREE.MMD.getModels()[e.turn_to_character].mesh.position
   c.rot.y = Math.PI/2 - Math.atan2((target_pos.z-c.pos.z), (target_pos.x-c.pos.x))
   c.about_turn = false
   THREE.MMD.getModels()[0].mesh.quaternion.setFromEuler(c.rot)
@@ -10009,7 +10251,7 @@ if (e.turn_to_character) {
 
 if (e.look_at_character) {
   MMD_SA._mouse_pos_3D = []
-  if (obj && obj.cache_index) {
+  if (obj && obj.cache_index && (typeof e.look_at_character != "number")) {
     MMD_SA_options.model_para_obj_all[0].look_at_target = (function () {
 var target = obj
 return function () {
@@ -10024,10 +10266,24 @@ return function () {
 }
 
 if (e.NPC_turns_to_you) {
-  var npc = (obj && obj._obj) || THREE.MMD.getModels()[e.NPC_turns_to_you].mesh
+  var npc = (obj && obj._obj && (typeof e.NPC_turns_to_you != "number")) || THREE.MMD.getModels()[e.NPC_turns_to_you].mesh
   this._event_active._NPC_turns_back = { npc:npc, quat:npc.quaternion.clone() }
   MMD_SA.TEMP_v3.set(0, Math.PI/2 - Math.atan2((c.pos.z-npc.position.z), (c.pos.x-npc.position.x)), 0)
   npc.quaternion.setFromEuler(MMD_SA.TEMP_v3)
+}
+
+if (e.swap_PC) {
+  if (typeof swap_PC == "number") {
+    c.swap_character({character_index:e.swap_PC})
+  }
+  else {
+    let id = this.object_id_translated[e.swap_PC] || e.swap_PC
+    if (/^object(\d+)_(\d+)$/.test(id)) {
+      c.swap_character(this.object_base_list[parseInt(RegExp.$1)].object_list[parseInt(RegExp.$2)])
+    }
+    else {
+    }
+  }
 }
 
 if (e.set_starting_position) {
@@ -10044,7 +10300,10 @@ if (e.set_starting_position) {
 
 if (e.follow_PC) {
   for (var id in e.follow_PC) {
+    var follower = e.follow_PC[id]
+
     var mesh, obj_base_index, obj_base
+    id = this.object_id_translated[id] || id
     if (/^object(\d+)_(\d+)$/.test(id)) {
       obj_base_index = parseInt(RegExp.$1)
       obj_base = this.object_base_list[obj_base_index]
@@ -10060,7 +10319,6 @@ if (e.follow_PC) {
     else {
     }
 
-    var follower = e.follow_PC[id]
     this.PC_follower_list.push({
   obj: {
     _obj: mesh
@@ -10074,6 +10332,7 @@ if (e.follow_PC) {
 if (e.unfollow_PC) {
   e.unfollow_PC.forEach(function (id) {
     var mesh
+    id = that.object_id_translated[id] || id
     if (/^object(\d+)_(\d+)$/.test(id)) {
       var obj_base_index = parseInt(RegExp.$1)
       var obj_base = that.object_base_list[obj_base_index]
@@ -10108,6 +10367,7 @@ if (objects) {
 
     var character_index
     var mesh, _obj
+    id = this.object_id_translated[id] || id
     if (id == "PC") {
       character_index = 0
       _obj = c
@@ -10128,8 +10388,8 @@ console.error("event error: invalid e.placement")
 continue
     }
 
+    var rot_mod, pos_center, center_mesh
     if (p) {
-      var rot_mod, pos_center
       if (p.position) {
         var pos = Object.assign(new THREE.Vector3(), p.position)
         if (pos.grid) {
@@ -10140,12 +10400,22 @@ continue
           pos.add(new THREE.Vector3((pos.grid.x+0.5) * this.grid_size, 0, (pos.grid.y+0.5) * this.grid_size).add(pos))
         }
         if (pos.center) {
-          if (pos.center.id == "PC")
-            pos_center = c.pos
-          else if (/^object(\d+)_(\d+)$/.test(pos.center.id))
-            pos_center = this.object_base_list[parseInt(RegExp.$1)].object_list[parseInt(RegExp.$2)]._obj.position
-          if (pos.center.offset)
-            pos_center = pos_center.clone().add(pos.center.offset)
+          let center_id = this.object_id_translated[pos.center.id] || pos.center.id
+          if (center_id == "PC")
+            center_mesh = THREE.MMD.getModels()[0].mesh
+          else if (/^object(\d+)_(\d+)$/.test(center_id))
+            center_mesh = this.object_base_list[parseInt(RegExp.$1)].object_list[parseInt(RegExp.$2)]._obj
+          if (pos.center.offset) {
+            let offset = MMD_SA.TEMP_v3.copy(pos.center.offset)
+            if (pos.center.offset_rotation) {
+              if (center_mesh.useQuaternion)
+                offset.applyQuaternion(center_mesh.quaternion)
+              else
+                offset.applyEuler(center_mesh.rotation)
+              offset.applyEuler(MMD_SA._v3b.copy(pos.center.offset_rotation).multiplyScalar(Math.PI/180))
+            }
+            pos_center = center_mesh.position.clone().add(offset)
+          }
         }
         if (pos_center)
           pos.add(pos_center)
@@ -10171,19 +10441,29 @@ continue
       }
       if (p.rotation) {
         var rot = MMD_SA.TEMP_v3.copy(p.rotation).multiplyScalar(Math.PI/180)
+        if (center_mesh) {
+          if (center_mesh.useQuaternion) {
+//            rot.add(MMD_SA._v3b.setEulerFromQuaternion(center_mesh.quaternion))
+          }
+          else
+            rot.add(center_mesh.rotation)
+        }
         if (rot_mod)
           rot.add(rot_mod)
         if (character_index == 0) {
           c.about_turn = false
           c.rot.copy(rot)
-          mesh.quaternion.copy(MMD_SA.TEMP_q.setFromEuler(rot))
+          mesh.quaternion.setFromEuler(rot)
         }
         else {
           if (mesh.useQuaternion)
-            mesh.quaternion.copy(MMD_SA.TEMP_q.setFromEuler(rot))
+            mesh.quaternion.setFromEuler(rot)
           else
             mesh.rotation.copy(rot)
         }
+// avoid some conversion issue from Quaternion to Euler
+if (mesh.useQuaternion && center_mesh && center_mesh.useQuaternion) mesh.quaternion.multiply(center_mesh.quaternion)
+//if (p.rotation.y==90) DEBUG_show(rot.y*180/Math.PI+'\n\n'+MMD_SA.TEMP_v3.setEulerFromQuaternion(mesh.quaternion).multiplyScalar(180/Math.PI).toArray().join("\n"))
       }
       var vis = (p.hidden) ? false : true;
       mesh.visible = vis;
@@ -10245,12 +10525,22 @@ if (e.motion) {
     if (index == 0) {
       if (!(motion instanceof Array))
         motion = [motion]
-      if (motion[0].name && this.motion[motion[0].name] && this.motion[motion[0].name].name) {
+      var motion_name0 = motion[0].name
+      var loop = motion[0].loop
+      if (motion_name0 && ((this.motion[motion_name0] && this.motion[motion_name0].name) || MMD_SA_options.motion_index_by_name[motion_name0])) {
+var motion_list = motion.map(function (m, idx) {
+  var motion_name = motion[idx].name
+  return MMD_SA_options.motion_index_by_name[(that.motion[motion_name] && that.motion[motion_name].name) || motion_name];
+});
+if (loop) {
+  MMD_SA_options.motion_shuffle_list_default = motion_list
+}
+else {
 //        MMD_SA_options.motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name[motion_id]]
 // use ._motion_shuffle_list instead, because we have multiple motions running in order, but .motion_shuffle_list_default can be shuffled.
-MMD_SA_options._motion_shuffle_list = motion.map(function (m, idx) { return MMD_SA_options.motion_index_by_name[that.motion[motion[idx].name].name]; });
-MMD_SA_options.motion_shuffle_list_default = null
-MMD_SA._force_motion_shuffle = true
+  MMD_SA_options._motion_shuffle_list = motion_list
+  MMD_SA_options.motion_shuffle_list_default = null
+}
       }
       else {
         MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice()
@@ -10298,7 +10588,13 @@ if (e.inventory) {
 }
 
 if (e.mount) {
-  if (!e.mount.target)
+  if (e.mount.target) {
+    let id = this.object_id_translated[e.mount.target] || e.mount.target
+    if (/^object(\d+)_(\d+)$/.test(id)) {
+      e.mount.target = this.object_base_list[parseInt(RegExp.$1)].object_list[parseInt(RegExp.$2)]
+    }
+  }
+  else
     e.mount.target = obj
   c.mount(e.mount)
 }
@@ -11123,6 +11419,659 @@ return sprite_obj_list.find(function (obj) { return obj.texture_obj && (obj.text
   })()
 
 
+ ,multiplayer: (function () {
+    var enabled;
+
+    var net = System._browser.P2P_network
+    var d_options = MMD_SA_options.Dungeon_options
+
+    var online_data_cache_default = { data:{ OPC:{} } };
+    var online_data_cache = Object.clone(online_data_cache_default);
+
+    var PC_data = {
+  game: {
+    chapter_id: ""
+   ,area_id: ""
+  }
+ ,motion: {
+    name: ""
+   ,changed: false
+   ,time: 0
+   ,playbackRate: 1
+  }
+ ,model: {
+    position: []
+   ,quaternion: []
+  }
+    };
+
+    var host_command_timestamp = 0;
+    var host_command_timerID;
+
+    var _init_func;
+    var peer_para_default = {
+  events: {
+    peer: {
+      open: function (peer) {
+ChatboxAT.smallMsg("(P2P network: Peer initialized successfully)")
+
+if (parent.System._browser.url_search_params.host_peer_id) {
+  MMD_SA_options.Dungeon.multiplayer.connect(parent.System._browser.url_search_params.host_peer_id, { onconnect:_init_func, onerror:_init_func })
+}
+else {
+  _init_func()
+}
+      }
+     ,error: function (peer, err) {
+ChatboxAT.smallMsg("(P2P network: Peer error / " + (err.type) + ")")
+      }
+    }
+   ,connection: {
+      handshake_request: function (peer, connection) {
+console.log("P2P_network: Remote Peer" + "(" + connection.peer + "/" + connection.label + "/host) responding handshake request from Peer-" + peer.index + "(" + peer.id + ")")
+ChatboxAT.smallMsg("(P2P network: Connecting to host...)")
+connection.send({ handshake:{ request:true, para:{ game_id:d_options.game_id, game_version:d_options.game_version, chapter_id:d_options.chapter_id } } })
+      }
+     ,handshake_respond: function (peer, connection, handshake) {
+var mp = MMD_SA_options.Dungeon.multiplayer
+if (handshake.request) {
+// accept or reject
+  var console_msg_rejected = "P2P_network: Remote Peer" + "(" + connection.peer + "/" + connection.label + "/host) rejected handshake request from Peer-" + peer.index + "(" + peer.id + ")"
+
+  if (!handshake.para || (d_options.game_id != handshake.para.game_id) || (d_options.game_version != handshake.para.game_version) || (d_options.chapter_id != handshake.para.chapter_id)) {
+    console.log(console_msg_rejected+'/'+"incompatible game", handshake.para)
+    connection.send({ handshake:{ rejected:true, para:{ msg:"incompatible game" } } })
+    connection.close(peer)
+    return
+  }
+
+  if (mp.is_client) {
+    console.log(console_msg_rejected+'/'+"not host", handshake.para)
+    connection.send({ handshake:{ rejected:true, para:{ msg:"not host" } } })
+    connection.close(peer)
+    return
+  }
+
+  var connection_count = peer.connections.length
+  var connection_max = d_options.multiplayer.OPC_list.length
+  if (connection_count > connection_max) {
+    console.log(console_msg_rejected+'/'+"host full", handshake.para)
+    connection.send({ handshake:{ rejected:true, para:{ msg:"host full" } } })
+    connection.close(peer)
+    return
+  }
+
+  mp.is_host = true
+
+  mp.online = true
+  connection.status = "connected"
+  console.log("P2P_network: Remote Peer" + "(" + connection.peer + "/" + connection.label + "/client)'s handshake request accepted from Peer-" + peer.index + "(" + peer.id + ")")
+
+  var OPC_index_used = {}
+  for (var id in peer.connections) {
+    var connection = peer.connections[id]
+    if (connection._para && connection._para.OPC_index)
+      OPC_index_used[connection._para.OPC_index] = true
+  }
+  var OPC_index
+  for (var i = 1; i < connection_max+1; i++) {
+    if (!OPC_index_used[i]) {
+      OPC_index = i
+      break
+    }
+  }
+
+  connection._para = { OPC_index:OPC_index }
+  var para = {
+    OPC_index:OPC_index
+  };
+  connection.send({ handshake:{ accepted:true, para:para } })
+
+//  ChatboxAT.smallMsg("(P2P network: Remote Peer" + "(" + (handshake.para.name || (connection.peer + "/" + connection.label)) + ") connected (" + (connection_count+1) + "/" + (connection_max+1) + ")")
+  var msg = "Player-" + (OPC_index+1) + " has joined the game (" + (connection_count+1) + "/" + (connection_max+1) + ")."
+  ChatboxAT.smallMsg(msg)
+  online_data_cache.data.msg_out = (online_data_cache.data.msg_out || []).concat(['<p class=Msg_Default>' + msg + '</p>'])
+}
+else if (handshake.accepted) {
+  mp.is_client = true
+
+  mp.online = true
+  connection.status = "connected"
+  console.log("P2P_network: Remote Peer" + "(" + connection.peer + "/" + connection.label + "/host) accepted handshake request from Peer-" + peer.index + "(" + peer.id + ")")
+// resolve() from Peer.connect's Promise
+  if (peer.para.events.connection.handshake_request_accecpted && peer.para.events.connection.handshake_request_accecpted[connection.label]) {
+    peer.para.events.connection.handshake_request_accecpted[connection.label]({peer, connection, handshake})
+    delete peer.para.events.connection.handshake_request_accecpted[connection.label]
+  }
+}
+else {
+  console.log("P2P_network: Remote Peer" + "(" + connection.peer + "/" + connection.label + "/host) rejected handshake request from Peer-" + peer.index + "(" + peer.id + ")")
+// reject() from Peer.connect's Promise
+  if (peer.para.events.connection.handshake_request_rejected && peer.para.events.connection.handshake_request_rejected[connection.label]) {
+    let return_value = peer.para.events.connection.handshake_request_rejected[connection.label]({peer, connection, handshake})
+    delete peer.para.events.connection.handshake_request_rejected[connection.label]
+    if (return_value)
+      return
+  }
+  connection.close(peer)
+}
+      }
+     ,data: function (peer, connection, data) {
+if (!data.data)
+  return
+
+if (data.data.msg) {
+  online_data_cache.data.msg = (online_data_cache.data.msg || []).concat(data.data.msg)
+}
+
+var OPC_data_all = data.data.OPC
+if (!OPC_data_all)
+  return
+
+var OPC_data_cache = online_data_cache.data.OPC
+
+var time = Date.now()
+Object.keys(OPC_data_all).forEach(function (index) {
+  var OPC_data = OPC_data_all[index]
+  var cache = OPC_data_cache[index]
+// ignore "dummy" data if cache exists
+  if (!OPC_data.game && cache)
+    delete OPC_data_all[index]
+  else {
+// motion.changed is reset if only it has been processed
+    if (OPC_data.motion && cache && cache.motion && cache.motion.changed)
+      OPC_data.motion.changed = true
+  }
+});
+Object.append(OPC_data_cache, OPC_data_all)
+      }
+     ,close: function (peer, connection) {
+var mp = MMD_SA_options.Dungeon.multiplayer
+if (connection._para) {
+  if (connection._para.OPC_index != null) {
+    var msg = "Player-" + (connection._para.OPC_index+1) + " has left the game."
+    ChatboxAT.smallMsg(msg)
+    online_data_cache.data.msg_out = (online_data_cache.data.msg_out || []).concat(['<p class=Msg_Default>' + msg + '</p>'])
+    delete online_data_cache.data.OPC[connection._para.OPC_index]
+  }
+}
+if (peer.connections.length <= 1) {
+// clear OPC
+  online_data_cache = Object.clone(online_data_cache_default)
+  mp.process_remote_online_data()
+
+  mp.online = false
+  mp.is_host = false
+  mp.is_client = false
+
+  console.log("(Game mode: OFFLINE)")
+  ChatboxAT.smallMsg("(Game mode: OFFLINE)")
+}
+      }
+    }
+   ,send_message: function (para) {
+/*
+return
+- "": send no message
+- null: send original message
+- custom: send customized message
+*/
+var mp = MMD_SA_options.Dungeon.multiplayer
+if (!para.command) {
+  if (para.id && para.pass)
+    return null
+
+  var name = para.name
+  if (!mp.online) {
+    name += "(offline)"
+  }
+  else {
+    name += "(PC-" + (mp.OPC_index[0]+1) + ")"
+  }
+
+  var msg = name + ": " + para.msg
+  if (!mp.online || mp.is_host)
+    ChatboxAT.ChatShow([msg])
+  if (mp.online)
+    online_data_cache.data.msg_out = (online_data_cache.data.msg_out || []).concat([msg])
+}
+else {
+  var peer = net.peer_default
+  switch (para.command) {
+    case "host":
+      if (mp.is_client) {
+        ChatboxAT.smallMsg("You cannot host a game in client mode.")
+        break
+      }
+
+      var time = Date.now()
+      if (time < host_command_timestamp + 30*1000) {
+        ChatboxAT.smallMsg("No repeated host command in " + Math.round(30 - (time - host_command_timestamp) / 1000) + " second(s)")
+        break
+      }
+      host_command_timestamp = time
+
+      mp.is_host = true
+
+      if (!para.para1) {
+        try {
+          setTimeout(function () {
+Fchat_msg.value = peer.id
+Fchat_msg.select()
+document.execCommand("copy")
+          }, 100);
+        }
+        catch (err) {}
+
+        if (host_command_timerID) clearInterval(host_command_timerID);
+        host_command_timerID = setInterval(function () {
+ChatboxAT.SendData_ChatSend([System._browser.P2P_network.process_message('/host auto')])
+        }, 60*1000);
+      }
+      else {
+// auto update
+      }
+
+//($game_id, $game_path, $connection_count, $connection_max)
+      var path_local = Settings.f_path
+      if (path_local.indexOf(System.Gadget.path) == 0)
+        path_local = path_local.substring(System.Gadget.path.length+1).replace(/\\/g, "/")
+      return "/host [" + peer.id + "] " + encodeURIComponent([d_options.game_id, path_local, peer.connections.length, d_options.multiplayer.OPC_list.length].join("|"))
+    case "connect":
+      if (!para.para1)
+        ChatboxAT.smallMsg("No host peer ID specified")
+      else
+        mp.connect(para.para1)
+      break
+    default:
+      return null
+  }
+}
+
+return ""
+    }
+  }
+    };
+
+    var v3a, q1
+
+    return {
+  online: false
+
+ ,get online_data_cache() { return online_data_cache; }
+
+ ,init: function (init_func) {
+if (!SA_project_JSON || !SA_project_JSON.P2P_network)
+  delete d_options.multiplayer
+
+var enabled = !!d_options.multiplayer
+if (!enabled) {
+  init_func()
+  return 
+}
+
+System._browser.on_animation_update.add(function () {
+  MMD_SA_options.Dungeon.multiplayer.process_remote_online_data()
+},0,0, -1);
+
+System._browser.on_animation_update.add(function () {
+  MMD_SA_options.Dungeon.multiplayer.update_online_data()
+},0,1, -1);
+
+// temp (not needed for child_animation_host)
+if (!self.Blob) self.Blob = System.Bb;
+
+for (var i = 0, i_max = d_options.multiplayer.OPC_list.length; i <= i_max; i++)
+  this.OPC_index[i] = i
+
+this.OPC_index.forEach(function (idx) {
+  var model_para = MMD_SA_options.model_para_obj_all[(idx == 0) ? 0 : idx-1 + d_options.multiplayer.OPC_index0]
+  model_para.OPC_index = idx
+  if (idx > 0) {
+    model_para.look_at_character = null
+    model_para.look_at_target = null
+    model_para.look_at_screen = false
+  }
+});
+
+//MMD_SA_options.look_at_screen = false
+//MMD_SA_options.look_at_mouse = false
+
+window.addEventListener("jThree_ready", function () {
+v3a = new THREE.Vector3()
+q1 = new THREE.Quaternion()
+
+// temp
+//MMD_SA_options.Dungeon.multiplayer.online = true
+//MMD_SA_options.Dungeon.multiplayer.arrange_OPC([1,0])
+});
+
+_init_func = init_func
+
+if (net.status != "off") {
+  init_func()
+  return
+}
+
+ChatboxAT.smallMsg("(P2P network: Initializing peer...)")
+new net.peer(peer_para_default)
+  }
+
+ ,connect: function (peer_id, para_connect={}) {
+if (!net.peer_default) {
+  ChatboxAT.smallMsg("(P2P network: Peer not initialized yet)")
+  return
+}
+if (net.peer_default.status == "connecting") {
+  ChatboxAT.smallMsg("(P2P network: Still connecting)")
+  return
+}
+if (this.is_host) {
+  ChatboxAT.smallMsg("You cannot join another game in host mode.")
+  return
+}
+if (net.peer_default.connections.length) {
+  ChatboxAT.smallMsg("You have joined a game already.")
+  return
+}
+
+var that = this
+net.peer_default.connect(peer_id).then(function (para) {
+// peer, connection, handshake
+  var peer = para.peer
+  var connection = para.connection
+  var handshake = para.handshake
+
+  var list = [handshake.para.OPC_index]
+  for (var i = 1, i_max = d_options.multiplayer.OPC_list.length; i <= i_max; i++) {
+    list.push((handshake.para.OPC_index == i) ? 0 : i)
+  }
+  that.arrange_OPC(list)
+//console.log(list)
+  ChatboxAT.smallMsg("(P2P network: Host connected / Player " + (handshake.para.OPC_index+1) + "/" + (d_options.multiplayer.OPC_list.length+1) + ")")
+
+  net.peer_default.status = "connected"
+  para_connect.onconnect && para_connect.onconnect(para)
+//}).catch(function () {
+}).catch(function (err) {
+  ChatboxAT.smallMsg("(P2P network: Remote connection failed, check console for details)")
+
+  net.peer_default.status = "connected"
+  para_connect.onerror && para_connect.onerror()
+});
+
+// to prevent simultaneous connection attempts
+net.peer_default.status = "connecting"
+  }
+
+ ,OPC_index: []
+ ,arrange_OPC: function (list) {
+var that = this
+
+var path_list = [MMD_SA_options.model_path].concat(MMD_SA_options.model_path_extra)
+var swapped_index = []
+list.forEach(function (OPC_index, idx) {
+  var c_index_OLD = (idx == 0) ? 0 : idx-1 + d_options.multiplayer.OPC_index0
+  if (swapped_index[c_index_OLD])
+    return
+  swapped_index[c_index_OLD] = true
+
+  var c_index_NEW = (OPC_index == 0) ? 0 : OPC_index-1 + d_options.multiplayer.OPC_index0
+  if (swapped_index[c_index_NEW])
+    return
+  swapped_index[c_index_NEW] = true
+
+  var model_para_obj_OLD = MMD_SA_options.model_para_obj_all[c_index_OLD]
+  var model_para_obj_NEW = MMD_SA_options.model_para_obj_all[c_index_NEW]
+  MMD_SA_options.model_para_obj_all[c_index_OLD] = model_para_obj_NEW
+  MMD_SA_options.model_para_obj_all[c_index_NEW] = model_para_obj_OLD
+  model_para_obj_OLD._model_index = c_index_NEW
+  model_para_obj_NEW._model_index = c_index_OLD
+  if (c_index_OLD == 0) {
+    MMD_SA_options.model_para_obj = model_para_obj_NEW
+    MMD_SA_options.model_para_obj.is_OPC = false
+    if (!MMD_SA_options.MME.PostProcessingEffects)
+      MMD_SA_options.MME.PostProcessingEffects = (model_para_obj_OLD.MME && model_para_obj_OLD.MME.PostProcessingEffects) || MMD_SA_options._MME.PostProcessingEffects
+    model_para_obj_OLD.is_OPC = true
+    model_para_obj_OLD.is_PC_candidate = true
+  }
+  else {
+    model_para_obj_NEW.is_OPC = true
+    model_para_obj_NEW.is_PC_candidate = true
+  }
+
+  var path_OLD = path_list[c_index_OLD]
+  var path_NEW = path_list[c_index_NEW]
+  path_list[c_index_OLD] = path_NEW
+  path_list[c_index_NEW] = path_OLD
+});
+
+list.forEach(function (OPC_index, idx) {
+  var model_para = MMD_SA_options.model_para_obj_all[(idx == 0) ? 0 : idx-1 + d_options.multiplayer.OPC_index0]
+  model_para.OPC_index = idx
+  model_para.look_at_screen = (idx == 0) ? null : false
+});
+
+var clone_list = {}
+path_list.forEach(function (path) {
+  var filename = path.replace(/^.+[\/\\]/, "").replace(/\.pmx$/i, "")
+  var clone_index = 0
+  if (/^(.+)\#clone(\d+)/.test(filename)) {
+    filename = RegExp.$1
+    clone_index = RegExp.$2
+  }
+  var path_obj = path_list[filename] = path_list[filename] || { clone_max:0 }
+  path_obj.clone_max = Math.max(clone_index, path_obj.clone_max)
+});
+path_list.forEach(function (path, idx) {
+  var filename = path.replace(/^.+[\/\\]/, "").replace(/\.pmx$/i, "")
+  var clone_index = 0
+  if (/^(.+)\#clone(\d+)/.test(filename)) {
+    filename = RegExp.$1
+    clone_index = RegExp.$2
+  }
+  var path_obj = path_list[filename]
+  if (path_obj.clone_max) {
+    if (!path_obj._index)
+      path = path.replace(/\#clone(\d+)/, "")
+    else
+      path = path.replace(/\#clone(\d+)/, "").replace(/\.pmx$/i, "") + "#clone" + path_obj._index + ".pmx"
+    path_obj._index = (path_obj._index||0) + 1
+  }
+  path_list[idx] = path
+});
+
+MMD_SA_options.model_path = path_list[0]
+MMD_SA_options.model_path_extra = path_list.slice(1)
+
+this.OPC_index = list
+  }
+
+ ,update_online_data: (function () {
+    var last_updated = 0
+
+    return function () {
+var d = MMD_SA_options.Dungeon
+if (!this.online)
+  return
+
+var time = Date.now()
+//30fps
+if (time - last_updated < 1000/30) return
+last_updated = time
+
+if (d.started) {
+  var mm = MMD_SA.MMD.motionManager
+  var model = THREE.MMD.getModels()[0]
+  var model_para = MMD_SA_options.model_para_obj
+  var mesh = model.mesh
+
+  PC_data.game.chapter_id = d.chapter_id
+  PC_data.game.area_id = d.area_id
+
+  PC_data.motion.changed = (PC_data.motion.name != mm.filename) || (mm.para_SA.BPM && (Math.abs(PC_data.motion.time - model.skin.time) > 1))// || ((model_para._playbackRate_OPC_ || 1) != PC_data.motion.playbackRate)
+  PC_data.motion.time = model.skin.time
+  PC_data.motion.name = mm.filename
+  PC_data.motion.playbackRate = model_para._playbackRate_OPC_ || 1
+
+  PC_data.model.position = mesh.position.toArray()
+  PC_data.model.quaternion = mesh.quaternion.toArray()
+}
+
+this.send_online_data()
+    };
+  })()
+
+ ,send_online_data: function () {
+var d = MMD_SA_options.Dungeon
+if (!this.online)
+  return
+
+// inline version of online_data_cache_default (faster)
+var online_data = { data:{ OPC:{} } };//Object.clone(online_data_cache_default)
+
+var need_update
+if (online_data_cache.data.msg_out) {
+  need_update = true
+  online_data.data.msg = online_data_cache.data.msg_out
+  delete online_data_cache.data.msg_out
+}
+
+if (d.started) {
+  need_update = true
+  online_data.data.OPC[this.OPC_index[0]] = PC_data;
+
+  var OPC_data_cache = online_data_cache.data.OPC
+  if (this.is_host) {
+    for (var index in OPC_data_cache) {
+      var OPC_data = OPC_data_cache[index]
+      online_data.data.OPC[index] = Object.assign({}, OPC_data)
+    }
+  }
+  for (var index in OPC_data_cache) {
+    var OPC_data = OPC_data_cache[index]
+// sent cache can be safely cleared after processed
+    OPC_data._sent = true
+  }
+}
+
+if (!need_update)
+  return
+
+for (var id in net.peer_default.connections) {
+  var c = net.peer_default.connections[id]
+  c.send(online_data)
+}
+
+// temp (simulate the event when online data is received from remote
+/*
+online_data.data.OPC[0] = online_data.data.OPC[1]
+delete online_data.data.OPC[1]
+System._browser.on_animation_update.add(function () {
+  MMD_SA_options.Dungeon.multiplayer.process_remote_online_data(online_data)
+},0,0);
+*/
+  }
+
+ ,process_remote_online_data: function (online_data) {
+var d = MMD_SA_options.Dungeon
+if (!this.online)
+  return
+
+var that = this
+
+if (!online_data)
+  online_data = online_data_cache
+
+if (online_data.data.msg) {
+  ChatboxAT.ChatShow(online_data.data.msg)
+  if (this.is_host)
+    online_data_cache.data.msg_out = (online_data_cache.data.msg_out || []).concat(online_data_cache.data.msg)
+  delete online_data.data.msg
+}
+
+var OPC_data_all = online_data.data.OPC
+this.OPC_index.forEach(function (OPC_index, idx) {
+// ignore index for PC
+  if (OPC_index == 0)
+    return
+  OPC_index--
+
+  var id, obj_base_index, obj_base, character_index, _obj
+  if (d.started) {
+    id = d.object_id_translated["OPC-"+OPC_index]
+    if (/^object(\d+)_(\d+)$/.test(id)) {
+      obj_base_index = parseInt(RegExp.$1)
+      obj_base = d.object_base_list[obj_base_index]
+      character_index = obj_base.character_index
+      _obj = obj_base.object_list[parseInt(RegExp.$2)]
+    }
+  }
+
+  var OPC_data = OPC_data_all[idx]
+// offline/unused OPC
+  if (!OPC_data) {
+    if (_obj) {
+      _obj._obj_proxy.hidden = true
+      _obj._obj_proxy.visible = false
+    }
+    return
+  }
+
+// no update
+  if (!OPC_data.game)
+    return
+
+// game not started yet
+  if (!_obj || !d.started)
+    return
+
+// not in the same chapter/area
+  if ((OPC_data.game.chapter_id != d.chapter_id) || (OPC_data.game.area_id != d.area_id)) {
+    _obj._obj_proxy.hidden = true
+    _obj._obj_proxy.visible = false
+    return
+  }
+
+// Set .visible to true if model is current hidden. Otherwise, let the game decide whether the model should be shown (by view distance, etc).
+  var reset_visible = _obj._obj_proxy.hidden
+  _obj._obj_proxy.hidden = false
+  if (reset_visible)
+    _obj._obj_proxy.visible = true
+
+  var npc_model = THREE.MMD.getModels()[character_index]
+// use _obj._obj because it works with ._obj_proxy
+  var mesh = _obj._obj//npc_model.mesh
+
+  if (OPC_data.motion) {
+    var npc_motion = MMD_SA.motion[npc_model.skin._motion_index]
+    var model_para = MMD_SA_options.model_para_obj_all[character_index]
+    if (OPC_data.motion.changed/* || (npc_motion.filename != OPC_data.motion.name)*/) {
+      var npc_motion_para = MMD_SA.motion[npc_model.skin._motion_index].para_SA
+      model_para._motion_name_next = OPC_data.motion.name
+      model_para._firstFrame_ = OPC_data.motion.time*30
+//DEBUG_show(Date.now())
+    }
+    model_para._playbackRate_OPC_ = OPC_data.motion.playbackRate
+  }
+
+  if (OPC_data.model) {
+    mesh.position.fromArray(OPC_data.model.position)
+// temp
+//mesh.position.x+=10
+    mesh.quaternion.fromArray(OPC_data.model.quaternion)
+//DEBUG_show(Date.now())
+  }
+
+// cache can be safely reset if it has been sent
+  if (OPC_data._sent)
+    OPC_data_all[idx] = {}
+});
+  }
+    };
+  })()
+
+
  ,blob_url: (function () {
     var cache = {}
 
@@ -11569,6 +12518,48 @@ return box;
 
       };
     })()
+
+   ,grid_array_by_object: function (RDG_options, para) {
+if (RDG_options._grid_array_by_object)
+  return RDG_options._grid_array_by_object
+
+var d = MMD_SA_options.Dungeon
+
+var obj_base = d.object_base_list[para.object_index]
+var mesh = obj_base._obj._obj
+var bb = (mesh.geometry || mesh.children[0].geometry).boundingBox
+var scale = para.scale || (obj_base.placement && obj_base.placement.scale) || 10
+
+var w = Math.max(Math.abs(bb.min.x), Math.abs(bb.max.x)) * scale * 2
+var h = Math.max(Math.abs(bb.min.z), Math.abs(bb.max.z)) * scale * 2
+
+var area_options = MMD_SA_options.Dungeon_options.options_by_area_id[d.area_id]
+var grid_size
+if (!area_options.grid_size) {
+  grid_size = Math.max(w,h) / 100
+  grid_size = area_options.grid_size = (grid_size <= 64) ? 64 : Math.pow(2, Math.ceil(Math.log2(grid_size)))
+}
+if (!area_options.view_radius)
+  area_options.view_radius = Math.max(Math.round(512/grid_size), 4)
+
+w = Math.ceil(w/grid_size)
+h = Math.ceil(h/grid_size)
+if (w % 2 == 0) w++
+if (h % 2 == 0) h++
+
+RDG_options.width  = w
+RDG_options.height = h
+
+var _grid_array = RDG_options._grid_array_by_object = []
+for (var y = 0, y_max = h+2; y <= y_max; y++) {
+  _grid_array[y] = []
+  for (var x = 0, x_max = w+2; x <= x_max; x++)
+    _grid_array[y][x] = (y==0 || y==y_max || x==0 || x==x_max) ? 1 : 0
+}
+_grid_array[~~(h/2)+1][~~(w/2)+1] = 2
+
+return _grid_array
+    }
 
   }
 };
