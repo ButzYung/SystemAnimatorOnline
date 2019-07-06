@@ -1,4 +1,4 @@
-﻿(Document version 1.3)
+﻿(Document version 1.5)
 
 Introduction:
 
@@ -26,67 +26,80 @@ Demo (via GitHub):
 
 Copyright/License/Credits:
 
-- System Animator © Butz Yung/Anime Theme
-  http://www.animetheme.com/sidebar/
-  - License (CC BY-NC-SA 4.0):
-    http://creativecommons.org/licenses/by-nc-sa/4.0/
-  - Disclaimer:
-    http://www.animetheme.com/system_animator_online/docs/disclaimer.txt
+- Core apps/libraries:
 
-- Electron
-  http://electron.atom.io/
+  - System Animator © Butz Yung/Anime Theme
+    http://www.animetheme.com/sidebar/
+    - License (CC BY-NC-SA 4.0) (*):
+      http://creativecommons.org/licenses/by-nc-sa/4.0/
+      (*) - System Animator's license does NOT cover any third-party assets which may have incompatible licenses of their own.
+    - Disclaimer:
+      http://www.animetheme.com/system_animator_online/docs/disclaimer.txt
 
-- three.js
-  https://threejs.org/
+  - Electron
+    http://electron.atom.io/
 
-- jThree v2 (the latest version is now known as "Grimoire.js")
-  https://github.com/GrimoireGL/GrimoireJS
+  - three.js
+    https://threejs.org/
 
-- JSZip (used under MIT license)
-  https://stuk.github.io/jszip/
+  - jThree v2 (NOTE: jThree has been discontinued. Its successor is known as "Grimoire.js")
+    https://github.com/GrimoireGL/GrimoireJS
 
-- Various 3D background effects ported and modified from codes found on "Shadertoy"
-  https://www.shadertoy.com/
+  - JSZip (used under MIT license)
+    https://stuk.github.io/jszip/
 
-- "Appearance Miku" 3D Model
-  - Readme/License:
-    http://www.animetheme.com/system_animator_online/jThree/model/Appearance%20Miku/Readme.txt
+  - PeerJS
+    https://peerjs.com/
 
-- ローポリ雑魚敵 by 黒胡椒 さん
-  http://www.nicovideo.jp/watch/sm11196123
+  - Various 3D background effects ported and modified from codes found on "Shadertoy"
+    https://www.shadertoy.com/
 
-- 気休めモーション配布 by モコキッカー さん
-  http://www.nicovideo.jp/watch/sm24249428
+- Other assests:
 
-- 格闘シーン簡易作成用モーション by spinach さん
-  http://www.nicovideo.jp/watch/sm29537433
+  - "Appearance Miku" 3D Model
+    - Readme/License:
+      http://www.animetheme.com/system_animator_online/jThree/model/Appearance%20Miku/Readme.txt
 
-- Some texture/image sources
-  https://3dtextures.me/
-  https://opengameart.org/content/rpg-inventory
-  https://opengameart.org/content/fantasy-icon-pack-by-ravenmore-0
-  https://opengameart.org/content/potion-bottles
+  - ローポリ雑魚敵 by 黒胡椒 さん
+    http://www.nicovideo.jp/watch/sm11196123
 
-- 3D skydome textures by Ryntaro Nukata/額田倫太郎:
-  http://www.geocities.jp/miew_miew_fc/MMD.htm 
+  - 気休めモーション配布 by モコキッカー さん
+    http://www.nicovideo.jp/watch/sm24249428
 
-- Simple Explosion by Bleed
-  https://remusprites.carbonmade.com/
-  https://opengameart.org/content/simple-explosion-bleeds-game-art
+  - 格闘シーン簡易作成用モーション by spinach さん
+    http://www.nicovideo.jp/watch/sm29537433
 
-- Cartoon_Punch_02.wav by RSilveira_88
-  https://freesound.org/people/RSilveira_88/sounds/216198/
+  - Some texture/image sources
+    https://3dtextures.me/
+    https://opengameart.org/content/rpg-inventory
+    https://opengameart.org/content/fantasy-icon-pack-by-ravenmore-0
+    https://opengameart.org/content/potion-bottles
+
+  - 3D skydome textures by Ryntaro Nukata/額田倫太郎
+    http://www.geocities.jp/miew_miew_fc/MMD.htm 
+
+  - Simple Explosion by Bleed
+    https://remusprites.carbonmade.com/
+    https://opengameart.org/content/simple-explosion-bleeds-game-art
+
+  - Cartoon_Punch_02.wav by RSilveira_88
+    https://freesound.org/people/RSilveira_88/sounds/216198/
 
 
-- もぐ式りょう/もぐ式りく by Mogg
-  https://3d.nicovideo.jp/works/td55798
-  https://3d.nicovideo.jp/works/td55973
+  - もぐ式りょう/りく/りょく/りん by Mogg
+    https://3d.nicovideo.jp/works/td55798
+    https://3d.nicovideo.jp/works/td55973
+    https://3d.nicovideo.jp/works/td56074
+    https://3d.nicovideo.jp/works/td56604
 
-- Dragon Ball Super I Ultra Instinct OST I Clash of Gods Remix I Hip Hop Instrumental I @AndrezoWorks
-  https://www.youtube.com/watch?v=KJ71dY4mkNo
+  - "Stranger Things" - A Remix ft. Michael Jobity
+    https://soundcloud.com/foreignmachine/stranger-remix
+
+  - Dragon Ball Super I Ultra Instinct OST I Clash of Gods Remix I Hip Hop Instrumental I @AndrezoWorks
+    https://www.youtube.com/watch?v=KJ71dY4mkNo
 
 
-- For some third-party programming libraries/3D data/assets used in System Animator, please refer to the corresponding script/readme for license and terms (can be found on the downloadable version of System Animator).
+- For some third-party programming libraries/3D data/assets used in System Animator, please refer to the corresponding script/readme for license and terms (can be found on the downloadable/Github version of System Animator).
 
 - Credits are given to the authors of any other image/media files used in System Animator.
 
