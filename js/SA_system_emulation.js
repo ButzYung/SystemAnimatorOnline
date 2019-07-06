@@ -44,7 +44,7 @@ var bounds
 return function (x,y, force_update) {
   if (force_update || (last_updated != RAF_timestamp)) {
     last_updated = RAF_timestamp
-    bounds = (webkit_electron_mode) ? webkit_electron_screen.getDisplayNearestPoint({x:~~x, y:~~y}).bounds : { x:0, y:0, width:screen.width, height:screen.height }
+    bounds = (webkit_electron_mode) ? webkit_electron_screen.getDisplayNearestPoint({x:~~x, y:~~y}).bounds : { x:0, y:0, width:parent.screen.width, height:parent.screen.height }
   }
   return bounds
 };
@@ -652,8 +652,8 @@ document.addEventListener("mousedown", function (e) {
 }, false)
 */
 
-// make mouseover and mouseout events work with older version of XULRunner
-if (!WallpaperEngine_CEF_mode || !is_SA_child_animation) {
+// make mouseover and mouseout events work with browser_native_mode(child animation) / older version of XULRunner
+if (!WallpaperEngine_CEF_mode || !is_SA_child_animation || browser_native_mode) {
   document.addEventListener("mouseover", function (e) {
     System._browser.onmouseover(e)
   }, false)
@@ -794,7 +794,7 @@ var s_left, s_top
 
 this.Opacity = (is_SA_child_animation) ? parent.document.getElementById("Ichild_animation" + SA_child_animation_id).style.opacity || 1 : parseFloat(System.Gadget.Settings.readString("Opacity") || 1)
 
-if (is_SA_child_animation && !WallpaperAsBG_custom) {
+if (is_SA_child_animation && !self.SA_wallpaper_src && !WallpaperAsBG_custom) {
   // "DisableWallpaperMask" is false by default
   WallpaperAsBG = (WallpaperAsBG && parent.WMP_wallpaper_mask && parent.use_HTML5 && !parent.System.Gadget.Settings.readString("CSSTransform3D") && !System.Gadget.Settings.readString("DisableWallpaperMask"))
 
@@ -826,8 +826,8 @@ if (w3c_mode && self.SA_wallpaper_src && /\.(mp4|mkv|webm)$/i.test(SA_wallpaper_
   var vs = v_bg.style
   vs.position = "absolute"
   vs.posTop = vs.posLeft = 0
-  vs.width  = screen.width  + "px"
-  vs.height = screen.height + "px"
+  vs.width  = parent.screen.width  + "px"
+  vs.height = parent.screen.height + "px"
   vs.objectFit = "cover"
   LdesktopBG.appendChild(v_bg)
 
@@ -843,8 +843,9 @@ var desktop_reg, wallpaper, wallpaper_style
 var ds = LdesktopBG.style
 
 try {
-  ds.pixelWidth  = screen.width
-  ds.pixelHeight = screen.height
+  ds.pixelWidth  = parent.screen.width
+  ds.pixelHeight = parent.screen.height
+
   var wcolor_reg = oShell.RegRead('HKCU\\Control Panel\\Colors\\Background')
   ds.backgroundColor = (/^\#/.test(wcolor_reg)) ? wcolor_reg : 'rgb(' + wcolor_reg.replace(/\W+/g, ",") + ')'
 
@@ -866,7 +867,7 @@ try {
 
   this.moveWallpaper((s_left||0), (s_top ||0))
 
-  if (!is_SA_child_animation)
+  if (!is_SA_child_animation || self.SA_wallpaper_src)
     LdesktopBG_host.style.display = "block"
 }
 catch (err) {
@@ -903,8 +904,8 @@ if (WallpaperAsBG && (wallpaper_mask || this.bg_mask)) {
 
   if (!is_SA_child_animation || WallpaperAsBG_custom) {
     try {
-      var w = c.width  = screen.width
-      var h = c.height = screen.height
+      var w = c.width  = parent.screen.width
+      var h = c.height = parent.screen.height
 
       var context = c.getContext("2d")
 
@@ -933,8 +934,8 @@ if (!this.wallpaper_canvas_update) {
       wallpaper_onload = function () {
 var w = this.width
 var h = this.height
-var sw = screen.width
-var sh = screen.height
+var sw = parent.screen.width
+var sh = parent.screen.height
 var x_source,y_source,w_source,h_source, x_target,y_target,w_target,h_target
 if (sw > w) {
   x_source = 0
@@ -982,8 +983,8 @@ mask_img.src = toFileProtocol(wallpaper_mask)
       wallpaper_onload = function () {
 var w = this.width
 var h = this.height
-var sw = screen.width
-var sh = screen.height
+var sw = parent.screen.width
+var sh = parent.screen.height
 var ratio, ww,hh, x,y
 var context = C_wallpaper_mask.getContext("2d")
 if (wallpaper_style == "6") {
@@ -1154,21 +1155,21 @@ else {
     ds.height = "100%"
   }
   else {
-    ds.pixelWidth  = screen.width
-    ds.pixelHeight = screen.height
+    ds.pixelWidth  = parent.screen.width
+    ds.pixelHeight = parent.screen.height
   }
 
   if (windows_mode && wallpaper) {
     var dim = loadImageDim((/^(\/|[\w\-]+\:)/.test(wallpaper)) ? wallpaper : System.Gadget.path + toLocalPath('\\') + wallpaper)
     if (dim.w) {
-      var desk_ar = screen.width/screen.height
-      var desk_ar_ext = (screen.width*2 -screen.availWidth)/(screen.height*2-screen.availHeight)
+      var desk_ar = parent.screen.width/parent.screen.height
+      var desk_ar_ext = (parent.screen.width*2 -parent.screen.availWidth)/(parent.screen.height*2-parent.screen.availHeight)
       var wall_ar = dim.w / dim.h
       if (wall_ar < desk_ar) {
-        ds.pixelHeight = (wall_ar < desk_ar_ext) ? screen.height*2-screen.availHeight : Math.round(screen.width /wall_ar)
+        ds.pixelHeight = (wall_ar < desk_ar_ext) ? parent.screen.height*2-parent.screen.availHeight : Math.round(parent.screen.width /wall_ar)
       }
       else if (wall_ar > desk_ar) {
-        ds.pixelWidth  = (wall_ar > desk_ar_ext) ? screen.width*2 -screen.availWidth  : Math.round(screen.height*wall_ar)
+        ds.pixelWidth  = (wall_ar > desk_ar_ext) ? parent.screen.width*2 -parent.screen.availWidth  : Math.round(parent.screen.height*wall_ar)
       }
     }
   }
@@ -1395,8 +1396,8 @@ if (no_wallpaper_mask) {
 else {
   var wallpaper = this.wallpaper_canvas = document.createElement("canvas")
   if (!is_SA_child_animation) {
-    wallpaper.width  = screen.width
-    wallpaper.height = screen.height
+    wallpaper.width  = parent.screen.width
+    wallpaper.height = parent.screen.height
     wallpaper.getContext("2d").drawImage(C_wallpaper_mask, 0,0)
   }
 }
@@ -1456,10 +1457,10 @@ if (!document.getElementById("C_BG_mask"))
 var cw, ch, w ,h
 cw = w = (self.B_content_width)  ? B_content_width  : document.body.style.pixelWidth
 ch = h = (self.B_content_height) ? B_content_height : document.body.style.pixelHeight
-if (w > screen.width)
-  w = screen.width
-if (h > screen.height)
-  h = screen.height
+if (w > parent.screen.width)
+  w = parent.screen.width
+if (h > parent.screen.height)
+  h = parent.screen.height
 
 var x_source,y_source, x_target,y_target
 var cs = C_wallpaper_mask.style
@@ -1621,6 +1622,10 @@ if (this.is_dragging) {
 
   System.Gadget.Settings._writeSettings(true, true)
 }
+else if (is_SA_child_animation && parent.System._browser.is_dragging) {
+  parent.System._browser.is_dragging = false
+  this.showFocus(false)
+}
 
 if (ignore_wallpaper_mask)
   return
@@ -1676,7 +1681,7 @@ if (focused) {
       ey = event.screenY
     }
   }
-  if (!is_SA_child_animation || !parent.returnBoolean("ChildDragDisabled"))
+  if (!is_SA_child_animation || !parent.returnBoolean("ChildDragDisabled") ||true)
     this.drag_timerID = setTimeout('System._browser.onmousedown_dragStart(' + ex + ',' + ey + ')', 200)
 }
 else
@@ -1732,6 +1737,15 @@ this.drag_timerID = null;
 
 if (WallpaperEngine_mode)// && !is_SA_child_animation)
   return
+
+if (is_SA_child_animation && is_SA_child_animation_host) {
+  parent.System._browser.is_dragging = true;
+  parent.System._browser.drag_mouse_x = x;
+  parent.System._browser.drag_mouse_y = y;
+  DEBUG_show("drag start", 1)
+  this.showFocus(true)
+  return
+}
 
 if (!this._drag_disabled && (!is_SA_child_animation || !parent.System._browser._child_drag_disabled)) {
   this.is_dragging = true;
@@ -1796,14 +1810,19 @@ if (!enforced || xul_mode/* || WallpaperEngine_mode*/) {
 }
 
 if (is_SA_child_animation) {
-  parent.System.Gadget.Settings._settings_need_update = true
-  parent.SA_child_animation[SA_child_animation_id] = null
+  if (is_SA_child_animation_host) {
+    parent.System._browser.confirmClose(enforced)
+  }
+  else {
+    parent.System.Gadget.Settings._settings_need_update = true
+    parent.SA_child_animation[SA_child_animation_id] = null
 
-  var d = parent.document.getElementById("Ichild_animation" + SA_child_animation_id)
-  d.style.pixelWidth = d.style.pixelHeight = 0
-  d.style.visibility = "hidden"
+    var d = parent.document.getElementById("Ichild_animation" + SA_child_animation_id)
+    d.style.pixelWidth = d.style.pixelHeight = 0
+    d.style.visibility = "hidden"
 
-  d.contentWindow.location.replace("z_blank.html")
+    d.contentWindow.location.replace("z_blank.html")
+  }
 }
 else {
   if (WallpaperEngine_CEF_mode && !W8_or_above) {
@@ -1973,7 +1992,7 @@ else if (have_child && (k == 96)) {
   p.System._browser._child_selected = null
   return true
 }
-else if (have_child && ((k >= 97) && (k < 97+SA_child_animation_max))) {
+else if (have_child && ((k >= 97) && (k < 97+SA_child_animation_max)) && !is_SA_child_animation_host) {
 // num pad 1-9 (SA_child_animation_max)
   var id = k - 97
 
@@ -2061,8 +2080,12 @@ if (WallpaperEngine_mode || browser_native_mode) {
 if (this.onmousemove_custom && this.onmousemove_custom(event))
   return
 
-if (!this.is_dragging)
+if (!this.is_dragging) {
+  if (is_SA_child_animation && parent.System._browser.is_dragging) {
+    parent.System._browser.onmousemove(event)
+  }
   return
+}
 
 if (!WallpaperEngine_mode) {
   if (absolute_screen_mode) {
@@ -2146,8 +2169,8 @@ if (is_SA_child_animation || (document.getElementById("LdesktopBG") && (Ldesktop
       if (y == null)
         y = SA_top_window.screenTop
 
-      x = -(x % screen.width)
-      y = -(y % screen.height)
+      x = -(x % parent.screen.width)
+      y = -(y % parent.screen.height)
     }
   }
 
@@ -2157,7 +2180,7 @@ if (is_SA_child_animation || (document.getElementById("LdesktopBG") && (Ldesktop
     y -= ani.y
   }
   else {
-    var ds = LdesktopBG.style
+    var ds = ((is_SA_child_animation_host && Ichild_animation0.contentWindow.document.getElementById("LdesktopBG")) || LdesktopBG).style
     ds.posLeft = x
     ds.posTop  = y
   }
@@ -2341,10 +2364,11 @@ else {
 
    ,on_animation_update: (function () {
 var events = [[], []];
+var count = 0
 
 return {
-  add: function (func, frame_delay, phase) {
-    events[phase].push({ func:func, frame_count:frame_delay+phase })
+  add: function (func, frame_delay, phase, loop) {
+    events[phase].push({ func:func, frame_count:frame_delay+phase, loop:loop, index:count++ })
   }
 
  ,run: function (phase) {
@@ -2356,13 +2380,240 @@ return {
     ep.forEach(function (e, idx) {
       if (--e.frame_count >= 0)
         e_index_list.push(idx)
-      else
+      else {
+        if (e.loop && (--e.loop != 0))
+          e_index_list.push(idx)
         e.func()
+      }
     });
 
     events[phase] = e_index_list.map(function (index) { return ep[index]; });
   }
 };
+    })()
+
+   ,P2P_network: (function () {
+var lib, peer_default;
+var peer_count = 0;
+
+var peer_para_default = {
+  events: {
+    peer: {
+    }
+   ,connection: {
+      handshake_request: function (peer, connection) {
+        console.log("P2P_network: Remote Peer" + "(" + connection.peer + "/" + connection.label + "/host) responding handshake request from Peer-" + peer.index + "(" + peer.id + ")")
+        connection.send({ handshake:{ request:true } })
+      }
+     ,handshake_respond: function (peer, connection, handshake) {
+        if (handshake.request) {
+// accept or reject
+          connection.status = "connected"
+          console.log("P2P_network: Remote Peer" + "(" + connection.peer + "/" + connection.label + "/client)'s handshake request accepted from Peer-" + peer.index + "(" + peer.id + ")")
+          connection.send({ handshake:{ accepted:true } })
+        }
+        else if (handshake.accepted) {
+          connection.status = "connected"
+          console.log("P2P_network: Remote Peer" + "(" + connection.peer + "/" + connection.label + "/host) accepted handshake request from Peer-" + peer.index + "(" + peer.id + ")")
+// resolve() from Peer.connect's Promise
+          if (peer.para.events.connection.handshake_request_accecpted && peer.para.events.connection.handshake_request_accecpted[connection.label]) {
+            peer.para.events.connection.handshake_request_accecpted[connection.label]({peer, connection, handshake})
+            delete peer.para.events.connection.handshake_request_accecpted[connection.label]
+          }
+        }
+        else {
+          console.log("P2P_network: Remote Peer" + "(" + connection.peer + "/" + connection.label + "/host) rejected handshake request from Peer-" + peer.index + "(" + peer.id + ")")
+// reject() from Peer.connect's Promise
+          if (peer.para.events.connection.handshake_request_rejected && peer.para.events.connection.handshake_request_rejected[connection.label]) {
+            peer.para.events.connection.handshake_request_rejected[connection.label]({peer, connection, handshake})
+            delete peer.para.events.connection.handshake_request_rejected[connection.label]
+          }
+        }
+      }
+     ,data: function (peer, connection, data) {
+      }
+    }
+   ,send_message: function (para) {
+      if (!para.command)
+        net.content_window.ChatboxAT.ChatShow([para.name + ": " + para.msg])
+      return null
+    }
+  }
+};
+
+function P2P_Connection(peer, connection) {
+  this._connection = connection
+  this.status = "connecting"
+
+  peer.connections[connection.label] = this
+
+  var that = this
+  connection.on("data", function (data) {
+//console.log(data)
+    if (data.handshake) {
+      peer.para.events.connection.handshake_respond(peer, that, data.handshake)
+    }
+    else {
+      peer.para.events.connection.data(peer, that, data)
+    }
+  });
+  connection.on("close", function (data) {
+    console.log("P2P_network: DataConnection" + "(" + connection.peer + "/" + connection.label + "/host) closed")
+    that.close(peer)
+  });
+}
+
+P2P_Connection.prototype.send = function (data) {
+  this._connection.send(data)
+};
+
+P2P_Connection.prototype.close = function (peer) {
+  if (!peer.connections[this.label])
+    return
+  if (peer.para.events.connection.close && peer.para.events.connection.close(peer, this))
+    return
+
+  delete peer.connections[this.label]
+
+  var that = this
+  setTimeout(function () {
+    that._connection.close()
+    that._connection = null
+  }, 1000);
+};
+
+Object.defineProperty(P2P_Connection.prototype, "peer", {
+  get: function () {
+    return this._connection.peer
+  }
+});
+
+Object.defineProperty(P2P_Connection.prototype, "label", {
+  get: function () {
+    return this._connection.label
+  }
+});
+
+function P2P_Peer_connections() {}
+
+Object.defineProperty(P2P_Peer_connections.prototype, "length", {
+// enumerable should be false by default
+  get: function () {
+    return Object.keys(this).length
+  }
+});
+
+
+function P2P_Peer(para=Object.clone(peer_para_default)) {
+  this.para = para
+  this.id = null
+
+  var _peer = this._peer = new Peer()
+  this.index = peer_count
+
+  this.connections = new P2P_Peer_connections()
+
+  this.status = "connecting"
+
+  var that = this
+  _peer.on("open", function (id) {
+    peer_count++
+    if (!peer_default)
+      peer_default = that
+    that.id = id
+    that.status = "connected"
+    console.log("P2P_network: Peer-" + that.index + "(" + id + ") connected")
+    that.para.events.peer.open && that.para.events.peer.open(that)
+  });
+  _peer.on("error", function (err) {
+    console.log("P2P_network: Peer-" + that.index + " error", err)
+    that.para.events.peer.error && that.para.events.peer.error(that, err)
+  });
+  _peer.on("connection", function (connection) {
+    console.log("P2P_network: Remote Peer" + "(" + connection.peer + "/" + connection.label + "/client) connecting to Peer-" + that.index + "(" + that.id + ")")
+    var connection_obj = new P2P_Connection(that, connection)
+    para.events.peer.connection && para.events.peer.connection(that, connection_obj)
+  });
+}
+
+P2P_Peer.prototype.connect = function (id, options) {
+  var that = this
+  return new Promise(function (resolve, reject) {
+    var on_peer_connect = function () {
+// serialization:"json" required to have cross-frame support
+      var connect_options = { serialization:"json" }
+      var connection = that._peer.connect(id, connect_options)
+
+      connection.on("open", function () {
+        console.log("P2P_network: Remote Peer" + "(" + connection.peer + "/" + connection.label + "/host) connecting to Peer-" + that.index + "(" + that.id + ")")
+        var connection_obj = new P2P_Connection(that, connection)
+        that.para.events.connection.handshake_request(that, connection_obj)
+
+        that.para.events.connection.handshake_request_accecpted = that.para.events.connection.handshake_request_accecpted || {}
+        that.para.events.connection.handshake_request_rejected  = that.para.events.connection.handshake_request_rejected  || {}
+// NOTE: resolve/reject can only take 1 parameter
+        that.para.events.connection.handshake_request_accecpted[connection.label] = resolve;
+        that.para.events.connection.handshake_request_rejected[connection.label]  = reject;
+      });
+      connection.on("error", function (err) {
+        console.log("P2P_network: Remote connection failed", err)
+        reject(err)
+      });
+    };
+    switch (that.status) {
+      case "connected":
+        on_peer_connect()
+        break
+      default:
+        setTimeout(function () { reject(that); }, 0)
+    }
+  });
+};
+
+var net = {
+  peer: P2P_Peer
+ ,get peer_default() { return peer_default; }
+
+ ,status: "off"
+
+ ,get content_window() {
+return (is_SA_child_animation_host) ? document.getElementById("Ichild_animation0").contentWindow : self
+  }
+
+ ,process_message: function (msg) {
+var peer = this.peer_default
+if (!peer)
+  return msg
+
+var id = this.content_window.document.getElementById("Flogin").id.value
+var pass = this.content_window.document.getElementById("Flogin").pass.value
+var options = this.content_window.MMD_SA_options
+var name = (id || (options && options.model_para_obj.character && options.model_para_obj.character.name) || "Anonymous").substring(0, 16)
+
+var online = peer && peer.connections.length
+var return_value
+if (!/^\//.test(msg)) {
+  return_value = peer.para.events.send_message({ name:name, msg:msg, id:id, pass:pass })
+}
+else {
+  var command, para1, para2
+  var obj = this.content_window.ChatboxAT.checkChatCommand(msg)
+  command = obj.command
+  para1 = obj.para1
+  para2 = obj.para2
+
+  return_value = peer.para.events.send_message({ name:name, msg:msg, command:command, para1:para1, para2:para2, id:id, pass:pass })
+}
+
+this.content_window.document.getElementById("Fchat").msg.value = ""
+
+if (return_value != null)
+  return return_value
+return msg
+  }
+};
+
+return net;
     })()
 
   }
