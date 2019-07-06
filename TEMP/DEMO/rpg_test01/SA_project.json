@@ -1,0 +1,23 @@
+{
+
+  "folder_list": ["animate.js"]
+
+ ,"config_default": {
+    "DisableTransparency": "non_default"
+   ,"MMDShadow": "0.5"
+  }
+
+ ,"P2P_network": {
+    "chatbox_channel": 1
+  }
+
+ ,"child_animation_host": {
+    "width":  1280
+   ,"height": 720
+  }
+ ,"config_excluded": {
+    "ChildAnimation0": true
+   ,"CSSTransformScale": true
+  }
+
+}
