@@ -3,7 +3,8 @@ var MMD_SA_options = {
 //  model_path: System.Gadget.path + '\\TEMP\\DEMO\\models\\chung.min.zip#\\_chung_v012_CLEANED-v03.pmx'
 //  model_path: System.Gadget.path + "/TEMP/DEMO/models/miss_foo.zip#/_MissFoo_v09b_for_SA-CLEANED_v01.pmx"
 //  model_path: System.Gadget.path + '\\TEMP\\DEMO\\models\\Appearance Miku.min.zip#\\Appearance Miku_BDEF_mod-v05.pmx'
-  model_path: System.Gadget.path + '/TEMP/DEMO/models/Ryou.aes.zip#/Ryou.pmx'
+  model_path: 'F:\\MMD\\models - custom\\tda_miku_and_luka_bases_ver3_00\\Luka\\_Sisina_v08_CLEANED.pmx'
+//  model_path: System.Gadget.path + '/TEMP/DEMO/models/Ryou.aes.zip#/Ryou.pmx'
 
  ,model_path_extra: [
 
