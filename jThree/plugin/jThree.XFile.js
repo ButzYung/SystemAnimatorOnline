@@ -294,7 +294,8 @@ this.mtr.ambient.setStyle(material_para.ambient || "#FFF")
 
 			this.mtrs.materials.push( this.mtr );
 		} else if ( this.n === 2 ) {
-			this.mtr.shininess = + row[ 0 ];
+// AT: shininess should never be 0 for MMD
+			this.mtr.shininess = (+ row[ 0 ]) || 5;
 		} else if ( this.n === 3 ) {
 //this.mtr.specular.setStyle("rgb(100%,100%,100%)")
 			this.mtr.specular.setStyle( this.toRgb( row[ 0 ], row[ 1 ], row[ 2 ] ) );
@@ -368,6 +369,10 @@ console.log(row_utf8)
 // AT: material_para
 var material_para = this.material_para[this.mtrs.materials.length-1] || this.material_para._default_ || {}
 
+// AT: custom txrPath / row(texture)
+var _txrPath = toFileProtocol(material_para.txrPath || this.txrPath)
+row = material_para.row || row
+//console.log(_txrPath,row)
 // AT: revert base color
 if (this.mtr.base_color) {
   this.mtr.color.setArray(this.mtr.base_color.split(",").map(function (c) { return parseFloat(c) * 255; }))
@@ -384,8 +389,8 @@ this.transparency_check(material_para, row)
 
 // AT: check if file exists
 if (self.MMD_SA) {
-  if (!FSO_OBJ.FileExists(toLocalPath(this.txrPath + row))) {
-    console.error("Texture file not found (" + toLocalPath(this.txrPath + row) + ")")
+  if (!FSO_OBJ.FileExists(toLocalPath(_txrPath + row))) {
+    console.error("Texture file not found (" + toLocalPath(_txrPath + row) + ")")
     return
   }
 }
@@ -413,17 +418,17 @@ if (self.MMD_SA && MMD_SA_options.child_animation_as_texture && MMD_SA_options.c
 
 // AT: normal map, specular map, etc
 if (self.MMD_SA) {
-  var is_zip = /\.zip\#/i.test(toLocalPath(this.txrPath))
+  var is_zip = /\.zip\#/i.test(toLocalPath(_txrPath))
 
   var row_normalMap = row.replace(/\.(png|jpg|bmp|jpeg|tga)$/i, "_normal." + ((material_para.use_normal_jpg)?"jpg":"png"))
-  var normalMap = this.txrPath + row_normalMap
+  var normalMap = _txrPath + row_normalMap
   if (material_para.use_normal || ((browser_native_mode || is_zip) ? material_para.use_normal : FSO_OBJ.FileExists(toLocalPath(normalMap)))) {
 		if ( this.txrs[ row_normalMap ] ) {
 			this.mtr.normalMap = this.txrs[ row_normalMap ];
 			return;
 		}
 		this.txrLength++;
-		this.mtr.normalMap = this.txrs[ row_normalMap ] = THREE.ImageUtils.loadTexture( this.txrPath + row_normalMap, undefined, function() {
+		this.mtr.normalMap = this.txrs[ row_normalMap ] = THREE.ImageUtils.loadTexture( _txrPath + row_normalMap, undefined, function() {
 			if ( --that.txrLength ) return;
 			that.onload( new THREE.Mesh( that.gmt, that.mtrs ) );
 			that = null;
@@ -438,18 +443,18 @@ console.log("Normal map", row_normalMap)
   }
 
   var row_specularMap = row.replace(/\.(png|jpg|bmp|jpeg|tga)$/i, "_specular." + ((material_para.use_specular_jpg)?"jpg":"png"))
-  var specularMap = this.txrPath + row_specularMap
+  var specularMap = _txrPath + row_specularMap
   if (material_para.use_specular || ((browser_native_mode || is_zip) ? material_para.use_specular : FSO_OBJ.FileExists(toLocalPath(specularMap)))) {
 		if ( this.txrs[ row_specularMap ] ) {
 			this.mtr.specularMap = this.txrs[ row_specularMap ];
 			return;
 		}
 		this.txrLength++;
-		this.mtr.specularMap = this.txrs[ row_specularMap ] = THREE.ImageUtils.loadTexture( this.txrPath + row_specularMap, undefined, function(tex_specular) {
+		this.mtr.specularMap = this.txrs[ row_specularMap ] = THREE.ImageUtils.loadTexture( _txrPath + row_specularMap, undefined, function(tex_specular) {
 var row_metalMap = row.replace(/\.(png|jpg|bmp|jpeg|tga)$/i, "_metalness." + ((material_para.use_metalness_jpg)?"jpg":"png"))
-var metalMap = that.txrPath + row_metalMap
+var metalMap = _txrPath + row_metalMap
 if (material_para.use_metalness || ((browser_native_mode || is_zip) ? material_para.use_metalness : FSO_OBJ.FileExists(toLocalPath(metalMap)))) {
-  THREE.ImageUtils.loadTexture( that.txrPath + row_metalMap, undefined, function(tex_metal) {
+  THREE.ImageUtils.loadTexture( _txrPath + row_metalMap, undefined, function(tex_metal) {
     let canvas = document.createElement("canvas")
     let w = canvas.width  = tex_specular.image.width
     let h = canvas.height = tex_specular.image.height
@@ -506,7 +511,7 @@ console.log("Specular map", row_specularMap)
   }
 }
 
-		this.mtr.map = this.txrs[ row ] = THREE.ImageUtils.loadTexture( this.txrPath + row, undefined, function() {
+		this.mtr.map = this.txrs[ row ] = THREE.ImageUtils.loadTexture( _txrPath + row, undefined, function() {
 			if ( --that.txrLength ) return;
 			that.onload( new THREE.Mesh( that.gmt, that.mtrs ) );
 			that = null;

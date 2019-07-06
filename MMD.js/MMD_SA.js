@@ -436,8 +436,8 @@ MMD_SA._init_my_model = function () {
 
   if (!model_para_obj.skin_default)
     model_para_obj.skin_default = { _is_empty:true }
-  if (!model_para_obj.morph_default)
-    model_para_obj.morph_default = { _is_empty:true }
+// save some headaches and make sure that every VMD has morph (at least a dummy) in "Dungeon" mode
+  if (!model_para_obj.morph_default) model_para_obj.morph_default = { _is_empty:!MMD_SA_options.Dungeon }
 
   MMD_SA_options._MME = Object.clone(MMD_SA_options._MME_)
   if (Object.keys(MMD_SA_options._MME).length == 0) {
@@ -759,7 +759,7 @@ for (var i = 0; i < 5; i++)
 for (var i = 0; i < 5; i++)
   MMD_SA_options.motion.push({path:'MMD.js/motion/motion_basic_pack01.zip#/_number_meter_' + (i+1) + '.vmd', jThree_para:{}, match:{skin_jThree:/^(\u53F3)(\u80A9|\u8155|\u3072\u3058|\u624B\u9996|\u624B\u6369|.\u6307.)/}})
 
-var use_startup_screen = (MMD_SA_options.startup_screen !== false)
+var use_startup_screen = true//(MMD_SA_options.Dungeon && (MMD_SA_options.startup_screen !== false)) || !!MMD_SA_options.startup_screen;//(MMD_SA_options.startup_screen !== false);//
 if (use_startup_screen) {
   if (!MMD_SA_options.startup_screen)
     MMD_SA_options.startup_screen = {}
@@ -864,6 +864,7 @@ document.body.removeChild(div_p)
     MMD_SA_options.startup_screen.init(function () { init(); resize(); });
   }
   else {
+let sb_func = function () {
     let sb = document.createElement("div")
     sb.id = "LMMD_StartButton"
     sb.className = "StartButton"
@@ -889,6 +890,12 @@ document.body.removeChild(div_p)
         SA_DragDropEMU("(DUMMY)", blob)
       });
     }).catch(function(){});
+};
+
+if (!MMD_SA_options.Dungeon)
+  sb_func()
+else
+  MMD_SA_options.Dungeon.multiplayer.init(sb_func)
   }
 }
 else {
@@ -2213,8 +2220,9 @@ if (!para)
 this.flipH_bubble = flipH_bubble
 
 bubble_index = this.bubble_index
-msg = this.msg
 var b = this.bubbles[bubble_index]
+
+msg = this.msg.replace(/\{\{(.+?)\}\}/g, function (match, p1) { return eval(p1) })
 
 var canvas = this._canvas
 canvas.width = canvas.height = b.image.width;
@@ -2530,6 +2538,7 @@ return this._mesh.position
 if (!this.visible) {
   this.visible = true
   jThree( "#SpeechBubbleMESH" ).show();
+  window.dispatchEvent(new CustomEvent("SA_SpeechBubble_show"));
 }
     }
 
@@ -2561,6 +2570,7 @@ if (this.visible) {
 
   this.visible = false
   jThree( "#SpeechBubbleMESH" ).hide();
+  window.dispatchEvent(new CustomEvent("SA_SpeechBubble_hide"));
 }
     }
   }
@@ -4207,8 +4217,8 @@ return drop_list
 
   if (!MMD_SA_options.model_para_obj.skin_default)
     MMD_SA_options.model_para_obj.skin_default = { _is_empty:true }
-  if (!MMD_SA_options.model_para_obj.morph_default)
-    MMD_SA_options.model_para_obj.morph_default = { _is_empty:true }
+// save some headaches and make sure that every VMD has morph (at least a dummy) in "Dungeon" mode
+  if (!MMD_SA_options.model_para_obj.morph_default) MMD_SA_options.model_para_obj.morph_default = { _is_empty:!MMD_SA_options.Dungeon }
 
 //window.addEventListener("MMDStarted", function () { console.log(MMD_SA_options.model_para_obj.motion_name_default) });
 //  MMD_SA_options.model_para_obj.motion_name_default_combat = MMD_SA_options.model_para_obj.motion_name_default
@@ -4324,6 +4334,7 @@ return _trackball_camera_limit_adjust(eye)
 return this.model_para_obj.MME || this._MME
   }
 });
+  MMD_SA_options.model_para_obj.MME = MMD_SA_options.MME
 
   try {
     var _file = FSO_OBJ.OpenTextFile(System.Gadget.path + '\\TEMP\\MMD_MME_by_model.json', 1);
@@ -4375,8 +4386,8 @@ return this.model_para_obj.MME || this._MME
 
     if (!model_para_obj.skin_default)
       model_para_obj.skin_default = { _is_empty:true }
-    if (!model_para_obj.morph_default)
-      model_para_obj.morph_default = { _is_empty:true }
+// save some headaches and make sure that every VMD has morph (at least a dummy) in "Dungeon" mode
+  if (!model_para_obj.morph_default) model_para_obj.morph_default = { _is_empty:!MMD_SA_options.Dungeon }
 
     if (!model_para_obj.MME)
       model_para_obj.MME = {}
@@ -5195,6 +5206,10 @@ if (MMD_SA.initialized) {
   if (!MMD_SA.jThree_ready)
     MMD_SA._renderer.__resize(w,h)
 
+  if (self.ChatboxAT) {
+     document.getElementById("CB_Lwindow0").style.transform = (SA_zoom >= 1) ? "" : "scale(" + SA_zoom + ")";
+  }
+
   SA_zoom = 1
   if (MMD_SA_options.use_JSARToolKit) {
     SL_webcam.width  = w
@@ -5227,6 +5242,8 @@ if (MMD_SA.use_jThree) {
   }
   else {
 //MMD_SA_options.ammo_version=30
+//https://github.com/kripken/ammo.js/issues/36
+self.Module = { TOTAL_MEMORY:52428800*2 };
     js.push("jThree/MMDplugin/ammo" + ((MMD_SA_options.ammo_version) ? "_v" + MMD_SA_options.ammo_version : "") + ".js");
     if (MMD_SA_options.ammo_version) {
       js.push('Ammo().then(function () { MMD_SA._ammo_async_loaded_=true; console.log("Ammo.js async loaded"); if (self.jThree && jThree._ammo_async_init_) { console.log(jThree._ammo_async_init_.length); jThree._ammo_async_init_.forEach(function (func) { func() }); jThree._ammo_async_init_=[]; } else { console.log(0); }; });')

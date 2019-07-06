@@ -507,16 +507,21 @@ if (debug_msg.length) {
 
     var mm, mm0
     mm = mm0 = MMD_SA.motion[_model.skin._motion_index]
+    var model_para = MMD_SA_options.model_para_obj_all[i]
+
+// ignore frame range for online character with BPM motion (ie. use the full motion duration as lastFrame)
+    var lastFrame = (model_para.is_OPC && mm.para_SA.BPM) ? mm.lastFrame : mm.lastFrame_
+
     var _delta_from_last_loop = 0
     if (!multi_model_motion_reset[i]) {
-      if (_model.skin.time+delta <= mm.lastFrame_/30)
+      if (_model.skin.time+delta <= lastFrame/30)
         continue
-      _delta_from_last_loop = Math.min(_model.skin.time+delta - mm.lastFrame_/30, 0.1)
-      mm.para_SA.onended_NPC && mm.para_SA.onended_NPC(i)
+      _delta_from_last_loop = Math.min(_model.skin.time+delta - lastFrame/30, 0.1)
+// ignore onended_NPC for online PC (for now at least)
+      !mm.para_SA.is_OPC && mm.para_SA.onended_NPC && mm.para_SA.onended_NPC(i)
     }
 
     var motion_changed = false
-    var model_para = MMD_SA_options.model_para_obj_all[i]
     var obj
     if (model_para._motion_name_next || (multi_model_motion_reset[i] && model_para.mirror_motion_from_first_model)) {
       mm0 = mmd.motionManager
@@ -556,7 +561,7 @@ if (debug_msg.length) {
       }
     }
     else {
-      var ignore_physics_reset = _model.skin.time && ((mm.para_SA.loopback_physics_reset == false) || ((mm.lastFrame_ == mm.lastFrame) && !mm.firstFrame_ && !mm.para_SA.loopback_fading))
+      var ignore_physics_reset = _model.skin.time && ((mm.para_SA.loopback_physics_reset == false) || ((lastFrame == mm.lastFrame) && !(model_para._firstFrame_||mm.firstFrame_) && !mm.para_SA.loopback_fading))
       _model.resetMotion(ignore_physics_reset || MMD_SA._ignore_physics_reset)
     }
 
@@ -567,9 +572,11 @@ if (debug_msg.length) {
     }
 
     _model.playMotion()
-    if (_delta_from_last_loop || mm0.firstFrame_) {
-      _model.seekMotion(_delta_from_last_loop + ((mm0.firstFrame_ && mm0.firstFrame_/30) || 0))
+    if (_delta_from_last_loop || (model_para._firstFrame_||mm0.firstFrame_)) {
+      _model.seekMotion(_delta_from_last_loop + (((model_para._firstFrame_||mm0.firstFrame_) && (model_para._firstFrame_||mm0.firstFrame_)/30) || 0))
     }
+
+    model_para._firstFrame_ = null
   }
 
   MMD_SA._ignore_physics_reset = null
@@ -2565,8 +2572,9 @@ var model_para_obj = self.MMD_SA && MMD_SA_options.model_para_obj_all[pmx._model
 	morphKeys = this.morphKeys;
 	if ( morphKeys.length === 0 ) {
 // AT: default morph for no-morph motion
-if (!self.MMD_SA || model_para_obj.morph_default._is_empty)
+if (!self.MMD_SA || model_para_obj.morph_default._is_empty) {
 		return null;
+}
 	}
 	timeMax = this.timeMax;
 	targets = [];
@@ -2691,6 +2699,7 @@ targets = targets.concat(targets_extra);
 // AT: Skip it for now. Null morth may create problems in some cases.
 //		return null;
 	}
+//if (targets.some(function (t) { return t.keys[0].name=="はぅ" })) console.log(targets)
 	return { duration:timeMax, targets:targets };
 };
 VMD.prototype.generateCameraAnimation = function() {
@@ -4755,7 +4764,6 @@ MMDMorph = function( mesh, animation ) { // extend Animation
 	// setup morph targets
 	targets = animation.targets;
 	geo = mesh.geometry;
-
 // AT: Make morphs from extra motions work, by rearranging "targets" to match the existing "morphTargets", to avoid unnecessary mesh updates, which may cause errors.
 //	geo.morphTargets = [];//
 //DEBUG_show(targets.length,0,1)
@@ -5871,7 +5879,14 @@ if (self.MMD_SA) {
   para_SA = (MMD_SA.motion[(this.skin||this.morph||{})._motion_index] || MMD_SA.MMD.motionManager).para_SA
   mesh._bone_morph = {}
 // playbackRate
-  dt *= ((para_SA.playbackRate_by_model_index && para_SA.playbackRate_by_model_index[this._model_index]) || 1) * (model_para._playbackRate || 1)
+  var playbackRate = ((para_SA.playbackRate_by_model_index && para_SA.playbackRate_by_model_index[this._model_index]) || 1) * (model_para._playbackRate || 1)
+// for Dungeon multiplayer
+  if (this._model_index == 0)
+    model_para._playbackRate_OPC_ = MMD_SA._playbackRate * playbackRate
+  else if (model_para._playbackRate_OPC_)
+    playbackRate = model_para._playbackRate_OPC_ / MMD_SA._playbackRate
+//DEBUG_show((MMD_SA._playbackRate * playbackRate)+'\n'+Date.now())
+  dt *= playbackRate
 }
 
 	if ( this.morph ) {
@@ -6533,6 +6548,125 @@ model._model_index = model.pmx._model_index
 	getModels: function() {
 		return models;
 	},
+
+// AT: swap model
+swapModels: function (i0, i1, func) {
+/*
+Model
+  _model_index
+
+  mesh
+    _model_index
+
+  pmx
+    _model_index
+
+  morph_MMD_SA_extra
+    MMDMorph
+      _model_index
+
+  skin_MMD_SA_extra
+    MMDSkin
+      _model_index
+
+  _MMD_SA_cache
+    morph
+      _model_index
+    skin
+      _model_index
+
+MMD_SA_options.model_para_obj_all
+  _model_index
+
+MMD_SA_options.model_para_obj
+
+MMD_SA_options.mesh_obj_by_id
+
+MMD_SA.ammo_proxy
+  cache_by_model
+    list
+  cache_by_model_next
+    list
+  cache_by_model_temp
+    list
+*/
+  [i0, i1].forEach(function (model_index) {
+    var model = models[model_index]
+    var model_index_new = (model_index == i0) ? i1 : i0
+
+    model._model_index = model.mesh._model_index = model.pmx._model_index = model_index_new
+
+    if (model.morph_MMD_SA_extra) {
+      model.morph_MMD_SA_extra.forEach(function (obj) {
+        obj._model_index = model_index_new
+      });
+    }
+    if (model.skin_MMD_SA_extra) {
+      model.skin_MMD_SA_extra.forEach(function (obj) {
+        obj._model_index = model_index_new
+      });
+    }
+
+    for (var path in model._MMD_SA_cache) {
+      var obj = model._MMD_SA_cache[path]
+      if (obj.morph)
+        obj.morph._model_index = model_index_new
+      if (obj.skin)
+        obj.skin._model_index = model_index_new
+    }
+  });
+
+  var obj0, obj1
+
+  obj0 = models[i0]
+  obj1 = models[i1]
+  models[i0] = obj1
+  models[i1] = obj0
+
+  obj0 = MMD_SA_options.model_para_obj_all[i0]
+  obj1 = MMD_SA_options.model_para_obj_all[i1]
+  MMD_SA_options.model_para_obj_all[i0] = obj1
+  MMD_SA_options.model_para_obj_all[i1] = obj0
+  MMD_SA_options.model_para_obj_all[i0]._model_index = i0
+  MMD_SA_options.model_para_obj_all[i1]._model_index = i1
+
+  obj0 = MMD_SA_options.mesh_obj_by_id["mikuPmx" + i0]
+  obj1 = MMD_SA_options.mesh_obj_by_id["mikuPmx" + i1]
+  MMD_SA_options.mesh_obj_by_id["mikuPmx" + i0] = obj1
+  MMD_SA_options.mesh_obj_by_id["mikuPmx" + i1] = obj0
+
+  if (MMD_SA.ammo_proxy) {
+    ["cache_by_model", "cache_by_model_next", "cache_by_model_temp"].forEach(function (p) {
+      obj0 = MMD_SA.ammo_proxy[p].list[i0]
+      obj1 = MMD_SA.ammo_proxy[p].list[i1]
+      MMD_SA.ammo_proxy[p].list[i0] = obj1
+      MMD_SA.ammo_proxy[p].list[i1] = obj0
+    });
+  }
+
+  var loc0 = {}
+  var loc1 = {}
+  var p_list = ["position", "rotation", "quaternion"]
+  p_list.forEach(function (p) {
+    loc0[p] = models[i0].mesh[p].clone()
+    loc1[p] = models[i1].mesh[p].clone()
+  });
+
+  func && func(i0, i1);
+
+  p_list.forEach(function (p) {
+    models[i0].mesh[p].copy(loc1[p])
+    models[i1].mesh[p].copy(loc0[p])
+  });
+
+  if (i0 == 0) {
+    MMD_SA_options.model_para_obj = MMD_SA_options.model_para_obj_all[0]
+
+    models[0].mesh.visible = true
+    models[0].mesh.children.forEach(function (c) { c.visible = true; });
+  }
+},
+
 	setupCameraMotion: function( vmd, camera ) {
 		var animation = vmd.generateCameraAnimation(),motion,index;
 

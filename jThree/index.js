@@ -13,7 +13,7 @@ MMD_SA.fn = {
 this.length++;
 
 var load_length = MMD_SA_options.motion.length + MMD_SA_options.x_object.length +1 + this.load_length_extra;
-
+//console.log(MMD_SA_options.motion.length,MMD_SA_options.x_object.length +1,this.load_length_extra)
 // extra model
 load_length += MMD_SA_options.model_path_extra.length
 
@@ -277,15 +277,17 @@ for (var i = 0, len = MMD_SA_options.motion.length; i < len; i++) {
       para = motion.jThree_para
 
       var motion_skipped = false
-      if (para_SA.model_name_RegExp) {
-        motion_skipped = !para_SA.model_name_RegExp.test(model_para._filename)
+      if (para_SA.model_name_RegExp || para_SA.model_index_list) {
+        if (para_SA.model_name_RegExp)
+          motion_skipped = !para_SA.model_name_RegExp.test(model_para._filename)
+        if (para_SA.model_index_list && (!para_SA.model_name_RegExp || motion_skipped)) {
+          motion_skipped = (para_SA.model_index_list.indexOf(idx) == -1)
+          if (motion_skipped && (para_SA.model_index_list.indexOf(0) != -1) && model_para.is_PC_candidate)
+            motion_skipped = false
+        }
 //if (!motion_skipped) DEBUG_show(filename+'/'+idx,0,1)
       }
-      else if (para_SA.model_index_list) {
-        motion_skipped = (para_SA.model_index_list.indexOf(idx) == -1)
-//if (!motion_skipped) DEBUG_show(filename+'/'+idx,0,1)
-      }
-      else if ((idx > 0) && (para || !model_para.mirror_motion_from_first_model)) {
+      else if ((idx > 0) && !model_para.is_PC_candidate && (para || !model_para.mirror_motion_from_first_model)) {
         motion_skipped = true
       }
 
@@ -347,8 +349,14 @@ for (var i = 0, len = MMD_SA_options.motion.length; i < len; i++) {
 
     if (!model.skin || (i == motion_default) || (model_para.motion_name_default == filename)) {
 //console.log(idx)
-      if ((idx > 0) && !model_para.mirror_motion_from_first_model && !model_para.motion_name_default)
-        model_para.motion_name_default = filename
+      if (!model_para.motion_name_default) {
+        if (idx == 0) {
+          if (i == motion_default)
+            model_para.motion_name_default = filename
+        }
+        else if ((idx > 0) && !model_para.mirror_motion_from_first_model)
+          model_para.motion_name_default = filename
+      }
       model._MMD_SA_cache_current = obj
       model.skin  = skin
       model.morph = morph
@@ -1135,12 +1143,14 @@ var ground_y_threshold = bb_ground.min.y + (bb_ground.max.y - bb_ground.min.y) *
 var ground_y_threshold_upper = bb_ground.center(center).y;
 var ground_plane_y_threshold = ((bb_static.min.y > bb_moved.min.y) ? bb_moved.min.y : bb_static.min.y) - Math.max(bb_static.max.x-bb_static.min.x, bb_static.max.z-bb_static.min.z) * 2
 
+//var _bb_moved_center = bb_moved.center(bb_moved_center)
 bb_moved.union(bb_static);
 
 bb_static.center(bb_static_center);
 bb_moved.center(bb_moved_center)
 
 // ray from top
+//ray.set(_v3a.copy(_bb_moved_center).setY(bb_moved.max.y), new THREE.Vector3(0,-1,0));
 ray.set(_v3a.copy(bb_moved_center).setY(bb_moved.max.y), new THREE.Vector3(0,-1,0));
 
 bb_core_static.copy(bb_static);
@@ -1291,6 +1301,8 @@ if (face.materialIndex >= collision_by_mesh_material_index_max) break;
 
 faces.forEach(function (tri) {
 
+var grounded_priority = 0
+
 bb_list.some(function (bb) {
   if (!collision.isIntersectionTriangleAABB( tri[0], tri[1], tri[2], bb )) {
 //if (face.materialIndex==1 && (collision.isIntersectionTriangleAABB(tri[0],tri[2],tri[1], bb) || collision.isIntersectionTriangleAABB(tri[1],tri[0],tri[2], bb) || collision.isIntersectionTriangleAABB(tri[1],tri[2],tri[0], bb) || collision.isIntersectionTriangleAABB(tri[2],tri[0],tri[1], bb) || collision.isIntersectionTriangleAABB(tri[2],tri[1],tri[0], bb))) DEBUG_show(Date.now())
@@ -1326,8 +1338,12 @@ bb_list.some(function (bb) {
     bb_priority = 2
   }
 
-  var blocked, grounded
-  var is_flat = _face_grounded(face, 0.5)//0.75)
+  var blocked
+
+// comparison between grounded_priority and grounded is used to make sure that ground_y from bb_moved has a prority higher than bb_static, which avoids pass-thru glitches in some cases.
+  var grounded = 0
+
+  var is_flat = _face_grounded(face, 0.5)//0.75)//
 // c, a, b (correct face normal?)
   if (ray.intersectTriangle( tri[2], tri[0], tri[1], false, _v3a )) {
     if (_v3a.y > ground_y_threshold_upper) {
@@ -1336,8 +1352,8 @@ bb_list.some(function (bb) {
       }
       else blocked = true
     }
-    else {
-      grounded = true
+    else if (grounded >= grounded_priority) {
+      grounded = grounded_priority = bb_priority
       ground_y = Math.max(ground_y, _v3a.y)
       if (ground_y == _v3a.y) {
 //        ground_pos.copy(_v3a)
@@ -1526,18 +1542,18 @@ for (var i_side = 0; i_side < 2; i_side++) {
 
 // only check ground_y for extended-y bb
 if (_bb == bb) {
-  if (is_flat && !grounded) {
+  if (is_flat && (!grounded && (bb_priority >= grounded_priority))) {
     if (_bb_contained.max.y < ground_y_threshold) {
+      grounded = grounded_priority = bb_priority
       ground_y = Math.max(ground_y, _bb_contained.max.y)
-      grounded = true
       if (ground_y == _bb_contained.max.y) {
 //        ground_pos.y = ground_y
         ground_face_index = f
       }
     }
     else if (_bb_contained.min.y < ground_y_threshold) {
+      grounded = grounded_priority = bb_priority
       ground_y = Math.max(ground_y, ground_y_threshold)
-      grounded = true
       if (ground_y == ground_y_threshold)
         ground_face_index = f
     }
