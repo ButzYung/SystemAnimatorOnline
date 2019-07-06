@@ -5,6 +5,7 @@ var use_SA_system_emulation, use_SA_gimage_emulation
 
 var SA_HTA_folder, SA_HTA_folder_parent
 var SA_project_JSON
+var is_SA_child_animation_host
 
 document.write('<script type="text/javascript" language="javascript" src="js/SA_system_emulation_ext.js"></scr'+'ipt>\n')
 if (!self.System) {
@@ -51,13 +52,21 @@ function SA_load_scripts() {
   var html = ''
 
   if (use_SA_browser_mode) {
-    var p
-    if (is_SA_child_animation && /f\=([^\&]+)/.test(self.location.search)) {
-      SA_HTA_folder = decodeURIComponent(RegExp.$1)
-      SA_child_animation_id = (/id\=(\d+)/.test(self.location.search)) ? parseInt(RegExp.$1) : 0
+    var params = System._browser.url_search_params = {}
+    var _re = /[\?\&](\w+)\=([^\&]+)/g;
+    var _str = self.location.search;
+    var _result;
+    while ((_result = _re.exec(_str)) !== null) {
+      params[_result[1]] = _result[2];
     }
-    else if ((browser_native_mode && !webkit_window) || /cmd_line\=([^\&]+)/.test(self.location.search)) {
-      p = (/cmd_line\=([^\&]+)/.test(self.location.search)) ? RegExp.$1.split("|") : ["/TEMP/DEMO/miku01"]
+
+    var p
+    if (is_SA_child_animation && params.f) {
+      SA_HTA_folder = decodeURIComponent(params.f)
+      SA_child_animation_id = (params.id && parseInt(params.id)) || 0
+    }
+    else if ((browser_native_mode && !webkit_window) || params.cmd_line) {
+      p = (params.cmd_line && params.cmd_line.split("|")) || ["/TEMP/DEMO/miku01"]
       for (var i = 0; i < p.length; i++)
         p[i] = decodeURIComponent(p[i])
     }
@@ -181,9 +190,66 @@ if (FSO_OBJ.FileExists(p_js)) {
 }
 if (!SA_project_JSON)
   SA_project_JSON = {}
+
+is_SA_child_animation_host = !!SA_project_JSON.child_animation_host
+if (SA_project_JSON.child_animation_host && !is_SA_child_animation) {
+  self.w_max = SA_project_JSON.child_animation_host.width  || screen.width
+  self.h_max = SA_project_JSON.child_animation_host.height || screen.height
+  self.use_full_fps_registered = true
+  Settings_default._custom_.Display = "-1"
+  Settings_default._custom_.ChildDragDisabled = "non_default"
+  Settings_default._custom_.ChildAnimation0 = encodeURIComponent(SA_HTA_folder) + "|0|0|0|1"
+
+  window.addEventListener('DOMContentLoaded', (event) => {
+    document.getElementById("Lbody_host").style.visibility = "hidden"
+  });
+
+  window.addEventListener("resize", (function () {
+    var w, h;
+
+    return function (e) {
+var c0 = document.getElementById("Ichild_animation0")
+if (!c0) return
+
+var cw0 = c0.contentWindow
+/*
+if (!cw0.B_content_width) return
+
+if (!w) w = cw0.B_content_width
+if (!h) h = cw0.B_content_height
+
+var cbs0 = cw0.document.body.style
+
+var scale = Math.min(screen.width/w, screen.height/h)
+cbs0.pixelWidth  = Math.round(w * scale)
+cbs0.pixelHeight = Math.round(h * scale)
+cw0.Settings.CSSTransformScale = cw0.SA_zoom = scale
+cw0.resize(true)
+*/
+
+cw0.Settings.CSSTransformFullscreen = true
+cw0.cw0SA_zoom = 1
+cw0.resize()//null,null,null, true)
+
+    };
+  })());
+
+  SA_project_JSON = {
+    child_animation_host: SA_project_JSON.child_animation_host
+   ,P2P_network: SA_project_JSON.P2P_network
+  };
+}
+if (SA_project_JSON.child_animation_host && is_SA_child_animation) {
+  System._browser.P2P_network = parent.System._browser.P2P_network
+}
+
 if (SA_project_JSON.config_default) {
   for (var s_name in SA_project_JSON.config_default)
     Settings_default._custom_[s_name] = SA_project_JSON.config_default[s_name]
+}
+if (SA_project_JSON.config_excluded) {
+  for (var s_name in SA_project_JSON.config_excluded)
+    Settings_default._excluded_[s_name] = true
 }
 if (SA_project_JSON.readme_url)
   self._readme_url_ = SA_project_JSON.readme_url
@@ -267,6 +333,8 @@ try {
 catch (err) {}
     }
 
+    webkit_mode && WebKit_object._init2()
+
     if (ie9_native)
       getHTAUseGPUAcceleration()
   }
@@ -305,6 +373,18 @@ console.log("_core.00.min.js")
 + '<script type="text/javascript" language="javascript" src="js/seq.js"></scr'+'ipt>\n'
 + '<script type="text/javascript" language="javascript" src="js/shell_folder.js"></scr'+'ipt>\n'
 + '<script type="text/javascript" language="javascript" src="js/wmi.js"></scr'+'ipt>\n'
+  }
+
+  if (SA_project_JSON && SA_project_JSON.P2P_network && !is_SA_child_animation) {
+console.log("Use PeerJS")
+    html +=
+  '<script type="text/javascript" language="javascript" src="js/peerjs.min.js"></scr'+'ipt>\n'
+  }
+  if (SA_project_JSON && SA_project_JSON.P2P_network && ((is_SA_child_animation_host) ? is_SA_child_animation : !is_SA_child_animation)) {
+console.log("Use Chatbox")
+    html +=
+  '<script type="text/javascript" language="javascript" src="js/chatbox.js"></scr'+'ipt>\n'
++ '<script>ChatboxAT.channel = SA_project_JSON.P2P_network.chatbox_channel||0;</scr'+'ipt>\n'
   }
 
   html +=
@@ -353,6 +433,13 @@ function SA_load_body() {
 
   var menu_html = ""
   if (use_SA_system_emulation) {
+    if (self.ChatboxAT) {
+      Chatbox_intro_msg =
+  '<p>Anime Theme World Online - Chatbox Mini</p>\n'
++ '<p>New comer? <a href="readme_multiplayer.txt" class=AutoChatCommand>Click here</a> to know more about this game.</p>\n'
++ '<p>Not a member? <a href="http://www.animetheme.com/cgi-bin/ikonboard/register.cgi" target="_blank" class=AutoChatCommand>Register now!</a></p>';
+    }
+
     menu_html +=
   '<div id="Lbrowse_for_file" style="position:absolute; left:10px; top:10px; height:24px; width:380px; background-color:white; z-index:999; padding:5px; border:2px solid black; visibility:hidden">\n'
 + '<span style="font-family:Arial; font-size:12px">Choose an input file.</span>\n'
@@ -413,6 +500,15 @@ function SA_load_body() {
 + ' <div id="LbuttonRotate" style="position:absolute; top:0px; left:0px; width:12px; height:12px; font-family:Symbola; font-size:12px; color:rgba(0,0,0,0.75); visibility:hidden;" class="Tooltip_LR" title="Drag to rotate. Double-click to switch to resize mode.">&#x25D5;</div>\n'
 + '</div>\n'
 
++ '<script>\n'
++ 'self.Chatbox_Write && self.Chatbox_Write();\n'
++ '</scr'+'ipt>\n'
+
++ '<script>\n'
+//document.getElementById("CB_Lwindow0").left=16; document.getElementById("CB_Lwindow0").bottom=72;
++ 'if (self.Chatbox_Init) window.addEventListener("DOMContentLoaded", (event) => { document.getElementById("CB_Lwindow0").top=32; Chatbox_Init(); });\n'
++ '</scr'+'ipt>\n'
+
     if (use_inline_dialog) {
       menu_html +=
   '<iframe id="Idialog" src="z_blank2.html" frameborder="0" style="position:absolute; z-index:999; visibility:hidden"></iframe>\n'
@@ -451,6 +547,31 @@ if (!content3d_disabled)
 }
 
 function SA_load_body2() {
+  if (WallpaperEngine_CEF_mode) {
+    LbuttonMinimize.style.visibility = "hidden"
+//    LbuttonLR.style.display = "none"
+
+    Lquick_menu_folder_button.style.opacity = Lquick_menu_gallery_button.style.opacity = 0.5
+    Lquick_menu_folder_button.setAttribute("data-title", "N/A")
+    Lquick_menu_gallery_button.setAttribute("data-title", "N/A")
+    Lquick_menu_folder_button.onclick = Lquick_menu_gallery_button.onclick = null
+    Lquick_menu_settings_button.setAttribute("data-title", "About")
+    Lquick_menu_settings_button.onclick = function () {
+if (browser_native_mode && /^https?\:/.test(location.href)) {
+  window.open(self._readme_url_ || "http://www.animetheme.com/system_animator_online/readme.txt")
+}
+else {
+  alert('System Animator Lite (' + System.Gadget.version + ')\n\nhttp://www.animetheme.com/sidebar/')
+}
+    }
+    Lquick_menu_close_button.setAttribute("data-title", ((browser_native_mode)?"Close":"Restart"))
+    if (is_SA_child_animation || browser_native_mode) {
+      Lquick_menu_close_button.style.opacity = 0.5
+      Lquick_menu_close_button.setAttribute("data-title", "N/A")
+      Lquick_menu_close_button.onclick = null
+    }
+  }
+
   if (!ie9_mode || is_SA_child_animation)
     return
 
@@ -499,31 +620,6 @@ function SA_load_body2() {
     ds.zIndex  = ani.z
     if (ani.opacity < 1)
       ds.opacity = ani.opacity
-  }
-
-  if (WallpaperEngine_CEF_mode) {
-    LbuttonMinimize.style.visibility = "hidden"
-    LbuttonLR.style.display = "none"
-
-    Lquick_menu_folder_button.style.opacity = Lquick_menu_gallery_button.style.opacity = 0.5
-    Lquick_menu_folder_button.setAttribute("data-title", "N/A")
-    Lquick_menu_gallery_button.setAttribute("data-title", "N/A")
-    Lquick_menu_folder_button.onclick = Lquick_menu_gallery_button.onclick = null
-    Lquick_menu_settings_button.setAttribute("data-title", "About")
-    Lquick_menu_settings_button.onclick = function () {
-if (browser_native_mode && /^https?\:/.test(location.href)) {
-  window.open(self._readme_url_ || "http://www.animetheme.com/system_animator_online/readme.txt")
-}
-else {
-  alert('System Animator Lite (' + System.Gadget.version + ')\n\nhttp://www.animetheme.com/sidebar/')
-}
-    }
-    Lquick_menu_close_button.setAttribute("data-title", ((browser_native_mode)?"Close":"Restart"))
-    if (is_SA_child_animation) {
-      Lquick_menu_close_button.style.opacity = 0.5
-      Lquick_menu_close_button.setAttribute("data-title", "N/A")
-      Lquick_menu_close_button.onclick = null
-    }
   }
 
   try {
