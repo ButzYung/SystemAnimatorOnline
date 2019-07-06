@@ -44,6 +44,7 @@ for (var i = 0; i < SA_child_animation_max; i++)
 
 var Settings_default = {
    _custom_: {}
+  ,_excluded_: {}
 
   ,Folder: "demo1"
 
