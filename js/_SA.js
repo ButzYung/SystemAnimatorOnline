@@ -221,7 +221,7 @@ this._onmouseout_waiting_custom.push(func)
   }
 });
 
-    if (browser_native_mode && !webkit_window) {
+    if (browser_native_mode && !webkit_window && !is_SA_child_animation) {
       window.addEventListener("resize", function (e) {
 if (1||Settings.CSSTransformFullscreen) {
 //  SA_zoom = 1
@@ -232,7 +232,13 @@ if (1||Settings.CSSTransformFullscreen) {
 
     LbuttonFullscreen.addEventListener("click", function (event) {
 if (is_SA_child_animation) {
-  DEBUG_show("(no fullscreen mode for child animation)", 2)
+  if (is_SA_child_animation_host) {
+    parent.document.getElementById("LbuttonFullscreen").click()
+    LbuttonFullscreen.style.visibility = "hidden"
+    LbuttonRestore.style.visibility = "inherit"
+  }
+  else
+    DEBUG_show("(no fullscreen mode for child animation)", 2)
   return
 }
 
@@ -246,6 +252,13 @@ event.stopPropagation()
     }, true)
 
     LbuttonRestore.addEventListener("click", function (event) {
+if (is_SA_child_animation_host && is_SA_child_animation) {
+  parent.document.getElementById("LbuttonRestore").click()
+  LbuttonFullscreen.style.visibility = "inherit"
+  LbuttonRestore.style.visibility = "hidden"
+  return
+}
+
 System.Gadget.Settings.writeString("CSSTransformFullscreen", "")
 System.Gadget.Settings.writeString("CSSTransformScale", 1)
 System.Gadget.Settings.writeString("CSSTransformRotate", 0)
@@ -263,7 +276,10 @@ event.stopPropagation()
 
     LbuttonMinimize.addEventListener("click", function (event) {
 if (is_SA_child_animation) {
-  DEBUG_show("(not applicable for child animation)", 2)
+  if (is_SA_child_animation_host)
+    parent.document.getElementById("LbuttonMinimize").click()
+  else
+    DEBUG_show("(not applicable for child animation)", 2)
   return
 }
 
@@ -358,6 +374,14 @@ var use_EQP_size_scale = (self.EQP_size_scale && !self.EQP_video_options)
 var zoom = (use_EQP_size_scale) ? EQP_size_scale : SA_zoom
 
 var scale = LbuttonResize._scale = Math.round(LbuttonResize._scale*zoom*1000)/1000
+if (is_SA_child_animation_host && is_SA_child_animation) {
+  parent.System.Gadget.Settings.writeString("CSSTransformScale", scale)
+  parent.Settings.CSSTransformScale = parent.SA_zoom = scale
+  parent.resize()
+  resize(true)
+  return
+}
+
 System.Gadget.Settings.writeString("CSSTransformScale", scale)
 Settings.CSSTransformScale = SA_zoom = scale
 
@@ -1586,7 +1610,7 @@ var _resize_loop_ = 0
 var _resize_loop_timerID = null
 
 function resize(no_focus, custom_resize, no_fullscreen_resize, fullscreen_adjust_position) {
-if (++_resize_loop_ >= 10) {
+if (++_resize_loop_ >= 100) {
   DEBUG_show("WARNING: dead loop in resize, possibly a bug",0,1)
   return
 }
@@ -1749,7 +1773,7 @@ if (!ie9)
   var bar_height = 8+((ie8_mode)?2:0)
   var bw = B_width
   var bh = B_height + ((Settings.Display > 0) ? bar_height*EV_usage_list.length : 0)
-  var fullscreen = (use_SA_browser_mode && !is_SA_child_animation && Settings.CSSTransformFullscreen)
+  var fullscreen = use_SA_browser_mode && Settings.CSSTransformFullscreen && (!is_SA_child_animation || is_SA_child_animation_host)
 
 // Hopefully reduce the chance of random hang-ups during startup when running on Wallpaper Engine CEF
   if (WallpaperEngine_CEF_mode && self.MMD_SA && !MMD_SA_options.MMD_disabled && !MMD_SA.MMD_started)
@@ -2111,13 +2135,15 @@ if (fullscreen) {
 
     LbuttonTL.style.posLeft = Math.min(B_content_width, screen_w) - 24 - 12
     LbuttonTL.style.posTop  = 12
-    if ((_SA_zoom == 1) && !fullscreen && !SA_rotate) {
-      LbuttonFullscreen.style.visibility = "inherit"
-      LbuttonRestore.style.visibility = "hidden"
-    }
-    else {
-      LbuttonFullscreen.style.visibility = "hidden"
-      LbuttonRestore.style.visibility = "inherit"
+    if (!is_SA_child_animation_host) {
+      if ((_SA_zoom == 1) && !fullscreen && !SA_rotate) {
+        LbuttonFullscreen.style.visibility = "inherit"
+        LbuttonRestore.style.visibility = "hidden"
+      }
+      else {
+        LbuttonFullscreen.style.visibility = "hidden"
+        LbuttonRestore.style.visibility = "inherit"
+      }
     }
 
     LbuttonLR.style.posLeft = Math.min(B_content_width, screen_w) - 24
@@ -2135,7 +2161,7 @@ if (fullscreen) {
     }
   }
 
-  if (browser_native_mode) {
+  if (browser_native_mode && !is_SA_child_animation) {
     Lbody_host.style.posLeft = Math.max((screen_w - B_content_width) /2, 0)
     Lbody_host.style.posTop  = Math.max((screen_h - B_content_height)/2, 0)
   }
@@ -2917,7 +2943,7 @@ top.document.body.dispatchEvent(evt)
       SVG_Clock.update()
 
 EV_sync_update.fps_count_func()
-if (!is_SA_child_animation && EV_sync_update.fps_last) { console.log('FPS:' + EV_sync_update.fps_last); EV_sync_update.fps_last=0; }
+if (EV_sync_update.fps_last && ((is_SA_child_animation_host) ? is_SA_child_animation : !is_SA_child_animation)) { if (parent.EV_sync_update.fps_log) console.log('FPS:' + EV_sync_update.fps_last); EV_sync_update.fps_last=0; }
   }
 
   // 3D billboard START
@@ -4275,8 +4301,12 @@ var gallery, gallery_js, pic_last
 var image_ratio
 var b_width, b_height
 var B_width, B_height
+
 var w_max, h_max
-w_max = h_max = 0
+// NOTE: w_max/h_max may already be initialized in some cases.
+w_max = w_max || 0
+h_max = h_max || 0
+
 var gallery_dim_predefined, gallery_preload_always
 var SEQ_mode, SEQ_fps, SEQ_fps_ini, SEQ_fps_end, SEQ_ani_count, SEQ_ani_count_overridden
 var SEQ_gallery_all, SEQ_gallery, SEQ_gallery_by_name, SEQ_gallery_by_percent
@@ -4321,7 +4351,7 @@ function ItemsFromFolder(path, is_root) {
       Settings.f_path_folder = Settings.f_path.replace(/[\/\\][^\/\\]+$/, "")
 
       var animate_js = Settings.f_path_folder + toLocalPath('\\animate.js')
-      if (ValidatePath(animate_js))
+      if (!(is_SA_child_animation_host && !is_SA_child_animation) && ValidatePath(animate_js))
         gallery_js = animate_js
 
       if (/\.gif$/i.test(path)) {
@@ -4419,7 +4449,7 @@ self.EV_b_height = h_max_org * image_ratio
         EQP_gallery = [path]
 
         var js_path = path.replace(/[^\\\/]+$/, "animate.js")
-        if (ValidatePath(js_path))
+        if (!(is_SA_child_animation_host && !is_SA_child_animation) && ValidatePath(js_path))
           gallery_js = js_path
 
         if (/\.(jpg|jpeg|png)$/i.test(path)) {
@@ -4531,7 +4561,8 @@ else {
       var path = item.path
 
       if (is_root && /animate\.js$/i.test(path)) {
-        gallery_js = path
+        if (!(is_SA_child_animation_host && !is_SA_child_animation))
+          gallery_js = path
         continue
       }
 
@@ -5017,7 +5048,7 @@ function Canvas_BDDraw(canvas, beat) {
     return
   }
 
-  if (!gallery_js && !gallery.length && (!EQP_gallery || !EQP_gallery.length) && !self.MMD_SA_options) {
+  if (!(is_SA_child_animation_host && !is_SA_child_animation) && !gallery_js && !gallery.length && (!EQP_gallery || !EQP_gallery.length) && !self.MMD_SA_options) {
     EQP_gallery = null
     ItemsFromFolder(f_path_default, true)
   }
