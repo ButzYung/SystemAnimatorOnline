@@ -85,6 +85,11 @@ app.on('ready', function() {
     return
   }
 
+  if (windows_mode && !electron.systemPreferences.isAeroGlassEnabled()) {
+    global.is_natural_opaque = true
+    global.is_transparent = false
+  }
+
   if (linux_mode) {
     global.is_natural_opaque = true
     global.is_transparent = false
@@ -184,6 +189,7 @@ if (c_json) {
   if (1) {
     mainWindow = new BrowserWindow({icon:__dirname + toLocalPath("\\") + icon_name, width:width, height:height, resizable:false, frame:false, transparent:global.is_transparent, show:false
  ,webPreferences: {
+    nodeIntegration: true
 //    preload: toLocalPath(SA_path + '\\' + 'js\\electron_preload.js')
 //    backgroundThrottling: false
   }
