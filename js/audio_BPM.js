@@ -704,7 +704,7 @@ if (_p) {
 
     var cw = child.contentWindow
     try {
-      if ((cw.EQP_video_options && cw.EQP_video_options.BPM) || cw.MMD_SA)
+      if ((cw.EQP_video_options && cw.EQP_video_options.BPM) || (cw.MMD_SA && !cw.MMD_SA_options.MMD_disabled))
         linked_list.push(cw)
     }
     catch (err) {}
