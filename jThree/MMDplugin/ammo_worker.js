@@ -1,5 +1,8 @@
 'use strict';
 
+//https://github.com/kripken/ammo.js/issues/36
+var Module = { TOTAL_MEMORY:52428800*2 };
+
 importScripts("ammo.js");
 
 var v = {};
