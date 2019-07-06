@@ -16,21 +16,6 @@ var WebKit_object = {
 WebKit_InitIEDOM()
 
 if (WallpaperEngine_CEF_mode) {
-  if (browser_native_mode && !webkit_window) {
-    Object.defineProperty(screen, "width", {
-  get: function () { return top.innerWidth }
-    });
-    Object.defineProperty(screen, "availWidth", {
-  get: function () { return top.innerWidth }
-    });
-    Object.defineProperty(screen, "height", {
-  get: function () { return top.innerHeight }
-    });
-    Object.defineProperty(screen, "availHeight", {
-  get: function () { return top.innerHeight }
-    });
-  }
-
   self.require = (function () {
 var module_cache = {}
 return function (name) {
@@ -208,6 +193,37 @@ else {
     try { webkit_window.setAlwaysOnTop(top.returnBoolean("AutoItAlwaysOnTop")) } catch (err) {}
     return confirmed
   }
+}
+  }
+
+ ,_init2: function () {
+if (WallpaperEngine_CEF_mode && (browser_native_mode && !webkit_window)) {
+  Object.defineProperty(screen, "width", {
+  get: function () { return top.innerWidth }
+  });
+  Object.defineProperty(screen, "availWidth", {
+  get: function () { return top.innerWidth }
+  });
+  Object.defineProperty(screen, "height", {
+  get: function () { return top.innerHeight }
+  });
+  Object.defineProperty(screen, "availHeight", {
+  get: function () { return top.innerHeight }
+  });
+}
+else if (is_SA_child_animation_host && is_SA_child_animation) {
+  Object.defineProperty(screen, "width", {
+  get: function () { return top.document.body.style.pixelWidth }
+  });
+  Object.defineProperty(screen, "availWidth", {
+  get: function () { return top.document.body.style.pixelWidth }
+  });
+  Object.defineProperty(screen, "height", {
+  get: function () { return top.document.body.style.pixelHeight }
+  });
+  Object.defineProperty(screen, "availHeight", {
+  get: function () { return top.document.body.style.pixelHeight }
+  });
 }
   }
 
