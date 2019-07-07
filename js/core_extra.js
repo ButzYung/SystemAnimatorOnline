@@ -436,7 +436,7 @@ function SA_load_body() {
   if (use_SA_system_emulation) {
     if (self.ChatboxAT) {
       Chatbox_intro_msg =
-  '<p>Anime Theme World Online - Chatbox Mini</p>\n'
+  '<p>Anime Theme World Online - Chatbox Mini (' + ChatboxAT.Chatbox_version + ')</p>\n'
 + '<p>New comer? <a href="readme_multiplayer.txt" class=AutoChatCommand>Click here</a> to know more about this game.</p>\n'
 + '<p>Not a member? <a href="http://www.animetheme.com/cgi-bin/ikonboard/register.cgi" target="_blank" class=AutoChatCommand>Register now!</a></p>';
     }
