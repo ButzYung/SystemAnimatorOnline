@@ -201,6 +201,7 @@ if (SA_project_JSON.child_animation_host && !is_SA_child_animation) {
   Settings_default._custom_.ChildAnimation0 = encodeURIComponent(SA_HTA_folder) + "|0|0|0|1"
 
   window.addEventListener('DOMContentLoaded', (event) => {
+    SA_fullscreen_stretch_to_cover = true
     document.getElementById("Lbody_host").style.visibility = "hidden"
   });
 

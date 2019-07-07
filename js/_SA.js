@@ -1776,11 +1776,9 @@ if (!ie9)
   var fullscreen = use_SA_browser_mode && Settings.CSSTransformFullscreen && (!is_SA_child_animation || is_SA_child_animation_host)
 
 // Hopefully reduce the chance of random hang-ups during startup when running on Wallpaper Engine CEF
-  if (WallpaperEngine_CEF_mode && self.MMD_SA && !MMD_SA_options.MMD_disabled && !MMD_SA.MMD_started)
-    fullscreen = false
+  if (WallpaperEngine_CEF_mode && self.MMD_SA && !MMD_SA_options.MMD_disabled && !MMD_SA.MMD_started && !is_SA_child_animation_host) fullscreen = false;
 
   if (fullscreen && !no_fullscreen_resize) {
-
     var w_ratio = screen_w / bw
     var h_ratio = screen_h / bh
     var zoom, stretch_to_cover
