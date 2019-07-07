@@ -2,13 +2,15 @@
 
   "folder_list": ["animate.js"]
 
+ ,"readme_url": "readme_multiplayer.txt"
+
  ,"config_default": {
     "DisableTransparency": "non_default"
    ,"MMDShadow": "0.5"
   }
 
  ,"P2P_network": {
-    "chatbox_channel": 1
+    "chatbox_channel": 0
   }
 
  ,"child_animation_host": {
