@@ -3184,6 +3184,8 @@ MMD_SA_options.custom_default = function () {
   var _hit_head = {
     action: {
       condition: function (is_bone_action, objs) {
+if (objs._model_index) return false
+
 return MMD_SA._hit_head_;
       }
 
@@ -3206,6 +3208,8 @@ return ((this.frame >= 27) ? 0 : (27 - this.frame)/27)
   var _cover_chest = {
     action: {
       condition: function (is_bone_action, objs) {
+if (objs._model_index) return false
+
 if (MMD_SA._hit_chest_ || this._cover_chest_) {
   if (is_bone_action && !this.frame) {
     MMD_SA.copy_first_bone_frame(this.motion_index, objs, {bone_group:["腕"], skin_jThree:/^(\u5DE6|\u53F3)(\u80A9|\u8155|\u3072\u3058|\u624B\u9996|\u624B\u6369)/})
@@ -11654,19 +11658,22 @@ else {
       mp.is_host = true
 
       if (!para.para1) {
-        try {
-          setTimeout(function () {
+        if (!ChatboxAT.Chatbox_online_mode()) {
+          try {
+            setTimeout(function () {
 Fchat_msg.value = peer.id
 Fchat_msg.select()
 document.execCommand("copy")
-          }, 100);
+            }, 100);
+          }
+          catch (err) {}
         }
-        catch (err) {}
 
         if (host_command_timerID) clearInterval(host_command_timerID);
         host_command_timerID = setInterval(function () {
 ChatboxAT.SendData_ChatSend([System._browser.P2P_network.process_message('/host auto')])
-        }, 60*1000);
+// every 3 minutes
+        }, 3*60*1000);
       }
       else {
 // auto update
