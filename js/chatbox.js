@@ -1,4 +1,4 @@
-// Chatbox 2.0
+// Chatbox
 
 var Chatbox_no_auto_open, Chatbox_no_drag, Chatbox_no_scroll_adjust, Chatbox_no_auto_place;
 var Chatbox_intro_msg;
@@ -23,7 +23,7 @@ else {
 }
 
 
-var Chatbox_version = "Beta 1.5.0"
+var Chatbox_version = "2.0.0"
 
 function w3c_chatDisplay(state) {
   if (!_w3c_dom)
@@ -1095,6 +1095,8 @@ self.ChatboxAT = {
  ,smallMsg: smallMsg
  ,checkChatCommand: checkChatCommand
  ,SendData_ChatSend: SendData_ChatSend
+ ,chatW_place: chatW_place
+ ,chatW_minimize: chatW_minimize
 
  ,Chatbox_online_mode: function () { return Chatbox_online_mode; }
 
