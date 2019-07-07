@@ -23,7 +23,7 @@ else {
 }
 
 
-var Chatbox_version = "2.0.2"
+var Chatbox_version = "2.0.3"
 
 function w3c_chatDisplay(state) {
   if (!_w3c_dom)
@@ -953,11 +953,12 @@ switch (command) {
       continue
     className = "Msg_Default";
     v = (paras[4] || 'Someone') + ' is hosting a game(' + (paras[0]) + ')! ';
+    var game_url = 'https://sao.animetheme.com/?cmd_line=' + (paras[1]) + '&host_peer_id=' + (para1);
     if (SystemAnimator_mode) {
-      v += '<a href="" onclick="try { MMD_SA_options.Dungeon.multiplayer.connect(\'' + (para1) + '\'); } catch (err) { console.error(err); }; return false;">Join now!</a>';
+      v += '<a href="' + game_url + '" onclick="try { MMD_SA_options.Dungeon.multiplayer.connect(\'' + (para1) + '\'); } catch (err) { console.error(err); }; return false;">Join now!</a>';
     }
     else {
-      v += '<a href="https://sao.animetheme.com/?cmd_line=' + (paras[1]) + '&host_peer_id=' + (para1) + '" target="_top">Join now!</a>';
+      v += '<a href="' + game_url + '" target="_top">Join now!</a>';
     }
     break
 // Ignore all unknown commands
