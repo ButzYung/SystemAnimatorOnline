@@ -23,7 +23,7 @@ else {
 }
 
 
-var Chatbox_version = "2.0.1"
+var Chatbox_version = "2.0.2"
 
 function w3c_chatDisplay(state) {
   if (!_w3c_dom)
@@ -949,7 +949,7 @@ switch (command) {
   case "host":
 //$peer_id | $game_id, $game_path, $connection_count, $connection_max, $name
     var paras = decodeURIComponent(para2).split("|");
-    if (parent.System._browser.P2P_network.peer_default && (para1 == parent.System._browser.P2P_network.peer_default.id))
+    if (SystemAnimator_mode && parent.System._browser.P2P_network.peer_default && (para1 == parent.System._browser.P2P_network.peer_default.id))
       continue
     className = "Msg_Default";
     v = (paras[4] || 'Someone') + ' is hosting a game(' + (paras[0]) + ')! ';
