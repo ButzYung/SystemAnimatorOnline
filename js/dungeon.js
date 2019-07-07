@@ -11682,7 +11682,7 @@ ChatboxAT.SendData_ChatSend([System._browser.P2P_network.process_message('/host 
 //($game_id, $game_path, $connection_count, $connection_max)
       var path_local = Settings.f_path
       if (path_local.indexOf(System.Gadget.path) == 0)
-        path_local = path_local.substring(System.Gadget.path.length).replace(/\\/g, "/")
+        path_local = path_local.substring(System.Gadget.path.length).replace(/\\/g, "/").replace(/^\/+/, "/")
       return "/host [" + peer.id + "] " + encodeURIComponent([d_options.game_id, path_local, peer.connections.length, d_options.multiplayer.OPC_list.length].join("|"))
     case "connect":
       if (!para.para1)
