@@ -870,6 +870,14 @@ let sb_func = function () {
     sb.className = "StartButton"
 //  sb.href="#"
     sb.addEventListener("click", function () {
+      if (MMD_SA_options.Dungeon_options && MMD_SA_options.Dungeon_options.multiplayer) {
+        var mp = MMD_SA_options.Dungeon.multiplayer
+        if (!mp.is_host && !mp.is_client) {
+          if (!confirm("You are about to start without joining a game from other players, which means you will start in \"host\" mode. In this mode, you won't be able to join other players' games, but on the other hand, other players can join yours."))
+            return
+          ChatboxAT.SendData_ChatSend([System._browser.P2P_network.process_message('/host')])
+        }
+      }
 //      sb.style.display = "none"
       document.body.removeChild(sb)
       init(); resize();
@@ -1204,6 +1212,8 @@ this._kissing = MMD_SA.meter_motion_disabled = false
    ,"cover_undies": {
       action: {
         condition: function (is_bone_action, objs) {
+if (objs._model_index) return false
+
 var busy = MMD_SA._busy_mode1_ || !MMD_SA_options.look_at_screen
 if (MMD_SA._hit_hip_ || ((MMD_SA.MMD.motionManager.para_SA._cover_undies != false) && !busy && !MMD_SA.custom_action_default.kissing.action._kissing && (((MMD_SA._rx*180/Math.PI) % 360 > 45 * ((MMD_SA.use_jThree) ? 0.75 : 1)) || (MMD_SA.use_jThree && MMD_SA_options.use_JSARToolKit && MMD_SA.AR_obj._m4 && (MMD_SA.AR_obj.camera_position.y < 10)))/* && !Audio_BPM.vo.motion_by_song_name_mode*/)) {
   this._undies_visible = true
