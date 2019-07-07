@@ -23,7 +23,7 @@ else {
 }
 
 
-var Chatbox_version = "2.0.0"
+var Chatbox_version = "2.0.1"
 
 function w3c_chatDisplay(state) {
   if (!_w3c_dom)
@@ -957,7 +957,7 @@ switch (command) {
       v += '<a href="" onclick="try { MMD_SA_options.Dungeon.multiplayer.connect(\'' + (para1) + '\'); } catch (err) { console.error(err); }; return false;">Join now!</a>';
     }
     else {
-      v += '<a href="https://www.animetheme.com/system_animator_online/SystemAnimator_online.html?cmd_line=' + (paras[1]) + '&host_peer_id=' + (para1) + '" target="_top">Join now!</a>';
+      v += '<a href="https://sao.animetheme.com/?cmd_line=' + (paras[1]) + '&host_peer_id=' + (para1) + '" target="_top">Join now!</a>';
     }
     break
 // Ignore all unknown commands
@@ -1095,6 +1095,7 @@ self.ChatboxAT = {
  ,smallMsg: smallMsg
  ,checkChatCommand: checkChatCommand
  ,SendData_ChatSend: SendData_ChatSend
+ ,Chatbox_version: Chatbox_version
  ,chatW_place: chatW_place
  ,chatW_minimize: chatW_minimize
 
