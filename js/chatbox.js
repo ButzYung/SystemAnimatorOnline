@@ -1096,6 +1096,8 @@ self.ChatboxAT = {
  ,checkChatCommand: checkChatCommand
  ,SendData_ChatSend: SendData_ChatSend
 
+ ,Chatbox_online_mode: function () { return Chatbox_online_mode; }
+
  ,css: {
     MENU: [246,246,246]
    ,BUTTONHIGHLIGHT: [217,217,217]
