@@ -5217,7 +5217,8 @@ if (MMD_SA.initialized) {
     MMD_SA._renderer.__resize(w,h)
 
   if (self.ChatboxAT) {
-     document.getElementById("CB_Lwindow0").style.transform = (SA_zoom >= 1) ? "" : "scale(" + SA_zoom + ")";
+    let zoom = Math.min(w/1280, h/720)
+    document.getElementById("CB_Lwindow0").style.transform = (zoom >= 1) ? "" : "scale(" + zoom + ")";
   }
 
   SA_zoom = 1
