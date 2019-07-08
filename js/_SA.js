@@ -687,11 +687,12 @@ function SA_OnKeyDown(event, enforced) {
   var result = { return_value:null }
   window.dispatchEvent(new CustomEvent("SA_keydown", { detail:{ e:event, keyCode:k, result:result } }));
 
+  var _browser_onkeydown
   if (result.return_value) {
     if (result.return_value == "nondefault")
       return
   }
-  else if (browser_native_mode && !webkit_window) {}
+  else if (browser_native_mode && !webkit_window) { _browser_onkeydown=true }
   else if (k == 73) {}
   else if (k == 65) {
     if (is_SA_child_animation) {
@@ -778,13 +779,13 @@ function SA_OnKeyDown(event, enforced) {
     }
     event.preventDefault()
   }
-  else {
-    if (!System._browser.onkeydown(event)) {
-      if (!event.shiftKey)
-        DEBUG_show(k, 2)
-      System._browser.showFocus(false)
-      return
-    }
+  else { _browser_onkeydown=true }
+
+  if (_browser_onkeydown && !System._browser.onkeydown(event)) {
+    if (!event.shiftKey)
+      DEBUG_show(k, 2)
+    System._browser.showFocus(false)
+    return
   }
 
   if (webkit_electron_mode && (p_win.returnBoolean("IgnoreMouseEvents") || p_win.returnBoolean("AutoItStayOnDesktop"))) {

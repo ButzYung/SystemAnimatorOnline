@@ -1981,7 +1981,7 @@ else if (have_child && ((k >= 49) && (k < 49+SA_child_animation_max))) {
 
   return true
 }
-else if (have_child && (k == 96)) {
+else if (have_child && (k == 96) && !is_SA_child_animation_host) {
   var p = (is_SA_child_animation) ? parent : self
 
   var ds = p.Lchild_animation_parent.style
@@ -2024,7 +2024,7 @@ else if (have_child && ((k >= 97) && (k < 97+SA_child_animation_max)) && !is_SA_
 }
 else if ((k >= 96) && (k < 96+10)) {
 // num pad 0-9
-  if (self.MMD_SA && MMD_SA_options.motion_shuffle && MMD_SA.use_jThree) {
+  if (self.MMD_SA && MMD_SA_options.motion_shuffle && MMD_SA.use_jThree && MMD_SA.MMD_started) {
     if (k == 96) {
       if (MMD_SA_options._motion_shuffle) {
         MMD_SA_options.motion_shuffle = MMD_SA_options._motion_shuffle.slice(0)
