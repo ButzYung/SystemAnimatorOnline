@@ -2527,9 +2527,9 @@ function P2P_Peer(para=Object.clone(peer_para_default)) {
   });
   _peer.on("error", function (err) {
     console.log("P2P_network: Peer-" + that.index + " error", err)
-    if (that.para.events.peer.error_by_connection && that.para.events.peer.error_by_connection[that.id]) {
-      that.para.events.peer.error_by_connection[that.id](err)
-      delete that.para.events.peer.error_by_connection[that.id]
+    if (that.para.events.peer.error_by_connection) {
+      that.para.events.peer.error_by_connection(err)
+      delete that.para.events.peer.error_by_connection
     }
     else
       that.para.events.peer.error && that.para.events.peer.error(that, err)
@@ -2559,15 +2559,16 @@ P2P_Peer.prototype.connect = function (id, options) {
 // NOTE: resolve/reject can only take 1 parameter
         that.para.events.connection.handshake_request_accecpted[connection.label] = resolve;
         that.para.events.connection.handshake_request_rejected[connection.label]  = reject;
+
+        delete that.para.events.peer.error_by_connection
       });
       connection.on("error", function (err) {
         console.log("P2P_network: Remote connection failed", err)
         reject(err)
       });
 
-// one-time, by source peer id
-      that.para.events.peer.error_by_connection = that.para.events.peer.error_by_connection || {}
-      that.para.events.peer.error_by_connection[that.id] = reject;
+// one-time
+      that.para.events.peer.error_by_connection = reject;
     };
     switch (that.status) {
       case "connected":
