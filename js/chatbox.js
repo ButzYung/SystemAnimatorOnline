@@ -23,7 +23,7 @@ else {
 }
 
 
-var Chatbox_version = "2.0.3"
+var Chatbox_version = "2.0.4"
 
 function w3c_chatDisplay(state) {
   if (!_w3c_dom)
@@ -476,7 +476,7 @@ if (_w3c_dom) {
   CB_SresizeB0.innerText = Chatbox_buttons.max
 }
 
-  if (Chatbox_no_auto_open || /chatbox_minimized=1|chatbox_opened=1/.test(document.cookie))
+  if (Chatbox_no_auto_open || (/chatbox_minimized=1|chatbox_opened=1/.test(document.cookie) && !SystemAnimator_mode))
     chatW_minimize(0)
   else {
     chatW_fix(0)
