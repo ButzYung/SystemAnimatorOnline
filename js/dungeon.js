@@ -1,4 +1,4 @@
-// Dungeon (v1.0.1)
+// Dungeon (v1.0.2)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -11541,6 +11541,7 @@ setTimeout(function () { connection.send({ handshake:{ accepted:true, para:para 
 }
 else if (handshake.accepted) {
   if (mp.is_client && mp.online) {
+    console.log("P2P_network: Remote Peer connected already")
     return
   }
 
@@ -11824,7 +11825,8 @@ net.peer_default.connect(peer_id).then(function (para) {
   para_connect.onconnect && para_connect.onconnect(para)
 //}).catch(function () {
 }).catch(function (err) {
-  ChatboxAT.smallMsg("(P2P network: Remote connection failed, check console for details)")
+  if (err && err.type)
+    ChatboxAT.smallMsg("(P2P network: Remote connection failed" + ((err && err.type) ? " / "+(err.type) : ", check console for details") + ")")
 
   net.peer_default.status = "connected"
   para_connect.onerror && para_connect.onerror()

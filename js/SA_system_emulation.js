@@ -2527,7 +2527,12 @@ function P2P_Peer(para=Object.clone(peer_para_default)) {
   });
   _peer.on("error", function (err) {
     console.log("P2P_network: Peer-" + that.index + " error", err)
-    that.para.events.peer.error && that.para.events.peer.error(that, err)
+    if (that.para.events.peer.error_by_connection && that.para.events.peer.error_by_connection[that.id]) {
+      that.para.events.peer.error_by_connection[that.id](err)
+      delete that.para.events.peer.error_by_connection[that.id]
+    }
+    else
+      that.para.events.peer.error && that.para.events.peer.error(that, err)
   });
   _peer.on("connection", function (connection) {
     console.log("P2P_network: Remote Peer" + "(" + connection.peer + "/" + connection.label + "/client) connecting to Peer-" + that.index + "(" + that.id + ")")
@@ -2559,6 +2564,10 @@ P2P_Peer.prototype.connect = function (id, options) {
         console.log("P2P_network: Remote connection failed", err)
         reject(err)
       });
+
+// one-time, by source peer id
+      that.para.events.peer.error_by_connection = that.para.events.peer.error_by_connection || {}
+      that.para.events.peer.error_by_connection[that.id] = reject;
     };
     switch (that.status) {
       case "connected":
