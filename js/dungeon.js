@@ -11449,9 +11449,6 @@ return sprite_obj_list.find(function (obj) { return obj.texture_obj && (obj.text
   }
     };
 
-    var host_command_timestamp = 0;
-    var host_command_timerID;
-
     var _init_func;
     var peer_para_default = {
   events: {
@@ -11560,35 +11557,47 @@ else {
   connection.close(peer)
 }
       }
-     ,data: function (peer, connection, data) {
+     ,data: (function () {
+        var send_data_timestamp = 0;
+        return function (peer, connection, data) {
 if (!data.data)
   return
+
+var time = Date.now()
 
 if (data.data.msg) {
   online_data_cache.data.msg = (online_data_cache.data.msg || []).concat(data.data.msg)
 }
 
 var OPC_data_all = data.data.OPC
-if (!OPC_data_all)
-  return
+if (OPC_data_all) {
+  var OPC_data_cache = online_data_cache.data.OPC
 
-var OPC_data_cache = online_data_cache.data.OPC
-
-var time = Date.now()
-Object.keys(OPC_data_all).forEach(function (index) {
-  var OPC_data = OPC_data_all[index]
-  var cache = OPC_data_cache[index]
+  Object.keys(OPC_data_all).forEach(function (index) {
+    var OPC_data = OPC_data_all[index]
+    var cache = OPC_data_cache[index]
 // ignore "dummy" data if cache exists
-  if (!OPC_data.game && cache)
-    delete OPC_data_all[index]
-  else {
+    if (!OPC_data.game && cache)
+      delete OPC_data_all[index]
+    else {
 // motion.changed is reset if only it has been processed
-    if (OPC_data.motion && cache && cache.motion && cache.motion.changed)
-      OPC_data.motion.changed = true
+      if (OPC_data.motion && cache && cache.motion && cache.motion.changed)
+        OPC_data.motion.changed = true
+    }
+  });
+  Object.append(OPC_data_cache, OPC_data_all)
+}
+
+// to counter background throttling, by utilizing the network events from other peers as "timer" (i.e. events of connection.send())
+if (document.hidden) {
+  if (time > send_data_timestamp + 1000/30) {
+    MMD_SA_options.Dungeon.multiplayer.process_remote_online_data()
+    MMD_SA_options.Dungeon.multiplayer.update_online_data()
+    send_data_timestamp = time
   }
-});
-Object.append(OPC_data_cache, OPC_data_all)
-      }
+}
+        };
+      })()
      ,close: function (peer, connection) {
 var mp = MMD_SA_options.Dungeon.multiplayer
 if (connection._para) {
@@ -11613,7 +11622,10 @@ if (peer.connections.length <= 1) {
 }
       }
     }
-   ,send_message: function (para) {
+   ,send_message: (function () {
+      var host_command_timestamp = 0;
+      var host_command_timerID;
+      return function (para) {
 /*
 return
 - "": send no message
@@ -11696,7 +11708,8 @@ ChatboxAT.SendData_ChatSend([System._browser.P2P_network.process_message('/host 
 }
 
 return ""
-    }
+      };
+    })()
   }
     };
 
@@ -11962,8 +11975,8 @@ if (d.started) {
   }
 }
 
-if (!need_update)
-  return
+// send dummy data even when there is no update, to counter background throttling, by providing the network events as "timer" for peers in background (i.e. events of connection.send())
+//if (!need_update) return
 
 for (var id in net.peer_default.connections) {
   var c = net.peer_default.connections[id]
