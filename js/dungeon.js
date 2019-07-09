@@ -2031,7 +2031,6 @@ if (this.area_id) {
 // total refresh
     for (var id in MMD_SA_options.Dungeon_options.options_by_area_id) {
       var area_options = MMD_SA_options.Dungeon_options.options_by_area_id[id]
-      area_options._grid_array = null
       area_options._random_seed = null
     }
   }
@@ -2065,7 +2064,7 @@ if (area_id)
 options = MMD_SA_options.Dungeon_options.options_by_area_id[this.area_id]
 
 if (!options._random_seed)
-  options._random_seed = Date.now()
+  options._random_seed = this.generate_seed()
 MT = new MersenneTwister(options._random_seed)
 
 if (options.event_listener) {
@@ -2103,9 +2102,7 @@ this.wall_material_index_default  = (options.wall_material_index_default != null
 
 
 var d_options = this.RDG_options
-var grid_array = this.grid_array = (options._grid_array && options._grid_array.map(function (x) { return x.slice() })) || (this.RDG_options.grid_array && this.RDG_options.grid_array.map(function (x) { return x.slice() })) || this.RDG.NewDungeon(d_options);
-if (!options._grid_array)
-  options._grid_array = grid_array.map(function (x) { return x.slice() })
+var grid_array = this.grid_array = (this.RDG_options.grid_array && this.RDG_options.grid_array.map(function (x) { return x.slice() })) || this.RDG.NewDungeon(d_options);
 //console.log(this.grid_array)
 
 
@@ -11695,7 +11692,7 @@ ChatboxAT.SendData_ChatSend([System._browser.P2P_network.process_message('/host 
       var path_local = Settings.f_path
       if (path_local.indexOf(System.Gadget.path) == 0)
         path_local = path_local.substring(System.Gadget.path.length).replace(/\\/g, "/").replace(/^\/+/, "/")
-      return "/host [" + peer.id + "] " + encodeURIComponent([d_options.game_id, path_local, peer.connections.length, d_options.multiplayer.OPC_list.length].join("|"))
+      return "/host [" + peer.id + "] " + encodeURIComponent([d_options.game_id+"/v"+(d_options.game_version), path_local, peer.connections.length, d_options.multiplayer.OPC_list.length].join("|"))
     case "connect":
       if (!para.para1)
         ChatboxAT.smallMsg("No host peer ID specified")
@@ -12108,6 +12105,27 @@ return cache[name]
   }
     };
   })()
+
+ ,seed_base: Date.now()
+ ,generate_seed: function (str_list) {
+var d_options = MMD_SA_options.Dungeon_options
+if (!str_list) {
+  str_list = [d_options.game_id, d_options.game_version, d_options.chapter_id, this.area_id]
+}
+
+var _this = str_list.join("|") + "|" + this.seed_base
+//https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
+var hash = 0, i, chr;
+if (_this.length === 0) return hash;
+for (i = 0; i < _this.length; i++) {
+  chr   = _this.charCodeAt(i);
+  hash  = ((hash << 5) - hash) + chr;
+  hash |= 0; // Convert to 32bit integer
+}
+//_random_seed
+console.log("seed", _this, hash)
+return hash;
+  }
 
  ,utils: {
 

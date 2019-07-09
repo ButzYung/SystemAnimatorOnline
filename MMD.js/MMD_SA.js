@@ -5201,7 +5201,7 @@ MMD_SA.GOML_head +=
 if (MMD_SA.initialized) {
 // resize
 //use_solid_bg
-  var fullscreen = !is_SA_child_animation && Settings.CSSTransformFullscreen && (SA_fullscreen_stretch_to_cover || returnBoolean("AutoItStayOnDesktop"))
+  var fullscreen = (!is_SA_child_animation || is_SA_child_animation_host) && Settings.CSSTransformFullscreen && (SA_fullscreen_stretch_to_cover || returnBoolean("AutoItStayOnDesktop"))
   var w, h
   if (fullscreen) {
     w = EV_width  = screen.availWidth

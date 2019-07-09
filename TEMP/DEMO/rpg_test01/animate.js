@@ -1154,7 +1154,8 @@ MMD_SA_options.custom_action[MMD_SA_options.custom_action.length-1]._onmessage =
 
 MMD_SA_options.Dungeon_options = {
 
-  game_id: "ATWO-beta-0.0.1"
+  game_id: "ATWO-beta-01"
+ ,game_version: "0.0.2"
 
  ,use_PC_click_reaction_default:true
  ,combat_mode_enabled:true
