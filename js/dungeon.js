@@ -11528,23 +11528,12 @@ if (handshake.request) {
   };
   connection.send({ handshake:{ accepted:true, para:para } })
 
-setTimeout(function () { connection.send({ handshake:{ accepted:true, para:para } }); }, 1000)
-setTimeout(function () { connection.send({ handshake:{ accepted:true, para:para } }); }, 2000)
-setTimeout(function () { connection.send({ handshake:{ accepted:true, para:para } }); }, 3000)
-setTimeout(function () { connection.send({ handshake:{ accepted:true, para:para } }); }, 4000)
-setTimeout(function () { connection.send({ handshake:{ accepted:true, para:para } }); }, 5000)
-
 //  ChatboxAT.smallMsg("(P2P network: Remote Peer" + "(" + (handshake.para.name || (connection.peer + "/" + connection.label)) + ") connected (" + (connection_count+1) + "/" + (connection_max+1) + ")")
   var msg = "Player-" + (OPC_index+1) + " has joined the game (" + (connection_count+1) + "/" + (connection_max+1) + ")."
   ChatboxAT.smallMsg(msg)
   online_data_cache.data.msg_out = (online_data_cache.data.msg_out || []).concat(['<p class=Msg_Default>' + msg + '</p>'])
 }
 else if (handshake.accepted) {
-  if (mp.is_client && mp.online) {
-    console.log("P2P_network: Remote Peer connected already")
-    return
-  }
-
   mp.is_client = true
 
   mp.online = true

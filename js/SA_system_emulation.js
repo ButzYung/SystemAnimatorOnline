@@ -2393,7 +2393,7 @@ return {
     })()
 
    ,P2P_network: (function () {
-var lib, peer_default;
+var peer_default;
 var peer_count = 0;
 
 var peer_para_default = {
@@ -2535,9 +2535,13 @@ function P2P_Peer(para=Object.clone(peer_para_default)) {
       that.para.events.peer.error && that.para.events.peer.error(that, err)
   });
   _peer.on("connection", function (connection) {
+    if (para.events.peer.connection && para.events.peer.connection(that, connection))
+      return
     console.log("P2P_network: Remote Peer" + "(" + connection.peer + "/" + connection.label + "/client) connecting to Peer-" + that.index + "(" + that.id + ")")
-    var connection_obj = new P2P_Connection(that, connection)
-    para.events.peer.connection && para.events.peer.connection(that, connection_obj)
+    connection.on("open", function () {
+      console.log("P2P_network: Remote Peer" + "(" + connection.peer + "/" + connection.label + "/client) connected to Peer-" + that.index + "(" + that.id + ")")
+      new P2P_Connection(that, connection)
+    });
   });
 }
 
