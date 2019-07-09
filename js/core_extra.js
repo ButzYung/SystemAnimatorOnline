@@ -60,6 +60,10 @@ function SA_load_scripts() {
       params[_result[1]] = _result[2];
     }
 
+    if (self._url_search_params_) {
+      params = System._browser.url_search_params = Object.assign(_url_search_params_, params)
+    }
+
     var p
     if (is_SA_child_animation && params.f) {
       SA_HTA_folder = decodeURIComponent(params.f)
