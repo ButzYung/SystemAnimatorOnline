@@ -207,14 +207,14 @@ if (SA_project_JSON.child_animation_host && !is_SA_child_animation) {
   window.addEventListener('DOMContentLoaded', (event) => {
     SA_fullscreen_stretch_to_cover = true
     document.getElementById("Lbody_host").style.visibility = "hidden"
-  });
 
-  window.addEventListener("resize", (function () {
-    var w, h;
+    window.addEventListener("resize", (function () {
+      var w, h;
 
-    return function (e) {
+      return function (e) {
 var c0 = document.getElementById("Ichild_animation0")
 if (!c0) return
+if (c0.contentDocument.readyState == "loading") return
 
 var cw0 = c0.contentWindow
 /*
@@ -235,9 +235,9 @@ cw0.resize(true)
 cw0.Settings.CSSTransformFullscreen = true
 cw0.cw0SA_zoom = 1
 cw0.resize()//null,null,null, true)
-
-    };
-  })());
+      };
+    })());
+  });
 
   SA_project_JSON = {
     child_animation_host: SA_project_JSON.child_animation_host
