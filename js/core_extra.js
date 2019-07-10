@@ -214,9 +214,11 @@ if (SA_project_JSON.child_animation_host && !is_SA_child_animation) {
       return function (e) {
 var c0 = document.getElementById("Ichild_animation0")
 if (!c0) return
-if (c0.contentDocument.readyState == "loading") return
 
 var cw0 = c0.contentWindow
+// make sure that System Animator page on child animation has loaded and is DOM-content ready
+if (!cw0.System) return
+if (c0.contentDocument.readyState == "loading") return
 /*
 if (!cw0.B_content_width) return
 
