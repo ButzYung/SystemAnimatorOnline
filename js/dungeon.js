@@ -11426,6 +11426,13 @@ return sprite_obj_list.find(function (obj) { return obj.texture_obj && (obj.text
     var net = System._browser.P2P_network
     var d_options = MMD_SA_options.Dungeon_options
 
+    if (self.ChatboxAT && !Chatbox_intro_msg) {
+      Chatbox_intro_msg =
+  '<p>Anime Theme World Online 3D - Chatbox Mini (' + ChatboxAT.Chatbox_version + ')</p>\n'
++ '<p>New comer? <a href="readme_multiplayer.txt" target="_blank" class=AutoChatCommand>Click here</a> to know more about this game.</p>\n'
++ '<p>Not a member? <a href="http://www.animetheme.com/cgi-bin/ikonboard/register.cgi" target="_blank" class=AutoChatCommand>Register now!</a></p>';
+    }
+
     var online_data_cache_default = { data:{ OPC:{} } };
     var online_data_cache = Object.clone(online_data_cache_default);
 

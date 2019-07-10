@@ -1,4 +1,4 @@
-﻿(Document version 1.0)
+﻿(Document version 1.1)
 
 Introduction:
 
@@ -41,7 +41,7 @@ Multiplayer feature:
 
     - Once you start hosting a game, you cannot join games hosted by others without restarting.
 
-    - If you decide to host a game, you can actually press START and start the game offline, and then type /host in chatbox at any time.
+    - If you decide to host your own game, you can actually press START without manually type the host command. After that, the host command will be automatically executed.
 
 - Normally, you join a game automatically by clicking on the links on the chatbox. However, if you know the peer ID of a host, you can type below in chatbox to connect manually.
 

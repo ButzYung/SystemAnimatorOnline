@@ -440,13 +440,6 @@ function SA_load_body() {
 
   var menu_html = ""
   if (use_SA_system_emulation) {
-    if (self.ChatboxAT) {
-      Chatbox_intro_msg =
-  '<p>Anime Theme World Online - Chatbox Mini (' + ChatboxAT.Chatbox_version + ')</p>\n'
-+ '<p>New comer? <a href="readme_multiplayer.txt" class=AutoChatCommand>Click here</a> to know more about this game.</p>\n'
-+ '<p>Not a member? <a href="http://www.animetheme.com/cgi-bin/ikonboard/register.cgi" target="_blank" class=AutoChatCommand>Register now!</a></p>';
-    }
-
     menu_html +=
   '<div id="Lbrowse_for_file" style="position:absolute; left:10px; top:10px; height:24px; width:380px; background-color:white; z-index:999; padding:5px; border:2px solid black; visibility:hidden">\n'
 + '<span style="font-family:Arial; font-size:12px">Choose an input file.</span>\n'
