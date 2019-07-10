@@ -101,7 +101,6 @@ catch (err) {
 
 // main
   if (!is_SA_child_animation) {
-    var func_str
     if (use_RAF) {
       DEBUG_show('Use "requestAnimationFrame"', 2)
       setTimeout('RAF_timerID = requestAnimationFrame(Animate_RAF)', 200)
@@ -1611,13 +1610,17 @@ var _resize_loop_ = 0
 var _resize_loop_timerID = null
 
 function resize(no_focus, custom_resize, no_fullscreen_resize, fullscreen_adjust_position) {
-if (++_resize_loop_ >= 100) {
-  DEBUG_show("WARNING: dead loop in resize, possibly a bug",0,1)
-  return
-}
-if (_resize_loop_timerID)
-  clearTimeout(_resize_loop_timerID)
-_resize_loop_timerID = setTimeout(function(){_resize_loop_timerID=null; _resize_loop_=0;}, 100)
+// Fix some extreme cases in which resize can be run before DOM content is ready
+  if (document.readyState == "loading")
+    return
+
+  if (++_resize_loop_ >= 100) {
+    DEBUG_show("WARNING: dead loop in resize, possibly a bug",0,1)
+    return
+  }
+  if (_resize_loop_timerID)
+    clearTimeout(_resize_loop_timerID)
+  _resize_loop_timerID = setTimeout(function(){_resize_loop_timerID=null; _resize_loop_=0;}, 100)
 
 
   var _SA_zoom = SA_zoom
