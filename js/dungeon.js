@@ -11621,8 +11621,8 @@ if (peer.connections.length <= 1) {
   mp.is_host = false
   mp.is_client = false
 
-  console.log("(Game mode: OFFLINE)")
-  ChatboxAT.smallMsg("(Game mode: OFFLINE)")
+  console.log("(No connected player)")
+  ChatboxAT.smallMsg("(No connected player)")
 }
       }
     }
