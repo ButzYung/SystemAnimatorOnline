@@ -23,7 +23,7 @@ else {
 }
 
 
-var Chatbox_version = "2.0.4"
+var Chatbox_version = "2.0.5"
 
 function w3c_chatDisplay(state) {
   if (!_w3c_dom)
@@ -891,6 +891,8 @@ function CheckMute(v) {
   return ((/^[\w ]+\(([\w ]+)\):/.exec(v)) && (mute_list.indexOf(RegExp.$1) != -1))
 }
 
+var peer_announced = {}
+
 function ChatShow(msgs) {
   var auto_scroll = (CB_Lchat_content0.scrollTop > CB_Lchat_content0.scrollHeight - CB_Lchat_content0.clientHeight - 20)
 
@@ -949,8 +951,10 @@ switch (command) {
   case "host":
 //$peer_id | $game_id, $game_path, $connection_count, $connection_max, $name
     var paras = decodeURIComponent(para2).split("|");
-    if (SystemAnimator_mode && parent.System._browser.P2P_network.peer_default && (para1 == parent.System._browser.P2P_network.peer_default.id))
+    if (peer_announced[para1] || (SystemAnimator_mode && parent.System._browser.P2P_network.peer_default && (para1 == parent.System._browser.P2P_network.peer_default.id)))
       continue
+    peer_announced[para1] = true
+
     className = "Msg_Default";
     v = (paras[4] || 'Someone') + ' is hosting a game(' + (paras[0]) + ')! ';
     var game_url = 'https://sao.animetheme.com/?cmd_line=' + (paras[1]) + '&host_peer_id=' + (para1);
