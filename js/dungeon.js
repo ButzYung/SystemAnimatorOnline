@@ -11818,8 +11818,8 @@ net.peer_default.connect(peer_id).then(function (para) {
   para_connect.onconnect && para_connect.onconnect(para)
 //}).catch(function () {
 }).catch(function (err) {
-  if (err && err.type)
-    ChatboxAT.smallMsg("(P2P network: Remote connection failed" + ((err && err.type) ? " / "+(err.type) : ", check console for details") + ")")
+//  if (err && err.type)
+  ChatboxAT.smallMsg("(P2P network: Remote connection failed, check console for details)")
 
   net.peer_default.status = "connected"
   para_connect.onerror && para_connect.onerror()
