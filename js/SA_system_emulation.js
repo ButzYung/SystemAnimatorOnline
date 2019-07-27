@@ -2594,7 +2594,7 @@ var net = {
 return (is_SA_child_animation_host) ? document.getElementById("Ichild_animation0").contentWindow : self
   }
 
- ,process_message: function (msg) {
+ ,process_message: function (msg, is_auto) {
 var peer = this.peer_default
 if (!peer)
   return msg
@@ -2619,7 +2619,8 @@ else {
   return_value = peer.para.events.send_message({ name:name, msg:msg, command:command, para1:para1, para2:para2, id:id, pass:pass })
 }
 
-this.content_window.document.getElementById("Fchat").msg.value = ""
+if (!is_auto)
+  this.content_window.document.getElementById("Fchat").msg.value = ""
 
 if (return_value != null)
   return return_value

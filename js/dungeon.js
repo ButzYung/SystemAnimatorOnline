@@ -11687,7 +11687,7 @@ document.execCommand("copy")
 
         if (host_command_timerID) clearInterval(host_command_timerID);
         host_command_timerID = setInterval(function () {
-ChatboxAT.SendData_ChatSend([System._browser.P2P_network.process_message('/host auto')])
+ChatboxAT.SendData_ChatSend([System._browser.P2P_network.process_message('/host auto', true)])
 // every 3 minutes
         }, 3*60*1000);
       }
