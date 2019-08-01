@@ -538,8 +538,9 @@ if (!content3d_disabled)
   html +=
   '</div>\n'
 + '</div></div></div></div>\n'
-+ menu_html
+//+ menu_html
 + '</div>\n'
++ menu_html;
 
   html = html.replace(/title\=/g, "data-title=")
 

@@ -145,6 +145,9 @@ catch (err) {
     sb.init()
 
     sb._onmouseover_custom = [function () {
+// in SA_child_animation_host mode, hide the menu of parent window
+if (is_SA_child_animation_host && !is_SA_child_animation) return
+
 Lquick_menu.style.visibility = "inherit"
 Lquick_menu._activated = true
 
