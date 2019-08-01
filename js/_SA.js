@@ -565,7 +565,7 @@ function SA_OnDocument() {
     }
     catch (err) {}
 
-    webkit_electron_remote.dialog.showOpenDialog(null, {title:"Choose an input file."}
+    webkit_electron_dialog.showOpenDialog(null, {title:"Choose an input file."}
 ,function (v) {
   try {
     webkit_window.setAlwaysOnTop(returnBoolean("AutoItAlwaysOnTop"))
@@ -606,7 +606,7 @@ function SA_OnFolder(info) {
     }
     catch (err) {}
 
-    webkit_electron_remote.dialog.showOpenDialog(null, {title:info, properties:["openDirectory"]}
+    webkit_electron_dialog.showOpenDialog(null, {title:info, properties:["openDirectory"]}
 ,function (v) {
   try {
     webkit_window.setAlwaysOnTop(returnBoolean("AutoItAlwaysOnTop"))

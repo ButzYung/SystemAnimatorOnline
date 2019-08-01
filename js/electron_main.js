@@ -226,7 +226,8 @@ if (c_json) {
     }
     catch (err) {}
 
-    if (!electron.dialog.showMessageBox(null, {type:"question", buttons:["OK", "Cancel"], defaultId:1, message:"ERROR: System Animator has crashed. Press OK to restart, or Cancel to quit."})) {
+    var options = {type:"question", buttons:["OK", "Cancel"], defaultId:1, message:"ERROR: System Animator has crashed. Press OK to restart, or Cancel to quit."}
+    if ((parseInt(process.versions['node-webkit']) >= 6) ? !electron.dialog.showMessageBoxSync(null, options) : !electron.dialog.showMessageBox(null, options)) {
       app.relaunch()
       app.exit(0)
     }

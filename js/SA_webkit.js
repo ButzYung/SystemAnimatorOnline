@@ -180,7 +180,7 @@ fd = undefined
 else if (webkit_electron_mode) {
   window.confirm = function (msg) {
     try { webkit_window.setAlwaysOnTop(false) } catch (err) {}
-    var confirmed = !webkit_electron_remote.dialog.showMessageBox(null, {type:"question", buttons:["OK", "Cancel"], defaultId:1, message:msg})
+    var confirmed = !webkit_electron_dialog.showMessageBox(null, {type:"question", buttons:["OK", "Cancel"], defaultId:1, message:msg})
     try { webkit_window.setAlwaysOnTop(top.returnBoolean("AutoItAlwaysOnTop")) } catch (err) {}
     return confirmed
   }

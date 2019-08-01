@@ -473,7 +473,7 @@ var webkit_version_milestone = {}
 var webkit_path, webkit_dir, webkit_transparent_mode
 var webkit_nwjs_mode, webkit_electron_mode
 var webkit_electron_remote
-var webkit_window, webkit_electron_screen
+var webkit_window, webkit_electron_screen, webkit_electron_dialog
 var webkit_IgnoreMouseEvents_disabled;
 
 (function () {
@@ -600,6 +600,20 @@ if (!browser_native_mode) {
       webkit_version = process.versions['electron']
       webkit_electron_remote = top.require('electron').remote
       webkit_electron_screen = top.require('electron').screen
+      webkit_electron_dialog = {
+  showOpenDialog: function (browserWindow, options, callback) {
+if (webkit_version_milestone["6.0.0"])
+  webkit_electron_remote.dialog.showOpenDialogSync(browserWindow, options, callback)
+else
+  webkit_electron_remote.dialog.showOpenDialog(browserWindow, options, callback)
+  }
+ ,showMessageBox: function (browserWindow, options) {
+if (webkit_version_milestone["6.0.0"])
+  webkit_electron_remote.dialog.showMessageBoxSync(browserWindow, options)
+else
+  webkit_electron_remote.dialog.showMessageBox(browserWindow, options)
+  }
+      };
     }
     webkit_path = process.execPath
     webkit_window = (webkit_nwjs_mode) ? require('nw.gui').Window.get() : webkit_electron_remote.getCurrentWindow()
@@ -614,6 +628,7 @@ if (!browser_native_mode) {
     if (webkit_electron_mode) {
       webkit_electron_remote = top.webkit_electron_remote
       webkit_electron_screen = top.webkit_electron_screen
+      webkit_electron_dialog = top.webkit_electron_dialog
     }
   }
   webkit_dir = webkit_path.replace(/[\/\\][^\/\\]+$/, "")
@@ -629,6 +644,10 @@ if (!browser_native_mode) {
   webkit_version_milestone["1.2.2"]  = (v1 >= 10202)//('setIgnoreMouseEvents' in webkit_window)
   webkit_version_milestone["1.2.4"]  = (v1 >= 10204)//('getChildWindows' in webkit_window)
   webkit_version_milestone["1.4.11"] = (v1 >= 10411)//reload page instead of relaunch to restart the app (https://github.com/electron/electron/pull/8110)
+  webkit_version_milestone["6.0.0"]  = (v1 >= 60000)//sync/promise-based version of dialog.showMessageBox, dialog.showOpenDialog, dialog.showSaveDialog
+
+// electron v6
+  webkit_electron_screen = webkit_electron_screen || webkit_electron_remote.screen
 
   webkit_transparent_mode = webkit_nwjs_mode || webkit_electron_remote.getGlobal("is_transparent")
 })();

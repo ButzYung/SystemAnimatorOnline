@@ -74,7 +74,7 @@ var pos
 return function (force_update) {
   if (force_update || (last_updated != RAF_timestamp)) {
     last_updated = RAF_timestamp
-    pos = this.require('electron').screen.getCursorScreenPoint()
+    pos = webkit_electron_screen.getCursorScreenPoint()
   }
   return pos
 };
