@@ -611,6 +611,13 @@ else
 
 		if ( _this.enabled === false ) return;
 
+// AT: ignore joystick touch
+var touches = [];
+for (var i = 0; i < event.touches.length; i++) {
+  if (event.touches[i].target.id != "Ljoystick") touches.push(event.touches[i]);
+}
+if (touches.length != event.touches.length) event = { touches:touches };
+
 		switch ( event.touches.length ) {
 
 			case 1:
@@ -618,7 +625,7 @@ else
 				_rotateEnd.copy( _this.getMouseProjectionOnBall( event.touches[ 0 ].pageX, event.touches[ 0 ].pageY, _rotateStart ));
 
 // AT: camera rotation with up fixed
-_this.rotate_with_up_fixed && _this.getMouseOnScreen_fixed_up(event.touches[ 0 ].pageX, event.touches[ 0 ].pageY, _rotateStart_fixed_up);
+_this.rotate_with_up_fixed && _rotateEnd_fixed_up.copy(_this.getMouseOnScreen_fixed_up(event.touches[ 0 ].pageX, event.touches[ 0 ].pageY, _rotateStart_fixed_up));
 
 				break;
 
@@ -647,6 +654,14 @@ _this.rotate_with_up_fixed && _this.getMouseOnScreen_fixed_up(event.touches[ 0 ]
 
 		event.preventDefault();
 		event.stopPropagation();
+//var msgs=[Date.now()]; for (var i=0; i<event.touches.length; i++) msgs.push(event.touches[i].target.id); DEBUG_show(msgs.join("\n"));
+
+// AT: ignore joystick touch
+var touches = [];
+for (var i = 0; i < event.touches.length; i++) {
+  if (event.touches[i].target.id != "Ljoystick") touches.push(event.touches[i]);
+}
+if (touches.length != event.touches.length) event = { touches:touches };
 
 		switch ( event.touches.length ) {
 
@@ -678,6 +693,13 @@ _this.rotate_with_up_fixed && _this.getMouseOnScreen_fixed_up(event.touches[ 0 ]
 	function touchend( event ) {
 
 		if ( _this.enabled === false ) return;
+
+// AT: ignore joystick touch
+var touches = [];
+for (var i = 0; i < event.touches.length; i++) {
+  if (event.touches[i].target.id != "Ljoystick") touches.push(event.touches[i]);
+}
+if (touches.length != event.touches.length) event = { touches:touches };
 
 		switch ( event.touches.length ) {
 
