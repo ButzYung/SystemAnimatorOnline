@@ -197,6 +197,14 @@ else {
   }
 
  ,_init2: function () {
+try {
+  Object.defineProperty(screen, "_width",  Object.getOwnPropertyDescriptor(screen.constructor.prototype, "width"));
+  Object.defineProperty(screen, "_height", Object.getOwnPropertyDescriptor(screen.constructor.prototype, "height"));
+}
+catch (err) {
+  console.error(err)
+}
+
 if (WallpaperEngine_CEF_mode && (browser_native_mode && !webkit_window)) {
   Object.defineProperty(screen, "width", {
   get: function () { return top.innerWidth }
