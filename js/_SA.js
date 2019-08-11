@@ -50,7 +50,7 @@ var use_EQP_ripple = (ie9_mode && returnBoolean("UseCanvasRipple"))
 var use_EQP_fireworks = (ie9_mode && returnBoolean("UseCanvasFireworks"))
 
 var use_WebGL = (w3c_mode)
-var use_WebGL_2D = (use_WebGL && webkit_transparent_mode && returnBoolean("UseWebGLForCanvas2D"))
+var use_WebGL_2D// = (use_WebGL && webkit_transparent_mode && returnBoolean("UseWebGLForCanvas2D"))
 
 var use_MatrixRain
 
@@ -2136,7 +2136,17 @@ if (fullscreen) {
 
   if (use_SA_system_emulation) {
     var ls = Lquick_menu.style
-    ls.posTop = ((B_content_height > screen_h-10)/* || fullscreen*/) ? 20+4 : B_content_height - 20 - 4
+    var qmb_list = document.getElementsByClassName("QuickMenu_button")
+    if ((B_content_height > screen_h-10)/* || fullscreen*/) {
+      ls.posTop = 20+4
+      for (var i = 0; i < qmb_list.length; i++)
+        qmb_list[i].className = "QuickMenu_button QuickMenu_button_TL"
+    }
+    else {
+      ls.posTop = B_content_height - (20+4)
+      for (var i = 0; i < qmb_list.length; i++)
+        qmb_list[i].className = "QuickMenu_button"
+    }
 
     LbuttonTL.style.posLeft = Math.min(B_content_width, screen_w) - 24 - 12
     LbuttonTL.style.posTop  = 12
@@ -2163,6 +2173,16 @@ if (fullscreen) {
     if (WallpaperEngine_mode) {
       ls.posLeft = Math.min(B_content_width, screen_w) - (18*5+2)
       ls.posTop  = Math.min(B_content_height, screen.availHeight) - 24
+    }
+
+    if (is_mobile) {
+      Lquick_menu.style.transform = Idialog.style.transform = "scale(" + (System._browser.css_scale*2) + ")"
+    }
+    if (is_mobile && self.MMD_SA_options && MMD_SA_options.Dungeon) {
+      Lnumpad.style.posLeft = B_content_width - 200
+      Lnumpad.style.posTop  = 64
+      Lnumpad.style.visibility = "inherit"
+      Lnumpad.style.transform = "scale(" + (1 + (System._browser.css_scale-1)*0.5) + ")"
     }
   }
 
