@@ -2911,6 +2911,8 @@ System._browser.on_animation_update.add(function () { SL_Host.style.visibility =
 
 MMD_SA_options.Dungeon.event_mode = true
 setTimeout(function () {
+  if (!MMD_SA_options.Dungeon.started)
+    window.dispatchEvent(new CustomEvent("SA_Dungeon_onstart"));
   MMD_SA_options.Dungeon.started = true
 
   MMD_SA_options.Dungeon.event_mode = false
@@ -3004,6 +3006,9 @@ console.log(item_name)
       MMD_SA_options.model_para_obj_all[i].physics_disabled = true
     console.log("NPC physics OFF")
   }
+
+  if (is_mobile)
+    Ljoystick.style.visibility = "inherit"
 });
 
 window.addEventListener("jThree_ready", function () {
@@ -3027,6 +3032,100 @@ window.addEventListener("jThree_ready", function () {
     });
   });
 });
+
+window.addEventListener("SA_Dungeon_onstart", function () {
+//https://github.com/yoannmoinet/nipplejs
+  if (Ljoystick.style.visibility == "hidden")
+    return
+
+  var d = MMD_SA_options.Dungeon;
+
+  (function () {
+    var css_scale = System._browser.css_scale
+
+    function keyboard_event(e_type, key_id) {
+var keyCode = d.key_map_by_id[key_id].keyCode
+if ((e_type == "keyup") && !d._key_pressed[keyCode])
+  return
+
+var e = new KeyboardEvent(e_type, {bubbles:true, cancelable:true, keyCode:keyCode});
+document.dispatchEvent(e);
+    }
+
+    function joystick_resize() {
+Ljoystick.style.posLeft = 16
+Ljoystick.style.posTop  = B_content_height - (Ljoystick.style.pixelWidth+32)
+//Ljoystick.style.transform = "scale(" + css_scale + ")"
+Ljoystick.style.visibility = "inherit"
+    }
+
+    Ljoystick.style.pixelWidth = Ljoystick.style.pixelHeight = 256 * css_scale
+
+    var nipple_radius = 64 * css_scale
+    d.nipplejs_manager = nipplejs.create({
+      zone: Ljoystick
+     ,color: "black"
+//     ,mode: "static"
+     ,size: nipple_radius*2
+     ,position: { top:"50%", left:"50%" }
+    });
+
+    d.nipplejs_manager.on("move", function (ev, data) {
+//DEBUG_show(d.key_map_by_id.up.keyCode)
+//DEBUG_show(JSON.stringify(data))
+var key_pressed = {up:0, down:0, left:0, right:0}
+var xy = data.instance.frontPosition
+var x = xy.x
+var y = xy.y
+//DEBUG_show(JSON.stringify(xy))
+var dis = Math.sqrt(x*x + y*y)
+if (dis > nipple_radius/10) {
+  var scale
+  var threshold = (d.character.TPS_mode) ? 0 : nipple_radius/10
+  var x_abs = Math.abs(x)
+  var y_abs = Math.abs(y)
+  if (x_abs > threshold) {
+    scale = (d.character.TPS_mode) ? x_abs/dis * Math.min(dis/nipple_radius*2, 1) : (x_abs/nipple_radius-0.1)/0.9
+    if (x > 0)
+      key_pressed.right = scale
+    else
+      key_pressed.left  = scale
+  }
+  if (y_abs > threshold) {
+    scale = (d.character.TPS_mode) ? y_abs/dis * Math.min(dis/nipple_radius*2, 1) : Math.min(y_abs/nipple_radius*2, 1)
+    if (y > 0)
+      key_pressed.down = scale
+    else
+      key_pressed.up   = scale
+  }
+}
+
+for (var key_id in key_pressed) {
+  var v = key_pressed[key_id]
+  if (v) {
+    var key_map = d.key_map_by_id[key_id]
+    var key_data = key_map._data = key_map._data || {}
+    key_data.scale = v
+    keyboard_event("keydown", key_id)
+  }
+  else
+    keyboard_event("keyup", key_id)
+}
+    });
+
+    d.nipplejs_manager.on("end", function (ev) {
+var key_pressed = {up:0, down:0, left:0, right:0}
+for (var key_id in key_pressed)
+  keyboard_event("keyup", key_id)
+    });
+
+    joystick_resize()
+    window.addEventListener("resize", function (e) {
+joystick_resize()
+    });
+  })();
+});
+
 
 // defaults for MMD_SA_options START
 if (!MMD_SA_options.GOML_head)
@@ -3555,6 +3654,8 @@ if (!this.item_base.backpack) {
    ,action: {
   func: function () {
 Ldungeon_inventory_backpack.style.visibility = (Ldungeon_inventory_backpack.style.visibility != "hidden") ? "hidden" : "inherit"
+if (MMD_SA_options.Dungeon.nipplejs_manager)
+  Ljoystick.style.visibility = (Ldungeon_inventory_backpack.style.visibility != "hidden") ? "hidden" : "inherit"
   }
  ,anytime: true
     }
@@ -3775,6 +3876,7 @@ ds.position = "absolute"
 ds.backgroundColor = "rgba(0,0,0, 0.5)"
 ds.zIndex = 2
 ds.opacity = 0.75
+ds.transformOrigin = "100% 100%"
 SL_Host.appendChild(d)
 
 d = document.createElement("canvas")
@@ -3820,6 +3922,7 @@ ds.position = "absolute"
 ds.posLeft = 8
 ds.posTop = 24+22+4
 ds.zIndex = 3
+ds.transformOrigin = "0% 0%"
 SL_Host.appendChild(d)
 
 d = document.createElement("div")
@@ -3827,6 +3930,7 @@ ds = d.style
 d.id = "Ldungeon_inventory"
 ds.position = "absolute"
 ds.zIndex = 4
+ds.transformOrigin = "50% 100%"
 SL_Host.appendChild(d)
 
 d = document.createElement("div")
@@ -3835,6 +3939,7 @@ d.id = "Ldungeon_inventory_backpack"
 ds.position = "absolute"
 ds.zIndex = 3
 ds.visibility = "hidden"
+ds.transformOrigin = "50% 100%"
 SL_Host.appendChild(d)
 
 var inv = MMD_SA_options.Dungeon.inventory
@@ -4097,13 +4202,19 @@ update_status_bar(true)
 var place_inventory = function (e) {
   Ldungeon_inventory.style.posLeft = Ldungeon_inventory_backpack.style.posLeft = (B_content_width - (inv.max_base)*64) / 2
   Ldungeon_inventory.style.posTop  = B_content_height - 64 - 4
-  Ldungeon_inventory_backpack.style.posTop  = B_content_height - (inv.max_row)*64 - 4
+  Ldungeon_inventory.style.pixelWidth  = (inv.max_base)*64
+  Ldungeon_inventory.style.pixelHeight = 64
+
+  Ldungeon_inventory_backpack.style.posTop = B_content_height - (inv.max_row)*64 - 4
+  Ldungeon_inventory_backpack.style.pixelWidth  = (inv.max_base)*64
+  Ldungeon_inventory_backpack.style.pixelHeight = (inv.max_row)*64
 }
 
 var draw_UI = function (e) {
   draw_dungeon_map(e)
   place_inventory(e)
   MMD_SA_options.Dungeon.update_status_bar(true)
+  Ldungeon_map.style.transform = Ldungeon_inventory.style.transform = Ldungeon_inventory_backpack.style.transform = Cdungeon_status_bar.style.transform = "scale(" + System._browser.css_scale + ")"
 }
 
 window.addEventListener("SA_Dungeon_after_map_generation", function (e) { draw_UI(); });
@@ -5685,7 +5796,7 @@ return movement_v3
 // key events START
   d._key_pressed = {}
 
-  window.addEventListener("keyup", function (e) {
+  document.addEventListener("keyup", function (e) {
 var k = e.keyCode
 d._key_pressed[k] = 0
 
@@ -5694,6 +5805,7 @@ if (!key_map) {
   return
 }
 key_map.is_down = 0
+key_map._data = null
 
 if (key_map.onkeyup && key_map.onkeyup())
   return
@@ -6223,6 +6335,8 @@ key_para.pressed = _k.pressed
         return
     }
 
+    var key_map_data = key_map._data || {}
+
     if (key_map.down) {
       any_key_down = true
       motion_para = key_map_by_mode.motion_id && d.motion[key_map_by_mode.motion_id].para
@@ -6243,13 +6357,17 @@ key_para.pressed = _k.pressed
       }
 
       if (!motion_duration || (t2 < motion_duration)) {
+        TPS_mode_in_action = (key_map_by_mode == key_map.TPS_mode)
+
         if (key_map_by_mode.mov_speed) {
           let _mov = (mov) ? _movement_v3.copy(mov) : null
 // .mov_speed can change among modes, safer to reassign it
           motion_para.mov_speed = key_map_by_mode.mov_speed
-          mov = mov_delta(model, motion_para, t_diff, t2)
-          if (_mov)
-            mov.lerp(_mov, 0.5).normalize().multiplyScalar(_mov.length())
+          mov = mov_delta(model, motion_para, t_diff, t2).multiplyScalar(key_map_data.scale||1)
+          if (_mov) {
+            let mov_length = mov.length()
+            mov.lerp(_mov, 0.5).normalize().multiplyScalar(Math.max(_mov.length(), mov_length))
+          }
         }
 
         if (pos_delta && key_motion_running)
@@ -6257,12 +6375,10 @@ key_para.pressed = _k.pressed
 
 //if (pos_delta && key_map.keyCode==105) { DEBUG_show(key_map.keyCode+'/'+Date.now()); console.log(key_map); }
         if (key_map_by_mode.rot_speed) {
-          rot = rotation_v3.copy(key_map_by_mode.rot_speed).multiplyScalar(t_diff)
+          rot = rotation_v3.copy(key_map_by_mode.rot_speed).multiplyScalar(t_diff * (key_map_data.scale||1))
         }
 
-        if (key_map_by_mode == key_map.TPS_mode) {
-          TPS_mode_in_action = true
-
+        if (TPS_mode_in_action) {
           if (!TPS_camera_lookAt_) {
             let camera = MMD_SA._trackball_camera
             TPS_camera_ry = Math.PI/2 - Math.atan2((camera.target.z-camera.object.position.z), (camera.target.x-camera.object.position.x))
@@ -12639,6 +12755,8 @@ else {
 
   document.write('<script language="JavaScript" src="js/rbush.min.js"></scr'+'ipt>');
 //document.write('<script language="JavaScript" src="node_modules/box-intersect.js"></scr'+'ipt>');
+
+  document.write('<script language="JavaScript" src="js/nipplejs.js"></scr'+'ipt>');
 }
 
 document.write('<script>MMD_SA_options.Dungeon.init();</scr'+'ipt>');
