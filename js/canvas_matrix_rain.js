@@ -36,8 +36,9 @@ function MatrixRain(width,height, para) {
   this.canvas = document.createElement("canvas")
   this.canvas_mask = document.createElement("canvas")
 
-  // ignoring "use_WebGL_2D", always use WebGL 2D in XUL and node-webkit, since WebGL is faster for processing green matrix rain
-  if (use_WebGL) {
+// use WebGL 2D for processing green matrix rain
+  if (use_WebGL_2D || (use_WebGL && !this.full_color)) {
+    DEBUG_show("Use WebGL 2D - Matrix Rain", 2)
     WebGL_2D.createObject(this.canvas_mask, {})
     this.canvas_mask._WebGL_2D.fshader_2d_main +=
   '   gl_FragColor = vec4(gl_FragColor.rgb, (0.3* gl_FragColor.r + 0.59 * gl_FragColor.g + 0.11 * gl_FragColor.b));\n'
@@ -89,8 +90,8 @@ MatrixRain.prototype.matrixCreate = function (w,h) {
   var word_list = this.word_list
 
   if (this.use_AudioFFT) {
-    var w = (is_SA_child_animation) ? parent : self
-    this.AudioFFT = w.AudioFFT_active
+    let f = (is_SA_child_animation) ? parent : self
+    this.AudioFFT = f.AudioFFT_active
     if (this.AudioFFT) {
       this.matrixDraw_no_skip = true
 /*
@@ -99,6 +100,18 @@ MatrixRain.prototype.matrixCreate = function (w,h) {
       if (this.AudioFFT.power_spectrum_divider.indexOf(mw) == -1)
         this.AudioFFT.power_spectrum_divider.push(mw)
 */
+    }
+    else {
+// delayed AudioFFT connection (i.e. from media player)
+      Object.defineProperty(this, "AudioFFT", {
+  get: function () {
+if (f.AudioFFT_active) {
+  this.matrixDraw_no_skip = true
+  return f.AudioFFT_active
+}
+return null
+  }
+      });
     }
   }
   else {
@@ -216,20 +229,21 @@ MatrixRain.prototype.matrixDraw = function (skip) {
 
   var speed_update = !this.matrixDraw_no_skip || EV_sync_update.frame_changed("matrixDrawing")
   var _fft, _fft_last, _fft_size
-  if (this.AudioFFT) {
+  var aFFT = this.AudioFFT
+  if (aFFT) {
     var size_list = [32, 16]//[mw_fit, mw, 128, 32, 16]
     for (var i = 0, i_max = size_list.length; i < i_max; i++) {
       _fft_size = size_list[i]
-      _fft = this.AudioFFT["_fft" + _fft_size]
+      _fft = aFFT["_fft" + _fft_size]
       if (_fft)
         break
       _fft_size = null
     }
 //DEBUG_show(_fft_size+','+_fft.length+'/'+mw_fit)
     if (_fft_size) {
-      _fft_last = this.AudioFFT["_fft_last" + _fft_size]
+      _fft_last = aFFT["_fft_last" + _fft_size]
       if (!_fft_last)
-        _fft_last = this.AudioFFT["_fft_last" + _fft_size] = []
+        _fft_last = aFFT["_fft_last" + _fft_size] = []
     }
   }
 
