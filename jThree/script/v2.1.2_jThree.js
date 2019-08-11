@@ -13479,7 +13479,10 @@ THREE.ShaderChunk = {
 // AT: shadowPara
 "vec3 SP;",
 
-			"for( int i = 0; i < MAX_SHADOWS; i ++ ) {",
+// AT: unroll_loop
+"#pragma unroll_loop\n",
+
+			"for( int i = 0; i < MAX_SHADOWS; i ++ ) {//LOOP_START",
 
 // AT: reset inFrustumCount for new parent light
 "SP = shadowPara[i];",
@@ -13672,7 +13675,7 @@ THREE.ShaderChunk = {
 
 					"#endif",
 
-				"}",
+				"}//LOOP_END",
 
 
 				"#ifdef SHADOWMAP_DEBUG",
@@ -21890,6 +21893,35 @@ uniforms.shadowPara.value[ j ] = _light._shadowPara;
 
 	// Shaders
 
+// AT: backported (modified)
+	function unrollLoops( string ) {
+
+		var pattern = /#pragma unroll_loop[\s]+?for[\s]*\([\s]*int i[\s]*\=[\s]*(\d+)\;[\s]i[\s]<[\s](\w+)\;[\s]i[\s]\+\+[\s]\)[\s]\{\/\/LOOP_START([\s\S]+?)(?=\})\}\/\/LOOP_END/g;
+
+		function replace( match, start, end, snippet ) {
+
+			var unroll = '';
+
+if (/^\D/.test(end)) {
+  let re = new RegExp("\\#define " + end + " (\\d+)");
+  if (re.test(string))
+    end = RegExp.$1
+}
+
+			for ( var i = parseInt( start ); i < parseInt( end ); i ++ ) {
+
+				unroll += snippet.replace( /\[[\s]*i[\s]*\]/g, '[ ' + i + ' ]' );
+
+			}
+
+			return unroll;
+
+		}
+
+		return string.replace( pattern, replace );
+
+	}
+
 	function buildProgram ( shaderID, fragmentShader, vertexShader, uniforms, attributes, defines, parameters ) {
 
 		var p, pl, d, program, code;
@@ -22147,9 +22179,9 @@ if (self.MMD_SA && MMD_SA.use_webgl2) {
   vertexShader   = MMD_SA.webgl2_vshader_main_convert(vertexShader)
   fragmentShader = MMD_SA.webgl2_fshader_main_convert(fragmentShader)
 }
-
-		var glVertexShader = getShader( "vertex", prefix_vertex + vertexShader );
-		var glFragmentShader = getShader( "fragment", prefix_fragment + fragmentShader );
+// AT: unrollLoops
+		var glVertexShader = getShader( "vertex", unrollLoops(prefix_vertex + vertexShader) );
+		var glFragmentShader = getShader( "fragment", unrollLoops(prefix_fragment + fragmentShader) );
 
 		_gl.attachShader( program, glVertexShader );
 		_gl.attachShader( program, glFragmentShader );
@@ -22310,13 +22342,13 @@ console.error(_gl.getProgramInfoLog(program));
 		_gl.compileShader( shader );
 
 		if ( !_gl.getShaderParameter( shader, _gl.COMPILE_STATUS ) ) {
-
+//if (!self._count_) self._count_=5; if (--self._count_) { let _s=string; for (var i=0;i<118;i++) _s=_s.replace(/[^\n]*\n/, ""); DEBUG_show(_gl.getShaderInfoLog( shader )+'\n'+string.length,0,1); }
 			console.error( _gl.getShaderInfoLog( shader ) );
 			console.error( addLineNumbers( string ) );
 			return null;
 
 		}
-
+//if (!self._count_) self._count_=5; if (--self._count_) { if (/\#define MAX_SHADOWS/.test(string)) console.log(string) }
 		return shader;
 
 	};
