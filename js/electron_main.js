@@ -21,6 +21,9 @@ const icon_name = (windows_mode) ? "icon_teto.ico" : "icon_teto_512x512.png";
 // Module to control application life.
 const app = electron.app
 
+// https://stackoverflow.com/questions/55898000/blocked-a-frame-with-origin-file-from-accessing-a-cross-origin-frame
+app.commandLine.appendSwitch('disable-site-isolation-trials');
+
 
 // https://github.com/electron/electron/issues/2170
 // transparency on Linux is broken, disabled for now
@@ -227,7 +230,7 @@ if (c_json) {
     catch (err) {}
 
     var options = {type:"question", buttons:["OK", "Cancel"], defaultId:1, message:"ERROR: System Animator has crashed. Press OK to restart, or Cancel to quit."}
-    if ((parseInt(process.versions['node-webkit']) >= 6) ? !electron.dialog.showMessageBoxSync(null, options) : !electron.dialog.showMessageBox(null, options)) {
+    if ((parseInt(process.versions['electron']) >= 6) ? !electron.dialog.showMessageBoxSync(null, options) : !electron.dialog.showMessageBox(null, options)) {
       app.relaunch()
       app.exit(0)
     }
@@ -663,7 +666,7 @@ const DropArea_show = function (visible) {
 
   contextMenu.items[menu_item_index['Show drop area']].enabled = true
 
-  var win_options = {width:256, height:256, focusable:false, resizable:false, frame:false, transparent:true}
+  var win_options = {width:256, height:256, focusable:false, resizable:false, frame:false, transparent:true, webPreferences:{nodeIntegration:true}}
   if ('getChildWindows' in mainWindow) {
     win_options.parent = mainWindow
   }
