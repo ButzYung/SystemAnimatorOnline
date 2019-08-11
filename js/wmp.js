@@ -182,7 +182,7 @@ document.body.appendChild(d_dummy)
 
 this.createAudioObject = function () {
   var ao
-  if (WallpaperEngine_CEF_mode) {
+  if (WallpaperEngine_CEF_mode && !browser_native_mode) {
     ao = player.audio_obj = new Aurora.WebAudio()
     ao.AV_init && ao.AV_init(item.obj.obj.file)
   }
