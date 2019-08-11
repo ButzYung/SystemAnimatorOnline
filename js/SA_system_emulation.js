@@ -1859,7 +1859,7 @@ if (System.Gadget.onSettingsClosed)
     }
 
    ,onkeydown: function (event) {
-var have_child = (is_SA_child_animation || document.getElementById("Lchild_animation_parent"))
+var have_child = (is_SA_child_animation || document.getElementById("Lchild_animation_parent")) && !is_SA_child_animation_host;
 
 var k = event.keyCode
 if (k == 67) {
@@ -1981,7 +1981,7 @@ else if (have_child && ((k >= 49) && (k < 49+SA_child_animation_max))) {
 
   return true
 }
-else if (have_child && (k == 96) && !is_SA_child_animation_host) {
+else if (have_child && (k == 96)) {
   var p = (is_SA_child_animation) ? parent : self
 
   var ds = p.Lchild_animation_parent.style
@@ -1992,7 +1992,7 @@ else if (have_child && (k == 96) && !is_SA_child_animation_host) {
   p.System._browser._child_selected = null
   return true
 }
-else if (have_child && ((k >= 97) && (k < 97+SA_child_animation_max)) && !is_SA_child_animation_host) {
+else if (have_child && ((k >= 97) && (k < 97+SA_child_animation_max))) {
 // num pad 1-9 (SA_child_animation_max)
   var id = k - 97
 
@@ -2390,6 +2390,80 @@ return {
     events[phase] = e_index_list.map(function (index) { return ep[index]; });
   }
 };
+    })()
+
+   ,get css_scale() {
+return ((window.devicePixelRatio >= 2) ? 0.5 : 1)
+    }
+
+   ,virtual_numpad: (function () {
+      var key_objs = {}
+
+      return function (ev, e_type) {
+ev.preventDefault()
+ev.stopPropagation()
+
+var key = ev.target.textContent
+var key_obj = key_objs[key] = key_objs[key] || {}
+var keyCode, shiftKey
+switch (key) {
+  case "+":
+    keyCode = 107
+    key_obj.pressed = !key_obj.pressed
+    e_type = (key_obj.pressed) ? "keydown" : "keyup"
+    break
+  case "S":
+    keyCode = 16
+    key_obj.pressed = !key_obj.pressed
+    e_type = (key_obj.pressed) ? "keydown" : "keyup"
+    break
+  case "*":
+    keyCode = 106
+    break
+  case "/":
+    keyCode = 111
+    break
+  case "E":
+    keyCode = 13
+    break
+  case "J":
+    keyCode = 32
+    break
+  case "↑":
+    keyCode = 38
+    break
+  case "↓":
+    keyCode = 40
+    break
+  case "←":
+    keyCode = 37
+    break
+  default:
+    keyCode = parseInt(key) + 96
+}
+
+if (key_obj.timeoutID)  clearTimeout(key_obj.timeoutID)
+if (key_obj.intervalID) clearTimeout(key_obj.intervalID)
+key_obj.timeoutID = key_obj.intervalID = null
+
+let e = new KeyboardEvent(e_type, {bubbles:true, cancelable:true, key:key, keyCode:keyCode, shiftKey:(key_objs["S"] && key_objs["S"].pressed)});
+document.dispatchEvent(e);
+if (e_type == "keydown") {
+  if (/[\+S]/.test(key)) {
+    ev.target.style.opacity = "0.75"
+  }
+  else {
+    key_obj.timeoutID = setTimeout(function () {
+      key_obj.intervalID = setInterval(function () {
+        document.dispatchEvent(e);
+      }, 100);
+    }, 400);
+  }
+}
+else {
+  ev.target.style.opacity = ""
+}
+      };
     })()
 
    ,P2P_network: (function () {
