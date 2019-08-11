@@ -201,6 +201,16 @@ if (path && (path != this._default[path_default])) {
   this._default[path_default] = null
 }
 
+if ((this._default[path_default] == null) && webkit_electron_mode) {
+  let registered
+  try {
+    registered = webkit_electron_remote.app.isDefaultProtocolClient("system-animator")
+  }
+  catch (err) {}
+  if (registered)
+    this._default[path_default] = webkit_path
+}
+
 if (this._default[path_default] == null) {
   var SA_parent = System.Gadget.path.replace(/[\/\\][^\/\\]+$/, "")
   this._default[path_default] = SA_parent + toLocalPath('\\electron.exe')
