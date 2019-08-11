@@ -260,7 +260,7 @@ function CANVAS_draw(first_draw) {
   var img_obj = canvas_target.img_obj
 
 // mainly for wallpaper canvas
-  this._match_str = img_obj._match_str
+  this._match_str = canvas_target._match_str = img_obj._match_str
 
   var canvas = CANVAS_obj._buffer
   if (EQP_size_scale < 1) {
@@ -705,7 +705,7 @@ this.stop_counter = obj.stop_counter
   }
 
   // defaults START
-  if (CANVAS_Video_Overlay.url && !/^\w\:/.test(CANVAS_Video_Overlay.url))
+  if (CANVAS_Video_Overlay.url && !/^\w+\:/.test(CANVAS_Video_Overlay.url))
     CANVAS_Video_Overlay.url = Settings.f_path_folder + '\\' + CANVAS_Video_Overlay.url
   CANVAS_Video_Overlay.url_default = CANVAS_Video_Overlay.url || ""
 
