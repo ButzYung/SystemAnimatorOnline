@@ -789,6 +789,8 @@ let init = function () {
     Ldebug.removeEventListener("click", MMD_SA._click_to_reset);
     MMD_SA._click_to_reset = null;
   }
+  if (is_mobile)
+    document.documentElement.requestFullscreen()
 
   MMD_SA.MME_init()
   MMD_SA.jThree_ready()
@@ -2505,7 +2507,17 @@ if (our_group) {
 if (!scale)
   scale = 1
 
-this._mesh.position.copy(this.pos_base_ref.dir).multiplyScalar(this.distance_scale * scale).add(this.pos_base_ref._v3.copy(this.pos_base_ref.center).sub(this.pos_base_ref.character_pos_ref).add(THREE.MMD.getModels()[0].mesh.position))
+var is_portrait, is_landscape
+if (is_mobile && screen.orientation) {
+  if (/landscape/.test(screen.orientation.type))
+    is_landscape = true
+  else
+    is_portrait = true
+}
+if (is_landscape)
+  scale *= 1.5
+
+this._mesh.position.copy(this.pos_base_ref.dir).multiplyScalar(this.distance_scale*((is_portrait)?0.25:1) * scale).add(this.pos_base_ref._v3.copy(this.pos_base_ref.center).sub(this.pos_base_ref.character_pos_ref).add(THREE.MMD.getModels()[0].mesh.position))
 this._mesh.scale.set(1,1,1).multiplyScalar(this.scale * scale * ((this.use_sprite)?1/3:1))
 
 //this.pos_base.copy(this._mesh.position).sub(this.pos_base_ref.character_pos_ref)
@@ -4165,7 +4177,7 @@ return drop_list
 
   MMD_SA_options.custom_default && MMD_SA_options.custom_default()
 
-  if (is_mobile) MMD_SA_options.texture_resolution_limit = MMD_SA_options.texture_resolution_limit_mobile || 256
+//  if (is_mobile) MMD_SA_options.texture_resolution_limit = MMD_SA_options.texture_resolution_limit_mobile || 256
 //MMD_SA_options.texture_resolution_limit=64
 
 
