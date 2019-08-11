@@ -49,6 +49,10 @@ font-size:10px;
 content: attr(data-title);
 }
 
+.QuickMenu_button_TL:hover:after{
+bottom: -26px;
+}
+
 .Tooltip_LR:hover:after{
 background: #333;
 background: rgba(0,0,0,.8);
@@ -111,6 +115,30 @@ div {
   width:100%; height:100%; -webkit-transform-style:preserve-3d; -moz-transform-style:preserve-3d;
 }
 
+
+.Lnumpad_button {
+ margin:3px;
+ display: inline-block;
+ border:1px solid black;
+ color: black;
+width:36px;height:36px;max-width:36px;max-height:36px;min-width:36px;min-height:36px;overflow:hidden;
+ border-radius: 30px;
+ -webkit-border-radius: 30px;
+ -moz-border-radius: 30px;
+ font-family: Verdana;
+ width: auto;
+ height: auto;
+ font-size: 16px;
+ padding: 8px 12px;
+ background-color: white;
+outline: none;
+cursor: pointer;
+opacity: 0.5;
+}
+
+.Lnumpad_button:active {
+  opacity: 0.75
+}
 
 /* http://cssbuttoncreator.com/ */
 .StartButton {
