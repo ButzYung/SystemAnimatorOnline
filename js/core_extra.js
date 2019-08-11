@@ -457,7 +457,7 @@ function SA_load_body() {
 + '<div style="position:absolute; top:30px; left:0px;"><input id="MC_seek" class="MC_button_s" style="width:140px; height:20px;" type="range" min="0" max="100" step="1" value="0" onmouseover="SL_MC_MouseEnter({Name:this.id})" onmousedown="this._update_disabled=true" onmouseup="this._update_disabled=false" onchange="try { if (this._media_obj) { var t=parseInt(this.value)/100*this._media_obj.duration; var mod=(t-this._media_obj.currentTime)/30; if (mod) SL_MC_Seek(mod, true, true); } } catch (err) {}" /></div>\n'
 + '</div>\n'
 
-+ '<div id="Lquick_menu" style="position:absolute; visibility:hidden; background-color:rgba(68,79,91, 0.66); left:2px; width:' + (18*5+2) + 'px; height:20px; z-index:499; border:1px solid gray; border-radius:5px">\n'
++ '<div id="Lquick_menu" style="position:absolute; visibility:hidden; background-color:rgba(68,79,91, 0.66); left:2px; width:' + (18*5+2) + 'px; height:20px; z-index:499; border:1px solid gray; border-radius:5px; transform-origin:0% 50%;">\n'
 + ' <div style="position:absolute; top:1px; left:1px">\n'
 + '  <div id="Lquick_menu_close_button" class="QuickMenu_button" style="left:0px" onclick="System._browser.confirmClose(true)" title="Close">\n'
 + '   <img src="images/icon_closing.png" class="QuickMenu_image" />\n'
@@ -500,6 +500,47 @@ function SA_load_body() {
 + ' <div id="LbuttonRotate" style="position:absolute; top:0px; left:0px; width:12px; height:12px; font-family:Symbola; font-size:12px; color:rgba(0,0,0,0.75); visibility:hidden;" class="Tooltip_LR" title="Drag to rotate. Double-click to switch to resize mode.">&#x25D5;</div>\n'
 + '</div>\n'
 
++ '<div id="Lnumpad" style="position:absolute; top:64px; left:0px; z-index:599; visibility:hidden; transform-origin:100% 0%;">\n'
++ '  <div id="Lnumpad_container">\n'
++ '    <div>\n'
++ '      <button class="Lnumpad_button" onclick="Lnumpad_row0.style.visibility=Lnumpad_rows.style.visibility=(Lnumpad_row0.style.visibility==\'hidden\')?\'inherit\':\'hidden\';">K</button>\n'
++ '<span id="Lnumpad_row0" style="visibility:hidden">\n'
++ '      <button class="Lnumpad_button">/</button>\n'
++ '      <button class="Lnumpad_button">*</button>\n'
++ '      <button class="Lnumpad_button">S</button>\n'
++ '</span>\n'
++ '    </div>\n'
++ '<div id="Lnumpad_rows" style="visibility:hidden">\n'
++ '    <div>\n'
++ '      <button class="Lnumpad_button">7</button>\n'
++ '      <button class="Lnumpad_button">8</button>\n'
++ '      <button class="Lnumpad_button">9</button>\n'
++ '      <button class="Lnumpad_button">+</button>\n'
++ '    </div>\n'
++ '    <div>\n'
++ '      <button class="Lnumpad_button">4</button>\n'
++ '      <button class="Lnumpad_button">5</button>\n'
++ '      <button class="Lnumpad_button">6</button>\n'
++ '      <button class="Lnumpad_button">E</button>\n'
++ '    </div>\n'
++ '    <div>\n'
++ '      <button class="Lnumpad_button">1</button>\n'
++ '      <button class="Lnumpad_button">2</button>\n'
++ '      <button class="Lnumpad_button">3</button>\n'
++ '      <button class="Lnumpad_button">↑</button>\n'
++ '    </div>\n'
++ '	   <div>\n'
++ '      <button class="Lnumpad_button">J</button>\n'
++ '	     <button class="Lnumpad_button">0</button>\n'
++ '	     <button class="Lnumpad_button">←</button>\n'
++ '      <button class="Lnumpad_button">↓</button>\n'
++ '    </div>\n'
++ '</div>\n'
++ '  </div>\n'
++ '</div>\n'
+
++ '<div id="Ljoystick" style="position:absolute; width:256px; height:256px; top:300px; left:16px; z-index:599; visibility:hidden; transform-origin:0% 50%;"></div>\n'
+
 + '<script>\n'
 + 'self.Chatbox_Write && self.Chatbox_Write();\n'
 + '</scr'+'ipt>\n'
@@ -509,9 +550,35 @@ function SA_load_body() {
 + 'if (self.Chatbox_Init) window.addEventListener("DOMContentLoaded", (event) => { document.getElementById("CB_Lwindow0").top=32; Chatbox_Init(); });\n'
 + '</scr'+'ipt>\n'
 
+window.addEventListener('DOMContentLoaded', function () {
+  var buttons = document.getElementsByClassName("Lnumpad_button")
+  var ev_start, ev_end
+  if (is_mobile) {
+    ev_start = "touchstart"
+    ev_end = "touchend"
+  }
+  else {
+    ev_start = "mousedown"
+    ev_end = "mouseup"
+  }
+  for (var i = 0; i < buttons.length; i++) {
+    var b = buttons[i]
+    if (b.textContent == "K") continue
+
+    b.addEventListener(ev_start, function (e) {
+System._browser.virtual_numpad(e, 'keydown')
+    });
+    if (!/[\+S]/.test(b.textContent)) {
+      b.addEventListener(ev_end, function (e) {
+System._browser.virtual_numpad(e, 'keyup')
+      });
+    }
+  }
+});
+
     if (use_inline_dialog) {
       menu_html +=
-  '<iframe id="Idialog" src="z_blank2.html" frameborder="0" style="position:absolute; z-index:999; visibility:hidden"></iframe>\n'
+  '<iframe id="Idialog" src="z_blank2.html" frameborder="0" style="position:absolute; z-index:999; visibility:hidden;"></iframe>\n'
     }
   }
 
