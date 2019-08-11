@@ -602,8 +602,12 @@ if (!browser_native_mode) {
       webkit_electron_screen = top.require('electron').screen
       webkit_electron_dialog = {
   showOpenDialog: function (browserWindow, options, callback) {
-if (webkit_version_milestone["6.0.0"])
-  webkit_electron_remote.dialog.showOpenDialogSync(browserWindow, options, callback)
+if (webkit_version_milestone["6.0.0"]) {
+  webkit_electron_remote.dialog.showOpenDialog(browserWindow, options).then(function (result) {
+var v = (result.canceled) ? null : result.filePaths
+callback(v)
+  }).catch(function (err) { console.error(err) });
+}
 else
   webkit_electron_remote.dialog.showOpenDialog(browserWindow, options, callback)
   }
