@@ -4206,7 +4206,8 @@ if (RAF_timerID) {
 }
 
 
-this.gl = MMD_SA.renderer.getContext()
+this.renderer = MMD_SA.renderer;
+this.gl = this.renderer.getContext();
 
 try {
 //  await this.gl.makeXRCompatible();
@@ -4232,7 +4233,6 @@ this.session = null
 MMD_SA.reset_camera()
 MMD_SA._trackball_camera.enabled = true
 this.camera.matrixAutoUpdate = true
-this.camera = null
 
 EV_sync_update.requestAnimationFrame_auto = true
 RAF_timerID = requestAnimationFrame(Animate_RAF)
@@ -4271,7 +4271,7 @@ DEBUG_show(1,0,1)
 
   Animate_RAF(time)
 }
-else { DEBUG_show(0,0,1) }
+//else { DEBUG_show(0,0,1) }
   }
     };
 
