@@ -22900,7 +22900,7 @@ else
 			_gl.viewport( vx, vy, width, height );
 
 			_currentFramebuffer = framebuffer;
-DEBUG_show(9,0,1)
+
 		}
 
 		_currentWidth = width;
@@ -23098,7 +23098,7 @@ DEBUG_show(9,0,1)
 				premultipliedAlpha: _premultipliedAlpha,
 				antialias: _antialias,
 				stencil: _stencil,
-				preserveDrawingBuffer: _preserveDrawingBuffer
+//				preserveDrawingBuffer: _preserveDrawingBuffer
 			};
 
 // AT: WebXR
@@ -23108,7 +23108,7 @@ if ((self.MMD_SA_options && MMD_SA_options.WebXR_AR && MMD_SA.WebXR.can_AR)) {
 }
 
 // AT: WebGL2
-if (self.MMD_SA) _gl = _canvas.getContext( 'webgl2', attributes );
+//if (self.MMD_SA) _gl = _canvas.getContext( 'webgl2', attributes );
 if (_gl) {
   console.log("Use WebGL2")
   MMD_SA.use_webgl2 = true
