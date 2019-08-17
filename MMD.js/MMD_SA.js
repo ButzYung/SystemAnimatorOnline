@@ -4194,7 +4194,7 @@ session.addEventListener('end', this.onSessionEnd);
 
 
 MMD_SA.reset_camera()
-MD_SA._trackball_camera.enabled = false
+MMD_SA._trackball_camera.enabled = false
 
 this.camera = MMD_SA._trackball_camera.object
 this.camera.matrixAutoUpdate = false;
@@ -4209,7 +4209,7 @@ if (RAF_timerID) {
 this.gl = MMD_SA.renderer.getContext()
 
 try {
-  await this.gl.makeXRCompatible();
+//  await this.gl.makeXRCompatible();
 
   session.updateRenderState({ baseLayer: new XRWebGLLayer(session, this.gl) });
 
@@ -4228,9 +4228,6 @@ session.requestAnimationFrame(this.onARFrame);
  ,onSessionEnd: function () {
 this.frameOfRef = null
 this.session = null
-this._viewport = {}
-
-this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
 
 MMD_SA.reset_camera()
 MMD_SA._trackball_camera.enabled = true
@@ -4239,6 +4236,9 @@ this.camera = null
 
 EV_sync_update.requestAnimationFrame_auto = true
 RAF_timerID = requestAnimationFrame(Animate_RAF)
+
+this._viewport = {}
+this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
   }
 
  ,_viewport: {}
