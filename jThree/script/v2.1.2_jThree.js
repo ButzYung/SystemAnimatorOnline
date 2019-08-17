@@ -23086,6 +23086,12 @@ else
 				preserveDrawingBuffer: _preserveDrawingBuffer
 			};
 
+// AT: WebXR
+if ((self.MMD_SA_options && MMD_SA_options.WebXR_AR && MMD_SA.WebXR.can_AR)) {
+  console.log("Use XR-compatible WebGL context")
+  attributes.xrCompatible = true;
+}
+
 // AT: WebGL2
 if (self.MMD_SA) _gl = _canvas.getContext( 'webgl2', attributes );
 if (_gl) {
