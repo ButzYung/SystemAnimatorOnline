@@ -3927,7 +3927,7 @@ for (var i = 1, i_max = MMD_SA.light_list.length; i < i_max; i++) {
     continue
 
   light.castShadow = enabled;
-  if (enabled && MMD_SA.renderer.shadowMapCascade) {
+  if (enabled && renderer.shadowMapCascade) {
     light.shadowCascade = true
     console.log("Use cascaded shadow map")
   }
@@ -4157,6 +4157,129 @@ for (var model_name in pos_to_track) {
 
 return drop_list
     };
+  })()
+
+ ,WebXR: (function () {
+    var xr = {
+  can_AR: false
+
+ ,enter_AR: async function () {
+if (!this.can_AR) {
+  DEBUG_show("(AR not supported by this device)", 2)
+  return
+}
+if (!MMD_SA.MMD_started) {
+  DEBUG_show("(AR not available before MMD loading is complete)", 3)
+  return
+}
+if (this.session) {
+  DEBUG_show("(XR session already active)", 2)
+  return
+}
+
+try {
+  const session = await this.device.requestSession('immersive-ar');
+
+  this.onSessionStart(session)
+}
+catch (err) {
+  console.error(err)
+  DEBUG_show("(AR session failed)")
+}
+  }
+
+ ,onSessionStart: async function (session) {
+this.session = session
+session.addEventListener('end', this.onSessionEnd);
+
+this.gl = MMD_SA.renderer.getContext()
+
+try {
+//  await this.gl.makeXRCompatible();
+
+  session.updateRenderState({ baseLayer: new XRWebGLLayer(session, this.gl) });
+
+  this.frameOfRef = await session.requestReferenceSpace('local');
+}
+catch (err) {
+  session.end()
+  console.error(err)
+  DEBUG_show("(AR session ended in error)")
+  return
+}
+
+MMD_SA.reset_camera()
+MD_SA._trackball_camera.enabled = false
+
+this.camera = MMD_SA._trackball_camera.object
+this.camera.matrixAutoUpdate = false;
+
+EV_sync_update.requestAnimationFrame_auto = false
+if (RAF_timerID) {
+  cancelAnimationFrame(RAF_timerID)
+  RAF_timerID = null
+}
+
+session.requestAnimationFrame(this.onARFrame);
+  }
+
+ ,onSessionEnd: function () {
+this.frameOfRef = null
+this.session = null
+this._viewport = {}
+
+this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+
+MMD_SA.reset_camera()
+MD_SA._trackball_camera.enabled = true
+this.camera.matrixAutoUpdate = true
+this.camera = null
+  }
+
+ ,_viewport: {}
+ ,onARFrame: function (time, frame) {
+let session = frame.session;
+
+session.requestAnimationFrame(this.onARFrame);
+
+let pose;
+try {
+  pose = frame.getViewerPose(this.frameOfRef);
+} catch (err) {}
+
+if (pose) {
+  this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, session.renderState.baseLayer.framebuffer);
+
+  for (let view of pose.views) {
+    const viewport = session.renderState.baseLayer.getViewport(view);
+    if ((this._viewport.width != viewport.width) || (this._viewport.height != viewport.height)) {
+      this.renderer.setSize(viewport.width, viewport.height);
+      this._viewport.width  = viewport.width
+      this._viewport.height = viewport.height
+    }
+
+    this.camera.projectionMatrix.fromArray(view.projectionMatrix);
+    this.camera.matrix.fromArray(view.transform.matrix);
+    this.camera.updateMatrixWorld(true);
+  }
+
+  Animate_RAF(time)
+}
+  }
+    };
+
+    try {
+if (navigator.xr && XRSession.prototype.requestHitTest) {
+  navigator.xr.supportsSession('immersive-ar').then(()=>{
+    xr.can_AR = true
+  }).catch((err)=>{});
+}
+    } catch (err) { console.error(err) }
+
+    xr.onSessionEnd = xr.onSessionEnd.bind(xr);
+    xr.onARFrame = xr.onARFrame.bind(xr);
+
+    return xr;
   })()
 
 // temp stuff
