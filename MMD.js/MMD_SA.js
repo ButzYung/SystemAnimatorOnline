@@ -2386,7 +2386,6 @@ this._txr.needsUpdate = true
    ,msg: ""
    ,msg_timerID: null
    ,message: function (bubble_index, msg, duration, para) {
-return
 if (!para)
   para = {}
 
