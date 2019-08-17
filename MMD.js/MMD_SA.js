@@ -5428,7 +5428,7 @@ console.log("three.core.min.js")
   }
   else {
     js.push(
-  ((localhost_mode || ValidatePath(System.Gadget.path + "/_private/js/XMLHttpRequestZIP.js")) ? "_private/js/XMLHttpRequestZIP.js" : "js/XMLHttpRequestZIP_.js")
+  ((localhost_mode || webkit_electron_mode) ? "_private/js/XMLHttpRequestZIP.js" : "js/XMLHttpRequestZIP_.js")
  ,"js/jszip.js"
 
  ,"jThree/script/"+js_prefix+"jThree.js"
