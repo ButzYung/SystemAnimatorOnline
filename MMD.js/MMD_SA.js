@@ -4210,7 +4210,7 @@ this.renderer = MMD_SA.renderer;
 this.gl = this.renderer.getContext();
 
 try {
-//  await this.gl.makeXRCompatible();
+  await this.gl.makeXRCompatible();
 
   session.updateRenderState({ baseLayer: new XRWebGLLayer(session, this.gl) });
 
@@ -4253,7 +4253,7 @@ try {
 } catch (err) {}
 
 if (pose) {
-DEBUG_show(1,0,1)
+//DEBUG_show(1,0,1)
   this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, session.renderState.baseLayer.framebuffer);
 
   for (let view of pose.views) {
@@ -4262,6 +4262,7 @@ DEBUG_show(1,0,1)
       this.renderer.setSize(viewport.width, viewport.height);
       this._viewport.width  = viewport.width
       this._viewport.height = viewport.height
+DEBUG_show("view port:" + viewport.width+"x"+viewport.height)
     }
 
     this.camera.projectionMatrix.fromArray(view.projectionMatrix);
