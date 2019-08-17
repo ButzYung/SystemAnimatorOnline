@@ -22900,7 +22900,7 @@ else
 			_gl.viewport( vx, vy, width, height );
 
 			_currentFramebuffer = framebuffer;
-DEBUG_show(9,0,1)
+
 		}
 
 		_currentWidth = width;

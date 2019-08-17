@@ -4264,7 +4264,7 @@ if (pose) {
 
   for (let view of pose.views) {
     const viewport = session.renderState.baseLayer.getViewport(view);
-    this.gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
+//    this.gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
 /*
     if ((this._viewport.width != viewport.width) || (this._viewport.height != viewport.height)) {
 //      this.renderer.setSize(viewport.width, viewport.height);
