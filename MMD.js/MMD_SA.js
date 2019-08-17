@@ -789,7 +789,7 @@ let init = function () {
     Ldebug.removeEventListener("click", MMD_SA._click_to_reset);
     MMD_SA._click_to_reset = null;
   }
-  if (is_mobile && !MMD_SA_options.WebXR_AR)
+  if (is_mobile)
     document.documentElement.requestFullscreen()
 
   MMD_SA.MME_init()
@@ -4283,6 +4283,7 @@ this.camera.matrixAutoUpdate = true
   }
 
 THREE.MMD.getModels()[0].mesh.position.z = -50
+THREE.MMD.getModels()[0].mesh.visible = false
   Animate_RAF(time)
 }
 //else { DEBUG_show(0,0,1) }
