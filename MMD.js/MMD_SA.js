@@ -4231,6 +4231,8 @@ session.requestAnimationFrame(this.onARFrame);
  ,onSessionEnd: function () {
 this.frameOfRef = null
 this.session = null
+this.hits = []
+this.hit_found = false
 
 MMD_SA.reset_camera()
 MMD_SA._trackball_camera.enabled = true
@@ -4272,11 +4274,41 @@ if (pose) {
 //this.camera.matrixAutoUpdate = true
   }
 
-THREE.MMD.getModels()[0].mesh.position.z = -50
+  if (!this.hit_test())
+    THREE.MMD.getModels()[0].mesh.position.z = -50
 
   Animate_RAF(time)
 }
 //else { DEBUG_show(0,0,1) }
+  }
+
+ ,hits: []
+ ,hit_found: false
+ ,hit_test: function () {
+if (this.hit_found)
+  return true
+
+this.raycaster = this.raycaster || new THREE.Raycaster();
+this.raycaster.setFromCamera({ x:0, y:0 }, this.camera);
+const ray = this.raycaster.ray;
+
+let xrray = new XRRay(new DOMPoint(ray.origin.x, ray.origin.y, ray.origin.z), new DOMPoint(ray.direction.x, ray.direction.y, ray.direction.z));
+this.session.requestHitTest(xrray, this.frameOfRef).then(function (hits) {
+  xr.hits = hits;
+});
+
+if (this.hits.length) {
+  this.hit_found = true
+
+  const hit = this.hits[0];
+
+  const hitMatrix = new THREE.Matrix4().fromArray(hit.hitMatrix);
+
+  THREE.MMD.getModels()[0].mesh.position.setFromMatrixPosition(hitMatrix);
+  return true
+}
+
+return false
   }
     };
 

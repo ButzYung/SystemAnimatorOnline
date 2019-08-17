@@ -6449,6 +6449,27 @@ THREE.EventDispatcher.prototype = {
 
 	};
 
+// AT: backported
+THREE.Raycaster.prototype.setFromCamera = function ( coords, camera ) {
+
+			if ( ( camera && (camera instanceof THREE.PerspectiveCamera) ) ) {// camera.isPerspectiveCamera ) ) {
+
+				this.ray.origin.getPositionFromMatrix( camera.matrixWorld );//setFromMatrixPosition( camera.matrixWorld );
+				this.ray.direction.set( coords.x, coords.y, 0.5 ).unproject( camera ).sub( this.ray.origin ).normalize();
+
+			} else if ( ( camera && (camera instanceof THREE.OrthographicCamera) ) ) {// camera.isOrthographicCamera ) ) {
+
+				this.ray.origin.set( coords.x, coords.y, ( camera.near + camera.far ) / ( camera.near - camera.far ) ).unproject( camera ); // set origin in plane of camera
+				this.ray.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+
+			} else {
+
+				console.error( 'THREE.Raycaster: Unsupported camera type.' );
+
+			}
+
+};
+
 }( THREE ) );
 /**
  * @author mrdoob / http://mrdoob.com/
