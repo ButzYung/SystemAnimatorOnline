@@ -28,6 +28,7 @@ body {
 
 .QuickMenu_button {
   position:absolute; width:18px; height:18px; top:0px;
+  font-size:14px;
 }
 
 .QuickMenu_button:hover {
