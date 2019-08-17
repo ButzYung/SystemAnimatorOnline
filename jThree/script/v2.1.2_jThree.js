@@ -4588,6 +4588,21 @@ if (!(matrix instanceof THREE.Matrix4)) { matrix = new THREE.Matrix4(); }
 
 }();
 
+// AT: backported
+THREE.Matrix4.prototype.fromArray = function ( array, offset ) {
+
+			if ( offset === undefined ) offset = 0;
+
+			for ( var i = 0; i < 16; i ++ ) {
+
+				this.elements[ i ] = array[ i + offset ];
+
+			}
+
+			return this;
+
+};
+
 /**
  * @author bhouston / http://exocortex.com
  */
