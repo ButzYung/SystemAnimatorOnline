@@ -789,7 +789,7 @@ let init = function () {
     Ldebug.removeEventListener("click", MMD_SA._click_to_reset);
     MMD_SA._click_to_reset = null;
   }
-  if (is_mobile)
+  if (is_mobile && !MMD_SA_options.WebXR_AR)
     document.documentElement.requestFullscreen()
 
   MMD_SA.MME_init()
@@ -4264,7 +4264,7 @@ if (pose) {
 
   for (let view of pose.views) {
     const viewport = session.renderState.baseLayer.getViewport(view);
-    this.gl.viewport(viewport.x, viewport.y, viewport.width*0.5, viewport.height*0.5);
+    this.gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
 /*
     if ((this._viewport.width != viewport.width) || (this._viewport.height != viewport.height)) {
 //      this.renderer.setSize(viewport.width, viewport.height);
