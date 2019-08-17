@@ -905,7 +905,8 @@ EPS: 0.000001,
 
 		this.object.position.addVectors( this.target, this._eye );
 
-// AT: TEST
+/*
+// AT: TEST (obsolete)
 var z_extra;
 
 var p = this.object.position
@@ -959,6 +960,7 @@ if (MMD_SA._AR_roty) {
   p.applyQuaternion(new THREE.Quaternion().setFromEuler(new THREE.Vector3(0, MMD_SA._AR_roty, 0)));
   MMD_SA._AR_roty_last = MMD_SA._AR_roty
 }
+*/
 
 		this.checkDistances();
 
