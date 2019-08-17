@@ -4206,7 +4206,7 @@ if (RAF_timerID) {
 }
 
 this.renderer = MMD_SA.renderer;
-this.renderer.autoClear = false;
+//this.renderer.autoClear = false;
 
 
 this.gl = this.renderer.getContext();
@@ -4239,7 +4239,6 @@ this.camera.matrixAutoUpdate = true
 EV_sync_update.requestAnimationFrame_auto = true
 RAF_timerID = requestAnimationFrame(Animate_RAF)
 
-this._viewport = {}
 this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
 
 window.dispatchEvent(new Event('resize'));
@@ -4247,7 +4246,6 @@ window.dispatchEvent(new Event('resize'));
 //DEBUG_show("session ended",0,1)
   }
 
- ,_viewport: {}
  ,onARFrame: function (time, frame) {
 let session = frame.session;
 
@@ -4265,25 +4263,17 @@ if (pose) {
   for (let view of pose.views) {
     const viewport = session.renderState.baseLayer.getViewport(view);
     this.gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
-/*
-    if ((this._viewport.width != viewport.width) || (this._viewport.height != viewport.height)) {
-//      this.renderer.setSize(viewport.width, viewport.height);
-      this.gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
-      this._viewport.width  = viewport.width
-      this._viewport.height = viewport.height
-DEBUG_show("view port:" + viewport.width+"x"+viewport.height,0,1)
-    }
-*/
-/*
+
+
     this.camera.projectionMatrix.fromArray(view.projectionMatrix);
     this.camera.matrix.fromArray(view.transform.matrix);
     this.camera.updateMatrixWorld(true);
-*/
-this.camera.matrixAutoUpdate = true
+
+//this.camera.matrixAutoUpdate = true
   }
 
 THREE.MMD.getModels()[0].mesh.position.z = -50
-//THREE.MMD.getModels()[0].mesh.visible = false
+
   Animate_RAF(time)
 }
 //else { DEBUG_show(0,0,1) }
@@ -5419,7 +5409,7 @@ self.Module = { TOTAL_MEMORY:52428800*2 };
     }
   }
 
-  var js_min_mode = self._js_min_mode_ || (!MMD_SA_options.WebXR_AR && browser_native_mode && !webkit_window && !localhost_mode);
+  var js_min_mode = self._js_min_mode_ || (!MMD_SA_options.WebXR && browser_native_mode && !webkit_window && !localhost_mode);
 
   if (js_min_mode) {
 console.log("three.core.min.js")

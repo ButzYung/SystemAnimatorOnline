@@ -1502,6 +1502,11 @@ if (!use_2nd_monitor && (PC_count_max == 1) && (EV_object[0].EV_parser() == "SOU
   EV_sync_update.enabled = true
 }
 
+if (self.MMD_SA_options && MMD_SA_options.WebXR) {
+  RAF_animation_frame_unlimited = true
+  console.log("UNLIMITED fps enforced in WebXR")
+}
+
 if (returnBoolean("UseFullFrameRate") || (use_SA_browser_mode && use_full_fps_registered)) {
   use_full_fps = true
   if (!is_SA_child_animation) {
@@ -2170,7 +2175,7 @@ if (fullscreen) {
       qmb_count--
     }
 
-    if (!self.MMD_SA_options || !MMD_SA_options.WebXR_AR) {
+    if (!self.MMD_SA_options || !MMD_SA_options.WebXR || !MMD_SA_options.WebXR.AR) {
       Lquick_menu_ar_button.style.display = "none"
       qmb_count--
     }

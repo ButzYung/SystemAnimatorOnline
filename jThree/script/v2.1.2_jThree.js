@@ -19666,7 +19666,7 @@ var useBlending = !(self.MMD_SA && MMD_SA._depth_render_mode_)
 if (renderTarget && renderTarget._use_multisample) {
   _gl.bindFramebuffer( _gl.READ_FRAMEBUFFER, renderTarget.__webglMSAAFramebuffer );
   _gl.bindFramebuffer( _gl.DRAW_FRAMEBUFFER, renderTarget.__webglFramebuffer );
-DEBUG_show(9,0,1)
+
   var width = renderTarget.width;
   var height = renderTarget.height;
   var mask = _gl.COLOR_BUFFER_BIT;
@@ -22656,7 +22656,7 @@ var glFormat_internal = MMD_SA.webgl2_RGBA_internal(_gl, glFormat, glType);
 
 		_gl.bindFramebuffer( _gl.FRAMEBUFFER, framebuffer );
 		_gl.framebufferTexture2D( _gl.FRAMEBUFFER, _gl.COLOR_ATTACHMENT0, textureTarget, renderTarget.__webglTexture, 0 );
-DEBUG_show(9,0,1)
+
 	};
 
 	function setupRenderBuffer ( renderbuffer, renderTarget  ) {
@@ -22762,7 +22762,7 @@ if (renderTarget._use_multisample) {
 
 // Our MSAA FBO
   _gl.bindFramebuffer( _gl.FRAMEBUFFER, renderTarget.__webglMSAAFramebuffer );
-DEBUG_show(9,0,1)
+
 // Ensure internalFormat is correct
 // NOTE: Just use RGA8 for now
   var glFormat_internal_MSAA = _gl.RGBA8
@@ -22778,7 +22778,7 @@ DEBUG_show(9,0,1)
     setupRenderBuffer( renderTarget.__webglMSAADepthbuffer, renderTarget );
   }
 
-  _gl.bindFramebuffer( _gl.FRAMEBUFFER, null );DEBUG_show(9,0,1)
+  _gl.bindFramebuffer( _gl.FRAMEBUFFER, null );
 }
 
 // AT: WebGL2
@@ -22853,7 +22853,7 @@ renderTarget._use_multisample = _use_multisample
 
 			_gl.bindRenderbuffer( _gl.RENDERBUFFER, null );
 			_gl.bindFramebuffer( _gl.FRAMEBUFFER, null );
-DEBUG_show(9,0,1)
+
 		}
 
 		var framebuffer, width, height, vx, vy;
@@ -22900,7 +22900,7 @@ else
 			_gl.viewport( vx, vy, width, height );
 
 			_currentFramebuffer = framebuffer;
-DEBUG_show(9,0,1)
+
 		}
 
 		_currentWidth = width;
@@ -23098,17 +23098,17 @@ DEBUG_show(9,0,1)
 				premultipliedAlpha: _premultipliedAlpha,
 				antialias: _antialias,
 				stencil: _stencil,
-//				preserveDrawingBuffer: _preserveDrawingBuffer
+				preserveDrawingBuffer: _preserveDrawingBuffer
 			};
 
 // AT: WebXR
-if ((self.MMD_SA_options && MMD_SA_options.WebXR_AR && MMD_SA.WebXR.can_AR)) {
+if ((self.MMD_SA_options && MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA.WebXR.can_AR)) {
   console.log("Use XR-compatible WebGL context")
   attributes.xrCompatible = true;
 }
 
 // AT: WebGL2
-//if (self.MMD_SA) _gl = _canvas.getContext( 'webgl2', attributes );
+if (self.MMD_SA) _gl = _canvas.getContext( 'webgl2', attributes );
 if (_gl) {
   console.log("Use WebGL2")
   MMD_SA.use_webgl2 = true

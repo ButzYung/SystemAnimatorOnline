@@ -255,7 +255,8 @@ setTimeout(function () {MMD_SA.SpeechBubble.message(0, "Drag with the left mouse
 setTimeout(function () {MMD_SA.SpeechBubble.message(0, ((WallpaperEngine_mode) ? "Give" : "Drop") + " me a MP3 and I\'ll dance for you~! ^o^", 4*1000)}, (2+10)*1000)
   }
 
- ,WebXR_AR: {
+ ,WebXR: {
+    AR: {}
   }
 
 // END
@@ -271,11 +272,11 @@ setTimeout(function () {MMD_SA.SpeechBubble.message(0, ((WallpaperEngine_mode) ?
     MMD_SA_options.height = 600
   }
 
-  RAF_animation_frame_unlimited = true
+//  RAF_animation_frame_unlimited = true
 
   Settings_default._custom_.EventToMonitor = "SOUND_ALL"
   Settings_default._custom_.Use30FPS = "non_default"
-  Settings_default._custom_.Use60FPS = "non_default"
+//  Settings_default._custom_.Use60FPS = "non_default"
   if (use_SA_browser_mode && !is_SA_child_animation)
     Settings_default._custom_.WallpaperAsBG = "non_default"
   Settings_default._custom_.Display = "-1"
