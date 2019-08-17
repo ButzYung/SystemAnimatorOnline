@@ -4327,6 +4327,7 @@ if (navigator.xr && XRSession.prototype.requestHitTest) {
   })()
 
 // temp stuff
+ ,_readVector_scale: 1
  ,_mouse_pos_3D: []
 
 };
@@ -5440,6 +5441,8 @@ self.Module = { TOTAL_MEMORY:52428800*2 };
 //      js.push('MMD_SA._ammo_async_loaded_=true; console.log("Ammo.js loaded");')
     }
   }
+
+  if (MMD_SA_options.WebXR) MMD_SA._readVector_scale = 0.1;
 
   var js_min_mode = self._js_min_mode_ || (!MMD_SA_options.WebXR && browser_native_mode && !webkit_window && !localhost_mode);
 

@@ -1226,11 +1226,13 @@ Reader.prototype.readMorphIndex = function() {
 Reader.prototype.readRigidIndex = function() {
 	return this.readIndex( this.rigidIndexSize );
 };
-Reader.prototype.readVector = function( n ) {
+// AT: scale
+Reader.prototype.readVector = function( n, scale ) {
 	var v = [];
 	while ( n-- > 0 ) {
 		v.push( this.readFloat32() );
 	}
+if (scale) v=v.map(f=>f*MMD_SA._readVector_scale);
 	return v;
 };
 
@@ -1285,7 +1287,7 @@ Skin = function( bin ) {
 
 Vertex = function( bin ) {
 	var n;
-	this.pos = convV( bin.readVector( 3 ) );
+	this.pos = convV( bin.readVector(3,true) );
 	this.normal = convV( bin.readVector( 3 ) );
 	this.uv = bin.readVector( 2 );
 	this.additionalUvs = [];
@@ -1356,7 +1358,7 @@ Bone = function( bin ) {
 	this.name = bin.readText();
 	//console.log('*' + this.name);
 	this.nameEn = bin.readText();
-	this.origin = convV( bin.readVector(3) );
+	this.origin = convV( bin.readVector(3,true) );
 	this.parent = bin.readBoneIndex();
 	this.deformHierachy = bin.readInt32();
 	//console.log('deformHierachy ' + this.deformHierachy);
@@ -1418,7 +1420,7 @@ if (self.MMD_SA && (MMD_SA.use_afterPhysics !== false)) MMD_SA.use_afterPhysics 
 
 MorphVertex = function( bin ) {
 	this.target = bin.readVertexIndex();
-	this.offset = convV( bin.readVector(3) );
+	this.offset = convV( bin.readVector(3,true) );
 };
 
 MorphUV = function( bin ) {
@@ -1428,7 +1430,7 @@ MorphUV = function( bin ) {
 
 MorphBone = function( bin ) {
 	this.target = bin.readBoneIndex();
-	this.pos = bin.readVector(3);
+	this.pos = bin.readVector(3,true);
 	this.rot = bin.readVector(4);
 // AT: pos_v3, rot_q
 if (this.pos[0] || this.pos[1] || this.pos[2]) {
@@ -1548,8 +1550,8 @@ Rigid = function( bin ) { // rigid body
 	this.group = bin.readUint8();
 	this.mask = bin.readUint16();
 	this.shape = bin.readUint8();
-	this.size = bin.readVector(3);
-	this.pos = convV( bin.readVector(3) );
+	this.size = bin.readVector(3,true);
+	this.pos = convV( bin.readVector(3,true) );
 	this.rot = convR( bin.readVector(3) );
 	this.mass = bin.readFloat32();
 	this.posDamping = bin.readFloat32();
@@ -1565,15 +1567,15 @@ Joint = function( bin ) { // constraint between two rigid bodies
 	this.type = bin.readUint8();
 	this.rigidA = bin.readRigidIndex();
 	this.rigidB = bin.readRigidIndex();
-	this.pos = convV( bin.readVector(3) );
+	this.pos = convV( bin.readVector(3,true) );
 	this.rot = convR( bin.readVector(3) );
-	this.posLower = bin.readVector(3);
-	this.posUpper = bin.readVector(3);
+	this.posLower = bin.readVector(3,true);
+	this.posUpper = bin.readVector(3,true);
 	convV2( this.posLower, this.posUpper );
 	this.rotLower = bin.readVector(3);
 	this.rotUpper = bin.readVector(3);
 	convR2( this.rotLower, this.rotUpper );
-	this.posSpring = bin.readVector(3);
+	this.posSpring = bin.readVector(3,true);
 	this.rotSpring = bin.readVector(3);
 };
 
@@ -2270,18 +2272,20 @@ Reader.prototype.readCString = function( length ) {
 	}
 	return text;
 };
-Reader.prototype.readVector = function( n ) {
+// AT: scale
+Reader.prototype.readVector = function( n, scale ) {
 	var v = [];
 	while ( n-- > 0 ) {
 		v.push( this.readFloat32() );
 	}
+if (scale) v=v.map(f=>f*MMD_SA._readVector_scale);
 	return v;
 };
 
 BoneKey = function( bin ) {
 	this.name = bin.readCString(15);
 	this.time = f2t( bin.readUint32() );
-	this.pos = convV( bin.readVector(3) );
+	this.pos = convV( bin.readVector(3,true) );
 	this.rot = convR( bin.readVector(4) );
 	this.interp = bin.readBytes(64).subarray(0,16); // 必要なのは最初の１６個。
 };
