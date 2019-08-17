@@ -4304,7 +4304,7 @@ if (this.hits.length) {
 
   const hitMatrix = new THREE.Matrix4().fromArray(hit.hitMatrix);
 
-  THREE.MMD.getModels()[0].mesh.position.setFromMatrixPosition(hitMatrix);
+  THREE.MMD.getModels()[0].mesh.position.getPositionFromMatrix(hitMatrix);
   return true
 }
 
