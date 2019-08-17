@@ -2137,6 +2137,7 @@ if (fullscreen) {
   if (use_SA_system_emulation) {
     var ls = Lquick_menu.style
     var qmb_list = document.getElementsByClassName("QuickMenu_button")
+    var qmb_count = 6
     if ((B_content_height > screen_h-10)/* || fullscreen*/) {
       ls.posTop = 20+4
       for (var i = 0; i < qmb_list.length; i++)
@@ -2166,7 +2167,12 @@ if (fullscreen) {
 
     if (!self.EQP_dragdrop_target) {
       Lquick_menu_gallery_button.style.display = "none"
-      ls.pixelWidth = (18*4+2)
+      qmb_count--
+    }
+
+    if (!self.MMD_SA_options || !MMD_SA_options.WebXR_AR) {
+      Lquick_menu_ar_button.style.display = "none"
+      qmb_count--
     }
 //    ls.visibility = "inherit"
 
@@ -2174,6 +2180,8 @@ if (fullscreen) {
       ls.posLeft = Math.min(B_content_width, screen_w) - (18*5+2)
       ls.posTop  = Math.min(B_content_height, screen.availHeight) - 24
     }
+
+    ls.pixelWidth = (18*qmb_count+2)
 
     if (is_mobile) {
       Lquick_menu.style.transform = Idialog.style.transform = "scale(" + (System._browser.css_scale*2) + ")"
@@ -2402,6 +2410,8 @@ var EV_sync_update = {
  ,no_update_count: 0
  ,no_animation_count: 99
 
+ ,requestAnimationFrame_auto: true
+
 // fps count
  ,fps_count: 0
  ,fps_count_start_time: 0
@@ -2479,7 +2489,8 @@ var RAF_frame_drop = 0
 
 var Animate_RAF = function (timestamp) {
 //EV_sync_update.fps_count_func()
-  RAF_timerID = requestAnimationFrame(Animate_RAF)
+  if (EV_sync_update.requestAnimationFrame_auto)
+    RAF_timerID = requestAnimationFrame(Animate_RAF)
 //RAF_timerID = setTimeout(function () { Animate_RAF(performance.now()) }, 1000/60)
 
   if (EV_sync_update.RAF_paused) {
