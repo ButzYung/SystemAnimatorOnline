@@ -4199,6 +4199,8 @@ MMD_SA._trackball_camera.enabled = false
 this.camera = MMD_SA._trackball_camera.object
 this.camera.matrixAutoUpdate = false;
 
+this.renderer.autoClear = false;
+
 EV_sync_update.requestAnimationFrame_auto = false
 if (RAF_timerID) {
   cancelAnimationFrame(RAF_timerID)
