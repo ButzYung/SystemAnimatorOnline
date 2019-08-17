@@ -4192,21 +4192,6 @@ catch (err) {
 this.session = session
 session.addEventListener('end', this.onSessionEnd);
 
-this.gl = MMD_SA.renderer.getContext()
-
-try {
-//  await this.gl.makeXRCompatible();
-
-  session.updateRenderState({ baseLayer: new XRWebGLLayer(session, this.gl) });
-
-  this.frameOfRef = await session.requestReferenceSpace('local');
-}
-catch (err) {
-  session.end()
-  console.error(err)
-  DEBUG_show("(AR session ended in error)",0,1)
-  return
-}
 
 MMD_SA.reset_camera()
 MD_SA._trackball_camera.enabled = false
@@ -4218,6 +4203,23 @@ EV_sync_update.requestAnimationFrame_auto = false
 if (RAF_timerID) {
   cancelAnimationFrame(RAF_timerID)
   RAF_timerID = null
+}
+
+
+this.gl = MMD_SA.renderer.getContext()
+
+try {
+  await this.gl.makeXRCompatible();
+
+  session.updateRenderState({ baseLayer: new XRWebGLLayer(session, this.gl) });
+
+  this.frameOfRef = await session.requestReferenceSpace('local');
+}
+catch (err) {
+  session.end()
+  console.error(err)
+  DEBUG_show("AR session error:" + err,0,1)
+  return
 }
 
 session.requestAnimationFrame(this.onARFrame);
@@ -4234,6 +4236,9 @@ MMD_SA.reset_camera()
 MMD_SA._trackball_camera.enabled = true
 this.camera.matrixAutoUpdate = true
 this.camera = null
+
+EV_sync_update.requestAnimationFrame_auto = true
+RAF_timerID = requestAnimationFrame(Animate_RAF)
   }
 
  ,_viewport: {}
