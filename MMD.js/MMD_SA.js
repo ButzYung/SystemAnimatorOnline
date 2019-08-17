@@ -2386,6 +2386,7 @@ this._txr.needsUpdate = true
    ,msg: ""
    ,msg_timerID: null
    ,message: function (bubble_index, msg, duration, para) {
+return
 if (!para)
   para = {}
 
@@ -4283,7 +4284,7 @@ this.camera.matrixAutoUpdate = true
   }
 
 THREE.MMD.getModels()[0].mesh.position.z = -50
-THREE.MMD.getModels()[0].mesh.visible = false
+//THREE.MMD.getModels()[0].mesh.visible = false
   Animate_RAF(time)
 }
 //else { DEBUG_show(0,0,1) }
