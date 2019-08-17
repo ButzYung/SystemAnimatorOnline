@@ -5418,7 +5418,9 @@ self.Module = { TOTAL_MEMORY:52428800*2 };
     }
   }
 
-  if (self._js_min_mode_ || (browser_native_mode && !webkit_window && !localhost_mode)) {
+  var js_min_mode = self._js_min_mode_ || (!MMD_SA_options.WebXR_AR && browser_native_mode && !webkit_window && !localhost_mode);
+
+  if (js_min_mode) {
 console.log("three.core.min.js")
     js.push(
   "jThree/three.core.min.js"
@@ -5457,7 +5459,7 @@ console.log("three.core.min.js")
 
   var EC = MMD_SA_options.MME && MMD_SA_options.MME.PostProcessingEffects
   if (EC && EC.effects.length) {
-    if (self._js_min_mode_ || (!MMD_SA_options.WebXR_AR && browser_native_mode && !webkit_window && !localhost_mode)) {
+    if (js_min_mode) {
 console.log("three.core.min.effect.js")
       js.push(
   "jThree/three.core.effect.min.js"
