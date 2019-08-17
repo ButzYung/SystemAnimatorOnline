@@ -15775,7 +15775,7 @@ if (parameters.canvas) parameters.canvas = document.getElementById(parameters.ca
 		_viewportHeight = height !== undefined ? height : _canvas.height;
 
 		_gl.viewport( _viewportX, _viewportY, _viewportWidth, _viewportHeight );
-
+DEBUG_show([_viewportX, _viewportY, _viewportWidth, _viewportHeight],0,1)
 	};
 
 	// ADD by katwat | http://www20.atpages.jp/katwat/wp/
