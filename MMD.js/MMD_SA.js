@@ -4204,7 +4204,7 @@ try {
 catch (err) {
   session.end()
   console.error(err)
-  DEBUG_show("(AR session ended in error)")
+  DEBUG_show("(AR session ended in error)",0,1)
   return
 }
 
@@ -4231,7 +4231,7 @@ this._viewport = {}
 this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
 
 MMD_SA.reset_camera()
-MD_SA._trackball_camera.enabled = true
+MMD_SA._trackball_camera.enabled = true
 this.camera.matrixAutoUpdate = true
 this.camera = null
   }
@@ -4248,6 +4248,7 @@ try {
 } catch (err) {}
 
 if (pose) {
+DEBUG_show(1,0,1)
   this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, session.renderState.baseLayer.framebuffer);
 
   for (let view of pose.views) {
@@ -4265,6 +4266,7 @@ if (pose) {
 
   Animate_RAF(time)
 }
+else { DEBUG_show(0,0,1) }
   }
     };
 
