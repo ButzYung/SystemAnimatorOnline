@@ -4240,7 +4240,9 @@ RAF_timerID = requestAnimationFrame(Animate_RAF)
 this._viewport = {}
 this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
 
-DEBUG_show("session ended",0,1)
+window.dispatchEvent(new Event('resize'));
+
+//DEBUG_show("session ended",0,1)
   }
 
  ,_viewport: {}
@@ -4261,7 +4263,8 @@ if (pose) {
   for (let view of pose.views) {
     const viewport = session.renderState.baseLayer.getViewport(view);
     if ((this._viewport.width != viewport.width) || (this._viewport.height != viewport.height)) {
-      this.renderer.setSize(viewport.width, viewport.height);
+//      this.renderer.setSize(viewport.width, viewport.height);
+      this.gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
       this._viewport.width  = viewport.width
       this._viewport.height = viewport.height
 DEBUG_show("view port:" + viewport.width+"x"+viewport.height,0,1)
