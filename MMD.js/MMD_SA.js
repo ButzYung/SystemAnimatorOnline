@@ -4272,9 +4272,12 @@ if (pose) {
 DEBUG_show("view port:" + viewport.width+"x"+viewport.height,0,1)
     }
 */
+/*
     this.camera.projectionMatrix.fromArray(view.projectionMatrix);
     this.camera.matrix.fromArray(view.transform.matrix);
     this.camera.updateMatrixWorld(true);
+*/
+this.camera.matrixAutoUpdate = true
   }
 
 THREE.MMD.getModels()[0].mesh.position.z = -50
