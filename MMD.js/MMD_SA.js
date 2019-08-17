@@ -4178,7 +4178,7 @@ if (this.session) {
 }
 
 try {
-  const session = await this.device.requestSession('immersive-ar');
+  const session = await navigator.xr.requestSession('immersive-ar');
 
   this.onSessionStart(session)
 }
