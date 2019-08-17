@@ -4262,6 +4262,8 @@ if (pose) {
 
   for (let view of pose.views) {
     const viewport = session.renderState.baseLayer.getViewport(view);
+    this.gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
+/*
     if ((this._viewport.width != viewport.width) || (this._viewport.height != viewport.height)) {
 //      this.renderer.setSize(viewport.width, viewport.height);
       this.gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
@@ -4269,7 +4271,7 @@ if (pose) {
       this._viewport.height = viewport.height
 DEBUG_show("view port:" + viewport.width+"x"+viewport.height,0,1)
     }
-
+*/
     this.camera.projectionMatrix.fromArray(view.projectionMatrix);
     this.camera.matrix.fromArray(view.transform.matrix);
     this.camera.updateMatrixWorld(true);
