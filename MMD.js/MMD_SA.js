@@ -4260,13 +4260,12 @@ try {
 
 if (pose) {
 //DEBUG_show(1,0,1)
-if (!self._TEST_) {
   this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, session.renderState.baseLayer.framebuffer);
-self._TEST_=true;}
 
   for (let view of pose.views) {
     const viewport = session.renderState.baseLayer.getViewport(view);
-    this.gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
+//    this.gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
+this.gl.viewport(viewport.x, viewport.y, session.renderState.baseLayer.framebufferWidth, session.renderState.baseLayer.framebufferHeight);
 /*
     if ((this._viewport.width != viewport.width) || (this._viewport.height != viewport.height)) {
 //      this.renderer.setSize(viewport.width, viewport.height);
