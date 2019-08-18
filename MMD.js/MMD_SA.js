@@ -4228,6 +4228,15 @@ catch (err) {
   return
 }
 
+if (!this.reticle) {
+  let geometry = new THREE.RingGeometry(0.1, 0.11, 24, 1);
+  let material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  geometry.applyMatrix(new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(-90)));
+  this.reticle = new Mesh(geometry, material);
+  this.reticle.visible = false
+  MMD_SA.scene.add(this.reticle)
+}
+
 session.requestAnimationFrame(this.onARFrame);
   }
 
@@ -4281,8 +4290,16 @@ if (pose) {
   var model_mesh = THREE.MMD.getModels()[0].mesh
   var hit_result = this.hit_test()
   if (hit_result) {
-    this.hit_found = true
+//    this.hit_found = true
     if (hit_result.hitMatrix) {
+      if (1) {
+        this.reticle.position.getPositionFromMatrix(hit_result.hitMatrix)
+        let targetPos = new THREE.Vector3().getPositionFromMatrix(this.camera.matrixWorld);
+        let angle = Math.atan2(targetPos.x - this.position.x, targetPos.z - this.position.z);
+        this.reticle.rotation.set(0, angle, 0);
+        this.reticle.visible = true;
+      }
+/*
       let pos0 = new THREE.Vector3()
       pos0.getPositionFromMatrix(hit_result.hitMatrix);
       pos0.multiplyScalar(10)
@@ -4291,12 +4308,14 @@ if (pose) {
 
       model_mesh.visible = true
       MMD_SA.reset_gravity()
+*/
     }
   }
   else {
     model_mesh.visible = false
   }
 
+if (0) {
 // xyz
   this.camera.matrix.elements[12] *= 10
   this.camera.matrix.elements[13] *= 10
@@ -4313,6 +4332,7 @@ if (pose) {
 
   this.camera.position.getPositionFromMatrix(this.camera.matrix)
   this.camera.updateMatrixWorld(true);
+}
 
   Animate_RAF(time)
 }
