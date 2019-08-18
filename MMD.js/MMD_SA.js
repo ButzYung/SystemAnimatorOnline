@@ -4283,6 +4283,7 @@ if (pose) {
     if (hit_result.hitMatrix) {
       model_mesh.position.getPositionFromMatrix(hit_result.hitMatrix);
       model_mesh.position.multiplyScalar(10)
+      model_mesh.position.y += 20
       model_mesh.visible = true
       MMD_SA.reset_gravity()
     }
@@ -4291,9 +4292,12 @@ if (pose) {
     model_mesh.visible=false//position.z = -50
   }
 
+// xyz
   this.camera.matrix.elements[12] *= 10
   this.camera.matrix.elements[13] *= 10
   this.camera.matrix.elements[14] *= 10
+// y
+  this.camera.matrix.elements[13] += 20
   this.camera.position.getPositionFromMatrix(this.camera.matrix)
   this.camera.updateMatrixWorld(true);
 
