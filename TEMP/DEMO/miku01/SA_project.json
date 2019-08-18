@@ -2,17 +2,17 @@
 
   "folder_list": ["animate.js"]
 
- ,"child_animation_host": {
+ ,"__child_animation_host": {
     "width":  800
    ,"height": 600
   }
 
- ,"config_excluded": {
+ ,"__config_excluded": {
     "ChildAnimation0": true
    ,"CSSTransformScale": true
   }
 
- ,"_P2P_network": {
+ ,"__P2P_network": {
   }
 
 }
