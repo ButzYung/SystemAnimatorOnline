@@ -4293,8 +4293,9 @@ if (pose) {
 //    this.hit_found = true
     if (hit_result.hitMatrix) {
       if (1) {
-        this.reticle.position.getPositionFromMatrix(hit_result.hitMatrix)
-        let targetPos = new THREE.Vector3().getPositionFromMatrix(this.camera.matrixWorld);
+        this.reticle.position.getPositionFromMatrix(hit_result.hitMatrix);
+        let targetPos = new THREE.Vector3();
+        targetPos.getPositionFromMatrix(this.camera.matrixWorld);
         let angle = Math.atan2(targetPos.x - this.position.x, targetPos.z - this.position.z);
         this.reticle.rotation.set(0, angle, 0);
         this.reticle.visible = true;
