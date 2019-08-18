@@ -4231,7 +4231,9 @@ session.requestAnimationFrame(this.onARFrame);
  ,onSessionEnd: function () {
 this.frameOfRef = null
 this.session = null
-this.hits = []
+
+this.hits = null
+this.hits_searching = false
 this.hit_found = false
 
 MMD_SA.reset_camera()
@@ -4266,16 +4268,27 @@ if (pose) {
     const viewport = session.renderState.baseLayer.getViewport(view);
     this.gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
 
-
     this.camera.projectionMatrix.fromArray(view.projectionMatrix);
     this.camera.matrix.fromArray(view.transform.matrix);
-    this.camera.updateMatrixWorld(true);
-
-//this.camera.matrixAutoUpdate = true
   }
 
-  if (!this.hit_test())
-    THREE.MMD.getModels()[0].mesh.position.z = -50
+  var model_mesh = THREE.MMD.getModels()[0].mesh
+  var hit_result = this.hit_test()
+  if (hit_result) {
+    this.hit_found = true
+    if (hit_result.hitMatrix) {
+      model_mesh.position.getPositionFromMatrix(hit_result.hitMatrix);
+      model_mesh.position.multiplyScalar(10)
+    }
+  }
+  else {
+    model_mesh.visible=false//position.z = -50
+  }
+
+  this.camera.matrix.elements[12] *= 10
+  this.camera.matrix.elements[13] *= 10
+  this.camera.matrix.elements[14] *= 10
+  this.camera.updateMatrixWorld(true);
 
   Animate_RAF(time)
 }
@@ -4283,32 +4296,33 @@ if (pose) {
   }
 
  ,hits: []
+ ,hits_searching: false
  ,hit_found: false
  ,hit_test: function () {
 if (this.hit_found)
-  return true
-
-this.raycaster = this.raycaster || new THREE.Raycaster();
-this.raycaster.setFromCamera({ x:0, y:0 }, this.camera);
-const ray = this.raycaster.ray;
-
-let xrray = new XRRay(new DOMPoint(ray.origin.x, ray.origin.y, ray.origin.z), new DOMPoint(ray.direction.x, ray.direction.y, ray.direction.z));
-this.session.requestHitTest(xrray, this.frameOfRef).then(function (hits) {
-  xr.hits = hits;
-});
+  return {}
 
 if (this.hits.length) {
-  this.hit_found = true
-
-  const hit = this.hits[0];
-
-  const hitMatrix = new THREE.Matrix4().fromArray(hit.hitMatrix);
-
-  THREE.MMD.getModels()[0].mesh.position.getPositionFromMatrix(hitMatrix);
-  return true
+  return { hitMatrix: new THREE.Matrix4().fromArray(this.hits[0].hitMatrix) };
 }
 
-return false
+if (!this.hits_searching) {
+  this.hits_searching = true
+
+  this.raycaster = this.raycaster || new THREE.Raycaster();
+  this.raycaster.setFromCamera({ x:0, y:0 }, this.camera);
+  const ray = this.raycaster.ray;
+
+  let xrray = new XRRay(new DOMPoint(ray.origin.x, ray.origin.y, ray.origin.z), new DOMPoint(ray.direction.x, ray.direction.y, ray.direction.z));
+  this.session.requestHitTest(xrray, this.frameOfRef).then(function (hits) {
+    xr.hits_searching = false;
+    xr.hits = hits;
+  }).catch(function (err) {
+    xr.hits_searching = false;
+  });
+}
+
+return null
   }
     };
 
@@ -5442,7 +5456,7 @@ self.Module = { TOTAL_MEMORY:52428800*2 };
     }
   }
 
-  if (MMD_SA_options.WebXR) MMD_SA._readVector_scale = 0.1;
+//  if (MMD_SA_options.WebXR) MMD_SA._readVector_scale = 0.1;
 
   var js_min_mode = self._js_min_mode_ || (!MMD_SA_options.WebXR && browser_native_mode && !webkit_window && !localhost_mode);
 
