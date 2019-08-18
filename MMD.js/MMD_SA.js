@@ -19,18 +19,7 @@ this.fadeout_dummy.src = toFileProtocol(System.Gadget.path + '\\images\\laughing
 
 var c_host = (returnBoolean("CSSTransform3DDisabledForContent")) ? document.getElementById("Lbody_host") : document.getElementById("Lbody")
 
-c_host.ondblclick = function (e) {
-  if (!MMD_SA.use_jThree || MMD_SA_options.MMD_disabled || !MMD_SA.MMD_started)
-    return
-
-  if (MMD_SA_options.ondblclick && MMD_SA_options.ondblclick(e))
-    return
-
-  if (!MMD_SA_options.Dungeon || !MMD_SA_options.Dungeon.character.TPS_camera_lookAt_) {
-    MMD_SA.reset_camera(true)
-    DEBUG_show("(camera reset)", 2)
-  }
-
+MMD_SA.reset_gravity = function () {
   if (MMD_SA._gravity_)
     return
 
@@ -53,6 +42,21 @@ m.mesh._reset_rigid_body_physics_ = MMD_SA_options.reset_rigid_body_physics_step
 //m.physi.reset()
     });
 */
+};
+
+c_host.ondblclick = function (e) {
+  if (!MMD_SA.use_jThree || MMD_SA_options.MMD_disabled || !MMD_SA.MMD_started)
+    return
+
+  if (MMD_SA_options.ondblclick && MMD_SA_options.ondblclick(e))
+    return
+
+  if (!MMD_SA_options.Dungeon || !MMD_SA_options.Dungeon.character.TPS_camera_lookAt_) {
+    MMD_SA.reset_camera(true)
+    DEBUG_show("(camera reset)", 2)
+  }
+
+  MMD_SA.reset_gravity()
 };
 
 var d = document.createElement("div")
@@ -4277,9 +4281,10 @@ if (pose) {
   if (hit_result) {
     this.hit_found = true
     if (hit_result.hitMatrix) {
-      model_mesh.visible = true
       model_mesh.position.getPositionFromMatrix(hit_result.hitMatrix);
       model_mesh.position.multiplyScalar(10)
+      model_mesh.visible = true
+      MMD_SA.reset_gravity()
     }
   }
   else {
@@ -4289,6 +4294,7 @@ if (pose) {
   this.camera.matrix.elements[12] *= 10
   this.camera.matrix.elements[13] *= 10
   this.camera.matrix.elements[14] *= 10
+  this.camera.getPositionFromMatrix(this.camera.matrix)
   this.camera.updateMatrixWorld(true);
 
   Animate_RAF(time)
