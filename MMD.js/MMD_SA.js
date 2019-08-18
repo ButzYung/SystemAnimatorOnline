@@ -4274,6 +4274,7 @@ if (pose) {
 
     this.camera.projectionMatrix.fromArray(view.projectionMatrix);
     this.camera.matrix.fromArray(view.transform.matrix);
+    this.camera.updateMatrixWorld(true);
   }
 
   var model_mesh = THREE.MMD.getModels()[0].mesh
@@ -4328,7 +4329,6 @@ if (!this.hits_searching) {
   this.session.requestHitTest(xrray, this.frameOfRef).then(function (hits) {
     xr.hits_searching = false;
     xr.hits = hits;
-DEBUG_show(hits.length,0,1)
   }).catch(function (err) {
     xr.hits_searching = false;
   });
