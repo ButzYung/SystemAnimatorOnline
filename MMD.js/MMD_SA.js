@@ -4294,7 +4294,7 @@ if (pose) {
   this.camera.matrix.elements[12] *= 10
   this.camera.matrix.elements[13] *= 10
   this.camera.matrix.elements[14] *= 10
-  this.camera.getPositionFromMatrix(this.camera.matrix)
+  this.camera.position.getPositionFromMatrix(this.camera.matrix)
   this.camera.updateMatrixWorld(true);
 
   Animate_RAF(time)
