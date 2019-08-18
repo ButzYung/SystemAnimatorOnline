@@ -4277,17 +4277,18 @@ if (pose) {
   if (hit_result) {
     this.hit_found = true
     if (hit_result.hitMatrix) {
+      model_mesh.visible = true
       model_mesh.position.getPositionFromMatrix(hit_result.hitMatrix);
-//      model_mesh.position.multiplyScalar(10)
+      model_mesh.position.multiplyScalar(10)
     }
   }
   else {
     model_mesh.visible=false//position.z = -50
   }
 
-//  this.camera.matrix.elements[12] *= 10
-//  this.camera.matrix.elements[13] *= 10
-//  this.camera.matrix.elements[14] *= 10
+  this.camera.matrix.elements[12] *= 10
+  this.camera.matrix.elements[13] *= 10
+  this.camera.matrix.elements[14] *= 10
   this.camera.updateMatrixWorld(true);
 
   Animate_RAF(time)
