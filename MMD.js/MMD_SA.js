@@ -4328,7 +4328,7 @@ if (!this.hits_searching) {
   this.session.requestHitTest(xrray, this.frameOfRef).then(function (hits) {
     xr.hits_searching = false;
     xr.hits = hits;
-DEBUG_show(9,0,1)
+DEBUG_show(hits.length,0,1)
   }).catch(function (err) {
     xr.hits_searching = false;
   });
