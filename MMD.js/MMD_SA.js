@@ -4192,6 +4192,14 @@ catch (err) {
 }
   }
 
+ ,inputSources: []
+
+ ,center_pos: null
+
+ ,hits: []
+ ,hits_searching: false
+ ,hit_found: false
+
  ,onSessionStart: async function (session) {
 this.session = session
 session.addEventListener('end', this.onSessionEnd);
@@ -4228,14 +4236,27 @@ catch (err) {
   return
 }
 
+session.addEventListener('inputsourceschange', function (e) {
+  xr.inputSources = e.session.inputSources;
+});
+session.addEventListener('select', function (e) {
+  var time = Date.now()
+  if (xr.screen_clicked && (time - xr.screen_clicked < 400))
+    xr.screen_dblclicked = time
+  xr.screen_clicked = time
+});
+
 if (!this.reticle) {
   let geometry = new THREE.RingGeometry(0.1, 0.11, 24, 1);
   let material = new THREE.MeshBasicMaterial({ color: 0xffffff });
   geometry.applyMatrix(new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(-90)));
   this.reticle = new THREE.Mesh(geometry, material);
+  this.reticle.scale.set(10,10,10)
   this.reticle.visible = false
   MMD_SA.scene.add(this.reticle)
 }
+
+THREE.MMD.getModels()[0].mesh.visible = false
 
 session.requestAnimationFrame(this.onARFrame);
   }
@@ -4247,8 +4268,16 @@ this.session = null
 this.hits = []
 this.hits_searching = false
 this.hit_found = false
+this.hitMatrix = null
+this.reticle.visible = false
+
+this.inputSources = []
+this.screen_clicked = false
+this.screen_dblclicked = false
 
 this.center_pos = null
+
+THREE.MMD.getModels()[0].mesh.visible = true
 
 MMD_SA.reset_camera()
 MMD_SA._trackball_camera.enabled = true
@@ -4263,7 +4292,6 @@ window.dispatchEvent(new Event('resize'));
 //DEBUG_show("session ended",0,1)
   }
 
- ,center_pos: null
  ,onARFrame: function (time, frame) {
 let session = frame.session;
 
@@ -4287,35 +4315,38 @@ if (pose) {
     this.camera.updateMatrixWorld(true);
   }
 
-  var model_mesh = THREE.MMD.getModels()[0].mesh
   var hit_result = this.hit_test()
-  if (hit_result) {
-//    this.hit_found = true
+
+  if (this.reticle.visible && this.screen_dblclicked) {
+    this.screen_dblclicked = this.screen_clicked = false
+
+    this.hit_found = true
+    this.reticle.visible = false
+
+    let model_mesh = THREE.MMD.getModels()[0].mesh
+
+    let pos0 = new THREE.Vector3().getPositionFromMatrix(this.hitMatrix).multiplyScalar(10);
+
+    this.center_pos = model_mesh.position.clone().sub(pos0)
+
+    model_mesh.visible = true
+    MMD_SA.reset_gravity()
+  }
+  else if (hit_result) {
     if (hit_result.hitMatrix) {
-      if (1) {
-        this.reticle.position.getPositionFromMatrix(hit_result.hitMatrix);
-        let targetPos = new THREE.Vector3().getPositionFromMatrix(this.camera.matrixWorld);
-        let angle = Math.atan2(targetPos.x - this.reticle.position.x, targetPos.z - this.reticle.position.z);
-        this.reticle.rotation.set(0, angle, 0);
-        this.reticle.visible = true;
-      }
+      this.hitMatrix = hit_result.hitMatrix
+
+      this.reticle.position.getPositionFromMatrix(hit_result.hitMatrix).multiplyScalar(10);
+      if (this.center_pos) this.reticle.position.add(this.center_pos);
 /*
-      let pos0 = new THREE.Vector3()
-      pos0.getPositionFromMatrix(hit_result.hitMatrix);
-      pos0.multiplyScalar(10)
-
-      this.center_pos = model_mesh.position.clone().sub(pos0)
-
-      model_mesh.visible = true
-      MMD_SA.reset_gravity()
+      let targetPos = new THREE.Vector3().getPositionFromMatrix(this.camera.matrixWorld);
+      let angle = Math.atan2(targetPos.x - this.reticle.position.x, targetPos.z - this.reticle.position.z);
+      this.reticle.rotation.set(0, angle, 0);
 */
+      this.reticle.visible = true;
     }
   }
-  else {
-    model_mesh.visible = false
-  }
 
-if (0) {
 // xyz
   this.camera.matrix.elements[12] *= 10
   this.camera.matrix.elements[13] *= 10
@@ -4326,22 +4357,15 @@ if (0) {
     this.camera.matrix.elements[13] += this.center_pos.y
     this.camera.matrix.elements[14] += this.center_pos.z
   }
-  else {
-    this.camera.matrix.elements[13] += 18
-  }
 
   this.camera.position.getPositionFromMatrix(this.camera.matrix)
   this.camera.updateMatrixWorld(true);
-}
 
   Animate_RAF(time)
 }
 //else { DEBUG_show(0,0,1) }
   }
 
- ,hits: []
- ,hits_searching: false
- ,hit_found: false
  ,hit_test: function () {
 if (this.hit_found)
   return {}
