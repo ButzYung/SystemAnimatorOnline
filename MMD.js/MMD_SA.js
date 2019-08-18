@@ -4236,7 +4236,7 @@ session.requestAnimationFrame(this.onARFrame);
 this.frameOfRef = null
 this.session = null
 
-this.hits = null
+this.hits = []
 this.hits_searching = false
 this.hit_found = false
 
