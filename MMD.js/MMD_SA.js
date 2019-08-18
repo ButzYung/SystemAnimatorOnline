@@ -4232,7 +4232,7 @@ if (!this.reticle) {
   let geometry = new THREE.RingGeometry(0.1, 0.11, 24, 1);
   let material = new THREE.MeshBasicMaterial({ color: 0xffffff });
   geometry.applyMatrix(new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(-90)));
-  this.reticle = new Mesh(geometry, material);
+  this.reticle = new THREE.Mesh(geometry, material);
   this.reticle.visible = false
   MMD_SA.scene.add(this.reticle)
 }
