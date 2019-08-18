@@ -22904,8 +22904,8 @@ else
 			vy = 0;
 
 		} else {
-
-			framebuffer = null;
+// AT: device framebuffer (mainly for WebXR)
+			framebuffer = this.device_framebuffer;//null;
 
 			width = _viewportWidth;
 			height = _viewportHeight;
@@ -23242,6 +23242,23 @@ else {
 	}
 
 };
+
+// AT: device framebuffer (mainly for WebXR)
+Object.defineProperty(THREE.WebGLRenderer.prototype, "device_framebuffer", {
+  get: function () {
+return this._device_framebuffer || null;
+  }
+
+ ,set: function (fb) {
+let _device_framebuffer = this._device_framebuffer || null;
+if (fb != _device_framebuffer) {
+  this._device_framebuffer = fb
+  let _gl = this.getContext()
+  _gl.bindFramebuffer(_gl.FRAMEBUFFER, fb);
+}
+  }
+});
+
 /**
  * @author szimek / https://github.com/szimek/
  * @author alteredq / http://alteredqualia.com/

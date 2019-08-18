@@ -4247,8 +4247,7 @@ this.camera.matrixAutoUpdate = true
 EV_sync_update.requestAnimationFrame_auto = true
 RAF_timerID = requestAnimationFrame(Animate_RAF)
 
-this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
-
+this.renderer.device_framebuffer = null;
 window.dispatchEvent(new Event('resize'));
 
 //DEBUG_show("session ended",0,1)
@@ -4266,11 +4265,11 @@ try {
 
 if (pose) {
 //DEBUG_show(1,0,1)
-  this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, session.renderState.baseLayer.framebuffer);
+  this.renderer.device_framebuffer = session.renderState.baseLayer.framebuffer;
 
   for (let view of pose.views) {
     const viewport = session.renderState.baseLayer.getViewport(view);
-    this.gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
+    this.renderer.setViewport(viewport.x, viewport.y, viewport.width, viewport.height);
 
     this.camera.projectionMatrix.fromArray(view.projectionMatrix);
     this.camera.matrix.fromArray(view.transform.matrix);
