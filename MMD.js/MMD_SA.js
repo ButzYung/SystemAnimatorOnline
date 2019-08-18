@@ -4196,7 +4196,6 @@ catch (err) {
 this.session = session
 session.addEventListener('end', this.onSessionEnd);
 
-
 MMD_SA.reset_camera()
 MMD_SA._trackball_camera.enabled = false
 
@@ -4240,6 +4239,8 @@ this.hits = []
 this.hits_searching = false
 this.hit_found = false
 
+this.center_pos = null
+
 MMD_SA.reset_camera()
 MMD_SA._trackball_camera.enabled = true
 this.camera.matrixAutoUpdate = true
@@ -4253,6 +4254,7 @@ window.dispatchEvent(new Event('resize'));
 //DEBUG_show("session ended",0,1)
   }
 
+ ,center_pos: null
  ,onARFrame: function (time, frame) {
 let session = frame.session;
 
@@ -4281,23 +4283,35 @@ if (pose) {
   if (hit_result) {
     this.hit_found = true
     if (hit_result.hitMatrix) {
-      model_mesh.position.getPositionFromMatrix(hit_result.hitMatrix);
-      model_mesh.position.multiplyScalar(10)
-      model_mesh.position.y += 20
+      let pos0 = model_mesh.position.clone()
+      this.center_pos = new THREE.Vector3()
+      this.center_pos.getPositionFromMatrix(hit_result.hitMatrix);
+      this.center_pos.multiplyScalar(10)
+      this.center_pos.y += 18
+      this.center_pos.sub(pos0)
+
       model_mesh.visible = true
       MMD_SA.reset_gravity()
     }
   }
   else {
-    model_mesh.visible=false//position.z = -50
+    model_mesh.visible = false
   }
 
 // xyz
   this.camera.matrix.elements[12] *= 10
   this.camera.matrix.elements[13] *= 10
   this.camera.matrix.elements[14] *= 10
-// y
-  this.camera.matrix.elements[13] += 20
+
+  if (this.center_pos) {
+    this.camera.matrix.elements[12] -= this.center_pos.x
+    this.camera.matrix.elements[13] -= this.center_pos.y
+    this.camera.matrix.elements[14] -= this.center_pos.z
+  }
+  else {
+    this.camera.matrix.elements[13] += 18
+  }
+
   this.camera.position.getPositionFromMatrix(this.camera.matrix)
   this.camera.updateMatrixWorld(true);
 
