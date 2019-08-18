@@ -4348,7 +4348,9 @@ if (this.hit_found)
   return {}
 
 if (this.hits.length) {
-  return { hitMatrix: new THREE.Matrix4().fromArray(this.hits[0].hitMatrix) };
+  let hit = this.hits[0]
+  this.hits = []
+  return { hitMatrix: new THREE.Matrix4().fromArray(hit.hitMatrix) };
 }
 
 if (!this.hits_searching) {
