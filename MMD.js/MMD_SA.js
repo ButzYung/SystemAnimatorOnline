@@ -4283,12 +4283,11 @@ if (pose) {
   if (hit_result) {
     this.hit_found = true
     if (hit_result.hitMatrix) {
-      let pos0 = model_mesh.position.clone()
-      this.center_pos = new THREE.Vector3()
-      this.center_pos.getPositionFromMatrix(hit_result.hitMatrix);
-      this.center_pos.multiplyScalar(10)
-      this.center_pos.y += 18
-      this.center_pos.sub(pos0)
+      let pos0 = new THREE.Vector3()
+      pos0.getPositionFromMatrix(hit_result.hitMatrix);
+      pos0.multiplyScalar(10)
+
+      this.center_pos = model_mesh.position.clone().sub(pos0)
 
       model_mesh.visible = true
       MMD_SA.reset_gravity()
@@ -4304,9 +4303,9 @@ if (pose) {
   this.camera.matrix.elements[14] *= 10
 
   if (this.center_pos) {
-    this.camera.matrix.elements[12] -= this.center_pos.x
-    this.camera.matrix.elements[13] -= this.center_pos.y
-    this.camera.matrix.elements[14] -= this.center_pos.z
+    this.camera.matrix.elements[12] += this.center_pos.x
+    this.camera.matrix.elements[13] += this.center_pos.y
+    this.camera.matrix.elements[14] += this.center_pos.z
   }
   else {
     this.camera.matrix.elements[13] += 18
