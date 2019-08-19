@@ -4430,7 +4430,7 @@ if (navigator.xr && XRSession.prototype.requestHitTest) {
   MMD_SA_options.custom_default && MMD_SA_options.custom_default()
 
 // save some headaches
-  if (is_mobile) {
+  if (is_mobile && !is_SA_child_animation) {
     SA_fullscreen_stretch_to_cover = true
     Settings.CSSTransformFullscreen = true
   }
