@@ -892,7 +892,7 @@ let sb_func = function () {
     sb.addEventListener("mouseover", function () {
       DEBUG_show(this._msg_mouseover, -1)
     }, true);
-    sb.style.zIndex = 9999
+    sb.style.zIndex = 500
     sb.textContent = "START"
     document.body.appendChild(sb)
 
