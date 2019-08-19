@@ -5606,9 +5606,10 @@ js.push("jThree/plugin/three_" + effect.name + ".js")
     });
   }
 
-
-  MMD_SA_options.shadow_darkness = parseFloat(System.Gadget.Settings.readString('MMDShadow') || 0)
-  MMD_SA_options.use_shadowMap = !!MMD_SA_options.shadow_darkness
+  if (MMD_SA_options.shadow_darkness == null)
+    MMD_SA_options.shadow_darkness = parseFloat(System.Gadget.Settings.readString('MMDShadow') || ((MMD_SA_options.use_shadowMap && 0.5)||0))
+  if (MMD_SA_options.use_shadowMap == null)
+    MMD_SA_options.use_shadowMap = !!MMD_SA_options.shadow_darkness
 
   if (MMD_SA_options.use_JSARToolKit) {
     js.push("js/JSARToolKit.js")

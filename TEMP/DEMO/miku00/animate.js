@@ -259,6 +259,12 @@ setTimeout(function () {MMD_SA.SpeechBubble.message(0, ((WallpaperEngine_mode) ?
     AR: {}
   }
 
+ ,light_position: [0,1,0]
+
+ ,use_shadowMap: true
+ ,shadow_darkness: 0.1
+// ,ground_shadow_only: true
+
 // END
 };
 
@@ -285,6 +291,30 @@ setTimeout(function () {MMD_SA.SpeechBubble.message(0, ((WallpaperEngine_mode) ?
     parent.DragDrop.relay_id = SA_child_animation_id
 
   self.SA_wallpaper_src = "TEMP/DEMO/wood_wallpaper_flip-h.jpg"
+
+  window.addEventListener("MMDStarted", function () {
+let geometry = new THREE.PlaneGeometry(100,100)
+/*
+let tex = document.createElement("canvas")
+tex.width = tex.height = 1
+//let tex_context = tex.getContext("2d")
+//tex_context.fillStyle = "rgba(0,0,0,0)"
+//tex_context.fillRect(0,0,1,1)
+tex = new THREE.Texture(tex)
+tex.needsUpdate = true
+*/
+let material = new THREE.MeshBasicMaterial({ color: 0x000000, transparent:true });
+geometry.applyMatrix(new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(-90)));
+let ground = new THREE.Mesh(geometry, material);
+ground.receiveShadow = true;
+ground.receiveShadowAlpha = true;
+MMD_SA.scene.add(ground)
+
+// opacity can only be update AFTER scene.add
+//ground.material.opacity = 0.5
+
+console.log(ground,material)
+  });
 
 })();
 

@@ -13558,10 +13558,15 @@ THREE.ShaderChunk = {
 				"if ( frustumTest ) {",
 
 // AT: shadowBias by light normal
+"#ifdef PHONG",
 // for simplicity, assumed DirectionalLight for now (directionalLightDirection)
-"shadowCoord.z += shadowBias[ i ].x * clamp(pow(abs(tan(acos(clamp(dot(directionalLightDirection[ int(SP.y) ], normal_untransformed), -1., 1.)))), 2.0), shadowBias[ i ].y, shadowBias[ i ].z);",
+  "shadowCoord.z += shadowBias[ i ].x * clamp(pow(abs(tan(acos(clamp(dot(directionalLightDirection[ int(SP.y) ], normal_untransformed), -1., 1.)))), 2.0), shadowBias[ i ].y, shadowBias[ i ].z);",
 // ajust shadowDarkness (use emissive.r for simplicity)
-"float shadowDarkness_scale = (1.0-emissive.r) * opacity;",
+  "float shadowDarkness_scale = (1.0-emissive.r) * opacity;",
+"#else",
+  "shadowCoord.z += shadowBias[ i ].x;",
+  "float shadowDarkness_scale = 1.0;",
+"#endif",
 //					"shadowCoord.z += shadowBias[ i ];",
 
 					"#if defined( SHADOWMAP_TYPE_PCF )",
@@ -13690,8 +13695,8 @@ THREE.ShaderChunk = {
 
 // AT: shadow_opacity
 "#ifndef SHADOWMAP_CASCADE",
-'float shadow_opacity = 1. - min(pow(length((shadowCoord.xy-0.5)*2.),4.), 1.);',
-'shadowColor = mix(vec3(1.), shadowColor, shadow_opacity);',//vec3(1.-shadow_opacity);',//
+  'float shadow_opacity = 1. - min(pow(length((shadowCoord.xy-0.5)*2.),4.), 1.);',
+  'shadowColor = mix(vec3(1.), shadowColor, shadow_opacity);',//vec3(1.-shadow_opacity);',//
 "#endif",
 
 					"#else",
@@ -13736,7 +13741,12 @@ THREE.ShaderChunk = {
 
 			"#endif",
 
+ //AT: SHADOWMAP_ALPHA
+"#ifdef SHADOWMAP_ALPHA",
+"gl_FragColor.a *= 1.0 - shadowColor.r;",
+"#else",
 			"gl_FragColor.xyz = gl_FragColor.xyz * shadowColor;",//normal_untransformed;",//
+"#endif",
 
 		"#endif"
 
@@ -20606,6 +20616,8 @@ mirrorTexture: (material.mirrorTextureIndex != null),
 			shadowMapType: this.shadowMapType,
 			shadowMapDebug: this.shadowMapDebug,
 			shadowMapCascade: this.shadowMapCascade,
+// AT: shadowMapAlpha
+shadowMapAlpha: object.receiveShadowAlpha,
 
 			alphaTest: material.alphaTest,
 			metal: material.metal,
@@ -22201,6 +22213,8 @@ parameters.mirrorTexture ? "#define USE_MIRROR_TEXTURE" : "",
 			parameters.shadowMapEnabled ? "#define " + shadowMapTypeDefine : "",
 			parameters.shadowMapDebug ? "#define SHADOWMAP_DEBUG" : "",
 			parameters.shadowMapCascade ? "#define SHADOWMAP_CASCADE" : "",
+// AT: shadowMapAlpha
+parameters.shadowMapAlpha ? "#define SHADOWMAP_ALPHA" : "",
 
 			"uniform mat4 viewMatrix;",
 			"uniform vec3 cameraPosition;",
