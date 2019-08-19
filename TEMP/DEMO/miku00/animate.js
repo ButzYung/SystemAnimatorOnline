@@ -311,7 +311,7 @@ ground.receiveShadowAlpha = true;
 MMD_SA.scene.add(ground)
 
 // opacity can only be update AFTER scene.add
-//ground.material.opacity = 0.5
+ground.material.opacity = 0.5
 
 console.log(ground,material)
   });
