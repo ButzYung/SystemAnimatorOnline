@@ -4429,6 +4429,8 @@ if (navigator.xr && XRSession.prototype.requestHitTest) {
 
   MMD_SA_options.custom_default && MMD_SA_options.custom_default()
 
+// save some headaches
+  if (is_mobile) SA_fullscreen_stretch_to_cover=true;
 //  if (is_mobile) MMD_SA_options.texture_resolution_limit = MMD_SA_options.texture_resolution_limit_mobile || 256
 //MMD_SA_options.texture_resolution_limit=64
 
