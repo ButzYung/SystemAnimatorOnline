@@ -263,7 +263,7 @@ setTimeout(function () {MMD_SA.SpeechBubble.message(0, ((WallpaperEngine_mode) ?
 
  ,use_shadowMap: true
  ,shadow_darkness: 0.1
-// ,ground_shadow_only: true
+ ,ground_shadow_only: true
 
 // END
 };
