@@ -640,8 +640,8 @@ else {
   alert('System Animator Lite (' + System.Gadget.version + ')\n\nhttp://www.animetheme.com/sidebar/')
 }
     }
-    Lquick_menu_close_button.setAttribute("data-title", ((browser_native_mode)?"Close":"Restart"))
-    if (is_SA_child_animation || browser_native_mode) {
+    Lquick_menu_close_button.setAttribute("data-title", "Restart")
+    if (is_SA_child_animation && !is_SA_child_animation_host) {
       Lquick_menu_close_button.style.opacity = 0.5
       Lquick_menu_close_button.setAttribute("data-title", "N/A")
       Lquick_menu_close_button.onclick = null

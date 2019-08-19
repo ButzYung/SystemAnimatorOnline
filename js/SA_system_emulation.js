@@ -1794,6 +1794,13 @@ if (!WallpaperEngine_mode && (!self.Lquick_menu || !Lquick_menu._activated))
     }
 
    ,confirmClose: function (enforced) {
+if (browser_native_mode) {
+  if (confirm("This will reload System Animator.")) {
+    top.location.reload()
+  }  
+  return
+}
+
 if (!enforced || xul_mode/* || WallpaperEngine_mode*/) {
   System._browser.showFocus(true, true)
 
