@@ -1414,7 +1414,7 @@ function loadMain() {
   if (!SA_zoom || (SA_zoom < 0) || (SA_zoom > 3))
     SA_zoom = 1
 
-  Settings.CSSTransformFullscreen = returnBoolean("CSSTransformFullscreen")
+  Settings.CSSTransformFullscreen = Settings.CSSTransformFullscreen || returnBoolean("CSSTransformFullscreen")
   if (Settings.CSSTransformFullscreen)
     SA_zoom = 1
 
