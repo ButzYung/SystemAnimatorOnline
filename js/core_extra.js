@@ -235,7 +235,7 @@ cw0.resize(true)
 */
 
 cw0.Settings.CSSTransformFullscreen = true
-cw0.cw0SA_zoom = 1
+cw0.SA_zoom = 1
 cw0.resize()//null,null,null, true)
       };
     })());
