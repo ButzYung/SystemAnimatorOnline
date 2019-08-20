@@ -15,7 +15,7 @@ document.write('<webview id="wv" src="' + facebookAuthURL + '" style="display:in
 var w = document.getElementById("wv")
 var e_remote = require("electron").remote
 var w_browser = e_remote.getCurrentWindow()
-
+//w_browser.show()
 w.addEventListener('did-get-redirect-request', function (event) {
 //alert(event.newURL)
   var newUrl = event.newURL

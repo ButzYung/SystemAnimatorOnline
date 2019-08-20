@@ -493,7 +493,7 @@ vo.BPMFinalize()
     vo._get_BPM_WebAudioAPI_worker = function () {
 if (webkit_electron_mode) {
   var win_pos = SA_top_window.getPos()
-  var win_options = {x:win_pos[0]+30, y:win_pos[1]+30, width:320, height:240, resizable:false, frame:false, transparent:true}
+  var win_options = {x:win_pos[0]+30, y:win_pos[1]+30, width:320, height:240, resizable:false, frame:false, transparent:true, webPreferences:{nodeIntegration:true}}
   if (webkit_version_milestone["1.2.4"]) {
     win_options.parent = webkit_window
   }

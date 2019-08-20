@@ -1295,7 +1295,7 @@ global.FB_login = function (reset) {
     redirect_uri: "https://www.facebook.com/connect/login_success.html"
   };
 
-  FB_authWindow = new BrowserWindow({ width: 450, height: 300, show: false });
+  FB_authWindow = new BrowserWindow({ width:450, height:300, show:false, webPreferences:{nodeIntegration:true} });
   FB_authWindow.setContentProtection(true)
 
 //    var facebookAuthURL = "https://www.facebook.com/dialog/oauth?client_id=" + options.client_id + "&redirect_uri=" + options.redirect_uri + "&response_type=token,granted_scopes&scope=" + options.scopes + "&display=popup";
