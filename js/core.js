@@ -176,17 +176,23 @@ function toFileProtocol(url) {
 //  if (WallpaperEngine_CEF_mode) {
     var dd = top.DragDrop
     if (dd && dd._path_to_obj) {
-      var obj_url = dd._obj_url[url]
+      let obj_url = dd._obj_url[url]
       if (!obj_url) {
-        var url_zip = (/^(.+)(\.zip\#[\/\\].+)$/i.test(url)) ? RegExp.$1 : url
-        var file = dd._path_to_obj[url_zip]
+/*
+When RegExp.$2 is excluded (i.e. no .zip in url_zip), files inside zip will effectively return in raw url (i.e. file variable will be null) instead of blob url (which should save some headaches?).
+Other file types (including zip file by its own) will return in blob url.
+*/
+        let url_zip = (/^(.+)(\.zip)(\#[\/\\].+)$/i.test(url)) ? RegExp.$1/*+RegExp.$2*/ : url
+        let file = dd._path_to_obj[url_zip]
+//console.log(file,url_zip,url)
         if (file) {
+          let obj_url_zip
           if (url_zip != url) {
-            var obj_url_zip = dd._obj_url[url_zip] = dd._obj_url[url_zip] || top.URL.createObjectURL(file)
-            obj_url = dd._obj_url[url] = obj_url_zip + RegExp.$2
+            obj_url_zip = dd._obj_url[url_zip] = dd._obj_url[url_zip] || top.URL.createObjectURL(file)
+            obj_url = dd._obj_url[url] = obj_url_zip + RegExp.$2+RegExp.$3
           }
           else
-            obj_url = dd._obj_url[url] = top.URL.createObjectURL(file)
+            obj_url = obj_url_zip = dd._obj_url[url] = dd._obj_url[url] || top.URL.createObjectURL(file)
         }
       }
       if (obj_url)
@@ -202,7 +208,7 @@ function toFileProtocol(url) {
 }
 
 function toLocalPath(url) {
-  return decodeURIComponent(url.replace(/^file\:\/+/i, ((windows_mode||browser_native_mode)?"":"/")).replace(/^(\w)[\|\:]/i, "$1:").replace(/[\/\\]/g, ((windows_mode)?"\\":"/")).replace(/\?.+$/, ""));
+  return (/^(blob|data)\:/i.test(url)) ? url : decodeURIComponent(url.replace(/^file\:\/+/i, ((windows_mode||browser_native_mode)?"":"/")).replace(/^(\w)[\|\:]/i, "$1:").replace(/[\/\\]/g, ((windows_mode)?"\\":"/")).replace(/\?.+$/, ""));
 }
 
 function toRegExp(str, separator) {

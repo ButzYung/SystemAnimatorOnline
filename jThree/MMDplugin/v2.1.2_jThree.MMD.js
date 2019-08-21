@@ -2405,6 +2405,8 @@ var that = this;
 	if ( boneKeys.length === 0 ) {
 		return null;
 	}
+// AT: IK disabled
+    var IK_disabled_RE = new RegExp("(" + toRegExp(["足ＩＫ","つま先ＩＫ"],"|") + ")$");
 // AT: custom duration
 	timeMax = (motion_para && motion_para.duration)||this.timeMax;
 	targets = [];
@@ -2559,14 +2561,57 @@ if (key_mod.interp)
 
   if ((last && ((keys.length > 1) || (last.time < timeMax))) && /guitar|g_head|g_bridge|f_board|\u8155\uFF29\uFF2B/.test(v.name)) { that.use_armIK = true }
 }
+
 		if ( last && last.time < timeMax ) {
 			last = cloneKey( last );
 			last.time = timeMax;
 			keys.push( last );
 //if (self._k && /strap\d_IK/.test(v.name)) { var _rot=new THREE.Vector3().setEulerFromQuaternion(new THREE.Quaternion(keys[0].rot[0], keys[0].rot[1], keys[0].rot[2], keys[0].rot[3]).normalize()); DEBUG_show(JSON.stringify(keys[0]), 0,1); }
 		}
+
+// AT: IK disabled
+if ((!motion_para || !motion_para.IK_disabled || motion_para.IK_disabled._IK_name_list) && IK_disabled_RE.test(v.name)) {
+  let IK_disabled
+  if (keys.length <= 1) {
+    IK_disabled = true
+  }
+  else if (keys.length == 2) {
+    let key_last = keys[keys.length-1]
+    let p = key_last.pos
+    let r = key_last.rot
+    if (p[0]==0 && p[1]==0 && p[2]==0 && r[0]==0 && r[1]==0 && r[2]==0)
+      IK_disabled = true
+  }
+//let _filename = decodeURIComponent(that.url.replace(/^.+[\/\\]/, "").replace(/\.vmd$/i, ""))
+//if (/IA_HIGHER_light_version/.test(_filename)) console.log(_filename, keys)
+  if (IK_disabled) {
+    let filename = decodeURIComponent(that.url.replace(/^.+[\/\\]/, "").replace(/\.vmd$/i, ""))
+//console.log(filename, keys)
+    motion_para = MMD_SA_options.motion_para[filename] = MMD_SA_options.motion_para[filename] || {};
+    motion_para.IK_disabled = motion_para.IK_disabled || {
+  test: function (IK_name) {
+return (this._IK_name_list.indexOf(IK_name) != -1);
+  }
+ ,_IK_name_list:[]
+    };
+    motion_para.IK_disabled._IK_name_list.push(v.name)
+  }
+}
+
 		targets.push( { keys:keys } );
 	});
+
+// AT: IK disabled
+if (motion_para && motion_para.IK_disabled && motion_para.IK_disabled._IK_name_list) {
+  motion_para.IK_disabled._IK_name_list = motion_para.IK_disabled._IK_name_list.filter(function (IK_name) {
+    return ((IK_name.indexOf("つま先ＩＫ") != -1) ? (motion_para.IK_disabled._IK_name_list.indexOf(IK_name.charAt(0)+"足ＩＫ") != -1) : true);
+  });
+  if (motion_para.IK_disabled._IK_name_list.length == 0)
+    delete motion_para.IK_disabled
+  else
+    console.log("IK disabled auto:", decodeURIComponent(that.url.replace(/^.+[\/\\]/, "").replace(/\.vmd$/i, "")))
+}
+
 	return { duration:timeMax, targets:targets };
 };
 // AT: Use regular expression to filter frames (RE), stuff

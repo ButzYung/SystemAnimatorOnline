@@ -265,7 +265,7 @@ var files = e.dataTransfer.files
 //DEBUG_show(e.dataTransfer.getData("URL"))
 if (files.length) {
   if (parent.WallpaperEngine_CEF_mode || /\.zip$/i.test(files[0].name)) {
-    SA_DragDropEMU("(DUMMY)", files[0])
+    SA_DragDropEMU(files[0])
     return
   }
   item = new System.Shell._FolderItem(new WebKit_object["Shell.Application"]._FolderItem({path:files[0].path}))

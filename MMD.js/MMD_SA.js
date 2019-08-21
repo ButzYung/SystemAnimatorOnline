@@ -413,11 +413,41 @@ DragDrop.onDrop_finish = function (item) {
 
 new self.JSZip().loadAsync(zip_file)
 .then(function (zip) {
-    // will be called, even if content is corrupted
+// will be called, even if content is corrupted
 //console.log(999,src)
+
+  top.DragDrop._zip_by_url = top.DragDrop._zip_by_url || {}
+  top.DragDrop._zip_by_url[src] = zip
+
+  var files_added
+  var music_list = zip.file(/[^\/\\]+.(mp3|wav|aac)$/i)
+  if (music_list.length) {
+    music_list.slice(0,10).forEach(function (music, idx) {
+      var music_filename = music.name.replace(/^.+[\/\\]/, "").replace(/\.\w+$/, "")
+//DEBUG_show(music_filename,0,1)
+      var vmd = zip.file(new RegExp(toRegExp(music_filename)+"\\.vmd"))
+      if (vmd) {
+        files_added = true
+        if (!MMD_SA_options.motion_by_song_name)
+          MMD_SA_options.motion_by_song_name = {}
+        MMD_SA_options.motion_by_song_name[music_filename] = {
+  motion_path: (src + "#/" + vmd[0].name)
+ ,song_path: (src + "#/" + music.name)
+ ,key:(idx+1)
+        };
+//console.log(toFileProtocol(src + "#/" + vmd[0].name))
+//        MMD_SA_options.motion.push({ must_load:true, no_shuffle:true, path:toFileProtocol(src + "#/" + vmd[0].name) })
+      }
+    });
+
+    if (files_added)
+      DEBUG_show("(music/motion list updated)", 2)
+  }
+
   var pmx_list = zip.file(/\.pmx$/i)
   if (!pmx_list.length) {
-    DEBUG_show("(No MMD model found)")
+    if (!files_added)
+      DEBUG_show("(No MMD model found)")
     return
   }
 //  DEBUG_show(pmx_list[0].name)
@@ -901,7 +931,7 @@ let sb_func = function () {
 //console.log(blob)
         blob.name = "my_model.zip"
         blob.isFileSystem = true
-        SA_DragDropEMU("(DUMMY)", blob)
+        SA_DragDropEMU(blob)
       });
     }).catch(function(){});
 };

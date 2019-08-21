@@ -2042,6 +2042,39 @@ else if ((k >= 96) && (k < 96+10)) {
     }
     else {
       var id = k - 97
+
+      if (MMD_SA_options.motion_by_song_name) {
+        if (MMD_SA_options.motion_by_song_name._loading_) {
+          DEBUG_show("(music/motion loading)", 2)
+          return true
+        }
+
+        let entry = Object.keys(MMD_SA_options.motion_by_song_name).find((p)=>{return MMD_SA_options.motion_by_song_name[p].key==(id+1)});
+        if (entry) {
+          let song_path = MMD_SA_options.motion_by_song_name[entry].song_path
+          if (/\.zip\#/i.test(song_path)) {
+MMD_SA_options.motion_by_song_name._loading_ = true
+
+// zip filename only
+song_path = song_path.replace(/^.+[\/\\]([^\/\\]+\.zip)/i, "$1")
+let xhr = new self.XMLHttpRequestZIP;
+xhr.onload = function () {
+  MMD_SA_options.motion_by_song_name._loading_ = false
+  let blob = this.response
+  blob.name = song_path.replace(/^.+[\/\\]/, "")
+  blob.isFileSystem = true
+  SA_DragDropEMU(blob)
+};
+xhr.open( "GET", song_path, true );
+xhr.responseType = "blob";
+xhr.send();
+          }
+          else
+            SA_DragDropEMU(song_path)
+          return true
+        }
+      }
+
       if (id >= MMD_SA.normal_action_length) {
         DEBUG_show("(MMD motion not found)", 2)
         return true

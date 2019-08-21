@@ -816,11 +816,12 @@ function SA_OnKeyDown(event, enforced) {
   System._browser.showFocus(false)
 }
 
-function SA_DragDropEMU(path, file) {
+function SA_DragDropEMU(file) {
 //if (file) DEBUG_show(file.constructor,0,1)
 //DEBUG_show(self.URL.createObjectURL(file),0,1)
-  var item = (file) ? new System.Shell._FolderItem(new WebKit_object["Shell.Application"]._FolderItem({path:file.name, file:file})) : System.Shell.itemFromPath(path)
-  if (/*WallpaperEngine_CEF_mode && */file) {// && DragDrop._obj_url_RE && DragDrop._obj_url_RE.test(file.name)) {
+  var is_file = (typeof file != "string")
+  var item = (is_file) ? new System.Shell._FolderItem(new WebKit_object["Shell.Application"]._FolderItem({path:file.name, file:file})) : System.Shell.itemFromPath(file)
+  if (/*WallpaperEngine_CEF_mode && */is_file) {// && DragDrop._obj_url_RE && DragDrop._obj_url_RE.test(file.name)) {
 console.log(file)
     var dd = top.DragDrop
     if (!dd._path_to_obj) {
@@ -828,6 +829,12 @@ console.log(file)
       dd._obj_url = {}
     }
     dd._path_to_obj[file.name] = file
+/*
+    if (/(\.zip)$/i.test(file.name)) {
+      let obj_url_zip = dd._obj_url[file.name] = top.URL.createObjectURL(file)
+      dd._path_to_obj[obj_url_zip+RegExp.$1] = file
+    }
+*/
   }
 //console.log(item)
   DragDrop._no_relay = true
@@ -2191,7 +2198,7 @@ if (fullscreen) {
     if (is_mobile) {
       Lquick_menu.style.transform = Idialog.style.transform = "scale(" + (System._browser.css_scale*2) + ")"
     }
-    if (is_mobile && self.MMD_SA_options && MMD_SA_options.Dungeon) {
+    if (is_mobile && self.MMD_SA_options) {
       Lnumpad.style.posLeft = B_content_width - 200
       Lnumpad.style.posTop  = 64
       Lnumpad.style.visibility = "inherit"

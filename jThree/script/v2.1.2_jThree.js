@@ -9636,9 +9636,10 @@ else
 			if ( !/^data:image/.test( url ) ) image.crossOrigin = "anonymous";
 // AT: zip file
 // use XMLHttpRequestZIP for all textures and take advantage of the cache feature
-if (!/^(data|blob)\:/.test(url)) {// && /\.zip\#/i.test(toLocalPath(url))) {
+if (!/^(data|blob)\:/.test(url) || /\.zip\#/i.test(toLocalPath(url))) {
   var xhr = new XMLHttpRequestZIP;
   xhr.onload = function () {
+//console.log(url, this.responseType, this.response)
 var obj_url = URL.createObjectURL(this.response)
 if (/^(.+)\.jpga\.jpg$/i.test(url)) {
   var url_a = RegExp.$1 + ".alpha.png"
