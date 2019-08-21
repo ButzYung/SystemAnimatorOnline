@@ -5,7 +5,7 @@
 <script type="text/javascript">
 /*
 Native dialog in WebKit mode (v0.8.0-rc1):
-- "self.xxx" and "var xxx" are messed up sometimes. Some variables declared in a bloack may disappear in another block for unknown reasons.
+- "self.xxx" and "var xxx" are messed up sometimes. Some variables declared in a block may disappear in another block for unknown reasons.
 */
 self.returnValue = null
 if (opener)
@@ -41,7 +41,7 @@ function _cancel() {
 <span style="position:relative">
 <span id="Stitle" style="font-family:Arial; font-size:12px; font-weight:bold"></span>&nbsp;
 <script type="text/javascript">
-var title = (/title\=([^\&]+)$/.test(location.search)) ? decodeURIComponent(RegExp.$1) : "Dialog"
+var title = (/title\=([^\&]+)/.test(location.search)) ? decodeURIComponent(RegExp.$1) : "Dialog"
 document.write('<input style="font-family:Arial; font-size:12px; width:150px" id="LBFF_browse" type="file" ' + ((webkit_mode && /folder/.test(title)) ? 'nwdirectory ' : '') + '/>')
 </script>
 </span>
