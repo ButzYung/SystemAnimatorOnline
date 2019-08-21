@@ -4281,9 +4281,9 @@ if (!this.reticle) {
   let material = new THREE.MeshBasicMaterial({ color: 0xffffff });
   geometry.applyMatrix(new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(-90)));
   this.reticle = new THREE.Mesh(geometry, material);
+  MMD_SA.scene.add(this.reticle)
   this.reticle.scale.set(10,10,10)
   this.reticle.visible = false
-  MMD_SA.scene.add(this.reticle)
 }
 
 THREE.MMD.getModels()[0].mesh.visible = false
