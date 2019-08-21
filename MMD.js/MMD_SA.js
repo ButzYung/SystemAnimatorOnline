@@ -4288,6 +4288,11 @@ if (!this.reticle) {
 
 THREE.MMD.getModels()[0].mesh.visible = false
 
+let ao = SL_MC_video_obj && SL_MC_video_obj.vo && SL_MC_video_obj.vo.audio_obj;
+if (ao && !ao.paused) {
+  SL_MC_Play()
+}
+
 session.requestAnimationFrame(this.onARFrame);
   }
 
@@ -4361,6 +4366,11 @@ if (pose) {
 
     model_mesh.visible = true
     MMD_SA.reset_gravity()
+
+    let ao = SL_MC_video_obj && SL_MC_video_obj.vo && SL_MC_video_obj.vo.audio_obj;
+    if (ao && ao.paused) {
+      SL_MC_Play()
+    }
   }
   else if (hit_result) {
     if (hit_result.hitMatrix) {
