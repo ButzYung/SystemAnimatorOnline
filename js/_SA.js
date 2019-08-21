@@ -558,7 +558,7 @@ function SA_OnKeyDown_Gadget() {
 var EQP_gallery_append_mode = false
 
 function SA_OnDocument() {
-  if (webkit_electron_mode) {
+  if (0&&webkit_electron_mode) {
 // https://github.com/electron/electron/blob/master/docs/api/dialog.md
     try {
       webkit_window.setAlwaysOnTop(false)
@@ -580,7 +580,7 @@ function SA_OnDocument() {
     return
   }
 
-  var url = "SystemAnimator_browse.html?title=" + encodeURIComponent("Choose an input file.")
+  var url = "SystemAnimator_browse.html?title=" + encodeURIComponent("Choose an input file.")// + "&seed=" + Date.now()
   if (use_inline_dialog) {
     if (document.getElementById("Idialog").style.visibility == "hidden") {
       document.getElementById("Idialog").contentWindow.location.replace(url)
@@ -821,8 +821,9 @@ function SA_DragDropEMU(file) {
 //DEBUG_show(self.URL.createObjectURL(file),0,1)
   var is_file = (typeof file != "string")
   var item = (is_file) ? new System.Shell._FolderItem(new WebKit_object["Shell.Application"]._FolderItem({path:file.name, file:file})) : System.Shell.itemFromPath(file)
+//console.log(item)
   if (/*WallpaperEngine_CEF_mode && */is_file) {// && DragDrop._obj_url_RE && DragDrop._obj_url_RE.test(file.name)) {
-console.log(file)
+console.log("File input:", file)
     var dd = top.DragDrop
     if (!dd._path_to_obj) {
       dd._path_to_obj = {}

@@ -14,16 +14,9 @@ if (opener)
 var webkit_mode = /WebKit/i.test(navigator.userAgent)
 
 function _ok() {
-  if (parent.use_inline_dialog) {
-    self.returnValue = LBFF_browse.value
-    self.location.replace("z_blank.html")
-  }
-  else {
-    self.returnValue = LBFF_browse.value; if (opener) opener.returnValue = LBFF_browse.value; self.close()
-  }
-}
-
-function _cancel() {
+  self.returnValue = LBFF_browse.value;
+  if (opener) opener.returnValue = LBFF_browse.value;
+  _finish()
   if (parent.use_inline_dialog) {
     self.location.replace("z_blank.html")
   }
@@ -31,6 +24,36 @@ function _cancel() {
     self.close()
   }
 }
+
+function _cancel() {
+  _finish()
+  if (parent.use_inline_dialog) {
+    self.location.replace("z_blank.html")
+  }
+  else {
+    self.close()
+  }
+}
+
+function _finish() {
+  if (parent.use_inline_dialog) {
+    SA_dialog_restore_parent_size()
+
+    parent.document.getElementById("Idialog").style.visibility = "hidden"
+
+    parent.AudioFFT_active && parent.AudioFFT_active.restartCaptureAudioWE && parent.AudioFFT_active.restartCaptureAudioWE()
+
+    var v = self.returnValue
+    if (v) {
+      if (/folder/.test(title))
+        parent.SA_DragDropEMU((new parent.Shell_OBJ._Folder({path:v})).Self.Path)
+      else {
+        parent.SA_DragDropEMU(LBFF_browse.files[0])
+      }
+    }
+  }
+}
+
 </script>
 
 </head>
@@ -66,29 +89,6 @@ var h = 24+((opener)?0:14)
 document.getElementById("Lsettings_main").style.width = w + "px"
 
 SA_dialog_resize(w, h + ((parent.use_inline_dialog) ? 50 : 0))
-
-if (parent.use_inline_dialog) {
-  self.onbeforeunload = function () {
-    SA_dialog_restore_parent_size()
-
-    self.onbeforeunload = null
-    parent.document.getElementById("Idialog").style.visibility = "hidden"
-
-    parent.AudioFFT_active && parent.AudioFFT_active.restartCaptureAudioWE && parent.AudioFFT_active.restartCaptureAudioWE()
-
-    var v = self.returnValue
-    if (v) {
-      if (/folder/.test(title))
-        parent.SA_DragDropEMU((new parent.Shell_OBJ._Folder({path:v})).Self.Path)
-      else {
-        var file
-        if (parent.WallpaperEngine_CEF_mode)
-          file = LBFF_browse.files[0]
-        parent.SA_DragDropEMU(file)
-      }
-    }
-  }
-}
 
 onload = function () {
   document.getElementById("Stitle").innerHTML = title
