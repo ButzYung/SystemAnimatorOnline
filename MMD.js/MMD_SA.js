@@ -5573,7 +5573,7 @@ self.Module = { TOTAL_MEMORY:52428800*2 };
 
   MMD_SA._readVector_scale = (MMD_SA_options.WebXR) ? (MMD_SA_options.WebXR.model_scale || 0.9) : 1;
 
-  var js_min_mode = self._js_min_mode_ || (!MMD_SA_options.WebXR && browser_native_mode && !webkit_window && !localhost_mode);
+  var js_min_mode = self._js_min_mode_ || (/*!MMD_SA_options.WebXR && */browser_native_mode && !webkit_window && !localhost_mode);
 
   if (js_min_mode) {
 console.log("three.core.min.js")
