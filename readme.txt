@@ -1,4 +1,4 @@
-﻿(Document version 1.5)
+﻿(Document version 2.0)
 
 Introduction:
 
@@ -9,7 +9,7 @@ Introduction:
 
 ----------------------------
 
-Demo (via GitHub):
+Featured Demos:
 
 - 3D Miku The Dancer (drop any MP3 and she will dance for you)
   https://sao.animetheme.com/
@@ -20,7 +20,43 @@ Demo (via GitHub):
 - 3D Vocaloid Fighters - Miku vs Teto
   https://sao.animetheme.com/?cmd_line=/TEMP/DEMO/miku_battle_arena01
 
+- 3D Multiplayer RPG (up to 3 players)
+  https://sao.animetheme.com/SystemAnimator_online_multiplayer.html
+
   All demos support the use of custom MMD (MikuMikuDance) model. Drop a zip of your favorite MMD model at the beginning, press the START button, and the demo will proceed with your model instead of the default one.
+
+----------------------------
+
+Augmented Reality (AR) support:
+
+  Some demos support the "Augmented Reality" (AR) mode on mobile phones, which renders the 3D models that appear as if they exist in the real world. The AR mode requires mobile phones that support Google's ARCore technology, Chrome browser and the experimental WebXR API. Follow the steps below.
+
+1) Check below for a list of ARCore-supported devices.
+   https://developers.google.com/ar/discover/supported-devices
+
+2) Install "Google Play Services for AR" (ARCore) on Google Play.
+   https://play.google.com/store/apps/details?id=com.google.ar.core
+
+3) Install Chrome browser (tested on v76).
+
+4) Enable 2 WebXR-related flags on Chrome.
+
+    1) Type chrome://flags in the URL bar.
+    2) Type webxr in the Search flags input field.
+    3) Set the "WebXR Device API" (#webxr) flag to Enabled.
+    4) Set the "WebXR Hit Test" (#webxr-hit-test) flag to Enabled.
+    5) Tap RELAUNCH NOW to ensure the updated flags take effect.
+
+    Still confused? Check out the following page (the "Ensure AR features are enabled on Chrome" paragraph).
+    https://codelabs.developers.google.com/codelabs/ar-with-webxr/#1
+
+  Are you ready for the AR experience? Check out the demo below with the AR feature enabled!
+  https://sao.animetheme.com/?cmd_line=/TEMP/DEMO/miku00
+
+  After the page has been fully loaded, click on the little phone button on the top-left (or bottom-left) menu to activate the AR mode. Once the AR mode is enabled, you will see what your phone's camera is showing. Move your camera around the ground where you want to place the 3D model, and a white circle should apppear. Double-tap on the screen, and the 3D model will be placed over the white circle.
+
+  Check out the video below for a demonstration.
+  https://youtu.be/SkPRVoZGbPU
 
 ----------------------------
 
