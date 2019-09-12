@@ -511,14 +511,14 @@ function SA_load_body() {
 + '<div id="Lnumpad" style="position:absolute; top:64px; left:0px; z-index:599; visibility:hidden; transform-origin:100% 0%;">\n'
 + '  <div id="Lnumpad_container">\n'
 + '    <div>\n'
-+ '      <button class="Lnumpad_button" onclick="Lnumpad_row0.style.visibility=Lnumpad_rows.style.visibility=(Lnumpad_row0.style.visibility==\'hidden\')?\'inherit\':\'hidden\';">K</button>\n'
-+ '<span id="Lnumpad_row0" style="visibility:hidden">\n'
++ '      <button class="Lnumpad_button">K</button>\n'
++ '<span id="Lnumpad_row0" style="display:none">\n'
 + '      <button class="Lnumpad_button">/</button>\n'
 + '      <button class="Lnumpad_button">*</button>\n'
 + '      <button class="Lnumpad_button">S</button>\n'
 + '</span>\n'
 + '    </div>\n'
-+ '<div id="Lnumpad_rows" style="visibility:hidden">\n'
++ '<div id="Lnumpad_rows" style="display:none">\n'
 + '    <div>\n'
 + '      <button class="Lnumpad_button">7</button>\n'
 + '      <button class="Lnumpad_button">8</button>\n'
@@ -571,7 +571,14 @@ window.addEventListener('DOMContentLoaded', function () {
   }
   for (var i = 0; i < buttons.length; i++) {
     var b = buttons[i]
-    if (b.textContent == "K") continue
+    if (b.textContent == "K") {
+      b.addEventListener(ev_start, function (e) {
+is_hidden = (Lnumpad_row0.style.display == "none");
+Lnumpad_row0.style.display = (is_hidden) ? "inline" : "none";
+Lnumpad_rows.style.display = (is_hidden) ? "block"  : "none";
+      });
+      continue
+    }
 
     b.addEventListener(ev_start, function (e) {
 System._browser.virtual_numpad(e, 'keydown')
