@@ -4286,7 +4286,18 @@ if (!this.reticle) {
   this.reticle.visible = false
 }
 
-THREE.MMD.getModels()[0].mesh.visible = false
+//THREE.MMD.getModels()[0].mesh.visible = false
+xr.XR_webglObjects_by_id = {}
+MMD_SA.scene.__webglObjects.forEach(function (obj) {
+  if (!obj._XR_id)
+    obj._XR_id = THREE.Math.generateUUID()
+  xr.XR_webglObjects_by_id[obj._XR_id] = {
+    obj: obj
+   ,visible: obj.object.visible
+  };
+  if (obj.object.visible)
+    obj.object.visible = false
+});
 
 let ao = SL_MC_video_obj && SL_MC_video_obj.vo && SL_MC_video_obj.vo.audio_obj;
 if (ao && !ao.paused) {
@@ -4294,6 +4305,14 @@ if (ao && !ao.paused) {
 }
 
 session.requestAnimationFrame(this.onARFrame);
+  }
+
+ ,restore_scene: function () {
+MMD_SA.scene.__webglObjects.forEach(function (obj) {
+  var xr_obj = obj._XR_id && xr.XR_webglObjects_by_id[obj._XR_id];
+  if (xr_obj && xr_obj.visible)
+    obj.object.visible = true
+});
   }
 
  ,onSessionEnd: function () {
@@ -4312,7 +4331,9 @@ this.screen_dblclicked = false
 
 this.center_pos = null
 
-THREE.MMD.getModels()[0].mesh.visible = true
+if (!THREE.MMD.getModels()[0].mesh.visible)
+  this.restore_scene()
+this.XR_webglObjects_by_id = null
 
 MMD_SA.reset_camera()
 MMD_SA._trackball_camera.enabled = true
@@ -4364,7 +4385,7 @@ if (pose) {
 
     this.center_pos = model_mesh.position.clone().sub(pos0)
 
-    model_mesh.visible = true
+    this.restore_scene()
     MMD_SA.reset_gravity()
 
     let ao = SL_MC_video_obj && SL_MC_video_obj.vo && SL_MC_video_obj.vo.audio_obj;
