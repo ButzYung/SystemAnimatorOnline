@@ -4240,17 +4240,8 @@ catch (err) {
 this.session = session
 session.addEventListener('end', this.onSessionEnd);
 
-MMD_SA.reset_camera()
-MMD_SA._trackball_camera.enabled = false
-
 this.camera = MMD_SA._trackball_camera.object
 this.camera.matrixAutoUpdate = false;
-
-EV_sync_update.requestAnimationFrame_auto = false
-if (RAF_timerID) {
-  cancelAnimationFrame(RAF_timerID)
-  RAF_timerID = null
-}
 
 this.renderer = MMD_SA.renderer;
 //this.renderer.autoClear = false;
@@ -4294,28 +4285,39 @@ if (!this.reticle) {
 
   MMD_SA.scene.add(this.reticle)
   this.reticle.scale.set(10,10,10)
-  this.reticle.visible = false
 }
+this.reticle.visible = false
+
+System._browser.on_animation_update.add(function () {
+  MMD_SA.reset_camera()
+  MMD_SA._trackball_camera.enabled = false
 
 //THREE.MMD.getModels()[0].mesh.visible = false
-xr.XR_webglObjects_by_id = {}
-MMD_SA.scene.__webglObjects.forEach(function (obj) {
-  if (!obj._XR_id)
-    obj._XR_id = THREE.Math.generateUUID()
-  xr.XR_webglObjects_by_id[obj._XR_id] = {
-    obj: obj
-   ,visible: obj.object.visible
-  };
-  if (obj.object.visible)
-    obj.object.visible = false
-});
+  xr.XR_webglObjects_by_id = {}
+  MMD_SA.scene.__webglObjects.forEach(function (obj) {
+    if (!obj._XR_id)
+      obj._XR_id = THREE.Math.generateUUID()
+    xr.XR_webglObjects_by_id[obj._XR_id] = {
+      obj: obj
+     ,visible: obj.object.visible
+    };
+    if (obj.object.visible)
+      obj.object.visible = false
+  });
 
-let ao = SL_MC_video_obj && SL_MC_video_obj.vo && SL_MC_video_obj.vo.audio_obj;
-if (ao && !ao.paused) {
-  SL_MC_Play()
-}
+  let ao = SL_MC_video_obj && SL_MC_video_obj.vo && SL_MC_video_obj.vo.audio_obj;
+  if (ao && !ao.paused) {
+    SL_MC_Play()
+  }
 
-session.requestAnimationFrame(this.onARFrame);
+  EV_sync_update.requestAnimationFrame_auto = false
+  if (RAF_timerID) {
+    cancelAnimationFrame(RAF_timerID)
+    RAF_timerID = null
+  }
+
+  session.requestAnimationFrame(xr.onARFrame);
+},0,1);
   }
 
  ,restore_scene: function () {
@@ -4335,7 +4337,7 @@ this.hits_searching = false
 this.hit_found = false
 this.hitMatrix = null
 this.hitMatrix_decomposed = null
-//this.reticle.visible = false
+this.reticle.visible = false
 
 this.inputSources = []
 this.screen_clicked = false
