@@ -4293,7 +4293,7 @@ System._browser.on_animation_update.add(function () {
   xr.XR_webglObjects_by_id = {}
   MMD_SA.scene.__webglObjects.forEach(function (obj) {
 // top-level objects only
-    if (MMD_SA.scene.children.indexOf(obj.object) == -1) return;
+    if (obj.object.parent != MMD_SA.scene) return;
 
     if (!obj._XR_id)
       obj._XR_id = THREE.Math.generateUUID()
