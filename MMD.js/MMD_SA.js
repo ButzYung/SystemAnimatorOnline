@@ -4286,7 +4286,7 @@ session.addEventListener('select', function (e) {
 
 if (!this.reticle) {
   let geometry = new THREE.RingGeometry(0.1, 0.11, 24, 1);
-//  geometry.applyMatrix(new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(-90)));
+  geometry.applyMatrix(new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(-90)));
   let material = new THREE.MeshBasicMaterial({ color: 0xffffff });
   let reticle0 = new THREE.Mesh(geometry, material);
 
