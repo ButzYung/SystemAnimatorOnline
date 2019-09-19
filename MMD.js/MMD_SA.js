@@ -4194,9 +4194,10 @@ return drop_list
   })()
 
  ,WebXR: (function () {
-    var _camera = {}
+    var _camera;
 
-    window.addEventListener("jThree_ready", function () {
+    window.addEventListener("MMDStarted", function () {
+      _camera = MMD_SA._trackball_camera.object.clone()
       _camera.matrixWorld = new THREE.Matrix4()
       _camera.projectionMatrix = new THREE.Matrix4()
     });
