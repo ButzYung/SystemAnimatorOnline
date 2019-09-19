@@ -4414,6 +4414,7 @@ if (pose) {
       }
     }
     if (!this.hit_found && hit_result.hitMatrix) {
+DBEUG_show(Date.now())
       this.reticle.position.copy(this.hitMatrix_decomposed[0]).multiplyScalar(10);
       this.reticle.quaternion.copy(this.hitMatrix_decomposed[1]);
 
