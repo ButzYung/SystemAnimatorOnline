@@ -4414,10 +4414,9 @@ if (pose) {
       }
     }
     if (!this.hit_found && hit_result.hitMatrix) {
-DEBUG_show(9,0,1)
       this.reticle.position.copy(this.hitMatrix_decomposed[0]).multiplyScalar(10);
       this.reticle.quaternion.copy(this.hitMatrix_decomposed[1]);
-
+DEBUG_show(this.reticle.position.toArray(),0,1)
       if (this.center_pos) this.reticle.position.add(this.center_pos);
 /*
       let targetPos = new THREE.Vector3().getPositionFromMatrix(this.camera.matrixWorld);
