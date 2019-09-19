@@ -4288,12 +4288,12 @@ if (!this.reticle) {
   let geometry = new THREE.RingGeometry(0.1, 0.11, 24, 1);
 //  geometry.applyMatrix(new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(-90)));
   let material = new THREE.MeshBasicMaterial({ color: 0xffffff });
-  let reticle0 = this.reticle = new THREE.Mesh(geometry, material);
-/*
+  let reticle0 = new THREE.Mesh(geometry, material);
+
   this.reticle = new THREE.Object3D()
   this.reticle.useQuaternion = true
   this.reticle.add(reticle0)
-*/
+
   MMD_SA.scene.add(this.reticle)
   this.reticle.scale.set(10,10,10)
   this.reticle.visible = false
@@ -4413,9 +4413,8 @@ if (pose) {
         }
       }
     }
-
-    if (hit_result.hitMatrix) {
-      this.reticle.position.copy(this.hitMatrix_decomposed[0]).multiplyScalar(10);
+    if (!this.hit_found && hit_result.hitMatrix) {
+//      this.reticle.position.copy(this.hitMatrix_decomposed[0]).multiplyScalar(10);
 //      this.reticle.quaternion.copy(this.hitMatrix_decomposed[1]);
 
       if (this.center_pos) this.reticle.position.add(this.center_pos);
