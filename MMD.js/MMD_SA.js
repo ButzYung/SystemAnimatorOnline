@@ -4292,7 +4292,7 @@ if (!this.reticle) {
 
   this.reticle = new THREE.Object3D()
   this.reticle.add(reticle0)
-  this.useQuaternion = true
+  this.reticle.useQuaternion = true
 
   MMD_SA.scene.add(this.reticle)
   this.reticle.scale.set(10,10,10)
