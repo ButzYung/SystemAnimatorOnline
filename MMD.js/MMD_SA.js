@@ -4292,6 +4292,7 @@ System._browser.on_animation_update.add(function () {
 //THREE.MMD.getModels()[0].mesh.visible = false
   xr.XR_webglObjects_by_id = {}
   MMD_SA.scene.__webglObjects.forEach(function (obj) {
+    if (obj.object.parent instanceof THREE.Object3D) return;
     if (!obj._XR_id)
       obj._XR_id = THREE.Math.generateUUID()
     xr.XR_webglObjects_by_id[obj._XR_id] = {
@@ -4413,7 +4414,7 @@ if (pose) {
     if (!this.hit_found && hit_result.hitMatrix) {
       this.reticle.position.copy(this.hitMatrix_decomposed[0]).multiplyScalar(10);
       this.reticle.quaternion.copy(this.hitMatrix_decomposed[1]);
-DEBUG_show(this.reticle.position.toArray(),0,1)
+
       if (this.center_pos) this.reticle.position.add(this.center_pos);
 /*
       let targetPos = new THREE.Vector3().getPositionFromMatrix(this.camera.matrixWorld);
