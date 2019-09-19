@@ -4414,7 +4414,7 @@ if (pose) {
       }
     }
     if (!this.hit_found && hit_result.hitMatrix) {
-DEBUG_show(Date.now())
+DEBUG_show(9,0,1)
       this.reticle.position.copy(this.hitMatrix_decomposed[0]).multiplyScalar(10);
       this.reticle.quaternion.copy(this.hitMatrix_decomposed[1]);
 
