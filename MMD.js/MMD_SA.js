@@ -4400,7 +4400,7 @@ if (pose) {
 
         let model_mesh = THREE.MMD.getModels()[0].mesh
 
-        let pos0 = new THREE.Vector3().getPositionFromMatrix(this.hitMatrix).multiplyScalar(10);
+        let pos0 = new THREE.Vector3().copy(this.hitMatrix_decomposed[0]).multiplyScalar(10);
 
         this.center_pos = model_mesh.position.clone().sub(pos0)
 
@@ -4416,7 +4416,7 @@ if (pose) {
 
     if (hit_result.hitMatrix) {
       this.reticle.position.copy(this.hitMatrix_decomposed[0]).multiplyScalar(10);
-      this.reticle.quaternion.copy(this.hitMatrix_decomposed[1]);
+//      this.reticle.quaternion.copy(this.hitMatrix_decomposed[1]);
 
       if (this.center_pos) this.reticle.position.add(this.center_pos);
 /*
