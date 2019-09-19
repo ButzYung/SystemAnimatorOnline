@@ -4241,19 +4241,15 @@ this.session = session
 session.addEventListener('end', this.onSessionEnd);
 
 this.camera = MMD_SA._trackball_camera.object
-this.camera.matrixAutoUpdate = false;
 
 this.renderer = MMD_SA.renderer;
 //this.renderer.autoClear = false;
-
 
 this.gl = this.renderer.getContext();
 
 try {
   await this.gl.makeXRCompatible();
-
   session.updateRenderState({ baseLayer: new XRWebGLLayer(session, this.gl) });
-
   this.frameOfRef = await session.requestReferenceSpace('local');
 }
 catch (err) {
@@ -4291,6 +4287,7 @@ this.reticle.visible = false
 System._browser.on_animation_update.add(function () {
   MMD_SA.reset_camera()
   MMD_SA._trackball_camera.enabled = false
+  xr.camera.matrixAutoUpdate = false;
 
 //THREE.MMD.getModels()[0].mesh.visible = false
   xr.XR_webglObjects_by_id = {}
