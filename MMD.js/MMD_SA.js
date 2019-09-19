@@ -4194,6 +4194,13 @@ return drop_list
   })()
 
  ,WebXR: (function () {
+    var _camera = {}
+
+    window.addEventListener("jThree_ready", function () {
+      _camera.matrixWorld = new THREE.Matrix4()
+      _camera.projectionMatrix = new THREE.Matrix4()
+    });
+
     var xr = {
   can_AR: false
 
@@ -4278,9 +4285,14 @@ session.addEventListener('select', function (e) {
 
 if (!this.reticle) {
   let geometry = new THREE.RingGeometry(0.1, 0.11, 24, 1);
+//  geometry.applyMatrix(new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(-90)));
   let material = new THREE.MeshBasicMaterial({ color: 0xffffff });
-  geometry.applyMatrix(new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(-90)));
-  this.reticle = new THREE.Mesh(geometry, material);
+  let reticle0 = new THREE.Mesh(geometry, material);
+
+  this.reticle = new THREE.Object3D()
+  this.reticle.add(reticle0)
+  this.useQuaternion = true
+
   MMD_SA.scene.add(this.reticle)
   this.reticle.scale.set(10,10,10)
   this.reticle.visible = false
@@ -4323,6 +4335,7 @@ this.hits = []
 this.hits_searching = false
 this.hit_found = false
 this.hitMatrix = null
+this.hitMatrix_decomposed = null
 this.reticle.visible = false
 
 this.inputSources = []
@@ -4369,35 +4382,41 @@ if (pose) {
     this.camera.projectionMatrix.fromArray(view.projectionMatrix);
     this.camera.matrix.fromArray(view.transform.matrix);
     this.camera.updateMatrixWorld(true);
+
+    _camera.matrixWorld.copy(this.camera.matrixWorld)
+    _camera.projectionMatrix.copy(this.camera.projectionMatrix)
   }
 
   var hit_result = this.hit_test()
 
-  if (this.reticle.visible && this.screen_dblclicked) {
-    this.screen_dblclicked = this.screen_clicked = false
+  if (hit_result) {
+    if (this.reticle.visible) {
+      if (this.screen_dblclicked) {
+        this.screen_dblclicked = this.screen_clicked = false
 
-    this.hit_found = true
-    this.reticle.visible = false
+        this.hit_found = true
+        this.reticle.visible = false
 
-    let model_mesh = THREE.MMD.getModels()[0].mesh
+        let model_mesh = THREE.MMD.getModels()[0].mesh
 
-    let pos0 = new THREE.Vector3().getPositionFromMatrix(this.hitMatrix).multiplyScalar(10);
+        let pos0 = new THREE.Vector3().getPositionFromMatrix(this.hitMatrix).multiplyScalar(10);
 
-    this.center_pos = model_mesh.position.clone().sub(pos0)
+        this.center_pos = model_mesh.position.clone().sub(pos0)
 
-    this.restore_scene()
-    MMD_SA.reset_gravity()
+        this.restore_scene()
+        MMD_SA.reset_gravity()
 
-    let ao = SL_MC_video_obj && SL_MC_video_obj.vo && SL_MC_video_obj.vo.audio_obj;
-    if (ao && ao.paused) {
-      SL_MC_Play()
+        let ao = SL_MC_video_obj && SL_MC_video_obj.vo && SL_MC_video_obj.vo.audio_obj;
+        if (ao && ao.paused) {
+          SL_MC_Play()
+        }
+      }
     }
-  }
-  else if (hit_result) {
-    if (hit_result.hitMatrix) {
-      this.hitMatrix = hit_result.hitMatrix
 
-      this.reticle.position.getPositionFromMatrix(hit_result.hitMatrix).multiplyScalar(10);
+    if (hit_result.hitMatrix) {
+      this.reticle.position.copy(this.hitMatrix_decomposed[0]).multiplyScalar(10);
+      this.reticle.quaternion.copy(this.hitMatrix_decomposed[1]);
+
       if (this.center_pos) this.reticle.position.add(this.center_pos);
 /*
       let targetPos = new THREE.Vector3().getPositionFromMatrix(this.camera.matrixWorld);
@@ -4434,14 +4453,16 @@ if (this.hit_found)
 if (this.hits.length) {
   let hit = this.hits[0]
   this.hits = []
-  return { hitMatrix: new THREE.Matrix4().fromArray(hit.hitMatrix) };
+  this.hitMatrix = new THREE.Matrix4().fromArray(hit.hitMatrix)
+  this.hitMatrix_decomposed = this.hitMatrix.decompose()
+  return { hitMatrix:this.hitMatrix  };
 }
 
 if (!this.hits_searching) {
   this.hits_searching = true
 
   this.raycaster = this.raycaster || new THREE.Raycaster();
-  this.raycaster.setFromCamera({ x:0, y:0 }, this.camera);
+  this.raycaster.setFromCamera({ x:0, y:0 }, _camera);
   const ray = this.raycaster.ray;
 
   let xrray = new XRRay(new DOMPoint(ray.origin.x, ray.origin.y, ray.origin.z), new DOMPoint(ray.direction.x, ray.direction.y, ray.direction.z));
