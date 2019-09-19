@@ -4284,47 +4284,47 @@ if (!this.reticle) {
 }
 this.reticle.visible = false
 
-System._browser.on_animation_update.add(function () {
-  MMD_SA.reset_camera()
-  MMD_SA._trackball_camera.enabled = false
-  xr.camera.matrixAutoUpdate = false;
+
+MMD_SA.reset_camera()
+MMD_SA._trackball_camera.enabled = false
+xr.camera.matrixAutoUpdate = false;
 
 //THREE.MMD.getModels()[0].mesh.visible = false
-  xr.XR_webglObjects_by_id = {}
-  MMD_SA.scene.__webglObjects.forEach(function (obj) {
-// top-level objects only
-    if (obj.object.parent != MMD_SA.scene) return;
+xr.XR_objects_by_id = {}
+MMD_SA.scene.__objects.forEach(function (obj) {
+// top-level objects/MMD models only
+// Note: MMD model(SkinnedMesh) is wrapped by Object3D. Ignore that wrapper.
+  if (((obj.parent != MMD_SA.scene) && !(obj instanceof THREE.SkinnedMesh)) || !(obj.children[0] instanceof THREE.SkinnedMesh)) return;
 
-    if (!obj._XR_id)
-      obj._XR_id = THREE.Math.generateUUID()
-    xr.XR_webglObjects_by_id[obj._XR_id] = {
-      obj: obj
-     ,visible: obj.object.visible
-    };
-    if (obj.object.visible)
-      obj.object.visible = false
-  });
+  if (!obj._XR_id)
+    obj._XR_id = THREE.Math.generateUUID()
+  xr.XR_objects_by_id[obj._XR_id] = {
+    obj: obj
+   ,visible: obj.visible
+  };
+  if (obj.visible)
+    obj.visible = false
+});
 
-  let ao = SL_MC_video_obj && SL_MC_video_obj.vo && SL_MC_video_obj.vo.audio_obj;
-  if (ao && !ao.paused) {
-    SL_MC_Play()
-  }
+let ao = SL_MC_video_obj && SL_MC_video_obj.vo && SL_MC_video_obj.vo.audio_obj;
+if (ao && !ao.paused) {
+  SL_MC_Play()
+}
 
-  EV_sync_update.requestAnimationFrame_auto = false
-  if (RAF_timerID) {
-    cancelAnimationFrame(RAF_timerID)
-    RAF_timerID = null
-  }
+EV_sync_update.requestAnimationFrame_auto = false
+if (RAF_timerID) {
+  cancelAnimationFrame(RAF_timerID)
+  RAF_timerID = null
+}
 
-  session.requestAnimationFrame(xr.onARFrame);
-},0,1);
+session.requestAnimationFrame(xr.onARFrame);
   }
 
  ,restore_scene: function () {
-MMD_SA.scene.__webglObjects.forEach(function (obj) {
-  var xr_obj = obj._XR_id && xr.XR_webglObjects_by_id[obj._XR_id];
+MMD_SA.scene.__objects.forEach(function (obj) {
+  var xr_obj = obj._XR_id && xr.XR_objects_by_id[obj._XR_id];
   if (xr_obj && xr_obj.visible)
-    obj.object.visible = true
+    obj.visible = true
 });
   }
 
@@ -4347,7 +4347,7 @@ this.center_pos = null
 
 if (!THREE.MMD.getModels()[0].mesh.visible)
   this.restore_scene()
-this.XR_webglObjects_by_id = null
+this.XR_objects_by_id = null
 
 MMD_SA.reset_camera()
 MMD_SA._trackball_camera.enabled = true
