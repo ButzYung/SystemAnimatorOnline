@@ -4292,7 +4292,9 @@ System._browser.on_animation_update.add(function () {
 //THREE.MMD.getModels()[0].mesh.visible = false
   xr.XR_webglObjects_by_id = {}
   MMD_SA.scene.__webglObjects.forEach(function (obj) {
-    if (obj.object.parent instanceof THREE.Object3D) return;
+// top-level objects only
+    if (MMD_SA.scene.children.indexOf(obj.object) == -1) return;
+
     if (!obj._XR_id)
       obj._XR_id = THREE.Math.generateUUID()
     xr.XR_webglObjects_by_id[obj._XR_id] = {
