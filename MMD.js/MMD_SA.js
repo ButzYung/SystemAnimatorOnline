@@ -4295,7 +4295,7 @@ MMD_SA.scene.__objects.forEach(function (obj, idx) {
 // top-level objects/MMD models only
 // Note: MMD model(SkinnedMesh) is wrapped by Object3D. Ignore that wrapper.
   if (((obj.parent != MMD_SA.scene) && !(obj instanceof THREE.SkinnedMesh)) || (obj.children[0] instanceof THREE.SkinnedMesh)) return;
-DEBUG_show(idx,0,1)
+//DEBUG_show(idx,0,1)
   if (!obj._XR_id)
     obj._XR_id = THREE.Math.generateUUID()
   xr.XR_objects_by_id[obj._XR_id] = {
