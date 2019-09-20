@@ -303,7 +303,7 @@ tex.width = tex.height = 1
 tex = new THREE.Texture(tex)
 tex.needsUpdate = true
 */
-let material = new THREE.MeshBasicMaterial({ color: 0x000000, transparent:false/*, side:2*/ });
+let material = new THREE.MeshBasicMaterial({ color: 0x000000, transparent:false });
 geometry.applyMatrix(new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(-90)));
 let ground = new THREE.Mesh(geometry, material);
 ground.receiveShadow = true;
