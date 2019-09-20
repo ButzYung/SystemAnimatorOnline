@@ -2593,9 +2593,9 @@ return this._mesh.position
    ,show: function () {
 if (!this.visible) {
   this.visible = true
-  jThree( "#SpeechBubbleMESH" ).show();
   window.dispatchEvent(new CustomEvent("SA_SpeechBubble_show"));
 }
+jThree( "#SpeechBubbleMESH" ).show();
     }
 
    ,hidden_time_ref: Date.now()
@@ -2625,9 +2625,9 @@ if (this.visible) {
   this.hidden_time_ref = Date.now()
 
   this.visible = false
-  jThree( "#SpeechBubbleMESH" ).hide();
   window.dispatchEvent(new CustomEvent("SA_SpeechBubble_hide"));
 }
+jThree( "#SpeechBubbleMESH" ).hide();
     }
   }
 // END
