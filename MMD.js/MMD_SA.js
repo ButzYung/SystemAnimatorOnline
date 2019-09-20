@@ -4206,11 +4206,12 @@ if (xr.reticle.visible) {
   xr.reticle.visible = false
 
   let model_mesh = THREE.MMD.getModels()[0].mesh
-  model_mesh.lookAt(xr.camera.position.clone().setY(model_mesh.position.y))
 
   let pos0 = new THREE.Vector3().copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10);
-
+  let center_pos_old = (xr.center_pos && xr.center_pos.clone()) || new THREE.Vector3();
   xr.center_pos = model_mesh.position.clone().sub(pos0)
+
+  model_mesh.lookAt(xr.camera.position.clone().sub(center_pos_old).add(xr.center_pos).setY(model_mesh.position.y))
 
   xr.restore_scene()
   MMD_SA.reset_gravity()
