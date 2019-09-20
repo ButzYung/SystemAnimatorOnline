@@ -4387,6 +4387,7 @@ MMD_SA.scene.__objects.forEach(function (obj) {
   if (xr_obj && xr_obj.visible)
     obj.visible = true
 });
+MMD_SA.SpeechBubble.hide()
   }
 
  ,onSessionEnd: function () {
