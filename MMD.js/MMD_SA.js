@@ -4200,6 +4200,29 @@ return drop_list
       _camera = MMD_SA._trackball_camera.object.clone()
     });
 
+    window.addEventListener("SA_AR_dblclick", function (e) {
+if (xr.reticle.visible) {
+  xr.hit_found = true
+  xr.reticle.visible = false
+
+  let model_mesh = THREE.MMD.getModels()[0].mesh
+
+  let pos0 = new THREE.Vector3().copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10);
+
+  xr.center_pos = model_mesh.position.clone().sub(pos0)
+
+  xr.restore_scene()
+  MMD_SA.reset_gravity()
+
+  let ao = SL_MC_video_obj && SL_MC_video_obj.vo && SL_MC_video_obj.vo.audio_obj;
+  if (ao && ao.paused) {
+    SL_MC_Play()
+  }
+
+  e.detail.result.return_value = true
+}
+    });
+
     var xr = {
   can_AR: false
 
@@ -4228,7 +4251,7 @@ catch (err) {
 }
   }
 
- ,inputSources: []
+ ,input_event: { inputSources:[] }
 
  ,center_pos: null
 
@@ -4260,8 +4283,46 @@ catch (err) {
 }
 
 session.addEventListener('inputsourceschange', function (e) {
-  xr.inputSources = e.session.inputSources;
+  xr.input_event.inputSources = e.session.inputSources;
 });
+
+session.addEventListener('selectstart', function (e) {
+  var time = Date.now()
+  xr.input_event.touchdown = time
+});
+
+session.addEventListener('selectend', function (e) {
+  if (!xr.input_event.touchdown)
+    return
+
+  var result
+
+  var time = Date.now()
+  var time_diff = time - xr.input_event.touchdown
+  xr.input_event.touchdown = false
+
+  if (time_diff > 400)
+    return
+
+  if (xr.input_event.click && (time - xr.input_event.click < 400)) {
+    xr.input_event.click = false
+
+    result = { return_value:null }
+    window.dispatchEvent(new CustomEvent("SA_AR_dblclick", { detail:{ e:e, result:result } }));
+    if (result.return_value) {
+      return
+    }
+  }
+
+  result = { return_value:null }
+  window.dispatchEvent(new CustomEvent("SA_AR_click", { detail:{ e:e, result:result } }));
+  if (result.return_value) {
+    return
+  }
+
+  xr.input_event.click = time
+});
+
 session.addEventListener('select', function (e) {
   var time = Date.now()
   if (xr.screen_clicked && (time - xr.screen_clicked < 400))
@@ -4339,9 +4400,7 @@ this.hitMatrix = null
 this.hitMatrix_decomposed = null
 this.reticle.visible = false
 
-this.inputSources = []
-this.screen_clicked = false
-this.screen_dblclicked = false
+this.input_event = { inputSources:[] }
 
 this.center_pos = null
 
@@ -4391,28 +4450,6 @@ if (pose) {
   var hit_result = this.hit_test()
 
   if (hit_result) {
-    if (this.reticle.visible) {
-      if (this.screen_dblclicked) {
-        this.screen_dblclicked = this.screen_clicked = false
-
-        this.hit_found = true
-        this.reticle.visible = false
-
-        let model_mesh = THREE.MMD.getModels()[0].mesh
-
-        let pos0 = new THREE.Vector3().copy(this.hitMatrix_decomposed[0]).multiplyScalar(10);
-
-        this.center_pos = model_mesh.position.clone().sub(pos0)
-
-        this.restore_scene()
-        MMD_SA.reset_gravity()
-
-        let ao = SL_MC_video_obj && SL_MC_video_obj.vo && SL_MC_video_obj.vo.audio_obj;
-        if (ao && ao.paused) {
-          SL_MC_Play()
-        }
-      }
-    }
     if (!this.hit_found && hit_result.hitMatrix) {
       this.reticle.position.copy(this.hitMatrix_decomposed[0]).multiplyScalar(10);
       this.reticle.quaternion.copy(this.hitMatrix_decomposed[1]);
