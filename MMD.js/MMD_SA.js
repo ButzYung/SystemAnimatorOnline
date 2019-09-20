@@ -4206,6 +4206,7 @@ if (xr.reticle.visible) {
   xr.reticle.visible = false
 
   let model_mesh = THREE.MMD.getModels()[0].mesh
+  model_mesh.lookAt(xr.camera.position.clone().setY(model_mesh.position.y))
 
   let pos0 = new THREE.Vector3().copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10);
 
