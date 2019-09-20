@@ -4223,6 +4223,13 @@ if (xr.reticle.visible) {
 
   e.detail.result.return_value = true
 }
+else if (xr.hit_found) {
+  xr.hit_found = false
+  xr.reticle.position.add(xr.center_pos)
+  xr.reticle.visible = true
+
+  e.detail.result.return_value = true
+}
     });
 
     var xr = {
