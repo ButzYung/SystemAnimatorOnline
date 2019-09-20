@@ -4225,7 +4225,7 @@ if (xr.reticle.visible) {
 }
 else if (xr.hit_found) {
   xr.hit_found = false
-  xr.reticle.position.add(xr.center_pos)
+  xr.reticle.position.copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10).add(xr.center_pos)
   xr.reticle.visible = true
 
   e.detail.result.return_value = true
