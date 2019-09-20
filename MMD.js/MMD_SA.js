@@ -2215,7 +2215,7 @@ MMD_SA.GOML_head +=
 //'<txr id="SpeechBubbleTXR" canvas="canvas" animation="false" />\n'
   '<txr id="SpeechBubbleTXR" canvas="#j3_speechCanvas" animation="false" />\n'
 
-+ '<geo id="SpeechBubbleGEO" type="Plane" param="10 10" />\n'
+//+ '<geo id="SpeechBubbleGEO" type="Plane" param="10 10" />\n'
 + '<mtl id="SpeechBubbleMTL" type="' + ((this.use_sprite)?"Sprite":"MeshBasic") + '" param="map:#SpeechBubbleTXR;sizeAttenuation:false;depthTest:false;" />\n';
 
 MMD_SA.GOML_scene +=
