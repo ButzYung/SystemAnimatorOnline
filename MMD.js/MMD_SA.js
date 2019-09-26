@@ -1251,7 +1251,7 @@ this._kissing = MMD_SA.meter_motion_disabled = false
 if (objs._model_index) return false
 
 var busy = MMD_SA._busy_mode1_ || !MMD_SA_options.look_at_screen
-if (MMD_SA._hit_hip_ || ((MMD_SA_options.model_para_obj._cover_undies != false) || (MMD_SA.MMD.motionManager.para_SA._cover_undies != false) && !busy && !MMD_SA.custom_action_default.kissing.action._kissing && (((MMD_SA._rx*180/Math.PI) % 360 > 45 * ((MMD_SA.use_jThree) ? 0.75 : 1)) || (MMD_SA.use_jThree && MMD_SA_options.use_JSARToolKit && MMD_SA.AR_obj._m4 && (MMD_SA.AR_obj.camera_position.y < 10)))/* && !Audio_BPM.vo.motion_by_song_name_mode*/)) {
+if (MMD_SA._hit_hip_ || ((MMD_SA_options.model_para_obj._cover_undies != false) && (MMD_SA.MMD.motionManager.para_SA._cover_undies != false) && !busy && !MMD_SA.custom_action_default.kissing.action._kissing && (((MMD_SA._rx*180/Math.PI) % 360 > 45 * ((MMD_SA.use_jThree) ? 0.75 : 1)) || (MMD_SA.use_jThree && MMD_SA_options.use_JSARToolKit && MMD_SA.AR_obj._m4 && (MMD_SA.AR_obj.camera_position.y < 10)))/* && !Audio_BPM.vo.motion_by_song_name_mode*/)) {
   this._undies_visible = true
   if (!this._cover_undies) {
     this.frame = 0
