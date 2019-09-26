@@ -223,6 +223,20 @@ var MMD_SA_options = {
 
  ,edgeScale: 0.75
 
+ ,model_para: {
+    "プーさん6準標準.pmx": {
+  morph_default: {}
+ ,skin_default: {
+    "全ての親":  { pos_add:{x:0, y:6.5, z:0} }
+  }
+ ,material_para: {
+  "gras and veg": { alphaTest:0.5 }
+ ,"swing": { alphaTest:0.5 }
+  }
+ ,_cover_undies: false
+    }
+  }
+
 /*
  ,MME: {
     self_overlay: {
