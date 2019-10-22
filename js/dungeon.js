@@ -7684,8 +7684,11 @@ if (!this.motion["PC movement forward"]) {
  ,morph_default:{
   "あ":{weight:0.13}
  ,"い":{weight:0.27}
- ,"なごみ":{weight:0.29*0.5}
- ,"はぅ":{weight:0.15}
+
+// ,"なごみ":{weight:0.29*0.5}
+// ,"はぅ":{weight:0.15}
+ ,"じと目":{weight:0.25}
+
  ,"困る":{weight:0.23}
  ,"下":{weight:0.64}
   }
@@ -7696,8 +7699,11 @@ if (!this.motion["PC movement forward"]) {
  ,morph_default:{
   "あ":{weight:0.13}
  ,"い":{weight:0.27}
- ,"なごみ":{weight:0.29*0.5}
- ,"はぅ":{weight:0.15}
+
+// ,"なごみ":{weight:0.29*0.5}
+// ,"はぅ":{weight:0.15}
+ ,"じと目":{weight:0.25}
+
  ,"困る":{weight:0.23}
  ,"下":{weight:0.64}
   }
@@ -7708,8 +7714,11 @@ if (!this.motion["PC movement forward"]) {
  ,morph_default:{
   "あ":{weight:0.13}
  ,"い":{weight:0.27}
- ,"なごみ":{weight:0.29*0.5}
- ,"はぅ":{weight:0.15}
+
+// ,"なごみ":{weight:0.29*0.5}
+// ,"はぅ":{weight:0.15}
+ ,"じと目":{weight:0.25}
+
  ,"困る":{weight:0.23}
  ,"下":{weight:0.64}
   }
