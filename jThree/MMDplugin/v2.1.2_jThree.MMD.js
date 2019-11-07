@@ -683,8 +683,9 @@ mmd.frame_time_ref = t
 
     var context = SL_2D_front.getContext("2d")
     if (MMD_SA.fadeout_opacity > 0) {
-      SL_2D_front.width  = SL.width
-      SL_2D_front.height = SL.height
+// for desktop and mobile
+      SL_2D_front.width  = SL.width  / window.devicePixelRatio
+      SL_2D_front.height = SL.height / window.devicePixelRatio
       context.globalCompositeOperation = 'copy'
       context.globalAlpha = MMD_SA.fadeout_opacity
       context.drawImage(MMD_SA.fadeout_canvas, 0,0)
