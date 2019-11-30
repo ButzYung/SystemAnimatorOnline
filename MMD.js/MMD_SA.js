@@ -503,13 +503,24 @@ MMD_SA._init_my_model = function () {
 
   var sb = document.getElementById("LMMD_StartButton")
   if (sb) {
+    let info_extra = ""
+    let model_json = zip.file(/model\.json$/i)
+    if (model_json.length) {
+      info_extra = "(+MME)"
+      model_json[0].async("text").then(function (json) {
+MMD_SA_options.MME_saved = Object.assign(MMD_SA_options.MME_saved, JSON.parse(json))
+console.log("(model.json updated)")
+      });
+    }
+
     sb._msg_mouseover = [
-  model_filename
+  model_filename + info_extra
  ,"Press START to begin with your custom MMD model."
  ,""
  ,"(Click here to reset to the default model.)"
     ].join("\n");
     DEBUG_show(sb._msg_mouseover, -1);
+
     MMD_SA._click_to_reset = function () {
       MMD_SA._init_my_model = null;
       SystemAnimator_caches.delete("/user-defined-local/my_model.zip");
