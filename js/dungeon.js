@@ -3446,6 +3446,9 @@ _cursor_timerID = setTimeout(function () {
 
 
 if (options.combat_mode_enabled) {
+  if (options.simple_combat_input_mode_enabled == null)
+    options.simple_combat_input_mode_enabled = is_mobile
+
   if (!options.sound.some(function(s){return(s.name=="hit-1")})) {
     options.sound.push({
       url: System.Gadget.path + "/sound/SFX_pack01.zip#/162370__lewisisminted__punch-1.aac"
@@ -8259,6 +8262,8 @@ MMD_SA._force_motion_shuffle = true
   _default_ : {
     skin_default: {
   "全ての親": { keys:[{ time:0/30, pos:{x:0, y:0, z:0} }, { time:37/30, pos:{x:0, y:0, z:20} }] }
+// ,"左足ＩＫ": { rot_scale:{x:1, y:0, z:0} }
+// ,"右足ＩＫ": { rot_scale:{x:1, y:0, z:0} }
     }
    ,morph_default: {
   "はぅ": { weight:1 }
@@ -8277,6 +8282,8 @@ MMD_SA._force_motion_shuffle = true
   ,{ frame:33, pos:{x:0, y:-12.65+1.5, z:0} }
     ]
   }
+// ,"左足ＩＫ": { rot_scale:{x:1, y:0, z:0} }
+// ,"右足ＩＫ": { rot_scale:{x:1, y:0, z:0} }
     }
    ,morph_default: {
   "はぅ": { weight:1 }
@@ -8321,7 +8328,11 @@ MMD_SA._force_motion_shuffle = true
        ,super_armor: { level:99 }
        ,adjustment_per_model: {
   _default_ : {
-    morph_default: {
+    skin_default: {
+//  "左足ＩＫ": { keys_mod:[{frame:0, rot:{x:64.3, y:0, z:0}}] }
+// ,"右足ＩＫ": { keys_mod:[{frame:0, rot:{x:64.3, y:0, z:0}}] }
+    }
+   ,morph_default: {
   "じと目": { weight:0.5 }
  ,"真面目": { weight:1 }
     }
@@ -8334,6 +8345,8 @@ MMD_SA._force_motion_shuffle = true
   ,{ frame:40, pos:{x:0, y:-12.65+1.5, z:0} }
     ]
   }
+// ,"左足ＩＫ": { keys_mod:[{frame:0, rot:{x:64.3, y:0, z:0}}] }
+// ,"右足ＩＫ": { keys_mod:[{frame:0, rot:{x:64.3, y:0, z:0}}] }
     }
    ,morph_default: {
   "じと目": { weight:0.5 }
@@ -9607,6 +9620,7 @@ if (options.combat_mode_enabled) {
     }
     MMD_SA_options.Dungeon_options.attack_combo_list.forEach(function (combo) {
       combo._RE = new RegExp("(^|\\,)" + combo.combo_RE.replace(/\,/g, "\\,") + "(\\,|$)")
+      combo._RE_simple = new RegExp("(^|\\,)" + ((/^(123|456|789)$/.test(combo.combo_RE)) ? combo.combo_RE.replace(/123/, "3\\,3").replace(/456/, "6\\,6").replace(/789/, "9\\,9") : combo.combo_RE.replace(/\,/g, "\\,").replace(/[123]+/g, "[123]").replace(/[456]+/g, "[456]").replace(/[789]+/g, "[789]")) + "(\\,|$)")
       d.key_map[combo.keyCode] = { order:combo.keyCode, id:"combo-"+combo.keyCode, type_combat:true, keyCode:combo.keyCode
        ,motion_id: combo.motion_id
       };
@@ -9652,23 +9666,31 @@ if (MMD_SA._force_motion_shuffle) {
 }
 
 if (!para_SA.motion_duration_by_combo) {
-  MMD_SA_options.Dungeon_options.attack_combo_list.some(function (combo) {
+  let combos = MMD_SA_options.Dungeon_options.attack_combo_list.filter(function (combo) {
     if ((combo.combo_type != "free") && !c.combat_stats.weapon.combo_type_RE.test(combo.combo_type||"bare-handed"))
-      return
+      return false
 
-    var index = combo_str.search(combo._RE)
+    let _RE = (MMD_SA_options.Dungeon_options.simple_combat_input_mode_enabled) ? combo._RE_simple : combo._RE
+    let index = combo_str.search(_RE)
     if (index == -1)
-      return
-    if ((combo.plus_down) ? !d.key_map[107].is_down : d.key_map[107].is_down)
-      return
+      return false
+    if (!MMD_SA_options.Dungeon_options.simple_combat_input_mode_enabled && ((combo.plus_down) ? !d.key_map[107].is_down : d.key_map[107].is_down))
+      return false
 
-    var key_map = d.key_map[combo.keyCode]
+    combo._index_ = index + RegExp.lastMatch.length
+    return true
+  });
+
+  if (combos.length) {
+    let combo = combos.shuffle()[0]
+
+    let key_map = d.key_map[combo.keyCode]
     key_map.down = t
 
-    combo_str = combo_str.substr(index + RegExp.lastMatch.length)
+    combo_str = combo_str.substr(combo._index_)
 
-    var motion_index = MMD_SA_options.motion_index_by_name[d.motion[key_map.motion_id].name]
-    var motion_para = MMD_SA.motion[motion_index].para_SA
+    let motion_index = MMD_SA_options.motion_index_by_name[d.motion[key_map.motion_id].name]
+    let motion_para = MMD_SA.motion[motion_index].para_SA
     if (motion_para.motion_duration_by_combo) {
       key_map.motion_duration = motion_para.motion_duration = motion_para.motion_duration_by_combo[motion_para.motion_duration_by_combo.length-1].motion_duration
 //DEBUG_show(combo.keyCode+'/'+that.motion_duration,0,1)
@@ -9682,9 +9704,7 @@ if (!para_SA.motion_duration_by_combo) {
 //DEBUG_show(combo.keyCode,0,1)
       }
     }
-
-    return true
-  });
+  }
 }
 //DEBUG_show(combo_str)
 
@@ -9694,7 +9714,8 @@ if (!para_SA.motion_duration_by_combo || !combo_str.length)
 var key_map = d.key_map[para_SA.keyCode]
 var motion_duration = para_SA.motion_duration
 para_SA.motion_duration_by_combo.some(function (combo) {
-  if (!combo._RE || (combo_str.search(combo._RE) == 0)) {
+  let _RE = (MMD_SA_options.Dungeon_options.simple_combat_input_mode_enabled) ? combo._RE_simple : combo._RE
+  if (!_RE || (combo_str.search(_RE) == 0)) {
     if (combo.motion_duration > motion_duration) {
       key_map.motion_duration = para_SA.motion_duration = combo.motion_duration
 //DEBUG_show(combo_str+'/'+combo.motion_duration+'/'+para_SA.keyCode,0,1)
@@ -9811,8 +9832,10 @@ if (para) {
 
   if (para.motion_duration_by_combo) {
     para.motion_duration_by_combo.forEach(function (combo) {
-      if (combo.combo_RE)
+      if (combo.combo_RE) {
         combo._RE = new RegExp("^" + combo.combo_RE.replace(/\,/g, "\\,") + "(\\,|$)")
+        combo._RE_simple = new RegExp("^" + combo.combo_RE.replace(/\,/g, "\\,").replace(/\d+/g, "\\d") + "(\\,|$)")
+      }
     });
   }
 
@@ -12296,7 +12319,7 @@ var combat = {
 
     return function (attacker) {
 var action_obj = {}
-var seed_max = Math.max(combat.combat_seed, 2)
+var seed_max = (d._combat_seed_ != null) ? d._combat_seed_ : Math.max(combat.combat_seed, 2)
 var seed = random(seed_max)
 
 var dis = attacker._obj.position.distanceTo(d.character.pos)
@@ -12333,12 +12356,13 @@ p.lvl = Math.min(p.lvl + hit_level/(10), 3)
 //console.log(def)
 //DEBUG_show(atk_para.motion_id+'/'+p.lvl)
 
-return Math.floor(Math.random() * (combat.parry_level||1) + p.lvl)
+return Math.floor(Math.random() * (((d._parry_level_ != null) ? d._parry_level_ : combat.parry_level) || 1) + p.lvl)
   }
 };
 
-return {
+var obj = {
   object_index: object_index
+
  ,placement: {
     can_overlap: true
    ,hidden: true
@@ -12351,6 +12375,12 @@ return {
  ,combat: combat
  ,animate: "combat_default"
 };
+
+if (para.p_to_assign) {
+  obj = Object.assign(obj, para.p_to_assign)
+}
+
+return obj;
     }
 
    ,create_combat_event: (function () {
