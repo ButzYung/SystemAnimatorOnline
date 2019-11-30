@@ -244,6 +244,13 @@ if (is_SA_child_animation) {
   return
 }
 
+if (is_mobile && (is_SA_child_animation_host || self.MMD_SA)) {
+  LbuttonFullscreen.style.visibility = "hidden"
+  LbuttonRestore.style.visibility = "inherit"
+  document.documentElement.requestFullscreen()
+  return
+}
+
 System.Gadget.Settings.writeString("CSSTransformFullscreen", "non_default")
 Settings.CSSTransformFullscreen = true
 SA_zoom = 1
@@ -258,6 +265,13 @@ if (is_SA_child_animation_host && is_SA_child_animation) {
   parent.document.getElementById("LbuttonRestore").click()
   LbuttonFullscreen.style.visibility = "inherit"
   LbuttonRestore.style.visibility = "hidden"
+  return
+}
+
+if (is_mobile && (is_SA_child_animation_host || self.MMD_SA)) {
+  LbuttonFullscreen.style.visibility = "inherit"
+  LbuttonRestore.style.visibility = "hidden"
+  document.exitFullscreen()
   return
 }
 
@@ -2164,7 +2178,17 @@ if (fullscreen) {
 
     LbuttonTL.style.posLeft = Math.min(B_content_width, screen_w) - 24 - 12
     LbuttonTL.style.posTop  = 12
-    if (!is_SA_child_animation_host) {
+    if (is_mobile && (is_SA_child_animation_host || self.MMD_SA)) {
+      if (document.fullscreenElement) {
+        LbuttonFullscreen.style.visibility = "hidden"
+        LbuttonRestore.style.visibility = "inherit"
+      }
+      else {
+        LbuttonFullscreen.style.visibility = "inherit"
+        LbuttonRestore.style.visibility = "hidden"
+      }
+    }
+    else if (!is_SA_child_animation_host) {
       if ((_SA_zoom == 1) && !fullscreen && !SA_rotate) {
         LbuttonFullscreen.style.visibility = "inherit"
         LbuttonRestore.style.visibility = "hidden"
