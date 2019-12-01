@@ -1667,6 +1667,44 @@ if (!cloned) {
 		this.bones.push( new Bone( bin ) );
 	}
 
+// AT: skin_weight
+if (model_para_obj.skin_weight) {
+  let skin_weight = {}
+  let sw_mod = (MMD_SA_options.skin_weight_mod || ((MMD_SA_options.Dungeon) ? 0.5 : 1))
+  Object.keys(model_para_obj.skin_weight).forEach(function (name) {
+    let index = that.bones.findIndex(b => b.name==name)
+    if (index >= 0)
+      skin_weight[index] = model_para_obj.skin_weight[name] * sw_mod
+  });
+
+  this.vertices.forEach(function (v) {
+    let skin = v.skin
+    if (skin.weights.length <= 1)
+      return
+
+    let weights_modified
+    let weights_add = []
+    let def_max = skin.weights.length
+    for (let i = 0; i < def_max; i++) {
+      let sw = skin_weight[skin.bones[i]]
+      if (sw != null) {
+        weights_modified = true
+        let w_mod = skin.weights[i] * (1-sw)
+        let w_total = 1 - skin.weights[i]
+        for (let j = 0; j < def_max; j++) {
+          weights_add[j] = (weights_add[j]||0) + ((j == i) ? -w_mod : w_mod * (skin.weights[j]/w_total))
+        }
+      }
+    }
+
+    if (weights_modified) {
+      for (let i = 0; i < def_max; i++) {
+        skin.weights[i] += weights_add[i]
+      }
+    }
+  });
+}
+
 	n = bin.readInt32();
 	//console.log('morphs = ' + n);
 	while ( n-- > 0 ) {
@@ -4196,7 +4234,7 @@ if (v._skin_parent) {
 // AT: reset rigid bodies
 if (v.bone == -1) return
 var b_name = mesh.bones[v.bone].name
-var skin_filtered = !ignore_physics && skin_filter && !skin_filter.test(b_name)
+var skin_filtered = !ignore_physics && skin_filter && !skin_filter.test(b_name) && (!model_para_obj.skin_weight || !model_para_obj.skin_weight[b_name])
 if (use_ammo_proxy && ignore_physics && (mesh._reset_rigid_body_physics_ <= 2)) {
 // forced update of ammo_proxy physics, before ignore_physics ends.
   skin_filtered = true

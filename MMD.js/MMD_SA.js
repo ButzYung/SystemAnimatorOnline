@@ -506,9 +506,10 @@ MMD_SA._init_my_model = function () {
     let info_extra = ""
     let model_json = zip.file(/model\.json$/i)
     if (model_json.length) {
-      info_extra = "(+MME)"
+      info_extra = "(+config)"
       model_json[0].async("text").then(function (json) {
-MMD_SA_options.MME_saved = Object.assign(MMD_SA_options.MME_saved, JSON.parse(json))
+//MMD_SA_options.MME_saved = Object.assign(MMD_SA_options.MME_saved, JSON.parse(json))
+MMD_SA_options.model_para = Object.assign(MMD_SA_options.model_para, JSON.parse(json))
 console.log("(model.json updated)")
       });
     }
