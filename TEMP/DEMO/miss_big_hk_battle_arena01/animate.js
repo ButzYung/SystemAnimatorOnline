@@ -1254,6 +1254,7 @@ return _grid_array
       var a = i/i_max*Math.PI*2
       p_to_assign.push({
   zone_of_movement: zom
+/*
  ,onclick: [
     {
       click_range: 128
@@ -1261,7 +1262,7 @@ return _grid_array
      ,event_id: "arena_exit"
     }
   ]
-
+*/
  ,placement: {
     grid_id: 2
    ,position: {x:128*Math.sin(a), y:0, z:128*Math.cos(a)}
@@ -1275,6 +1276,7 @@ return _grid_array
   { _constructor: function () { return MMD_SA_options.Dungeon.utils.create_combat_character(0, {
     p_to_assign: {
   zone_of_movement: zom
+
  ,onclick: [
     {
       click_range: 128
@@ -1307,114 +1309,7 @@ return _grid_array
  ,{ object_index:10 }
     ];
   })()
-/*
- ,object_list: (function () {
-    var combat = {
-      action_check: (function () {
-        var combat_action = [
-  "PC combat attack 01"
- ,"PC combat attack 02"
- ,"PC combat attack 03"
- ,"PC combat attack 04"
- ,"PC combat attack 05"
- ,"PC combat attack 06"
- ,"PC combat attack 07"
- ,"PC combat attack 08"
- ,"PC combat attack 09"
- ,"PC combat attack 10"
- ,"PC combat attack 11"
- ,"PC combat attack 12"
- ,"PC combat attack 13"
- ,"PC combat attack 14"
- ,"PC combat attack 15"
- ,"PC combat attack 16"
- ,"PC combat attack 17"
- ,"PC combat attack 18"
- ,"PC combat attack 19"
-        ];
 
-        return function (para) {
-var d = MMD_SA_options.Dungeon
-
-var action_obj = {}
-var seed_max = d._combat_seed_||2
-var seed = random(seed_max)
-if ((seed_max > 2) && (seed == seed_max-1)) {
-  action_obj.motion_id = combat_action[random(combat_action.length)]//"PC combat attack 12"//
-}
-else if (seed % 2 == 0) {
-  action_obj.type = "STAY"
-}
-else {
-  action_obj.type = "MOVE"
-}
-
-return action_obj
-        };
-      })()
-
-     ,parry_check: function (para) {
-var d = MMD_SA_options.Dungeon
-
-return (d._parry_level_ && random(d._parry_level_+1))||0
-      }
-    };
-
-    var zom = { min:{x:-128*10, y:0, z:-128*10}, max:{x:128*10, y:0, z:128*10} };
-
-    var npc_list = [
-      {object_index:0
- ,onclick: [
-    {
-      click_range: 128
-     ,is_dblclick: true
-     ,event_id: "arena_exit"
-    }
-  ]
-
- ,zone_of_movement: zom
-
- ,mass: 1
- ,hp: 100
- ,combat: combat
- ,animate: "combat_default"
-      }
-    ];
-
-    for (var i = 1, i_max = 10; i < i_max; i++) {
-      var a = i/i_max*Math.PI*2
-      npc_list.push({
-  object_index:i
- ,placement: {
-    grid_id: 2
-   ,position: {x:128*Math.sin(a), y:0, z:128*Math.cos(a)}
-   ,rotation: {x:0, y:a/Math.PI*180-180, z:0}
-   ,can_overlap: true
-  }
- ,no_camera_collision: true
- ,view_distance: 999
-
- ,onclick: [
-    {
-      click_range: 128
-     ,is_dblclick: true
-     ,event_id: "arena_exit"
-    }
-  ]
-
- ,zone_of_movement: zom
- ,mass: 1
- ,hp: 100
- ,combat: combat
- ,animate: "combat_default"
-      });
-    }
-
-    return npc_list.concat([
-  {object_index:2}
-    ]);
-  })()
-*/
  ,events: {
     "onstart": [
       [
@@ -1447,7 +1342,21 @@ return (d._parry_level_ && random(d._parry_level_+1))||0
         }
        ,{
           message: {
+  content: "「手機操作:\n* 移動:虛擬操縱桿(左下)\n* 虛擬Keypad:K\n* 鏡頭操作:拖曳(虛擬按鈕以外)」"
+ ,bubble_index: 3
+ ,para: { scale:1.5 }
+          }
+        }
+       ,{
+          message: {
   content: "「組合技由不同組合的Keypad鍵組成.\n例:5,5,4,6\n某些組合需要同時按+發動.\n例:+8,5,9」"
+ ,bubble_index: 3
+ ,para: { scale:1.5 }
+          }
+        }
+       ,{
+          message: {
+  content: "「用滑鼠/畫面按兩下馬夫人開啟選項.」"
  ,bubble_index: 3
  ,para: { scale:1.5 }
           }
