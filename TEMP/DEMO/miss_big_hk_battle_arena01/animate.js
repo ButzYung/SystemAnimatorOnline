@@ -50,13 +50,14 @@
 // X object END
 
    ,"_Miss_HK_v01c_shirt_v05_CLEANED_v01.pmx": {
-      MME: {
+  "MME": {
 "self_overlay":{"enabled":true,"opacity":0.4},
 "HDR":{"enabled":true,"opacity":0.4},
 "serious_shader":{"enabled":true,"type":"AdultShaderS2","shadow_opacity":0.3,"material":{"face00":{"shadow_opacity_scale":0.5},"face01":{"shadow_opacity_scale":0.5},"eye":{"shadow_opacity_scale":0.5},"eye_hi":{"shadow_opacity_scale":0.5}},"OverBright":1.2},
 "SAO":{"disabled_by_material":[]}
-      }
-     ,rigid_filter: { test:function(name){ return ((name.indexOf("胸")==-1) && (name.indexOf("乳")==-1)) } }
+  }
+ ,"skin_weight": { "左胸上2":0.667, "右胸上2":0.667 }
+//     ,rigid_filter: { test:function(name){ return ((name.indexOf("胸")==-1) && (name.indexOf("乳")==-1)) } }
     }
 
    ,"セーラー服さんv1.3長袖.pmx": {
