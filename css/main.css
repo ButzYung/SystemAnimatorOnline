@@ -4,6 +4,7 @@ body {
   height: 130px;
   overflow: hidden;
   background-color: transparent;
+  font-family:Segoe UI,Arial,sans-serif;
 }
 
 .CPU_bar {
