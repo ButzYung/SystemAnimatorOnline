@@ -2158,7 +2158,7 @@ return this.MME_shader_fshader[name]
    ,bubbles: [
   {
     image_url:System.Gadget.path+'/images/SB_kakukaku01.png'
-   ,font: 'Segoe Print,cursive'
+   ,font: '"Segoe Print",fantasy'
    ,font_unicode: 'DFKai-SB,"Microsoft JhengHei"'
    ,font_size: 18
 //   ,column_max: 50-3
@@ -2172,7 +2172,7 @@ return this.MME_shader_fshader[name]
 
  ,{
     image_url:System.Gadget.path+'/images/SB_irregular01.png'
-   ,font: 'Segoe Print,cursive'
+   ,font: '"Segoe Print",fantasy'
    ,font_unicode: 'DFKai-SB,"Microsoft JhengHei"'
    ,font_size: 18
 //   ,column_max: 36-3
@@ -2185,7 +2185,7 @@ return this.MME_shader_fshader[name]
 
  ,{
     image_url:System.Gadget.path+'/images/SB_mokumoku01.png'
-   ,font: 'Segoe Print,cursive'
+   ,font: '"Segoe Print",fantasy'
    ,font_unicode: 'DFKai-SB,"Microsoft JhengHei"'
    ,font_size: 18
 //   ,column_max: 42-3
@@ -2199,7 +2199,7 @@ return this.MME_shader_fshader[name]
 
  ,{
     image_url:System.Gadget.path+'/images/SB_mokumoku01a.png'
-   ,font: 'Segoe Print,cursive'
+   ,font: '"Segoe Print",fantasy'
    ,font_unicode: 'DFKai-SB,"Microsoft JhengHei"'
    ,font_size: 18
 //   ,column_max: 42-3
