@@ -1356,7 +1356,7 @@ return _grid_array
         }
        ,{
           message: {
-  content: "「用滑鼠/畫面按兩下馬夫人開啟選項.」"
+  content: "「用滑鼠/觸控式螢幕按兩下馬夫人及畫面其他地方, 開啟各種選項及功能.」"
  ,bubble_index: 3
  ,para: { scale:1.5 }
           }
