@@ -38,9 +38,13 @@ function AreaDataSaved() {
   this.object_by_index = {}
 }
 
+var _bb_xz_factor_ = 0.5
+
 return {
+  _bb_xz_factor_:_bb_xz_factor_
+
 //https://github.com/Matthew-Burfield/random-dungeon-generator
-  RDG: (function () {
+ ,RDG: (function () {
 /*
 if (xul_mode) {
   var module
@@ -6110,8 +6114,10 @@ default:
     return true
   }
 
- ,_bb_expand: {x:0.5, y:0, z:0.5}
- ,_bb_translate: {x:0, y:0, z:0.5}
+// ,_bb_expand: {x:0.5, y:0, z:0.5}
+// ,_bb_translate: {x:0, y:0, z:0.5}
+ ,_bb_expand: {x:(1+0.5)/_bb_xz_factor_-1, y:0, z:(1+0.5)/_bb_xz_factor_-1}
+ ,_bb_translate: {x:0, y:0, z:0.5/_bb_xz_factor_}
 };
 
 if (MMD_SA_options.Dungeon_options.combat_para_default) {
@@ -6244,6 +6250,14 @@ if (key_map.is_down && !key_map.down) {
 
   var key_para  = { t:t }
 
+// check if the upcoming motion change is .motion_command_disabled
+if (MMD_SA._force_motion_shuffle) DEBUG_show(Date.now())
+  var motion_command_disabled = para_SA.motion_command_disabled
+  if (TPS_mode && !motion_command_disabled && MMD_SA._force_motion_shuffle && MMD_SA_options.motion_shuffle_list_default) {
+    motion_command_disabled = MMD_SA.motion[MMD_SA_options.motion_shuffle_list_default[0]].para_SA.motion_command_disabled
+DEBUG_show(MMD_SA_options.motion_shuffle_list_default[0]+'/'+Date.now())
+  }
+
   var PC = { obj:c, mass:c.mass }
   var key_used = {}
   var any_key_down
@@ -6360,7 +6374,8 @@ key_para.pressed = _k.pressed
       }
 
       if (!motion_duration || (t2 < motion_duration)) {
-        TPS_mode_in_action = (key_map_by_mode == key_map.TPS_mode)
+// not sure if it may be better to use a local variable (let _TPS_mode_in_action) here
+        TPS_mode_in_action = TPS_mode_in_action || (key_map_by_mode == key_map.TPS_mode)
 
         if (key_map_by_mode.mov_speed) {
           let _mov = (mov) ? _movement_v3.copy(mov) : null
@@ -6408,6 +6423,7 @@ key_para.pressed = _k.pressed
                 rot.y = cy + r_max * ((r_diff>0)?-1:1)
               }
             }
+//DEBUG_show(rot.y*180/Math.PI+'\n'+TPS_camera_ry*180/Math.PI+'\n'+Date.now())
           }
 // case: no rotation from mov
           else if (key_map_by_mode.no_rotation) {
@@ -6544,7 +6560,7 @@ use_rot_camera = true
     c.rot.copy(rot_self)
     model.mesh.quaternion.setFromEuler(rot_self)
   }
-
+//if (rot) DEBUG_show(rot.y*180/Math.PI+'\n'+c.rot.y*180/Math.PI+'\n'+TPS_mode_in_action+'\n'+(d.key_map_list.map(function(k){return((k.down)?k.id:0)}))+'\n'+para_SA._path+'\n'+Date.now())
   if (!use_rot_camera && (mov || rot))
     rot_camera.ini_count = 0
 
@@ -6928,15 +6944,17 @@ MMD_SA._force_motion_shuffle = true
   var update_dungeon_blocks
   if (mov || rot) {
     c.pos_update()
-    var mov_camera
+    let _mov_camera
     if (mov) {
-      mov_camera = _v3a.copy(mov.add(movement_extra_v3))
-      mov_camera.y += camera_y_offset
-      mov_camera = [mov_camera, mov]
+      _mov_camera = _v3a.copy(mov.add(movement_extra_v3))
+      _mov_camera.y += camera_y_offset
+      _mov_camera = [_mov_camera, mov]
     }
-    MMD_SA._trackball_camera.SA_adjust(mov_camera, ((TPS_mode_in_action && !TPS_camera_lookAt) ? null : (rot_camera.enabled && rot && rot_camera.v3.negate().add(rot))||rot))
-    if (rot_camera.enabled && rot)
+    let _rot_camera = ((TPS_mode_in_action && !TPS_camera_lookAt) ? null : (rot_camera.enabled && rot && rot_camera.v3.negate().add(rot))||rot)
+    MMD_SA._trackball_camera.SA_adjust(_mov_camera, _rot_camera)
+    if (rot_camera.enabled && rot) {
       rot_camera.v3.copy(rot)
+    }
     update_dungeon_blocks = true
   }
   else {
@@ -9178,6 +9196,20 @@ for (var name in this.motion) {
 // NPC-only combat motion (define .duration to prevent looping)
       if (para.duration_NPC && !para.duration && !para.motion_duration)
         para.duration = para.duration_NPC + 10
+      let xz = ["x","z"]
+      para.combat_para.forEach(function (p) {
+        if (p.bb_expand) {
+          xz.forEach(function (_xz) {
+            p.bb_expand[_xz] = (1+p.bb_expand[_xz])/_bb_xz_factor_ - 1
+          });
+        }
+        if (p.bb_translate) {
+          xz.forEach(function (_xz) {
+            if (p.bb_translate[_xz])
+              p.bb_translate[_xz] = p.bb_translate[_xz]/_bb_xz_factor_
+          });
+        }
+      });
     }
     MMD_SA_options.motion_para[motion.name] = para
   }
@@ -9766,7 +9798,6 @@ if (this.is_down) {
     MMD_SA_options._motion_shuffle_list_default = MMD_SA_options.motion_shuffle_list_default.slice()
     d.key_map_swap(d.key_map_parry)
     MMD_SA._force_motion_shuffle = true
-
 //    MMD_SA.reset_camera()
   }
 }

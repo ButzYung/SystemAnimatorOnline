@@ -2215,7 +2215,7 @@ if ((v.texture >= 0) && !MMD_SA.use_webgl2) {
 if (self.MMD_SA && MMD_SA_options.Dungeon && (!model_para.is_object && !model_para.use_default_boundingBox)) {
 // save some headaches by setting xz center as (0,0), with equal xz size (z no bigger than x)
   var _v3 = geo.boundingBox.size()
-  var _xz = (_v3.x + ((_v3.z > _v3.x) ? _v3.x : _v3.z))*0.5 *0.5
+  var _xz = (_v3.x + ((_v3.z > _v3.x) ? _v3.x : _v3.z))*0.5 *0.5 *(MMD_SA_options.Dungeon._bb_xz_factor_||1)
   geo.boundingBox.min.x = geo.boundingBox.min.z = -_xz
   geo.boundingBox.max.x = geo.boundingBox.max.z =  _xz
 
