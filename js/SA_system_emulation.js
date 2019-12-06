@@ -2463,7 +2463,7 @@ switch (key) {
   case "/":
     keyCode = 111
     break
-  case "E":
+  case "⏎":
     keyCode = 13
     break
   case "J":
@@ -2477,6 +2477,9 @@ switch (key) {
     break
   case "←":
     keyCode = 37
+    break
+  case "→":
+    keyCode = 39
     break
   default:
     keyCode = parseInt(key) + 96
