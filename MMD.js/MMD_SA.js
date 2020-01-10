@@ -4400,6 +4400,10 @@ if (RAF_timerID) {
   RAF_timerID = null
 }
 
+if (1) {
+  document.getElementById("Lnumpad").requestFullscreen()
+}
+
 session.requestAnimationFrame(xr.onARFrame);
   }
 
