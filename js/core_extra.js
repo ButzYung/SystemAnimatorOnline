@@ -123,6 +123,9 @@ function SA_load_scripts() {
 // settings from localStorage
     var Settings_default_by_path, Settings_by_path, update_LS
     if (WallpaperEngine_CEF_mode) {
+// reset corrupted config
+//localStorage.Settings_default_by_path=""
+//localStorage.Settings_by_path=""
       Settings_default_by_path = localStorage.Settings_default_by_path
       update_LS = false
       if (Settings_default_by_path)
