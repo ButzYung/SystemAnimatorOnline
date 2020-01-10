@@ -22,7 +22,7 @@ var Setting_name_list = [
   "Use3DBloomPostProcessBlurSize", "Use3DBloomPostProcessThreshold", "Use3DBloomPostProcessIntensity",
   "MMDLightColor", "MMDLightPosition", "MMDShadow", "MMDEdgeScale",
   "CSSTransformScale", "CSSTransformRotate", "CSSTransform3D", "CSSTransform3DBoxAnimate",
-  "BDSpectrumToBeat", "BDScale", "BDOpacity", "BDBassKick"
+  "BDSpectrumToBeat", "BDScale", "BDDecay", "BDOpacity", "BDBassKick"
 ]
 var Setting_name_list_boolean = [
   "ReverseAnimation", "UseFilters", "UseMarkers", "UseImgCache", "UseFullFrameRate", "Use30FPS", "Use60FPS", "IgnoreMouseEvents", "IgnoreMouseEventsPartial",
@@ -76,6 +76,7 @@ var Settings_default = {
   ,EnableMotionEffectForAnimatedPicture: false
   ,EnableMotionEffectForSEQVideo: true
   ,BDScale: "1"
+  ,BDDecay: "1"
   ,BDOpacity: "1"
   ,BDBassKick: "1"
 
