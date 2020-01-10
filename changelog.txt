@@ -2,6 +2,44 @@ System Animator - Changelog
 
 -------------------------------
 
+v10.9.1.0
+
+- Add "Decay" option in settings for audio-beat-driven animation.
+
+-------------------------------
+
+v10.9.0.0
+
+- This is a major update for System Animator 10, with many existing features improved and major bug fixes during the development of the WIP System Animator 11.
+
+- This is also a major update for Electron (v1 => v7). Please make sure that you use at least Electron v7 as older versions of Electron may not work on this version of System Animator.
+
+- Add support for 60fps animation (mainly for MMD).
+
+- Add support for loading files from ZIP directly (mainly for MMD).
+
+- Update MMD physics to run in web worker, which improves frame rate for animation with complex physics.
+
+- Update MMD speech bubble to use sprite with a fixed angle to the screen.
+
+- Fix many bugs in MMD mode.
+
+- Add support for monochrome video effect overlay.
+
+- Canvas 2D no longer uses WebGL to render by default (unless some specific features are needed), which should improve performance.
+
+- Update some button icons to use unicode characters instead of images.
+
+- XUL mode and HTA mode are deprecated.
+
+-------------------------------
+
+v10.7.2.0
+
+- Fix a bug related to shadow map
+
+-------------------------------
+
 v10.7.1.0
 
 - Add "Custom wallpaper" and "Custom wallpaper mask" options.
