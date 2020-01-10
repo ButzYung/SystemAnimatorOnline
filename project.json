@@ -527,7 +527,28 @@
         "type" : "bool",
         "value" : false
       }
-
+     ,"SA_canvas_effect_motion_blur_decay" : 
+      {
+        "order" : 225,
+        "condition" : "SA_canvas_effect_motion_blur.value == true",
+        "options": [
+        {
+          "label": "Fast",
+          "value": 2
+        },
+        {
+          "label": "Normal",
+          "value": 1
+        },
+        {
+          "label": "Slow",
+          "value": 0
+        }
+        ],
+        "text" : "- Decay speed",
+        "type": "combo",
+        "value" : 1
+      }
 
      ,"SPACE299":
       {

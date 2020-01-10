@@ -1,4 +1,4 @@
-// Settings WE (v1.0.5)
+// Settings WE (v1.1.1)
 
 window.wallpaperPropertyListener = (function () {
 
@@ -359,8 +359,33 @@ delay_exec("SA_canvas_effect_fireworks_start_x", function () {
 });
     }
 
+   ,"SA_canvas_effect_fireworks_bullet_shell_per_frame": function (v) {
+if (!use_EQP_fireworks)
+  return
+
+delay_exec("SA_canvas_effect_fireworks_bullet_shell_per_frame", function () {
+  EQP_Fireworks._new_particles_per_update = parseInt(v)
+});
+    }
+
+   ,"SA_canvas_effect_fireworks_bullet_shell_by_beat": function (v) {
+if (!use_EQP_fireworks)
+  return
+
+delay_exec("SA_canvas_effect_fireworks_bullet_shell_by_beat", function () {
+  EQP_Fireworks._by_beat = !!v
+});
+    }
+
    ,"SA_canvas_effect_motion_blur": function (v) {
 setSettingsDefault(v, "SA_canvas_effect_motion_blur", "EnableMotionEffectForAnimatedPicture")
+    }
+
+   ,"SA_canvas_effect_motion_blur_decay": function (v) {
+if (loaded)
+  Settings.BDDecay = v
+else
+  setSettingsDefault(v, "SA_canvas_effect_motion_blur_decay", "BDDecay")
     }
 
 
