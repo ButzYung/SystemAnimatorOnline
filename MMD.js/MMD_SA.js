@@ -4401,7 +4401,9 @@ if (RAF_timerID) {
 }
 
 if (1) {
-  document.getElementById("Lnumpad").requestFullscreen()
+//  document.getElementById("Lnumpad").requestFullscreen()
+  document.getElementById("LdesktopBG_host").style.visibility = "hidden"
+  document.getElementById("SL_Host_Parent").style.visibility = "hidden"
 }
 
 session.requestAnimationFrame(xr.onARFrame);
