@@ -112,6 +112,7 @@ function loadBD() {
   var state = EnableBeatDetection.checked
   toggleElement(L_EnableMotionEffect, state)
   toggleElement(L_BDScale, state)
+  toggleElement(L_BDDecay, state)
   toggleElement(L_BDOpacity, state)
   toggleElement(L_BDBassKick, state)
 }
@@ -404,6 +405,10 @@ System.Gadget.onSettingsClosing = SettingsClosing;
   if (!v)
     v = Settings_default.BDScale
   document.getElementById("BDScale" + v).checked = true
+  v = System.Gadget.Settings.readString("BDDecay")
+  if (!v)
+    v = Settings_default.BDDecay
+  document.getElementById("BDDecay" + v).checked = true
   v = System.Gadget.Settings.readString("BDOpacity")
   if (!v)
     v = Settings_default.BDOpacity
@@ -780,6 +785,13 @@ if (use_SA_system_emulation && (!v || /^demo/.test(v))) {
       var d = document.getElementById("BDScale" + i)
       if (d.checked) {
         System.Gadget.Settings.writeString("BDScale", i)
+        break
+      }
+    }
+    for (var i = 0; i < 3; i++) {
+      var d = document.getElementById("BDDecay" + i)
+      if (d.checked) {
+        System.Gadget.Settings.writeString("BDDecay", i)
         break
       }
     }
@@ -2495,6 +2507,12 @@ Edge scale <a href="#" onclick="return false" title="Change the edge scale for M
 		<td width="26%" align="left"><label id="L_BDScale1_TEXT" for="BDScale1"><input name="BDScale" id="BDScale1" type="radio" />medium</label></td>
 		<td width="26%" align="left"><label id="L_BDScale0_TEXT" for="BDScale0"><input name="BDScale" id="BDScale0" type="radio" />small</label></td>
 	<tr>
+	<tr id="L_BDDecay">
+		<td width="22%" align="right">Decay:</td>
+		<td width="26%" align="left"><label id="L_BDDecay2_TEXT" for="BDDecay2"><input name="BDDecay" id="BDDecay2" type="radio" />fast</label></td>
+		<td width="26%" align="left"><label id="L_BDDecay1_TEXT" for="BDDecay1"><input name="BDDecay" id="BDDecay1" type="radio" />normal</label></td>
+		<td width="26%" align="left"><label id="L_BDDecay0_TEXT" for="BDDecay0"><input name="BDDecay" id="BDDecay0" type="radio" />slow</label></td>
+	<tr>
 	<tr id="L_BDOpacity">
 		<td width="22%" align="right">Opacity:</td>
 		<td width="26%" align="left"><label id="L_BDOpacity2_TEXT" for="BDOpacity2"><input name="BDOpacity" id="BDOpacity2" type="radio" />high</label></td>
@@ -2806,11 +2824,12 @@ function createAnimationHost() {
 		<tr>
 			<td>&nbsp;</td>
 			<td style="padding-top:4px">
-<h5>Copyright/License:</h5>
+<h5>Copyright/License <a href="#" onclick="System.Shell.execute(System.Gadget.path + '\\readme.txt'); return false">(latest version)</a>:</h5>
 <ul>
 <li>System Animator &#169; <a href="http://www.animetheme.com/sidebar/" target="_blank">Butz Yung/Anime Theme</a>
 <ul>
-<li>License - <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank"><img alt="Creative Commons License" style="border-width:0" align="absmiddle" src="images/cc4-by-nc-sa-80x15.png" /></a></li>
+<li>License - <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank"><img alt="Creative Commons License" style="border-width:0" align="absmiddle" src="images/cc4-by-nc-sa-80x15.png" /></a> (*)
+<br/>(*) - System Animator's license does NOT cover any third-party assets which may have incompatible licenses of their own.</li>
 <li><a href="#" onclick="System.Shell.execute(System.Gadget.path + '\\docs\\disclaimer.txt'); return false">Disclaimer</a></li>
 </ul>
 </li>
@@ -2818,7 +2837,9 @@ function createAnimationHost() {
 
 <ul>
 <li><a href="http://electron.atom.io/" target="_blank">Electron</a></li>
-<li><a href="https://github.com/GrimoireGL/GrimoireJS" target="_blank">jThree</a></li>
+<li><a href="https://threejs.org/" target="_blank">three.js</a></li>
+<li><a href="https://github.com/GrimoireGL/GrimoireJS" target="_blank">jThree v2</a> (now known as "Grimoire.js")</li>
+<li><a href="https://stuk.github.io/jszip/" target="_blank">JSZip</a> (used under MIT license)</li>
 <li>"Appearance Miku" 3D Model <a href="#" onclick="System.Shell.execute(System.Gadget.path + '\\jThree\\model\\Appearance Miku\\Readme.txt'); return false">(readme/license)</a></li>
 <li>Various 3D background effects ported and modified from codes found on <a href="https://www.shadertoy.com/" target="_blank">Shadertoy</a></li>
 <li>For some third-party programming libraries/3D data/etc used in System Animator, please refer to the corresponding script/readme for license and terms.</li>

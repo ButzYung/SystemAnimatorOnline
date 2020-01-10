@@ -1489,6 +1489,9 @@ function loadMain() {
   Settings.BDScale = System.Gadget.Settings.readString("BDScale")
   if (!Settings.BDScale)
     Settings.BDScale = Settings_default.BDScale
+  Settings.BDDecay = System.Gadget.Settings.readString("BDDecay")
+  if (!Settings.BDDecay)
+    Settings.BDDecay =  Settings_default.BDDecay
   Settings.BDOpacity = System.Gadget.Settings.readString("BDOpacity")
   if (!Settings.BDOpacity)
     Settings.BDOpacity =  Settings_default.BDOpacity
@@ -1498,6 +1501,7 @@ function loadMain() {
 
   Settings.BDSpectrumToBeat = parseInt(Settings.BDSpectrumToBeat)
   Settings.BDScale    = parseInt(Settings.BDScale)
+  Settings.BDDecay    = parseInt(Settings.BDDecay)
   Settings.BDOpacity  = parseInt(Settings.BDOpacity)
   Settings.BDBassKick = parseInt(Settings.BDBassKick)
 
@@ -3536,9 +3540,10 @@ if (EV_usage_sub) {
     BD_obj.beat = beat
 //EV_sync_update.fps_count_func()
     for (var m = 1; m <= 2; m++) {
-      var mod = (use_full_fps) ? 1/(m*(EV_sync_update.count_to_10fps_/2)) : 1/m
-      var beat_last = EV_sync_update["_beat_last"+m]
-      BD_obj["beat"+m] = EV_sync_update["_beat_last"+m] = (beat < beat_last - mod) ? beat_last - mod : beat
+      var mod = (use_full_fps) ? 1/(m*(EV_sync_update.count_to_10fps_/2)) : 1/m;
+      mod *= (Settings.BDDecay == 2) ? 1 : ((Settings.BDDecay == 1) ? 0.5 : 0.25);
+      var beat_last = EV_sync_update["_beat_last"+m];
+      BD_obj["beat"+m] = EV_sync_update["_beat_last"+m] = (beat < beat_last - mod) ? beat_last - mod : beat;
     }
   }
   else
