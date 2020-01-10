@@ -805,7 +805,7 @@ for (var i = 0; i < 5; i++)
 for (var i = 0; i < 5; i++)
   MMD_SA_options.motion.push({path:'MMD.js/motion/motion_basic_pack01.zip#/_number_meter_' + (i+1) + '.vmd', jThree_para:{}, match:{skin_jThree:/^(\u53F3)(\u80A9|\u8155|\u3072\u3058|\u624B\u9996|\u624B\u6369|.\u6307.)/}})
 
-var use_startup_screen = true//(MMD_SA_options.Dungeon && (MMD_SA_options.startup_screen !== false)) || !!MMD_SA_options.startup_screen;//(MMD_SA_options.startup_screen !== false);//
+var use_startup_screen = true//(MMD_SA_options.Dungeon || (browser_native_mode && !webkit_window)) ? (MMD_SA_options.startup_screen !== false) : !!MMD_SA_options.startup_screen;
 if (use_startup_screen) {
   if (!MMD_SA_options.startup_screen)
     MMD_SA_options.startup_screen = {}
@@ -4263,7 +4263,7 @@ if (this.session) {
 }
 
 try {
-  const session = await navigator.xr.requestSession('immersive-ar');
+  const session = await navigator.xr.requestSession('immersive-ar', {optionalFeatures: ["dom-overlay-for-handheld-ar"]});
 
   this.onSessionStart(session)
 }
@@ -5684,8 +5684,10 @@ console.log("three.core.min.js")
     );
   }
   else {
+    let XMLHttpRequestZIP_path = ((localhost_mode || (webkit_electron_mode && FSO_OBJ.FileExists(System.Gadget.path + "/_private/js/XMLHttpRequestZIP.js"))) ? "_private/js/XMLHttpRequestZIP.js" : "js/XMLHttpRequestZIP_.js");
+    console.log(XMLHttpRequestZIP_path)
     js.push(
-  ((localhost_mode || webkit_electron_mode) ? "_private/js/XMLHttpRequestZIP.js" : "js/XMLHttpRequestZIP_.js")
+  XMLHttpRequestZIP_path
  ,"js/jszip.js"
 
  ,"jThree/script/"+js_prefix+"jThree.js"
