@@ -655,7 +655,7 @@ return obj
 // (fixed in latest Chromium(?)) in the case of WebKit, some alpha and composition operations do not work properly when dealing with video object directly
 // in the case of WebM, canavs dummy is used to cache the previous video frame, so that it can be used while the video is being seeked (to prevent blinking)
 function _v_(v, w,h) {
-  if (!w3c_mode || (v.tagName != 'VIDEO') || !/\.webm$/.test(v.src))
+  if ((!self.CANVAS_Video_Overlay || !CANVAS_Video_Overlay.monochrome) && (!w3c_mode || (v.tagName != 'VIDEO') || !/\.webm$/.test(v.src)))
     return v
 
   var v_dummy = CANVAS_obj._video_dummy
@@ -664,7 +664,7 @@ function _v_(v, w,h) {
   }
 
   if (v.seeking) {
-    console.log("(WebM frame restored during seeking)")
+//    console.log("(WebM frame restored during seeking)")
     return v_dummy
   }
 
@@ -675,9 +675,16 @@ function _v_(v, w,h) {
   v_dummy.width  = w
   v_dummy.height = h
 
-  var context = v_dummy.getContext("2d")
-  context.globalCompositeOperation = 'copy'
-  context.drawImage(v, 0,0,w,h)
+  var ctx = v_dummy.getContext("2d")
+  if (self.CANVAS_Video_Overlay && CANVAS_Video_Overlay.monochrome) {
+    ctx.fillStyle = 'white'
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalCompositeOperation = 'luminosity';
+  }
+  else {
+    ctx.globalCompositeOperation = 'copy'
+  }
+  ctx.drawImage(v, 0,0,w,h)
 
   return v_dummy
 
