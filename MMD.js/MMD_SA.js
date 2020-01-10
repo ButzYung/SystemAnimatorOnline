@@ -4404,6 +4404,19 @@ if (1) {
 //  document.getElementById("Lnumpad").requestFullscreen()
   document.getElementById("LdesktopBG_host").style.visibility = "hidden"
   document.getElementById("SL_Host_Parent").style.visibility = "hidden"
+
+  document.body.addEventListener("dblclick", function (e) {
+    e.stopPropagation();
+    e.preventDefault();
+//DEBUG_show(Date.now())
+
+//SA_AR_dblclick
+    var result = { return_value:null }
+    window.dispatchEvent(new CustomEvent("SA_AR_dblclick", { detail:{ e:e, result:result } }));
+    if (result.return_value) {
+      return
+    }
+  }, true);
 }
 
 session.requestAnimationFrame(xr.onARFrame);
