@@ -36,12 +36,23 @@ return this.active_window.IPC
     }
 
    ,ipcRenderer_DragDrop: function (event, path) {
-  var item = new System.Shell._FolderItem(new WebKit_object["Shell.Application"]._FolderItem({path:path}))
+if (/\.zip/i.test(path)) {
+  let xhr = new XMLHttpRequestZIP;
+  xhr.onload = function () {
+    SA_DragDropEMU(new File([this.response], path))
+  };
+  xhr.open("GET", toFileProtocol(path), true);
+  xhr.responseType = "blob";
+  xhr.send();
+}
+else {
+  let item = new System.Shell._FolderItem(new WebKit_object["Shell.Application"]._FolderItem({path:path}))
 
   if (DragDrop.validate_func(item))
     DragDrop.onDrop_finish(item)
   else
     DEBUG_show("(Unsupported file type)", 5)
+}
     }
 
    ,ipcRenderer_capturePage: function (event, message) {
