@@ -4281,6 +4281,19 @@ catch (err) {
  ,hits_searching: false
  ,hit_found: false
 
+ ,DOM_event_dblclick: function (e) {
+    e.stopPropagation();
+    e.preventDefault();
+//DEBUG_show(Date.now())
+
+//SA_AR_dblclick
+    var result = { return_value:null }
+    window.dispatchEvent(new CustomEvent("SA_AR_dblclick", { detail:{ e:e, result:result } }));
+    if (result.return_value) {
+      return
+    }
+  }
+
  ,onSessionStart: async function (session) {
 this.session = session
 session.addEventListener('end', this.onSessionEnd);
@@ -4401,22 +4414,10 @@ if (RAF_timerID) {
 }
 
 if (1) {
-//  document.getElementById("Lnumpad").requestFullscreen()
   document.getElementById("LdesktopBG_host").style.visibility = "hidden"
   document.getElementById("SL_Host_Parent").style.visibility = "hidden"
 
-  document.body.addEventListener("dblclick", function (e) {
-    e.stopPropagation();
-    e.preventDefault();
-//DEBUG_show(Date.now())
-
-//SA_AR_dblclick
-    var result = { return_value:null }
-    window.dispatchEvent(new CustomEvent("SA_AR_dblclick", { detail:{ e:e, result:result } }));
-    if (result.return_value) {
-      return
-    }
-  }, true);
+  document.body.addEventListener("dblclick", this.DOM_event_dblclick, true);
 }
 
 session.requestAnimationFrame(xr.onARFrame);
@@ -4456,6 +4457,13 @@ this.camera.matrixAutoUpdate = true
 
 EV_sync_update.requestAnimationFrame_auto = true
 RAF_timerID = requestAnimationFrame(Animate_RAF)
+
+if (1) {
+  document.getElementById("LdesktopBG_host").style.visibility = "inherit"
+  document.getElementById("SL_Host_Parent").style.visibility = "inherit"
+
+  document.body.removeEventListener("dblclick", this.DOM_event_dblclick, true);
+}
 
 this.renderer.device_framebuffer = null;
 window.dispatchEvent(new Event('resize'));
