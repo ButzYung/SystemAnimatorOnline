@@ -834,7 +834,7 @@ function SA_DragDropEMU(file) {
 //if (file) DEBUG_show(file.constructor,0,1)
 //DEBUG_show(self.URL.createObjectURL(file),0,1)
   var is_file = (typeof file != "string")
-  var item = (is_file) ? new System.Shell._FolderItem(new WebKit_object["Shell.Application"]._FolderItem({path:(webkit_electron_mode)?file.path:file.name, file:file})) : System.Shell.itemFromPath(file)
+  var item = (is_file) ? new System.Shell._FolderItem(new WebKit_object["Shell.Application"]._FolderItem({path:(webkit_electron_mode&&file.path)||file.name, file:file})) : System.Shell.itemFromPath(file)
 //console.log(item)
   if (/*WallpaperEngine_CEF_mode && */is_file) {// && DragDrop._obj_url_RE && DragDrop._obj_url_RE.test(file.name)) {
 console.log("File input:", file)
