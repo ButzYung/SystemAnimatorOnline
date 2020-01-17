@@ -409,7 +409,7 @@ DragDrop.onDrop_finish = function (item) {
 //DEBUG_show(toFileProtocol(src))
     if (!MMD_SA.jThree_ready) return;
 
-    var zip_file = top.DragDrop._path_to_obj[src]
+    var zip_file = top.DragDrop._path_to_obj[src.replace(/^(.+)[\/\\]/, "")]
 
 new self.JSZip().loadAsync(zip_file)
 .then(function (zip) {
