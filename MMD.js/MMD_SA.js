@@ -4449,7 +4449,6 @@ MMD_SA.scene.__objects.forEach(function (obj, idx) {
   };
   if (obj.visible)
     obj.visible = false
-if (obj == xr.reticle) DEBUG_show(9,0,1)
 });
 
 let ao = SL_MC_video_obj && SL_MC_video_obj.vo && SL_MC_video_obj.vo.audio_obj;
@@ -4491,7 +4490,6 @@ this.hits_searching = false
 this.hit_found = false
 this.hitMatrix = null
 this.hitMatrix_decomposed = null
-this.reticle.visible = false
 
 this.input_event = { inputSources:[] }
 
@@ -4500,6 +4498,7 @@ this.center_pos = null
 if (!THREE.MMD.getModels()[0].mesh.visible)
   this.restore_scene()
 this.XR_objects_by_id = null
+this.reticle.visible = false
 
 MMD_SA.reset_camera()
 MMD_SA._trackball_camera.enabled = true
