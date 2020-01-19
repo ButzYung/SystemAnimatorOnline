@@ -4426,9 +4426,20 @@ if (!this.reticle) {
 
   MMD_SA.scene.add(this.reticle)
   this.reticle.scale.set(10,10,10)
+
+  Object.defineProperty(this.reticle, "visible", {
+    get: function () {
+return this._visible_;
+    }
+
+   ,set: function (v) {
+this._visible_ = reticle0.visible = v
+if (xr.ground_plane)
+  xr.ground_plane.visible = !v
+    }
+  });
 }
 this.reticle.visible = false
-
 
 MMD_SA.reset_camera()
 MMD_SA._trackball_camera.enabled = false
@@ -4490,6 +4501,7 @@ this.hits_searching = false
 this.hit_found = false
 this.hitMatrix = null
 this.hitMatrix_decomposed = null
+this.reticle.visible = false
 
 this.input_event = { inputSources:[] }
 
@@ -4498,7 +4510,6 @@ this.center_pos = null
 if (!THREE.MMD.getModels()[0].mesh.visible)
   this.restore_scene()
 this.XR_objects_by_id = null
-this.reticle.visible = false
 
 MMD_SA.reset_camera()
 MMD_SA._trackball_camera.enabled = true

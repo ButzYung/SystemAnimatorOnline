@@ -319,7 +319,7 @@ tex.needsUpdate = true
 */
 let material = new THREE.MeshBasicMaterial({ color: 0x000000, transparent:false });
 geometry.applyMatrix(new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(-90)));
-let ground = new THREE.Mesh(geometry, material);
+let ground = MMD_SA.WebXR.ground_plane = new THREE.Mesh(geometry, material);
 ground.receiveShadow = true;
 ground.receiveShadowAlpha = true;
 MMD_SA.scene.add(ground)
