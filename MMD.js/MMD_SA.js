@@ -407,7 +407,7 @@ DragDrop.onDrop_finish = function (item) {
   var src = item.path
   if (item.isFileSystem && /([^\/\\]+)\.zip$/i.test(src)) {
 //DEBUG_show(toFileProtocol(src))
-    if (!MMD_SA.jThree_ready) return;
+//    if (!MMD_SA.jThree_ready) return;
 
     var zip_file = top.DragDrop._path_to_obj[src.replace(/^(.+)[\/\\]/, "")]
 
@@ -422,18 +422,43 @@ new self.JSZip().loadAsync(zip_file)
   var files_added
   var music_list = zip.file(/[^\/\\]+.(mp3|wav|aac)$/i)
   if (music_list.length) {
-    music_list.slice(0,10).forEach(function (music, idx) {
+    if (!MMD_SA_options.motion_by_song_name)
+      MMD_SA_options.motion_by_song_name = {}
+
+    let keys_used = []
+    for (let music_filename in MMD_SA_options.motion_by_song_name) {
+      let k = MMD_SA_options.motion_by_song_name[music_filename].key
+      if (k)
+        keys_used.push(k)
+    }
+
+    let keys_available = []
+    for (let i = 1; i <= 9; i++) {
+      if (keys_used.indexOf(i) == -1)
+        keys_available.push(i)
+    } 
+
+    keys_used = []
+    music_list.slice(0,keys_available.length).forEach(function (music) {
       var music_filename = music.name.replace(/^.+[\/\\]/, "").replace(/\.\w+$/, "")
 //DEBUG_show(music_filename,0,1)
       var vmd = zip.file(new RegExp(toRegExp(music_filename)+"\\.vmd"))
-      if (vmd) {
+      if (vmd.length) {
         files_added = true
-        if (!MMD_SA_options.motion_by_song_name)
-          MMD_SA_options.motion_by_song_name = {}
+        let k = keys_available.shift()
+        keys_used.push(k)
+
+        let morph_vmd = zip.file(new RegExp(toRegExp(music_filename)+"_morph\\.vmd"))
+        if (morph_vmd.length) {
+          let para_SA = MMD_SA_options.motion_para[music_filename] = MMD_SA_options.motion_para[music_filename] || {}
+          if (!para_SA.morph_component_by_filename)
+            para_SA.morph_component_by_filename = music_filename + "_morph"
+        }
+
         MMD_SA_options.motion_by_song_name[music_filename] = {
   motion_path: (src + "#/" + vmd[0].name)
  ,song_path: (src + "#/" + music.name)
- ,key:(idx+1)
+ ,key: k
         };
 //console.log(toFileProtocol(src + "#/" + vmd[0].name))
 //        MMD_SA_options.motion.push({ must_load:true, no_shuffle:true, path:toFileProtocol(src + "#/" + vmd[0].name) })
@@ -441,8 +466,10 @@ new self.JSZip().loadAsync(zip_file)
     });
 
     if (files_added)
-      DEBUG_show("(music/motion list updated)", 2)
+      DEBUG_show("Music/Motion list updated (" + keys_used.join(",") + ")", 2)
   }
+
+  if (!MMD_SA.jThree_ready) return;
 
   var pmx_list = zip.file(/\.pmx$/i)
   if (!pmx_list.length) {
@@ -637,6 +664,7 @@ else
     var motion_by_song_name = MMD_SA_options.motion_by_song_name && MMD_SA_options.motion_by_song_name[filename]
     if (motion_by_song_name) {
       vo.motion_by_song_name_mode = true
+      MMD_SA.playbackRate = 0
     }
     else {
       vo.motion_by_song_name_mode = false
@@ -683,8 +711,10 @@ if (ao._timed || !this.currentTime)
   return
 //DEBUG_show(!!MMD_SA._force_motion_shuffle,0,1)
 ao._timed = true
-if (vo.motion_by_song_name_mode)
+if (vo.motion_by_song_name_mode) {
+  MMD_SA.playbackRate = 1
   MMD_SA.seek_motion(this.currentTime)
+}
 //var _t = THREE.MMD.getModels()[0].skin.time; DEBUG_show(_t+'/'+this.currentTime,0,1);
 DEBUG_show('Audio:START(' + (parseInt(this.currentTime*1000)/1000) + 's)', 2)
         }
@@ -1483,6 +1513,8 @@ if (name_old) {
 //DEBUG_show(name_old,0,1)
 }
 
+var model = THREE.MMD.getModels()[0]
+
 function _finalize() {
   MMD_SA_options.motion_index_by_name[name_new] = index
   var m = MMD_SA_options.motion[index] = { path:src }
@@ -1504,13 +1536,15 @@ function _finalize() {
   }
 }
 
-if (MMD_SA.vmd_by_filename[name_new]) {
-  _finalize()
-}
-else {
-  var model = THREE.MMD.getModels()[0]
+function _vmd(vmd_morph) {
   model._VMD(toFileProtocol(src), function( vmd ) {
     vmd._index = MMD_SA.motion_index_for_external
+
+    if (vmd_morph) {
+      vmd._morph_component = vmd_morph
+      vmd._morph_component.url = vmd.url
+    }
+
     model._MMD_SA_cache[src] = model.setupMotion_MMD_SA(vmd)
 
     for (var i = 1, i_max = MMD_SA_options.model_para_obj_all.length; i < i_max; i++) {
@@ -1523,6 +1557,21 @@ else {
 
     _finalize()
   });
+}
+
+if (MMD_SA.vmd_by_filename[name_new]) {
+  _finalize()
+}
+else {
+  let para_SA = MMD_SA_options.motion_para[name_new] = MMD_SA_options.motion_para[name_new] || {}
+  if (para_SA.morph_component_by_filename) {
+    model._VMD(toFileProtocol(src.replace(/[^\/\\]+$/, "")) + para_SA.morph_component_by_filename + ".vmd", function( vmd ) {
+      _vmd(vmd)
+    });
+  }
+  else {
+    _vmd()
+  }
 }
   }
 
@@ -4400,6 +4449,7 @@ MMD_SA.scene.__objects.forEach(function (obj, idx) {
   };
   if (obj.visible)
     obj.visible = false
+if (obj == xr.reticle) DEBUG_show(9,0,1)
 });
 
 let ao = SL_MC_video_obj && SL_MC_video_obj.vo && SL_MC_video_obj.vo.audio_obj;
