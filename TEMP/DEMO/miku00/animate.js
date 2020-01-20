@@ -298,7 +298,38 @@ setTimeout(function () {MMD_SA.SpeechBubble.message(0, ((WallpaperEngine_mode) ?
   }
 
  ,WebXR: {
-    AR: {}
+    AR: {
+      onwallhit: function (e) {
+var model_mesh = THREE.MMD.getModels()[0].mesh
+if (!model_mesh.visible) {
+  DEBUG_show("(Place the model on the ground first.)", 3)
+  return
+}
+
+var xr = MMD_SA.WebXR
+MMD_SA.TEMP_v3.setEulerFromQuaternion(xr.hitMatrix_decomposed[1])
+
+let pos0 = new THREE.Vector3().copy(xr.hitMatrix_decomposed[0]).setY(xr.hit_ground_y).multiplyScalar(10);
+xr.center_pos = model_mesh.position.clone().setY(0).sub(pos0)
+
+MMD_SA.TEMP_v3.z -= Math.PI/2
+MMD_SA.TEMP_v3.y -= Math.PI/2
+model_mesh.quaternion.setFromEuler(MMD_SA.TEMP_v3)
+
+MMD_SA_options.motion_shuffle_list_default = [30]
+MMD_SA._force_motion_shuffle = true
+      }
+
+     ,ongroundhit: function (e) {
+var model_mesh = THREE.MMD.getModels()[0].mesh
+model_mesh.position.y = 0
+
+if (MMD_SA_options.motion_shuffle_list_default[0] != 0) {
+  MMD_SA_options.motion_shuffle_list_default = [0]
+  MMD_SA._force_motion_shuffle = true
+}
+      }
+    }
   }
 
  ,light_position: [0,1,0]

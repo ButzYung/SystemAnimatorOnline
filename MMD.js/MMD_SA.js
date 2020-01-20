@@ -4264,19 +4264,36 @@ return drop_list
 
     window.addEventListener("SA_AR_dblclick", function (e) {
 if (xr.reticle.visible) {
-  MMD_SA.TEMP_v3.setEulerFromQuaternion(xr.hitMatrix_decomposed[1])
-  DEBUG_show(MMD_SA.TEMP_v3.multiplyScalar(180/Math.PI).toArray().join("\n")+"\n"+xr.hitMatrix_decomposed[0].y)
-
-  xr.hit_found = true
-  xr.reticle.visible = false
+  e.detail.result.return_value = true
 
   let model_mesh = THREE.MMD.getModels()[0].mesh
 
-  let pos0 = new THREE.Vector3().copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10);
-  let center_pos_old = (xr.center_pos && xr.center_pos.clone()) || new THREE.Vector3();
-  xr.center_pos = model_mesh.position.clone().sub(pos0)
+  MMD_SA.TEMP_v3.setEulerFromQuaternion(xr.hitMatrix_decomposed[1])
+//  DEBUG_show(MMD_SA.TEMP_v3.multiplyScalar(180/Math.PI).toArray().join("\n")+"\n"+xr.hitMatrix_decomposed[0].y)
+  if (MMD_SA.TEMP_v3.z > Math.PI/4) {
+    if (!MMD_SA_options.WebXR.AR.onwallhit) {
+      DEBUG_show("(Model cannot be placed here.)", 3)
+      return
+    }
+    if (MMD_SA_options.WebXR.AR.onwallhit(e)) {
+      return
+    }
+  }
+  else {
+    if (MMD_SA_options.WebXR.AR.ongroundhit && MMD_SA_options.WebXR.AR.ongroundhit(e)) {
+      return
+    }
 
-  model_mesh.lookAt(xr.camera.position.clone().sub(center_pos_old).add(xr.center_pos).setY(model_mesh.position.y))
+    let pos0 = new THREE.Vector3().copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10);
+    let center_pos_old = (xr.center_pos && xr.center_pos.clone()) || new THREE.Vector3();
+    xr.center_pos = model_mesh.position.clone().setY(0).sub(pos0)
+    xr.hit_ground_y = xr.hitMatrix_decomposed[0].y
+
+    model_mesh.lookAt(xr.camera.position.clone().sub(center_pos_old).add(xr.center_pos).setY(model_mesh.position.y))
+  }
+
+  xr.hit_found = true
+  xr.reticle.visible = false
 
   xr.restore_scene()
   MMD_SA.reset_gravity()
@@ -4285,15 +4302,13 @@ if (xr.reticle.visible) {
   if (ao && ao.paused) {
     SL_MC_Play()
   }
-
-  e.detail.result.return_value = true
 }
 else if (xr.hit_found) {
+  e.detail.result.return_value = true
+
   xr.hit_found = false
   xr.reticle.position.copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10).add(xr.center_pos)
   xr.reticle.visible = true
-
-  e.detail.result.return_value = true
 }
     });
 
@@ -4479,7 +4494,7 @@ if (RAF_timerID) {
 if (1) {
   document.getElementById("LdesktopBG_host").style.visibility = "hidden"
   document.getElementById("SL_Host_Parent").style.visibility = "hidden"
-  document.getElementById("Lquick_menu").style.visibility = "hidden"
+  document.getElementById("Lquick_menu").style.display = "none"
 
   document.body.addEventListener("dblclick", this.DOM_event_dblclick, true);
 }
@@ -4525,7 +4540,7 @@ RAF_timerID = requestAnimationFrame(Animate_RAF)
 if (1) {
   document.getElementById("LdesktopBG_host").style.visibility = "inherit"
   document.getElementById("SL_Host_Parent").style.visibility = "inherit"
-  document.getElementById("Lquick_menu").style.visibility = "inherit"
+  document.getElementById("Lquick_menu").style.display = "block"
 
   document.body.removeEventListener("dblclick", this.DOM_event_dblclick, true);
 }
