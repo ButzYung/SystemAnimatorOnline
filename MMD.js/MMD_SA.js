@@ -4269,9 +4269,9 @@ if (xr.reticle.visible) {
   let model_mesh = THREE.MMD.getModels()[0].mesh
 
   MMD_SA.TEMP_v3.setEulerFromQuaternion(xr.hitMatrix_decomposed[1])
-//  DEBUG_show(MMD_SA.TEMP_v3.multiplyScalar(180/Math.PI).toArray().join("\n")+"\n"+xr.hitMatrix_decomposed[0].y)
+DEBUG_show(MMD_SA.TEMP_v3.multiplyScalar(180/Math.PI).toArray().join("\n")+"\n"+xr.hitMatrix_decomposed[0].y)
   if (MMD_SA.TEMP_v3.z > Math.PI/4) {
-DEBUG_show("wall hit",0,1)
+//DEBUG_show("wall hit",0,1)
     if (!MMD_SA_options.WebXR.AR.onwallhit) {
       DEBUG_show("(Model cannot be placed here.)", 3)
       return
@@ -4281,7 +4281,7 @@ DEBUG_show("wall hit",0,1)
     }
   }
   else {
-DEBUG_show("ground hit",0,1)
+//DEBUG_show("ground hit",0,1)
     if (MMD_SA_options.WebXR.AR.ongroundhit && MMD_SA_options.WebXR.AR.ongroundhit(e)) {
       return
     }
