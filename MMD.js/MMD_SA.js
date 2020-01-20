@@ -4270,7 +4270,7 @@ if (xr.reticle.visible) {
 
   MMD_SA.TEMP_v3.setEulerFromQuaternion(xr.hitMatrix_decomposed[1])
 DEBUG_show(MMD_SA.TEMP_v3.multiplyScalar(180/Math.PI).toArray().join("\n")+"\n"+xr.hitMatrix_decomposed[0].y)
-  if (MMD_SA.TEMP_v3.z > Math.PI/4) {
+  if (0&&MMD_SA.TEMP_v3.z > Math.PI/4) {
 //DEBUG_show("wall hit",0,1)
     if (!MMD_SA_options.WebXR.AR.onwallhit) {
       DEBUG_show("(Model cannot be placed here.)", 3)
@@ -4282,10 +4282,11 @@ DEBUG_show(MMD_SA.TEMP_v3.multiplyScalar(180/Math.PI).toArray().join("\n")+"\n"+
   }
   else {
 //DEBUG_show("ground hit",0,1)
+/*
     if (MMD_SA_options.WebXR.AR.ongroundhit && MMD_SA_options.WebXR.AR.ongroundhit(e)) {
       return
     }
-
+*/
     let pos0 = new THREE.Vector3().copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10);
     let center_pos_old = (xr.center_pos && xr.center_pos.clone()) || new THREE.Vector3();
     xr.center_pos = model_mesh.position.clone().setY(0).sub(pos0)
