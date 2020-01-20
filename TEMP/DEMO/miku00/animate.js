@@ -324,7 +324,7 @@ MMD_SA._force_motion_shuffle = true
      ,ongroundhit: function (e) {
 var model_mesh = THREE.MMD.getModels()[0].mesh
 model_mesh.position.y = 0
-
+return
 if (MMD_SA_options.motion_shuffle_list_default[0] != 0) {
   MMD_SA_options._motion_shuffle_list_default = [0]
   MMD_SA_options.motion_shuffle_list_default = [0]
