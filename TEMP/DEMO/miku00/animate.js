@@ -303,7 +303,7 @@ setTimeout(function () {MMD_SA.SpeechBubble.message(0, ((WallpaperEngine_mode) ?
 var model_mesh = THREE.MMD.getModels()[0].mesh
 if (!model_mesh.visible) {
   DEBUG_show("(Place the model on the ground first.)", 3)
-  return
+  return true
 }
 
 var xr = MMD_SA.WebXR
@@ -318,8 +318,6 @@ model_mesh.quaternion.setFromEuler(MMD_SA.TEMP_v3)
 
 MMD_SA_options.motion_shuffle_list_default = [30]
 MMD_SA._force_motion_shuffle = true
-
-DEBUG_show("wall hit")
       }
 
      ,ongroundhit: function (e) {
@@ -330,8 +328,6 @@ if (MMD_SA_options.motion_shuffle_list_default[0] != 0) {
   MMD_SA_options.motion_shuffle_list_default = [0]
   MMD_SA._force_motion_shuffle = true
 }
-
-DEBUG_show("ground hit")
       }
     }
   }
