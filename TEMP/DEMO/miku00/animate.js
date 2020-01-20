@@ -133,6 +133,7 @@ var MMD_SA_options = {
 
 // must-load list
 // ,{ must_load:true, no_shuffle:true, path:'C:\\Users\\User\\Downloads\\MikuMikuDanceE_v739\\MikuMikuDanceE_v739\\UserFile\\Motion\\Muuubu Rin -Append-\\motion_BAL3.vmd'}
+  ,{ must_load:true, no_shuffle:true, path:System.Gadget.path + '/TEMP/DEMO/motion/motion_misc.zip#/壁穴モーション/壁穴_モデルモーション_loop.vmd'}
   ]
 
 
@@ -145,7 +146,7 @@ var MMD_SA_options = {
 // ,motion_shuffle_pool_size: 9
 // ,motion_shuffle: [1,3,3+15, 0+15,1+15,4+15, 6,9,4]
 
- ,motion_shuffle_list_default: [0]
+ ,motion_shuffle_list_default: [0]//30]
 
 // ,motion_shuffle_list: [4,4,4,4,4,4,4,4]
 
@@ -206,6 +207,33 @@ var MMD_SA_options = {
 //   ,"tik tok" : { center_view:[0,0,0], loopback_fading:true, BPM:{rewind:true, BPM: 120*1.03, beat_frame: 142} }
 //   ,"nekomimi_lat" : { center_view:[0,0,0], loopback_fading:true, range:[{time:[30,30+(30*(60+59)+27)]}], BPM:{rewind:true, BPM: 160, beat_frame: 1124} }
 //   ,"you make me happy rea - MODIFIED" : { center_view:[0,0,0], loopback_fading:true, range:[{time:[0,0]}], BPM:{rewind:true, BPM: 124.06, beat_frame: 338} }
+
+   ,"壁穴_モデルモーション_loop" : {
+  random_range_disabled:true
+ ,_cover_undies: false
+ ,onended: function (loop_end) {
+MMD_SA._no_fading=true;
+
+if (!loop_end) {
+  MMD_SA.WebXR._wall.visible = false
+}
+  }
+ ,onstart: function (changed) {
+if (!changed) return
+
+var model = THREE.MMD.getModels()[0].mesh
+MMD_SA.WebXR._wall.position.copy(model.position)
+MMD_SA.WebXR._wall.quaternion.copy(model.quaternion)
+MMD_SA.WebXR._wall.visible = true
+  }
+ ,adjustment_per_model: {
+    _default_ : {
+  skin_default: {
+  "全ての親": { pos_add:{ x:0, y:0, z:0.5 } }
+  }
+    }
+  }
+    }
   }
 
  ,custom_action: [
@@ -324,10 +352,19 @@ ground.receiveShadow = true;
 ground.receiveShadowAlpha = true;
 MMD_SA.scene.add(ground)
 
-// opacity can only be update AFTER scene.add
-ground.material.opacity = 0.5
+let wall_geo = new THREE.CubeGeometry(20,20,20);
+wall_geo.applyMatrix(new THREE.Matrix4().makeTranslation(0,10,-10));
+let wall = MMD_SA.WebXR._wall = new THREE.Mesh(wall_geo, material);
+wall.useQuaternion = true
+wall.receiveShadow = true;
+wall.receiveShadowAlpha = true;
+MMD_SA.scene.add(wall)
 
-console.log(ground,material)
+// can be updated only AFTER scene.add
+wall.visible = false
+material.opacity = 0.5
+
+//console.log(ground,material)
   });
 
 })();

@@ -4264,6 +4264,9 @@ return drop_list
 
     window.addEventListener("SA_AR_dblclick", function (e) {
 if (xr.reticle.visible) {
+  MMD_SA.TEMP_v3.setEulerFromQuaternion(xr.hitMatrix_decomposed[1])
+  DEBUG_show(MMD_SA.TEMP_v3.multiplyScalar(180/Math.PI).toArray().join("\n")+"\n"+xr.hitMatrix_decomposed[0].y)
+
   xr.hit_found = true
   xr.reticle.visible = false
 
@@ -4476,6 +4479,7 @@ if (RAF_timerID) {
 if (1) {
   document.getElementById("LdesktopBG_host").style.visibility = "hidden"
   document.getElementById("SL_Host_Parent").style.visibility = "hidden"
+  document.getElementById("Lquick_menu").style.visibility = "hidden"
 
   document.body.addEventListener("dblclick", this.DOM_event_dblclick, true);
 }
@@ -4521,6 +4525,7 @@ RAF_timerID = requestAnimationFrame(Animate_RAF)
 if (1) {
   document.getElementById("LdesktopBG_host").style.visibility = "inherit"
   document.getElementById("SL_Host_Parent").style.visibility = "inherit"
+  document.getElementById("Lquick_menu").style.visibility = "inherit"
 
   document.body.removeEventListener("dblclick", this.DOM_event_dblclick, true);
 }
