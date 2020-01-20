@@ -318,6 +318,8 @@ model_mesh.quaternion.setFromEuler(MMD_SA.TEMP_v3)
 
 MMD_SA_options.motion_shuffle_list_default = [30]
 MMD_SA._force_motion_shuffle = true
+
+DEBUG_show("wall hit")
       }
 
      ,ongroundhit: function (e) {
@@ -328,6 +330,8 @@ if (MMD_SA_options.motion_shuffle_list_default[0] != 0) {
   MMD_SA_options.motion_shuffle_list_default = [0]
   MMD_SA._force_motion_shuffle = true
 }
+
+DEBUG_show("ground hit")
       }
     }
   }
