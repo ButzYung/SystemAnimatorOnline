@@ -316,7 +316,7 @@ MMD_SA.TEMP_v3.z -= Math.PI/2
 MMD_SA.TEMP_v3.y -= Math.PI/2
 model_mesh.quaternion.setFromEuler(MMD_SA.TEMP_v3)
 
-MMD_SA_options.motion_shuffle = [30]
+MMD_SA_options._motion_shuffle_list_default = [30]
 MMD_SA_options.motion_shuffle_list_default = [30]
 MMD_SA._force_motion_shuffle = true
       }
@@ -326,7 +326,7 @@ var model_mesh = THREE.MMD.getModels()[0].mesh
 model_mesh.position.y = 0
 
 if (MMD_SA_options.motion_shuffle_list_default[0] != 0) {
-  MMD_SA_options.motion_shuffle = [0]
+  MMD_SA_options._motion_shuffle_list_default = [0]
   MMD_SA_options.motion_shuffle_list_default = [0]
   MMD_SA._force_motion_shuffle = true
 }
