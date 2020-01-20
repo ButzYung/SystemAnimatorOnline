@@ -4282,11 +4282,10 @@ DEBUG_show(MMD_SA.TEMP_v3.multiplyScalar(180/Math.PI).toArray().join("\n")+"\n"+
   }
   else {
 //DEBUG_show("ground hit",0,1)
-/*
     if (MMD_SA_options.WebXR.AR.ongroundhit && MMD_SA_options.WebXR.AR.ongroundhit(e)) {
       return
     }
-*/
+
     let pos0 = new THREE.Vector3().copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10);
     let center_pos_old = (xr.center_pos && xr.center_pos.clone()) || new THREE.Vector3();
     xr.center_pos = model_mesh.position.clone().setY(0).sub(pos0)
