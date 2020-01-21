@@ -4272,7 +4272,7 @@ if (xr.reticle.visible) {
 //DEBUG_show(MMD_SA.TEMP_v3.multiplyScalar(180/Math.PI).toArray().join("\n")+"\n"+xr.hitMatrix_decomposed[0].y)
 
   let axis_angle = xr.hitMatrix_decomposed[1].toAxisAngle()
-DEBUG_show(axis_angle.join("\n"))
+DEBUG_show(axis_angle[0].toArray().join("\n"))
 
   if (0&&MMD_SA.TEMP_v3.z > Math.PI/4) {
 //DEBUG_show("wall hit",0,1)
