@@ -4271,8 +4271,8 @@ if (xr.reticle.visible) {
 //MMD_SA.TEMP_v3.setEulerFromQuaternion(xr.hitMatrix_decomposed[1])
 //DEBUG_show(MMD_SA.TEMP_v3.multiplyScalar(180/Math.PI).toArray().join("\n")+"\n"+xr.hitMatrix_decomposed[0].y)
 
-  let axis_angle = xr.hitMatrix_decomposed[1].toAxisAngle()
-DEBUG_show(axis_angle[0].toArray().join("\n"))
+  let axis = xr.hitMatrix_decomposed[3] = MMD_SA.TEMP_v3.set(0,1,0).applyQuaternion(xr.hitMatrix_decomposed[1])
+DEBUG_show(axis.toArray().join("\n"))
 
   if (0&&MMD_SA.TEMP_v3.z > Math.PI/4) {
 //DEBUG_show("wall hit",0,1)
