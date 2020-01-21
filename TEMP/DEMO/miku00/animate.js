@@ -340,15 +340,21 @@ if (!model_mesh.visible) {
 var xr = MMD_SA.WebXR
 var axis = xr.hitMatrix_decomposed[3]
 
-let pos0 = new THREE.Vector3().copy(xr.hitMatrix_decomposed[0]).setY(xr.hit_ground_y).multiplyScalar(10);
-xr.center_pos = model_mesh.position.clone().setY(0).sub(pos0)
-
-model_mesh.position.y = -11.5 + (xr.hitMatrix_decomposed[0].y - xr.hit_ground_y)*10
 model_mesh.quaternion.setFromEuler(MMD_SA.TEMP_v3.set(0,Math.atan2(axis.x,axis.z),0))
 MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]._obj.rotation.copy(MMD_SA.TEMP_v3)
 
-MMD_SA_options.motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["壁穴_モデルモーション_loop"]]
-MMD_SA._force_motion_shuffle = true
+let pos0
+if (this._adult_mode) {
+  pos0 = new THREE.Vector3().copy(xr.hitMatrix_decomposed[0]).setY(xr.hit_ground_y).multiplyScalar(10);
+  model_mesh.position.y = -11.5 + (xr.hitMatrix_decomposed[0].y - xr.hit_ground_y)*10
+
+  MMD_SA_options.motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["壁穴_モデルモーション_loop"]]
+  MMD_SA._force_motion_shuffle = true
+}
+else {
+  pos0 = axis.clone().multiplyScalar(1/3).add(xr.hitMatrix_decomposed[0]).setY(xr.hit_ground_y).multiplyScalar(10);
+}
+xr.center_pos = model_mesh.position.clone().setY(0).sub(pos0)
       }
 
      ,ongroundhit: function (e) {
@@ -356,7 +362,7 @@ MMD_SA._force_motion_shuffle = true
 var model_mesh = THREE.MMD.getModels()[0].mesh
 model_mesh.position.y = 0
 
-if (MMD_SA_options.motion_shuffle_list_default[0] != MMD_SA_options._motion_shuffle_list_default[0]) {
+if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle_list_default[0] != MMD_SA_options._motion_shuffle_list_default[0])) {
   MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice()
   MMD_SA._force_motion_shuffle = true
 }
@@ -396,6 +402,8 @@ if (MMD_SA_options.motion_shuffle_list_default[0] != MMD_SA_options._motion_shuf
     parent.DragDrop.relay_id = SA_child_animation_id
 
   self.SA_wallpaper_src = "TEMP/DEMO/wood_wallpaper_flip-h.jpg"
+
+  MMD_SA_options.WebXR.AR._adult_mode = !!System._browser.url_search_params.adult_mode
 
   window.addEventListener("MMDStarted", function () {
 let geometry = new THREE.PlaneGeometry(100,100)

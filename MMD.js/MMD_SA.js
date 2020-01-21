@@ -4268,11 +4268,8 @@ if (xr.reticle.visible) {
 
   let model_mesh = THREE.MMD.getModels()[0].mesh
 
-//MMD_SA.TEMP_v3.setEulerFromQuaternion(xr.hitMatrix_decomposed[1])
-//DEBUG_show(MMD_SA.TEMP_v3.multiplyScalar(180/Math.PI).toArray().join("\n")+"\n"+xr.hitMatrix_decomposed[0].y)
-
   let axis = xr.hitMatrix_decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.hitMatrix_decomposed[1])
-DEBUG_show(axis.toArray().join("\n"))
+//DEBUG_show(axis.toArray().join("\n"))
 
   if (Math.abs(axis.y) < 0.5) {
 //DEBUG_show("wall hit",0,1)
@@ -4540,6 +4537,11 @@ this.XR_objects_by_id = null
 
 model_mesh.quaternion.set(0,0,0,1)
 MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"] && MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]._obj.rotation.set(0,0,0)
+
+if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle_list_default[0] != MMD_SA_options._motion_shuffle_list_default[0])) {
+  MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice()
+  MMD_SA._force_motion_shuffle = true
+}
 
 MMD_SA.reset_camera()
 MMD_SA._trackball_camera.enabled = true
