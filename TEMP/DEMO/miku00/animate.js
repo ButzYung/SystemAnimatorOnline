@@ -260,7 +260,7 @@ MMD_SA.WebXR._wall.visible = true
  ,adjustment_per_model: {
     _default_ : {
   skin_default: {
-  "全ての親": { pos_add:{ x:0, y:0, z:0.5 } }
+  "全ての親": { pos_add:{ x:0, y:-4, z:-3.5 }, rot_add:{ x:90, y:0, z:0} }
   }
     }
   }
@@ -342,7 +342,7 @@ var axis = xr.hitMatrix_decomposed[3]
 
 //model_mesh.quaternion.setFromEuler(MMD_SA.TEMP_v3.set(0,Math.atan2(axis.x,axis.z),0))
 //MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]._obj.rotation.copy(MMD_SA.TEMP_v3)
-model_mesh.quaternion.setFromEuler(MMD_SA.TEMP_v3.set(Math.atan(1/axis.y),0,0)).multiply(xr.hitMatrix_decomposed[1])
+model_mesh.quaternion.copy(xr.hitMatrix_decomposed[1])
 
 let pos0
 if (this._adult_mode) {
@@ -425,7 +425,8 @@ ground.receiveShadowAlpha = true;
 MMD_SA.scene.add(ground)
 
 let wall_geo = new THREE.CubeGeometry(30,30,30);
-wall_geo.applyMatrix(new THREE.Matrix4().makeTranslation(0,10,-15));
+//wall_geo.applyMatrix(new THREE.Matrix4().makeTranslation(0,10,-15));
+wall_geo.applyMatrix(new THREE.Matrix4().makeTranslation(0,-15,-10));
 let wall = MMD_SA.WebXR._wall = new THREE.Mesh(wall_geo, material);
 wall.useQuaternion = true
 wall.receiveShadow = true;
