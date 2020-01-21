@@ -343,7 +343,7 @@ var axis = xr.hitMatrix_decomposed[3]
 let pos0 = new THREE.Vector3().copy(xr.hitMatrix_decomposed[0]).setY(xr.hit_ground_y).multiplyScalar(10);
 xr.center_pos = model_mesh.position.clone().setY(0).sub(pos0)
 
-model_mesh.quaternion.setFromEuler(MMD_SA.TEMP_v3.set(0,Math.atan2(axis.z,axis.x),0))
+model_mesh.quaternion.setFromEuler(MMD_SA.TEMP_v3.set(0,Math.atan2(axis.x,axis.z),0))
 return
 MMD_SA_options._motion_shuffle_list_default = [30]
 MMD_SA_options.motion_shuffle_list_default = [30]
