@@ -340,8 +340,9 @@ if (!model_mesh.visible) {
 var xr = MMD_SA.WebXR
 var axis = xr.hitMatrix_decomposed[3]
 
-model_mesh.quaternion.setFromEuler(MMD_SA.TEMP_v3.set(0,Math.atan2(axis.x,axis.z),0))
-MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]._obj.rotation.copy(MMD_SA.TEMP_v3)
+//model_mesh.quaternion.setFromEuler(MMD_SA.TEMP_v3.set(0,Math.atan2(axis.x,axis.z),0))
+//MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]._obj.rotation.copy(MMD_SA.TEMP_v3)
+model_mesh.quaternion.copy(xr.hitMatrix_decomposed[1]).multiply(MMD_SA.TEMP_q.setFromEuler(-Math.atan(1/axis.y),0,0))
 
 let pos0
 if (this._adult_mode) {
