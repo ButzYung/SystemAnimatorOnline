@@ -343,11 +343,11 @@ var axis = xr.hitMatrix_decomposed[3]
 let pos0 = new THREE.Vector3().copy(xr.hitMatrix_decomposed[0]).setY(xr.hit_ground_y).multiplyScalar(10);
 xr.center_pos = model_mesh.position.clone().setY(0).sub(pos0)
 
+model_mesh.position.y = -11.5 + (xr.hitMatrix_decomposed[0].y - xr.hit_ground_y)*10
 model_mesh.quaternion.setFromEuler(MMD_SA.TEMP_v3.set(0,Math.atan2(axis.x,axis.z),0))
 MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]._obj.rotation.copy(MMD_SA.TEMP_v3)
-return
-MMD_SA_options._motion_shuffle_list_default = [30]
-MMD_SA_options.motion_shuffle_list_default = [30]
+
+MMD_SA_options.motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["壁穴_モデルモーション_loop"]]
 MMD_SA._force_motion_shuffle = true
       }
 
@@ -355,10 +355,9 @@ MMD_SA._force_motion_shuffle = true
 //DEBUG_show(9,0,1);return;
 var model_mesh = THREE.MMD.getModels()[0].mesh
 model_mesh.position.y = 0
-return
-if (MMD_SA_options.motion_shuffle_list_default[0] != 0) {
-  MMD_SA_options._motion_shuffle_list_default = [0]
-  MMD_SA_options.motion_shuffle_list_default = [0]
+
+if (MMD_SA_options.motion_shuffle_list_default[0] != MMD_SA_options._motion_shuffle_list_default[0]) {
+  MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice()
   MMD_SA._force_motion_shuffle = true
 }
       }
@@ -416,8 +415,8 @@ ground.receiveShadow = true;
 ground.receiveShadowAlpha = true;
 MMD_SA.scene.add(ground)
 
-let wall_geo = new THREE.CubeGeometry(20,20,20);
-wall_geo.applyMatrix(new THREE.Matrix4().makeTranslation(0,10,-10));
+let wall_geo = new THREE.CubeGeometry(30,30,30);
+wall_geo.applyMatrix(new THREE.Matrix4().makeTranslation(0,10,-15));
 let wall = MMD_SA.WebXR._wall = new THREE.Mesh(wall_geo, material);
 wall.useQuaternion = true
 wall.receiveShadow = true;
