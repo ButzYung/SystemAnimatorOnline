@@ -146,7 +146,7 @@ var MMD_SA_options = {
 // ,motion_shuffle_pool_size: 9
 // ,motion_shuffle: [1,3,3+15, 0+15,1+15,4+15, 6,9,4]
 
- ,motion_shuffle_list_default: [0]//30]
+ ,motion_shuffle_list_default: [30]
 
 // ,motion_shuffle_list: [4,4,4,4,4,4,4,4]
 
@@ -211,6 +211,36 @@ var MMD_SA_options = {
    ,"壁穴_モデルモーション_loop" : {
   random_range_disabled:true
  ,_cover_undies: false
+
+ ,get look_at_screen_ratio() {
+var f = THREE.MMD.getModels()[0].skin.time*30
+var ratio = 1
+if (f<=100)
+  ratio = 0
+else if ((f>100) && (f<130))
+  ratio = (f-100)/30
+else if ((f>184) && (f<=285))
+  ratio = Math.max(1-(f-184)/16, 0)
+else if ((f>285) && (f<330))
+  ratio = (f-285)/45
+else if ((f>625) && (f<=930))
+  ratio = Math.max(1-(f-625)/55, 0)
+else if ((f>930) && (f<960))
+  ratio = (f-930)/30
+else if ((f>1020) && (f<=1085))
+  ratio = Math.max(1-(f-1020)/10, 0)
+else if ((f>1085) && (f<1105))
+  ratio = (f-1085)/20
+else if ((f>1380) && (f<=1430))
+  ratio = Math.max(1-(f-1380)/10, 0)
+else if ((f>1430) && (f<1450))
+  ratio = (f-1430)/20
+else if (f>2015)
+  ratio = Math.max(1-(f-2015)/5, 0)
+
+return ratio
+  }
+
  ,onended: function (loop_end) {
 MMD_SA._no_fading=true;
 
@@ -218,6 +248,7 @@ if (!loop_end) {
   MMD_SA.WebXR._wall.visible = false
 }
   }
+
  ,onstart: function (changed) {
 if (!changed) return
 
