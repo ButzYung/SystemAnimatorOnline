@@ -4268,8 +4268,12 @@ if (xr.reticle.visible) {
 
   let model_mesh = THREE.MMD.getModels()[0].mesh
 
-  MMD_SA.TEMP_v3.setEulerFromQuaternion(xr.hitMatrix_decomposed[1])
-DEBUG_show(MMD_SA.TEMP_v3.multiplyScalar(180/Math.PI).toArray().join("\n")+"\n"+xr.hitMatrix_decomposed[0].y)
+//MMD_SA.TEMP_v3.setEulerFromQuaternion(xr.hitMatrix_decomposed[1])
+//DEBUG_show(MMD_SA.TEMP_v3.multiplyScalar(180/Math.PI).toArray().join("\n")+"\n"+xr.hitMatrix_decomposed[0].y)
+
+  let axis_angle = xr.hitMatrix_decomposed[1].toAxisAngle()
+DEBUG_show(axis_angle.toArray().join("\n"))
+
   if (0&&MMD_SA.TEMP_v3.z > Math.PI/4) {
 //DEBUG_show("wall hit",0,1)
     if (!MMD_SA_options.WebXR.AR.onwallhit) {
