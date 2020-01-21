@@ -344,6 +344,7 @@ let pos0 = new THREE.Vector3().copy(xr.hitMatrix_decomposed[0]).setY(xr.hit_grou
 xr.center_pos = model_mesh.position.clone().setY(0).sub(pos0)
 
 model_mesh.quaternion.setFromEuler(MMD_SA.TEMP_v3.set(0,Math.atan2(axis.x,axis.z),0))
+MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]._obj.rotation.copy(MMD_SA.TEMP_v3)
 return
 MMD_SA_options._motion_shuffle_list_default = [30]
 MMD_SA_options.motion_shuffle_list_default = [30]
