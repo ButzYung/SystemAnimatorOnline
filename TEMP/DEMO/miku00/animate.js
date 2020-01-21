@@ -260,7 +260,7 @@ MMD_SA.WebXR._wall.visible = true
  ,adjustment_per_model: {
     _default_ : {
   skin_default: {
-  "全ての親": { pos_add:{ x:0, y:-4, z:-3.5 }, rot_add:{ x:90, y:0, z:0} }
+  "全ての親": { pos_add:{ x:0, y:0, z:0.5 } }
   }
     }
   }
