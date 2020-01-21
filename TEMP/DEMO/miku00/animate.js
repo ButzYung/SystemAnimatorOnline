@@ -338,25 +338,23 @@ if (!model_mesh.visible) {
 }
 
 var xr = MMD_SA.WebXR
-MMD_SA.TEMP_v3.setEulerFromQuaternion(xr.hitMatrix_decomposed[1])
+var axis = xr.hitMatrix_decomposed[3]
 
 let pos0 = new THREE.Vector3().copy(xr.hitMatrix_decomposed[0]).setY(xr.hit_ground_y).multiplyScalar(10);
 xr.center_pos = model_mesh.position.clone().setY(0).sub(pos0)
 
-MMD_SA.TEMP_v3.z -= Math.PI/2
-MMD_SA.TEMP_v3.y -= Math.PI/2
-model_mesh.quaternion.setFromEuler(MMD_SA.TEMP_v3)
-
+model_mesh.quaternion.setFromEuler(MMD_SA.TEMP_v3.set(0,Math.atan2(axis.z,axis.x),0))
+return
 MMD_SA_options._motion_shuffle_list_default = [30]
 MMD_SA_options.motion_shuffle_list_default = [30]
 MMD_SA._force_motion_shuffle = true
       }
 
      ,ongroundhit: function (e) {
-DEBUG_show(9,0,1);return;
+//DEBUG_show(9,0,1);return;
 var model_mesh = THREE.MMD.getModels()[0].mesh
 model_mesh.position.y = 0
-
+return
 if (MMD_SA_options.motion_shuffle_list_default[0] != 0) {
   MMD_SA_options._motion_shuffle_list_default = [0]
   MMD_SA_options.motion_shuffle_list_default = [0]

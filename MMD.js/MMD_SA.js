@@ -4271,10 +4271,10 @@ if (xr.reticle.visible) {
 //MMD_SA.TEMP_v3.setEulerFromQuaternion(xr.hitMatrix_decomposed[1])
 //DEBUG_show(MMD_SA.TEMP_v3.multiplyScalar(180/Math.PI).toArray().join("\n")+"\n"+xr.hitMatrix_decomposed[0].y)
 
-  let axis = xr.hitMatrix_decomposed[3] = MMD_SA.TEMP_v3.set(0,1,0).applyQuaternion(xr.hitMatrix_decomposed[1])
+  let axis = xr.hitMatrix_decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.hitMatrix_decomposed[1])
 DEBUG_show(axis.toArray().join("\n"))
 
-  if (0&&MMD_SA.TEMP_v3.z > Math.PI/4) {
+  if (Math.abs(axis.y) < 0.5) {
 //DEBUG_show("wall hit",0,1)
     if (!MMD_SA_options.WebXR.AR.onwallhit) {
       DEBUG_show("(Model cannot be placed here.)", 3)
