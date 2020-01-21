@@ -340,7 +340,7 @@ if (!model_mesh.visible) {
 var xr = MMD_SA.WebXR
 var axis = xr.hitMatrix_decomposed[3]
 
-model_mesh.quaternion.setFromEuler(MMD_SA.TEMP_v3.set(-30*Math.PI/180,Math.atan2(axis.x,axis.z),0))
+model_mesh.quaternion.setFromEuler(MMD_SA.TEMP_v3.set(0,Math.atan2(axis.x,axis.z),0))
 MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]._obj.rotation.setEulerFromQuaternion(model_mesh.quaternion)
 
 let pos0
@@ -424,8 +424,7 @@ ground.receiveShadowAlpha = true;
 MMD_SA.scene.add(ground)
 
 let wall_geo = new THREE.CubeGeometry(30,30,30);
-//wall_geo.applyMatrix(new THREE.Matrix4().makeTranslation(0,10,-15));
-wall_geo.applyMatrix(new THREE.Matrix4().makeTranslation(0,-15,-10));
+wall_geo.applyMatrix(new THREE.Matrix4().makeTranslation(0,10,-15));
 let wall = MMD_SA.WebXR._wall = new THREE.Mesh(wall_geo, material);
 wall.useQuaternion = true
 wall.receiveShadow = true;
