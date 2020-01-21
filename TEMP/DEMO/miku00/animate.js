@@ -146,7 +146,7 @@ var MMD_SA_options = {
 // ,motion_shuffle_pool_size: 9
 // ,motion_shuffle: [1,3,3+15, 0+15,1+15,4+15, 6,9,4]
 
- ,motion_shuffle_list_default: [30]
+ ,motion_shuffle_list_default: [0]
 
 // ,motion_shuffle_list: [4,4,4,4,4,4,4,4]
 
