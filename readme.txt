@@ -58,7 +58,7 @@ Augmented Reality (AR) support:
   Are you ready for the AR experience? Check out the demo below with the AR feature enabled!
   https://sao.animetheme.com/?cmd_line=/TEMP/DEMO/miku00
 
-  After the page has been fully loaded, click on the little phone button on the top-left (or bottom-left) menu to activate the AR mode. Once the AR mode is enabled, you will see what your phone's camera is showing. Move your camera around the ground where you want to place the 3D model, and a white circle should apppear. Double-tap on the screen, and the 3D model will be placed over the white circle.
+  After the page has been fully loaded, click on the little phone button on the top-left (or bottom-left) menu to activate the AR mode. Once the AR mode is enabled, you will see what your phone's camera is showing. Move your camera around the ground where you want to place the 3D model, and a white circle should apppear. Double-tap on the screen, and the 3D model will be placed over the white circle. Double-tab again to re-summon the white circle if you want to place the model elsewhere.
 
   Check out the video below for a demonstration.
   https://youtu.be/SkPRVoZGbPU
