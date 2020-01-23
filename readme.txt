@@ -1,4 +1,4 @@
-﻿(Document version 2.0)
+﻿(Document version 2.1)
 
 Introduction:
 
@@ -23,6 +23,9 @@ Featured Demos:
 - 3D Multiplayer RPG (up to 3 players)
   https://sao.animetheme.com/SystemAnimator_online_multiplayer.html
 
+- 3D Miku - Augmented Reality (AR) demo
+  https://sao.animetheme.com/?cmd_line=/TEMP/DEMO/miku00
+
   All demos support the use of custom MMD (MikuMikuDance) model. Drop a zip of your favorite MMD model at the beginning, press the START button, and the demo will proceed with your model instead of the default one.
 
 ----------------------------
@@ -37,7 +40,7 @@ Augmented Reality (AR) support:
 2) Install "Google Play Services for AR" (ARCore) on Google Play.
    https://play.google.com/store/apps/details?id=com.google.ar.core
 
-3) Install Chrome browser (tested on v76-78).
+3) Install Chrome browser (tested on v76-79).
 
 4) Enable 3 WebXR-related flags on Chrome.
 
@@ -46,7 +49,8 @@ Augmented Reality (AR) support:
     3) Set the "WebXR Device API" (#webxr) flag to Enabled.
     4) Set the "WebXR AR Module" (#webxr-ar-module) flag to Enabled.
     5) Set the "WebXR Hit Test" (#webxr-hit-test) flag to Enabled.
-    6) Tap RELAUNCH NOW to ensure the updated flags take effect.
+    6) Set the "WebXR AR DOM Overlay" (#webxr-hit-test) flag to Enabled. This one is optional, but highly recommended.
+    7) Tap RELAUNCH NOW to ensure the updated flags take effect.
 
     Still confused? Check out the following page (the "Ensure AR features are enabled on Chrome" paragraph).
     https://codelabs.developers.google.com/codelabs/ar-with-webxr/#1
