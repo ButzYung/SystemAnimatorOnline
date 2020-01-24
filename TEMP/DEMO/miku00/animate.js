@@ -405,6 +405,61 @@ if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle
 
   MMD_SA_options.WebXR.AR._adult_mode = !!System._browser.url_search_params.adult_mode
 
+
+// dungeon options START
+MMD_SA_options.Dungeon_options = {
+
+  use_PC_click_reaction_default: true
+
+ ,use_point_light: false
+
+// ,grid_material_list: []
+
+// ,object_base_list: []
+
+ ,options_by_area_id: {
+    "start": {
+
+  RDG_options: {
+    width:  1
+   ,height: 1
+   ,grid_array: [
+  [2]
+    ]
+  }
+
+ ,grid_size: 64*3
+
+ ,floor_material_index_default: -1
+ ,wall_material_index_default: -1
+ ,ceil_material_index_default: -1
+
+ ,ambient_light_color: "#FFF"
+ ,light_color: '#606060'
+
+// ,object_list: []
+
+ ,events: {
+    "onstart": [
+      [
+        {
+          message: {
+  content: "呢度係咩鬼地方... 入口明明係間普通學校黎架喎..."
+          }
+        }
+      ]
+    ]
+  }
+
+    }
+  }
+
+};
+
+MMD_SA_options.Dungeon_options = null;
+// END
+
+
   window.addEventListener("MMDStarted", function () {
 let geometry = new THREE.PlaneGeometry(100,100)
 /*
@@ -441,7 +496,8 @@ material.opacity = 0.5
 })();
 
 
-//document.write('<script language="JavaScript" src="jThree/_AR_demo_01.js"></scr'+'ipt>');
 // main js
+if (MMD_SA_options.Dungeon_options)
+  document.write('<script language="JavaScript" src="js/dungeon.js"></scr'+'ipt>');
 document.write('<script language="JavaScript" src="MMD.js/MMD_SA.js"></scr'+'ipt>');
 

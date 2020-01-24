@@ -848,7 +848,7 @@ if (browser_native_mode || MMD_SA_options.Dungeon || use_startup_screen) {
   window.addEventListener("MMDStarted", function (e) {
     Ldebug.style.posLeft = Ldebug.style.posTop = 0
     Ldebug.style.transform = Ldebug.style.transformOrigin = ""
-    if (MMD_SA_options.Dungeon) {
+    if (MMD_SA_options.Dungeon && (!MMD_SA_options.WebXR || !MMD_SA_options.WebXR.AR)) {
       LdesktopBG.style.backgroundImage = ""
       LdesktopBG.style.backgroundColor = "black"
     }
@@ -4497,7 +4497,7 @@ if (RAF_timerID) {
 
 if (1) {
   document.getElementById("LdesktopBG_host").style.visibility = "hidden"
-  document.getElementById("SL_Host_Parent").style.visibility = "hidden"
+  document.getElementById("SL").style.visibility = "hidden"
   document.getElementById("Lquick_menu").style.display = "none"
 
   document.body.addEventListener("dblclick", this.DOM_event_dblclick, true);
@@ -4552,7 +4552,7 @@ RAF_timerID = requestAnimationFrame(Animate_RAF)
 
 if (1) {
   document.getElementById("LdesktopBG_host").style.visibility = "inherit"
-  document.getElementById("SL_Host_Parent").style.visibility = "inherit"
+  document.getElementById("SL").style.visibility = "inherit"
   document.getElementById("Lquick_menu").style.display = "block"
 
   document.body.removeEventListener("dblclick", this.DOM_event_dblclick, true);

@@ -2299,7 +2299,7 @@ if (fog) {
     MMD_SA.scene.fog.far  = fog.far  || this.grid_size * this.view_radius * (MMD_SA.scene.fog.far_ratio ||0.9)
   }
   MMD_SA.scene.fog.color = new THREE.Color(fog.color||"#000")
-console.log("Fog:"+MMD_SA.scene.fog.near+'/'+MMD_SA.scene.fog.far+'/'+MMD_SA.scene.fog.color.getHexString())
+console.log("Fog:"+ ((MMD_SA.scene.fog instanceof THREE.Fog) ? MMD_SA.scene.fog.near+'/'+MMD_SA.scene.fog.far: 'EXP2') +'/'+MMD_SA.scene.fog.color.getHexString())
   this.object_base_list.forEach(function (obj) {
     if (obj.is_dummy) return
 
@@ -3162,8 +3162,8 @@ if (!MMD_SA_options.shadow_para.shadowCameraBottom)
 if (!MMD_SA_options.shadow_para.shadowCameraTop)
   MMD_SA_options.shadow_para.shadowCameraTop = 64*4;
 
-// use default fog para
-if (!MMD_SA_options.fog)
+// use default fog para unless in AR mode
+if (!MMD_SA_options.fog && (!MMD_SA_options.WebXR || !MMD_SA_options.WebXR.AR))
   MMD_SA_options.fog = options.fog || {}
 
 if (!MMD_SA_options.light_position)
