@@ -437,14 +437,18 @@ MMD_SA_options.Dungeon_options = {
  ,ambient_light_color: "#FFF"
  ,light_color: '#606060'
 
+// ,no_camera_collision: true
+// ,camera_y_default_non_negative: false
+
 // ,object_list: []
 
  ,events: {
     "onstart": [
       [
         {
-          message: {
-  content: "呢度係咩鬼地方... 入口明明係間普通學校黎架喎..."
+          func: function () {
+MMD_SA_options.Dungeon.character_movement_disabled = true
+return true
           }
         }
       ]
@@ -456,7 +460,7 @@ MMD_SA_options.Dungeon_options = {
 
 };
 
-MMD_SA_options.Dungeon_options = null;
+//MMD_SA_options.Dungeon_options = null;
 // END
 
 

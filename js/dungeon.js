@@ -5677,6 +5677,7 @@ c_host.addEventListener( 'click', function (e) {
 });
 
 if (c_host.ondblclick) {
+  c_host._ondblclick = c_host.ondblclick
   c_host.addEventListener( 'dblclick', c_host.ondblclick)
   c_host.ondblclick = null
 }
@@ -10365,6 +10366,11 @@ return defeated
     function event_main(e) {
 var that = this
 var obj = this._event_active.obj
+
+if (MMD_SA.SpeechBubble.visible && !MMD_SA.SpeechBubble.msg_timerID && this._states.dialogue_mode) {
+  MMD_SA.SpeechBubble.hide()
+  that._states.dialogue_mode = false
+}
 
 if (e.func && e.func()) {
   this.run_event()

@@ -4500,7 +4500,18 @@ if (1) {
   document.getElementById("SL").style.visibility = "hidden"
   document.getElementById("Lquick_menu").style.display = "none"
 
-  document.body.addEventListener("dblclick", this.DOM_event_dblclick, true);
+  let c_host = (returnBoolean("CSSTransform3DDisabledForContent")) ? document.getElementById("Lbody_host") : document.getElementById("Lbody")
+  c_host.addEventListener("dblclick", this.DOM_event_dblclick)
+// push the .onclick AFTER the AR event handler
+  if (c_host.ondblclick) {
+    c_host._ondblclick = c_host.ondblclick
+    c_host.addEventListener( 'dblclick', c_host.ondblclick)
+    c_host.ondblclick = null
+  }
+  else if (c_host._ondblclick) {
+    c_host.removeEventListener("dblclick", c_host._ondblclick)
+    c_host.addEventListener("dblclick", c_host._ondblclick)
+  }
 }
 
 session.requestAnimationFrame(xr.onARFrame);
@@ -4555,7 +4566,8 @@ if (1) {
   document.getElementById("SL").style.visibility = "inherit"
   document.getElementById("Lquick_menu").style.display = "block"
 
-  document.body.removeEventListener("dblclick", this.DOM_event_dblclick, true);
+  let c_host = (returnBoolean("CSSTransform3DDisabledForContent")) ? document.getElementById("Lbody_host") : document.getElementById("Lbody")
+  c_host.removeEventListener("dblclick", this.DOM_event_dblclick)
 }
 
 this.renderer.device_framebuffer = null;
