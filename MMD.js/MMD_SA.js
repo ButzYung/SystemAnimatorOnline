@@ -4354,6 +4354,7 @@ catch (err) {
 
  ,DOM_event_dblclick: function (e) {
     e.stopPropagation();
+    e.stopImmediatePropagation();
     e.preventDefault();
 //DEBUG_show(Date.now())
 
