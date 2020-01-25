@@ -460,7 +460,7 @@ return true
 
 };
 
-//MMD_SA_options.Dungeon_options = null;
+MMD_SA_options.Dungeon_options = null;
 // END
 
 
