@@ -447,7 +447,7 @@ MMD_SA_options.Dungeon_options = {
       [
         {
           func: function () {
-MMD_SA_options.Dungeon.character_movement_disabled = true
+MMD_SA_options.Dungeon_options.character_movement_disabled = true
 return true
           }
         }

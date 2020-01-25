@@ -5367,7 +5367,7 @@ this._look_at_screen_parent_rotation = v;
 
   if (MMD_SA_options.look_at_mouse == null)
     MMD_SA_options.look_at_mouse = returnBoolean("MMDLookAtMouse")
-  if (MMD_SA_options.WebXR || (!webkit_electron_mode && !WallpaperEngine_CEF_mode))
+  if (MMD_SA_options.WebXR || is_mobile || (!webkit_electron_mode && !WallpaperEngine_CEF_mode))
     MMD_SA_options.look_at_mouse = false
 
   MMD_SA_options._look_at_screen = MMD_SA_options.look_at_screen;

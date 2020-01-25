@@ -2795,6 +2795,9 @@ else {
   let dir_light = jThree("#MMD_DirLight").three(0)
   let _dir_light_pos = dir_light.position.clone()
 
+  let _look_at_screen = MMD_SA_options._look_at_screen
+  let _look_at_mouse  = MMD_SA_options._look_at_mouse
+
   MMD_SA_options.look_at_screen = MMD_SA_options.look_at_mouse = false
 // avoid some issues by running this after a few frame skips
   let frame_to_skip = 2
@@ -2905,7 +2908,9 @@ if (point_light) {
 var mesh = THREE.MMD.getModels()[0].mesh
 mesh.geometry.boundingBox.expandByScalar(-20)
 mesh.geometry.boundingSphere.radius -= 20
-MMD_SA_options.look_at_screen = MMD_SA_options.look_at_mouse = true
+
+MMD_SA_options.look_at_screen = _look_at_screen
+MMD_SA_options.look_at_mouse  = _look_at_mouse
 
 MMD_SA.reset_camera()
 
@@ -9976,7 +9981,7 @@ this.object_base_list.forEach(function (obj, idx) {
  ,get event_mode() { return (this._states.event_mode || this._states.dialogue_mode); }
  ,set event_mode(v) { this._states.event_mode = v; }
 
- ,get character_movement_disabled() { return (this._states.character_movement_disabled || this.event_mode || this.character_combat_locked); }
+ ,get character_movement_disabled() { return (this._states.character_movement_disabled || this.event_mode || this.character_combat_locked || MMD_SA_options.Dungeon_options.character_movement_disabled); }
  ,set character_movement_disabled(v) { this._states.character_movement_disabled = v; }
 
  ,get can_parry() {
