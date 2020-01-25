@@ -4636,8 +4636,9 @@ if (pose) {
 
   this.camera.position.getPositionFromMatrix(this.camera.matrix)
   this.camera.updateMatrixWorld(true);
-
+var _pos = new THREE.Vector3().copy(this.camera.position)
   Animate_RAF(time)
+if (!MMD_SA.camera_position.equals(_pos)) DEBUG_show(Date.now())
 }
 //else { DEBUG_show(0,0,1) }
   }
