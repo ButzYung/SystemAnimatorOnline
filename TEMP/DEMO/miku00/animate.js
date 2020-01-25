@@ -271,7 +271,7 @@ MMD_SA.WebXR._wall.visible = true
   "cover_undies"
   ]
 
- ,use_CircularSpectrum: true
+// ,use_CircularSpectrum: true
 
  ,look_at_screen: true
 
@@ -460,7 +460,7 @@ return true
 
 };
 
-MMD_SA_options.Dungeon_options = null;
+//MMD_SA_options.Dungeon_options = null;
 // END
 
 
