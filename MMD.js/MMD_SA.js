@@ -4465,8 +4465,8 @@ if (xr.ground_plane)
 this.reticle.visible = false
 
 MMD_SA.reset_camera()
-//MMD_SA._reset_camera = function () {}
-//MMD_SA.reset_camera = null
+MMD_SA._reset_camera = MMD_SA.reset_camera
+MMD_SA.reset_camera = function () {}
 MMD_SA._trackball_camera.enabled = false
 xr.camera.matrixAutoUpdate = false;
 
@@ -4557,7 +4557,7 @@ if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle
   MMD_SA._force_motion_shuffle = true
 }
 
-//MMD_SA.reset_camera = MMD_SA._reset_camera
+MMD_SA.reset_camera = MMD_SA._reset_camera
 MMD_SA.reset_camera()
 MMD_SA._trackball_camera.enabled = true
 this.camera.matrixAutoUpdate = true
