@@ -4306,6 +4306,10 @@ if (xr.reticle.visible) {
   if (ao && ao.paused) {
     SL_MC_Play()
   }
+
+  if (MMD_SA_options.Dungeon) {
+    MMD_SA_options.Dungeon.object_click_disabled = false
+  }
 }
 else if (xr.hit_found) {
   e.detail.result.return_value = true
@@ -4313,6 +4317,10 @@ else if (xr.hit_found) {
   xr.hit_found = false
   xr.reticle.position.copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10).add(xr.center_pos)
   xr.reticle.visible = true
+
+  if (MMD_SA_options.Dungeon) {
+    MMD_SA_options.Dungeon.object_click_disabled = true
+  }
 }
     });
 
@@ -4600,7 +4608,15 @@ if (pose) {
 
     this.camera.projectionMatrix.fromArray(view.projectionMatrix);
     this.camera.matrix.fromArray(view.transform.matrix);
-    this.camera.updateMatrixWorld(true);
+
+//    this.camera.updateMatrixWorld(true);
+// update .matrixWorld mnaully, to avoid repeated .updateMatrixWorld from below (to avoid issues for positional audio, etc)
+if ( this.camera.parent === undefined ) {
+  this.camera.matrixWorld.copy( this.camera.matrix );
+}
+else {
+  this.camera.matrixWorld.multiplyMatrices( this.camera.parent.matrixWorld, this.camera.matrix );
+}
 
     _camera.matrixWorld.copy(this.camera.matrixWorld)
     _camera.projectionMatrix.copy(this.camera.projectionMatrix)
