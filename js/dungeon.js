@@ -10003,6 +10003,7 @@ return (this._states.character_combat_locked);
  ,set character_combat_locked(v) { this._states.character_combat_locked = v; }
 
  ,get object_click_disabled() { return (this._states.object_click_disabled || this.event_mode); }
+ ,set object_click_disabled(v) { this._states.object_click_disabled = v; }
 
  ,check_states: function () {
 var s = this._states
