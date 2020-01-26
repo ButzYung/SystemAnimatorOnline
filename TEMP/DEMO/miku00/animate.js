@@ -460,12 +460,12 @@ return true
 
 };
 
-MMD_SA_options.Dungeon_options = null;
+//MMD_SA_options.Dungeon_options = null;
 // END
 
 
   window.addEventListener("MMDStarted", function () {
-let geometry = new THREE.PlaneGeometry(100,100)
+let geometry = new THREE.PlaneGeometry(1000,1000)
 /*
 let tex = document.createElement("canvas")
 tex.width = tex.height = 1

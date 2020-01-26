@@ -5467,6 +5467,16 @@ this._look_at_screen_ratio = v
   }
 });
 
+
+  if (MMD_SA_options.WebXR) {
+    window.addEventListener("jThree_ready", function () {
+MMD_SA_options.model_para_obj_all.forEach(function (model_para_obj) {
+  model_para_obj.use_default_boundingBox = true
+});
+    });
+  }
+
+
   MMD_SA_options.x_object_by_name = {}
 
   if (!MMD_SA_options.mesh_obj)
