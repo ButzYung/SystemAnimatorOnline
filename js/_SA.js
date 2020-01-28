@@ -549,9 +549,11 @@ return true
       Lquick_menu.style.visibility = "inherit"
       Lquick_menu._activated = true
     }
+/*
     window.addEventListener('blur', function () {
 Lquick_menu.style.visibility = LbuttonTL.style.visibility = LbuttonLR.style.visibility = "hidden";
     });
+*/
   }
 
   loadMain()
