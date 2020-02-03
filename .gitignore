@@ -1,4 +1,5 @@
 ﻿
 _private/
 TEMP/_config_local/
-au3/
+au3/*.exe
+au3/*/*.exe
