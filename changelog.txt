@@ -1,5 +1,12 @@
 System Animator - Changelog
 
+
+v10.9.2.0
+
+- Fix and improve Winamp player support (tested on Winamp 5.666 and the latest 5.8)
+
+- Fix a bug in confirm dialog box not returning the correct click state.
+
 -------------------------------
 
 v10.9.1.0

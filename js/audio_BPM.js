@@ -275,15 +275,15 @@ if (!browser_native_mode)
   }
 
  ,checkWinamp: function (vo) {
-    if (!returnBoolean("AutoItWinampMode"))
-      return
+    if (!returnBoolean("AutoItWinampMode")) return
 
     var sender = vo._sender
 
-    AutoIt_Execute(System.Gadget.path + '\\au3\\BASS\\_winamp')
-
-    Seq.item("AutoIt_CheckWinamp").At(1, "Audio_BPM._CheckWinamp()", -1, 0.1)
-    Seq.item("AutoIt_CheckWinamp").Play()
+// hide internal media control panel
+    EV_SL_Media_MouseEnter = function (sender) {
+var ao = sender.vo.audio_obj
+return ao.is_winamp
+    };
 
     this._CheckWinamp = function () {
 var winamp = vo.audio_obj_WINAMP
@@ -291,26 +291,11 @@ var winamp_is_active = (vo.audio_obj && vo.audio_obj.is_winamp && !sender.busy)
 
 var winamp_stopped
 
-var path = oShell.ExpandEnvironmentStrings("%TEMP%") + "\\_SA_winamp.txt"
-if (!FSO_OBJ.FileExists(path))
+var obj = WebKit_object.monitor_winamp._json
+
+if (!Object.keys(obj).length)
   winamp_stopped = true
 else {
-  var file, txt
-  var obj
-  try {
-    file = FSO_OBJ.OpenTextFile(path, 1);
-    txt = file.ReadAll()
-    file.Close()
-
-    obj = JSON.parse(txt)
-  }
-  catch (err) { return }
-
-  if (!obj) {
-    //DEBUG_show(Date.now())
-    return
-  }
-
   if (Date.now() > obj.time + 10*1000)
     winamp_stopped = true
   else {
@@ -322,10 +307,11 @@ else {
       winamp._JSON = obj
     }
 
-    if (!winamp || (winamp_is_active && (winamp.src != toFileProtocol(obj.path)))) {
+    if (!winamp || (winamp != vo.audio_obj) || (winamp_is_active && (winamp.src != toFileProtocol(obj.path)))) {
       if (!obj.playing)
         return
 //DEBUG_show(obj.path,0,1)
+      vo.audio_obj && vo.audio_obj.pause()
       var item = {
   path: obj.path
  ,isFileSystem: true
@@ -339,6 +325,7 @@ else {
         if (obj_last && (Math.abs(obj_last.pos - obj.pos)/1000 > 5)) {
           if (vo.is_webgl) {
             MMD_SA.MMD.frame_time_ref = 0
+            if (vo.motion_by_song_name_mode) { MMD_SA.seek_motion(vo.audio_obj.currentTime, true) }
           }
           else {
             var time_reference = (winamp.beat_reference - winamp.currentTime) * winamp.BPM/vo.BPM + sender.currentTime
@@ -378,13 +365,15 @@ else {
 if (winamp_stopped && winamp_is_active && !winamp.ended) {
   winamp.ended = true
   winamp.src = ""
-
   vo.audio_onended()
+  if (vo.is_webgl)
+    MMD_SA.MMD.play()
 }
 
 //DEBUG_show(obj.path+'/'+(obj.pos/1000) + '/' + (Date.now() - obj.time))
     }
 
+    WebKit_object.monitor_winamp.init()
     DEBUG_show("(Winamp mode)", 2)
   }
 
@@ -568,6 +557,13 @@ function _onload_song_name_mode() {
   sender.defaultPlaybackRate = sender.playbackRate = 1
   sender.busy = false
   ao.src = toFileProtocol(src)
+
+  if (ao.is_winamp) {
+    System._browser.on_animation_update.add(function () {
+      MMD_SA.playbackRate = 1
+      MMD_SA.seek_motion(ao.currentTime)
+    }, 1,0);
+  }
 }
 
 if (vo.motion_by_song_name_mode) {

@@ -983,6 +983,66 @@ Seq.item("MonitorWinstateSTDIN")._gadget_pause_disabled = true
 Seq.item("MonitorWinstateSTDIN").Play()
     }
   }
+
+ ,monitor_winamp: {
+    enabled: false
+   ,process: null
+   ,_json: {}
+   ,init: function () {
+if ((self.MMD_SA && MMD_SA.MMD_started) || (!self.MMD_SA && loaded)) {
+  this.run()
+}
+else {
+  window.addEventListener(((self.MMD_SA)?"MMDStarted":"load"), function () { WebKit_object.monitor_winamp.run() })
+}
+    }
+   ,run: function () {
+this.enabled = true
+if (loaded)
+  DEBUG_show("Winamp monitor:ON", 2)
+if (this.process)
+  return
+
+// http://stackoverflow.com/questions/18334181/spawn-on-node-js-windows-server-2012
+// /s /c
+var p = this.process = require('child_process').spawn('cmd', ['/s', '/c', '_winamp'], { 
+  cwd: System.Gadget.path + toLocalPath('\\au3\\BASS')
+});
+
+p.stdout.on('data', (data) => {
+  if (!WebKit_object.monitor_winamp.enabled)
+    return
+//  console.log('stdout:' + data);
+let data_str = data.toString()
+let para = data_str.split("}{")
+if (para.length > 1) {
+  para = "{" + para.pop()
+}
+else {
+  para = para[0]
+}
+try {
+  let json = WebKit_object.monitor_winamp._json = JSON.parse(para)
+//  console.log(!!json.playing)
+} catch (err) { console.error(err, data_str, para) }
+
+  self.Audio_BPM && Audio_BPM._CheckWinamp()
+});
+
+p.stderr.on('data', (data) => {
+  console.log('stderr:' + data);
+});
+/*
+p.on('close', (code) => {
+  console.log('child process exited with code ' + code);
+});
+*/
+Seq.item("MonitorWinampSTDIN").At(0, function () { WebKit_object.monitor_winamp.process.stdin.write("1\n"); }, -1, 1)
+Seq.item("MonitorWinampSTDIN")._gadget_pause_disabled = true
+Seq.item("MonitorWinampSTDIN").Play()
+    }
+
+  }
 }
 
 WebKit_object._init()

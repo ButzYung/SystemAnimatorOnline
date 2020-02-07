@@ -692,7 +692,7 @@ else
       }
     }
 
-    var ao = vo.audio_obj = (item._winamp_JSON) ? vo.audio_obj_WINAMP : ((vo.audio_obj) ? vo.audio_obj : vo.audio_obj_HTML5)
+    var ao = vo.audio_obj = (item._winamp_JSON) ? vo.audio_obj_WINAMP : ((vo.audio_obj && !vo.audio_obj.is_winamp) ? vo.audio_obj : vo.audio_obj_HTML5)
     if (ao && ((ao._ao_linked || ao._ao_linked_list) || ((ao == vo.audio_obj_HTML5) && self.AudioFFT)))
       ao = null
 
@@ -835,7 +835,7 @@ for (var i = 0; i < 5; i++)
 for (var i = 0; i < 5; i++)
   MMD_SA_options.motion.push({path:'MMD.js/motion/motion_basic_pack01.zip#/_number_meter_' + (i+1) + '.vmd', jThree_para:{}, match:{skin_jThree:/^(\u53F3)(\u80A9|\u8155|\u3072\u3058|\u624B\u9996|\u624B\u6369|.\u6307.)/}})
 
-var use_startup_screen = true//(MMD_SA_options.Dungeon || (browser_native_mode && !webkit_window)) ? (MMD_SA_options.startup_screen !== false) : !!MMD_SA_options.startup_screen;
+var use_startup_screen = (/AT_SystemAnimator_v0001\.gadget/.test(System.Gadget.path) && !returnBoolean("AutoItStayOnDesktop")) || ((MMD_SA_options.Dungeon || (browser_native_mode && !webkit_window)) ? (MMD_SA_options.startup_screen !== false) : !!MMD_SA_options.startup_screen);
 if (use_startup_screen) {
   if (!MMD_SA_options.startup_screen)
     MMD_SA_options.startup_screen = {}
@@ -1077,7 +1077,7 @@ if (MMD_SA_options.MMD_disabled) {
     mode = w_obj.SL && w_obj.SL._mouse_event_main && w_obj.SL._mouse_event_main()
   }
   else {
-    mode = !!(SL._media_player && SL._media_player.currentTime) || returnBoolean("UseAudioFFTLiveInput")
+    mode = !!(SL._media_player && SL._media_player.currentTime) || (self.AudioFFT && AudioFFT.use_live_input)
   }
 }
 else {
@@ -1748,7 +1748,7 @@ if (u_para['ST_opacity']) {
   var beat_max = u_para['ST_opacity'].max || 1-beat_min
   var beat_idle = (u_para['ST_opacity'].idle == null) ? 1 : u_para['ST_opacity'].idle
 
-  e.uniforms[ 'ST_opacity' ].value = (!MMD_SA.music_mode && (!MMD_SA_options.MMD_disabled || !returnBoolean("UseAudioFFTLiveInput")) && beat_idle) || beat_min + Math.pow(EC.effects_by_name[effect_name]._EV_usage_PROCESS(beat, beat_decay), beat_pow) * beat_max
+  e.uniforms[ 'ST_opacity' ].value = (!MMD_SA.music_mode && (!MMD_SA_options.MMD_disabled || !(self.AudioFFT && AudioFFT.use_live_input)) && beat_idle) || beat_min + Math.pow(EC.effects_by_name[effect_name]._EV_usage_PROCESS(beat, beat_decay), beat_pow) * beat_max
 }
   }
 
@@ -4908,6 +4908,7 @@ return this.model_para_obj.MME || this._MME
   }
 });
   MMD_SA_options.model_para_obj.MME = MMD_SA_options.MME
+  MMD_SA_options.model_para_obj.MME.PostProcessingEffects = MMD_SA_options.model_para_obj.MME.PostProcessingEffects || MMD_SA_options._MME.PostProcessingEffects
 
   try {
     var _file = FSO_OBJ.OpenTextFile(System.Gadget.path + '\\TEMP\\MMD_MME_by_model.json', 1);

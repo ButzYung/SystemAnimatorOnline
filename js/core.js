@@ -620,9 +620,8 @@ else
   }
  ,showMessageBox: function (browserWindow, options) {
 if (webkit_version_milestone["6.0.0"])
-  webkit_electron_remote.dialog.showMessageBoxSync(browserWindow, options)
-else
-  webkit_electron_remote.dialog.showMessageBox(browserWindow, options)
+  return webkit_electron_remote.dialog.showMessageBoxSync(browserWindow, options)
+return webkit_electron_remote.dialog.showMessageBox(browserWindow, options)
   }
       };
     }

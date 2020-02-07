@@ -517,14 +517,24 @@ if (!is_SA_child_animation) {
     SA_top_window.opener.closeSA(SA_top_window.SA_child_animation_id);
   }
 
-  if (webkit_electron_mode && WebKit_object.monitor_winstate.process) {
-    Seq.item("MonitorWinstateSTDIN").Stop()
-    try {
-      WebKit_object.monitor_winstate.process.stdin.write("KILL\n")
-//      WebKit_object.monitor_winstate.process.kill()
-      WebKit_object.monitor_winstate.process = null
+  if (webkit_electron_mode) {
+    if (WebKit_object.monitor_winstate.process) {
+      Seq.item("MonitorWinstateSTDIN").Stop()
+      try {
+        WebKit_object.monitor_winstate.process.stdin.write("KILL\n")
+//        WebKit_object.monitor_winstate.process.kill()
+        WebKit_object.monitor_winstate.process = null
+      }
+      catch (err) {}
     }
-    catch (err) {}
+    if (WebKit_object.monitor_winamp.process) {
+      Seq.item("MonitorWinampSTDIN").Stop()
+      try {
+        WebKit_object.monitor_winamp.process.stdin.write("KILL\n")
+        WebKit_object.monitor_winamp.process = null
+      }
+      catch (err) {}
+    }
   }
 }
     }
@@ -855,7 +865,7 @@ console.log("File input:", file)
       dd._path_to_obj = {}
       dd._obj_url = {}
     }
-    dd._path_to_obj[file.name] = file
+    dd._path_to_obj[file.name.replace(/^(.+)[\/\\]/, "")] = file
 /*
     if (/(\.zip)$/i.test(file.name)) {
       let obj_url_zip = dd._obj_url[file.name] = top.URL.createObjectURL(file)

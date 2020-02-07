@@ -13,7 +13,7 @@ var AudioFFT = {
  ,spectrum: null
  ,power_spectrum_divider: []
 
- ,use_live_input: returnBoolean("UseAudioFFTLiveInput")
+ ,use_live_input: Settings.UseAudioFFTLiveInput
 
  ,initialized: false
  ,init: function () {
