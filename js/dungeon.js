@@ -2724,7 +2724,7 @@ this._states = {}
 this.inventory.reset()
 
 var pos = options._saved.starting_position || options.starting_position
-var rot = null
+var rot = options._saved.starting_rotation || options.starting_rotation
 if (!pos) {
   pos = new THREE.Vector3()
   if (options.starting_position_full) {
@@ -2744,7 +2744,7 @@ if (!pos) {
       pos.add(options.starting_position_full.position)
 
     if (options.starting_position_full.rotation)
-      rot = new THREE.Vector3().copy(options.starting_position_full.rotation).multiplyScalar(Math.PI/180)
+      rot = options.starting_position_full.rotation
   }
   else {
     let x = this.grid_by_index[2][0][0]
@@ -2758,11 +2758,20 @@ Object.assign(c, options.character||options_base.character||{})
 c.reset()
 
 c.pos.copy(pos)
+//c.pos_update()
+if (!rot && (MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR)) {
+  rot = {x:0, y:180, z:0}
+}
 if (rot) {
+  c.TPS_mode = true
+  c.pos_update()
+
+  rot = new THREE.Vector3().copy(rot).multiplyScalar(Math.PI/180)
   c.rot.add(rot)
   THREE.MMD.getModels()[0].mesh.quaternion.multiply(MMD_SA.TEMP_q.setFromEuler(rot))
 }
-c.pos_update()
+else
+  c.pos_update()
 
 THREE.MMD.getModels()[0].resetMotion()
 MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice()
