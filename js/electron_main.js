@@ -1185,7 +1185,7 @@ global.capturePage = function (x,y) {
 
 //var screen_size = electron.screen.getPrimaryDisplay().workAreaSize
   capturePage_in_process = true
-  webContents.capturePage({x:x,y:y,width:1,height:1}, function(image) {
+  webContents.capturePage({x:x,y:y,width:1,height:1}).then(function(image) {
 var buffer = image.getBitmap()
 //webContents.send('tray_menu', encodeURIComponent([buffer[0],buffer[1],buffer[2],buffer[3]]) + ':0')
 webContents.send('capturePage', 'RESULT|' + [buffer[0],buffer[1],buffer[2],buffer[3]])

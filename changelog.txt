@@ -1,5 +1,12 @@
 System Animator - Changelog
 
+-------------------------------
+
+v10.9.2.1
+
+- Fix the partial click-thru and "opacity on hover" feature to work with the newer version of Electron (webContents.capturePage is now Promise-based).
+
+-------------------------------
 
 v10.9.2.0
 
