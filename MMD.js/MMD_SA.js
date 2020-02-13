@@ -4557,10 +4557,7 @@ if (!model_mesh.visible)
   this.restore_scene()
 this.XR_objects_by_id = null
 
-if (MMD_SA_options.Dungeon)
-  model_mesh.quaternion.setFromEuler(new THREE.Vector3(0,Math.PI,0))
-else
-  model_mesh.quaternion.set(0,0,0)
+model_mesh.quaternion.set(0,0,0)
 MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"] && MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]._obj.rotation.set(0,0,0)
 
 if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle_list_default[0] != MMD_SA_options._motion_shuffle_list_default[0])) {

@@ -129,7 +129,7 @@ return g
    ,ground_y: 0
    ,ground_normal: null
    ,grounded: false
-   ,camera_position_base_default: [0,10,-30]
+   ,camera_position_base_default: (MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR) ? ([0,10,30]) : [0,10,-30]
    ,camera_position_base: null
    ,speed_scale: 1
 //   ,boundingBox_scale: {x:2, y:1, z:2}
@@ -2758,9 +2758,8 @@ Object.assign(c, options.character||options_base.character||{})
 c.reset()
 
 c.pos.copy(pos)
-//c.pos_update()
 if (!rot && (MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR)) {
-  rot = {x:0, y:180, z:0}
+  c.TPS_mode = true
 }
 if (rot) {
   c.TPS_mode = true
