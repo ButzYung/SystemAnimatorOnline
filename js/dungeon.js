@@ -3037,6 +3037,9 @@ window.addEventListener("jThree_ready", function () {
       return
 //System.Gadget.path + '\\icon_teto_512x512.png'
 
+    if (!/^\w+\:/.test(para_SA.icon_path))
+      para_SA.icon_path = MMD_SA_options.model_path.replace(/[^\/\\]+$/, "") + para_SA.icon_path
+
     var icon_canvas = para_SA._icon_canvas = document.createElement("canvas")
     icon_canvas.width = icon_canvas.height = 64
     System._browser.load_file(para_SA.icon_path, function (xhr) {
