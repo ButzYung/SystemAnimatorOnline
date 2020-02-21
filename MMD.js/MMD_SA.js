@@ -4697,10 +4697,17 @@ return null
     };
 
     try {
-if (navigator.xr && XRSession.prototype.requestHitTest) {
-  navigator.xr.supportsSession('immersive-ar').then(()=>{
-    xr.can_AR = true
-  }).catch((err)=>{});
+if (navigator.xr) {
+  if (XRSession.prototype.requestHitTest) {
+    navigator.xr.supportsSession('immersive-ar').then(()=>{
+      xr.can_AR = true
+    }).catch((err)=>{});
+  }
+  else {
+    navigator.xr.isSessionSupported('immersive-ar').then(()=>{
+      xr.can_AR = true
+    }).catch((err)=>{});
+  }
 }
     } catch (err) { console.error(err) }
 
