@@ -4569,6 +4569,9 @@ MMD_SA.SpeechBubble.hide()
 this.frameOfRef = null
 this.session = null
 
+this.xrViewerSpaceHitTestSource = null
+this.xrTransientInputHitTestSource = null
+
 this.hits = []
 this.hits_searching = false
 this.hit_found = false
