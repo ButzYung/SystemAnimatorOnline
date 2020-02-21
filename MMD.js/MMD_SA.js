@@ -4439,6 +4439,10 @@ session.addEventListener('select', function (e) {
   xr.screen_clicked = time
 });
 
+document.body.addEventListener('beforexrselect', (ev) => {
+  ev.preventDefault();
+});
+
 /*
 // https://github.com/immersive-web/hit-test/blob/master/hit-testing-explainer.md
 // https://storage.googleapis.com/chromium-webxr-test/r740830/proposals/phone-ar-hit-test.html
@@ -4695,7 +4699,7 @@ if (xr.xrViewerSpaceHitTestSource) {
 if (this.hits.length) {
   let hit = this.hits[0]
   this.hits = []
-  this.hitMatrix = new THREE.Matrix4().fromArray(hit.getPose(this.frameOfRef).transform.matrix)
+  this.hitMatrix = new THREE.Matrix4().fromArray((xr.can_requestHitTestSource) ? hit.getPose(this.frameOfRef).transform.matrix : hit.hitMatrix)
   this.hitMatrix_decomposed = this.hitMatrix.decompose()
   return { hitMatrix:this.hitMatrix  };
 }
