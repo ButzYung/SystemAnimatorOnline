@@ -4686,6 +4686,7 @@ if (this.hit_found)
 // https://storage.googleapis.com/chromium-webxr-test/r740830/proposals/phone-ar-hit-test.html
 if (xr.xrViewerSpaceHitTestSource) {
   this.hits = frame.getHitTestResults(xr.xrViewerSpaceHitTestSource);
+  xr.xrViewerSpaceHitTestSource = null
 }
 
 if (this.hits.length) {
