@@ -535,8 +535,14 @@ MMD_SA._init_my_model = function () {
     if (model_json.length) {
       info_extra = "(+config)"
       model_json[0].async("text").then(function (json) {
-//MMD_SA_options.MME_saved = Object.assign(MMD_SA_options.MME_saved, JSON.parse(json))
-MMD_SA_options.model_para = Object.assign(MMD_SA_options.model_para, JSON.parse(json))
+MMD_SA_options.model_para = Object.assign(MMD_SA_options.model_para, JSON.parse(json, function (key, value) {
+  if (typeof value == "string") {
+    if (/^eval\((.+)\)$/.test(value)) {
+      value = eval(decodeURIComponent(RegExp.$1))
+    }
+  }
+  return value
+}));
 console.log("(model.json updated)")
       });
     }
