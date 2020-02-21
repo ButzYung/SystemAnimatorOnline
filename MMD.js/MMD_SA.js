@@ -4439,10 +4439,6 @@ session.addEventListener('select', function (e) {
   xr.screen_clicked = time
 });
 
-document.body.addEventListener('beforexrselect', (ev) => {
-  ev.preventDefault();
-});
-
 /*
 // https://github.com/immersive-web/hit-test/blob/master/hit-testing-explainer.md
 // https://storage.googleapis.com/chromium-webxr-test/r740830/proposals/phone-ar-hit-test.html
@@ -4496,6 +4492,10 @@ this._visible_ = reticle0.visible = v
 if (xr.ground_plane)
   xr.ground_plane.visible = !v
     }
+  });
+
+  document.body.addEventListener('beforexrselect', (ev) => {
+    ev.preventDefault();
   });
 }
 this.reticle.visible = false
