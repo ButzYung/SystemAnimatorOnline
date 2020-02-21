@@ -4348,7 +4348,10 @@ if (this.session) {
 }
 
 try {
-  let options = (xr.can_requestHitTestSource) ? {requiredFeatures:['hit-test'], optionalFeatures:["dom-overlay"]} : {optionalFeatures:["dom-overlay-for-handheld-ar"]}
+// https://immersive-web.github.io/dom-overlays/
+// https://klausw.github.io/three.js/examples/webvr_lorenzattractor.html
+  let options = (xr.can_requestHitTestSource) ? {requiredFeatures:['hit-test'], domOverlay:{root: document.body}} : {};
+  options.optionalFeatures = ["dom-overlay","dom-overlay-for-handheld-ar"];
   const session = await navigator.xr.requestSession('immersive-ar', options);
 
   this.onSessionStart(session)
@@ -4718,7 +4721,6 @@ if (!this.hits_searching) {
       xr.xrViewerSpaceHitTestSource = hitTestSource;
       xr.hits_searching = false;
     }).catch(error => {
-DEBUG_show(9,0,1)
 //          console.error("Error when requesting hit test source", error);
       xr.hits_searching = false;
     });
