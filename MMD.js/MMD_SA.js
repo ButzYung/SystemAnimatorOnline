@@ -4684,7 +4684,7 @@ if (this.hit_found)
   return {}
 
 // https://storage.googleapis.com/chromium-webxr-test/r740830/proposals/phone-ar-hit-test.html
-if (xr.can_requestHitTestSource) {
+if (xr.xrViewerSpaceHitTestSource) {
   this.hits = frame.getHitTestResults(xr.xrViewerSpaceHitTestSource);
 }
 
@@ -4717,6 +4717,7 @@ if (!this.hits_searching) {
       xr.xrViewerSpaceHitTestSource = hitTestSource;
       xr.hits_searching = false;
     }).catch(error => {
+DEBUG_show(9,0,1)
 //          console.error("Error when requesting hit test source", error);
       xr.hits_searching = false;
     });
