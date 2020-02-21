@@ -4348,7 +4348,8 @@ if (this.session) {
 }
 
 try {
-  const session = await navigator.xr.requestSession('immersive-ar', {optionalFeatures: ["dom-overlay-for-handheld-ar"]});
+  let options = (xr.can_requestHitTestSource) ? {requiredFeatures:['hit-test'], optionalFeatures:["dom-overlay"]} : {optionalFeatures:["dom-overlay-for-handheld-ar"]}
+  const session = await navigator.xr.requestSession('immersive-ar', options);
 
   this.onSessionStart(session)
 }
@@ -4380,28 +4381,12 @@ catch (err) {
     }
   }
 
+ ,xrViewerSpaceHitTestSource: null
+ ,xrTransientInputHitTestSource: null
  ,onSessionStart: async function (session) {
 this.session = session
+
 session.addEventListener('end', this.onSessionEnd);
-
-this.camera = MMD_SA._trackball_camera.object
-
-this.renderer = MMD_SA.renderer;
-//this.renderer.autoClear = false;
-
-this.gl = this.renderer.getContext();
-
-try {
-  await this.gl.makeXRCompatible();
-  session.updateRenderState({ baseLayer: new XRWebGLLayer(session, this.gl) });
-  this.frameOfRef = await session.requestReferenceSpace('local');
-}
-catch (err) {
-  session.end()
-  console.error(err)
-  DEBUG_show("AR session error:" + err,0,1)
-  return
-}
 
 session.addEventListener('inputsourceschange', function (e) {
   xr.input_event.inputSources = e.session.inputSources;
@@ -4450,6 +4435,36 @@ session.addEventListener('select', function (e) {
     xr.screen_dblclicked = time
   xr.screen_clicked = time
 });
+
+/*
+// https://github.com/immersive-web/hit-test/blob/master/hit-testing-explainer.md
+// https://storage.googleapis.com/chromium-webxr-test/r740830/proposals/phone-ar-hit-test.html
+        session.requestHitTestSourceForTransientInput({
+          profile : "generic-touchscreen"
+        }).then(transient_input_hit_test_source => {
+          console.debug("Hit test source for generic touchscreen created!");
+          xrTransientInputHitTestSource = transient_input_hit_test_source;
+        });
+*/
+
+this.camera = MMD_SA._trackball_camera.object
+
+this.renderer = MMD_SA.renderer;
+//this.renderer.autoClear = false;
+
+this.gl = this.renderer.getContext();
+
+try {
+  await this.gl.makeXRCompatible();
+  session.updateRenderState({ baseLayer: new XRWebGLLayer(session, this.gl) });
+  this.frameOfRef = await session.requestReferenceSpace('local');
+}
+catch (err) {
+  session.end()
+  console.error(err)
+  DEBUG_show("AR session error:" + err,0,1)
+  return
+}
 
 if (!this.reticle) {
   let geometry = new THREE.RingGeometry(0.1, 0.11, 24, 1);
@@ -4628,7 +4643,7 @@ else {
     _camera.projectionMatrix.copy(this.camera.projectionMatrix)
   }
 
-  var hit_result = this.hit_test()
+  var hit_result = this.hit_test(frame)
 
   if (hit_result) {
     if (!this.hit_found && hit_result.hitMatrix) {
@@ -4664,14 +4679,19 @@ else {
 //else { DEBUG_show(0,0,1) }
   }
 
- ,hit_test: function () {
+ ,hit_test: function (frame) {
 if (this.hit_found)
   return {}
+
+// https://storage.googleapis.com/chromium-webxr-test/r740830/proposals/phone-ar-hit-test.html
+if (xr.can_requestHitTestSource) {
+  this.hits = frame.getHitTestResults(xr.xrViewerSpaceHitTestSource);
+}
 
 if (this.hits.length) {
   let hit = this.hits[0]
   this.hits = []
-  this.hitMatrix = new THREE.Matrix4().fromArray(hit.hitMatrix)
+  this.hitMatrix = new THREE.Matrix4().fromArray(hit.getPose(this.frameOfRef).transform.matrix)
   this.hitMatrix_decomposed = this.hitMatrix.decompose()
   return { hitMatrix:this.hitMatrix  };
 }
@@ -4684,12 +4704,31 @@ if (!this.hits_searching) {
   const ray = this.raycaster.ray;
 
   let xrray = new XRRay(new DOMPoint(ray.origin.x, ray.origin.y, ray.origin.z), new DOMPoint(ray.direction.x, ray.direction.y, ray.direction.z));
-  this.session.requestHitTest(xrray, this.frameOfRef).then(function (hits) {
-    xr.hits_searching = false;
-    xr.hits = hits;
-  }).catch(function (err) {
-    xr.hits_searching = false;
-  });
+
+  if (xr.can_requestHitTestSource) {
+// https://storage.googleapis.com/chromium-webxr-test/r740830/proposals/phone-ar-hit-test.html
+    this.session.requestHitTestSource({
+      space : this.frameOfRef,
+          //space : xrLocalFloor, // WIP: change back to viewer
+          //space : xrOffsetSpace, // WIP: change back to viewer
+      offsetRay : xrray
+          //offsetRay : new XRRay(new DOMPointReadOnly(0,.5,-.5), new DOMPointReadOnly(0, -0.5, -1)) // WIP: change back to default
+    }).then((hitTestSource) => {
+      xr.xrViewerSpaceHitTestSource = hitTestSource;
+      xr.hits_searching = false;
+    }).catch(error => {
+//          console.error("Error when requesting hit test source", error);
+      xr.hits_searching = false;
+    });
+  }
+  else {
+    this.session.requestHitTest(xrray, this.frameOfRef).then(function (hits) {
+      xr.hits_searching = false;
+      xr.hits = hits;
+    }).catch(function (err) {
+      xr.hits_searching = false;
+    });
+  }
 }
 
 return null
@@ -4701,11 +4740,13 @@ if (navigator.xr) {
   if (XRSession.prototype.requestHitTest) {
     navigator.xr.supportsSession('immersive-ar').then(()=>{
       xr.can_AR = true
+      xr.can_requestHitTest = true
     }).catch((err)=>{});
   }
   else {
     navigator.xr.isSessionSupported('immersive-ar').then(()=>{
       xr.can_AR = true
+      xr.can_requestHitTestSource = true
     }).catch((err)=>{});
   }
 }
