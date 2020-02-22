@@ -4351,7 +4351,7 @@ try {
 // https://immersive-web.github.io/dom-overlays/
 // https://klausw.github.io/three.js/examples/webvr_lorenzattractor.html
   let options = (xr.can_requestHitTestSource) ? {requiredFeatures:['hit-test'], domOverlay:{root: document.body}} : {};
-  options.optionalFeatures = ["dom-overlay","dom-overlay-for-handheld-ar","xr-global-light-estimation"];
+  options.optionalFeatures = ["dom-overlay","dom-overlay-for-handheld-ar"];//,"xr-global-light-estimation"];
   const session = await navigator.xr.requestSession('immersive-ar', options);
 
   this.onSessionStart(session)
