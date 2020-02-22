@@ -4300,6 +4300,12 @@ if (xr.reticle.visible) {
 
     model_mesh.lookAt(xr.camera.position.clone().sub(center_pos_old).add(xr.center_pos).setY(model_mesh.position.y))
     MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"] && MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]._obj.rotation.setEulerFromQuaternion(model_mesh.quaternion)
+
+this.hit_active.createAnchor().then(function (anchor) {
+DEBUG_show("anchor created")
+}).catch(function (err) {
+DEBUG_show("anchor creation failed")
+});
   }
 
   xr.hit_found = true
@@ -4575,6 +4581,7 @@ this.xrTransientInputHitTestSource = null
 this.hits = []
 this.hits_searching = false
 this.hit_found = false
+this.hit_active = null
 this.hitMatrix = null
 this.hitMatrix_decomposed = null
 this.reticle.visible = false
@@ -4719,7 +4726,7 @@ if (xr.xrViewerSpaceHitTestSource) {
 }
 
 if (this.hits.length) {
-  let hit = this.hits[0]
+  let hit = this.hit_active = this.hits[0]
   this.hits = []
   this.hitMatrix = new THREE.Matrix4().fromArray((xr.can_requestHitTestSource) ? hit.getPose(this.frameOfRef).transform.matrix : hit.hitMatrix)
   this.hitMatrix_decomposed = this.hitMatrix.decompose()
