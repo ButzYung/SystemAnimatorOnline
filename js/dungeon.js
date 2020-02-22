@@ -3379,8 +3379,7 @@ if (!_key_pressed_when_character_clicked[e.keyCode]) {
 
   var _cursor_timerID
   window.addEventListener('SA_Dungeon_character_clicked', function (e) {
-if (MMD_SA.WebXR.reticle && MMD_SA.WebXR.reticle.visible)
-  return
+//if (MMD_SA.WebXR.reticle && MMD_SA.WebXR.reticle.visible) return
 
 var d = MMD_SA_options.Dungeon
 var intersected = e.detail.intersected.sub(d.character.pos)
