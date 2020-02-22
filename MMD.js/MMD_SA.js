@@ -4350,8 +4350,8 @@ if (this.session) {
 try {
 // https://immersive-web.github.io/dom-overlays/
 // https://klausw.github.io/three.js/examples/webvr_lorenzattractor.html
-  let options = (xr.can_requestHitTestSource) ? {requiredFeatures:["hit-test","xr-global-light-estimation"], domOverlay:{root: document.body}} : {};
-  options.optionalFeatures = ["dom-overlay","dom-overlay-for-handheld-ar"];
+  let options = (xr.can_requestHitTestSource) ? {requiredFeatures:["hit-test"], domOverlay:{root: document.body}} : {};
+  options.optionalFeatures = ["dom-overlay","dom-overlay-for-handheld-ar"];//,"xr-global-light-estimation"
   const session = await navigator.xr.requestSession('immersive-ar', options);
 
   this.onSessionStart(session)
@@ -4685,7 +4685,7 @@ else {
 
   this.camera.position.getPositionFromMatrix(this.camera.matrix)
   this.camera.updateMatrixWorld(true);
-
+/*
   if (this.can_requestHitTestSource && !this.light_searching) {
     try {
       if (frame.getGlobalLightEstimate) {
@@ -4702,7 +4702,7 @@ else DEBUG_show("frame.getGlobalLightEstimate not found")
     }
     catch (err) { DEBUG_show(Date.now()+"/light estimation error") }
   }
-
+*/
   Animate_RAF(time)
 }
 //else { DEBUG_show(0,0,1) }
