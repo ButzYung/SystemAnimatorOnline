@@ -4695,8 +4695,10 @@ else {
 DEBUG_show(Date.now())
         }).catch(function (err) {
           xr.light_searching = false
+DEBUG_show("frame.getGlobalLightEstimate ERROR")
         });
       }
+else DEBUG_show("frame.getGlobalLightEstimate not found")
     }
     catch (err) { DEBUG_show(Date.now()+"/light estimation error") }
   }
