@@ -4307,7 +4307,6 @@ DEBUG_show("anchor created")
 DEBUG_show("anchor creation failed")
 });
 */
-DEBUG_show(xr.hit_active.createAnchor+"/")
   }
 
   xr.hit_found = true
