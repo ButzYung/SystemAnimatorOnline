@@ -3379,8 +3379,6 @@ if (!_key_pressed_when_character_clicked[e.keyCode]) {
 
   var _cursor_timerID
   window.addEventListener('SA_Dungeon_character_clicked', function (e) {
-//if (MMD_SA.WebXR.reticle && MMD_SA.WebXR.reticle.visible) return
-
 var d = MMD_SA_options.Dungeon
 var intersected = e.detail.intersected.sub(d.character.pos)
 
@@ -10015,7 +10013,7 @@ return (this._states.character_combat_locked);
   }
  ,set character_combat_locked(v) { this._states.character_combat_locked = v; }
 
- ,get object_click_disabled() { return (this._states.object_click_disabled || this.event_mode); }
+ ,get object_click_disabled() { return (this._states.object_click_disabled || this.event_mode || (MMD_SA.WebXR.reticle && MMD_SA.WebXR.reticle.visible)); }
  ,set object_click_disabled(v) { this._states.object_click_disabled = v; }
 
  ,check_states: function () {
