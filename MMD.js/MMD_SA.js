@@ -4596,8 +4596,6 @@ this.hitMatrix = null
 this.hitMatrix_decomposed = null
 this.reticle.visible = false
 
-this.light_searching = false
-
 this.input_event = { inputSources:[] }
 
 this.center_pos = null
@@ -4714,24 +4712,7 @@ else {
 
   this.camera.position.getPositionFromMatrix(this.camera.matrix)
   this.camera.updateMatrixWorld(true);
-/*
-  if (this.can_requestHitTestSource && !this.light_searching) {
-    try {
-      if (frame.getGlobalLightEstimate) {
-        this.light_searching = true
-        frame.getGlobalLightEstimate().then(function (xrLightProbe) {
-          xr.light_searching = false
-DEBUG_show(Date.now())
-        }).catch(function (err) {
-          xr.light_searching = false
-DEBUG_show("frame.getGlobalLightEstimate ERROR")
-        });
-      }
-else DEBUG_show("frame.getGlobalLightEstimate not found")
-    }
-    catch (err) { DEBUG_show(Date.now()+"/light estimation error") }
-  }
-*/
+
   Animate_RAF(time)
 }
 //else { DEBUG_show(0,0,1) }
@@ -4770,7 +4751,7 @@ if (!this.hits_searching) {
       space : this.frameOfRef,
           //space : xrLocalFloor, // WIP: change back to viewer
           //space : xrOffsetSpace, // WIP: change back to viewer
-      offsetRay : xrray
+//      offsetRay : xrray
           //offsetRay : new XRRay(new DOMPointReadOnly(0,.5,-.5), new DOMPointReadOnly(0, -0.5, -1)) // WIP: change back to default
     }).then((hitTestSource) => {
       xr.xrViewerSpaceHitTestSource = hitTestSource;
