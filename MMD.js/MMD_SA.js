@@ -4755,8 +4755,8 @@ if (!this.hits_searching) {
           //offsetRay : new XRRay(new DOMPointReadOnly(0,.5,-.5), new DOMPointReadOnly(0, -0.5, -1)) // WIP: change back to default
     }).then((hitTestSource) => {
       xr.xrViewerSpaceHitTestSource = hitTestSource;
-      xr.hits_searching = false;
-//      System._browser.on_animation_update(()=>{xr.hits_searching=false}, 0,1);
+//      xr.hits_searching = false;
+      System._browser.on_animation_update(()=>{xr.hits_searching=false}, 10,1);
     }).catch(error => {
 //          console.error("Error when requesting hit test source", error);
       xr.hits_searching = false;
