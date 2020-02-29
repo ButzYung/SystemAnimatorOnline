@@ -4476,6 +4476,15 @@ catch (err) {
   return
 }
 
+try {
+  session.updateWorldTrackingState({
+// https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/modules/xr/xr_world_tracking_state.idl
+//    "planeDetectionState" : { "enabled" : true}
+    "lightEstimationState" : { "enabled" : true}
+  });
+}
+catch (err) { DEBUG_show("light-estimation failed to init") }
+
 if (!this.reticle) {
   let geometry = new THREE.RingGeometry(0.1, 0.11, 24, 1);
   geometry.applyMatrix(new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(-90)));
@@ -4679,6 +4688,12 @@ else {
       this.reticle.visible = true;
     }
   }
+
+  try {
+// https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/modules/xr/xr_world_information.idl
+    DEBUG_show(Date.now()+'/'+frame.worldInformation.lightEstimation)
+  }
+  catch (err) { DEBUG_show(".lightEstimation failed")}
 
 // xyz
   this.camera.matrix.elements[12] *= 10
