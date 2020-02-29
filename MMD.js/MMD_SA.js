@@ -4702,9 +4702,9 @@ else {
 //      DEBUG_show([li.x, li.y, li.z, li.w])
       let c = jThree("#MMD_DirLight").three(0).color
       c.copy(this.light_color_base)
-      c.r *= Math.sqrt(li.x)
-      c.g *= Math.sqrt(li.y)
-      c.b *= Math.sqrt(li.z)
+      c.r *= 0.75 * Math.sqrt(li.x)
+      c.g *= 0.75 * Math.sqrt(li.y)
+      c.b *= 0.75 * Math.sqrt(li.z)
     }
   }
   catch (err) { DEBUG_show(".lightEstimation failed")}
@@ -4742,7 +4742,7 @@ if (xr.xrViewerSpaceHitTestSource) {
   catch (err) {}
   xr.xrViewerSpaceHitTestSource = null
 */
-DEBUG_show(Date.now()+'/'+this.hits.length)
+//DEBUG_show(Date.now()+'/'+this.hits.length)
 }
 
 if (this.hits.length) {
@@ -4773,11 +4773,9 @@ if (!this.hits_searching) {
     }).then((hitTestSource) => {
       xr.xrViewerSpaceHitTestSource = hitTestSource;
 //      xr.hits_searching = false;
-//      System._browser.on_animation_update(()=>{xr.hits_searching=false}, 0,1);
     }).catch(error => {
 //          console.error("Error when requesting hit test source", error);
-//      xr.hits_searching = false;
-//      System._browser.on_animation_update(()=>{xr.hits_searching=false}, 0,1);
+      xr.hits_searching = false;
     });
   }
   else {
