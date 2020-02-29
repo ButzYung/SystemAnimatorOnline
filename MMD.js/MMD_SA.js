@@ -4691,7 +4691,13 @@ else {
 
   try {
 // https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/modules/xr/xr_world_information.idl
-    DEBUG_show(Date.now()+'/'+frame.worldInformation.lightEstimation)
+// https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/modules/xr/xr_light_estimation.idl
+// https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/modules/xr/xr_light_probe.idl
+    if (frame.worldInformation.lightEstimation) {
+      let lightProbe = frame.worldInformation.lightEstimation.lightProbe
+      let li = lightProbe.mainLightIntensity
+      DEBUG_show([li.x, li.y, li.z, li.w])
+    }
   }
   catch (err) { DEBUG_show(".lightEstimation failed")}
 
