@@ -608,6 +608,24 @@ return {
  ,max_base: 8
  ,list: []
 
+// for mobile
+ ,_item_selected_index: null
+ ,get item_selected_index()  { return this._item_selected_index }
+ ,set item_selected_index(v) {
+if (!is_mobile)
+  return
+
+if (typeof this._item_selected_index === 'number')
+  document.getElementById("Ldungeon_inventory_item" + this._item_selected_index).style.opacity = 1
+
+if (v)
+  v = parseInt(v)
+this._item_selected_index = v
+
+if (typeof v === 'number')
+  document.getElementById("Ldungeon_inventory_item" + v).style.opacity = 0.75;
+  }
+
  ,get action_disabled() { return (MMD_SA_options.Dungeon.event_mode); }
 
  ,initialize: function () {
@@ -668,6 +686,8 @@ inv_target.update_UI()
 
  ,reset: function () {
 var that = this
+
+this.item_selected_index = null
 
 this.list.forEach(function (inv) {
   inv.clear()
@@ -3967,9 +3987,24 @@ SL_Host.appendChild(d)
 
 var inv = MMD_SA_options.Dungeon.inventory
 
+var drop_item = function (index_source, index) {
+  var inv_source = inv.list[index_source]
+  if (inv_source.item.is_base_inventory && (index >= inv.max_base)) {
+    MMD_SA_options.Dungeon.sound.audio_object_by_name["interface_item_deny"].play()
+    return
+  }
+  var inv_target = inv.list[index]
+  if (inv_target.item.is_base_inventory && (index_source >= inv.max_base)) {
+    MMD_SA_options.Dungeon.sound.audio_object_by_name["interface_item_deny"].play()
+    return
+  }
+  MMD_SA_options.Dungeon.sound.audio_object_by_name[((inv_source.item.sound && inv_source.item.sound.find(function(i){return i.is_drag})) || {name:"interface_item_drop"}).name].play()
+  inv.swap(index_source, index)
+};
+
 for (var r = 0, r_max = inv.max_row; r < r_max; r++) {
 for (var i = 0, i_max = inv.max_base; i < i_max; i++) {
-  var idx = r * i_max + i
+  let idx = r * i_max + i
 
   var d_inv = d = document.createElement("div")
   ds = d.style
@@ -3984,72 +4019,63 @@ for (var i = 0, i_max = inv.max_base; i < i_max; i++) {
   d.draggable  = true
   d.addEventListener("mousedown", function (e) {
 e.stopPropagation();
+if (is_mobile) {
+  e.preventDefault()
+
+  if (inv.item_selected_index != null) {
+    drop_item(inv.item_selected_index, idx)
+    inv.item_selected_index = null
+  }
+  else if (inv.list[idx].item_id) {
+    inv.item_selected_index = idx
+  }
+}
   }, true);
-  d.addEventListener("dblclick", (function () {
-var index = idx
-var sound_item_access = { name:"interface_item_access" }
-return function (e) {
-  e.stopPropagation();
-  var inv_item = inv.list[index]
-  if (!inv_item.action_check()) {
-    return
-  }
+  d.addEventListener("dblclick", function (e) {
+e.stopPropagation();
 
-  if (inv_item.item.action.func()) {
-    MMD_SA_options.Dungeon.sound.audio_object_by_name["interface_item_deny"].play()
-    return
-  }
+inv.item_selected_index = null
 
-  if (!inv_item.item.action.no_sound)
-    MMD_SA_options.Dungeon.sound.audio_object_by_name[((inv_item.item.sound && inv_item.item.sound[0]) || sound_item_access).name].play()
+var inv_item = inv.list[idx]
+if (!inv_item.action_check()) {
+  return
+}
 
-  if (inv_item.item.stock_max != 1) {
-    if (--inv_item.stock == 0)
-      inv_item.clear()
-    else
-      document.getElementById("Ldungeon_inventory_item" + index + "_stock").textContent = inv_item.stock
-  }
-};
-  })(), true);
-  d.addEventListener("dragstart", (function () {
-var index = idx
-return function (e) {
-  if (!inv.list[index].item_id)
-    return
-  e.stopPropagation();
-  e.dataTransfer.clearData();
-  e.dataTransfer.setData("text/plain", index);
-  e.dataTransfer.setDragImage(inv.list[index].item.icon, 30,30);
-  e.dataTransfer.dropEffect = "move";
-};
-  })(), true);
+if (inv_item.item.action.func()) {
+  MMD_SA_options.Dungeon.sound.audio_object_by_name["interface_item_deny"].play()
+  return
+}
+
+if (!inv_item.item.action.no_sound)
+  MMD_SA_options.Dungeon.sound.audio_object_by_name[((inv_item.item.sound && inv_item.item.sound[0]) || {name:"interface_item_access"}).name].play()
+
+if (inv_item.item.stock_max != 1) {
+  if (--inv_item.stock == 0)
+    inv_item.clear()
+  else
+    document.getElementById("Ldungeon_inventory_item" + idx + "_stock").textContent = inv_item.stock
+}
+  }, true);
+  d.addEventListener("dragstart", function (e) {
+if (!inv.list[idx].item_id)
+  return
+e.stopPropagation();
+e.dataTransfer.clearData();
+e.dataTransfer.setData("text/plain", idx);
+e.dataTransfer.setDragImage(inv.list[idx].item.icon, 30,30);
+e.dataTransfer.dropEffect = "move";
+  }, true);
   d.addEventListener("dragover", function (e) {
 e.preventDefault();
 e.dataTransfer.dropEffect = "move"
   });
-  d.addEventListener("drop", (function () {
-var index = idx
-var sound_item_drop = { name:"interface_item_drop" }
-return function (e) {
-  e.stopPropagation();
-  e.preventDefault();
-  var index_source = e.dataTransfer.getData("text");
+  d.addEventListener("drop", function (e) {
+e.stopPropagation();
+e.preventDefault();
+var index_source = e.dataTransfer.getData("text");
 //DEBUG_show(index_source,0,1)
-  var inv_source = inv.list[index_source]
-  if (inv_source.item.is_base_inventory && (index >= inv.max_base)) {
-    MMD_SA_options.Dungeon.sound.audio_object_by_name["interface_item_deny"].play()
-    return
-  }
-  var inv_target = inv.list[index]
-  if (inv_target.item.is_base_inventory && (index_source >= inv.max_base)) {
-    MMD_SA_options.Dungeon.sound.audio_object_by_name["interface_item_deny"].play()
-    return
-  }
-
-  MMD_SA_options.Dungeon.sound.audio_object_by_name[((inv_source.item.sound && inv_source.item.sound.find(function(i){return i.is_drag})) || sound_item_drop).name].play()
-  inv.swap(index_source, index)
-};
-  })());
+drop_item(index_source, idx);
+  });
 
   if (r)
     Ldungeon_inventory_backpack.appendChild(d)
