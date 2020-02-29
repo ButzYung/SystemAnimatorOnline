@@ -4697,7 +4697,7 @@ else {
     if (frame.worldInformation.lightEstimation) {
       let lightProbe = frame.worldInformation.lightEstimation.lightProbe
       let li = lightProbe.mainLightIntensity
-      DEBUG_show([li.x, li.y, li.z, li.w])
+//      DEBUG_show([li.x, li.y, li.z, li.w])
       let c = jThree("#MMD_DirLight").three(0).color
       c.copy(this.light_color_base)
       c.r *= Math.sqrt(li.x)
@@ -4734,15 +4734,16 @@ if (this.hit_found)
 if (xr.xrViewerSpaceHitTestSource) {
   this.hits = frame.getHitTestResults(xr.xrViewerSpaceHitTestSource);
   try {
-//    xr.xrViewerSpaceHitTestSource.cancel()
+    xr.xrViewerSpaceHitTestSource.cancel()
   }
   catch (err) {}
   xr.xrViewerSpaceHitTestSource = null
+DEBUG_show(Date.now()+'/'+this.hits.length)
 }
 
 if (this.hits.length) {
   let hit = this.hit_active = this.hits[0]
-//  this.hits = []
+  this.hits = []
   this.hitMatrix = new THREE.Matrix4().fromArray((xr.can_requestHitTestSource) ? hit.getPose(this.frameOfRef).transform.matrix : hit.hitMatrix)
   this.hitMatrix_decomposed = this.hitMatrix.decompose()
   return { hitMatrix:this.hitMatrix  };
@@ -4767,11 +4768,11 @@ if (!this.hits_searching) {
           //offsetRay : new XRRay(new DOMPointReadOnly(0,.5,-.5), new DOMPointReadOnly(0, -0.5, -1)) // WIP: change back to default
     }).then((hitTestSource) => {
       xr.xrViewerSpaceHitTestSource = hitTestSource;
-//      xr.hits_searching = false;
+      xr.hits_searching = false;
 //      System._browser.on_animation_update(()=>{xr.hits_searching=false}, 0,1);
     }).catch(error => {
 //          console.error("Error when requesting hit test source", error);
-//      xr.hits_searching = false;
+      xr.hits_searching = false;
 //      System._browser.on_animation_update(()=>{xr.hits_searching=false}, 0,1);
     });
   }
