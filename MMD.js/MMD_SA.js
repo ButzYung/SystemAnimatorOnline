@@ -4476,6 +4476,7 @@ catch (err) {
   return
 }
 
+this.ambient_light_color_base = jThree("#MMD_AmbLight").three(0).color.clone()
 try {
   session.updateWorldTrackingState({
 // https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/modules/xr/xr_world_tracking_state.idl
@@ -4596,6 +4597,8 @@ this.hitMatrix = null
 this.hitMatrix_decomposed = null
 this.reticle.visible = false
 
+jThree("#MMD_AmbLight").three(0).color.copy(this.ambient_light_color_base)
+
 this.input_event = { inputSources:[] }
 
 this.center_pos = null
@@ -4695,6 +4698,11 @@ else {
       let lightProbe = frame.worldInformation.lightEstimation.lightProbe
       let li = lightProbe.mainLightIntensity
       DEBUG_show([li.x, li.y, li.z, li.w])
+      let c = jThree("#MMD_AmbLight").three(0).color
+      c.copy(this.ambient_light_color_base)
+      c.r *= Math.sqrt(li.x)
+      c.g *= Math.sqrt(li.y)
+      c.b *= Math.sqrt(li.z)
     }
   }
   catch (err) { DEBUG_show(".lightEstimation failed")}
@@ -4755,8 +4763,8 @@ if (!this.hits_searching) {
           //offsetRay : new XRRay(new DOMPointReadOnly(0,.5,-.5), new DOMPointReadOnly(0, -0.5, -1)) // WIP: change back to default
     }).then((hitTestSource) => {
       xr.xrViewerSpaceHitTestSource = hitTestSource;
-//      xr.hits_searching = false;
-      System._browser.on_animation_update(()=>{xr.hits_searching=false}, 10,1);
+      xr.hits_searching = false;
+//      System._browser.on_animation_update(()=>{xr.hits_searching=false}, 0,1);
     }).catch(error => {
 //          console.error("Error when requesting hit test source", error);
       xr.hits_searching = false;
