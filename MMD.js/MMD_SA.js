@@ -4734,7 +4734,7 @@ if (this.hit_found)
 if (xr.xrViewerSpaceHitTestSource) {
   this.hits = frame.getHitTestResults(xr.xrViewerSpaceHitTestSource);
   try {
-//    xr.xrViewerSpaceHitTestSource.cancel()
+    xr.xrViewerSpaceHitTestSource.cancel()
   }
   catch (err) {}
   xr.xrViewerSpaceHitTestSource = null
@@ -4764,7 +4764,7 @@ if (!this.hits_searching) {
       space : this.frameOfRef,
           //space : xrLocalFloor, // WIP: change back to viewer
           //space : xrOffsetSpace, // WIP: change back to viewer
-      offsetRay : new XRRay()//xrray
+      offsetRay : xrray
           //offsetRay : new XRRay(new DOMPointReadOnly(0,.5,-.5), new DOMPointReadOnly(0, -0.5, -1)) // WIP: change back to default
     }).then((hitTestSource) => {
       xr.xrViewerSpaceHitTestSource = hitTestSource;
