@@ -4468,6 +4468,7 @@ try {
   await this.gl.makeXRCompatible();
   session.updateRenderState({ baseLayer: new XRWebGLLayer(session, this.gl) });
   this.frameOfRef = await session.requestReferenceSpace('local');
+  this.frameOfRef_viewer = await session.requestReferenceSpace('viewer');
 }
 catch (err) {
   session.end()
@@ -4584,6 +4585,7 @@ MMD_SA.SpeechBubble.hide()
 
  ,onSessionEnd: function () {
 this.frameOfRef = null
+this.frameOfRef_viewer = null
 this.session = null
 
 this.xrViewerSpaceHitTestSource = null
@@ -4733,11 +4735,13 @@ if (this.hit_found)
 // https://storage.googleapis.com/chromium-webxr-test/r740830/proposals/phone-ar-hit-test.html
 if (xr.xrViewerSpaceHitTestSource) {
   this.hits = frame.getHitTestResults(xr.xrViewerSpaceHitTestSource);
+/*
   try {
     xr.xrViewerSpaceHitTestSource.cancel()
   }
   catch (err) {}
   xr.xrViewerSpaceHitTestSource = null
+*/
 DEBUG_show(Date.now()+'/'+this.hits.length)
 }
 
@@ -4761,18 +4765,18 @@ if (!this.hits_searching) {
   if (xr.can_requestHitTestSource) {
 // https://storage.googleapis.com/chromium-webxr-test/r740830/proposals/phone-ar-hit-test.html
     this.session.requestHitTestSource({
-      space : this.frameOfRef,
+      space : this.frameOfRef_viewer,
           //space : xrLocalFloor, // WIP: change back to viewer
           //space : xrOffsetSpace, // WIP: change back to viewer
-      offsetRay : xrray
+//      offsetRay : xrray
           //offsetRay : new XRRay(new DOMPointReadOnly(0,.5,-.5), new DOMPointReadOnly(0, -0.5, -1)) // WIP: change back to default
     }).then((hitTestSource) => {
       xr.xrViewerSpaceHitTestSource = hitTestSource;
-      xr.hits_searching = false;
+//      xr.hits_searching = false;
 //      System._browser.on_animation_update(()=>{xr.hits_searching=false}, 0,1);
     }).catch(error => {
 //          console.error("Error when requesting hit test source", error);
-      xr.hits_searching = false;
+//      xr.hits_searching = false;
 //      System._browser.on_animation_update(()=>{xr.hits_searching=false}, 0,1);
     });
   }
