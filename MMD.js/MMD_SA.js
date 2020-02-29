@@ -4765,8 +4765,8 @@ if (!this.hits_searching) {
   }
   else {
     this.session.requestHitTest(xrray, this.frameOfRef).then(function (hits) {
-      xr.hits_searching = false;
       xr.hits = hits;
+      xr.hits_searching = false;
     }).catch(function (err) {
       xr.hits_searching = false;
     });
