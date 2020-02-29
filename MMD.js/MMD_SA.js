@@ -4733,7 +4733,7 @@ if (this.hit_found)
 // https://storage.googleapis.com/chromium-webxr-test/r740830/proposals/phone-ar-hit-test.html
 if (xr.xrViewerSpaceHitTestSource) {
   this.hits = frame.getHitTestResults(xr.xrViewerSpaceHitTestSource);
-  xr.xrViewerSpaceHitTestSource = null
+//  xr.xrViewerSpaceHitTestSource = null
 }
 
 if (this.hits.length) {
@@ -4759,11 +4759,11 @@ if (!this.hits_searching) {
       space : this.frameOfRef,
           //space : xrLocalFloor, // WIP: change back to viewer
           //space : xrOffsetSpace, // WIP: change back to viewer
-      offsetRay : xrray
+      offsetRay : new XRRay()//xrray
           //offsetRay : new XRRay(new DOMPointReadOnly(0,.5,-.5), new DOMPointReadOnly(0, -0.5, -1)) // WIP: change back to default
     }).then((hitTestSource) => {
       xr.xrViewerSpaceHitTestSource = hitTestSource;
-      xr.hits_searching = false;
+//      xr.hits_searching = false;
 //      System._browser.on_animation_update(()=>{xr.hits_searching=false}, 0,1);
     }).catch(error => {
 //          console.error("Error when requesting hit test source", error);
