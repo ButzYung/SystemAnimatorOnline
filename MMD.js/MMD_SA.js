@@ -4699,7 +4699,8 @@ else {
     if (frame.worldInformation.lightEstimation) {
       let lightProbe = frame.worldInformation.lightEstimation.lightProbe
       let li = lightProbe.mainLightIntensity
-//      DEBUG_show([li.x, li.y, li.z, li.w])
+      let ld = lightProbe.mainLightDirection
+      DEBUG_show([ld.x, ld.y, ld.z, ld.w])
       let c = jThree("#MMD_DirLight").three(0).color
       c.copy(this.light_color_base)
       c.r *= 0.75 * Math.sqrt(li.x)
