@@ -4476,7 +4476,7 @@ catch (err) {
   return
 }
 
-this.ambient_light_color_base = jThree("#MMD_AmbLight").three(0).color.clone()
+this.light_color_base = jThree("#MMD_DirLight").three(0).color.clone()
 try {
   session.updateWorldTrackingState({
 // https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/modules/xr/xr_world_tracking_state.idl
@@ -4597,7 +4597,7 @@ this.hitMatrix = null
 this.hitMatrix_decomposed = null
 this.reticle.visible = false
 
-jThree("#MMD_AmbLight").three(0).color.copy(this.ambient_light_color_base)
+jThree("#MMD_DirLight").three(0).color.copy(this.light_color_base)
 
 this.input_event = { inputSources:[] }
 
@@ -4698,8 +4698,8 @@ else {
       let lightProbe = frame.worldInformation.lightEstimation.lightProbe
       let li = lightProbe.mainLightIntensity
       DEBUG_show([li.x, li.y, li.z, li.w])
-      let c = jThree("#MMD_AmbLight").three(0).color
-      c.copy(this.ambient_light_color_base)
+      let c = jThree("#MMD_DirLight").three(0).color
+      c.copy(this.light_color_base)
       c.r *= Math.sqrt(li.x)
       c.g *= Math.sqrt(li.y)
       c.b *= Math.sqrt(li.z)
