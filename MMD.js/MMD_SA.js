@@ -4702,7 +4702,7 @@ else {
       let lightProbe = frame.worldInformation.lightEstimation.lightProbe
       let li = lightProbe.mainLightIntensity
       let ld = lightProbe.mainLightDirection
-DEBUG_show([ld.x, ld.y, ld.z, ld.w])
+//DEBUG_show([ld.x, ld.y, ld.z, ld.w])
       let L = jThree("#MMD_DirLight").three(0)
       L.position.copy(ld).multiplyScalar(MMD_SA_options.light_position_scale)
       let c = L.color
