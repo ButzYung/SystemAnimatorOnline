@@ -4734,7 +4734,7 @@ if (this.hit_found)
 if (xr.xrViewerSpaceHitTestSource) {
   this.hits = frame.getHitTestResults(xr.xrViewerSpaceHitTestSource);
   try {
-    xr.xrViewerSpaceHitTestSource.cancel()
+//    xr.xrViewerSpaceHitTestSource.cancel()
   }
   catch (err) {}
   xr.xrViewerSpaceHitTestSource = null
