@@ -4759,13 +4759,12 @@ else {
 if ((time != anchor.lastChangedTime) || !anchor._data || !anchor._data.update)
   continue
 
-// Query most recent pose of the anchor relative to some reference space:
-const pose = frame.getPose(anchor.anchorSpace, this.frameOfRef);
+const pose = frame.getPose(anchor.anchorSpace, this.frameOfRef_viewer);
 xr.hitMatrix = new THREE.Matrix4().fromArray(pose.transform.matrix);
 xr.hitMatrix_decomposed = xr.hitMatrix.decompose();
 anchor._data.update(anchor._data.obj);
 
-DEBUG_show(time+':anchor updated')
+DEBUG_show(time+':anchor updated(v1)')
       }
     }
     catch (err) { DEBUG_show("anchors update error") }
