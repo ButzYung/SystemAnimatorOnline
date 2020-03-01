@@ -4300,13 +4300,17 @@ if (xr.reticle.visible) {
 
     model_mesh.lookAt(xr.camera.position.clone().sub(center_pos_old).add(xr.center_pos).setY(model_mesh.position.y))
     MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"] && MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]._obj.rotation.setEulerFromQuaternion(model_mesh.quaternion)
-/*
-xr.hit_active.createAnchor().then(function (anchor) {
-DEBUG_show("anchor created")
+
+    if (xr.can_requestHitTestSource && xr.hit_active.createAnchor) {
+      try {
+xr.hit_active.createAnchor(xr.hit_active.getPose(xr.frameOfRef).transform).then(function (anchor) {
+  DEBUG_show("anchor created")
 }).catch(function (err) {
-DEBUG_show("anchor creation failed")
+  DEBUG_show("anchor creation failed")
 });
-*/
+      }
+      catch (err) {DEBUG_show(".createAnchor failed")}
+    }
   }
 
   xr.hit_found = true
@@ -4752,7 +4756,6 @@ if (xr.xrViewerSpaceHitTestSource) {
 
 if (this.hits.length) {
   let hit = this.hit_active = this.hits[0]
-if (xr.can_requestHitTestSource) DEBUG_show(Date.now()+'/'+!!hit.createAnchor)
   this.hits = []
   this.hitMatrix = new THREE.Matrix4().fromArray((xr.can_requestHitTestSource) ? hit.getPose(this.frameOfRef).transform.matrix : hit.hitMatrix)
   this.hitMatrix_decomposed = this.hitMatrix.decompose()
