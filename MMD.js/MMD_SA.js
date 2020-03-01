@@ -4317,7 +4317,7 @@ if (xr.reticle.visible) {
 
   if (xr.can_requestHitTestSource && xr.hit_active.createAnchor) {
     try {
-xr.hit_active.createAnchor(/*xr.hit_active.getPose(xr.frameOfRef).transform*/new XRRigidTransform()).then(function (anchor) {
+xr.hit_active.createAnchor(new XRRigidTransform()).then(function (anchor) {
 //  DEBUG_show("anchor created")
   if (model_mesh._anchor) {
     model_mesh._anchor.detach()
@@ -4762,6 +4762,7 @@ if ((time != anchor.lastChangedTime) || !anchor._data || !anchor._data.update)
 const pose = frame.getPose(anchor.anchorSpace, this.frameOfRef);
 xr.hitMatrix = new THREE.Matrix4().fromArray(pose.transform.matrix);
 xr.hitMatrix_decomposed = xr.hitMatrix.decompose();
+xr.hitMatrix_decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.hitMatrix_decomposed[1]);
 anchor._data.update(anchor._data.obj);
 
 DEBUG_show(time+':anchor updated(v2)')
@@ -4827,6 +4828,7 @@ if (!this.hits_searching) {
 // https://storage.googleapis.com/chromium-webxr-test/r740830/proposals/phone-ar-hit-test.html
     this.session.requestHitTestSource({
       space : this.frameOfRef_viewer,
+      entityTypes : ["plane"],
           //space : xrLocalFloor, // WIP: change back to viewer
           //space : xrOffsetSpace, // WIP: change back to viewer
 //      offsetRay : xrray
