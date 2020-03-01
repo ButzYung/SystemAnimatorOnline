@@ -4752,6 +4752,7 @@ if (xr.xrViewerSpaceHitTestSource) {
 
 if (this.hits.length) {
   let hit = this.hit_active = this.hits[0]
+if (xr.can_requestHitTestSource) DEBUG_show(Date.now()+'/'+!!hit.createAnchor)
   this.hits = []
   this.hitMatrix = new THREE.Matrix4().fromArray((xr.can_requestHitTestSource) ? hit.getPose(this.frameOfRef).transform.matrix : hit.hitMatrix)
   this.hitMatrix_decomposed = this.hitMatrix.decompose()
