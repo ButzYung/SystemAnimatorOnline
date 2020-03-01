@@ -4262,16 +4262,29 @@ return drop_list
   })()
 
  ,WebXR: (function () {
+    var xr;
     var _camera;
 
     window.addEventListener("MMDStarted", function () {
       _camera = MMD_SA._trackball_camera.object.clone()
     });
 
-    window.addEventListener("SA_AR_dblclick", function (e) {
+    window.addEventListener("SA_AR_dblclick", (function () {
+      function update_obj_default(model_mesh) {
+let pos0 = new THREE.Vector3().copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10);
+let center_pos_old = (xr.center_pos && xr.center_pos.clone()) || new THREE.Vector3();
+xr.center_pos = model_mesh.position.clone().setY(0).sub(pos0)
+xr.hit_ground_y = xr.hitMatrix_decomposed[0].y
+
+model_mesh.lookAt(xr.camera.position.clone().sub(center_pos_old).add(xr.center_pos).setY(model_mesh.position.y))
+MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"] && MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]._obj.rotation.setEulerFromQuaternion(model_mesh.quaternion)
+      }
+
+      return function (e) {
 if (xr.reticle.visible) {
   e.detail.result.return_value = true
 
+  let update_obj
   let model_mesh = THREE.MMD.getModels()[0].mesh
 
   let axis = xr.hitMatrix_decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.hitMatrix_decomposed[1])
@@ -4286,31 +4299,42 @@ if (xr.reticle.visible) {
     if (MMD_SA_options.WebXR.AR.onwallhit(e)) {
       return
     }
+    update_obj = e.detail.result.update_obj
   }
   else {
 //DEBUG_show("ground hit",0,1)
-    if (MMD_SA_options.WebXR.AR.ongroundhit && MMD_SA_options.WebXR.AR.ongroundhit(e)) {
-      return
+    if (MMD_SA_options.WebXR.AR.ongroundhit) {
+      if (MMD_SA_options.WebXR.AR.ongroundhit(e)) {
+        return
+      }
+      update_obj = e.detail.result.update_obj
     }
+  }
 
-    let pos0 = new THREE.Vector3().copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10);
-    let center_pos_old = (xr.center_pos && xr.center_pos.clone()) || new THREE.Vector3();
-    xr.center_pos = model_mesh.position.clone().setY(0).sub(pos0)
-    xr.hit_ground_y = xr.hitMatrix_decomposed[0].y
+  if (!update_obj)
+    update_obj = update_obj_default
+  update_obj(model_mesh)
 
-    model_mesh.lookAt(xr.camera.position.clone().sub(center_pos_old).add(xr.center_pos).setY(model_mesh.position.y))
-    MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"] && MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]._obj.rotation.setEulerFromQuaternion(model_mesh.quaternion)
-
-    if (xr.can_requestHitTestSource && xr.hit_active.createAnchor) {
-      try {
+  if (xr.can_requestHitTestSource && xr.hit_active.createAnchor) {
+    try {
 xr.hit_active.createAnchor(xr.hit_active.getPose(xr.frameOfRef).transform).then(function (anchor) {
-  DEBUG_show("anchor created")
+//  DEBUG_show("anchor created")
+  if (model_mesh._anchor) {
+    model_mesh._anchor.detach()
+    xr.anchors.delete(model_mesh._anchor)
+  }
+  model_mesh._anchor = anchor
+
+  anchor._data = {
+    obj: model_mesh
+   ,update: update_obj
+  };
+  xr.anchors.add(anchor)
 }).catch(function (err) {
   DEBUG_show("anchor creation failed")
 });
-      }
-      catch (err) {DEBUG_show(".createAnchor failed")}
     }
+    catch (err) {DEBUG_show(".createAnchor error")}
   }
 
   xr.hit_found = true
@@ -4339,9 +4363,10 @@ else if (xr.hit_found) {
     MMD_SA_options.Dungeon.object_click_disabled = true
   }
 }
-    });
+      };
+    })());
 
-    var xr = {
+    xr = {
   can_AR: false
 
  ,enter_AR: async function () {
@@ -4380,6 +4405,8 @@ catch (err) {
  ,hits: []
  ,hits_searching: false
  ,hit_found: false
+
+ ,anchors: new Set()
 
  ,DOM_event_dblclick: function (e) {
     e.stopPropagation();
@@ -4604,6 +4631,11 @@ this.hitMatrix = null
 this.hitMatrix_decomposed = null
 this.reticle.visible = false
 
+for (const anchor of this.anchors) {
+  anchor._data.obj._anchor = null
+}
+this.anchors.clear()
+
 jThree("#MMD_DirLight").three(0).color.copy(this.light_color_base)
 jThree("#MMD_DirLight").three(0).position.copy(this.light_position_base)
 
@@ -4716,7 +4748,25 @@ else {
       c.b *= 0.75 * Math.sqrt(li.z)
     }
   }
-  catch (err) { DEBUG_show(".lightEstimation failed")}
+  catch (err) { DEBUG_show(".lightEstimation failed") }
+
+  const trackedAnchors = frame.trackedAnchors;
+  if (trackedAnchors) {
+// https://github.com/immersive-web/anchors/blob/master/explainer.md
+// view-source:https://storage.googleapis.com/chromium-webxr-test/r695783/proposals/phone-ar-plane-detection-anchors.html
+    try {
+      for (const anchor of trackedAnchors) {
+if ((time != anchor.lastChangedTime) || !anchor._data || !anchor._data.update)
+  continue
+
+// Query most recent pose of the anchor relative to some reference space:
+const pose = frame.getPose(anchor.anchorSpace, this.frameOfRef);
+const transform = pose.transform;
+DEBUG_show(time)
+      }
+    }
+    catch (err) { DEBUG_show("anchors update error") }
+  }
 
 // xyz
   this.camera.matrix.elements[12] *= 10
