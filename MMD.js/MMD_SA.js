@@ -4768,7 +4768,7 @@ anchor._data.update(anchor._data.obj);
 DEBUG_show(time+':anchor updated(v2)')
       }
     }
-    catch (err) { DEBUG_show(err) }
+    catch (err) { DEBUG_show('AE:'+err) }
   }
 
 // xyz
@@ -4828,7 +4828,7 @@ if (!this.hits_searching) {
 // https://storage.googleapis.com/chromium-webxr-test/r740830/proposals/phone-ar-hit-test.html
     this.session.requestHitTestSource({
       space : this.frameOfRef_viewer,
-      entityTypes : ["plane"],
+//      entityTypes : ["plane"],
           //space : xrLocalFloor, // WIP: change back to viewer
           //space : xrOffsetSpace, // WIP: change back to viewer
 //      offsetRay : xrray
