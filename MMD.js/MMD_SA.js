@@ -4767,7 +4767,7 @@ anchor._data.update(anchor._data.obj);
 DEBUG_show(time+':anchor updated(v2)')
       }
     }
-    catch (err) { DEBUG_show("anchors update error") }
+    catch (err) { DEBUG_show(err) }
   }
 
 // xyz
