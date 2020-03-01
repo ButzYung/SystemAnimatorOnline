@@ -4317,7 +4317,7 @@ if (xr.reticle.visible) {
 
   if (xr.can_requestHitTestSource && xr.hit_active.createAnchor) {
     try {
-xr.hit_active.createAnchor(xr.hit_active.getPose(xr.frameOfRef).transform).then(function (anchor) {
+xr.hit_active.createAnchor(/*xr.hit_active.getPose(xr.frameOfRef).transform*/new XRRigidTransform()).then(function (anchor) {
 //  DEBUG_show("anchor created")
   if (model_mesh._anchor) {
     model_mesh._anchor.detach()
@@ -4759,12 +4759,12 @@ else {
 if ((time != anchor.lastChangedTime) || !anchor._data || !anchor._data.update)
   continue
 
-const pose = frame.getPose(anchor.anchorSpace, this.frameOfRef_viewer);
+const pose = frame.getPose(anchor.anchorSpace, this.frameOfRef);
 xr.hitMatrix = new THREE.Matrix4().fromArray(pose.transform.matrix);
 xr.hitMatrix_decomposed = xr.hitMatrix.decompose();
 anchor._data.update(anchor._data.obj);
 
-DEBUG_show(time+':anchor updated(v1)')
+DEBUG_show(time+':anchor updated(v2)')
       }
     }
     catch (err) { DEBUG_show("anchors update error") }
