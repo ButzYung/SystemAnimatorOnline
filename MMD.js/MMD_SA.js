@@ -4270,14 +4270,16 @@ return drop_list
     });
 
     window.addEventListener("SA_AR_dblclick", (function () {
-      function update_obj_default(model_mesh) {
+      function update_obj_default(model_mesh, first_call) {
 let pos0 = new THREE.Vector3().copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10);
 let center_pos_old = (xr.center_pos && xr.center_pos.clone()) || new THREE.Vector3();
 xr.center_pos = model_mesh.position.clone().setY(0).sub(pos0)
 xr.hit_ground_y = xr.hitMatrix_decomposed[0].y
 
-model_mesh.lookAt(xr.camera.position.clone().sub(center_pos_old).add(xr.center_pos).setY(model_mesh.position.y))
-MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"] && MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]._obj.rotation.setEulerFromQuaternion(model_mesh.quaternion)
+if (first_call) {
+  model_mesh.lookAt(xr.camera.position.clone().sub(center_pos_old).add(xr.center_pos).setY(model_mesh.position.y))
+  MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"] && MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]._obj.rotation.setEulerFromQuaternion(model_mesh.quaternion)
+}
       }
 
       return function (e) {
@@ -4313,7 +4315,7 @@ if (xr.reticle.visible) {
 
   if (!update_obj)
     update_obj = update_obj_default
-  update_obj(model_mesh)
+  update_obj(model_mesh, true)
 
   if (xr.can_requestHitTestSource && xr.hit_active.createAnchor) {
     try {
@@ -4765,7 +4767,7 @@ xr.hitMatrix_decomposed = xr.hitMatrix.decompose();
 xr.hitMatrix_decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.hitMatrix_decomposed[1]);
 anchor._data.update(anchor._data.obj);
 
-DEBUG_show(time+':anchor updated(v2)')
+DEBUG_show(time+':anchor updated(v3)')
       }
     }
     catch (err) { DEBUG_show('AE:'+err) }
