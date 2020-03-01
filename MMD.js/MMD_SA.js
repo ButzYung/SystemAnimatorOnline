@@ -4761,8 +4761,11 @@ if ((time != anchor.lastChangedTime) || !anchor._data || !anchor._data.update)
 
 // Query most recent pose of the anchor relative to some reference space:
 const pose = frame.getPose(anchor.anchorSpace, this.frameOfRef);
-const transform = pose.transform;
-DEBUG_show(time)
+xr.hitMatrix = pose.transform.matrix;
+xr.hitMatrix_decomposed = xr.hitMatrix.decompose();
+anchor._data.update(anchor._data.obj);
+
+DEBUG_show(time+':anchor updated')
       }
     }
     catch (err) { DEBUG_show("anchors update error") }
