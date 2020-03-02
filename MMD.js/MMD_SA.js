@@ -4742,7 +4742,7 @@ else {
       let ld = lightProbe.mainLightDirection
 //DEBUG_show([ld.x, ld.y, ld.z, ld.w])
       let L = jThree("#MMD_DirLight").three(0)
-      L.position.copy(ld).multiplyScalar(MMD_SA_options.light_position_scale)
+//      L.position.copy(ld).multiplyScalar(MMD_SA_options.light_position_scale)
       let c = L.color
       c.copy(this.light_color_base)
       c.r *= Math.min(1.5, 0.75 * Math.sqrt(li.x))
