@@ -4745,9 +4745,9 @@ else {
       L.position.copy(ld).multiplyScalar(MMD_SA_options.light_position_scale)
       let c = L.color
       c.copy(this.light_color_base)
-      c.r *= 0.75 * Math.sqrt(li.x)
-      c.g *= 0.75 * Math.sqrt(li.y)
-      c.b *= 0.75 * Math.sqrt(li.z)
+      c.r *= Math.min(1.5, 0.75 * Math.sqrt(li.x))
+      c.g *= Math.min(1.5, 0.75 * Math.sqrt(li.y))
+      c.b *= Math.min(1.5, 0.75 * Math.sqrt(li.z))
     }
   }
   catch (err) { DEBUG_show(".lightEstimation failed") }
