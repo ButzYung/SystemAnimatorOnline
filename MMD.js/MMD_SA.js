@@ -4369,16 +4369,14 @@ else if (xr.hit_found) {
     })());
 
     var zoom_scale = 1
-    var _zoom_ini, _zoom_distance_ini
+    var _zoom_distance_last
 
     function touchstart(e) {
 if (e.touches.length != 2) return
 
-var _zoom_ini = zoom_scale
-
 var dx = e.touches[0].pageX - e.touches[1].pageX;
 var dy = e.touches[0].pageY - e.touches[1].pageY;
-_zoom_distance_ini = Math.sqrt( dx * dx + dy * dy );
+_zoom_distance_last = Math.sqrt( dx * dx + dy * dy );
     }
 
     function touchmove(e) {
@@ -4387,7 +4385,8 @@ if (e.touches.length != 2) return
 var dx = e.touches[0].pageX - e.touches[1].pageX;
 var dy = e.touches[0].pageY - e.touches[1].pageY;
 var dis = Math.sqrt( dx * dx + dy * dy );
-zoom_scale = _zoom_ini * dis/_zoom_distance_ini
+zoom_scale *= dis/_zoom_distance_last
+_zoom_distance_last = dis
     }
 
     xr = {
