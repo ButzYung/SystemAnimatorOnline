@@ -4313,7 +4313,7 @@ if (xr.reticle.visible) {
     }
   }
 
-  xr.reticle._pos_active.copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10*xr.rectile._zoom_scale)
+  xr.reticle._pos_active.copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10*xr.reticle._zoom_scale)
 
   if (!update_obj)
     update_obj = update_obj_default
@@ -4757,7 +4757,7 @@ else {
   if (hit_result) {
     if (!this.hit_found && hit_result.hitMatrix) {
       if (!this.center_pos) {
-        this.reticle.position.copy(this.hitMatrix_decomposed[0]).multiplyScalar(10);
+        this.reticle.position.copy(this.hitMatrix_decomposed[0]).multiplyScalar(10*1);
         this.reticle._pos_active.copy(this.reticle.position);
       }
       else {
