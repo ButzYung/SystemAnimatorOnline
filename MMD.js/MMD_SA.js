@@ -4313,12 +4313,11 @@ if (xr.reticle.visible) {
     }
   }
 
+  xr.reticle._pos_active.copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10*xr.rectile._zoom_scale)
+
   if (!update_obj)
     update_obj = update_obj_default
   update_obj(model_mesh, true)
-
-  xr.reticle_placed_once = true
-  xr.reticle_pos_active.copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10)
 
   if (xr.can_requestHitTestSource && xr.hit_active.createAnchor) {
     try {
@@ -4579,6 +4578,8 @@ if (xr.ground_plane)
     ev.preventDefault();
   });
 }
+this.reticle._pos_active = new THREE.Vector3()
+this.reticle._zoom_factor = 1
 this.reticle.visible = false
 
 MMD_SA.reset_camera()
@@ -4659,9 +4660,12 @@ this.hit_found = false
 this.hit_active = null
 this.hitMatrix = null
 this.hitMatrix_decomposed = null
-this.reticle_pos_active = null
-this.reticle_placed_once = false
+
+this.reticle._pos_active = null
+this.reticle._zoom_scale = 1
 this.reticle.visible = false
+
+this.center_pos = null
 
 for (const anchor of this.anchors) {
   anchor._data.obj._anchor = null
@@ -4677,8 +4681,6 @@ jThree("#MMD_DirLight").three(0).color.copy(this.light_color_base)
 jThree("#MMD_DirLight").three(0).position.copy(this.light_position_base)
 
 this.input_event = { inputSources:[] }
-
-this.center_pos = null
 
 var model_mesh = THREE.MMD.getModels()[0].mesh
 if (!model_mesh.visible)
@@ -4754,17 +4756,17 @@ else {
 
   if (hit_result) {
     if (!this.hit_found && hit_result.hitMatrix) {
-      this.reticle.position.copy(this.hitMatrix_decomposed[0]).multiplyScalar(10);
-      if (!this.reticle_placed_once)
-        this.reticle_pos_active = (this.reticle_pos_active||new THREE.Vector3()).copy(this.reticle.position);
+      if (!this.center_pos) {
+        this.reticle.position.copy(this.hitMatrix_decomposed[0]).multiplyScalar(10);
+        this.reticle._pos_active.copy(this.reticle.position);
+      }
+      else {
+        this.reticle._zoom_scale = zoom_scale;
+        this.reticle.position.copy(this.hitMatrix_decomposed[0]).multiplyScalar(10*this.reticle._zoom_scale);
+        this.reticle.position.add(this.center_pos);
+      }
       this.reticle.quaternion.copy(this.hitMatrix_decomposed[1]);
 
-      if (this.center_pos) this.reticle.position.add(this.center_pos);
-/*
-      let targetPos = new THREE.Vector3().getPositionFromMatrix(this.camera.matrixWorld);
-      let angle = Math.atan2(targetPos.x - this.reticle.position.x, targetPos.z - this.reticle.position.z);
-      this.reticle.rotation.set(0, angle, 0);
-*/
       this.reticle.visible = true;
     }
   }
@@ -4804,7 +4806,7 @@ xr.hitMatrix_decomposed = xr.hitMatrix.decompose();
 xr.hitMatrix_decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.hitMatrix_decomposed[1]);
 anchor._data.update(anchor._data.obj);
 
-xr.reticle_pos_active.copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10);
+xr.reticle._pos_active.copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10*xr.reticle._zoom_scale);
 
 DEBUG_show(time+':anchor updated(v3)')
       }
@@ -4817,8 +4819,8 @@ DEBUG_show(time+':anchor updated(v3)')
   this.camera.matrix.elements[13] *= 10
   this.camera.matrix.elements[14] *= 10
 
-  if (this.reticle_pos_active) {
-    let camera_dis = MMD_SA.TEMP_v3.getPositionFromMatrix(this.camera.matrix).sub(this.reticle_pos_active)
+  if (this.reticle._pos_active) {
+    let camera_dis = MMD_SA.TEMP_v3.getPositionFromMatrix(this.camera.matrix).sub(this.reticle._pos_active)
     this.camera.matrix.elements[12] += -camera_dis.x + camera_dis.x * zoom_scale
     this.camera.matrix.elements[13] += -camera_dis.y + camera_dis.y * zoom_scale
     this.camera.matrix.elements[14] += -camera_dis.z + camera_dis.z * zoom_scale
