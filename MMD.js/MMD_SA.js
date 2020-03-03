@@ -4759,12 +4759,12 @@ else {
   if (hit_result) {
     if (!this.hit_found && hit_result.hitMatrix) {
       if (!this.center_pos) {
-        this.reticle.position.copy(this.hitMatrix_decomposed[0]).multiplyScalar(10*1);
+        this.reticle.position.copy(this.hitMatrix_decomposed[0]).multiplyScalar(10*zoom_scale);
         this.reticle._pos_active.copy(this.reticle.position);
       }
       else {
         this.reticle._zoom_scale = zoom_scale;
-        this.reticle.position.copy(this.hitMatrix_decomposed[0]).multiplyScalar(10*this.reticle._zoom_scale);
+        this.reticle.position.copy(this.hitMatrix_decomposed[0]).multiplyScalar(10);
         this.reticle.position.add(this.center_pos);
       }
       this.reticle.quaternion.copy(this.hitMatrix_decomposed[1]);
@@ -4820,14 +4820,14 @@ DEBUG_show(time+':anchor updated(v3)')
   this.camera.matrix.elements[12] *= 10
   this.camera.matrix.elements[13] *= 10
   this.camera.matrix.elements[14] *= 10
-
+/*
   if (this.reticle._pos_active) {
     let camera_dis = MMD_SA.TEMP_v3.getPositionFromMatrix(this.camera.matrix).sub(this.reticle._pos_active)
     this.camera.matrix.elements[12] += -camera_dis.x + camera_dis.x * zoom_scale
     this.camera.matrix.elements[13] += -camera_dis.y + camera_dis.y * zoom_scale
     this.camera.matrix.elements[14] += -camera_dis.z + camera_dis.z * zoom_scale
   }
-
+*/
   if (this.center_pos) {
     this.camera.matrix.elements[12] += this.center_pos.x
     this.camera.matrix.elements[13] += this.center_pos.y
