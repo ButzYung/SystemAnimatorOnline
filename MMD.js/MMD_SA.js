@@ -4763,8 +4763,7 @@ else {
         this.reticle._pos_active.copy(this.reticle.position);
       }
       else {
-        this.reticle._zoom_scale = zoom_scale;
-        this.reticle.position.copy(this.hitMatrix_decomposed[0]).multiplyScalar(10*zoom_scale);
+        this.reticle.position.copy(this.hitMatrix_decomposed[0]).multiplyScalar(10).sub(this.reticle._pos_active).multiplyScalar(zoom_scale);
         this.reticle.position.add(this.center_pos);
       }
       this.reticle.quaternion.copy(this.hitMatrix_decomposed[1]);
