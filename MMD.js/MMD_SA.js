@@ -4312,8 +4312,12 @@ if (xr.reticle.visible) {
     }
   }
 
-  xr.reticle._zoom_scale_active = xr.reticle._zoom_scale
-  xr.reticle._pos_active.copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10*xr.reticle._zoom_scale_active)
+  if (xr.center_pos) {
+    xr.reticle._zoom_scale_active = xr.reticle._zoom_scale_
+    xr.reticle._pos_active.copy(xr.hitMatrix_decomposed[0]).sub(xr.hitMatrix_decomposed_active[0]).multiplyScalar(xr.reticle._zoom_scale_active_);
+    xr.reticle._pos_active.add(MMD_SA.TEMP_v3.copy(xr.hitMatrix_decomposed_active[0]).multiplyScalar(10));
+  }
+  xr.hitMatrix_decomposed_active = xr.hitMatrix_decomposed.slice()
 
   if (!update_obj)
     update_obj = update_obj_default
@@ -4579,8 +4583,8 @@ if (xr.ground_plane)
   });
 }
 this.reticle._pos_active = new THREE.Vector3()
-this.reticle._zoom_scale = 1
 this.reticle._zoom_scale_active = 1
+this.reticle._zoom_scale_ = 1
 this.reticle.visible = false
 
 MMD_SA.reset_camera()
@@ -4663,8 +4667,6 @@ this.hitMatrix = null
 this.hitMatrix_decomposed = null
 
 this.reticle._pos_active = null
-this.reticle._zoom_scale = 1
-this.reticle._zoom_scale_active = 1
 this.reticle.visible = false
 
 this.center_pos = null
@@ -4763,7 +4765,8 @@ else {
         this.reticle._pos_active.copy(this.reticle.position);
       }
       else {
-        this.reticle.position.copy(this.hitMatrix_decomposed[0]).multiplyScalar(10).sub(this.reticle._pos_active).multiplyScalar(zoom_scale);
+        this.reticle._zoom_scale_ = zoom_scale
+        this.reticle.position.copy(this.hitMatrix_decomposed[0]).sub(this.hitMatrix_decomposed_active[0]).multiplyScalar(10*this.reticle._zoom_scale_);
         this.reticle.position.add(this.center_pos);
       }
       this.reticle.quaternion.copy(this.hitMatrix_decomposed[1]);
@@ -4805,9 +4808,11 @@ const pose = frame.getPose(anchor.anchorSpace, this.frameOfRef);
 xr.hitMatrix = new THREE.Matrix4().fromArray(pose.transform.matrix);
 xr.hitMatrix_decomposed = xr.hitMatrix.decompose();
 xr.hitMatrix_decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.hitMatrix_decomposed[1]);
-anchor._data.update(anchor._data.obj);
 
-xr.reticle._pos_active.copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10*xr.reticle._zoom_scale_active);
+xr.reticle._pos_active.copy(xr.hitMatrix_decomposed[0]).sub(xr.hitMatrix_decomposed_active[0]).multiplyScalar(xr.reticle._zoom_scale_active_);
+xr.reticle._pos_active.add(MMD_SA.TEMP_v3.copy(xr.hitMatrix_decomposed_active[0]).multiplyScalar(10));
+
+anchor._data.update(anchor._data.obj);
 
 DEBUG_show(time+':anchor updated(v3)')
       }
