@@ -4814,9 +4814,13 @@ DEBUG_show(time+':anchor updated(v3)')
     this.camera.matrix.elements[14] += this.center_pos.z
   }
 
-  this.camera.matrix.elements[12] *= zoom_scale
-  this.camera.matrix.elements[13] *= zoom_scale
-  this.camera.matrix.elements[14] *= zoom_scale
+  var camera_target = this.center_pos || (this.reticle.visible && this.reticle.position);
+  if (camera_target) {
+    let camera_dis = MMD_SA.TEMP_v3.getPositionFromMatrix(this.camera.matrix).sub(camera_target)
+    this.camera.matrix.elements[12] += -camera_dis.x + camera_dis.x * zoom_scale
+    this.camera.matrix.elements[13] += -camera_dis.y + camera_dis.y * zoom_scale
+    this.camera.matrix.elements[14] += -camera_dis.z + camera_dis.z * zoom_scale
+  }
 
   this.camera.position.getPositionFromMatrix(this.camera.matrix)
   this.camera.updateMatrixWorld(true);
