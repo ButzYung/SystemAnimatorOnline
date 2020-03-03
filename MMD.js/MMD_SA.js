@@ -4312,8 +4312,8 @@ if (xr.reticle.visible) {
     }
   }
 
+  xr.reticle._zoom_scale_active = xr.reticle._zoom_scale_
   if (xr.center_pos) {
-    xr.reticle._zoom_scale_active = xr.reticle._zoom_scale_
     xr.reticle._pos_active.copy(xr.hitMatrix_decomposed[0]).sub(xr.hitMatrix_decomposed_active[0]).multiplyScalar(xr.reticle._zoom_scale_active_);
     xr.reticle._pos_active.add(MMD_SA.TEMP_v3.copy(xr.hitMatrix_decomposed_active[0]).multiplyScalar(10));
   }
