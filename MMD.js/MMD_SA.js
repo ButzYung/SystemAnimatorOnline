@@ -4314,7 +4314,7 @@ if (xr.reticle.visible) {
 
   xr.reticle._zoom_scale_active = xr.reticle._zoom_scale_
   if (xr.center_pos) {
-    xr.reticle._pos_active.copy(xr.hitMatrix_decomposed[0]).sub(xr.hitMatrix_decomposed_active[0]).multiplyScalar(xr.reticle._zoom_scale_active_);
+    xr.reticle._pos_active.copy(xr.hitMatrix_decomposed[0]).sub(xr.hitMatrix_decomposed_active[0]).multiplyScalar(10*xr.reticle._zoom_scale_active_);
     xr.reticle._pos_active.add(MMD_SA.TEMP_v3.copy(xr.hitMatrix_decomposed_active[0]).multiplyScalar(10));
   }
   xr.hitMatrix_decomposed_active = xr.hitMatrix_decomposed.slice()
@@ -4809,7 +4809,7 @@ xr.hitMatrix = new THREE.Matrix4().fromArray(pose.transform.matrix);
 xr.hitMatrix_decomposed = xr.hitMatrix.decompose();
 xr.hitMatrix_decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.hitMatrix_decomposed[1]);
 
-xr.reticle._pos_active.copy(xr.hitMatrix_decomposed[0]).sub(xr.hitMatrix_decomposed_active[0]).multiplyScalar(xr.reticle._zoom_scale_active_);
+xr.reticle._pos_active.copy(xr.hitMatrix_decomposed[0]).sub(xr.hitMatrix_decomposed_active[0]).multiplyScalar(10*xr.reticle._zoom_scale_active_);
 xr.reticle._pos_active.add(MMD_SA.TEMP_v3.copy(xr.hitMatrix_decomposed_active[0]).multiplyScalar(10));
 
 anchor._data.update(anchor._data.obj);
