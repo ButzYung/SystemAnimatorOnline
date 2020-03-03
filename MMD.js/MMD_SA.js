@@ -4368,6 +4368,28 @@ else if (xr.hit_found) {
       };
     })());
 
+    var zoom_scale = 1
+    var _zoom_ini, _zoom_distance_ini
+
+    function touchstart(e) {
+if (e.touches.length != 2) return
+
+var _zoom_ini = zoom_scale
+
+var dx = e.touches[0].pageX - e.touches[1].pageX;
+var dy = e.touches[0].pageY - e.touches[1].pageY;
+_zoom_distance_ini = Math.sqrt( dx * dx + dy * dy );
+    }
+
+    function touchmove(e) {
+if (e.touches.length != 2) return
+
+var dx = e.touches[0].pageX - e.touches[1].pageX;
+var dy = e.touches[0].pageY - e.touches[1].pageY;
+var dis = Math.sqrt( dx * dx + dy * dy );
+zoom_scale = _zoom_ini * dis/_zoom_distance_ini
+    }
+
     xr = {
   can_AR: false
 
@@ -4490,6 +4512,11 @@ session.addEventListener('select', function (e) {
         });
 */
 
+let c_host = (returnBoolean("CSSTransform3DDisabledForContent")) ? document.getElementById("Lbody_host") : document.getElementById("Lbody");
+zoom_scale = 1;
+c_host.addEventListener( 'touchstart', touchstart, false );
+c_host.addEventListener( 'touchmove', touchmove, false );
+
 this.camera = MMD_SA._trackball_camera.object
 
 this.renderer = MMD_SA.renderer;
@@ -4591,7 +4618,6 @@ if (1) {
   document.getElementById("SL").style.visibility = "hidden"
   document.getElementById("Lquick_menu").style.display = "none"
 
-  let c_host = (returnBoolean("CSSTransform3DDisabledForContent")) ? document.getElementById("Lbody_host") : document.getElementById("Lbody")
   c_host.addEventListener("dblclick", this.DOM_event_dblclick)
 // push the .onclick AFTER the AR event handler
   if (c_host.ondblclick) {
@@ -4638,6 +4664,11 @@ for (const anchor of this.anchors) {
 }
 this.anchors.clear()
 
+let c_host = (returnBoolean("CSSTransform3DDisabledForContent")) ? document.getElementById("Lbody_host") : document.getElementById("Lbody");
+zoom_scale = 1;
+c_host.removeEventListener( 'touchstart', touchstart, false );
+c_host.removeEventListener( 'touchmove', touchmove, false );
+
 jThree("#MMD_DirLight").three(0).color.copy(this.light_color_base)
 jThree("#MMD_DirLight").three(0).position.copy(this.light_position_base)
 
@@ -4650,6 +4681,7 @@ if (!model_mesh.visible)
   this.restore_scene()
 this.XR_objects_by_id = null
 
+model_mesh.position.y = 0
 model_mesh.quaternion.set(0,0,0,1)
 MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"] && MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]._obj.rotation.set(0,0,0)
 
@@ -4671,7 +4703,6 @@ if (1) {
   document.getElementById("SL").style.visibility = "inherit"
   document.getElementById("Lquick_menu").style.display = "block"
 
-  let c_host = (returnBoolean("CSSTransform3DDisabledForContent")) ? document.getElementById("Lbody_host") : document.getElementById("Lbody")
   c_host.removeEventListener("dblclick", this.DOM_event_dblclick)
 }
 
@@ -4774,9 +4805,10 @@ DEBUG_show(time+':anchor updated(v3)')
   }
 
 // xyz
-  this.camera.matrix.elements[12] *= 10
-  this.camera.matrix.elements[13] *= 10
-  this.camera.matrix.elements[14] *= 10
+  var _zoom_scale = 10 * zoom_scale
+  this.camera.matrix.elements[12] *= _zoom_scale
+  this.camera.matrix.elements[13] *= _zoom_scale
+  this.camera.matrix.elements[14] *= _zoom_scale
 
   if (this.center_pos) {
     this.camera.matrix.elements[12] += this.center_pos.x
