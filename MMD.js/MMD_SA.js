@@ -4385,7 +4385,7 @@ if (e.touches.length != 2) return
 var dx = e.touches[0].pageX - e.touches[1].pageX;
 var dy = e.touches[0].pageY - e.touches[1].pageY;
 var dis = Math.sqrt( dx * dx + dy * dy );
-zoom_scale *= dis/_zoom_distance_last
+zoom_scale *= _zoom_distance_last/dis
 _zoom_distance_last = dis
     }
 
@@ -4804,16 +4804,19 @@ DEBUG_show(time+':anchor updated(v3)')
   }
 
 // xyz
-  var _zoom_scale = 10 * zoom_scale
-  this.camera.matrix.elements[12] *= _zoom_scale
-  this.camera.matrix.elements[13] *= _zoom_scale
-  this.camera.matrix.elements[14] *= _zoom_scale
+  this.camera.matrix.elements[12] *= 10
+  this.camera.matrix.elements[13] *= 10
+  this.camera.matrix.elements[14] *= 10
 
   if (this.center_pos) {
     this.camera.matrix.elements[12] += this.center_pos.x
     this.camera.matrix.elements[13] += this.center_pos.y
     this.camera.matrix.elements[14] += this.center_pos.z
   }
+
+  this.camera.matrix.elements[12] *= zoom_scale
+  this.camera.matrix.elements[13] *= zoom_scale
+  this.camera.matrix.elements[14] *= zoom_scale
 
   this.camera.position.getPositionFromMatrix(this.camera.matrix)
   this.camera.updateMatrixWorld(true);
