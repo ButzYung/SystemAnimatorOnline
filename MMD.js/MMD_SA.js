@@ -4579,7 +4579,7 @@ if (xr.ground_plane)
   });
 }
 this.reticle._pos_active = new THREE.Vector3()
-this.reticle._zoom_factor = 1
+this.reticle._zoom_scale = 1
 this.reticle.visible = false
 
 MMD_SA.reset_camera()
