@@ -347,9 +347,10 @@ e.detail.result.update_obj = function (model_mesh, first_call) {
   MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"] && MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]._obj.rotation.setEulerFromQuaternion(model_mesh.quaternion)
 
   var pos0
+  var zoom_scale = xr.reticle._zoom_scale_active
   if (adult_mode) {
-    pos0 = new THREE.Vector3().copy(xr.hitMatrix_decomposed[0]).setY(xr.hit_ground_y).multiplyScalar(10);
-    model_mesh.position.y = -11.5 + (xr.hitMatrix_decomposed[0].y - xr.hit_ground_y)*10
+    pos0 = new THREE.Vector3().copy(xr.hitMatrix_decomposed[0]).setY(xr.hit_ground_y).multiplyScalar(10*zoom_scale);
+    model_mesh.position.y = -11.5 + (xr.hitMatrix_decomposed[0].y - xr.hit_ground_y)*10*zoom_scale;
 
     if (first_call) {
       MMD_SA_options.motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["壁穴_モデルモーション_loop"]]
@@ -360,7 +361,7 @@ e.detail.result.update_obj = function (model_mesh, first_call) {
     MMD_SA.WebXR._wall.visible = true
   }
   else {
-    pos0 = axis.clone().multiplyScalar(1/3).add(xr.hitMatrix_decomposed[0]).setY(xr.hit_ground_y).multiplyScalar(10);
+    pos0 = axis.clone().multiplyScalar(1/3).add(xr.hitMatrix_decomposed[0]).setY(xr.hit_ground_y).multiplyScalar(10*zoom_scale);
   }
   xr.center_pos = model_mesh.position.clone().setY(0).sub(pos0)
 };

@@ -4271,9 +4271,8 @@ return drop_list
 
     window.addEventListener("SA_AR_dblclick", (function () {
       function update_obj_default(model_mesh, first_call) {
-let pos0 = new THREE.Vector3().copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10);
 let center_pos_old = (xr.center_pos && xr.center_pos.clone()) || new THREE.Vector3();
-xr.center_pos = model_mesh.position.clone().setY(0).sub(pos0)
+xr.center_pos = model_mesh.position.clone().setY(0).sub(xr.reticle._pos_active)
 xr.hit_ground_y = xr.hitMatrix_decomposed[0].y
 
 if (first_call) {
