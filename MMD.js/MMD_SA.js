@@ -4808,9 +4808,8 @@ DEBUG_show(time+':anchor updated(v3)')
   this.camera.matrix.elements[13] *= 10
   this.camera.matrix.elements[14] *= 10
 
-  var camera_target = this.reticle.position;
-  if (camera_target) {
-    let camera_dis = MMD_SA.TEMP_v3.getPositionFromMatrix(this.camera.matrix).sub(camera_target)
+  if (this.hitMatrix_decomposed) {
+    let camera_dis = MMD_SA.TEMP_v3.getPositionFromMatrix(this.camera.matrix).sub(MMD_SA._v3a.copy(this.hitMatrix_decomposed[0]).multiplyScalar(10))
     this.camera.matrix.elements[12] += -camera_dis.x + camera_dis.x * zoom_scale
     this.camera.matrix.elements[13] += -camera_dis.y + camera_dis.y * zoom_scale
     this.camera.matrix.elements[14] += -camera_dis.z + camera_dis.z * zoom_scale
