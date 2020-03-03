@@ -4313,7 +4313,8 @@ if (xr.reticle.visible) {
     }
   }
 
-  xr.reticle._pos_active.copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10*xr.reticle._zoom_scale)
+  xr.reticle._zoom_scale_active = xr.reticle._zoom_scale
+  xr.reticle._pos_active.copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10*xr.reticle._zoom_scale_active)
 
   if (!update_obj)
     update_obj = update_obj_default
@@ -4580,6 +4581,7 @@ if (xr.ground_plane)
 }
 this.reticle._pos_active = new THREE.Vector3()
 this.reticle._zoom_scale = 1
+this.reticle._zoom_scale_active = 1
 this.reticle.visible = false
 
 MMD_SA.reset_camera()
@@ -4663,6 +4665,7 @@ this.hitMatrix_decomposed = null
 
 this.reticle._pos_active = null
 this.reticle._zoom_scale = 1
+this.reticle._zoom_scale_active = 1
 this.reticle.visible = false
 
 this.center_pos = null
@@ -4806,7 +4809,7 @@ xr.hitMatrix_decomposed = xr.hitMatrix.decompose();
 xr.hitMatrix_decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.hitMatrix_decomposed[1]);
 anchor._data.update(anchor._data.obj);
 
-xr.reticle._pos_active.copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10*xr.reticle._zoom_scale);
+xr.reticle._pos_active.copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10*xr.reticle._zoom_scale_active);
 
 DEBUG_show(time+':anchor updated(v3)')
       }
