@@ -4817,9 +4817,9 @@ DEBUG_show(time+':anchor updated(v3)')
   }
 
 // xyz
-  this.camera.matrix.elements[12] *= 10
-  this.camera.matrix.elements[13] *= 10
-  this.camera.matrix.elements[14] *= 10
+  this.camera.matrix.elements[12] *= 10*zoom_scale
+  this.camera.matrix.elements[13] *= 10*zoom_scale
+  this.camera.matrix.elements[14] *= 10*zoom_scale
 /*
   if (this.reticle._pos_active) {
     let camera_dis = MMD_SA.TEMP_v3.getPositionFromMatrix(this.camera.matrix).sub(this.reticle._pos_active)
