@@ -4313,7 +4313,7 @@ if (xr.reticle.visible) {
   }
 
   xr.hitMatrix_anchor = {
-    obj: xr.hitMatrix.obj
+    obj: xr.hitMatrix.obj.clone()
    ,decomposed: xr.hitMatrix.decomposed.slice()
   };
 
@@ -4796,8 +4796,8 @@ if ((time != anchor.lastChangedTime) || !anchor._data || !anchor._data.update)
 
 const pose = frame.getPose(anchor.anchorSpace, this.frameOfRef);
 xr.hitMatrix_anchor.obj = new THREE.Matrix4().fromArray(pose.transform.matrix);
-xr.hitMatrix_anchor.decomposed = xr.hitMatrix.decompose();
-xr.hitMatrix_anchor.decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.hitMatrix_decomposed[1]);
+xr.hitMatrix_anchor.decomposed = xr.hitMatrix_anchor.obj.decompose();
+xr.hitMatrix_anchor.decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.hitMatrix_anchor.decomposed[1]);
 
 anchor._data.update(anchor._data.obj);
 
@@ -4854,10 +4854,10 @@ if (xr.xrViewerSpaceHitTestSource) {
 if (this.hits.length) {
   let hit = this.hit_active = this.hits[0]
   this.hits = []
-  this.hitMatrix = {
-    obj: new THREE.Matrix4().fromArray((xr.can_requestHitTestSource) ? hit.getPose(this.frameOfRef).transform.matrix : hit.hitMatrix)
-   ,decomposed: this.hitMatrix.decompose()
-  };
+  this.hitMatrix = this.hitMatrix || {};
+  this.hitMatrix.obj = new THREE.Matrix4().fromArray((xr.can_requestHitTestSource) ? hit.getPose(this.frameOfRef).transform.matrix : hit.hitMatrix);
+  this.hitMatrix.decomposed = this.hitMatrix.obj.decompose();
+
   return { hitMatrix:this.hitMatrix  };
 }
 
