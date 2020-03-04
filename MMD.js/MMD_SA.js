@@ -4272,8 +4272,8 @@ return drop_list
     window.addEventListener("SA_AR_dblclick", (function () {
       function update_obj_default(model_mesh, first_call) {
 let center_pos_old = (xr.center_pos && xr.center_pos.clone()) || new THREE.Vector3();
-xr.center_pos = model_mesh.position.clone().setY(0).sub(MMD_SA.TEMP_v3.copy(xr.hitMatrix_decomposed_active[0]).multiplyScalar(10))
-xr.hit_ground_y = xr.hitMatrix_decomposed[0].y
+xr.center_pos = model_mesh.position.clone().setY(0).sub(MMD_SA.TEMP_v3.copy(xr.hitMatrix_anchor.decomposed[0]).multiplyScalar(10))
+xr.hit_ground_y = xr.hitMatrix_anchor.decomposed[0].y
 
 if (first_call) {
   model_mesh.lookAt(xr.camera.position.clone().sub(center_pos_old).add(xr.center_pos).setY(model_mesh.position.y))
@@ -4288,7 +4288,7 @@ if (xr.reticle.visible) {
   let update_obj
   let model_mesh = THREE.MMD.getModels()[0].mesh
 
-  let axis = xr.hitMatrix_decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.hitMatrix_decomposed[1])
+  let axis = xr.hitMatrix.decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.hitMatrix.decomposed[1])
 //DEBUG_show(axis.toArray().join("\n"))
 
   if (Math.abs(axis.y) < 0.5) {
@@ -4312,8 +4312,10 @@ if (xr.reticle.visible) {
     }
   }
 
-  xr.reticle._zoom_scale_active = xr.reticle._zoom_scale_
-  xr.hitMatrix_decomposed_active = xr.hitMatrix_decomposed.slice()
+  xr.hitMatrix_anchor = {
+    obj: xr.hitMatrix.obj
+   ,decomposed: xr.hitMatrix.decomposed.slice()
+  };
 
   if (!update_obj)
     update_obj = update_obj_default
@@ -4360,7 +4362,7 @@ else if (xr.hit_found) {
   e.detail.result.return_value = true
 
   xr.hit_found = false
-  xr.reticle.position.copy(xr.hitMatrix_decomposed[0]).multiplyScalar(10).add(xr.center_pos)
+  xr.reticle.position.copy(xr.hitMatrix_anchor.decomposed[0]).multiplyScalar(10).add(xr.center_pos)
   xr.reticle.visible = true
 
   if (MMD_SA_options.Dungeon) {
@@ -4578,8 +4580,6 @@ if (xr.ground_plane)
     ev.preventDefault();
   });
 }
-this.reticle._zoom_scale_active = 1
-this.reticle._zoom_scale_ = 1
 this.reticle.visible = false
 
 MMD_SA.reset_camera()
@@ -4659,8 +4659,7 @@ this.hits_searching = false
 this.hit_found = false
 this.hit_active = null
 this.hitMatrix = null
-this.hitMatrix_decomposed = null
-this.hitMatrix_decomposed_active = null
+this.hitMatrix_anchor = null
 
 this.reticle.visible = false
 
@@ -4755,15 +4754,12 @@ else {
 
   if (hit_result) {
     if (!this.hit_found && hit_result.hitMatrix) {
-      if (!this.center_pos) {
-        this.reticle.position.copy(this.hitMatrix_decomposed[0]).multiplyScalar(10);
-      }
-      else {
-        this.reticle._zoom_scale_ = zoom_scale
-        this.reticle.position.copy(this.hitMatrix_decomposed[0]).sub(this.hitMatrix_decomposed_active[0]).multiplyScalar(10*this.reticle._zoom_scale_);
+      this.reticle.position.copy(this.hitMatrix.decomposed[0]).multiplyScalar(10);
+      if (this.center_pos) {
+        this.reticle.position.add(MMD_SA.TEMP_v3.copy(this.hitMatrix.decomposed[0]).sub(this.hitMatrix_anchor.decomposed[0]).multiplyScalar(10*zoom_scale));
         this.reticle.position.add(this.center_pos);
       }
-      this.reticle.quaternion.copy(this.hitMatrix_decomposed[1]);
+      this.reticle.quaternion.copy(this.hitMatrix.decomposed[1]);
 
       this.reticle.visible = true;
     }
@@ -4797,14 +4793,11 @@ else {
       for (const anchor of trackedAnchors) {
 if ((time != anchor.lastChangedTime) || !anchor._data || !anchor._data.update)
   continue
-continue
-const pose = frame.getPose(anchor.anchorSpace, this.frameOfRef);
-xr.hitMatrix = new THREE.Matrix4().fromArray(pose.transform.matrix);
-xr.hitMatrix_decomposed = xr.hitMatrix.decompose();
-xr.hitMatrix_decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.hitMatrix_decomposed[1]);
 
-xr.reticle._pos_active.copy(xr.hitMatrix_decomposed[0]).sub(xr.hitMatrix_decomposed_active[0]).multiplyScalar(10*xr.reticle._zoom_scale_active_);
-xr.reticle._pos_active.add(MMD_SA.TEMP_v3.copy(xr.hitMatrix_decomposed_active[0]).multiplyScalar(10));
+const pose = frame.getPose(anchor.anchorSpace, this.frameOfRef);
+xr.hitMatrix_anchor.obj = new THREE.Matrix4().fromArray(pose.transform.matrix);
+xr.hitMatrix_anchor.decomposed = xr.hitMatrix.decompose();
+xr.hitMatrix_anchor.decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.hitMatrix_decomposed[1]);
 
 anchor._data.update(anchor._data.obj);
 
@@ -4815,7 +4808,7 @@ DEBUG_show(time+':anchor updated(v3)')
   }
 
 // xyz
-  let camera_ref = this.hitMatrix_decomposed_active || this.hitMatrix_decomposed;
+  let camera_ref = (this.hitMatrix_anchor && this.hitMatrix_anchor.decomposed) || (this.hitMatrix && this.hitMatrix.decomposed);
   if (camera_ref) {
     let camera_diff = MMD_SA.TEMP_v3.getPositionFromMatrix(this.camera.matrix).sub(camera_ref[0]);
     this.camera.matrix.elements[12] += camera_diff.x * (zoom_scale-1)
@@ -4861,8 +4854,10 @@ if (xr.xrViewerSpaceHitTestSource) {
 if (this.hits.length) {
   let hit = this.hit_active = this.hits[0]
   this.hits = []
-  this.hitMatrix = new THREE.Matrix4().fromArray((xr.can_requestHitTestSource) ? hit.getPose(this.frameOfRef).transform.matrix : hit.hitMatrix)
-  this.hitMatrix_decomposed = this.hitMatrix.decompose()
+  this.hitMatrix = {
+    obj: new THREE.Matrix4().fromArray((xr.can_requestHitTestSource) ? hit.getPose(this.frameOfRef).transform.matrix : hit.hitMatrix)
+   ,decomposed: this.hitMatrix.decompose()
+  };
   return { hitMatrix:this.hitMatrix  };
 }
 
