@@ -4271,9 +4271,6 @@ return drop_list
 
     window.addEventListener("SA_AR_dblclick", (function () {
       function update_obj_default(model_mesh, first_call) {
-let center_pos_old = (xr.center_pos && xr.center_pos.clone()) || new THREE.Vector3();
-
-xr.center_pos = xr.hitMatrix_anchor.game_geo.position.clone().setY(0).sub(MMD_SA.TEMP_v3.copy(xr.hitMatrix_anchor.decomposed[0]).multiplyScalar(10));
 xr.hit_ground_y = xr.hitMatrix_anchor.decomposed[0].y;
 
 if (first_call) {
@@ -4317,7 +4314,7 @@ if (xr.reticle.visible) {
     obj: xr.hitMatrix.obj.clone()
    ,decomposed: xr.hitMatrix.decomposed.slice()
    ,game_geo: {
-      position: model_mesh.position.clone()
+      position: model_mesh.position.clone().setY(0)
     }
   };
 
@@ -4366,7 +4363,7 @@ else if (xr.hit_found) {
   e.detail.result.return_value = true
 
   xr.hit_found = false
-  xr.reticle.position.copy(xr.hitMatrix_anchor.decomposed[0]).multiplyScalar(10).add(xr.center_pos)
+  xr.reticle.position.copy(xr.hitMatrix_anchor.game_geo.position)
   xr.reticle.visible = true
 
   if (MMD_SA_options.Dungeon) {
@@ -4430,8 +4427,6 @@ catch (err) {
   }
 
  ,input_event: { inputSources:[] }
-
- ,center_pos: null
 
  ,hits: []
  ,hits_searching: false
@@ -4667,8 +4662,6 @@ this.hitMatrix_anchor = null
 
 this.reticle.visible = false
 
-this.center_pos = null
-
 for (const anchor of this.anchors) {
   anchor._data.obj._anchor = null
 }
@@ -4760,10 +4753,11 @@ else {
 
   if (hit_result) {
     if (!this.hit_found && hit_result.hitMatrix) {
-      this.reticle.position.copy(this.hitMatrix.decomposed[0]).multiplyScalar(10);
-      if (this.center_pos) {
-        this.reticle.position.add(MMD_SA.TEMP_v3.copy(this.hitMatrix.decomposed[0]).sub(this.hitMatrix_anchor.decomposed[0]).multiplyScalar(10*zoom_scale));
-        this.reticle.position.add(this.center_pos);
+      if (this.hitMatrix_anchor) {
+        this.reticle.position.copy(this.hitMatrix_anchor.game_geo.position).add(MMD_SA.TEMP_v3.copy(this.hitMatrix.decomposed[0]).sub(this.hitMatrix_anchor.decomposed[0]).multiplyScalar(10*zoom_scale));
+      }
+      else {
+        this.reticle.position.copy(this.hitMatrix.decomposed[0]).multiplyScalar(10);
       }
       this.reticle.quaternion.copy(this.hitMatrix.decomposed[1]);
 
@@ -4826,10 +4820,11 @@ DEBUG_show(time+':anchor updated(v3)')
   this.camera.matrix.elements[13] *= 10
   this.camera.matrix.elements[14] *= 10
 
-  if (this.center_pos) {
-    this.camera.matrix.elements[12] += this.center_pos.x
-    this.camera.matrix.elements[13] += this.center_pos.y
-    this.camera.matrix.elements[14] += this.center_pos.z
+  if (this.hitMatrix_anchor) {
+    let camera_offset = MMD_SA.TEMP_v3.copy(this.hitMatrix_anchor.decomposed[0]).multiplyScalar(10);
+    this.camera.matrix.elements[12] += this.hitMatrix_anchor.game_geo.position.x - camera_offset.x
+    this.camera.matrix.elements[13] += this.hitMatrix_anchor.game_geo.position.y - camera_offset.y
+    this.camera.matrix.elements[14] += this.hitMatrix_anchor.game_geo.position.z - camera_offset.z
   }
 
   this.camera.position.getPositionFromMatrix(this.camera.matrix)
