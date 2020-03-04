@@ -4273,8 +4273,7 @@ return drop_list
       function update_obj_default(model_mesh, first_call) {
 let center_pos_old = (xr.center_pos && xr.center_pos.clone()) || new THREE.Vector3();
 
-xr.hitMatrix_anchor.pos0 = xr.hitMatrix_anchor.pos0 || model_mesh.position.clone();
-xr.center_pos = xr.hitMatrix_anchor.pos0.clone().setY(0).sub(MMD_SA.TEMP_v3.copy(xr.hitMatrix_anchor.decomposed[0]).multiplyScalar(10));
+xr.center_pos = xr.hitMatrix_anchor.game_geo.position.clone().setY(0).sub(MMD_SA.TEMP_v3.copy(xr.hitMatrix_anchor.decomposed[0]).multiplyScalar(10));
 xr.hit_ground_y = xr.hitMatrix_anchor.decomposed[0].y;
 
 if (first_call) {
@@ -4317,7 +4316,9 @@ if (xr.reticle.visible) {
   xr.hitMatrix_anchor = {
     obj: xr.hitMatrix.obj.clone()
    ,decomposed: xr.hitMatrix.decomposed.slice()
-   ,pos0: null
+   ,game_geo: {
+      position: model_mesh.position.clone()
+    }
   };
 
   if (!update_obj)

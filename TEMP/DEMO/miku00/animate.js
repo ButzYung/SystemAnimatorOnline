@@ -341,15 +341,14 @@ if (!model_mesh.visible) {
 var adult_mode = this._adult_mode
 e.detail.result.update_obj = function (model_mesh, first_call) {
   var xr = MMD_SA.WebXR
-  var axis = xr.hitMatrix_decomposed[3]
+  var axis = xr.hitMatrix_anchor.decomposed[3]
 
   model_mesh.quaternion.setFromEuler(MMD_SA.TEMP_v3.set(0,Math.atan2(axis.x,axis.z),0))
   MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"] && MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]._obj.rotation.setEulerFromQuaternion(model_mesh.quaternion)
 
   var pos0
-  var zoom_scale = xr.reticle._zoom_scale_active
   if (adult_mode) {
-    pos0 = new THREE.Vector3().copy(xr.hitMatrix_decomposed[0]).setY(xr.hit_ground_y).multiplyScalar(10*zoom_scale);
+    pos0 = new THREE.Vector3().copy(xr.hitMatrix_anchor.decomposed[0]).setY(xr.hit_ground_y).multiplyScalar(10);
     model_mesh.position.y = -11.5 + (xr.hitMatrix_decomposed[0].y - xr.hit_ground_y)*10*zoom_scale;
 
     if (first_call) {
@@ -361,9 +360,9 @@ e.detail.result.update_obj = function (model_mesh, first_call) {
     MMD_SA.WebXR._wall.visible = true
   }
   else {
-    pos0 = axis.clone().multiplyScalar(1/3).add(xr.hitMatrix_decomposed[0]).setY(xr.hit_ground_y).multiplyScalar(10*zoom_scale);
+    pos0 = axis.clone().multiplyScalar(1/3).add(xr.hitMatrix_anchor.decomposed[0]).setY(xr.hit_ground_y).multiplyScalar(10);
   }
-  xr.center_pos = model_mesh.position.clone().setY(0).sub(pos0)
+  xr.center_pos = xr.hitMatrix_anchor.game_geo.position.clone().setY(0).sub(pos0)
 };
       }
 
