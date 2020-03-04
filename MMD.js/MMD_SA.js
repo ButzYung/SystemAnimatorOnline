@@ -4278,7 +4278,7 @@ xr.center_pos = xr.hitMatrix_anchor.pos0.clone().setY(0).sub(MMD_SA.TEMP_v3.copy
 xr.hit_ground_y = xr.hitMatrix_anchor.decomposed[0].y;
 
 if (first_call) {
-  model_mesh.lookAt(MMD_SA.TEMP_v3.copy(model_mesh.position).sub(xr.camera._pos_XR).setY(model_mesh.position.y))
+  model_mesh.lookAt(MMD_SA.TEMP_v3.copy(model_mesh.position).add(xr.camera._pos_XR).sub(xr.hitMatrix_anchor.decomposed[0]).setY(model_mesh.position.y))
   MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"] && MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]._obj.rotation.setEulerFromQuaternion(model_mesh.quaternion)
 }
       }
