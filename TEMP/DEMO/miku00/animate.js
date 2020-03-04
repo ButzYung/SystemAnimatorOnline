@@ -349,7 +349,7 @@ e.detail.result.update_obj = function (model_mesh, first_call) {
   var pos0
   if (adult_mode) {
     pos0 = new THREE.Vector3().copy(xr.hitMatrix_anchor.decomposed[0]).setY(xr.hit_ground_y).multiplyScalar(10);
-    model_mesh.position.y = -11.5 + (xr.hitMatrix_decomposed[0].y - xr.hit_ground_y)*10*zoom_scale;
+    model_mesh.position.y = -11.5 + (xr.hitMatrix_anchor.decomposed[0].y - xr.hit_ground_y)*10;
 
     if (first_call) {
       MMD_SA_options.motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["壁穴_モデルモーション_loop"]]
