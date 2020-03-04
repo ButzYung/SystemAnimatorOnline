@@ -4815,10 +4815,13 @@ DEBUG_show(time+':anchor updated(v3)')
   }
 
 // xyz
-  let camera_diff = MMD_SA.TEMP_v3.getPositionFromMatrix(this.camera.matrix).sub((this.hitMatrix_decomposed_active||this.hitMatrix_decomposed)[0]);
-  this.camera.matrix.elements[12] += camera_diff.x * (zoom_scale-1)
-  this.camera.matrix.elements[13] += camera_diff.y * (zoom_scale-1)
-  this.camera.matrix.elements[14] += camera_diff.z * (zoom_scale-1)
+  let camera_ref = this.hitMatrix_decomposed_active || this.hitMatrix_decomposed;
+  if (camera_ref) {
+    let camera_diff = MMD_SA.TEMP_v3.getPositionFromMatrix(this.camera.matrix).sub(camera_ref[0]);
+    this.camera.matrix.elements[12] += camera_diff.x * (zoom_scale-1)
+    this.camera.matrix.elements[13] += camera_diff.y * (zoom_scale-1)
+    this.camera.matrix.elements[14] += camera_diff.z * (zoom_scale-1)
+  }
 
   this.camera.matrix.elements[12] *= 10
   this.camera.matrix.elements[13] *= 10
