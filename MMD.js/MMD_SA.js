@@ -4272,11 +4272,13 @@ return drop_list
     window.addEventListener("SA_AR_dblclick", (function () {
       function update_obj_default(model_mesh, first_call) {
 let center_pos_old = (xr.center_pos && xr.center_pos.clone()) || new THREE.Vector3();
-xr.center_pos = model_mesh.position.clone().setY(0).sub(MMD_SA.TEMP_v3.copy(xr.hitMatrix_anchor.decomposed[0]).multiplyScalar(10))
-xr.hit_ground_y = xr.hitMatrix_anchor.decomposed[0].y
+
+xr.hitMatrix_anchor.pos0 = xr.hitMatrix_anchor.pos0 || model_mesh.position.clone();
+xr.center_pos = xr.hitMatrix_anchor.pos0.setY(0).sub(MMD_SA.TEMP_v3.copy(xr.hitMatrix_anchor.decomposed[0]).multiplyScalar(10));
+xr.hit_ground_y = xr.hitMatrix_anchor.decomposed[0].y;
 
 if (first_call) {
-  model_mesh.lookAt(xr.camera.position.clone().sub(center_pos_old).add(xr.center_pos).setY(model_mesh.position.y))
+  model_mesh.lookAt(MMD_SA.TEMP_v3.copy(xr.camera._pos_XR).setY(model_mesh.position.y))
   MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"] && MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]._obj.rotation.setEulerFromQuaternion(model_mesh.quaternion)
 }
       }
@@ -4315,6 +4317,7 @@ if (xr.reticle.visible) {
   xr.hitMatrix_anchor = {
     obj: xr.hitMatrix.obj.clone()
    ,decomposed: xr.hitMatrix.decomposed.slice()
+   ,pos0: null
   };
 
   if (!update_obj)
@@ -4746,8 +4749,10 @@ else {
   this.camera.matrixWorld.multiplyMatrices( this.camera.parent.matrixWorld, this.camera.matrix );
 }
 
-    _camera.matrixWorld.copy(this.camera.matrixWorld)
-    _camera.projectionMatrix.copy(this.camera.projectionMatrix)
+    this.camera._pos_XR = (this.camera._pos_XR||new THREE.Vector3()).getPositionFromMatrix(this.camera.matrix);
+
+    _camera.matrixWorld.copy(this.camera.matrixWorld);
+    _camera.projectionMatrix.copy(this.camera.projectionMatrix);
   }
 
   var hit_result = this.hit_test(frame)
@@ -4795,7 +4800,7 @@ if ((time != anchor.lastChangedTime) || !anchor._data || !anchor._data.update)
   continue
 
 const pose = frame.getPose(anchor.anchorSpace, this.frameOfRef);
-xr.hitMatrix_anchor.obj = new THREE.Matrix4().fromArray(pose.transform.matrix);
+xr.hitMatrix_anchor.obj = (xr.hitMatrix_anchor.obj||new THREE.Matrix4()).fromArray(pose.transform.matrix);
 xr.hitMatrix_anchor.decomposed = xr.hitMatrix_anchor.obj.decompose();
 xr.hitMatrix_anchor.decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.hitMatrix_anchor.decomposed[1]);
 
@@ -4855,7 +4860,7 @@ if (this.hits.length) {
   let hit = this.hit_active = this.hits[0]
   this.hits = []
   this.hitMatrix = this.hitMatrix || {};
-  this.hitMatrix.obj = new THREE.Matrix4().fromArray((xr.can_requestHitTestSource) ? hit.getPose(this.frameOfRef).transform.matrix : hit.hitMatrix);
+  this.hitMatrix.obj = (this.hitMatrix.obj||new THREE.Matrix4()).fromArray((xr.can_requestHitTestSource) ? hit.getPose(this.frameOfRef).transform.matrix : hit.hitMatrix);
   this.hitMatrix.decomposed = this.hitMatrix.obj.decompose();
 
   return { hitMatrix:this.hitMatrix  };
