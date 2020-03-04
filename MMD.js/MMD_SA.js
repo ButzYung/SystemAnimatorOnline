@@ -4826,10 +4826,13 @@ DEBUG_show(time+':anchor updated(v3)')
   this.camera.matrix.elements[14] *= 10
 
   if (this.reticle._pos_active) {
+DEBUG_show(this.reticle._pos_active.toArray())
+/*
     let camera_dis = MMD_SA.TEMP_v3.getPositionFromMatrix(this.camera.matrix).sub(this.reticle._pos_active)
     this.camera.matrix.elements[12] += -camera_dis.x + camera_dis.x * zoom_scale
     this.camera.matrix.elements[13] += -camera_dis.y + camera_dis.y * zoom_scale
     this.camera.matrix.elements[14] += -camera_dis.z + camera_dis.z * zoom_scale
+*/
   }
 
   if (this.center_pos) {
