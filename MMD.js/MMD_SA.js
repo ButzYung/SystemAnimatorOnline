@@ -4428,6 +4428,8 @@ catch (err) {
 
  ,input_event: { inputSources:[] }
 
+ ,get zoom_scale() { return zoom_scale; }
+
  ,hits: []
  ,hits_searching: false
  ,hit_found: false
@@ -4821,10 +4823,9 @@ DEBUG_show(time+':anchor updated(v3)')
   this.camera.matrix.elements[14] *= 10
 
   if (this.hitMatrix_anchor) {
-    let camera_offset = MMD_SA.TEMP_v3.copy(this.hitMatrix_anchor.decomposed[0]).multiplyScalar(10);
-    this.camera.matrix.elements[12] += this.hitMatrix_anchor.game_geo.position.x - camera_offset.x
-    this.camera.matrix.elements[13] += this.hitMatrix_anchor.game_geo.position.y - camera_offset.y
-    this.camera.matrix.elements[14] += this.hitMatrix_anchor.game_geo.position.z - camera_offset.z
+    this.camera.matrix.elements[12] += this.hitMatrix_anchor.game_geo.position.x - this.hitMatrix_anchor.decomposed[0].x*10
+    this.camera.matrix.elements[13] += this.hitMatrix_anchor.game_geo.position.y - this.hitMatrix_anchor.decomposed[0].y*10
+    this.camera.matrix.elements[14] += this.hitMatrix_anchor.game_geo.position.z - this.hitMatrix_anchor.decomposed[0].z*10
   }
 
   this.camera.position.getPositionFromMatrix(this.camera.matrix)

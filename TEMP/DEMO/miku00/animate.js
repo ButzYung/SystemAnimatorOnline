@@ -258,6 +258,23 @@ MMD_SA.WebXR._wall.quaternion.copy(model.quaternion)
 MMD_SA.WebXR._wall.visible = true
   }
 */
+
+// update every frame
+ ,process_bones: function (model) {
+if (!MMD_SA_options.WebXR.AR._adult_mode) return
+
+var xr = MMD_SA.WebXR
+var zoom_scale = xr.zoom_scale
+
+var model_mesh = model.mesh
+model_mesh.position.y = -11.5 + (xr.hitMatrix_anchor._hit_wall_y_ - xr.hit_ground_y)*10*zoom_scale;
+
+xr._wall.position.copy(model_mesh.position)
+xr._wall.quaternion.copy(model_mesh.quaternion)
+xr._wall.scale.set(zoom_scale,zoom_scale,zoom_scale)
+xr._wall.visible = true
+  }
+
  ,adjustment_per_model: {
     _default_ : {
   skin_default: {
@@ -346,23 +363,22 @@ e.detail.result.update_obj = function (model_mesh, first_call) {
   model_mesh.quaternion.setFromEuler(MMD_SA.TEMP_v3.set(0,Math.atan2(axis.x,axis.z),0))
   MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"] && MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]._obj.rotation.setEulerFromQuaternion(model_mesh.quaternion)
 
-  var pos0
   if (adult_mode) {
-    pos0 = new THREE.Vector3().copy(xr.hitMatrix_anchor.decomposed[0]).setY(xr.hit_ground_y).multiplyScalar(10);
-    model_mesh.position.y = -11.5 + (xr.hitMatrix_anchor.decomposed[0].y - xr.hit_ground_y)*10;
+// needed for .process_bones()
+    xr.hitMatrix_anchor._hit_wall_y_ = xr.hitMatrix_anchor.decomposed[0].y;
 
     if (first_call) {
       MMD_SA_options.motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["壁穴_モデルモーション_loop"]]
       MMD_SA._force_motion_shuffle = true
     }
-    MMD_SA.WebXR._wall.position.copy(model_mesh.position)
-    MMD_SA.WebXR._wall.quaternion.copy(model_mesh.quaternion)
-    MMD_SA.WebXR._wall.visible = true
   }
   else {
-    pos0 = axis.clone().multiplyScalar(1/3).add(xr.hitMatrix_anchor.decomposed[0]).setY(xr.hit_ground_y).multiplyScalar(10);
+// anchor offset away from the wall (x,z)
+    xr.hitMatrix_anchor.decomposed[0].add(axis.clone().multiplyScalar(1/3*10).setY(0));
   }
-  xr.center_pos = xr.hitMatrix_anchor.game_geo.position.clone().setY(0).sub(pos0)
+
+// save some headache and always put the reference anchor on the ground
+  xr.hitMatrix_anchor.decomposed[0].y = xr.hit_ground_y;
 };
       }
 
