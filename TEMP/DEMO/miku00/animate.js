@@ -374,7 +374,7 @@ e.detail.result.update_obj = function (model_mesh, first_call) {
   }
   else {
 // anchor offset away from the wall (x,z)
-    xr.hitMatrix_anchor.decomposed[0].add(axis.clone().multiplyScalar(1/3*10).setY(0));
+    xr.hitMatrix_anchor.decomposed[0].add(axis.clone().multiplyScalar(1/3).setY(0));
   }
 
 // save some headache and always put the reference anchor on the ground
