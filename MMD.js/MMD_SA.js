@@ -4584,7 +4584,7 @@ if (xr.ground_plane)
   });
 
   document.body.addEventListener('beforexrselect', (ev) => {
-//    ev.preventDefault();
+    ev.preventDefault();
   });
 }
 this.reticle.visible = false
