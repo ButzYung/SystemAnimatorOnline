@@ -4464,6 +4464,7 @@ session.addEventListener('inputsourceschange', function (e) {
 session.addEventListener('selectstart', function (e) {
   var time = Date.now()
   xr.input_event.touchdown = time
+DEBUG_show(Date.now(),0,1)
 });
 
 session.addEventListener('selectend', function (e) {
@@ -4503,12 +4504,13 @@ session.addEventListener('select', function (e) {
   if (xr.screen_clicked && (time - xr.screen_clicked < 400))
     xr.screen_dblclicked = time
   xr.screen_clicked = time
-DEBUG_show(Date.now()+":"+e.inputSource.targetRayMode)
 });
 
+/*
 session.addEventListener('squeezestart', function (e) {
 DEBUG_show(9,0,1)
 });
+*/
 
 /*
 // https://github.com/immersive-web/hit-test/blob/master/hit-testing-explainer.md
