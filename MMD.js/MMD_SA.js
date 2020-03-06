@@ -4769,7 +4769,7 @@ else {
   if (touches.length == 2) {
 DEBUG_show(Date.now())
   }
-//DEBUG_show(Date.now()+'('+xr.input_event.inputSources.length+'):'+inputSource.profiles+'\n'+touchpad.axes+'\n'+touchpad.buttons.map(b=>b.value))
+DEBUG_show(Date.now()+'('+xr.input_event.inputSources.length+'):'+xr.input_event.inputSources[0]._data)
 
   var hit_result = this.hit_test(frame)
 
