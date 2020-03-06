@@ -4464,6 +4464,7 @@ session.addEventListener('inputsourceschange', function (e) {
 session.addEventListener('selectstart', function (e) {
   var time = Date.now()
   xr.input_event.touchdown = time
+DEBUG_show(xr.input_event.inputSources.length)
 });
 
 session.addEventListener('selectend', function (e) {
@@ -4579,7 +4580,6 @@ if (xr.ground_plane)
 
   document.body.addEventListener('beforexrselect', (ev) => {
 //    ev.preventDefault();
-DEBUG_show(xr.input_event.inputSources.length)
   });
 }
 this.reticle.visible = false
