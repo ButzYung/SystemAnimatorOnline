@@ -4503,11 +4503,11 @@ session.addEventListener('select', function (e) {
   if (xr.screen_clicked && (time - xr.screen_clicked < 400))
     xr.screen_dblclicked = time
   xr.screen_clicked = time
+DEBUG_show(Date.now()+":"+e.inputSource.targetRayMode)
 });
 
-session.addEventListener('squeeze', function (e) {
-//DEBUG_show(xr.input_event.inputSources.length)
-DEBUG_show(Date.now()+":"+e.inputSource.targetRayMode)
+session.addEventListener('squeezestart', function (e) {
+DEBUG_show(9,0,1)
 });
 
 /*
