@@ -4426,7 +4426,7 @@ catch (err) {
 }
   }
 
- ,input_event: { inputSources:[] }
+ ,input_event: { inputSources:[], touches:[] }
 
  ,get zoom_scale() { return zoom_scale; }
 
@@ -4456,7 +4456,7 @@ catch (err) {
 this.session = session
 
 session.addEventListener('end', this.onSessionEnd);
-
+/*
 session.addEventListener('inputsourceschange', function (e) {
   var inputSources = e.session.inputSources;
   xr.input_event.inputSources = []
@@ -4464,21 +4464,25 @@ session.addEventListener('inputsourceschange', function (e) {
     xr.input_event.inputSources[i] = inputSources[i];
   }
 });
-
+*/
 session.addEventListener('selectstart', function (e) {
   var time = Date.now()
   xr.input_event.touchdown = time
 
-  var inputSource = xr.input_event.inputSources.find(inputSource => (inputSource==e.inputSource));
+  var inputSource = e.inputSource;
   inputSource._data = {
     created: time
   };
-  if ((inputSource.targetRayMode == "screen") && inputSource.gamepad && inputSource.gamepad.buttons[2].touched) {
+  if ((inputSource.targetRayMode == "screen") && inputSource.gamepad) {
     inputSource._data.axes = inputSource.gamepad.axes.slice();
+    xr.input_event.touches.push(inputSource);
   }
 });
 
 session.addEventListener('selectend', function (e) {
+  var inputSource = e.inputSource;
+  xr.input_event.touches = xr.input_event.touches.filter(touch => (touch != inputSource));
+
   if (!xr.input_event.touchdown)
     return
 
@@ -4689,7 +4693,7 @@ c_host.removeEventListener( 'touchmove', touchmove, false );
 jThree("#MMD_DirLight").three(0).color.copy(this.light_color_base)
 jThree("#MMD_DirLight").three(0).position.copy(this.light_position_base)
 
-this.input_event = { inputSources:[] }
+this.input_event = { inputSources:[], touches:[] }
 
 var model_mesh = THREE.MMD.getModels()[0].mesh
 if (!model_mesh.visible)
@@ -4765,11 +4769,7 @@ else {
 
 // https://immersive-web.github.io/webxr/#xrinputsource
 // https://github.com/immersive-web/webxr-gamepads-module/blob/master/gamepads-module-explainer.md
-  var touches = xr.input_event.inputSources.filter(inputSource => ((inputSource.targetRayMode == "screen") && inputSource._data && inputSource.gamepad && inputSource.gamepad.buttons[2].touched));
-  if (touches.length == 2) {
-DEBUG_show(Date.now())
-  }
-xr.input_event.inputSources.length && DEBUG_show('(v1)'+Date.now()+'('+xr.input_event.inputSources.length+'):'+xr.input_event.inputSources[0]._data)
+xr.input_event.touches.length && DEBUG_show('(v1)'+Date.now()+'('+xr.input_event.touches.length+'):'+xr.input_event.touches[0]._data)
 
   var hit_result = this.hit_test(frame)
 
