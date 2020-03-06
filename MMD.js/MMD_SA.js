@@ -4458,7 +4458,11 @@ this.session = session
 session.addEventListener('end', this.onSessionEnd);
 
 session.addEventListener('inputsourceschange', function (e) {
-  xr.input_event.inputSources = e.session.inputSources;
+  var inputSources = e.session.inputSources;
+  xr.input_event.inputSources = []
+  for (var i = 0, i_max = inputSources.length; i < i_max; i++) {
+    xr.input_event.inputSources[i] = inputSources[i];
+  }
 });
 
 session.addEventListener('selectstart', function (e) {
