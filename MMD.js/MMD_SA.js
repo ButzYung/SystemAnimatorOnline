@@ -5867,6 +5867,16 @@ MMD_SA.GOML_head +=
   if (MMD_SA_options.use_speech_bubble)
     MMD_SA.SpeechBubble.init()
 
+// save some headaches for physics glitches on start
+  window.addEventListener("MMDStarted", function () {
+     THREE.MMD.getModels().forEach(function (m) {
+if (!m.physi)
+  return
+m.mesh._reset_rigid_body_physics_ = MMD_SA_options.reset_rigid_body_physics_step + ((MMD_SA_options.Dungeon) ? 60 : 30)
+//m.physi.reset()
+    });
+  });
+
 // defaults END
 
 

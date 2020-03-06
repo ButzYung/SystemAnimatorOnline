@@ -5903,7 +5903,7 @@ if (!skin.time || skin._MMD_SA_disabled) {
 if (ignore_physics_reset) return;
 if (self.MMD_SA) {
 // a trick to reset rigid body physics on motion seek/change
-  this.mesh._reset_rigid_body_physics_ = MMD_SA_options.reset_rigid_body_physics_step;
+  this.mesh._reset_rigid_body_physics_ = Math.max(this.mesh._reset_rigid_body_physics_||0, MMD_SA_options.reset_rigid_body_physics_step);
 // custom gravity
   if (this._model_index == 0) {
     var gravity = MMD_SA.MMD.motionManager.para_SA.gravity || [0,-1,0]
