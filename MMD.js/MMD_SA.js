@@ -4464,7 +4464,6 @@ session.addEventListener('inputsourceschange', function (e) {
 session.addEventListener('selectstart', function (e) {
   var time = Date.now()
   xr.input_event.touchdown = time
-DEBUG_show(xr.input_event.inputSources.length)
 });
 
 session.addEventListener('selectend', function (e) {
@@ -4504,6 +4503,11 @@ session.addEventListener('select', function (e) {
   if (xr.screen_clicked && (time - xr.screen_clicked < 400))
     xr.screen_dblclicked = time
   xr.screen_clicked = time
+});
+
+session.addEventListener('squeeze', function (e) {
+//DEBUG_show(xr.input_event.inputSources.length)
+DEBUG_show(Date.now()+":"+e.inputSource.targetRayMode)
 });
 
 /*
