@@ -4464,7 +4464,6 @@ session.addEventListener('inputsourceschange', function (e) {
 session.addEventListener('selectstart', function (e) {
   var time = Date.now()
   xr.input_event.touchdown = time
-DEBUG_show(Date.now()+":"+e.inputSource.gamepad)
 });
 
 session.addEventListener('selectend', function (e) {
@@ -4761,6 +4760,16 @@ else {
     _camera.matrixWorld.copy(this.camera.matrixWorld);
     _camera.projectionMatrix.copy(this.camera.projectionMatrix);
   }
+
+// https://immersive-web.github.io/webxr/#xrinputsource
+// https://github.com/immersive-web/webxr-gamepads-module/blob/master/gamepads-module-explainer.md
+  xr.input_event.inputSources.forEach(function (inputSource) {
+    var touchpad = (inputSource.targetRayMode == "screen") && inputSource.gamepad;
+    if (!touchpad)
+      return
+
+DEBUG_show(Date.now()+":"+inputSource.profiles+'/'+touchpad.axes.length+'/'+touchpad.buttons.length)
+  });
 
   var hit_result = this.hit_test(frame)
 
