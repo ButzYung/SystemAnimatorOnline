@@ -4578,7 +4578,8 @@ if (xr.ground_plane)
   });
 
   document.body.addEventListener('beforexrselect', (ev) => {
-    ev.preventDefault();
+//    ev.preventDefault();
+DEBUG_show(xr.input_event.inputSources.length)
   });
 }
 this.reticle.visible = false
