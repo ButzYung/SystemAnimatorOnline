@@ -5872,11 +5872,13 @@ MMD_SA.GOML_head +=
      THREE.MMD.getModels().forEach(function (m) {
 if (!m.physi) return;
 
-let delay_ini = MMD_SA_options.reset_rigid_body_physics_step + ((MMD_SA_options.Dungeon) ? 60 : 30);
+let delay_ini = MMD_SA_options.reset_rigid_body_physics_step + ((MMD_SA_options.Dungeon) ? 90 : 30);
 m.mesh._reset_rigid_body_physics_ = delay_ini;
+/*
 System._browser.on_animation_update.add(function () {
   m.mesh._reset_rigid_body_physics_ = MMD_SA_options.reset_rigid_body_physics_step;
 }, delay_ini+30, 0);
+*/
 //m.physi.reset();
     });
   });
