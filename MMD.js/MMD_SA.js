@@ -4464,6 +4464,14 @@ session.addEventListener('inputsourceschange', function (e) {
 session.addEventListener('selectstart', function (e) {
   var time = Date.now()
   xr.input_event.touchdown = time
+
+  var inputSource = e.session.inputSource;
+  inputSource._data = {
+    created: time
+  };
+  if ((inputSource.targetRayMode == "screen") && inputSource.gamepad && inputSource.gamepad.buttons[2].touched) {
+    inputSource._data.axes = inputSource.gamepad.axes.slice();
+  }
 });
 
 session.addEventListener('selectend', function (e) {
@@ -4763,13 +4771,11 @@ else {
 
 // https://immersive-web.github.io/webxr/#xrinputsource
 // https://github.com/immersive-web/webxr-gamepads-module/blob/master/gamepads-module-explainer.md
-  xr.input_event.inputSources.forEach(function (inputSource) {
-    var touchpad = (inputSource.targetRayMode == "screen") && inputSource.gamepad;
-    if (!touchpad)
-      return
-
-DEBUG_show(Date.now()+'('+xr.input_event.inputSources.length+'):'+inputSource.profiles+'\n'+touchpad.axes+'\n'+touchpad.buttons.map(b=>b.value))
-  });
+  var touches = xr.input_event.inputSources.filter(inputSource => ((inputSource.targetRayMode == "screen") && inputSource._data && inputSource.gamepad && inputSource.gamepad.buttons[2].touched));
+  if (touches.length == 2) {
+DEBUG_show(Date.now())
+  }
+//DEBUG_show(Date.now()+'('+xr.input_event.inputSources.length+'):'+inputSource.profiles+'\n'+touchpad.axes+'\n'+touchpad.buttons.map(b=>b.value))
 
   var hit_result = this.hit_test(frame)
 
