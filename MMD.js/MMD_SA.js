@@ -4768,7 +4768,7 @@ else {
     if (!touchpad)
       return
 
-DEBUG_show(Date.now()+":"+inputSource.profiles+'\n'+touchpad.axes+'\n'+touchpad.buttons.map(b=>b.value))
+DEBUG_show(Date.now()+'('+xr.input_event.inputSources.length+'):'+inputSource.profiles+'\n'+touchpad.axes+'\n'+touchpad.buttons.map(b=>b.value))
   });
 
   var hit_result = this.hit_test(frame)
