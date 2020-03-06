@@ -5664,7 +5664,8 @@ var d = MMD_SA_options.Dungeon
 var obj_character = {
   _sort_weight:-99
  ,onclick:[{ is_dblclick:true, click_range:320, func:function (e, intersected) {
-    window.dispatchEvent(new CustomEvent('SA_Dungeon_character_clicked', { detail:{ target:e.target, intersected:intersected } }));
+    if (!MMD_SA.MMD.motionManager.para_SA.object_click_disabled)
+      window.dispatchEvent(new CustomEvent('SA_Dungeon_character_clicked', { detail:{ target:e.target, intersected:intersected } }));
   }}]
 };
 

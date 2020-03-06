@@ -275,6 +275,8 @@ xr._wall.scale.set(zoom_scale,zoom_scale,zoom_scale)
 xr._wall.visible = true
   }
 
+ ,object_click_disabled: true
+
  ,adjustment_per_model: {
     _default_ : {
   skin_default: {

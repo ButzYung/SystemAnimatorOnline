@@ -4505,14 +4505,15 @@ session.addEventListener('select', function (e) {
   xr.screen_clicked = time
 });
 
-
+/*
+// https://github.com/immersive-web/webxr/blob/master/input-explainer.md
 session.addEventListener('pointerdown', function (e) {
 DEBUG_show("PD",0,1)
 });
 session.addEventListener('click', function (e) {
 DEBUG_show("C",0,1)
 });
-
+*/
 
 /*
 // https://github.com/immersive-web/hit-test/blob/master/hit-testing-explainer.md
@@ -4587,7 +4588,7 @@ if (xr.ground_plane)
   });
 
   document.body.addEventListener('beforexrselect', (ev) => {
-//    ev.preventDefault();
+    ev.preventDefault();
   });
 }
 this.reticle.visible = false
