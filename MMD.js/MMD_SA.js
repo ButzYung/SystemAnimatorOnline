@@ -4464,6 +4464,7 @@ session.addEventListener('inputsourceschange', function (e) {
 session.addEventListener('selectstart', function (e) {
   var time = Date.now()
   xr.input_event.touchdown = time
+DEBUG_show(Date.now()+":"+e.inputSource.gamepad)
 });
 
 session.addEventListener('selectend', function (e) {
@@ -4588,7 +4589,7 @@ if (xr.ground_plane)
   });
 
   document.body.addEventListener('beforexrselect', (ev) => {
-    ev.preventDefault();
+//    ev.preventDefault();
   });
 }
 this.reticle.visible = false
