@@ -4563,7 +4563,9 @@ try {
     "lightEstimationState" : { "enabled" : true}
   });
 }
-catch (err) { DEBUG_show("light-estimation failed to init") }
+catch (err) {
+  DEBUG_show("light-estimation failed to init")
+}
 
 if (!this.reticle) {
   let geometry = new THREE.RingGeometry(0.1, 0.11, 24, 1);
@@ -4775,7 +4777,7 @@ else {
       is_touchstart = true
     }
   });
-  if (/*xr.is_dom_overlay_activated &&*/ (touches.length == 2)) {
+  if (!xr.is_dom_overlay_activated && (touches.length == 2)) {
     e_touch.touches[0].pageX = touches[0].gamepad.axes[0]
     e_touch.touches[0].pageY = touches[0].gamepad.axes[1]
     e_touch.touches[1].pageX = touches[1].gamepad.axes[0]
