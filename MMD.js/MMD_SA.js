@@ -4376,6 +4376,13 @@ else if (xr.hit_found) {
     var zoom_scale = 1
     var _zoom_distance_last
 
+    var e_touch = {
+      touches: [
+        { pageX:0, pageY:0 }
+       ,{ pageX:0, pageY:0 }
+      ]
+    };
+
     function touchstart(e) {
 if (e.touches.length != 2) return
 
@@ -4392,6 +4399,20 @@ var dy = e.touches[0].pageY - e.touches[1].pageY;
 var dis = Math.sqrt( dx * dx + dy * dy );
 zoom_scale *= _zoom_distance_last/dis
 _zoom_distance_last = dis
+    }
+
+    function DOM_event_dblclick(e) {
+e.stopPropagation();
+e.stopImmediatePropagation();
+e.preventDefault();
+//DEBUG_show(Date.now())
+
+//SA_AR_dblclick
+var result = { return_value:null }
+window.dispatchEvent(new CustomEvent("SA_AR_dblclick", { detail:{ e:e, result:result } }));
+if (result.return_value) {
+  return
+}
     }
 
     xr = {
@@ -4436,20 +4457,6 @@ catch (err) {
 
  ,anchors: new Set()
 
- ,DOM_event_dblclick: function (e) {
-    e.stopPropagation();
-    e.stopImmediatePropagation();
-    e.preventDefault();
-//DEBUG_show(Date.now())
-
-//SA_AR_dblclick
-    var result = { return_value:null }
-    window.dispatchEvent(new CustomEvent("SA_AR_dblclick", { detail:{ e:e, result:result } }));
-    if (result.return_value) {
-      return
-    }
-  }
-
  ,xrViewerSpaceHitTestSource: null
  ,xrTransientInputHitTestSource: null
  ,onSessionStart: async function (session) {
@@ -4480,7 +4487,7 @@ session.addEventListener('selectend', function (e) {
 
   var time = Date.now()
   var time_diff = time - xr.input_event.touchdown
-  xr.input_event.touchdown = false
+  xr.input_event.touchdown = null
 
   if (time_diff > 400)
     return
@@ -4585,6 +4592,7 @@ if (xr.ground_plane)
 
   document.body.addEventListener('beforexrselect', (ev) => {
     ev.preventDefault();
+    xr.is_dom_overlay_activated = true
   });
 }
 this.reticle.visible = false
@@ -4628,7 +4636,7 @@ if (1) {
   document.getElementById("SL").style.visibility = "hidden"
   document.getElementById("Lquick_menu").style.display = "none"
 
-  c_host.addEventListener("dblclick", this.DOM_event_dblclick)
+  c_host.addEventListener("dblclick", DOM_event_dblclick)
 // push the .onclick AFTER the AR event handler
   if (c_host.ondblclick) {
     c_host._ondblclick = c_host.ondblclick
@@ -4712,7 +4720,7 @@ if (1) {
   document.getElementById("SL").style.visibility = "inherit"
   document.getElementById("Lquick_menu").style.display = "block"
 
-  c_host.removeEventListener("dblclick", this.DOM_event_dblclick)
+  c_host.removeEventListener("dblclick", DOM_event_dblclick)
 }
 
 this.renderer.device_framebuffer = null;
@@ -4759,20 +4767,29 @@ else {
 
 // https://immersive-web.github.io/webxr/#xrinputsource
 // https://github.com/immersive-web/webxr-gamepads-module/blob/master/gamepads-module-explainer.md
-  xr.input_event.touches.forEach(function (touch) {
-    if (!touch._data) {
-      touch._data = {
-        created: time
-       ,axes: touch.gamepad.axes.slice()
-      };
+  let is_touchstart
+  let touches = xr.input_event.touches
+  touches.forEach(function (touch) {
+    if (!touch._initialized) {
+      touch._initialized = true
+      is_touchstart = true
     }
   });
-  if (xr.input_event.touches.length == 2) {
+  if (/*xr.is_dom_overlay_activated &&*/ (touches.length == 2)) {
+    e_obj.touches[0].pageX = touches[0].touch.gamepad.axes[0]
+    e_obj.touches[0].pageY = touches[0].touch.gamepad.axes[1]
+    e_obj.touches[1].pageX = touches[1].touch.gamepad.axes[0]
+    e_obj.touches[1].pageY = touches[1].touch.gamepad.axes[1]
+    if (is_touchstart) {
+      touchstart(e_obj)
+    }
+    else {
+      touchmove(e_obj)
+    }
   }
-xr.input_event.touches.length && DEBUG_show('(v2)'+Date.now()+'('+xr.input_event.touches.length+'):'+xr.input_event.touches[0]._data)
+//xr.input_event.touches.length && DEBUG_show('(v2)'+Date.now()+'('+xr.input_event.touches.length+'):'+xr.input_event.touches[0]._data)
 
-  var hit_result = this.hit_test(frame)
-
+  let hit_result = this.hit_test(frame)
   if (hit_result) {
     if (!this.hit_found && hit_result.hitMatrix) {
       if (this.hitMatrix_anchor) {
