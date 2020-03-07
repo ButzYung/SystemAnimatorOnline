@@ -4776,15 +4776,15 @@ else {
     }
   });
   if (/*xr.is_dom_overlay_activated &&*/ (touches.length == 2)) {
-    e_obj.touches[0].pageX = touches[0].gamepad.axes[0]
-    e_obj.touches[0].pageY = touches[0].gamepad.axes[1]
-    e_obj.touches[1].pageX = touches[1].gamepad.axes[0]
-    e_obj.touches[1].pageY = touches[1].gamepad.axes[1]
+    e_touch.touches[0].pageX = touches[0].gamepad.axes[0]
+    e_touch.touches[0].pageY = touches[0].gamepad.axes[1]
+    e_touch.touches[1].pageX = touches[1].gamepad.axes[0]
+    e_touch.touches[1].pageY = touches[1].gamepad.axes[1]
     if (is_touchstart) {
-      touchstart(e_obj)
+      touchstart(e_touch)
     }
     else {
-      touchmove(e_obj)
+      touchmove(e_touch)
     }
   }
 //xr.input_event.touches.length && DEBUG_show('(v2)'+Date.now()+'('+xr.input_event.touches.length+'):'+xr.input_event.touches[0]._data)
