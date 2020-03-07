@@ -4776,10 +4776,10 @@ else {
     }
   });
   if (/*xr.is_dom_overlay_activated &&*/ (touches.length == 2)) {
-    e_obj.touches[0].pageX = touches[0].touch.gamepad.axes[0]
-    e_obj.touches[0].pageY = touches[0].touch.gamepad.axes[1]
-    e_obj.touches[1].pageX = touches[1].touch.gamepad.axes[0]
-    e_obj.touches[1].pageY = touches[1].touch.gamepad.axes[1]
+    e_obj.touches[0].pageX = touches[0].gamepad.axes[0]
+    e_obj.touches[0].pageY = touches[0].gamepad.axes[1]
+    e_obj.touches[1].pageX = touches[1].gamepad.axes[0]
+    e_obj.touches[1].pageY = touches[1].gamepad.axes[1]
     if (is_touchstart) {
       touchstart(e_obj)
     }
@@ -4808,7 +4808,7 @@ else {
 // https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/modules/xr/xr_world_information.idl
 // https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/modules/xr/xr_light_estimation.idl
 // https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/modules/xr/xr_light_probe.idl
-    if (frame.worldInformation.lightEstimation) {
+    if (frame.worldInformation && frame.worldInformation.lightEstimation) {
       let lightProbe = frame.worldInformation.lightEstimation.lightProbe
       let li = lightProbe.mainLightIntensity
       let ld = lightProbe.mainLightDirection
