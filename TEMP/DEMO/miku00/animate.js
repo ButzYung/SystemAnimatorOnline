@@ -242,9 +242,8 @@ return ratio
   }
 
  ,look_at_screen_bone_list: [
-    { name:"首", weight_screen:0.25, weight_motion:0.5 }
-   ,{ name:"頭", weight_screen:0.25, weight_motion:0.5 }
-   ,{ name:"両目", weight_screen:0.15, weight_motion:0.5 }
+    { name:"首", weight_screen:0.5, weight_motion:1/3 }
+   ,{ name:"頭", weight_screen:0.5, weight_motion:1/3 }
   ]
 
  ,onended: function (loop_end) {
