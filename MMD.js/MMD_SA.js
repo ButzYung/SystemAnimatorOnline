@@ -4963,8 +4963,7 @@ if (navigator.xr) {
       xr.can_requestHitTestSource = true
     }).catch((err)=>{});
   }
-  else {
-// XRSession.prototype.requestHitTest
+  else if (XRSession.prototype.requestHitTest) {
     navigator.xr.supportsSession('immersive-ar').then(()=>{
       xr.can_AR = true
       xr.can_requestHitTest = true
