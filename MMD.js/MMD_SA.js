@@ -4944,7 +4944,7 @@ return null
 
     try {
 if (navigator.xr) {
-  if (navigator.xr.isSessionSupported) {
+  if (navigator.xr.isSessionSupported && XRSession.prototype.requestHitTestSource) {
     navigator.xr.isSessionSupported('immersive-ar').then(()=>{
       xr.can_AR = true
       xr.can_requestHitTestSource = true
