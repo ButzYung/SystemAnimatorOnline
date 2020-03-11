@@ -4443,7 +4443,20 @@ try {
 }
 catch (err) {
   console.error(err)
-  DEBUG_show("(AR session failed)")
+//  DEBUG_show("(AR session failed 01)")
+
+  try {
+// for Chrome 80
+    let options = {};
+    options.optionalFeatures = ["dom-overlay","dom-overlay-for-handheld-ar"];//,"xr-global-light-estimation"
+    const session = await navigator.xr.requestSession('immersive-ar', options);
+
+    this.onSessionStart(session)
+  }
+  catch (err2) {
+    console.error(err2)
+    DEBUG_show("(AR session failed 02)")
+  }
 }
   }
 
