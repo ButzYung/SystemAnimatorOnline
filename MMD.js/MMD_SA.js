@@ -5002,7 +5002,7 @@ if (navigator.xr) {
     SA_fullscreen_stretch_to_cover = true
     Settings.CSSTransformFullscreen = true
   }
-  if (is_mobile) MMD_SA_options.texture_resolution_limit = MMD_SA_options.texture_resolution_limit_mobile || 1024;
+//  if (is_mobile) MMD_SA_options.texture_resolution_limit = MMD_SA_options.texture_resolution_limit_mobile || 1024;
 //MMD_SA_options.texture_resolution_limit=256
 
 
