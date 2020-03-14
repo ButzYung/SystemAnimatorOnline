@@ -5003,7 +5003,7 @@ if (navigator.xr) {
     Settings.CSSTransformFullscreen = true
   }
   if (is_mobile) MMD_SA_options.texture_resolution_limit = MMD_SA_options.texture_resolution_limit_mobile || 1024;
-//MMD_SA_options.texture_resolution_limit=64
+//MMD_SA_options.texture_resolution_limit=256
 
 
 // model selection START
