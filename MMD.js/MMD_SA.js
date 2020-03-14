@@ -4790,6 +4790,7 @@ else {
       is_touchstart = true
     }
   });
+DEBUG_show(touches.length,0,1)
   if (!xr.is_dom_overlay_activated && (touches.length == 2)) {
     if (touches[0].gamepad) {
       e_touch.touches[0].pageX = touches[0].gamepad.axes[0]
