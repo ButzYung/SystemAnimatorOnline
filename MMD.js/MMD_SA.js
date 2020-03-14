@@ -4484,7 +4484,7 @@ session.addEventListener('inputsourceschange', function (e) {
     xr.input_event.inputSources[i] = inputSources[i];
   }
 
-  xr.input_event.touches = xr.input_event.inputSources.filter(inputSource => ((inputSource.targetRayMode == "screen") && inputSource.gamepad));
+  xr.input_event.touches = xr.input_event.inputSources.filter(inputSource => ((inputSource.targetRayMode == "screen")));// && inputSource.gamepad));
 });
 
 session.addEventListener('selectstart', function (e) {
@@ -4791,16 +4791,21 @@ else {
     }
   });
   if (!xr.is_dom_overlay_activated && (touches.length == 2)) {
-    e_touch.touches[0].pageX = touches[0].gamepad.axes[0]
-    e_touch.touches[0].pageY = touches[0].gamepad.axes[1]
-    e_touch.touches[1].pageX = touches[1].gamepad.axes[0]
-    e_touch.touches[1].pageY = touches[1].gamepad.axes[1]
+    if (touches[0].gamepad) {
+      e_touch.touches[0].pageX = touches[0].gamepad.axes[0]
+      e_touch.touches[0].pageY = touches[0].gamepad.axes[1]
+      e_touch.touches[1].pageX = touches[1].gamepad.axes[0]
+      e_touch.touches[1].pageY = touches[1].gamepad.axes[1]
     if (is_touchstart) {
       touchstart(e_touch)
     }
     else {
       touchmove(e_touch)
     }
+} else {
+DEBUG_show(Date.now()+":"+new THREE.Matrix4().fromArray(frame.getPose(touches[0].targetRaySpace, this.frameOfRef).transform.matrix).decompose()[0].toArray());
+}
+
   }
 //xr.input_event.touches.length && DEBUG_show('(v2)'+Date.now()+'('+xr.input_event.touches.length+'):'+xr.input_event.touches[0]._data)
 
