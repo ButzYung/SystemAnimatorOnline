@@ -6,7 +6,7 @@ var MMD_SA_options = {
 
 //  { path:System.Gadget.path + '/MMD.js/motion/stand.vmd'}
 //  { path:System.Gadget.path + '/MMD.js/motion/swing.vmd'}
-  { path:System.Gadget.path + '/MMD.js/motion/motion_basic_pack01.zip#/standmix2_modified.vmd'}
+  { must_load:true, no_shuffle:true, path:System.Gadget.path + '/MMD.js/motion/motion_basic_pack01.zip#/standmix2_modified.vmd'}
 //  { path:Settings.f_path + '/motion/_sleep90.vmd'}
 
    ,{
@@ -130,6 +130,11 @@ var MMD_SA_options = {
       path:'F:\\MMD\\motions\\ゆっきゆっきゆっきダンス・ライクーP\\ゆっきゆっきゆっきダンス・ライクーP.vmd'
     }
 
+// 30
+
+   ,{
+      must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/model/gal_model_motion_with_legs-2_loop_v01.vmd'
+    }
 
 // must-load list
 // ,{ must_load:true, no_shuffle:true, path:'C:\\Users\\User\\Downloads\\MikuMikuDanceE_v739\\MikuMikuDanceE_v739\\UserFile\\Motion\\Muuubu Rin -Append-\\motion_BAL3.vmd'}
@@ -146,7 +151,7 @@ var MMD_SA_options = {
 // ,motion_shuffle_pool_size: 9
 // ,motion_shuffle: [1,3,3+15, 0+15,1+15,4+15, 6,9,4]
 
- ,motion_shuffle_list_default: [0]
+ ,motion_shuffle_list_default: [30]//[0]
 
 // ,motion_shuffle_list: [4,4,4,4,4,4,4,4]
 
@@ -280,6 +285,7 @@ xr._wall.scale.set(zoom_scale,zoom_scale,zoom_scale)
 xr._wall.visible = true
   }
 
+ ,_cover_undies: false
  ,object_click_disabled: true
 
  ,adjustment_per_model: {
@@ -290,6 +296,94 @@ xr._wall.visible = true
     }
   }
     }
+
+   ,"gal_model_motion_with_legs-2_loop_v01" : {
+  look_at_screen_angle_x_limit: [Math.PI*0.25, -Math.PI*0.5]
+
+// ,loop:[1,1]
+ ,onended: function (last_frame) { MMD_SA._no_fading=last_frame&&(!this.loop||this.loop_count); }
+
+// ,gravity: [0,-0.1,0]
+// ,gravity_reset: [0,0.5,0]
+ ,gravity: [0,0,0]
+ ,gravity_reset: [0,-0.5,0]
+
+ ,object_click_disabled: true
+
+ ,adjustment_per_model: {
+    _default_ : {
+  skin_default: {
+    "全ての親": { keys:
+  [
+    {time:0, pos:{x:0, y:4, z:-10}}
+   ,{time:390*0.5/30, pos:{x:0, y:5, z:-10}}
+   ,{time:390/30, pos:{x:0, y:4, z:-10}}
+  ]
+    }
+//  "全ての親": { pos_add:{ x:-6.56+4, y:0+0.25, z:-6.47-3 }, rot_add:{ x:0, y:-54.4+20, z:0 } } 
+  }
+ ,morph_default:{
+  "あ":{weight_scale:2/3}
+ ,"High Heels OFF": { weight:1 }
+// ,"素足":{weight:1}
+  }
+    }
+  }
+
+// ,center_view: [5-1,-5-2-1.05,-10] ,center_view_lookAt: [0-1,0-2+0.75,0] ,SpeechBubble_pos_mod: [-11+8,2,7]
+
+// ,center_view: [5-1,-5-2,-10] ,center_view_lookAt: [0-1,0-2,0],SpeechBubble_pos_mod: [-1,2,8]
+// ,center_view: [0,0-2.5,-30] ,center_view_lookAt: [20,5,20] ,SpeechBubble_pos_mod: [-8,6,10-2]
+//[0,10,30], [0,10,0]
+//,center_view: [0,0,-20-2.5] ,center_view_lookAt: [20,0,10+2.5] ,SpeechBubble_pos_mod: [-17,0,-10]
+
+
+// ,SpeechBubble_flipH: true
+// ,SpeechBubble_pos_mod: [0-8,4,-2+12]
+//,SpeechBubble_pos_mod: [0,3,8]
+
+ ,get look_at_screen_ratio() {
+var f = THREE.MMD.getModels()[0].skin.time*30
+var ratio = 1
+if (f >= 157) {
+  if (f <= 180)
+    ratio = (180-f)/23
+  else if (f <= 210)
+    ratio = 0
+  else if (f <= 233)
+    ratio = (f-210)/23
+}
+
+return ratio
+  }
+
+ ,get look_at_screen_bone_list() {
+var f = THREE.MMD.getModels()[0].skin.time*30
+var ratio = 1
+if (f >= 157) {
+  if (f <= 180)
+    ratio = (180-f)/23
+  else if (f <= 210)
+    ratio = 0
+  else if (f <= 233)
+    ratio = (f-210)/23
+}
+
+return [
+  { name:"首", weight_screen:0.4*ratio, weight_motion:1*(1-ratio) }
+ ,{ name:"頭", weight_screen:0.4*ratio, weight_motion:1*(1-ratio) }
+ ,{ name:"両目", weight_screen:0.2*ratio, weight_motion:1*(1-ratio), weight_screen_pow:2 }
+];
+  }
+
+ ,look_at_mouse_z: -1
+
+// ,look_at_screen_bone_list: [{ name:"両目", weight_screen:0.2, weight_motion:0}]
+// ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].skin.mesh.bones_by_name["頭"].quaternion.clone(); }
+
+ ,IK_disabled: { test: function (name) { return (name.indexOf("足ＩＫ")!=-1) || (name.indexOf("つま先ＩＫ")!=-1); } }
+    }
+
   }
 
  ,custom_action: [
@@ -448,6 +542,90 @@ MMD_SA_options.Dungeon_options = {
 // ,grid_material_list: []
 
 // ,object_base_list: []
+
+ ,item_base: {
+    "air_blower": (function () {
+      function air_blower_frame() {
+if (MMD_SA.ammo_proxy && MMD_SA.ammo_proxy._timeStep) return// {DEBUG_show(Date.now()); return; }
+
+var camera = MMD_SA._trackball_camera.object
+var gravity = MMD_SA.TEMP_v3.copy(camera.position).sub(camera._lookAt).normalize().multiplyScalar((state==2) ? 2 : -2).toArray()
+//DEBUG_show(gravity)
+THREE.MMD.setGravity( gravity[0]*9.8*10, gravity[1]*9.8*10, gravity[2]*9.8*10 )
+      }
+
+      var state = 0
+      var air_blower = {
+  icon_path: Settings.f_path + '/assets/assets.zip#/icon/hair_dryer_64x64.png'
+ ,info_short: "Air blower"
+// ,is_base_inventory: true
+ ,stock_max: 1
+ ,stock_default: 1
+ ,action: {
+    func: function () {
+var phase = 1
+if (++state <= 2) {
+  if (state == 1) {
+    System._browser.on_animation_update.add(air_blower_frame,0,phase,-1)
+    DEBUG_show("(air blowing)", 2)
+  }
+  else {
+    DEBUG_show("(air sucking)", 2)
+  }
+}
+else {
+  System._browser.on_animation_update.remove(air_blower_frame,phase)
+  DEBUG_show("(air blower stopped)", 2)
+  air_blower.reset()
+  state = 0
+}
+    }
+   ,anytime: true
+  }
+ ,reset: function () {
+if (!MMD_SA.MMD_started || !state) return
+
+var gravity = MMD_SA.MMD.motionManager.para_SA.gravity || [0,-1,0]
+THREE.MMD.setGravity( gravity[0]*9.8*10, gravity[1]*9.8*10, gravity[2]*9.8*10 )
+  }
+      };
+
+      return air_blower;
+    })()
+
+   ,"magic_wand": {
+  icon_path: Settings.f_path + '/assets/assets.zip#/icon/magic-wand_64x64.png'
+ ,info_short: "Magic wand"
+// ,is_base_inventory: true
+ ,stock_max: 1
+ ,stock_default: 1
+ ,action: {
+    func: function () {
+var model_mesh = THREE.MMD.getModels()[0].mesh
+if (!model_mesh.visible)
+  return true
+
+//DEBUG_show(MMD_SA.MMD.motionManager.filename)
+if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle_list_default.indexOf(MMD_SA.MMD.motionManager._index) != -1)) {
+  if (MMD_SA_options.motion_shuffle_list_default[0] == MMD_SA_options.motion_index_by_name["standmix2_modified"])
+    MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["gal_model_motion_with_legs-2_loop_v01"]]
+  else
+    MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["standmix2_modified"]]
+
+  MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice()
+  MMD_SA._force_motion_shuffle = true
+}
+else {
+  return true
+}
+    }
+//   ,anytime: true
+  }
+ ,reset: function () {
+MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["standmix2_modified"]]
+  }
+    }
+  }
 
  ,options_by_area_id: {
     "start": {
