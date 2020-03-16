@@ -537,6 +537,8 @@ MMD_SA_options.Dungeon_options = {
 
   use_PC_click_reaction_default: true
 
+ ,joystick_disabled: true
+
  ,use_point_light: false
 
 // ,grid_material_list: []
