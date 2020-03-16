@@ -2411,6 +2411,10 @@ return {
     events[phase].push({ func:func, frame_count:frame_delay+phase, loop:loop, index:count++ })
   }
 
+ ,remove: function (func, phase) {
+    events[phase] = events[phase].filter(e => (e.func != func));
+  }
+
  ,run: function (phase) {
     var e_index_list = []
     var ep = events[phase]
