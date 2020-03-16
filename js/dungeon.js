@@ -695,6 +695,7 @@ this.list.forEach(function (inv) {
 
 for (var id in MMD_SA_options.Dungeon.item_base) {
   var item = MMD_SA_options.Dungeon.item_base[id]
+  item.reset && item.reset()
   if (item.index_default >= 0) {
     this.list[item.index_default].add(id, item.stock_default||1)
   }
