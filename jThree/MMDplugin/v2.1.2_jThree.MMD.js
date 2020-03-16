@@ -5548,6 +5548,9 @@ function find_physics_parent(bone) {
   return parent_index
 }
 
+// AT: temp stuff (reset on mesh.updateMotion)
+mesh._bone_morph = {}
+
 // AT: bound .MMDrigids = pmx.rigids to mesh, instead of geometry
 mesh.MMDrigids = that.pmx.rigids
 
