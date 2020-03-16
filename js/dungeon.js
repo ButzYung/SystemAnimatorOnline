@@ -3045,7 +3045,7 @@ console.log(item_name)
     console.log("NPC physics OFF")
   }
 
-  if (is_mobile)
+  if (is_mobile && !options.joystick_disabled)
     Ljoystick.style.visibility = "inherit"
 });
 
@@ -3699,7 +3699,7 @@ if (!this.item_base.backpack) {
   func: function () {
 Ldungeon_inventory_backpack.style.visibility = (Ldungeon_inventory_backpack.style.visibility != "hidden") ? "hidden" : "inherit"
 if (MMD_SA_options.Dungeon.nipplejs_manager)
-  Ljoystick.style.visibility = (Ldungeon_inventory_backpack.style.visibility != "hidden") ? "hidden" : "inherit"
+  Ljoystick.style.visibility = ((Ldungeon_inventory_backpack.style.visibility != "hidden") || options.joystick_disabled) ? "hidden" : "inherit"
   }
  ,anytime: true
     }
