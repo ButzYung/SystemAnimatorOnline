@@ -316,7 +316,7 @@ xr._wall.visible = true
     "全ての親": { keys:
   [
     {time:0, pos:{x:0, y:4, z:-10}}
-   ,{time:390*0.5/30, pos:{x:0, y:5, z:-10}}
+   ,{time:390*0.5/30, pos:{x:0, y:6, z:-10}}
    ,{time:390/30, pos:{x:0, y:4, z:-10}}
   ]
     }
