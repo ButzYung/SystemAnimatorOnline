@@ -579,7 +579,6 @@ else {
   System._browser.on_animation_update.remove(air_blower_frame,phase)
   DEBUG_show("(air blower stopped)", 2)
   air_blower.reset()
-  state = 0
 }
     }
    ,anytime: true
@@ -587,6 +586,7 @@ else {
  ,reset: function () {
 if (!MMD_SA.MMD_started || !state) return
 
+state = 0
 var gravity = MMD_SA.MMD.motionManager.para_SA.gravity || [0,-1,0]
 THREE.MMD.setGravity( gravity[0]*9.8*10, gravity[1]*9.8*10, gravity[2]*9.8*10 )
   }
@@ -595,7 +595,33 @@ THREE.MMD.setGravity( gravity[0]*9.8*10, gravity[1]*9.8*10, gravity[2]*9.8*10 )
       return air_blower;
     })()
 
-   ,"magic_wand": {
+   ,"magic_wand": (function () {
+      function morph_event(e) {
+var mf = morph_form[morph_form_index]
+if (mf) {
+  let model = e.detail.model
+  for (const morph_name in mf) {
+    let _m_idx = model.pmx.morphs_index_by_name[morph_name]
+    let _m = model.pmx.morphs[_m_idx]
+    MMD_SA._custom_morph.push({ key:{ weight:mf[morph_name], morph_type:_m.type, morph_index:_m_idx }, idx:model.morph.target_index_by_name[morph_name] })
+  }
+}
+//DEBUG_show(Date.now()+":"+MMD_SA._custom_morph.length)
+      }
+
+      var morph_event_registered = false
+
+      var morph_form = [null]
+      var morph_form_index = 0
+
+      window.addEventListener("MMDStarted", function () {
+var mf = MMD_SA_options.model_para_obj.morph_form
+if (mf) {
+  morph_form = morph_form.concat(Object.values(mf))
+}
+      });
+
+      return {
   icon_path: Settings.f_path + '/assets/assets.zip#/icon/magic-wand_64x64.png'
  ,info_short: "Magic wand"
 // ,is_base_inventory: true
@@ -606,16 +632,25 @@ THREE.MMD.setGravity( gravity[0]*9.8*10, gravity[1]*9.8*10, gravity[2]*9.8*10 )
 var model_mesh = THREE.MMD.getModels()[0].mesh
 if (!model_mesh.visible)
   return true
-
 //DEBUG_show(MMD_SA.MMD.motionManager.filename)
-if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle_list_default.indexOf(MMD_SA.MMD.motionManager._index) != -1)) {
-  if (MMD_SA_options.motion_shuffle_list_default[0] == MMD_SA_options.motion_index_by_name["standmix2_modified"])
-    MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["gal_model_motion_with_legs-2_loop_v01"]]
-  else
-    MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["standmix2_modified"]]
 
-  MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice()
-  MMD_SA._force_motion_shuffle = true
+if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle_list_default.indexOf(MMD_SA.MMD.motionManager._index) != -1)) {
+  if (!morph_event_registered) {
+    morph_event_registered = true
+    window.addEventListener("SA_MMD_model0_process_morphs", morph_event)
+  }
+
+  if (++morph_form_index == morph_form.length) {
+    morph_form_index = 0
+
+    if (MMD_SA_options.motion_shuffle_list_default[0] == MMD_SA_options.motion_index_by_name["standmix2_modified"])
+      MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["gal_model_motion_with_legs-2_loop_v01"]]
+    else
+      MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["standmix2_modified"]]
+
+    MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice()
+    MMD_SA._force_motion_shuffle = true
+  }
 }
 else {
   return true
@@ -624,9 +659,15 @@ else {
 //   ,anytime: true
   }
  ,reset: function () {
+if (morph_event_registered) {
+  morph_event_registered = false
+  window.removeEventListener("SA_MMD_model0_process_morphs", morph_event)
+}
+
 MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["standmix2_modified"]]
   }
-    }
+      };
+    })()
   }
 
  ,options_by_area_id: {
