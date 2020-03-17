@@ -3319,9 +3319,9 @@ if (m_obj) {
   if (!v_org) {
     v_org = this._original_value = {}
     v_org.opacity = this.opacity
-    v_org.mmdEdgeColor = this.mmdEdgeColor
+    v_org.mmdEdgeColor = this.mmdEdgeColor.clone()
     v_org.diffuse  = [this.color.r, this.color.g, this.color.b]
-    v_org.specular = [this.specular, this.specular, this.specular]
+    v_org.specular = [this.specular.r, this.specular.g, this.specular.b]
     v_org.ambient  = [this.ambient.r, this.ambient.g, this.ambient.b]
 //DEBUG_show(JSON.stringify(this.mmdEdgeColor),0,1)
   }
@@ -3339,10 +3339,24 @@ if (m_obj) {
     if (!weight)
       return
 
-    // reset it to make sure that it won't stay in next frame update, needed in some cases such as motion change
-    // take mirrors into account
-    if (!MMD_SA._mirror_rendering_)
-      m.weight = 0
+// a trick to reset the weight (once) in previous frame
+    if (weight < 0) {
+      weight = 0
+//DEBUG_show(that.name,0,1)
+    }
+
+// reset it to make sure that it won't stay in next frame update, needed in some cases such as motion change
+// take mirrors into account
+    if (!MMD_SA._mirror_rendering_) {
+      if (m.weight) {
+        m.weight = -1
+// to ensure that .refreshUniforms (where ._material_morph is processed) is executed once (especially when opacity is changed from 0 to other value)
+        that._render_once = true
+      }
+      else {
+        m.weight = 0
+      }
+    }
 
     var morph_obj = m.morph_obj
     var f
@@ -3360,19 +3374,16 @@ if (m_obj) {
 //DEBUG_show(v_org.diffuse+'/'+morph_obj.diffuse)
         for (var i = 0; i < 3; i++)
           diffuse[i] += morph_obj.diffuse[i] * weight
-        that.color.setRGB(diffuse[0], diffuse[1], diffuse[2])
       }
       if (morph_obj.specular.find(function (v) { return !!v })) {
 //DEBUG_show(v_org.specular+'/'+morph_obj.specular)
         for (var i = 0; i < 3; i++)
           specular[i] += morph_obj.specular[i] * weight
-        that.specular.setRGB(specular[0], specular[1], specular[2])
       }
       if (morph_obj.ambient.find(function (v) { return !!v })) {
 //DEBUG_show(v_org.ambient+'/'+morph_obj.ambient)
         for (var i = 0; i < 3; i++)
           ambient[i] += morph_obj.ambient[i] * weight
-        that.ambient.setRGB(ambient[0], ambient[1], ambient[2])
       }
     }
 
@@ -3389,6 +3400,9 @@ if (m_obj) {
 
   this.opacity = opacity_new
   this.mmdEdgeColor.w = edge_alpha
+  this.color.setRGB(diffuse[0], diffuse[1], diffuse[2])
+  this.specular.setRGB(specular[0], specular[1], specular[2])
+  this.ambient.setRGB(ambient[0], ambient[1], ambient[2])
 }
 else {
   if (v_org) {
