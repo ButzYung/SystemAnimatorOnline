@@ -3989,6 +3989,8 @@ SL_Host.appendChild(d)
 var inv = MMD_SA_options.Dungeon.inventory
 
 var drop_item = function (index_source, index) {
+  if (index_source == index) return
+
   var inv_source = inv.list[index_source]
   if (inv_source.item.is_base_inventory && (index >= inv.max_base)) {
     MMD_SA_options.Dungeon.sound.audio_object_by_name["interface_item_deny"].play()
