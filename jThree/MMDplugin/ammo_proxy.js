@@ -275,6 +275,7 @@ if (MMD_SA.MMD_started) {
     }
   }
   else {
+//if (data.t) System._browser.on_animation_update.add((function(){let _t=data.t; return function(){DEBUG_show(_t)};})(), 0,0);
     var vl = data.value_list
     var vl_length
     if (Array.isArray(vl)) {
