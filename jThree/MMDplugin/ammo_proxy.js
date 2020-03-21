@@ -246,8 +246,11 @@ if (this.use_optimized_command) {
   }
 }
 
-this.worker = new Worker("jThree/MMDplugin/ammo_worker.js");
-this.worker.onmessage = function (e) {
+window.addEventListener("jThree_ready", function () {
+
+let memory_size = (MMD_SA_options.model_para_obj.ammo_memory_size || MMD_SA_options.ammo_memory_size) || 1;
+that.worker = new Worker("jThree/MMDplugin/ammo_worker.js" + ((memory_size) ? "?memory_size="+memory_size : ""));
+that.worker.onmessage = function (e) {
   var data = ((typeof e.data == "string") && (e.data.charAt(0) === "{")) ? JSON.parse(e.data) : e.data;
 
   if (typeof data === "string") {
@@ -327,6 +330,8 @@ EV_sync_update.RAF_func.push((function () {
 
   data = undefined
 };
+
+});
 
 var Cache = function () {
   this.enabled = false

@@ -1,9 +1,10 @@
 'use strict';
 
 //https://github.com/kripken/ammo.js/issues/36
-var Module = { TOTAL_MEMORY:52428800*2 };
+var memory_size = (/memory_size\=(\d+)/i.test(location.search) && parseInt(RegExp.$1)) || 1;
+var Module = { TOTAL_MEMORY:67108864*memory_size };//{ TOTAL_MEMORY:52428800*2 };//
 
-var ammo_path = "__ammo_v20190904.wasm.js";//"ammo.js";//
+var ammo_path = "__ammo_v20190904" + ((memory_size==1) ? ".wasm" : "") + ".js";//"ammo.js";//
 importScripts(ammo_path);
 
 var v = {};
@@ -242,14 +243,14 @@ value_list[++value_list_index] = v[index+".z"]
 
 function _init() {
   onmessage = _onmessage;
-  postMessage("(ammo worker initialized|" + ammo_path + ")");
+  postMessage("(ammo worker initialized|" + ammo_path + "|x" + memory_size + ")");
 }
 
 if (ammo_path == "ammo.js") {
   _init();
 }
 else {
-  Ammo().then(function () {
+  Ammo(Module).then(function () {
     _init();
   });
 }
