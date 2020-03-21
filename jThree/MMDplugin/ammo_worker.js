@@ -3,7 +3,7 @@
 //https://github.com/kripken/ammo.js/issues/36
 var Module = { TOTAL_MEMORY:52428800*2 };
 
-var ammo_path = "__ammo_v20190904.js";//"ammo.js";//
+var ammo_path = "__ammo_v20190904.wasm.js";//"ammo.js";//
 importScripts(ammo_path);
 
 var v = {};
@@ -242,7 +242,7 @@ value_list[++value_list_index] = v[index+".z"]
 
 function _init() {
   onmessage = _onmessage;
-  postMessage("(ammo worker initialized/" + ammo_path + ")");
+  postMessage("(ammo worker initialized|" + ammo_path + ")");
 }
 
 if (ammo_path == "ammo.js") {
