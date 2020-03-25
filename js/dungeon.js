@@ -2780,7 +2780,7 @@ c.reset()
 
 c.pos.copy(pos)
 if (!rot && (MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR)) {
-  c.TPS_mode = true
+//  c.TPS_mode = true
 }
 if (rot) {
   c.TPS_mode = true
