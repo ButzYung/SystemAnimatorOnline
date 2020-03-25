@@ -6314,17 +6314,17 @@ MMD_SA._mouse_pos_3D[that._model_index][axis] += diff
 
   var bone_list = MMD_SA_options.look_at_screen_bone_list
   for (var i = 0, i_length = bone_list.length; i < i_length; i++) {
-    var b = bone_list[i]
-    var bone = mesh.bones_by_name[b.name]
+    let b = bone_list[i]
+    let bone = mesh.bones_by_name[b.name]
     if (!bone)
       continue
 
-    var weight_screen = b.weight_screen
-    var pos_scale = MMD_SA_options.model_para_obj.skin_default[b.name] && MMD_SA_options.model_para_obj.skin_default[b.name].pos_scale
+    let weight_screen = b.weight_screen
+    let pos_scale = MMD_SA_options.model_para_obj.skin_default[b.name] && MMD_SA_options.model_para_obj.skin_default[b.name].pos_scale
     if (pos_scale)
       weight_screen *= Math.min(pos_scale.x, pos_scale.y, pos_scale.z)
 
-    var rx, ry
+    let rx, ry
     if (b.weight_screen_pow != null) {
       rx = ws_max_x * Math.pow(ws_ratio_x, b.weight_screen_pow)
       ry = ws_max_y * Math.pow(ws_ratio_y, b.weight_screen_pow)
@@ -6334,8 +6334,10 @@ MMD_SA._mouse_pos_3D[that._model_index][axis] += diff
       ry = r.y
     }
 
-    var _ratio = b.weight_motion + (1 - ratio) * (1 - b.weight_motion)
-    MMD_SA.process_bone(bone, MMD_SA.TEMP_v3.set(rx * weight_screen, ry * weight_screen, 0), [_ratio,_ratio,1])
+    let _ratio = b.weight_motion + (1 - ratio) * (1 - b.weight_motion)
+    let sx = (b.weight_screen_x != null) ? b.weight_screen_x : 1
+    let sy = (b.weight_screen_y != null) ? b.weight_screen_y : 1
+    MMD_SA.process_bone(bone, MMD_SA.TEMP_v3.set(rx * weight_screen * sx, ry * weight_screen * sy, 0), [_ratio+(1-_ratio)*(1-sx),_ratio+(1-_ratio)*(1-sy),1])
   }
 
   if (MMD_SA._update_with_look_at_screen_) {
