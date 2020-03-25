@@ -164,7 +164,16 @@ var MMD_SA_options = {
  ,motion_para: {
     "stand" : { onended: function () { MMD_SA._no_fading=true; } }
    ,"standmix" : { onended: function () { MMD_SA._no_fading=true; } }
-   ,"standmix2_modified" : { onended: function () { MMD_SA._no_fading=true; } }
+   ,"standmix2_modified" : { onended: function () { MMD_SA._no_fading=true; }
+
+,look_at_screen_bone_list: [
+  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:0.5 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:0.5 }
+ ,{ name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:0.5 }
+ ,{ name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:0.5 }
+]
+
+ }
    ,"_sleep90" : { onended: function () { MMD_SA._no_fading=true; } }
 
    ,"恋はきっと☆まままＧＵＭＩ用 - modified" : { loop:[1,2], range:[{time:[4079,4278]}], BPM:{rewind:true, BPM: 143, beat_frame: 13 +60/143*30} }
@@ -667,6 +676,38 @@ if (morph_event_registered) {
 MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["standmix2_modified"]]
   }
       };
+    })()
+
+   ,"social_distancing": (function () {
+      var v3a, v3b;
+      window.addEventListener("jThree_ready", function () {
+v3a = new THREE.Vector3()
+v3b = new THREE.Vector3()
+      });
+
+      return {
+  icon_path: Settings.f_path + '/assets/assets.zip#/icon/coronavirus_social_distancing_64x64.png'
+ ,info_short: "Social meter"
+// ,is_base_inventory: true
+ ,stock_max: 1
+ ,stock_default: 1
+ ,action: {
+    func: function () {
+var model_mesh = THREE.MMD.getModels()[0].mesh
+if (!model_mesh.visible)
+  return true
+//DEBUG_show(MMD_SA.MMD.motionManager.filename)
+
+var zoom_scale = MMD_SA.WebXR.zoom_scale
+var dis = v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(v3b.copy(model_mesh.position).setY(0))/10 / zoom_scale
+DEBUG_show(dis)
+    }
+//   ,anytime: true
+  }
+ ,reset: function () {
+  }
+      };
+
     })()
   }
 
