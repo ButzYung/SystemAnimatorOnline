@@ -1,4 +1,4 @@
-﻿(Document version 2.1)
+﻿(Document version 2.2)
 
 Introduction:
 
@@ -86,16 +86,16 @@ Copyright/License/Credits:
   - jThree v2 (NOTE: jThree has been discontinued. Its successor is known as "Grimoire.js")
     https://github.com/GrimoireGL/GrimoireJS
 
+  - ammo.js, a port of Bullet Physics to JavaScript, zlib licensed
+    https://github.com/kripken/ammo.js
+
   - JSZip (used under MIT license)
     https://stuk.github.io/jszip/
 
   - PeerJS
     https://peerjs.com/
 
-  - Various 3D background effects ported and modified from codes found on "Shadertoy"
-    https://www.shadertoy.com/
-
-- Other assests:
+- Other third-party assests:
 
   - "Appearance Miku" 3D Model
     - Readme/License:
@@ -125,6 +125,9 @@ Copyright/License/Credits:
 
   - Cartoon_Punch_02.wav by RSilveira_88
     https://freesound.org/people/RSilveira_88/sounds/216198/
+
+  - Various 3D background effects ported and modified from codes found on "Shadertoy"
+    https://www.shadertoy.com/
 
 
   - もぐ式りょう/りく/りょく/りん by Mogg
