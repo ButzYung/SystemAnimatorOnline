@@ -513,7 +513,7 @@ MMD_SA.SpeechBubble.message(0, "Hey... too close...", 3*1000)
   } 
  ,onended: function (loop_end) {
 MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
-if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(0.5,2))
+if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(0.75,2))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
  ,auto_blink: true
@@ -534,7 +534,7 @@ MMD_SA.SpeechBubble.message(0, "Hey... too close...", 3*1000)
   } 
  ,onended: function (loop_end) {
 MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
-if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(0.5,2))
+if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(0.75,2))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
  ,auto_blink: true
