@@ -4891,6 +4891,9 @@ DEBUG_show(time+':anchor updated(v3)')
   this.camera.position.getPositionFromMatrix(this.camera.matrix)
   this.camera.updateMatrixWorld(true);
 
+// a trick to ensure that no frame is skipped
+  RAF_timestamp = null
+
   Animate_RAF(time)
 }
 //else { DEBUG_show(0,0,1) }
