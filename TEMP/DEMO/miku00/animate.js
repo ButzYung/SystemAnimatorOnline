@@ -1161,7 +1161,7 @@ if ((dis > min) && (dis < max))
 if (/surrender_v03/.test(MMD_SA.MMD.motionManager.filename)) {
   MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["surrender-R_v03"]]
 }
-else if (dis < 0.5) {
+else if (dis < 0.75) {
   MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["surrender_v03"]]
 }
 else if (dis < 2) {
