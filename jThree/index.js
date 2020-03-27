@@ -117,7 +117,8 @@ this._obj.visible = v
   x_object.visible = true
 }
 else {
-  x_object._obj = jThree(x_object.id).three(0)
+  if (!x_object._obj)
+    x_object._obj = jThree(x_object.id).three(0)
 
   var mesh = (x_object._obj.children.length) ? x_object._obj.children[0] : x_object._obj
   if (x_object.castShadow) {
