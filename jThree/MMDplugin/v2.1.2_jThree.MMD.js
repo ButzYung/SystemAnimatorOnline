@@ -476,11 +476,7 @@ if (debug_msg.length) {
         multi_model_motion_reset[i] = true
     }
 
-    if (mm.para_SA.onstart) {
-      var code_onstart = mm.para_SA.onstart(motion_changed)
-      if (code_onstart)
-        eval(code_onstart)
-    }
+    mm.para_SA.onstart && mm.para_SA.onstart(motion_changed);
 
     if (adjust_center_view && !mm.para_SA.adjust_center_view_disabled) {
       MMD_SA.reset_camera()
@@ -5999,12 +5995,19 @@ if (self.MMD_SA) {
 var morph_extra_played = false
 // save some headaches
 if (self.MMD_SA) {
-  var m = mesh.morphTargetInfluences
+  let m = mesh.morphTargetInfluences
 // m can be undefined for models with no morph transform
 // no need to reset if it isn't playing (especiialy for the case when the morph animation is paused by MMD_SA._freeze_onended)
-  if (m && this.morph.playing) {
-    for (var i = 0, len = m.length; i < len; i++)
-      m[i] = 0
+  if (m) {
+    if (this.morph.playing) {
+      for (var i = 0, len = m.length; i < len; i++)
+        m[i] = 0
+    }
+    else if (para_SA.auto_blink) {
+      m[this.morph.target_index_by_name["まばたき"]] = 0
+      if (this.morph.target_index_by_name["笑い"] != null)
+        m[this.morph.target_index_by_name["笑い"]] = 0
+    }
   }
 }
 if (this.morph_MMD_SA_extra) {
@@ -6080,33 +6083,60 @@ if (!m.condition || m.condition(that)) {
   MMD_SA._custom_morph = []
 }
 if (self.MMD_SA && MMD_SA_options.auto_blink && !morph_extra_played && (this.pmx.morphs_index_by_name["まばたき"] != null)) {
-  var targets = this.morph.targets
-  var _cache = this._MMD_SA_cache_current
-  var target = targets[_cache._blink_target_index]
+  let targets = this.morph.targets
+  let _cache = this._MMD_SA_cache_current
+  let target = targets[_cache._blink_target_index]
 
   if (this._blink_countdown == null)
     this._blink_countdown = -9999
 
   if (para_SA.auto_blink || (para_SA.auto_blink==null && target.keys.length<=2 && !target.keys[0].weight && !target.keys[target.keys.length-1].weight)) {
 //DEBUG_show(PC_count_absolute+"/"+target.keys[0].morph_index+"/"+_cache._blink_target_index+"/"+this.pmx.morphs_index_by_name["まばたき"])
-    var m = (para_SA.auto_blink) ? this.pmx.morphs_weight_by_name["まばたき"] : 0
-    var countdown = this._blink_countdown
-    var blink_weight = -1
-    if (countdown <= -4) {
-      this._blink_countdown = ~~(20 * (Math.random()*4 + 4))
-      blink_weight = m || 0
+    let m, blink_morph_name = "まばたき", blink_target_index = _cache._blink_target_index;
+// NOTE: this.morph.playing is false when MMD_SA._freeze_onended
+    if (para_SA.auto_blink && this.morph.playing) {
+      m = this.pmx.morphs_weight_by_name["まばたき"]
+      let m_smile = this.pmx.morphs_weight_by_name["笑い"]
+      if (m && m_smile) {
+        m = null
+      }
+      else if (m_smile) {
+        m = m_smile
+        blink_morph_name = "笑い"
+        blink_target_index = this.morph.target_index_by_name[blink_morph_name]
+      }
     }
-    else if ((countdown == -1) || (countdown == -3))
-      blink_weight = m + (1-m)*0.5
-    else if (countdown == -2)
-      blink_weight = 1
+    else {
+      m = 0
+    }
+
+    if (m == null) {
+      this._blink_countdown = null
+    }
+    else {
+      let countdown = this._blink_countdown
+      let blink_weight = -1
+      let blink_scale = 2
+      if (countdown <= -1-blink_scale*3) {
+        this._blink_countdown = ~~(20 * (Math.random()*4 + 4))
+        blink_weight = m || 0
+      }
+      else if (countdown <= -1-blink_scale*2)
+        blink_weight = m + (1-m)*(Math.abs(blink_scale*3+countdown)+1)/(blink_scale+1)
+      else if (countdown <= -1-blink_scale*1)
+        blink_weight = 1
+      else if (countdown <= -1)
+        blink_weight = m + (1-m)*(Math.abs(1+countdown)+1)/(blink_scale+1)
 //blink_weight=1
-    if (blink_weight >= 0) {
-      var key0 = target.keys[0]
-      var blink_key = { name:"まばたき", weight:blink_weight, morph_type:key0.morph_type, morph_index:key0.morph_index }
-      this.morph.onupdate(blink_key, blink_key, 0, _cache._blink_target_index)
+      if (blink_weight >= 0) {
+        let key0 = target.keys[0]
+        let blink_key = { name:blink_morph_name, weight:blink_weight, morph_type:key0.morph_type, morph_index:key0.morph_index }
+        this.morph.onupdate(blink_key, blink_key, 0, blink_target_index)
+//DEBUG_show(blink_morph_name+":"+blink_weight)
+//DEBUG_show(blink_weight,0,1)
+      }
+      this._blink_countdown--
     }
-    this._blink_countdown--
   }
 }
 // custom_morph, auto blink - END
