@@ -36758,6 +36758,7 @@ if (self.MMD_SA) {
   MMD_SA.jThree_ready = function () {
     window.dispatchEvent(new CustomEvent("jThree_ready"))
     ready()
+    window.dispatchEvent(new CustomEvent("GOML_ready"))
   }
 }
 else
