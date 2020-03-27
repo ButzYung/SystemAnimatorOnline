@@ -4005,6 +4005,7 @@ var drop_item = function (index_source, index) {
   inv.swap(index_source, index)
 };
 
+var _touchstart;
 for (var r = 0, r_max = inv.max_row; r < r_max; r++) {
 for (var i = 0, i_max = inv.max_base; i < i_max; i++) {
   let idx = r * i_max + i
@@ -4026,11 +4027,14 @@ if (is_mobile) {
   e.preventDefault()
 
   if (inv.item_selected_index != null) {
-    drop_item(inv.item_selected_index, idx)
-    inv.item_selected_index = null
+    if (Date.now() > _touchstart+500) {
+      drop_item(inv.item_selected_index, idx)
+      inv.item_selected_index = null
+    }
   }
   else if (inv.list[idx].item_id) {
     inv.item_selected_index = idx
+    _touchstart = Date.now()
   }
 }
   }, true);
@@ -4044,7 +4048,7 @@ if (!inv_item.action_check()) {
   return
 }
 
-if (inv_item.item.action.func()) {
+if (inv_item.item.action.func(inv_item.item)) {
   MMD_SA_options.Dungeon.sound.audio_object_by_name["interface_item_deny"].play()
   return
 }
@@ -9993,6 +9997,7 @@ this.object_base_list.forEach(function (obj, idx) {
       MMD_SA_options.mesh_obj.push(c.mesh_obj)
 //console.log(MMD_SA_options.GOML_head)
 //console.log(MMD_SA_options.GOML_scene)
+    c.build && c.build();
     return
   }
 
@@ -10552,6 +10557,10 @@ if (e.follow_PC) {
     else {
     }
 
+    this.PC_follower_list = this.PC_follower_list.filter(function (p) {
+      return (p.obj._obj != mesh)
+    });
+
     this.PC_follower_list.push({
   obj: {
     _obj: mesh
@@ -10747,6 +10756,8 @@ return para;
 })
       }
     }
+
+    obj.func && obj.func(_obj)
   }
   this.update_dungeon_blocks(true)
 }
