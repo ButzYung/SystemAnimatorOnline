@@ -1272,7 +1272,8 @@ return true
  ,func: function (obj) {
 obj._zoom_scale_update_ = function () {
   var circle_2m = obj._obj
-  circle_2m.scale.set(3,3,3)
+  var zoom_scale = MMD_SA.WebXR.zoom_scale
+  circle_2m.scale.set(zoom_scale,1,zoom_scale)
   circle_2m.updateMatrix()
 };
 window.addEventListener("SA_AR_zoom_scale_update", obj._zoom_scale_update_);
