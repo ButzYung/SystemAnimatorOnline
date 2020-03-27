@@ -132,13 +132,34 @@ var MMD_SA_options = {
 
 // 30
 
-   ,{
-      must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/model/gal_model_motion_with_legs-2_loop_v01.vmd'
-    }
-
 // must-load list
-// ,{ must_load:true, no_shuffle:true, path:'C:\\Users\\User\\Downloads\\MikuMikuDanceE_v739\\MikuMikuDanceE_v739\\UserFile\\Motion\\Muuubu Rin -Append-\\motion_BAL3.vmd'}
-  ,{ must_load:true, no_shuffle:true, path:System.Gadget.path + '/TEMP/DEMO/motion/motion_misc.zip#/壁穴モーション/壁穴_モデルモーション_loop.vmd'}
+//  ,{ must_load:true, no_shuffle:true, path:'C:\\Users\\User\\Downloads\\MikuMikuDanceE_v739\\MikuMikuDanceE_v739\\UserFile\\Motion\\Muuubu Rin -Append-\\motion_BAL3.vmd'}
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/model/gal_model_motion_with_legs-2_loop_v01.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:System.Gadget.path + '/TEMP/DEMO/motion/motion_misc.zip#/壁穴モーション/壁穴_モデルモーション_loop.vmd'}
+
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_お辞儀1.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_お辞儀2.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_肯定する1.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_肯定する2.vmd' }
+
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_照れる1.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_照れる2.vmd' }
+
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/surrender_v03.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/surrender-R_v03.vmd' }
+
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_歓迎する1.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_歓迎する2.vmd' }
+
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_がっかり1.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_がっかり2.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_肩をすくめる1.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_肩をすくめる2.vmd' }
+
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_すねる1.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_すねる2.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_よろめく1.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_よろめく2.vmd' }
   ]
 
 
@@ -167,13 +188,22 @@ var MMD_SA_options = {
    ,"standmix2_modified" : { onended: function () { MMD_SA._no_fading=true; }
 
 ,look_at_screen_bone_list: [
-  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:0.5 }
- ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:0.5 }
- ,{ name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:0.5 }
- ,{ name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:0.5 }
+  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+ ,{ name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
 ]
 
- }
+,adjustment_per_model: {
+    _default_ : {
+  skin_default: {
+    "左足ＩＫ": { keys: [{time:0, pos:{x: 0.2, y:0, z:0}, rot:{x:0, y: 10, z:0}}] }
+   ,"右足ＩＫ": { keys: [{time:0, pos:{x:-0.2, y:0, z:0}, rot:{x:0, y:-10, z:0}}] }
+  }
+    }
+}
+
+    }
    ,"_sleep90" : { onended: function () { MMD_SA._no_fading=true; } }
 
    ,"恋はきっと☆まままＧＵＭＩ用 - modified" : { loop:[1,2], range:[{time:[4079,4278]}], BPM:{rewind:true, BPM: 143, beat_frame: 13 +60/143*30} }
@@ -393,6 +423,378 @@ return [
  ,IK_disabled: { test: function (name) { return (name.indexOf("足ＩＫ")!=-1) || (name.indexOf("つま先ＩＫ")!=-1); } }
     }
 
+   ,"emote-mod_お辞儀1": {
+  onstart: function () {
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+MMD_SA.SpeechBubble.message(0, "Thank you. 2 meter is what we need.", 3*1000)
+  } 
+ ,onended: function (loop_end) {
+MMD_SA._no_fading=true
+if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(2,4))
+  MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
+  }
+ ,auto_blink: true
+ ,adjust_center_view_disabled: true
+ ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
+,look_at_screen_bone_list: [
+  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+ ,{ name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+]
+    }
+
+   ,"emote-mod_お辞儀2": {
+  onstart: function () {
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+MMD_SA.SpeechBubble.message(0, "Thank you. 2 meter is the distance we need.", 3*1000)
+  } 
+ ,onended: function (loop_end) {
+MMD_SA._no_fading=true
+if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(2,4))
+  MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
+  }
+ ,auto_blink: true
+ ,adjust_center_view_disabled: true
+ ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
+,look_at_screen_bone_list: [
+  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+ ,{ name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+]
+    }
+
+   ,"emote-mod_肯定する1": {
+  onstart: function () {
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+MMD_SA.SpeechBubble.message(0, "You got it, 2 meter~!", 3*1000)
+  } 
+ ,onended: function (loop_end) {
+MMD_SA._no_fading=true
+if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(2,4))
+  MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
+  }
+ ,auto_blink: true
+ ,adjust_center_view_disabled: true
+ ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
+,look_at_screen_bone_list: [
+  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+ ,{ name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+]
+    }
+
+   ,"emote-mod_肯定する2": {
+  onstart: function () {
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+MMD_SA.SpeechBubble.message(0, "This is it, 2 meter~!", 3*1000)
+  } 
+ ,onended: function (loop_end) {
+MMD_SA._no_fading=true
+MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
+  }
+ ,auto_blink: true
+ ,adjust_center_view_disabled: true
+ ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
+,look_at_screen_bone_list: [
+  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+ ,{ name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+]
+    }
+
+   ,"emote-mod_照れる1": {
+  onstart: function () {
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+MMD_SA.SpeechBubble.message(0, "Hey... too close...", 3*1000)
+  } 
+ ,onended: function (loop_end) {
+MMD_SA._no_fading=true
+if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(0.5,2))
+  MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
+  }
+ ,auto_blink: true
+ ,adjust_center_view_disabled: true
+ ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
+,look_at_screen_bone_list: [
+  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+ ,{ name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+]
+    }
+
+   ,"emote-mod_照れる2": {
+  onstart: function () {
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+MMD_SA.SpeechBubble.message(0, "Hey... too close...", 3*1000)
+  } 
+ ,onended: function (loop_end) {
+MMD_SA._no_fading=true
+if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(0.5,2))
+  MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
+  }
+ ,auto_blink: true
+ ,adjust_center_view_disabled: true
+ ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
+,look_at_screen_bone_list: [
+  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+ ,{ name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+]
+    }
+
+   ,"surrender_v03": {
+  onstart: function () {
+MMD_SA.SpeechBubble.message(0, "I surrender! Please, stay back! ><", 3*1000)
+  } 
+ ,onended: function (loop_end) {
+MMD_SA._no_fading=true
+MMD_SA._freeze_onended=MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(0,1.5)
+  }
+ ,auto_blink: false
+ ,adjust_center_view_disabled: true
+ ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
+,look_at_screen_bone_list: [
+  { name:"首", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+ ,{ name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+]
+    }
+
+   ,"surrender-R_v03": {
+  onstart: function () {} 
+ ,onended: function (loop_end) {
+MMD_SA._no_fading=true
+MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(999,999)
+  }
+ ,auto_blink: false
+ ,adjust_center_view_disabled: true
+ ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
+,look_at_screen_bone_list: [
+  { name:"首", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+ ,{ name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+]
+    }
+
+   ,"emote-mod_歓迎する1": {
+  onstart: function () {
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+MMD_SA.SpeechBubble.message(0, "Hey! Come closer~!", 3*1000)
+  } 
+ ,onended: function (loop_end) {
+MMD_SA._no_fading=true
+if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(4,6))
+  MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
+  }
+ ,auto_blink: true
+ ,adjust_center_view_disabled: true
+ ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
+,look_at_screen_bone_list: [
+  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+ ,{ name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+]
+    }
+
+   ,"emote-mod_歓迎する2": {
+  onstart: function () {
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+MMD_SA.SpeechBubble.message(0, "Come on! I won't bite~!", 3*1000)
+  } 
+ ,onended: function (loop_end) {
+MMD_SA._no_fading=true
+if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(4,6))
+  MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
+  }
+ ,auto_blink: true
+ ,adjust_center_view_disabled: true
+ ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
+,look_at_screen_bone_list: [
+  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+ ,{ name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+]
+    }
+
+   ,"emote-mod_がっかり1": {
+  onstart: function () {
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+MMD_SA.SpeechBubble.message(0, "That's a lot more than 2 meter...", 3*1000)
+  } 
+ ,onended: function (loop_end) {
+MMD_SA._no_fading=true
+if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8))
+  MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
+  }
+ ,auto_blink: true
+ ,adjust_center_view_disabled: true
+ ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
+,look_at_screen_bone_list: [
+  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+ ,{ name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+]
+    }
+
+   ,"emote-mod_がっかり2": {
+  onstart: function () {
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+MMD_SA.SpeechBubble.message(0, "No, not that far away...", 3*1000)
+  } 
+ ,onended: function (loop_end) {
+MMD_SA._no_fading=true
+if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8))
+  MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
+  }
+ ,auto_blink: true
+ ,adjust_center_view_disabled: true
+ ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
+,look_at_screen_bone_list: [
+  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+ ,{ name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+]
+    }
+
+   ,"emote-mod_肩をすくめる1": {
+  onstart: function () {
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+MMD_SA.SpeechBubble.message(0, "What's the point to stand so far away...", 3*1000)
+  } 
+ ,onended: function (loop_end) {
+MMD_SA._no_fading=true
+if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8))
+  MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
+  }
+ ,auto_blink: true
+ ,adjust_center_view_disabled: true
+ ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
+,look_at_screen_bone_list: [
+  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+ ,{ name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+]
+    }
+
+   ,"emote-mod_肩をすくめる2": {
+  onstart: function () {
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+MMD_SA.SpeechBubble.message(0, "Come on, not that far away...", 3*1000)
+  } 
+ ,onended: function (loop_end) {
+MMD_SA._no_fading=true
+if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8))
+  MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
+  }
+ ,auto_blink: true
+ ,adjust_center_view_disabled: true
+ ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
+,look_at_screen_bone_list: [
+  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+ ,{ name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+]
+    }
+
+   ,"emote-mod_すねる1": {
+  onstart: function () {
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+MMD_SA.SpeechBubble.message(0, "You don't like me, do you...", 3*1000)
+  } 
+ ,onended: function (loop_end) {
+MMD_SA._no_fading=true
+if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999))
+  MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
+  }
+ ,auto_blink: true
+ ,adjust_center_view_disabled: true
+ ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
+,look_at_screen_bone_list: [
+  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+ ,{ name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+]
+    }
+
+   ,"emote-mod_すねる2": {
+  onstart: function () {
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+MMD_SA.SpeechBubble.message(0, "That's so boring...", 3*1000)
+  } 
+ ,onended: function (loop_end) {
+MMD_SA._no_fading=true
+if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999))
+  MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
+  }
+ ,auto_blink: true
+ ,adjust_center_view_disabled: true
+ ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
+,look_at_screen_bone_list: [
+  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+ ,{ name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+]
+    }
+
+   ,"emote-mod_よろめく1": {
+  onstart: function () {
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+MMD_SA.SpeechBubble.message(0, "Am I a joke to you...", 3*1000)
+  } 
+ ,onended: function (loop_end) {
+MMD_SA._no_fading=true
+if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999))
+  MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
+  }
+ ,auto_blink: true
+ ,adjust_center_view_disabled: true
+ ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
+,look_at_screen_bone_list: [
+  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+ ,{ name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+]
+    }
+
+   ,"emote-mod_よろめく2": {
+  onstart: function () {
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+MMD_SA.SpeechBubble.message(0, "Oh my God... do you have to stand so far away...", 3*1000)
+  } 
+ ,onended: function (loop_end) {
+MMD_SA._no_fading=true
+if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999))
+  MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
+  }
+ ,auto_blink: true
+ ,adjust_center_view_disabled: true
+ ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
+,look_at_screen_bone_list: [
+  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+ ,{ name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+]
+    }
+
+
   }
 
  ,custom_action: [
@@ -552,7 +954,32 @@ MMD_SA_options.Dungeon_options = {
 
 // ,grid_material_list: []
 
-// ,object_base_list: []
+ ,object_base_list: [
+    {
+  construction: {
+    build: function () {
+var that = this;
+window.addEventListener("GOML_ready", function () {
+  let geometry = new THREE.RingGeometry(19.5, 20.5, 24, 1);
+  geometry.applyMatrix(new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(-90)));
+  let material = new THREE.MeshBasicMaterial({ color: 0xDC143C });
+  let circle_2m = new THREE.Mesh(geometry, material);
+
+  MMD_SA.scene.add(circle_2m);
+  circle_2m.visible = false;
+
+  that.mesh_obj = { id:"circle_2m", _obj:circle_2m }
+  MMD_SA_options.mesh_obj.push(that.mesh_obj)
+});
+    }
+  }
+ ,placement: {
+    position: {x:0, y:0.1, z:0}
+   ,hidden: true
+  }
+ ,no_collision: true
+    }
+  ]
 
  ,item_base: {
     "air_blower": (function () {
@@ -660,6 +1087,8 @@ if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle
     MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice()
     MMD_SA._force_motion_shuffle = true
   }
+
+  MMD_SA_options.Dungeon_options.item_base["social_distancing"].reset()
 }
 else {
   return true
@@ -679,35 +1108,96 @@ MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_na
     })()
 
    ,"social_distancing": (function () {
+      var social_distancing_started;
+
       var v3a, v3b;
       window.addEventListener("jThree_ready", function () {
 v3a = new THREE.Vector3()
 v3b = new THREE.Vector3()
       });
 
-      return {
+      var social_distancing = {
   icon_path: Settings.f_path + '/assets/assets.zip#/icon/coronavirus_social_distancing_64x64.png'
  ,info_short: "Social meter"
 // ,is_base_inventory: true
  ,stock_max: 1
  ,stock_default: 1
  ,action: {
-    func: function () {
+    func: function (item) {
 var model_mesh = THREE.MMD.getModels()[0].mesh
 if (!model_mesh.visible)
   return true
+if (social_distancing_started) {
+  item.reset()
+  return false
+}
 //DEBUG_show(MMD_SA.MMD.motionManager.filename)
 
-var zoom_scale = MMD_SA.WebXR.zoom_scale
-var dis = v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(v3b.copy(model_mesh.position).setY(0))/10 / zoom_scale
-DEBUG_show(dis)
+var dis = this._social_distance()
+
+if (dis < 2)
+  return true
+if (!/standmix2_modified/.test(MMD_SA.MMD.motionManager.filename))
+  return true
+
+social_distancing_started = true
+
+MMD_SA_options.Dungeon.run_event("circle_2m_show")
+
+this._social_distance_check(999,999)
     }
 //   ,anytime: true
+
+   ,_social_distance: function () {
+return v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(v3b.copy(THREE.MMD.getModels()[0].mesh.position).setY(0))/10 / MMD_SA.WebXR.zoom_scale
+    }
+
+   ,_social_distance_check: function (min, max) {
+var dis = this._social_distance()
+DEBUG_show(dis)
+if ((dis > min) && (dis < max))
+  return true
+
+if (/surrender_v03/.test(MMD_SA.MMD.motionManager.filename)) {
+  MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["surrender-R_v03"]]
+}
+else if (dis < 0.5) {
+  MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["surrender_v03"]]
+}
+else if (dis < 2) {
+  MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["emote-mod_照れる1"], MMD_SA_options.motion_index_by_name["emote-mod_照れる2"]]
+}
+else if (dis < 4) {
+  MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["emote-mod_お辞儀1"], MMD_SA_options.motion_index_by_name["emote-mod_お辞儀2"], MMD_SA_options.motion_index_by_name["emote-mod_肯定する1"], MMD_SA_options.motion_index_by_name["emote-mod_肯定する2"]]
+}
+else if (dis < 6) {
+  MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["emote-mod_歓迎する1"], MMD_SA_options.motion_index_by_name["emote-mod_歓迎する2"]]
+}
+else if (dis < 8) {
+  MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["emote-mod_がっかり1"], MMD_SA_options.motion_index_by_name["emote-mod_がっかり2"], MMD_SA_options.motion_index_by_name["emote-mod_肩をすくめる1"], MMD_SA_options.motion_index_by_name["emote-mod_肩をすくめる2"]]
+}
+else {
+  MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["emote-mod_すねる1"], MMD_SA_options.motion_index_by_name["emote-mod_すねる2"], MMD_SA_options.motion_index_by_name["emote-mod_よろめく1"], MMD_SA_options.motion_index_by_name["emote-mod_よろめく2"]]
+}
+
+MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice()
+MMD_SA._force_motion_shuffle = true
+    }
   }
  ,reset: function () {
+if (!social_distancing_started)
+  return
+social_distancing_started = false
+
+MMD_SA_options.Dungeon.run_event("circle_2m_hide")
+
+MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["standmix2_modified"]]
+MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice()
+MMD_SA._force_motion_shuffle = true
   }
       };
 
+      return social_distancing;
     })()
   }
 
@@ -734,7 +1224,9 @@ DEBUG_show(dis)
 // ,no_camera_collision: true
 // ,camera_y_default_non_negative: false
 
-// ,object_list: []
+ ,object_list: [
+    {object_index:0}
+  ]
 
  ,events: {
     "onstart": [
@@ -744,6 +1236,66 @@ DEBUG_show(dis)
 MMD_SA_options.Dungeon_options.character_movement_disabled = true
 return true
           }
+        }
+/*
+       ,{
+  objects: {
+    "object0_0": { hidden:false }
+  }
+ ,next_step: {}
+        }
+*/
+/*
+       ,{
+  follow_PC: {
+    "object0_0": {pos_base:{x:0,y:5,z:0}}
+  }
+ ,next_step: {}
+        }
+       ,{
+          func: function () {
+MMD_SA_options.Dungeon.character.pos_update()
+MMD_SA_options.Dungeon.object_base_list[0].object_list[0]._obj.updateMatrix()
+return true
+          }
+        }
+*/
+      ]
+    ]
+
+   ,"circle_2m_show": [
+      [
+        {
+  objects: {
+    "object0_0": {
+  placement: { hidden:false }
+ ,func: function (obj) {
+obj._zoom_scale_update_ = function () {
+  var circle_2m = obj._obj
+  circle_2m.scale.set(3,3,3)
+  circle_2m.updateMatrix()
+};
+window.addEventListener("SA_AR_zoom_scale_update", obj._zoom_scale_update_);
+  }
+    }
+  }
+ ,next_step: {}
+        }
+      ]
+    ]
+
+   ,"circle_2m_hide": [
+      [
+        {
+  objects: {
+    "object0_0": {
+  placement: { hidden:true }
+ ,func: function (obj) {
+window.removeEventListener("SA_AR_zoom_scale_update", obj._zoom_scale_update_);
+  }
+    }
+  }
+ ,next_step: {}
         }
       ]
     ]
