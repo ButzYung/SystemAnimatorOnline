@@ -2377,6 +2377,7 @@ if (font_scale != 1) {
 }
 
 var context = canvas.getContext('2d');
+context.globalAlpha = MMD_SA_options.SpeechBubble_opacity || ((MMD_SA_options.WebXR && 0.75) || 1)
 context.font = "bold " + font_size + 'px ' + font
 context.textBaseline = 'top'
 
@@ -2390,6 +2391,8 @@ if (flipH_bubble) {
 context.drawImage(b.image, 0,0)
 
 context.restore()
+
+context.globalAlpha = 1
 
 var msg_line
 if ((msg.length > column_max) && ((para.auto_wrap || b.auto_wrap) || (msg.indexOf("\n") == -1))) {
@@ -4397,7 +4400,7 @@ if (e.touches.length != 2) return
 var dx = e.touches[0].pageX - e.touches[1].pageX;
 var dy = e.touches[0].pageY - e.touches[1].pageY;
 var dis = Math.sqrt( dx * dx + dy * dy );
-zoom_scale *= _zoom_distance_last/dis
+xr.zoom_scale = zoom_scale * _zoom_distance_last/dis;
 _zoom_distance_last = dis
     }
 
@@ -4463,6 +4466,10 @@ catch (err) {
  ,input_event: { inputSources:[], touches:[] }
 
  ,get zoom_scale() { return zoom_scale; }
+ ,set zoom_scale(v) {
+zoom_scale = v;
+window.dispatchEvent(new CustomEvent("SA_AR_zoom_scale_update"));
+  }
 
  ,hits: []
  ,hits_searching: false
@@ -4543,7 +4550,7 @@ session.addEventListener('select', function (e) {
 */
 
 let c_host = (returnBoolean("CSSTransform3DDisabledForContent")) ? document.getElementById("Lbody_host") : document.getElementById("Lbody");
-zoom_scale = 1;
+xr.zoom_scale = 1;
 c_host.addEventListener( 'touchstart', touchstart, false );
 c_host.addEventListener( 'touchmove', touchmove, false );
 
@@ -4699,7 +4706,7 @@ for (const anchor of this.anchors) {
 this.anchors.clear()
 
 let c_host = (returnBoolean("CSSTransform3DDisabledForContent")) ? document.getElementById("Lbody_host") : document.getElementById("Lbody");
-zoom_scale = 1;
+xr.zoom_scale = 1;
 c_host.removeEventListener( 'touchstart', touchstart, false );
 c_host.removeEventListener( 'touchmove', touchmove, false );
 
