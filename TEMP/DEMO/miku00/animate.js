@@ -429,7 +429,7 @@ this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math
 MMD_SA.SpeechBubble.message(0, "Thank you. 2 meter is what we need.", 3*1000)
   } 
  ,onended: function (loop_end) {
-MMD_SA._no_fading=true
+MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(2,4))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
@@ -450,7 +450,7 @@ this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math
 MMD_SA.SpeechBubble.message(0, "Thank you. 2 meter is the distance we need.", 3*1000)
   } 
  ,onended: function (loop_end) {
-MMD_SA._no_fading=true
+MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(2,4))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
@@ -471,7 +471,7 @@ this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math
 MMD_SA.SpeechBubble.message(0, "You got it, 2 meter~!", 3*1000)
   } 
  ,onended: function (loop_end) {
-MMD_SA._no_fading=true
+MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(2,4))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
@@ -492,7 +492,7 @@ this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math
 MMD_SA.SpeechBubble.message(0, "This is it, 2 meter~!", 3*1000)
   } 
  ,onended: function (loop_end) {
-MMD_SA._no_fading=true
+MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
  ,auto_blink: true
@@ -512,7 +512,7 @@ this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math
 MMD_SA.SpeechBubble.message(0, "Hey... too close...", 3*1000)
   } 
  ,onended: function (loop_end) {
-MMD_SA._no_fading=true
+MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(0.5,2))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
@@ -533,7 +533,7 @@ this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math
 MMD_SA.SpeechBubble.message(0, "Hey... too close...", 3*1000)
   } 
  ,onended: function (loop_end) {
-MMD_SA._no_fading=true
+MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(0.5,2))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
@@ -553,7 +553,7 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 MMD_SA.SpeechBubble.message(0, "I surrender! Please, stay back! ><", 3*1000)
   } 
  ,onended: function (loop_end) {
-MMD_SA._no_fading=true
+MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 MMD_SA._freeze_onended=MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(0,1.5)
   }
  ,auto_blink: false
@@ -570,7 +570,7 @@ MMD_SA._freeze_onended=MMD_SA_options.Dungeon_options.item_base.social_distancin
    ,"surrender-R_v03": {
   onstart: function () {} 
  ,onended: function (loop_end) {
-MMD_SA._no_fading=true
+MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(999,999)
   }
  ,auto_blink: false
@@ -590,7 +590,7 @@ this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math
 MMD_SA.SpeechBubble.message(0, "Hey! Come closer~!", 3*1000)
   } 
  ,onended: function (loop_end) {
-MMD_SA._no_fading=true
+MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(4,6))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
@@ -611,7 +611,7 @@ this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math
 MMD_SA.SpeechBubble.message(0, "Come on! I won't bite~!", 3*1000)
   } 
  ,onended: function (loop_end) {
-MMD_SA._no_fading=true
+MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(4,6))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
@@ -632,7 +632,7 @@ this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math
 MMD_SA.SpeechBubble.message(0, "That's a lot more than 2 meter...", 3*1000)
   } 
  ,onended: function (loop_end) {
-MMD_SA._no_fading=true
+MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
@@ -653,7 +653,7 @@ this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math
 MMD_SA.SpeechBubble.message(0, "No, not that far away...", 3*1000)
   } 
  ,onended: function (loop_end) {
-MMD_SA._no_fading=true
+MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
@@ -674,7 +674,7 @@ this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math
 MMD_SA.SpeechBubble.message(0, "What's the point to stand so far away...", 3*1000)
   } 
  ,onended: function (loop_end) {
-MMD_SA._no_fading=true
+MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
@@ -695,7 +695,7 @@ this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math
 MMD_SA.SpeechBubble.message(0, "Come on, not that far away...", 3*1000)
   } 
  ,onended: function (loop_end) {
-MMD_SA._no_fading=true
+MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
@@ -716,7 +716,7 @@ this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math
 MMD_SA.SpeechBubble.message(0, "You don't like me, do you...", 3*1000)
   } 
  ,onended: function (loop_end) {
-MMD_SA._no_fading=true
+MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
@@ -737,7 +737,7 @@ this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math
 MMD_SA.SpeechBubble.message(0, "That's so boring...", 3*1000)
   } 
  ,onended: function (loop_end) {
-MMD_SA._no_fading=true
+MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
@@ -758,7 +758,7 @@ this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math
 MMD_SA.SpeechBubble.message(0, "Am I a joke to you...", 3*1000)
   } 
  ,onended: function (loop_end) {
-MMD_SA._no_fading=true
+MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
@@ -779,7 +779,7 @@ this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math
 MMD_SA.SpeechBubble.message(0, "Oh my God... do you have to stand so far away...", 3*1000)
   } 
  ,onended: function (loop_end) {
-MMD_SA._no_fading=true
+MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
