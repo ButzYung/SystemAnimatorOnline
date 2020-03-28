@@ -642,7 +642,7 @@ if (model.skin.time > mm._timeMax) {
 
    ,"surrender_v03": {
   onstart: function () {
-MMD_SA.SpeechBubble.message(0, "I surrender! Please, stay back! ><", 3*1000)
+MMD_SA.SpeechBubble.message(0, "I surrender! Please, stay back! >_<", 3*1000)
   } 
 /*
  ,onended: function (loop_end) {
@@ -661,6 +661,9 @@ if (model.skin.time > mm._timeMax) {
   if (!MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(0,1.5)) {
     MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
     MMD_SA._force_motion_shuffle = true;
+  }
+  else if ((parseInt(model.skin.time) % 10 == 0) && !MMD_SA.SpeechBubble.visible) {
+    MMD_SA.SpeechBubble.message(0, "I surrender! Please, stay back! >_<", 3*1000)
   }
 }
   }
