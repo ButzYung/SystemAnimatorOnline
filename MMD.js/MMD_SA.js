@@ -4580,7 +4580,7 @@ try {
   session.updateWorldTrackingState({
 // https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/modules/xr/xr_world_tracking_state.idl
 //    "planeDetectionState" : { "enabled" : true}
-    "lightEstimationState" : { "enabled" : true}
+//    "lightEstimationState" : { "enabled" : true}
   });
 }
 catch (err) {
