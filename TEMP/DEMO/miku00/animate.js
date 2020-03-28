@@ -425,14 +425,29 @@ return [
 
    ,"emote-mod_お辞儀1": {
   onstart: function () {
-this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
 MMD_SA.SpeechBubble.message(0, "Thank you. 2 meter is what we need.", 3*1000)
-  } 
+  }
+/*
  ,onended: function (loop_end) {
 MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(2,4))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
+*/
+
+ ,freeze_onended: true
+ ,onplaying: function (model_index) {
+var mm = MMD_SA.MMD.motionManager
+var model = THREE.MMD.getModels()[model_index]
+if (model.skin.time > mm._timeMax) {
+  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(2,4)) {
+    MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
+    MMD_SA._force_motion_shuffle = true;
+  }
+}
+  }
+
  ,auto_blink: true
  ,adjust_center_view_disabled: true
  ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
@@ -446,14 +461,29 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 
    ,"emote-mod_お辞儀2": {
   onstart: function () {
-this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
 MMD_SA.SpeechBubble.message(0, "Thank you. 2 meter is the distance we need.", 3*1000)
-  } 
+  }
+/*
  ,onended: function (loop_end) {
 MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(2,4))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
+*/
+
+ ,freeze_onended: true
+ ,onplaying: function (model_index) {
+var mm = MMD_SA.MMD.motionManager
+var model = THREE.MMD.getModels()[model_index]
+if (model.skin.time > mm._timeMax) {
+  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(2,4)) {
+    MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
+    MMD_SA._force_motion_shuffle = true;
+  }
+}
+  }
+
  ,auto_blink: true
  ,adjust_center_view_disabled: true
  ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
@@ -467,14 +497,29 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 
    ,"emote-mod_肯定する1": {
   onstart: function () {
-this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
 MMD_SA.SpeechBubble.message(0, "You got it, 2 meter~!", 3*1000)
-  } 
+  }
+/*
  ,onended: function (loop_end) {
 MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(2,4))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
+*/
+
+ ,freeze_onended: true
+ ,onplaying: function (model_index) {
+var mm = MMD_SA.MMD.motionManager
+var model = THREE.MMD.getModels()[model_index]
+if (model.skin.time > mm._timeMax) {
+  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(2,4)) {
+    MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
+    MMD_SA._force_motion_shuffle = true;
+  }
+}
+  }
+
  ,auto_blink: true
  ,adjust_center_view_disabled: true
  ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
@@ -488,13 +533,29 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 
    ,"emote-mod_肯定する2": {
   onstart: function () {
-this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
 MMD_SA.SpeechBubble.message(0, "This is it, 2 meter~!", 3*1000)
-  } 
+  }
+/*
  ,onended: function (loop_end) {
 MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
-MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
+if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(2,4))
+  MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
+*/
+
+ ,freeze_onended: true
+ ,onplaying: function (model_index) {
+var mm = MMD_SA.MMD.motionManager
+var model = THREE.MMD.getModels()[model_index]
+if (model.skin.time > mm._timeMax) {
+  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(2,4)) {
+    MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
+    MMD_SA._force_motion_shuffle = true;
+  }
+}
+  }
+
  ,auto_blink: true
  ,adjust_center_view_disabled: true
  ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
@@ -508,14 +569,29 @@ MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
 
    ,"emote-mod_照れる1": {
   onstart: function () {
-this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
 MMD_SA.SpeechBubble.message(0, "Hey... too close...", 3*1000)
-  } 
+  }
+/*
  ,onended: function (loop_end) {
 MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(0.75,2))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
+*/
+
+ ,freeze_onended: true
+ ,onplaying: function (model_index) {
+var mm = MMD_SA.MMD.motionManager
+var model = THREE.MMD.getModels()[model_index]
+if (model.skin.time > mm._timeMax) {
+  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(0.75,2)) {
+    MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
+    MMD_SA._force_motion_shuffle = true;
+  }
+}
+  }
+
  ,auto_blink: true
  ,adjust_center_view_disabled: true
  ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
@@ -529,14 +605,30 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 
    ,"emote-mod_照れる2": {
   onstart: function () {
-this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
-MMD_SA.SpeechBubble.message(0, "Hey... too close...", 3*1000)
-  } 
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
+MMD_SA.SpeechBubble.message(0, "Isn't it too close...", 3*1000)
+  }
+
+/*
  ,onended: function (loop_end) {
 MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(0.75,2))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
+*/
+
+ ,freeze_onended: true
+ ,onplaying: function (model_index) {
+var mm = MMD_SA.MMD.motionManager
+var model = THREE.MMD.getModels()[model_index]
+if (model.skin.time > mm._timeMax) {
+  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(0.75,2)) {
+    MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
+    MMD_SA._force_motion_shuffle = true;
+  }
+}
+  }
+
  ,auto_blink: true
  ,adjust_center_view_disabled: true
  ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
@@ -558,6 +650,7 @@ MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 MMD_SA._freeze_onended=MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(0,1.5)
   }
 */
+
  ,freeze_onended: true
  ,onplaying: function (model_index) {
 var mm = MMD_SA.MMD.motionManager
@@ -602,14 +695,29 @@ MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distan
 
    ,"emote-mod_歓迎する1": {
   onstart: function () {
-this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
 MMD_SA.SpeechBubble.message(0, "Hey! Come closer~!", 3*1000)
-  } 
+  }
+/*
  ,onended: function (loop_end) {
 MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(4,6))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
+*/
+
+ ,freeze_onended: true
+ ,onplaying: function (model_index) {
+var mm = MMD_SA.MMD.motionManager
+var model = THREE.MMD.getModels()[model_index]
+if (model.skin.time > mm._timeMax) {
+  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(4,6)) {
+    MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
+    MMD_SA._force_motion_shuffle = true;
+  }
+}
+  }
+
  ,auto_blink: true
  ,adjust_center_view_disabled: true
  ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
@@ -623,14 +731,29 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 
    ,"emote-mod_歓迎する2": {
   onstart: function () {
-this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
 MMD_SA.SpeechBubble.message(0, "Come on! I won't bite~!", 3*1000)
-  } 
+  }
+/*
  ,onended: function (loop_end) {
 MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(4,6))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
+*/
+
+ ,freeze_onended: true
+ ,onplaying: function (model_index) {
+var mm = MMD_SA.MMD.motionManager
+var model = THREE.MMD.getModels()[model_index]
+if (model.skin.time > mm._timeMax) {
+  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(4,6)) {
+    MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
+    MMD_SA._force_motion_shuffle = true;
+  }
+}
+  }
+
  ,auto_blink: true
  ,adjust_center_view_disabled: true
  ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
@@ -644,14 +767,29 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 
    ,"emote-mod_がっかり1": {
   onstart: function () {
-this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
 MMD_SA.SpeechBubble.message(0, "That's a lot more than 2 meter...", 3*1000)
-  } 
+  }
+/*
  ,onended: function (loop_end) {
 MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
+*/
+
+ ,freeze_onended: true
+ ,onplaying: function (model_index) {
+var mm = MMD_SA.MMD.motionManager
+var model = THREE.MMD.getModels()[model_index]
+if (model.skin.time > mm._timeMax) {
+  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8)) {
+    MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
+    MMD_SA._force_motion_shuffle = true;
+  }
+}
+  }
+
  ,auto_blink: true
  ,adjust_center_view_disabled: true
  ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
@@ -665,14 +803,29 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 
    ,"emote-mod_がっかり2": {
   onstart: function () {
-this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
 MMD_SA.SpeechBubble.message(0, "No, not that far away...", 3*1000)
-  } 
+  }
+/*
  ,onended: function (loop_end) {
 MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
+*/
+
+ ,freeze_onended: true
+ ,onplaying: function (model_index) {
+var mm = MMD_SA.MMD.motionManager
+var model = THREE.MMD.getModels()[model_index]
+if (model.skin.time > mm._timeMax) {
+  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8)) {
+    MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
+    MMD_SA._force_motion_shuffle = true;
+  }
+}
+  }
+
  ,auto_blink: true
  ,adjust_center_view_disabled: true
  ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
@@ -686,14 +839,29 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 
    ,"emote-mod_肩をすくめる1": {
   onstart: function () {
-this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
 MMD_SA.SpeechBubble.message(0, "What's the point to stand so far away...", 3*1000)
-  } 
+  }
+/*
  ,onended: function (loop_end) {
 MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
+*/
+
+ ,freeze_onended: true
+ ,onplaying: function (model_index) {
+var mm = MMD_SA.MMD.motionManager
+var model = THREE.MMD.getModels()[model_index]
+if (model.skin.time > mm._timeMax) {
+  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8)) {
+    MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
+    MMD_SA._force_motion_shuffle = true;
+  }
+}
+  }
+
  ,auto_blink: true
  ,adjust_center_view_disabled: true
  ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
@@ -707,14 +875,29 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 
    ,"emote-mod_肩をすくめる2": {
   onstart: function () {
-this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
 MMD_SA.SpeechBubble.message(0, "Come on, not that far away...", 3*1000)
-  } 
+  }
+/*
  ,onended: function (loop_end) {
 MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
+*/
+
+ ,freeze_onended: true
+ ,onplaying: function (model_index) {
+var mm = MMD_SA.MMD.motionManager
+var model = THREE.MMD.getModels()[model_index]
+if (model.skin.time > mm._timeMax) {
+  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8)) {
+    MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
+    MMD_SA._force_motion_shuffle = true;
+  }
+}
+  }
+
  ,auto_blink: true
  ,adjust_center_view_disabled: true
  ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
@@ -728,14 +911,29 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 
    ,"emote-mod_すねる1": {
   onstart: function () {
-this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
 MMD_SA.SpeechBubble.message(0, "You don't like me, do you...", 3*1000)
-  } 
+  }
+/*
  ,onended: function (loop_end) {
 MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
+*/
+
+ ,freeze_onended: true
+ ,onplaying: function (model_index) {
+var mm = MMD_SA.MMD.motionManager
+var model = THREE.MMD.getModels()[model_index]
+if (model.skin.time > mm._timeMax) {
+  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999)) {
+    MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
+    MMD_SA._force_motion_shuffle = true;
+  }
+}
+  }
+
  ,auto_blink: true
  ,adjust_center_view_disabled: true
  ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
@@ -749,14 +947,29 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 
    ,"emote-mod_すねる2": {
   onstart: function () {
-this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
 MMD_SA.SpeechBubble.message(0, "This is so boring...", 3*1000)
-  } 
+  }
+/*
  ,onended: function (loop_end) {
 MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
+*/
+
+ ,freeze_onended: true
+ ,onplaying: function (model_index) {
+var mm = MMD_SA.MMD.motionManager
+var model = THREE.MMD.getModels()[model_index]
+if (model.skin.time > mm._timeMax) {
+  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999)) {
+    MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
+    MMD_SA._force_motion_shuffle = true;
+  }
+}
+  }
+
  ,auto_blink: true
  ,adjust_center_view_disabled: true
  ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
@@ -770,14 +983,29 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 
    ,"emote-mod_よろめく1": {
   onstart: function () {
-this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
 MMD_SA.SpeechBubble.message(0, "Am I a joke to you...", 3*1000)
-  } 
+  }
+/*
  ,onended: function (loop_end) {
 MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
+*/
+
+ ,freeze_onended: true
+ ,onplaying: function (model_index) {
+var mm = MMD_SA.MMD.motionManager
+var model = THREE.MMD.getModels()[model_index]
+if (model.skin.time > mm._timeMax) {
+  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999)) {
+    MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
+    MMD_SA._force_motion_shuffle = true;
+  }
+}
+  }
+
  ,auto_blink: true
  ,adjust_center_view_disabled: true
  ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
@@ -791,14 +1019,29 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 
    ,"emote-mod_よろめく2": {
   onstart: function () {
-this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
+this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
 MMD_SA.SpeechBubble.message(0, "Oh my God... do you have to stand so far away...", 3*1000)
-  } 
+  }
+/*
  ,onended: function (loop_end) {
 MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999))
   MMD_SA._freeze_onended=(Date.now()<this._duration_end_)
   }
+*/
+
+ ,freeze_onended: true
+ ,onplaying: function (model_index) {
+var mm = MMD_SA.MMD.motionManager
+var model = THREE.MMD.getModels()[model_index]
+if (model.skin.time > mm._timeMax) {
+  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999)) {
+    MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
+    MMD_SA._force_motion_shuffle = true;
+  }
+}
+  }
+
  ,auto_blink: true
  ,adjust_center_view_disabled: true
  ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
@@ -971,6 +1214,7 @@ MMD_SA_options.Dungeon_options = {
 // ,grid_material_list: []
 
  ,object_base_list: [
+/*
     {
   construction: {
     build: function () {
@@ -978,10 +1222,11 @@ var that = this;
 window.addEventListener("GOML_ready", function () {
   let geometry = new THREE.RingGeometry(19.5, 20.5, 24, 1);
   geometry.applyMatrix(new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(-90)));
-  let material = new THREE.MeshBasicMaterial({ color: 0xDC143C });
+  let material = new THREE.MeshBasicMaterial({ color:0xDC143C });
   let circle_2m = new THREE.Mesh(geometry, material);
 
   MMD_SA.scene.add(circle_2m);
+
   circle_2m.visible = false;
 
   that.mesh_obj = { id:"circle_2m", _obj:circle_2m }
@@ -995,6 +1240,7 @@ window.addEventListener("GOML_ready", function () {
   }
  ,no_collision: true
     }
+*/
   ]
 
  ,item_base: {
@@ -1241,7 +1487,7 @@ MMD_SA._force_motion_shuffle = true
 // ,camera_y_default_non_negative: false
 
  ,object_list: [
-    {object_index:0}
+//    {object_index:0}
   ]
 
  ,events: {
@@ -1300,6 +1546,23 @@ window.addEventListener("SA_AR_zoom_scale_update", obj._zoom_scale_update_);
  ,next_step: {}
         }
 */
+
+        {
+          func: function () {
+var circle_2m = MMD_SA.WebXR._circle_2m
+circle_2m.position.copy(THREE.MMD.getModels()[0].mesh.position).y += 0.1
+circle_2m.visible = true
+
+circle_2m._zoom_scale_update_ = function () {
+  var zoom_scale = MMD_SA.WebXR.zoom_scale
+  circle_2m.scale.set(zoom_scale,1,zoom_scale)
+//  circle_2m.updateMatrix()
+};
+window.addEventListener("SA_AR_zoom_scale_update", circle_2m._zoom_scale_update_);
+return true;
+          }
+        }
+
       ]
     ]
 
@@ -1318,6 +1581,18 @@ window.removeEventListener("SA_AR_zoom_scale_update", obj._zoom_scale_update_);
  ,next_step: {}
         }
 */
+
+        {
+          func: function () {
+var circle_2m = MMD_SA.WebXR._circle_2m
+circle_2m.visible = false
+
+window.removeEventListener("SA_AR_zoom_scale_update", MMD_SA.WebXR._circle_2m._zoom_scale_update_);
+window.addEventListener("SA_AR_zoom_scale_update", circle_2m._zoom_scale_update_);
+return true;
+          }
+        }
+
       ]
     ]
 
@@ -1361,6 +1636,14 @@ MMD_SA.scene.add(wall)
 // can be updated only AFTER scene.add
 wall.visible = false
 material.opacity = 0.5
+
+let circle_2m_geometry = new THREE.RingGeometry(19.5, 20.5, 24, 1);
+circle_2m_geometry.applyMatrix(new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(-90)));
+let circle_2m_material = new THREE.MeshBasicMaterial({ color:0xDC143C });
+let circle_2m = MMD_SA.WebXR._circle_2m = new THREE.Mesh(circle_2m_geometry, circle_2m_material);
+MMD_SA.scene.add(circle_2m);
+circle_2m_material.opacity = 0.5;
+circle_2m.visible = false;
 
 //console.log(ground,material)
   });
