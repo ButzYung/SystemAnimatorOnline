@@ -5775,9 +5775,7 @@ MMD_SA_options.model_para_obj_all.forEach(function (model_para_obj) {
     });
     window.addEventListener("MMDStarted", function () {
 THREE.MMD.getModels().forEach(function (model) {
-  model.mesh.material.materials.forEach(function (m) {
-    m.frustumCulled = false
-  });
+  model.mesh.frustumCulled = false
 });
     });
   }
