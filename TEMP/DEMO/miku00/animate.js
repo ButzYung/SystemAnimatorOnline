@@ -1170,7 +1170,7 @@ return v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(v3b.copy(THREE.MMD.ge
 
    ,_social_distance_check: function (min, max) {
 var dis = this._social_distance()
-DEBUG_show(dis)
+//DEBUG_show(dis)
 if ((dis > min) && (dis < max))
   return true
 
