@@ -2619,10 +2619,9 @@ if (is_mobile && screen.orientation) {
   else
     is_portrait = true
 }
-//if (is_landscape) scale *= 1.5
 
-this._mesh.position.copy(this.pos_base_ref.dir).multiplyScalar(this.distance_scale*((is_portrait)?0.25:1) * scale).add(this.pos_base_ref._v3.copy(this.pos_base_ref.center).sub(this.pos_base_ref.character_pos_ref).add(THREE.MMD.getModels()[0].mesh.position))
-this._mesh.scale.set(1,1,1).multiplyScalar(this.scale * scale * ((this.use_sprite)?1/3:1))
+this._mesh.position.copy(this.pos_base_ref.dir).multiplyScalar(this.distance_scale * ((is_portrait && 0.25) || 1) * scale).add(this.pos_base_ref._v3.copy(this.pos_base_ref.center).sub(this.pos_base_ref.character_pos_ref).add(THREE.MMD.getModels()[0].mesh.position))
+this._mesh.scale.set(1,1,1).multiplyScalar(this.scale * scale * ((is_landscape && 1.5) || 1) * ((this.use_sprite)?1/3:1))
 
 //this.pos_base.copy(this._mesh.position).sub(this.pos_base_ref.character_pos_ref)
    }
@@ -5772,6 +5771,13 @@ this._look_at_screen_ratio = v
     window.addEventListener("jThree_ready", function () {
 MMD_SA_options.model_para_obj_all.forEach(function (model_para_obj) {
   model_para_obj.use_default_boundingBox = true
+});
+    });
+    window.addEventListener("MMDStarted", function () {
+THREE.MMD.getModels().forEach(function (model) {
+  model.mesh.material.materials.forEach(function (m) {
+    m.frustumCulled = false
+  });
 });
     });
   }
