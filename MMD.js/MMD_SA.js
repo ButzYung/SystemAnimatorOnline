@@ -2619,8 +2619,7 @@ if (is_mobile && screen.orientation) {
   else
     is_portrait = true
 }
-if (is_landscape)
-  scale *= 1.5
+//if (is_landscape) scale *= 1.5
 
 this._mesh.position.copy(this.pos_base_ref.dir).multiplyScalar(this.distance_scale*((is_portrait)?0.25:1) * scale).add(this.pos_base_ref._v3.copy(this.pos_base_ref.center).sub(this.pos_base_ref.character_pos_ref).add(THREE.MMD.getModels()[0].mesh.position))
 this._mesh.scale.set(1,1,1).multiplyScalar(this.scale * scale * ((this.use_sprite)?1/3:1))
