@@ -558,7 +558,7 @@ MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 MMD_SA._freeze_onended=MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(0,1.5)
   }
 */
-// ,freeze_onended: true
+ ,freeze_onended: true
  ,onplaying: function (model_index) {
 var mm = MMD_SA.MMD.motionManager
 var model = THREE.MMD.getModels()[model_index]
