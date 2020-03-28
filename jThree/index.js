@@ -194,6 +194,15 @@ return obj.skin.duration * 30
   }
 });
 
+Object.defineProperty(MMD_SA.MMD.MotionManager.prototype, "_timeMax",
+{
+  get: function () {
+var obj = THREE.MMD.getModels()[this._model_index]._MMD_SA_cache[this.para_SA._path]
+//DEBUG_show(MMD_SA_options.motion[this._index].path,0,1)
+return obj.skin._timeMax
+  }
+});
+
 // mainly for cases of multi-model motions
 Object.defineProperty(MMD_SA.MMD.MotionManager.prototype, "lastFrame_",
 {

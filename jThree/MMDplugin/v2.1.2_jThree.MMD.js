@@ -384,20 +384,26 @@ if (debug_msg.length) {
   MMD_SA._motion_time_ = skin.time+delta
 //DEBUG_show(MMD_SA._motion_time_)
   var onended_done
-  if (!MMD_SA._force_motion_shuffle && MMD_SA.motion_shuffle_started && (skin.time+delta > mm.lastFrame_/30)) {
+  if (!MMD_SA._force_motion_shuffle && MMD_SA.motion_shuffle_started) {
+    if (skin.time+delta > mm.lastFrame_/30) {
 // onended has to run BEFORE custom_motion_shuffle in some cases
-    let result = { return_value:null };
-    window.dispatchEvent(new CustomEvent("SA_MMD_model0_onmotionended", { detail:{ result:result } }));
-    if (!result.return_value) {
-      if (mm.para_SA.onended)
-        mm.para_SA.onended(true)
+      let result = { return_value:null };
+      window.dispatchEvent(new CustomEvent("SA_MMD_model0_onmotionended", { detail:{ result:result } }));
+      if (!result.return_value) {
+        if (mm.para_SA.onended)
+          mm.para_SA.onended(true)
+      }
+      if (MMD_SA._freeze_onended) {
+        skin.time = mm.lastFrame_/30 - delta - (1/59)/1000
+        MMD_SA._freeze_onended = null
+      }
+      else {
+        onended_done = true
+      }
     }
-    if (MMD_SA._freeze_onended) {
-      skin.time = mm.lastFrame_/30 - delta - (1/59)/1000
-      MMD_SA._freeze_onended = null
+    else {
+      mm.para_SA.onplaying && mm.para_SA.onplaying(0);
     }
-    else
-      onended_done = true
   }
 
 // not necessarily shuffle-related, more like a normal function that runs before motion shuffle
@@ -561,11 +567,7 @@ if (debug_msg.length) {
       _model.resetMotion(ignore_physics_reset || MMD_SA._ignore_physics_reset)
     }
 
-    if (mm.para_SA.onstart) {
-      var code_onstart = mm.para_SA.onstart(motion_changed)
-      if (code_onstart)
-        eval(code_onstart)
-    }
+    mm.para_SA.onstart && mm.para_SA.onstart(motion_changed);
 
     _model.playMotion()
     if (_delta_from_last_loop || (model_para._firstFrame_||mm0.firstFrame_)) {
@@ -2443,6 +2445,11 @@ var that = this;
 // AT: IK disabled
     var IK_disabled_RE = new RegExp("(" + toRegExp(["足ＩＫ","つま先ＩＫ"],"|") + ")$");
 // AT: custom duration
+var _timeMax = this.timeMax;
+if (motion_para && motion_para.freeze_onended) {
+  motion_para.duration = 9999
+  motion_para.random_range_disabled = true
+}
 	timeMax = (motion_para && motion_para.duration)||this.timeMax;
 	targets = [];
 	pmx.bones.forEach( function( v ) {
@@ -2647,7 +2654,8 @@ if (motion_para && motion_para.IK_disabled && motion_para.IK_disabled._IK_name_l
     console.log("IK disabled auto:", decodeURIComponent(that.url.replace(/^.+[\/\\]/, "").replace(/\.vmd$/i, "")))
 }
 
-	return { duration:timeMax, targets:targets };
+// AT: _timeMax
+	return { _timeMax:_timeMax, duration:timeMax, targets:targets };
 };
 // AT: Use regular expression to filter frames (RE), stuff
 VMD.prototype.generateMorphAnimation = function( pmx, RE ) {
@@ -5110,6 +5118,9 @@ MMDSkin = function( mesh, animation ) { // extend Animation
 	this.mesh = mesh;
 	Animation.call( this, animation.targets, animation.duration );
 	//this.update(0);
+
+// AT: _timeMax
+this._timeMax = animation._timeMax;
 };
 MMDSkin.prototype = Object.create( Animation.prototype );
 MMDSkin.prototype.constructor = MMDSkin;

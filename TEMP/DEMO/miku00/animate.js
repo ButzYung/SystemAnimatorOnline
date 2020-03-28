@@ -552,10 +552,24 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
   onstart: function () {
 MMD_SA.SpeechBubble.message(0, "I surrender! Please, stay back! ><", 3*1000)
   } 
+/*
  ,onended: function (loop_end) {
 MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 MMD_SA._freeze_onended=MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(0,1.5)
   }
+*/
+ ,freeze_onended: true
+ ,onplaying: function (model_index) {
+var mm = MMD_SA.MMD.motionManager
+//DEBUG_show(THREE.MMD.getModels()[0].skin.time+'\n'+mm._timeMax)
+if (THREE.MMD.getModels()[model_index].skin.time > mm._timeMax) {
+  if (!MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(0,1.5)) {
+    MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
+    MMD_SA._force_motion_shuffle = true;
+  }
+}
+  }
+
  ,auto_blink: false
  ,adjust_center_view_disabled: true
  ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
