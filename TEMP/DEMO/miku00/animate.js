@@ -561,8 +561,10 @@ MMD_SA._freeze_onended=MMD_SA_options.Dungeon_options.item_base.social_distancin
  ,freeze_onended: true
  ,onplaying: function (model_index) {
 var mm = MMD_SA.MMD.motionManager
-//DEBUG_show(THREE.MMD.getModels()[0].skin.time+'\n'+mm._timeMax)
-if (THREE.MMD.getModels()[model_index].skin.time > mm._timeMax) {
+var model = THREE.MMD.getModels()[model_index]
+//DEBUG_show(model.skin.time+'\n'+mm._timeMax)
+if (model.skin.time > mm._timeMax) {
+MMD_SA._custom_skin = [{ key:{ name:"全ての親", pos:[Math.random(),Math.random(),Math.random()] ,rot:[0,0,0,1] ,interp:MMD_SA._skin_interp_default }, idx:model.mesh.bones_by_name["全ての親"]._index }]
   if (!MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(0,1.5)) {
     MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
     MMD_SA._force_motion_shuffle = true;
