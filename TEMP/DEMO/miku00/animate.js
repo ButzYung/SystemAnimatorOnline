@@ -734,7 +734,7 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
    ,"emote-mod_すねる2": {
   onstart: function () {
 this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager.lastFrame/30 + Math.random()*3+0.5)*1000
-MMD_SA.SpeechBubble.message(0, "That's so boring...", 3*1000)
+MMD_SA.SpeechBubble.message(0, "This is so boring...", 3*1000)
   } 
  ,onended: function (loop_end) {
 MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
@@ -1265,6 +1265,7 @@ return true
 
    ,"circle_2m_show": [
       [
+/*
         {
   objects: {
     "object0_0": {
@@ -1282,11 +1283,13 @@ window.addEventListener("SA_AR_zoom_scale_update", obj._zoom_scale_update_);
   }
  ,next_step: {}
         }
+*/
       ]
     ]
 
    ,"circle_2m_hide": [
       [
+/*
         {
   objects: {
     "object0_0": {
@@ -1298,8 +1301,10 @@ window.removeEventListener("SA_AR_zoom_scale_update", obj._zoom_scale_update_);
   }
  ,next_step: {}
         }
+*/
       ]
     ]
+
   }
 
     }
