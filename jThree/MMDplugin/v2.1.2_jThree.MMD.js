@@ -6008,6 +6008,7 @@ if (self.MMD_SA) {
       if (this.morph.target_index_by_name["笑い"] != null)
         m[this.morph.target_index_by_name["笑い"]] = 0
     }
+//for (var i = 0, len = m.length; i < len; i++) m[i] = 0;
   }
 }
 if (this.morph_MMD_SA_extra) {
