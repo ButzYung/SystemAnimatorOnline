@@ -342,12 +342,13 @@ xr._wall.visible = true
 // ,loop:[1,1]
  ,onended: function (last_frame) { MMD_SA._no_fading=last_frame&&(!this.loop||this.loop_count); }
 
+ ,_cover_undies: false
+ ,object_click_disabled: true
+
 // ,gravity: [0,-0.1,0]
 // ,gravity_reset: [0,0.5,0]
  ,gravity: [0,0,0]
  ,gravity_reset: [0,-0.5,0]
-
- ,object_click_disabled: true
 
  ,adjustment_per_model: {
     _default_ : {
@@ -1393,7 +1394,14 @@ var model_mesh = THREE.MMD.getModels()[0].mesh
 if (!model_mesh.visible)
   return true
 if (social_distancing_started) {
-  item.reset()
+  if (MMD_SA.WebXR._circle_2m && MMD_SA.WebXR._circle_2m.visible) {
+    MMD_SA_options.Dungeon.run_event("circle_2m_hide")
+    DEBUG_show("Social distancing:ON / Circle:OFF", 2)
+  }
+  else {
+    item.reset()
+    DEBUG_show("Social distancing:OFF", 2)
+  }
   return false
 }
 //DEBUG_show(MMD_SA.MMD.motionManager.filename)
@@ -1408,6 +1416,7 @@ if (!/standmix2_modified/.test(MMD_SA.MMD.motionManager.filename))
 social_distancing_started = true
 
 MMD_SA_options.Dungeon.run_event("circle_2m_show")
+DEBUG_show("Social distancing:ON / Circle:ON", 2)
 
 this._social_distance_check(999,999)
     }
