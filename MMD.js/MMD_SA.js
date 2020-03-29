@@ -4668,7 +4668,7 @@ if (1) {
     c_host.addEventListener("dblclick", c_host._ondblclick)
   }
 }
-DEBUG_show = function () {};
+
 session.requestAnimationFrame(xr.onARFrame);
   }
 
