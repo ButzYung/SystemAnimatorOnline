@@ -2560,8 +2560,11 @@ if (sd) {
 		});
 // AT: guitar special and skin keys
 if (self.MMD_SA) {
+  let pos_add = sd && (sd.pos_add || (model_sd && model_sd.pos_add) || {x:0,y:0,z:0})
+  let rot_add = sd && (sd.rot_add || (model_sd && model_sd.rot_add) || {x:0,y:0,z:0})
+  let xyz = ["x","y","z"]
   if (sd && (sd.keys || (!keys.length && (sd.pos || sd.rot || sd.pos_add || sd.rot_add)))/* && !(that._index > MMD_SA.normal_action_length)*/) {
-    var sd_keys = (sd.keys) ? sd.keys : [{ pos:(sd.pos || sd.pos_add), rot:(sd.rot || sd.rot_add), time:sd.time, interp:sd.interp }]
+    let sd_keys = (sd.keys) ? sd.keys : [{ pos:sd.pos, rot:sd.rot, time:sd.time, interp:sd.interp }]
 
     keys = []
     sd_keys.forEach(function (key) {
@@ -2571,12 +2574,12 @@ var _rot = key.rot
 keys.push({
   name: v.name
  ,time: (key.time||0)
- ,pos: (_pos) ? [_pos.x, _pos.y, -_pos.z] : [0,0,0]
- ,rot: ((_rot) ? MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.set(-_rot.x, _rot.y, -_rot.z).multiplyScalar(Math.PI/180), 'YXZ') : MMD_SA.TEMP_q.set(0,0,0,1)).toArray()
+ ,pos:  ((_pos) ? [_pos.x, _pos.y, -_pos.z] : [0,0,0]).map((n,i) => n+pos_add[xyz[i]]*((i==2)?-1:1))
+ ,rot:  MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.fromArray(((_rot) ? [-_rot.x, _rot.y, -_rot.z] : [0,0,0]).map((n,i) => n*Math.PI/180+rot_add[xyz[i]]*((i==1)?1:-1))), 'YXZ').toArray()
  ,interp: new Uint8Array(key.interp || [20,20,20,20,20,20,20,20, 107,107,107,107,107,107,107,107])
 });
     });
-//if (sd.keys) DEBUG_show(JSON.stringify(keys),0,1)
+//if (sd.keys && (v.name.indexOf("ＩＫ")!=-1)) {DEBUG_show(JSON.stringify(keys),0,1);DEBUG_show(JSON.stringify(sd),0,1);}
     last = keys[keys.length-1];
   }
 
@@ -2589,12 +2592,12 @@ if (!key)
 var _pos = key_mod.pos
 var _rot = key_mod.rot
 if (_pos)
-  key.pos = [_pos.x, _pos.y, -_pos.z]
+  key.pos = [_pos.x, _pos.y, -_pos.z].map((n,i) => n+pos_add[xyz[i]]*((i==2)?-1:1))
 if (_rot) {
 //console.log(v.name+'/'+key_mod.frame)
 //console.log((new THREE.Quaternion()).set(key.rot[0], key.rot[1], key.rot[2], key.rot[3]).normalize())
 //console.log((new THREE.Quaternion()).setFromEuler((new THREE.Vector3()).setEulerFromQuaternion(MMD_SA._q1.set(key.rot[0],key.rot[1],key.rot[2],key.rot[3]).normalize(), 'YXZ'), 'YXZ').normalize())
-  key.rot = MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.set(-_rot.x, _rot.y, -_rot.z).multiplyScalar(Math.PI/180), 'YXZ').toArray()
+  key.rot = MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.fromArray([-_rot.x, _rot.y, -_rot.z].map((n,i) => n*Math.PI/180+rot_add[xyz[i]]*((i==1)?1:-1))), 'YXZ').toArray()
 }
 if (key_mod.interp)
   key.interp = new Uint8Array(key_mod.interp)
