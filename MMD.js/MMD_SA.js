@@ -4853,7 +4853,7 @@ else {
 // view-source:https://storage.googleapis.com/chromium-webxr-test/r695783/proposals/phone-ar-plane-detection-anchors.html
     try {
       for (const anchor of trackedAnchors) {
-DEBUG_show(time)
+DEBUG_show(anchor.lastChangedTime)
 if ((time != anchor.lastChangedTime) || !anchor._data || !anchor._data.update)
   continue
 
