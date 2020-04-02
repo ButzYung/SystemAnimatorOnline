@@ -4639,6 +4639,7 @@ MMD_SA.scene.__objects.forEach(function (obj, idx) {
   if (obj.visible)
     obj.visible = false
 });
+document.body.style.visibility = "hidden"
 
 let ao = SL_MC_video_obj && SL_MC_video_obj.vo && SL_MC_video_obj.vo.audio_obj;
 if (ao && !ao.paused) {
@@ -4679,6 +4680,7 @@ MMD_SA.scene.__objects.forEach(function (obj) {
     obj.visible = true
 });
 MMD_SA.SpeechBubble.hide()
+document.body.style.visibility = "visible"
   }
 
  ,onSessionEnd: function () {
