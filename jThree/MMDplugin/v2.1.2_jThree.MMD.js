@@ -385,13 +385,12 @@ if (debug_msg.length) {
 //DEBUG_show(MMD_SA._motion_time_)
   var onended_done
   if (!MMD_SA._force_motion_shuffle && MMD_SA.motion_shuffle_started) {
+    let result = { return_value:null };
     if (skin.time+delta > mm.lastFrame_/30) {
 // onended has to run BEFORE custom_motion_shuffle in some cases
-      let result = { return_value:null };
       window.dispatchEvent(new CustomEvent("SA_MMD_model0_onmotionended", { detail:{ result:result } }));
       if (!result.return_value) {
-        if (mm.para_SA.onended)
-          mm.para_SA.onended(true)
+        mm.para_SA.onended && mm.para_SA.onended(true);
       }
       if (MMD_SA._freeze_onended) {
         skin.time = mm.lastFrame_/30 - delta - (1/59)/1000
@@ -402,7 +401,10 @@ if (debug_msg.length) {
       }
     }
     else {
-      mm.para_SA.onplaying && mm.para_SA.onplaying(0);
+      window.dispatchEvent(new CustomEvent("SA_MMD_model0_onmotionplaying", { detail:{ result:result } }));
+      if (!result.return_value) {
+        mm.para_SA.onplaying && mm.para_SA.onplaying(0);
+      }
     }
   }
 
@@ -426,8 +428,7 @@ if (debug_msg.length) {
       let result = { return_value:null };
       window.dispatchEvent(new CustomEvent("SA_MMD_model0_onmotionended", { detail:{ result:result } }));
       if (!result.return_value) {
-        if (mm.para_SA.onended)
-          mm.para_SA.onended()
+        mm.para_SA.onended && mm.para_SA.onended();
       }
     }
 
