@@ -7936,6 +7936,7 @@ if (!this.motion["PC fall on ass"]) {
   adjust_center_view_disabled:true, get look_at_screen_ratio() { var t=THREE.MMD.getModels()[0].skin.time; return ((t>1)?0:1-t); }
  ,super_armor: { level:99 }
  ,SFX: [ { frame:21, sound:{} } ]
+ ,auto_blink: false
  ,onended: function () {
 MMD_SA._ignore_physics_reset=true; MMD_SA._no_fading=true;
   }
