@@ -4853,13 +4853,19 @@ else {
 // view-source:https://storage.googleapis.com/chromium-webxr-test/r695783/proposals/phone-ar-plane-detection-anchors.html
     try {
       for (const anchor of trackedAnchors) {
-DEBUG_show(time+'\n'+JSON.stringify(frame.getPose(anchor.anchorSpace, this.frameOfRef).transform.position))
-if ((time != anchor.lastChangedTime) || !anchor._data || !anchor._data.update)
+//DEBUG_show(time+'\n'+JSON.stringify(frame.getPose(anchor.anchorSpace, this.frameOfRef).transform.position))
+//if ((time != anchor.lastChangedTime) || !anchor._data || !anchor._data.update)
+if (!anchor._data || !anchor._data.update)
   continue
 
-const pose = frame.getPose(anchor.anchorSpace, this.frameOfRef);
-xr.hitMatrix_anchor.obj = (xr.hitMatrix_anchor.obj||new THREE.Matrix4()).fromArray(pose.transform.matrix);
-xr.hitMatrix_anchor.decomposed = xr.hitMatrix_anchor.obj.decompose();
+let transform = frame.getPose(anchor.anchorSpace, this.frameOfRef).transform;
+let checksum = transform.matrix.reduce((n0,n1)=>n0+n1);
+if (checksum == xr.hitMatrix_anchor._checksum)
+  continue
+
+xr.hitMatrix_anchor._checksum = checksum
+xr.hitMatrix_anchor.obj = (xr.hitMatrix_anchor.obj||new THREE.Matrix4()).fromArray(transform.matrix);
+xr.hitMatrix_anchor.decomposed = [new THREE.Vector3().copy(transform.position), new THREE.Quaternion().copy(transform.orientation), null];
 xr.hitMatrix_anchor.decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.hitMatrix_anchor.decomposed[1]);
 
 anchor._data.update(anchor._data.obj);
@@ -4920,8 +4926,16 @@ if (this.hits.length) {
   let hit = this.hit_active = this.hits[0]
   this.hits = []
   this.hitMatrix = this.hitMatrix || {};
-  this.hitMatrix.obj = (this.hitMatrix.obj||new THREE.Matrix4()).fromArray((xr.can_requestHitTestSource) ? hit.getPose(this.frameOfRef).transform.matrix : hit.hitMatrix);
-  this.hitMatrix.decomposed = this.hitMatrix.obj.decompose();
+  this.hitMatrix.obj = this.hitMatrix.obj || new THREE.Matrix4();
+  if (xr.can_requestHitTestSource) {
+    let transform = hit.getPose(this.frameOfRef).transform;
+    this.hitMatrix.obj.fromArray(transform.matrix);
+    this.hitMatrix.decomposed = [new THREE.Vector3().copy(transform.position), new THREE.Quaternion().copy(transform.orientation), null];
+  }
+  else {
+    this.hitMatrix.obj.fromArray(hit.hitMatrix);
+    this.hitMatrix.decomposed = this.hitMatrix.obj.decompose();
+  }
 
   return { hitMatrix:this.hitMatrix  };
 }
