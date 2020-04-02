@@ -1679,7 +1679,7 @@ window.addEventListener("SA_MMD_model0_onmotionplaying", function (e) {
   var speed = 0
   if (_camera_position) {
     speed = _camera_position.distanceTo(v3a) / ((RAF_timestamp - _timestamp)/1000)
-//DEBUG_show(speed)
+DEBUG_show(speed)
   }
   _camera_position = v3a.clone()
   _timestamp = RAF_timestamp
