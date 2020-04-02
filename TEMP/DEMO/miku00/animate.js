@@ -1678,8 +1678,8 @@ window.addEventListener("SA_MMD_model0_onmotionplaying", function (e) {
   var dis = v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(v3b.copy(THREE.MMD.getModels()[0].mesh.position).setY(0))/10;
   var speed = 0
   if (_camera_position) {
-    speed = _camera_position.distanceTo(v3a) / ((RAF_timestamp - _timestamp)/1000)
-DEBUG_show(speed)
+    speed = (_camera_position.distanceTo(v3a)/10) / ((RAF_timestamp - _timestamp)/1000)
+//DEBUG_show(speed)
   }
   _camera_position = v3a.clone()
   _timestamp = RAF_timestamp
