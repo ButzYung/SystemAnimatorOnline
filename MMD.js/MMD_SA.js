@@ -4366,6 +4366,7 @@ else if (xr.hit_found) {
   xr.hit_found = false
   xr.reticle.position.copy(xr.hitMatrix_anchor.game_geo.position)
   xr.reticle.visible = true
+  document.getElementById("SL_Host").style.visibility = "hidden"
 
   if (MMD_SA_options.Dungeon) {
     MMD_SA_options.Dungeon.object_click_disabled = true
