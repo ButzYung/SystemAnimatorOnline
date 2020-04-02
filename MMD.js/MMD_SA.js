@@ -4326,7 +4326,7 @@ if (xr.reticle.visible) {
   if (xr.can_requestHitTestSource && xr.hit_active.createAnchor) {
     try {
 xr.hit_active.createAnchor(new XRRigidTransform()).then(function (anchor) {
-//  DEBUG_show("anchor created")
+  DEBUG_show("anchor created")
   if (model_mesh._anchor) {
     model_mesh._anchor.detach()
     xr.anchors.delete(model_mesh._anchor)
