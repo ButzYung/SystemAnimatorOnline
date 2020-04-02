@@ -4326,7 +4326,7 @@ if (xr.reticle.visible) {
   if (xr.can_requestHitTestSource && xr.hit_active.createAnchor) {
     try {
 xr.hit_active.createAnchor(new XRRigidTransform()).then(function (anchor) {
-  DEBUG_show("anchor created")
+//  DEBUG_show("anchor created")
   if (model_mesh._anchor) {
     model_mesh._anchor.detach()
     xr.anchors.delete(model_mesh._anchor)
@@ -4853,7 +4853,7 @@ else {
 // view-source:https://storage.googleapis.com/chromium-webxr-test/r695783/proposals/phone-ar-plane-detection-anchors.html
     try {
       for (const anchor of trackedAnchors) {
-DEBUG_show(time+'\n'+anchor.lastChangedTime)
+DEBUG_show(time+'\n'+JSON.stringify(frame.getPose(anchor.anchorSpace, this.frameOfRef).transform.position))
 if ((time != anchor.lastChangedTime) || !anchor._data || !anchor._data.update)
   continue
 
