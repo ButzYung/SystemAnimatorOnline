@@ -1657,6 +1657,57 @@ MMD_SA.scene.add(circle_2m);
 circle_2m_material.opacity = 0.5;
 circle_2m.visible = false;
 
+
+window.addEventListener("SA_Dungeon_onstart", function () {
+
+let v3a = new THREE.Vector3()
+let v3b = new THREE.Vector3()
+
+let _camera_position, _timestamp
+
+window.addEventListener("SA_MMD_model0_onmotionplaying", function (e) {
+  var model_mesh = THREE.MMD.getModels()[0].mesh
+  if (!model_mesh.visible)
+    return
+
+  var mm = MMD_SA.MMD.motionManager
+  if (!/standmix2_modified/.test(mm.filename))
+    return
+
+  var d = MMD_SA_options.Dungeon;
+  var dis = v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(v3b.copy(THREE.MMD.getModels()[0].mesh.position).setY(0))/10;
+  var speed = 0
+  if (_camera_position) {
+    speed = _camera_position.distanceTo(v3a) / ((RAF_timestamp - _timestamp)/1000)
+//DEBUG_show(speed)
+  }
+  _camera_position = v3a.clone()
+  _timestamp = RAF_timestamp
+
+  if ((dis < 0.5) && (speed > 1)) {
+    // use ._motion_shuffle_list instead, because we have multiple motions running in order, but .motion_shuffle_list_default can be shuffled.
+    MMD_SA_options._motion_shuffle_list = [MMD_SA_options.motion_index_by_name["w01_すべって尻もち"], MMD_SA_options.motion_index_by_name["女の子座り→立ち上がる_gumi_v01"]]
+    MMD_SA_options.motion_shuffle_list_default = null
+    MMD_SA._force_motion_shuffle = true
+/*
+  else if (moving) {
+    MMD_SA._hit_legs_ = true
+    d.character_movement_disabled = true
+    // use ._motion_shuffle_list instead, because we have multiple motions running in order, but .motion_shuffle_list_default can be shuffled.
+    MMD_SA_options._motion_shuffle_list = [MMD_SA_options.motion_index_by_name["r01_普通に転ぶ"], MMD_SA_options.motion_index_by_name["OTL→立ち上がり"]]
+    MMD_SA_options.motion_shuffle_list_default = null
+    MMD_SA._force_motion_shuffle = true
+  }
+  else {
+    return
+  }
+*/
+    d.sound.audio_object_by_name["hit-3"].play(model_mesh)
+  }
+});
+
+});
+
 //console.log(ground,material)
   });
 
