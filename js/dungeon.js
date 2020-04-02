@@ -7939,6 +7939,26 @@ if (!this.motion["PC fall on ass"]) {
  ,onended: function () {
 MMD_SA._ignore_physics_reset=true; MMD_SA._no_fading=true;
   }
+
+ ,freeze_onended: true
+ ,onplaying: function (model_index) {
+var mm = MMD_SA.MMD.motionManager
+var model = THREE.MMD.getModels()[model_index]
+if (model.skin.time > mm._timeMax) {
+  if (MMD_SA_options.WebXR) {
+    let dis = MMD_SA._v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(MMD_SA._v3b.copy(THREE.MMD.getModels()[0].mesh.position).setY(0))/10;
+    if (dis < 2)
+      return
+  }
+}
+else {
+  return
+}
+// cannot use MMD_SA._force_motion_shuffle here
+// will trigger .onended afterwards
+model.skin.time = mm.lastFrame_/30;
+  }
+
  ,adjustment_per_model: {
     _default_ : {
   morph_default: {"瞳小": { weight_scale:0.75 }}
