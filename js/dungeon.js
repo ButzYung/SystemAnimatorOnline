@@ -7936,11 +7936,11 @@ if (!this.motion["PC fall on ass"]) {
   adjust_center_view_disabled:true, get look_at_screen_ratio() { var t=THREE.MMD.getModels()[0].skin.time; return ((t>1)?0:1-t); }
  ,super_armor: { level:99 }
  ,SFX: [ { frame:21, sound:{} } ]
- ,auto_blink: false
  ,onended: function () {
 MMD_SA._ignore_physics_reset=true; MMD_SA._no_fading=true;
   }
 
+ ,auto_blink: false
  ,freeze_onended: true
  ,onplaying: function (model_index) {
 var mm = MMD_SA.MMD.motionManager
@@ -8011,6 +8011,27 @@ if (!this.motion["PC fall from trip"]) {
      ,onended: function () {
 MMD_SA._ignore_physics_reset=true; MMD_SA._no_fading=true;
       }
+
+ ,auto_blink: false
+ ,freeze_onended: true
+ ,onplaying: function (model_index) {
+var mm = MMD_SA.MMD.motionManager
+var model = THREE.MMD.getModels()[model_index]
+if (model.skin.time > mm._timeMax) {
+  if (MMD_SA_options.WebXR) {
+    let dis = MMD_SA._v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(MMD_SA._v3b.copy(THREE.MMD.getModels()[0].mesh.position).setY(0))/10;
+    if (dis < 2)
+      return
+  }
+}
+else {
+  return
+}
+// cannot use MMD_SA._force_motion_shuffle here
+// will trigger .onended afterwards
+model.skin.time = mm.lastFrame_/30;
+  }
+
      ,adjustment_per_model: {
         _default_ : {
       skin_default: {
