@@ -1699,6 +1699,7 @@ window.addEventListener("SA_Dungeon_onstart", function () {
 
 let v3a = new THREE.Vector3()
 let v3b = new THREE.Vector3()
+let v3c = new THREE.Vector3()
 
 let _camera_position = new THREE.Vector3()
 let _timestamp
@@ -1714,16 +1715,21 @@ window.addEventListener("SA_MMD_model0_onmotionplaying", function (e) {
 
   var d = MMD_SA_options.Dungeon;
   var dis = v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(v3b.copy(model_mesh.position).setY(0))/10 / MMD_SA.WebXR.zoom_scale;
-  var speed = 0
+  var speed = 0, cam_mov;
   if (_camera_position) {
-    speed = (_camera_position.distanceTo(v3a)/10 / MMD_SA.WebXR.zoom_scale) / ((RAF_timestamp - _timestamp)/1000)
+    speed = (_camera_position.distanceTo(v3a)/10 / MMD_SA.WebXR.zoom_scale) / ((RAF_timestamp - _timestamp)/1000);
 //DEBUG_show(speed)
+    cam_mov = v3c.copy(_camera_position).sub(v3a);
   }
+
   _camera_position.copy(v3a)
   _timestamp = RAF_timestamp
 
-  if ((dis > 0.75) || (speed < 1))
-    return
+  if ((dis > 0.75) || (speed < 1)) return;
+
+  var cam_dir = v3a.sub(v3b)
+//  speed && cam_mov && DEBUG_show(cam_mov.angleTo(cam_dir));return;
+  if (Math.abs(cam_mov.angleTo(cam_dir)) > Math.PI/4) return;
 
   if (MMD_SA_options.WebXR.AR._wallhit) {
     MMD_SA_options._motion_shuffle_list = [MMD_SA_options.motion_index_by_name["emote-mod_おどろく1"]]
@@ -1733,9 +1739,7 @@ window.addEventListener("SA_MMD_model0_onmotionplaying", function (e) {
     return
   }
 
-  v3a.sub(v3b)
-  let angle_y = Math.atan2(v3a.x,v3a.z) - v3a.setEulerFromQuaternion(model_mesh.quaternion).y
-//  DEBUG_show(angle_y)
+  var angle_y = Math.atan2(cam_dir.x,cam_dir.z) - v3b.setEulerFromQuaternion(model_mesh.quaternion).y
 
   if (Math.abs(angle_y) < Math.PI/2) {
     // use ._motion_shuffle_list instead, because we have multiple motions running in order, but .motion_shuffle_list_default can be shuffled.
