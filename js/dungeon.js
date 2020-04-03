@@ -7947,7 +7947,7 @@ var mm = MMD_SA.MMD.motionManager
 var model = THREE.MMD.getModels()[model_index]
 if (model.skin.time > mm._timeMax) {
   if (MMD_SA_options.WebXR) {
-    let dis = MMD_SA._v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(MMD_SA._v3b.copy(THREE.MMD.getModels()[0].mesh.position).setY(0))/10;
+    let dis = MMD_SA._v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(MMD_SA._v3b.copy(THREE.MMD.getModels()[0].mesh.position).setY(0))/10 / MMD_SA.WebXR.zoom_scale;
     if (dis < 2)
       return
   }
@@ -8019,7 +8019,7 @@ var mm = MMD_SA.MMD.motionManager
 var model = THREE.MMD.getModels()[model_index]
 if (model.skin.time > mm._timeMax) {
   if (MMD_SA_options.WebXR) {
-    let dis = MMD_SA._v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(MMD_SA._v3b.copy(THREE.MMD.getModels()[0].mesh.position).setY(0))/10;
+    let dis = MMD_SA._v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(MMD_SA._v3b.copy(THREE.MMD.getModels()[0].mesh.position).setY(0))/10 / MMD_SA.WebXR.zoom_scale;
     if (dis < 2)
       return
   }
