@@ -4719,8 +4719,7 @@ jThree("#MMD_DirLight").three(0).position.copy(this.light_position_base)
 this.input_event = { inputSources:[], touches:[] }
 
 var model_mesh = THREE.MMD.getModels()[0].mesh
-if (!model_mesh.visible)
-  this.restore_scene()
+this.restore_scene()
 this.XR_objects_by_id = null
 
 model_mesh.position.y = 0
