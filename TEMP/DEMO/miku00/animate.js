@@ -160,6 +160,8 @@ var MMD_SA_options = {
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_すねる2.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_よろめく1.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_よろめく2.vmd' }
+
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_おどろく1.vmd' }
   ]
 
 
@@ -1057,6 +1059,35 @@ if (model.skin.time > mm._timeMax) {
 ]
     }
 
+   ,"emote-mod_おどろく1": {
+  onended: function (loop_end) {
+MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
+MMD_SA_options.motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["standmix2_modified"]]
+  }
+
+ ,onplaying: function (model_index) {
+var mm = MMD_SA.MMD.motionManager
+var model = THREE.MMD.getModels()[model_index]
+if (model.skin.time > 1) {
+  if (MMD_SA._v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(MMD_SA._v3b.copy(model.mesh.position).setY(0))/10 < 2) {
+    model.skin.time = 1
+    model.morph.time = 1
+  }
+}
+  }
+
+ ,auto_blink: false//true
+ ,adjust_center_view_disabled: true
+/*
+ ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
+,look_at_screen_bone_list: [
+  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+ ,{ name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
+]
+*/
+    }
 
   }
 
@@ -1130,6 +1161,9 @@ if (!model_mesh.visible) {
   return true
 }
 
+this._groundhit = false
+this._wallhit = true
+
 var adult_mode = this._adult_mode
 e.detail.result.update_obj = function (model_mesh, first_call) {
   var xr = MMD_SA.WebXR
@@ -1149,7 +1183,7 @@ e.detail.result.update_obj = function (model_mesh, first_call) {
   }
   else {
 // anchor offset away from the wall (x,z)
-    xr.hitMatrix_anchor.decomposed[0].add(axis.clone().multiplyScalar(1/3).setY(0));
+    xr.hitMatrix_anchor.decomposed[0].add(axis.clone().multiplyScalar(0.25).setY(0));
   }
 
 // save some headache and always put the reference anchor on the ground
@@ -1158,6 +1192,9 @@ e.detail.result.update_obj = function (model_mesh, first_call) {
       }
 
      ,ongroundhit: function (e) {
+this._groundhit = true
+this._wallhit = false
+
 //DEBUG_show(9,0,1);return;
 var model_mesh = THREE.MMD.getModels()[0].mesh
 model_mesh.position.y = 0
@@ -1486,7 +1523,7 @@ MMD_SA._force_motion_shuffle = true
     ]
   }
 
- ,grid_size: 64*3
+ ,grid_size: 64*10
 
  ,floor_material_index_default: -1
  ,wall_material_index_default: -1
@@ -1663,7 +1700,8 @@ window.addEventListener("SA_Dungeon_onstart", function () {
 let v3a = new THREE.Vector3()
 let v3b = new THREE.Vector3()
 
-let _camera_position, _timestamp
+let _camera_position = new THREE.Vector3()
+let _timestamp
 
 window.addEventListener("SA_MMD_model0_onmotionplaying", function (e) {
   var model_mesh = THREE.MMD.getModels()[0].mesh
@@ -1675,35 +1713,43 @@ window.addEventListener("SA_MMD_model0_onmotionplaying", function (e) {
     return
 
   var d = MMD_SA_options.Dungeon;
-  var dis = v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(v3b.copy(THREE.MMD.getModels()[0].mesh.position).setY(0))/10;
+  var dis = v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(v3b.copy(model_mesh.position).setY(0))/10;
   var speed = 0
   if (_camera_position) {
     speed = (_camera_position.distanceTo(v3a)/10) / ((RAF_timestamp - _timestamp)/1000)
 //DEBUG_show(speed)
   }
-  _camera_position = v3a.clone()
+  _camera_position.copy(v3a)
   _timestamp = RAF_timestamp
 
-  if ((dis < 0.5) && (speed > 1)) {
+  if ((dis > 0.5) || (speed < 1))
+    return
+
+  if (MMD_SA_options.WebXR.AR._wallhit) {
+    MMD_SA_options.motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["emote-mod_おどろく1"]]
+    MMD_SA._force_motion_shuffle = true
+    d.sound.audio_object_by_name["anime_wow"].play(model_mesh)
+    return
+  }
+
+  v3a.sub(v3b)
+  let angle_y = Math.atan2(v3a.x,v3a.z) - v3a.setEulerFromQuaternion(model_mesh.quaternion).y
+//  DEBUG_show(angle_y)
+
+  if (Math.abs(angle_y) < Math.PI/2) {
     // use ._motion_shuffle_list instead, because we have multiple motions running in order, but .motion_shuffle_list_default can be shuffled.
     MMD_SA_options._motion_shuffle_list = [MMD_SA_options.motion_index_by_name["w01_すべって尻もち"], MMD_SA_options.motion_index_by_name["女の子座り→立ち上がる_gumi_v01"]]
     MMD_SA_options.motion_shuffle_list_default = null
     MMD_SA._force_motion_shuffle = true
-/*
-  else if (moving) {
-    MMD_SA._hit_legs_ = true
-    d.character_movement_disabled = true
+  }
+  else {
     // use ._motion_shuffle_list instead, because we have multiple motions running in order, but .motion_shuffle_list_default can be shuffled.
     MMD_SA_options._motion_shuffle_list = [MMD_SA_options.motion_index_by_name["r01_普通に転ぶ"], MMD_SA_options.motion_index_by_name["OTL→立ち上がり"]]
     MMD_SA_options.motion_shuffle_list_default = null
     MMD_SA._force_motion_shuffle = true
   }
-  else {
-    return
-  }
-*/
-    d.sound.audio_object_by_name["hit-3"].play(model_mesh)
-  }
+
+  d.sound.audio_object_by_name["hit-3"].play(model_mesh)
 });
 
 });
