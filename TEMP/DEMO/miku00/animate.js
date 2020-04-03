@@ -1069,7 +1069,7 @@ MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list
 var mm = MMD_SA.MMD.motionManager
 var model = THREE.MMD.getModels()[model_index]
 if (model.skin.time > 1) {
-  if (MMD_SA._v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(MMD_SA._v3b.copy(model.mesh.position).setY(0))/10 < 2) {
+  if (MMD_SA._v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(MMD_SA._v3b.copy(model.mesh.position).setY(0))/10 / MMD_SA.WebXR.zoom_scale < 2) {
     model.skin.time = 1
     model.morph.time = 1
   }
@@ -1460,7 +1460,7 @@ this._social_distance_check(999,999)
 //   ,anytime: true
 
    ,_social_distance: function () {
-return v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(v3b.copy(THREE.MMD.getModels()[0].mesh.position).setY(0))/10 / MMD_SA.WebXR.zoom_scale
+return v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(v3b.copy(THREE.MMD.getModels()[0].mesh.position).setY(0))/10 / MMD_SA.WebXR.zoom_scale;
     }
 
    ,_social_distance_check: function (min, max) {
@@ -1713,10 +1713,10 @@ window.addEventListener("SA_MMD_model0_onmotionplaying", function (e) {
     return
 
   var d = MMD_SA_options.Dungeon;
-  var dis = v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(v3b.copy(model_mesh.position).setY(0))/10;
+  var dis = v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(v3b.copy(model_mesh.position).setY(0))/10 / MMD_SA.WebXR.zoom_scale;
   var speed = 0
   if (_camera_position) {
-    speed = (_camera_position.distanceTo(v3a)/10) / ((RAF_timestamp - _timestamp)/1000)
+    speed = (_camera_position.distanceTo(v3a)/10 / MMD_SA.WebXR.zoom_scale) / ((RAF_timestamp - _timestamp)/1000)
 //DEBUG_show(speed)
   }
   _camera_position.copy(v3a)
