@@ -1062,7 +1062,7 @@ if (model.skin.time > mm._timeMax) {
    ,"emote-mod_おどろく1": {
   onended: function (loop_end) {
 MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
-MMD_SA_options.motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["standmix2_modified"]]
+MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice();
   }
 
  ,onplaying: function (model_index) {
@@ -1726,7 +1726,8 @@ window.addEventListener("SA_MMD_model0_onmotionplaying", function (e) {
     return
 
   if (MMD_SA_options.WebXR.AR._wallhit) {
-    MMD_SA_options.motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["emote-mod_おどろく1"]]
+    MMD_SA_options._motion_shuffle_list = [MMD_SA_options.motion_index_by_name["emote-mod_おどろく1"]]
+    MMD_SA_options.motion_shuffle_list_default = null
     MMD_SA._force_motion_shuffle = true
     d.sound.audio_object_by_name["anime_wow"].play(model_mesh)
     return
