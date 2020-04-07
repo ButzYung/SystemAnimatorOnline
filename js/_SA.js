@@ -2244,7 +2244,7 @@ if (fullscreen) {
       ls.posTop  = Math.min(B_content_height, screen.availHeight) - 24
     }
 
-    ls.pixelWidth = (18*qmb_count+2)
+    ls.pixelWidth = (18*((is_mobile)?2:1)*qmb_count+2)
 
     if (is_mobile) {
       Lquick_menu.style.transform = Idialog.style.transform = "scale(" + (System._browser.css_scale*2) + ")"

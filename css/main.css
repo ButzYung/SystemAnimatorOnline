@@ -28,7 +28,7 @@ body {
 }
 
 .QuickMenu_button {
-  position:absolute; width:18px; height:18px; top:0px;
+  position:absolute; width:18px; height:18px; top:0px; text-align:center;
   font-size:14px;
 }
 
