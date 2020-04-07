@@ -464,7 +464,7 @@ function SA_load_body() {
 + ' <div style="position:absolute; top:1px; left:1px">\n'
 + '  <div id="Lquick_menu_close_button" class="QuickMenu_button" style="left:' + ((is_mobile)?'0px;width:36px;':'0px') + '" onclick="System._browser.confirmClose(true)" title="Close">\n'
 //+ '   <img src="images/icon_closing.png" class="QuickMenu_image" />\n'
-+ '<span>❌</span>'
++ '<span>' + ((is_mobile)?'⟳':'❌') + '</span>'
 + '  </div>\n'
 + '  <div id="Lquick_menu_settings_button" class="QuickMenu_button" style="left:' + ((is_mobile)?'36px;width:36px;':'18px') + '" onclick="System._browser.onSettings()" title="Settings">\n'
 //+ '   <img src="images/icon_setting.png" class="QuickMenu_image" />\n'
