@@ -1147,9 +1147,10 @@ if (model.skin.time > 1) {
 
  ,use_speech_bubble: true
  ,onstart: function () {
-setTimeout(function () {MMD_SA.SpeechBubble.message(0, "Welcome to the world of System Animator~! ^o^", 4*1000)}, (2)*1000)
-setTimeout(function () {MMD_SA.SpeechBubble.message(0, "Drag with the left mouse button to move camera~!", 4*1000)}, (2+5)*1000)
-setTimeout(function () {MMD_SA.SpeechBubble.message(0, ((WallpaperEngine_mode) ? "Give" : "Drop") + " me a MP3 and I\'ll dance for you~! ^o^", 4*1000)}, (2+10)*1000)
+var d = MMD_SA_options.Dungeon
+setTimeout(function () {if (!d || !d.event_mode) MMD_SA.SpeechBubble.message(0, "Welcome to the world of System Animator~! ^o^", 4*1000)}, (2)*1000)
+setTimeout(function () {if (!d || !d.event_mode) MMD_SA.SpeechBubble.message(0, "Drag with the left mouse button to move camera~!", 4*1000)}, (2+5)*1000)
+setTimeout(function () {if (!d || !d.event_mode) MMD_SA.SpeechBubble.message(0, ((WallpaperEngine_mode) ? "Give" : "Drop") + " me a MP3 and I\'ll dance for you~! ^o^", 4*1000)}, (2+10)*1000)
   }
 
  ,WebXR: {
@@ -1430,9 +1431,16 @@ v3b = new THREE.Vector3()
 var model_mesh = THREE.MMD.getModels()[0].mesh
 if (!model_mesh.visible)
   return true
+
+var d = MMD_SA_options.Dungeon
+if (d.event_mode && !social_distancing_started)
+  return true
+
 if (social_distancing_started) {
   if (MMD_SA.WebXR._circle_2m && MMD_SA.WebXR._circle_2m.visible) {
-    MMD_SA_options.Dungeon.run_event("circle_2m_hide")
+    d.run_event("circle_2m_hide")
+    d._states.dialogue_mode = true
+
     DEBUG_show("Social distancing:ON / Circle:OFF", 2)
   }
   else {
@@ -1452,12 +1460,14 @@ if (!/standmix2_modified/.test(MMD_SA.MMD.motionManager.filename))
 
 social_distancing_started = true
 
-MMD_SA_options.Dungeon.run_event("circle_2m_show")
+d.run_event("circle_2m_show")
+d._states.dialogue_mode = true
+
 DEBUG_show("Social distancing:ON / Circle:ON", 2)
 
 this._social_distance_check(999,999)
     }
-//   ,anytime: true
+   ,anytime: true
 
    ,_social_distance: function () {
 return v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(v3b.copy(THREE.MMD.getModels()[0].mesh.position).setY(0))/10 / MMD_SA.WebXR.zoom_scale;
