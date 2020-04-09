@@ -4562,7 +4562,7 @@ this.gl = this.renderer.getContext();
 
 try {
   await this.gl.makeXRCompatible();
-  session.updateRenderState({ baseLayer: new XRWebGLLayer(session, this.gl, {framebufferScaleFactor:0.25} ) });
+  session.updateRenderState({ baseLayer: new XRWebGLLayer(session, this.gl /*,{framebufferScaleFactor:0.25}*/ ) });
   this.frameOfRef = await session.requestReferenceSpace('local');
   this.frameOfRef_viewer = await session.requestReferenceSpace('viewer');
 }
