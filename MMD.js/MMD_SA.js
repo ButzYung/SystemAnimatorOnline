@@ -4281,6 +4281,7 @@ if (first_call) {
       }
 
       return function (e) {
+const AR_options = MMD_SA_options.WebXR.AR;
 if (xr.reticle.visible) {
   e.detail.result.return_value = true
 
@@ -4292,19 +4293,19 @@ if (xr.reticle.visible) {
 
   if (Math.abs(axis.y) < 0.5) {
 //DEBUG_show("wall hit",0,1)
-    if (!MMD_SA_options.WebXR.AR.onwallhit) {
+    if (!AR_options.onwallhit) {
       DEBUG_show("(Model cannot be placed here.)", 3)
       return
     }
-    if (MMD_SA_options.WebXR.AR.onwallhit(e)) {
+    if (AR_options.onwallhit(e)) {
       return
     }
     update_obj = e.detail.result.update_obj
   }
   else {
 //DEBUG_show("ground hit",0,1)
-    if (MMD_SA_options.WebXR.AR.ongroundhit) {
-      if (MMD_SA_options.WebXR.AR.ongroundhit(e)) {
+    if (AR_options.ongroundhit) {
+      if (AR_options.ongroundhit(e)) {
         return
       }
       update_obj = e.detail.result.update_obj
@@ -4434,13 +4435,13 @@ if (this.session) {
   return
 }
 
-let use_dom_overlay// = true
+const AR_options = MMD_SA_options.WebXR.AR;
 try {
 // https://immersive-web.github.io/dom-overlays/
 // https://klausw.github.io/three.js/examples/webvr_lorenzattractor.html
   let options = (xr.can_requestHitTestSource) ? {requiredFeatures:["hit-test"]} : {};
-  if (use_dom_overlay) {
-    options.domOverlay = {root:document.body};
+  if (AR_options.dom_overlay) {
+    options.domOverlay = {root:AR_options.dom_overlay.root||document.body};
     options.optionalFeatures = ["dom-overlay","dom-overlay-for-handheld-ar"];//,"xr-global-light-estimation"
   }
   const session = await navigator.xr.requestSession('immersive-ar', options);
@@ -4454,7 +4455,7 @@ catch (err) {
   try {
 // for Chrome 80
     let options = {};
-    if (use_dom_overlay) {
+    if (AR_options.dom_overlay) {
       options.optionalFeatures = ["dom-overlay","dom-overlay-for-handheld-ar"];//,"xr-global-light-estimation"
     }
     const session = await navigator.xr.requestSession('immersive-ar', options);
@@ -4486,6 +4487,8 @@ window.dispatchEvent(new CustomEvent("SA_AR_zoom_scale_update"));
  ,xrTransientInputHitTestSource: null
  ,onSessionStart: async function (session) {
 this.session = session
+
+const AR_options = MMD_SA_options.WebXR.AR;
 
 session.addEventListener('end', this.onSessionEnd);
 
@@ -4617,10 +4620,12 @@ if (xr.ground_plane)
     }
   });
 
-  document.body.addEventListener('beforexrselect', (ev) => {
-    ev.preventDefault();
-    xr.is_dom_overlay_activated = true
-  });
+  if (AR_options.dom_overlay) {
+    document.body.addEventListener('beforexrselect', (ev) => {
+      ev.preventDefault();
+      xr.is_dom_overlay_activated = true
+    });
+  }
 }
 this.reticle.visible = false
 
