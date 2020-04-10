@@ -1155,7 +1155,9 @@ setTimeout(function () {if (!d || !d.event_mode) MMD_SA.SpeechBubble.message(0, 
 
  ,WebXR: {
     AR: {
-      onwallhit: function (e) {
+      dom_overlay: {}
+
+     ,onwallhit: function (e) {
 var model_mesh = THREE.MMD.getModels()[0].mesh
 if (!model_mesh.visible) {
   DEBUG_show("(Place the model on the ground first.)", 3)
