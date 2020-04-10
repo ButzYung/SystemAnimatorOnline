@@ -1155,7 +1155,7 @@ setTimeout(function () {if (!d || !d.event_mode) MMD_SA.SpeechBubble.message(0, 
 
  ,WebXR: {
     AR: {
-      dom_overlay: null// {}
+      dom_overlay: {}
 
      ,onwallhit: function (e) {
 var model_mesh = THREE.MMD.getModels()[0].mesh
