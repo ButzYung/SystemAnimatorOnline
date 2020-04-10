@@ -4437,8 +4437,9 @@ if (this.session) {
 try {
 // https://immersive-web.github.io/dom-overlays/
 // https://klausw.github.io/three.js/examples/webvr_lorenzattractor.html
-  let options = (xr.can_requestHitTestSource) ? {requiredFeatures:["hit-test"], domOverlay:{root: document.body}} : {};
-  options.optionalFeatures = ["dom-overlay","dom-overlay-for-handheld-ar"];//,"xr-global-light-estimation"
+  let use_dom_overlay// = true
+  let options = (xr.can_requestHitTestSource) ? {requiredFeatures:["hit-test"], domOverlay:(use_dom_overlay)?{root: document.body}:null} : {};
+  options.optionalFeatures = (use_dom_overlay) ? ["dom-overlay","dom-overlay-for-handheld-ar"] : null;//,"xr-global-light-estimation"
   const session = await navigator.xr.requestSession('immersive-ar', options);
 
   this.onSessionStart(session)
@@ -4682,7 +4683,7 @@ MMD_SA.scene.__objects.forEach(function (obj) {
 });
 MMD_SA.SpeechBubble.hide();
 System._browser.on_animation_update.add(function () {
-//  document.getElementById("SL_Host").style.visibility = "visible"
+  document.getElementById("SL_Host").style.visibility = "visible"
 },0,0);
   }
 
