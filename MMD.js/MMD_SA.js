@@ -4682,7 +4682,7 @@ MMD_SA.scene.__objects.forEach(function (obj) {
 });
 MMD_SA.SpeechBubble.hide();
 System._browser.on_animation_update.add(function () {
-  document.getElementById("SL_Host").style.visibility = "visible"
+//  document.getElementById("SL_Host").style.visibility = "visible"
 },0,0);
   }
 
