@@ -4268,6 +4268,11 @@ return drop_list
 
     window.addEventListener("MMDStarted", function () {
       _camera = MMD_SA._trackball_camera.object.clone()
+
+      var AR_options = MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR;
+      if (AR_options && AR_options.dom_overlay) {
+        AR_options.dom_overlay.root = (AR_options.dom_overlay.root && document.getElementById(AR_options.dom_overlay.root)) || document.body;
+      }
     });
 
     window.addEventListener("SA_AR_dblclick", (function () {
@@ -4441,7 +4446,7 @@ try {
 // https://klausw.github.io/three.js/examples/webvr_lorenzattractor.html
   let options = (xr.can_requestHitTestSource) ? {requiredFeatures:["hit-test"]} : {};
   if (AR_options.dom_overlay) {
-    options.domOverlay = {root:AR_options.dom_overlay.root||document.body};
+    options.domOverlay = {root:AR_options.dom_overlay.root};
     options.optionalFeatures = ["dom-overlay","dom-overlay-for-handheld-ar"];//,"xr-global-light-estimation"
   }
   const session = await navigator.xr.requestSession('immersive-ar', options);
