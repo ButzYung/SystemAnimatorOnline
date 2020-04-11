@@ -4329,7 +4329,7 @@ if (xr.reticle.visible) {
     update_obj = update_obj_default
   update_obj(model_mesh, true)
 
-  if (xr.can_requestHitTestSource && xr.hit_active.createAnchor) {
+  if (0&&xr.can_requestHitTestSource && xr.hit_active.createAnchor) {
     try {
 xr.hit_active.createAnchor(new XRRigidTransform()).then(function (anchor) {
 //  DEBUG_show("anchor created")
