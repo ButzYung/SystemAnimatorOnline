@@ -3,13 +3,14 @@
 //https://github.com/kripken/ammo.js/issues/36
 var memory_size = (/memory_size\=(\d+)/i.test(location.search) && parseInt(RegExp.$1)) || 1;
 var Module, ammo_path;
-if (memory_size <= 2) {
+if (/^(file|https)/i.test(location.protocol) && (memory_size <= 2)) {
   ammo_path = "__ammo_v20200227.wasm.js";
 }
 else {
   Module = { TOTAL_MEMORY:67108864*memory_size };//{ TOTAL_MEMORY:52428800*2 };//
   ammo_path = "__ammo_v20200227.js";//"ammo.js";//
 }
+console.log(ammo_path)
 
 importScripts(ammo_path);
 
