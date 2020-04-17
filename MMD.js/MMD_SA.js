@@ -2423,14 +2423,13 @@ if ((msg.length > column_max) && ((para.auto_wrap || b.auto_wrap) || (msg.indexO
     }
 
     end = Math.min(msg.length-ini, char_count)
-    var line = msg.substr(ini, end)
+    var line = msg.substr(ini, end).replace(/^\n+/, "")
     if (/(\n+)/.test(line)) {
       var break_index = line.indexOf(RegExp.$1)
-      if (break_index > 0) {
-        msg_line[i] = msg.substr(ini, break_index)
-        ini += break_index + RegExp.$1.length
-        continue
-      }
+//DEBUG_show(break_index,0,1)
+      msg_line[i] = msg.substr(ini, break_index)
+      ini += break_index + RegExp.$1.length
+      continue
     }
     if (/^(\s)/.test(line)) {
       var s_length = RegExp.$1.length
@@ -4445,7 +4444,7 @@ try {
 // https://immersive-web.github.io/dom-overlays/
 // https://klausw.github.io/three.js/examples/webvr_lorenzattractor.html
   let options = (xr.can_requestHitTestSource) ? {requiredFeatures:["hit-test"]} : {};
-  if (AR_options.dom_overlay) {
+  if (AR_options.dom_overlay && (AR_options.dom_overlay.enabled !== false)) {
     options.domOverlay = {root:AR_options.dom_overlay.root};
     options.optionalFeatures = ["dom-overlay","dom-overlay-for-handheld-ar"];//,"xr-global-light-estimation"
   }
@@ -4460,7 +4459,7 @@ catch (err) {
   try {
 // for Chrome 80
     let options = {};
-    if (AR_options.dom_overlay) {
+    if (AR_options.dom_overlay && (AR_options.dom_overlay.enabled !== false)) {
       options.optionalFeatures = ["dom-overlay","dom-overlay-for-handheld-ar"];//,"xr-global-light-estimation"
     }
     const session = await navigator.xr.requestSession('immersive-ar', options);
@@ -4625,7 +4624,7 @@ if (xr.ground_plane)
     }
   });
 
-  if (AR_options.dom_overlay) {
+  if (AR_options.dom_overlay && (AR_options.dom_overlay.enabled !== false)) {
     document.body.addEventListener('beforexrselect', (ev) => {
       ev.preventDefault();
       xr.is_dom_overlay_activated = true
