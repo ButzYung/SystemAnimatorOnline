@@ -2797,7 +2797,7 @@ THREE.MMD.getModels()[0].resetMotion()
 MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice()
 MMD_SA._force_motion_shuffle = true
 //console.log(MMD_SA_options.motion_shuffle_list_default)
-this.shadow_camera_width = options.shadow_camera_width || 64*4
+this.shadow_camera_width = options.shadow_camera_width || options_base.shadow_camera_width || 64*4
 this.update_shadow_para()
 
 //console.log(d.object_base_list.filter(function (obj_base) { return obj_base.cache.reusable_list.some(function (idx) { return obj_base.cache.list[idx].visible; }); }))
@@ -10215,8 +10215,8 @@ if (s.auto_damage && !s.dialogue_mode) {
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:1 }
-   ,{ key:2, branch_index:99 }
-   ,{ key:3, branch_index:6 }
+   ,{ key:2, branch_index:6 }
+   ,{ key:3, branch_index:8 }
    ,{ key:4 }
   ]
           }
@@ -10298,6 +10298,32 @@ System._browser.update_tray()
 // 6
      ,[
         {
+          message: {
+  content: "1. Shadow\n2. Cancel"
+ ,bubble_index: 3
+ ,branch_list: [
+    { key:1, branch_index:6+1 }
+   ,{ key:2 }
+  ]
+          }
+        }
+      ]
+// 7
+     ,[
+        {
+  func: function () {
+MMD_SA_options.use_shadowMap = !MMD_SA_options.use_shadowMap
+MMD_SA.toggle_shadowMap()
+DEBUG_show("Shadow:" + ((MMD_SA_options.use_shadowMap && "ON")||"OFF"), 3)
+  }
+ ,ended: true
+        }
+      ]
+
+
+// 8
+     ,[
+        {
           goto_event: { id:"_WEBXR_OPTIONS_", branch_index:0 }
         }
       ]
@@ -10309,11 +10335,15 @@ System._browser.update_tray()
       [
         {
           message: {
-  content: "1. DOM Overlay\n2. Cancel"
+  content: "1. DOM Overlay\n2. Light Estimation\n3. Anchors\n4. Framebuffer Scale\n5. Check Status\n6. Cancel"
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:1 }
-   ,{ key:2 }
+   ,{ key:2, branch_index:2 }
+   ,{ key:3, branch_index:3 }
+   ,{ key:4, branch_index:4 }
+   ,{ key:5, branch_index:8 }
+   ,{ key:6 }
   ]
           }
         }
@@ -10327,19 +10357,154 @@ if (!AR_options || !AR_options.dom_overlay) {
   DEBUG_show("(No WebXR mode available)", 3)
   return
 }
-
 var xr = MMD_SA.WebXR;
 if (xr.session) {
   DEBUG_show("(This option cannot be changed during WebXR mode.)", 3)
   return
 }
 
-AR_options.dom_overlay.enabled = !AR_options.dom_overlay.enabled;
+AR_options.dom_overlay.enabled = (AR_options.dom_overlay.enabled !== false) ? false : true;
 DEBUG_show("DOM Overlay:" + ((AR_options.dom_overlay.enabled && "ON")||"OFF"), 3)
   }
  ,ended: true
         }
       ]
+// 2
+     ,[
+        {
+  func: function () {
+var AR_options = MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR;
+if (!AR_options) {
+  DEBUG_show("(No WebXR mode available)", 3)
+  return
+}
+var xr = MMD_SA.WebXR;
+if (xr.session) {
+  DEBUG_show("(This option cannot be changed during WebXR mode.)", 3)
+  return
+}
+
+AR_options.light_estimation_enabled = (AR_options.light_estimation_enabled !== false) ? false : true;
+DEBUG_show("Light Estimation:" + ((AR_options.light_estimation_enabled && "ON")||"OFF"), 3)
+  }
+ ,ended: true
+        }
+      ]
+// 3
+     ,[
+        {
+  func: function () {
+var AR_options = MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR;
+if (!AR_options) {
+  DEBUG_show("(No WebXR mode available)", 3)
+  return
+}
+var xr = MMD_SA.WebXR;
+if (xr.session) {
+  DEBUG_show("(This option cannot be changed during WebXR mode.)", 3)
+  return
+}
+
+AR_options.anchors_enabled = (AR_options.anchors_enabled !== false) ? false : true;
+DEBUG_show("Anchors:" + ((AR_options.anchors_enabled && "ON")||"OFF"), 3)
+  }
+ ,ended: true
+        }
+      ]
+// 4
+     ,[
+        {
+          message: {
+  content: "1. Default\n2. x0.5\n3. x0.25\n4. Cancel"
+ ,bubble_index: 3
+ ,branch_list: [
+    { key:1, branch_index:4+1 }
+   ,{ key:2, branch_index:4+2 }
+   ,{ key:3, branch_index:4+3 }
+   ,{ key:4 }
+  ]
+          }
+        }
+      ]
+// 5
+     ,[
+        {
+  func: function () {
+var AR_options = MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR;
+if (!AR_options) {
+  DEBUG_show("(No WebXR mode available)", 3)
+  return
+}
+var xr = MMD_SA.WebXR;
+if (xr.session) {
+  DEBUG_show("(This option cannot be changed during WebXR mode.)", 3)
+  return
+}
+
+AR_options.framebufferScaleFactor = 0;
+DEBUG_show("Framebuffer Scale:x" + (System._browser.url_search_params.xr_fb_scale||1), 3)
+  }
+ ,ended: true
+        }
+      ]
+// 6
+     ,[
+        {
+  func: function () {
+var AR_options = MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR;
+if (!AR_options) {
+  DEBUG_show("(No WebXR mode available)", 3)
+  return
+}
+var xr = MMD_SA.WebXR;
+if (xr.session) {
+  DEBUG_show("(This option cannot be changed during WebXR mode.)", 3)
+  return
+}
+
+AR_options.framebufferScaleFactor = 0.5;
+DEBUG_show("Framebuffer Scale:x0.5", 3)
+  }
+ ,ended: true
+        }
+      ]
+// 7
+     ,[
+        {
+  func: function () {
+var AR_options = MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR;
+if (!AR_options) {
+  DEBUG_show("(No WebXR mode available)", 3)
+  return
+}
+var xr = MMD_SA.WebXR;
+if (xr.session) {
+  DEBUG_show("(This option cannot be changed during WebXR mode.)", 3)
+  return
+}
+
+AR_options.framebufferScaleFactor = 0.25;
+DEBUG_show("Framebuffer Scale:x0.25", 3)
+  }
+ ,ended: true
+        }
+      ]
+// 8
+     ,[
+        {
+          message: {
+  content: "1. DOM Overlay:{{(!self.XRSession||XRSession.prototype.domOverlayState)?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.dom_overlay && MMD_SA_options.WebXR.AR.dom_overlay.enabled!=false && 'ON')||'OFF')}}\n2. Light Estimation:{{(!self.XRSession||XRSession.prototype.updateWorldTrackingState)?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.light_estimation_enabled!=false && 'ON')||'OFF')}}\n3. Anchors:{{(!self.XRHitTestResult||XRHitTestResult.prototype.createAnchor)?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.anchors_enabled!=false && 'ON')||'OFF')}}\n4. Framebuffer Scale:x{{((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.framebufferScaleFactor)||System._browser.url_search_params.xr_fb_scale||1)}}"
+ ,bubble_index: 3
+          }
+        }
+      ]
+// 9
+     ,[
+        {
+  ended: true
+        }
+      ]
+
     ]
 
    ,"_onplayerdefeated_default_": [
