@@ -1255,6 +1255,8 @@ MMD_SA_options.Dungeon_options = {
 
  ,use_point_light: false
 
+ ,shadow_camera_width: 32
+
 // ,grid_material_list: []
 
  ,object_base_list: [
@@ -1693,6 +1695,12 @@ wall.useQuaternion = true
 wall.receiveShadow = true;
 wall.receiveShadowAlpha = true;
 MMD_SA.scene.add(wall)
+
+window.addEventListener("SA_MMD_toggle_shadowMap", function () {
+  ground.receiveShadow = wall.receiveShadow = ground.receiveShadowAlpha = wall.receiveShadowAlpha = MMD_SA_options.use_shadowMap
+  material.opacity = (MMD_SA_options.use_shadowMap) ? 0.5 : 0
+  material.needsUpdate = true
+});
 
 // can be updated only AFTER scene.add
 wall.visible = false
