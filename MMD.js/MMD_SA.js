@@ -4328,7 +4328,7 @@ if (xr.reticle.visible) {
     update_obj = update_obj_default
   update_obj(model_mesh, true)
 
-  if (xr.can_requestHitTestSource && xr.hit_active.createAnchor) {
+  if (xr.can_requestHitTestSource && xr.hit_active.createAnchor && (AR_options.anchors_enabled !== false)) {
     try {
 xr.hit_active.createAnchor(new XRRigidTransform()).then(function (anchor) {
 //  DEBUG_show("anchor created")
@@ -4575,7 +4575,7 @@ this.gl = this.renderer.getContext();
 
 try {
   await this.gl.makeXRCompatible();
-  session.updateRenderState({ baseLayer: new XRWebGLLayer(session, this.gl, (System._browser.url_search_params.xr_fb_scale && {framebufferScaleFactor:Math.max(0,Math.min(1,parseFloat(System._browser.url_search_params.xr_fb_scale)||1))}) || null) });
+  session.updateRenderState({ baseLayer: new XRWebGLLayer(session, this.gl, (System._browser.url_search_params.xr_fb_scale && {framebufferScaleFactor:Math.max(0,Math.min(1,AR_options.framebufferScaleFactor||parseFloat(System._browser.url_search_params.xr_fb_scale)||1))}) || null) });
   this.frameOfRef = await session.requestReferenceSpace('local');
   this.frameOfRef_viewer = await session.requestReferenceSpace('viewer');
 }
@@ -4588,15 +4588,17 @@ catch (err) {
 
 this.light_color_base = jThree("#MMD_DirLight").three(0).color.clone()
 this.light_position_base = jThree("#MMD_DirLight").three(0).position.clone()
-try {
-  session.updateWorldTrackingState({
+if (session.updateWorldTrackingState && (AR_options.light_estimation_enabled !== false)) {
+  try {
+    session.updateWorldTrackingState({
 // https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/modules/xr/xr_world_tracking_state.idl
-//    "planeDetectionState" : { "enabled" : true}
-    "lightEstimationState" : { "enabled" : true}
-  });
-}
-catch (err) {
-  DEBUG_show("light-estimation failed to init")
+//      "planeDetectionState" : { "enabled" : true}
+      "lightEstimationState" : { "enabled" : true}
+    });
+  }
+  catch (err) {
+    DEBUG_show("light-estimation failed to init")
+  }
 }
 
 if (!this.reticle) {
@@ -4773,6 +4775,8 @@ let session = frame.session;
 
 session.requestAnimationFrame(this.onARFrame);
 
+const AR_options = MMD_SA_options.WebXR.AR;
+
 let pose;
 try {
   pose = frame.getViewerPose(this.frameOfRef);
@@ -4848,7 +4852,7 @@ else {
 // https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/modules/xr/xr_world_information.idl
 // https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/modules/xr/xr_light_estimation.idl
 // https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/modules/xr/xr_light_probe.idl
-    if (frame.worldInformation && frame.worldInformation.lightEstimation) {
+    if ((AR_options.light_estimation_enabled !== false) && frame.worldInformation && frame.worldInformation.lightEstimation) {
       let lightProbe = frame.worldInformation.lightEstimation.lightProbe
       let li = lightProbe.mainLightIntensity
       let ld = lightProbe.mainLightDirection
