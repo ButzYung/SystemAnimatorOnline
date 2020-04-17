@@ -4718,6 +4718,8 @@ this.hit_active = null
 this.hitMatrix = null
 this.hitMatrix_anchor = null
 
+this.is_dom_overlay_activated = false
+
 this.reticle.visible = false
 
 for (const anchor of this.anchors) {
