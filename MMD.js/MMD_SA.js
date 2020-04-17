@@ -2423,7 +2423,7 @@ if ((msg.length > column_max) && ((para.auto_wrap || b.auto_wrap) || (msg.indexO
     }
 
     end = Math.min(msg.length-ini, char_count)
-    var line = msg.substr(ini, end).replace(/^\n+/, "")
+    var line = msg.substr(ini, end).replace(/^\n+/, function (match) { ini += match.length; end -= match.length; return ""; })
     if (/(\n+)/.test(line)) {
       var break_index = line.indexOf(RegExp.$1)
 //DEBUG_show(break_index,0,1)
