@@ -10211,12 +10211,13 @@ if (s.auto_damage && !s.dialogue_mode) {
       [
         {
           message: {
-  content: "1. Graphics Presets (PC)\n2. Graphics Effects (Scene)\n3. Cancel"
+  content: "1. Graphics Presets (PC)\n2. Graphics Effects (Scene)\n3. WebXR Options\n4. Cancel"
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:1 }
-   ,{ key:2, branch_index:10 }
-   ,{ key:3 }
+   ,{ key:2, branch_index:99 }
+   ,{ key:3, branch_index:6 }
+   ,{ key:4 }
   ]
           }
         }
@@ -10289,6 +10290,52 @@ MMD_SA_options.MME.serious_shader = { enabled:true, type:"AdultShaderS2" }
 //MMD_SA_options.MME.SAO = { disabled_by_material:[] }
 MMD_SA._MME_uniforms_updated_ = Date.now()
 System._browser.update_tray()
+  }
+ ,ended: true
+        }
+      ]
+
+// 6
+     ,[
+        {
+          goto_event: { id:"_WEBXR_OPTIONS_", branch_index:0 }
+        }
+      ]
+
+    ]
+
+   ,"_WEBXR_OPTIONS_": [
+//0
+      [
+        {
+          message: {
+  content: "1. DOM Overlay\n2. Cancel"
+ ,bubble_index: 3
+ ,branch_list: [
+    { key:1, branch_index:1 }
+   ,{ key:2 }
+  ]
+          }
+        }
+      ]
+// 1
+     ,[
+        {
+  func: function () {
+var AR_options = MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR;
+if (!AR_options || !AR_options.dom_overlay) {
+  DEBUG_show("(No WebXR mode available)", 3)
+  return
+}
+
+var xr = MMD_SA.WebXR;
+if (xr.session) {
+  DEBUG_show("(This option cannot be changed during WebXR mode.)", 3)
+  return
+}
+
+AR_options.dom_overlay.enabled = !AR_options.dom_overlay.enabled;
+DEBUG_show("DOM Overlay:" + ((AR_options.dom_overlay.enabled && "ON")||"OFF"), 3)
   }
  ,ended: true
         }
