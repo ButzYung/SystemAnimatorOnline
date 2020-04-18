@@ -569,6 +569,12 @@ function SA_load_body() {
 + '</scr'+'ipt>\n'
 
 window.addEventListener('DOMContentLoaded', function () {
+  Lnumpad.addEventListener("touchstart", function (e) {
+    e.stopPropagation()
+  });
+  Lnumpad.addEventListener("touchmove", function (e) {
+    e.stopPropagation()
+  });
   var buttons = document.getElementsByClassName("Lnumpad_button")
   var ev_start, ev_end
   if (is_mobile) {
@@ -583,20 +589,18 @@ window.addEventListener('DOMContentLoaded', function () {
     var b = buttons[i]
     if (b.textContent == "K") {
       b.addEventListener(ev_start, function (e) {
-is_hidden = (Lnumpad_row0.style.display == "none");
-Lnumpad_row0.style.display = (is_hidden) ? "inline" : "none";
-Lnumpad_rows.style.display = (is_hidden) ? "block"  : "none";
-      });
+System._browser.virtual_numpad_toggle()
+      }, true);
       continue
     }
 
     b.addEventListener(ev_start, function (e) {
 System._browser.virtual_numpad(e, 'keydown')
-    });
+    }, true);
     if (!/[\+S]/.test(b.textContent)) {
       b.addEventListener(ev_end, function (e) {
 System._browser.virtual_numpad(e, 'keyup')
-      });
+      }, true);
     }
   }
 });
