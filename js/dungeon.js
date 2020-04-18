@@ -10709,15 +10709,16 @@ var func = function () {
     }
 
     if (msg.branch_list) {
-      if (Lnumpad.style.visibility != "hidden")
-        System._browser.virtual_numpad_toggle(true)
       that._states.dialogue_branch_mode = msg.branch_list
     }
 
     MMD_SA.SpeechBubble.message(bubble_index, msg.content, duration, para)
 
-    if (!duration)
+    if (!duration) {
+      if (Lnumpad.style.visibility != "hidden")
+        System._browser.virtual_numpad_toggle(true)
       that._states.dialogue_mode = true
+    }
   }
   else {
     MMD_SA.SpeechBubble.hide()
