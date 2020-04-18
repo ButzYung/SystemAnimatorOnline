@@ -2441,9 +2441,10 @@ return ((window.devicePixelRatio >= 2) ? 0.5 : 1)
     }
 
    ,virtual_numpad_toggle: function (visible) {
-var is_hidden = (visible == null) ? (Lnumpad_row0.style.display == "none") : !visible;
-Lnumpad_row0.style.display = (is_hidden) ? "inline" : "none";
-Lnumpad_rows.style.display = (is_hidden) ? "block"  : "none";
+if (visible == null)
+  visible = (Lnumpad_row0.style.display == "none")
+Lnumpad_row0.style.display = (visible) ? "inline" : "none";
+Lnumpad_rows.style.display = (visible) ? "block"  : "none";
     }
 
    ,virtual_numpad: (function () {
