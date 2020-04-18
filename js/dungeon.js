@@ -7948,7 +7948,7 @@ var model = THREE.MMD.getModels()[model_index]
 if (model.skin.time > mm._timeMax) {
   if (MMD_SA_options.WebXR) {
     let dis = MMD_SA._v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(MMD_SA._v3b.copy(THREE.MMD.getModels()[0].mesh.position).setY(0))/10 / MMD_SA.WebXR.zoom_scale;
-    if (dis < 2)
+    if (dis < 1)
       return
   }
 }
@@ -10709,6 +10709,8 @@ var func = function () {
     }
 
     if (msg.branch_list) {
+      if (Lnumpad.style.visibility != "hidden")
+        System._browser.virtual_numpad_toggle(true)
       that._states.dialogue_branch_mode = msg.branch_list
     }
 
