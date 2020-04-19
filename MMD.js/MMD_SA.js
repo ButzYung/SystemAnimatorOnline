@@ -1469,7 +1469,7 @@ if (mm.firstFrame_)
 
 if (MMD_SA._no_fading)
   fading = MMD_SA._no_fading = false
-this.fading = fading
+this.fading = fading && (!this.WebXR.session || this.WebXR.use_dummy_webgl)
 if (!fading)
   return motion_changed
 
