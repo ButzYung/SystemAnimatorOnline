@@ -1111,8 +1111,10 @@ else {
 if (SystemEXT.enforce_WSH)
   args.push("wsh")
 
-if (RAF_timerID)
+if (RAF_timerID) {
   cancelAnimationFrame(RAF_timerID)
+  RAF_timerID = null
+}
 
 if (!self.oHTA && (app_path == app_path_current)) {
   if (webkit_electron_mode) {
@@ -2554,6 +2556,8 @@ var Animate_RAF = function (timestamp) {
 //EV_sync_update.fps_count_func()
   if (EV_sync_update.requestAnimationFrame_auto)
     RAF_timerID = requestAnimationFrame(Animate_RAF)
+  else
+    RAF_timerID = null
 //RAF_timerID = setTimeout(function () { Animate_RAF(performance.now()) }, 1000/60)
 
   if (EV_sync_update.RAF_paused) {
