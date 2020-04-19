@@ -4573,8 +4573,12 @@ this.renderer = MMD_SA.renderer;
 
 this.gl = this.renderer.getContext();
 
+this.use_dummy_webgl = !!session.domOverlayState;
 //dummy AR WebGL context (device_framebuffer)
-this.gl = document.createElement("canvas").getContext("webgl2");
+if (this.use_dummy_webgl) {
+  DEBUG_show("Use dummy WebGL (AR)",5)
+  this.gl = document.createElement("canvas").getContext("webgl2");
+}
 
 try {
   await this.gl.makeXRCompatible();
@@ -4674,10 +4678,12 @@ if (RAF_timerID) {
 }
 
 if (1) {
-  document.getElementById("LdesktopBG_host").style.visibility = "hidden"
 //dummy AR WebGL context (device_framebuffer)
-//  document.getElementById("SL").style.visibility = "hidden"
-  document.getElementById("Lquick_menu").style.display = "none"
+  if (!this.use_dummy_webgl) {
+    document.getElementById("SL").style.visibility = "hidden"
+  }
+//  document.getElementById("LdesktopBG_host").style.visibility = "hidden"
+//  document.getElementById("Lquick_menu").style.display = "none"
 
   c_host.addEventListener("dblclick", DOM_event_dblclick)
 // push the .onclick AFTER the AR event handler
@@ -4763,9 +4769,9 @@ EV_sync_update.requestAnimationFrame_auto = true
 RAF_timerID = requestAnimationFrame(Animate_RAF)
 
 if (1) {
-  document.getElementById("LdesktopBG_host").style.visibility = "inherit"
   document.getElementById("SL").style.visibility = "inherit"
-  document.getElementById("Lquick_menu").style.display = "block"
+//  document.getElementById("LdesktopBG_host").style.visibility = "inherit"
+//  document.getElementById("Lquick_menu").style.display = "block"
 
   c_host.removeEventListener("dblclick", DOM_event_dblclick)
 }
@@ -4791,7 +4797,9 @@ try {
 if (pose) {
 //DEBUG_show(1,0,1)
 //dummy AR WebGL context (device_framebuffer)
-//  this.renderer.device_framebuffer = session.renderState.baseLayer.framebuffer;
+  if (!this.use_dummy_webgl) {
+    this.renderer.device_framebuffer = session.renderState.baseLayer.framebuffer;
+  }
 
   for (let view of pose.views) {
     const viewport = session.renderState.baseLayer.getViewport(view);
