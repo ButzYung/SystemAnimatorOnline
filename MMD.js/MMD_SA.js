@@ -4960,7 +4960,8 @@ if (!this.use_dummy_webgl) {
   Animate_RAF(time)
 }
 else {
-  RAF_timerID = requestAnimationFrame(Animate_RAF)
+  if (!RAF_timerID)
+    RAF_timerID = requestAnimationFrame(Animate_RAF)
 }
   }
 
