@@ -4284,7 +4284,7 @@ if (first_call) {
 }
       }
 
-      function update_anchor(update_obj) {
+      function update_anchor(hit, update_obj) {
 let model_mesh = THREE.MMD.getModels()[0].mesh
 
 xr.hitMatrix_anchor = {
@@ -4300,9 +4300,9 @@ if (!update_obj)
   update_obj = update_obj_default
 update_obj(model_mesh, true)
 
-if (xr.can_requestHitTestSource && xr.hit_active.createAnchor && (AR_options.anchors_enabled !== false)) {
+if (xr.can_requestHitTestSource && hit.createAnchor && (AR_options.anchors_enabled !== false)) {
   try {
-xr.hit_active.createAnchor(new XRRigidTransform()).then(function (anchor) {
+hit.createAnchor(new XRRigidTransform()).then(function (anchor) {
 //  DEBUG_show("anchor created")
   if (model_mesh._anchor) {
     model_mesh._anchor.detach()
@@ -4377,7 +4377,7 @@ if (xr.reticle.visible) {
     }
   }
 
-  xr._update_anchor = function () { update_anchor(update_obj) };
+  xr._update_anchor = function (hit) { update_anchor(hit, update_obj) };
 }
 else if (xr.hit_found) {
   e.detail.result.return_value = true
@@ -4736,7 +4736,6 @@ this.xrTransientInputHitTestSource = null
 this.hits = []
 this.hits_searching = false
 this.hit_found = false
-this.hit_active = null
 this.hitMatrix = null
 this.hitMatrix_anchor = null
 this._update_anchor = null
@@ -4968,7 +4967,7 @@ if (xr.xrViewerSpaceHitTestSource) {
 }
 
 if (this.hits.length) {
-  let hit = this.hit_active = this.hits[0]
+  let hit = this.hits[0]
   this.hits = []
   this.hitMatrix = this.hitMatrix || {};
   this.hitMatrix.obj = this.hitMatrix.obj || new THREE.Matrix4();
@@ -4983,7 +4982,7 @@ if (this.hits.length) {
   }
 
   if (this._update_anchor) {
-    this._update_anchor()
+    this._update_anchor(hit)
     this._update_anchor = null
     return {}
   }
