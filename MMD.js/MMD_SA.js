@@ -4354,7 +4354,7 @@ if (xr.reticle.visible) {
 
   let update_obj
 
-  let axis = xr.hitMatrix.decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.hitMatrix.decomposed[1])
+  let axis = xr.hitMatrix.decomposed[3];
 //DEBUG_show(axis.toArray().join("\n"))
 
   if (Math.abs(axis.y) < 0.5) {
@@ -4972,7 +4972,7 @@ if (this.hits.length) {
   this.hits = []
   this.hitMatrix = this.hitMatrix || {};
   this.hitMatrix.obj = this.hitMatrix.obj || new THREE.Matrix4();
-  if (xr.can_requestHitTestSource) {
+  if (this.can_requestHitTestSource) {
     let transform = hit.getPose(this.frameOfRef).transform;
     this.hitMatrix.obj.fromArray(transform.matrix);
     this.hitMatrix.decomposed = [new THREE.Vector3().copy(transform.position), new THREE.Quaternion().copy(transform.orientation), null];
@@ -4981,6 +4981,7 @@ if (this.hits.length) {
     this.hitMatrix.obj.fromArray(hit.hitMatrix);
     this.hitMatrix.decomposed = this.hitMatrix.obj.decompose();
   }
+  this.hitMatrix.decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(this.hitMatrix.decomposed[1]);
 
   if (this._update_anchor) {
     this._update_anchor(hit)
