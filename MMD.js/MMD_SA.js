@@ -4573,7 +4573,7 @@ this.renderer = MMD_SA.renderer;
 
 this.gl = this.renderer.getContext();
 
-//device_framebuffer
+//dummy AR WebGL context (device_framebuffer)
 this.gl = document.createElement("canvas").getContext("webgl2");
 
 try {
@@ -4675,7 +4675,8 @@ if (RAF_timerID) {
 
 if (1) {
   document.getElementById("LdesktopBG_host").style.visibility = "hidden"
-  document.getElementById("SL").style.visibility = "hidden"
+//dummy AR WebGL context (device_framebuffer)
+//  document.getElementById("SL").style.visibility = "hidden"
   document.getElementById("Lquick_menu").style.display = "none"
 
   c_host.addEventListener("dblclick", DOM_event_dblclick)
@@ -4789,6 +4790,7 @@ try {
 
 if (pose) {
 //DEBUG_show(1,0,1)
+//dummy AR WebGL context (device_framebuffer)
 //  this.renderer.device_framebuffer = session.renderState.baseLayer.framebuffer;
 
   for (let view of pose.views) {
