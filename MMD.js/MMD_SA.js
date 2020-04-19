@@ -4285,7 +4285,8 @@ if (first_call) {
       }
 
       function update_anchor(hit, update_obj) {
-let model_mesh = THREE.MMD.getModels()[0].mesh
+const AR_options = MMD_SA_options.WebXR.AR;
+let model_mesh = THREE.MMD.getModels()[0].mesh;
 
 xr.hitMatrix_anchor = {
   obj: xr.hitMatrix.obj.clone()
