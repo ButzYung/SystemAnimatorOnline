@@ -4573,6 +4573,9 @@ this.renderer = MMD_SA.renderer;
 
 this.gl = this.renderer.getContext();
 
+//device_framebuffer
+this.gl = document.createElement("canvas").getContext("webgl2");
+
 try {
   await this.gl.makeXRCompatible();
   session.updateRenderState({ baseLayer: new XRWebGLLayer(session, this.gl, (System._browser.url_search_params.xr_fb_scale && {framebufferScaleFactor:Math.max(0,Math.min(1,AR_options.framebufferScaleFactor||parseFloat(System._browser.url_search_params.xr_fb_scale)||1))}) || null) });
@@ -4786,7 +4789,7 @@ try {
 
 if (pose) {
 //DEBUG_show(1,0,1)
-  this.renderer.device_framebuffer = session.renderState.baseLayer.framebuffer;
+//  this.renderer.device_framebuffer = session.renderState.baseLayer.framebuffer;
 
   for (let view of pose.views) {
     const viewport = session.renderState.baseLayer.getViewport(view);
