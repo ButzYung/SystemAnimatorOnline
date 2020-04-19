@@ -4284,13 +4284,74 @@ if (first_call) {
 }
       }
 
+      function update_anchor(update_obj) {
+let model_mesh = THREE.MMD.getModels()[0].mesh
+
+xr.hitMatrix_anchor = {
+  obj: xr.hitMatrix.obj.clone()
+ ,decomposed: xr.hitMatrix.decomposed.slice()
+ ,_pos_: xr.hitMatrix.decomposed[0]
+ ,game_geo: {
+    position: model_mesh.position.clone().setY(0)
+  }
+};
+
+if (!update_obj)
+  update_obj = update_obj_default
+update_obj(model_mesh, true)
+
+if (xr.can_requestHitTestSource && xr.hit_active.createAnchor && (AR_options.anchors_enabled !== false)) {
+  try {
+xr.hit_active.createAnchor(new XRRigidTransform()).then(function (anchor) {
+//  DEBUG_show("anchor created")
+  if (model_mesh._anchor) {
+    model_mesh._anchor.detach()
+    xr.anchors.delete(model_mesh._anchor)
+  }
+  model_mesh._anchor = anchor
+
+  anchor._data = {
+    obj: model_mesh
+   ,update: update_obj
+  };
+  xr.anchors.add(anchor)
+}).catch(function (err) {
+  DEBUG_show("anchor creation failed")
+});
+  }
+  catch (err) {DEBUG_show(".createAnchor error")}
+}
+
+xr.hit_found = true
+/*
+try {
+  xr.xrViewerSpaceHitTestSource && xr.xrViewerSpaceHitTestSource.cancel();
+}
+catch (err) { DEBUG_show("FAILED: xr.xrViewerSpaceHitTestSource.cancel()") }
+xr.xrViewerSpaceHitTestSource = null
+xr.hits_searching = false
+*/
+xr.reticle.visible = false
+
+xr.restore_scene()
+MMD_SA.reset_gravity()
+
+let ao = SL_MC_video_obj && SL_MC_video_obj.vo && SL_MC_video_obj.vo.audio_obj;
+if (ao && ao.paused) {
+  SL_MC_Play()
+}
+
+if (MMD_SA_options.Dungeon) {
+  MMD_SA_options.Dungeon.object_click_disabled = false
+}
+      }
+
       return function (e) {
 const AR_options = MMD_SA_options.WebXR.AR;
 if (xr.reticle.visible) {
   e.detail.result.return_value = true
 
   let update_obj
-  let model_mesh = THREE.MMD.getModels()[0].mesh
 
   let axis = xr.hitMatrix.decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.hitMatrix.decomposed[1])
 //DEBUG_show(axis.toArray().join("\n"))
@@ -4316,63 +4377,7 @@ if (xr.reticle.visible) {
     }
   }
 
-  xr.hitMatrix_anchor = {
-    obj: xr.hitMatrix.obj.clone()
-   ,decomposed: xr.hitMatrix.decomposed.slice()
-,_pos_: xr.hitMatrix.decomposed[0]
-   ,game_geo: {
-      position: model_mesh.position.clone().setY(0)
-    }
-  };
-
-  if (!update_obj)
-    update_obj = update_obj_default
-  update_obj(model_mesh, true)
-
-  if (xr.can_requestHitTestSource && xr.hit_active.createAnchor && (AR_options.anchors_enabled !== false)) {
-    try {
-xr.hit_active.createAnchor(new XRRigidTransform()).then(function (anchor) {
-//  DEBUG_show("anchor created")
-  if (model_mesh._anchor) {
-    model_mesh._anchor.detach()
-    xr.anchors.delete(model_mesh._anchor)
-  }
-  model_mesh._anchor = anchor
-
-  anchor._data = {
-    obj: model_mesh
-   ,update: update_obj
-  };
-  xr.anchors.add(anchor)
-}).catch(function (err) {
-  DEBUG_show("anchor creation failed")
-});
-    }
-    catch (err) {DEBUG_show(".createAnchor error")}
-  }
-
-  xr.hit_found = true
-/*
-  try {
-    xr.xrViewerSpaceHitTestSource && xr.xrViewerSpaceHitTestSource.cancel();
-  }
-  catch (err) { DEBUG_show("FAILED: xr.xrViewerSpaceHitTestSource.cancel()") }
-  xr.xrViewerSpaceHitTestSource = null
-  xr.hits_searching = false
-*/
-  xr.reticle.visible = false
-
-  xr.restore_scene()
-  MMD_SA.reset_gravity()
-
-  let ao = SL_MC_video_obj && SL_MC_video_obj.vo && SL_MC_video_obj.vo.audio_obj;
-  if (ao && ao.paused) {
-    SL_MC_Play()
-  }
-
-  if (MMD_SA_options.Dungeon) {
-    MMD_SA_options.Dungeon.object_click_disabled = false
-  }
+  xr._update_anchor = function () { update_anchor(update_obj) };
 }
 else if (xr.hit_found) {
   e.detail.result.return_value = true
@@ -4734,6 +4739,7 @@ this.hit_found = false
 this.hit_active = null
 this.hitMatrix = null
 this.hitMatrix_anchor = null
+this._update_anchor = null
 
 this.is_dom_overlay_activated = false
 
@@ -4974,6 +4980,12 @@ if (this.hits.length) {
   else {
     this.hitMatrix.obj.fromArray(hit.hitMatrix);
     this.hitMatrix.decomposed = this.hitMatrix.obj.decompose();
+  }
+
+  if (this._update_anchor) {
+    this._update_anchor()
+    this._update_anchor = null
+    return {}
   }
 
   return { hitMatrix:this.hitMatrix  };
