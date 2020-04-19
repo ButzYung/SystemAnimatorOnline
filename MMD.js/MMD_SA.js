@@ -4695,7 +4695,7 @@ if (!this.use_dummy_webgl) {
 
 if (1) {
   if (!this.use_dummy_webgl) {
-    document.getElementById("SL").style.display = "none"
+    document.getElementById("SL").style.visibility = "hidden"
   }
   document.getElementById("LdesktopBG_host").style.visibility = "hidden"
   document.getElementById("Lquick_menu").style.display = "none"
@@ -4784,7 +4784,7 @@ if (!this.use_dummy_webgl) {
 }
 
 if (1) {
-  document.getElementById("SL").style.display = "block"
+  document.getElementById("SL").style.visibility = "inherit"
   document.getElementById("LdesktopBG_host").style.visibility = "inherit"
   document.getElementById("Lquick_menu").style.display = "block"
 
