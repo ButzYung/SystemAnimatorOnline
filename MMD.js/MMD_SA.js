@@ -4371,7 +4371,7 @@ else if (xr.hit_found) {
   xr.hit_found = false
   xr.reticle.position.copy(xr.hitMatrix_anchor.game_geo.position)
   xr.reticle.visible = true
-  document.getElementById("SL_Host").style.visibility = "hidden"
+//  document.getElementById("SL_Host").style.visibility = "hidden"
 
   if (MMD_SA_options.Dungeon) {
     MMD_SA_options.Dungeon.object_click_disabled = true
@@ -4664,7 +4664,7 @@ MMD_SA.scene.__objects.forEach(function (obj, idx) {
   if (obj.visible)
     obj.visible = false
 });
-document.getElementById("SL_Host").style.visibility = "hidden"
+//document.getElementById("SL_Host").style.visibility = "hidden"
 
 let ao = SL_MC_video_obj && SL_MC_video_obj.vo && SL_MC_video_obj.vo.audio_obj;
 if (ao && !ao.paused) {
@@ -4708,9 +4708,7 @@ MMD_SA.scene.__objects.forEach(function (obj) {
     obj.visible = true
 });
 MMD_SA.SpeechBubble.hide();
-System._browser.on_animation_update.add(function () {
-  document.getElementById("SL_Host").style.visibility = "visible"
-},0,0);
+//System._browser.on_animation_update.add(function () { document.getElementById("SL_Host").style.visibility = "visible"; },0,0);
   }
 
  ,onSessionEnd: function () {
