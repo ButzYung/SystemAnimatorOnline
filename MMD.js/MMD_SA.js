@@ -4588,7 +4588,7 @@ this.renderer = MMD_SA.renderer;
 
 this.gl = this.renderer.getContext();
 
-//this.use_dummy_webgl = !!session.domOverlayState;
+this.use_dummy_webgl = !!session.domOverlayState && AR_options.dom_overlay && AR_options.dom_overlay.use_dummy_webgl;
 if (this.use_dummy_webgl) {
   DEBUG_show("Use dummy WebGL (AR)",5)
   this.gl = document.createElement("canvas").getContext("webgl2");
