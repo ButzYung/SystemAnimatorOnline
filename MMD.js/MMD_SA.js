@@ -4351,6 +4351,12 @@ xr.hit_active.createAnchor(new XRRigidTransform()).then(function (anchor) {
   }
 
   xr.hit_found = true
+  try {
+    xr.xrViewerSpaceHitTestSource && xr.xrViewerSpaceHitTestSource.cancel();
+  }
+  catch (err) { DEBUG_show("FAILED: xr.xrViewerSpaceHitTestSource.cancel()") }
+  xr.xrViewerSpaceHitTestSource = null
+
   xr.reticle.visible = false
 
   xr.restore_scene()
@@ -4989,11 +4995,6 @@ if (!this.hits_searching) {
 //      offsetRay : xrray
           //offsetRay : new XRRay(new DOMPointReadOnly(0,.5,-.5), new DOMPointReadOnly(0, -0.5, -1)) // WIP: change back to default
     }).then((hitTestSource) => {
-      try {
-        xr.xrViewerSpaceHitTestSource && xr.xrViewerSpaceHitTestSource.cancel();
-      }
-      catch (err) { DEBUG_show("FAILED: xr.xrViewerSpaceHitTestSource.cancel()") }
-
       xr.xrViewerSpaceHitTestSource = hitTestSource;
 //      xr.hits_searching = false;
     }).catch(error => {
