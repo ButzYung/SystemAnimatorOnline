@@ -4898,7 +4898,7 @@ else {
       for (const anchor of trackedAnchors) {
 //DEBUG_show(time+'\n'+JSON.stringify(frame.getPose(anchor.anchorSpace, this.frameOfRef).transform.position))
 //if ((time != anchor.lastChangedTime) || !anchor._data || !anchor._data.update)
-if (!anchor._data || !anchor._data.update)
+if (!xr.anchors.has(anchor) || !anchor._data || !anchor._data.update)
   continue
 
 let transform = frame.getPose(anchor.anchorSpace, this.frameOfRef).transform;
@@ -4913,7 +4913,7 @@ xr.hitMatrix_anchor.decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.
 
 anchor._data.update(anchor._data.obj);
 
-DEBUG_show(time+'/'+trackedAnchors.size+':anchor(v4)')
+DEBUG_show(time+'-'+xr.anchors.size+'/'+trackedAnchors.size+':anchor(v4)')
       }
     }
     catch (err) { DEBUG_show('AE:'+err) }
