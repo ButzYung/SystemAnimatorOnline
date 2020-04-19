@@ -4949,13 +4949,6 @@ if (this.hit_found)
 // https://storage.googleapis.com/chromium-webxr-test/r740830/proposals/phone-ar-hit-test.html
 if (xr.xrViewerSpaceHitTestSource) {
   this.hits = frame.getHitTestResults(xr.xrViewerSpaceHitTestSource);
-/*
-  try {
-    xr.xrViewerSpaceHitTestSource.cancel()
-  }
-  catch (err) {}
-  xr.xrViewerSpaceHitTestSource = null
-*/
 //DEBUG_show(Date.now()+'/'+this.hits.length)
 }
 
@@ -4996,6 +4989,11 @@ if (!this.hits_searching) {
 //      offsetRay : xrray
           //offsetRay : new XRRay(new DOMPointReadOnly(0,.5,-.5), new DOMPointReadOnly(0, -0.5, -1)) // WIP: change back to default
     }).then((hitTestSource) => {
+      try {
+        xr.xrViewerSpaceHitTestSource && xr.xrViewerSpaceHitTestSource.cancel();
+      }
+      catch (err) { DEBUG_show("FAILED: xr.xrViewerSpaceHitTestSource.cancel()") }
+
       xr.xrViewerSpaceHitTestSource = hitTestSource;
 //      xr.hits_searching = false;
     }).catch(error => {
