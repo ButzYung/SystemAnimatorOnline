@@ -4685,7 +4685,7 @@ if (ao && !ao.paused) {
   SL_MC_Play()
 }
 
-if (!this.use_dummy_webgl) {
+if (1||!this.use_dummy_webgl) {
   EV_sync_update.requestAnimationFrame_auto = false
   if (RAF_timerID) {
     cancelAnimationFrame(RAF_timerID)
@@ -4778,8 +4778,12 @@ MMD_SA.reset_camera()
 MMD_SA._trackball_camera.enabled = true
 this.camera.matrixAutoUpdate = true
 
-if (!this.use_dummy_webgl) {
+if (1||!this.use_dummy_webgl) {
   EV_sync_update.requestAnimationFrame_auto = true
+  if (RAF_timerID) {
+    cancelAnimationFrame(RAF_timerID)
+    RAF_timerID = null
+  }
   RAF_timerID = requestAnimationFrame(Animate_RAF)
 }
 
@@ -4954,6 +4958,9 @@ if (!this.use_dummy_webgl) {
 // a trick to ensure that no frame is skipped
   RAF_timestamp = null
   Animate_RAF(time)
+}
+else {
+  RAF_timerID = requestAnimationFrame(Animate_RAF)
 }
   }
 
