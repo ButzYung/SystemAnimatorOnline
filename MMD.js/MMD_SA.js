@@ -4356,6 +4356,7 @@ xr.hit_active.createAnchor(new XRRigidTransform()).then(function (anchor) {
   }
   catch (err) { DEBUG_show("FAILED: xr.xrViewerSpaceHitTestSource.cancel()") }
   xr.xrViewerSpaceHitTestSource = null
+  xr.hits_searching = false
 
   xr.reticle.visible = false
 
@@ -4996,7 +4997,6 @@ if (!this.hits_searching) {
           //offsetRay : new XRRay(new DOMPointReadOnly(0,.5,-.5), new DOMPointReadOnly(0, -0.5, -1)) // WIP: change back to default
     }).then((hitTestSource) => {
       xr.xrViewerSpaceHitTestSource = hitTestSource;
-//      xr.hits_searching = false;
     }).catch(error => {
 //          console.error("Error when requesting hit test source", error);
       xr.hits_searching = false;
