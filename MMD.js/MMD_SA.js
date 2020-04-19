@@ -4574,7 +4574,6 @@ this.renderer = MMD_SA.renderer;
 this.gl = this.renderer.getContext();
 
 this.use_dummy_webgl = !!session.domOverlayState;
-//dummy AR WebGL context (device_framebuffer)
 if (this.use_dummy_webgl) {
   DEBUG_show("Use dummy WebGL (AR)",5)
   this.gl = document.createElement("canvas").getContext("webgl2");
@@ -4671,19 +4670,20 @@ if (ao && !ao.paused) {
   SL_MC_Play()
 }
 
-EV_sync_update.requestAnimationFrame_auto = false
-if (RAF_timerID) {
-  cancelAnimationFrame(RAF_timerID)
-  RAF_timerID = null
+if (!this.use_dummy_webgl) {
+  EV_sync_update.requestAnimationFrame_auto = false
+  if (RAF_timerID) {
+    cancelAnimationFrame(RAF_timerID)
+    RAF_timerID = null
+  }
 }
 
 if (1) {
-//dummy AR WebGL context (device_framebuffer)
   if (!this.use_dummy_webgl) {
     document.getElementById("SL").style.visibility = "hidden"
   }
-//  document.getElementById("LdesktopBG_host").style.visibility = "hidden"
-//  document.getElementById("Lquick_menu").style.display = "none"
+  document.getElementById("LdesktopBG_host").style.visibility = "hidden"
+  document.getElementById("Lquick_menu").style.display = "none"
 
   c_host.addEventListener("dblclick", DOM_event_dblclick)
 // push the .onclick AFTER the AR event handler
@@ -4763,13 +4763,15 @@ MMD_SA.reset_camera()
 MMD_SA._trackball_camera.enabled = true
 this.camera.matrixAutoUpdate = true
 
-EV_sync_update.requestAnimationFrame_auto = true
-RAF_timerID = requestAnimationFrame(Animate_RAF)
+if (!this.use_dummy_webgl) {
+  EV_sync_update.requestAnimationFrame_auto = true
+  RAF_timerID = requestAnimationFrame(Animate_RAF)
+}
 
 if (1) {
   document.getElementById("SL").style.visibility = "inherit"
-//  document.getElementById("LdesktopBG_host").style.visibility = "inherit"
-//  document.getElementById("Lquick_menu").style.display = "block"
+  document.getElementById("LdesktopBG_host").style.visibility = "inherit"
+  document.getElementById("Lquick_menu").style.display = "block"
 
   c_host.removeEventListener("dblclick", DOM_event_dblclick)
 }
@@ -4794,7 +4796,6 @@ try {
 
 if (pose) {
 //DEBUG_show(1,0,1)
-//dummy AR WebGL context (device_framebuffer)
   if (!this.use_dummy_webgl) {
     this.renderer.device_framebuffer = session.renderState.baseLayer.framebuffer;
   }
@@ -4934,9 +4935,11 @@ anchor._data.update(anchor._data.obj);
 }
 //else { DEBUG_show(0,0,1) }
 
+if (!this.use_dummy_webgl) {
 // a trick to ensure that no frame is skipped
-    RAF_timestamp = null
-    Animate_RAF(time)
+  RAF_timestamp = null
+  Animate_RAF(time)
+}
   }
 
  ,hit_test: function (frame) {
