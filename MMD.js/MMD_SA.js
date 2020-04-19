@@ -4913,7 +4913,7 @@ xr.hitMatrix_anchor.decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.
 
 anchor._data.update(anchor._data.obj);
 
-//DEBUG_show(time+':anchor updated(v3)')
+DEBUG_show(time+'/'+trackedAnchors.size+':anchor(v4)')
       }
     }
     catch (err) { DEBUG_show('AE:'+err) }
