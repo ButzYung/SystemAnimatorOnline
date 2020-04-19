@@ -10335,7 +10335,7 @@ DEBUG_show("Shadow:" + ((MMD_SA_options.use_shadowMap && "ON")||"OFF"), 3)
       [
         {
           message: {
-  content: "1. DOM Overlay\n2. Light Estimation\n3. Anchors\n4. Framebuffer Scale\n5. Check Status\n6. Cancel"
+  content: "1. DOM Overlay\n2. Light Estimation\n3. Anchors\n4. Framebuffer Scale\n5. Dummy WebGL Layer\n6. Check Status\n7. Cancel"
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:1 }
@@ -10343,7 +10343,8 @@ DEBUG_show("Shadow:" + ((MMD_SA_options.use_shadowMap && "ON")||"OFF"), 3)
    ,{ key:3, branch_index:3 }
    ,{ key:4, branch_index:4 }
    ,{ key:5, branch_index:8 }
-   ,{ key:6 }
+   ,{ key:6, branch_index:9 }
+   ,{ key:7 }
   ]
           }
         }
@@ -10492,8 +10493,29 @@ DEBUG_show("Framebuffer Scale:x0.25", 3)
 // 8
      ,[
         {
+  func: function () {
+var AR_options = MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR;
+if (!AR_options || !AR_options.dom_overlay) {
+  DEBUG_show("(No WebXR mode available)", 3)
+  return
+}
+var xr = MMD_SA.WebXR;
+if (xr.session) {
+  DEBUG_show("(This option cannot be changed during WebXR mode.)", 3)
+  return
+}
+
+AR_options.dom_overlay.use_dummy_webgl = !AR_options.dom_overlay.use_dummy_webgl;
+DEBUG_show("Dummy WebGL Layer:" + ((AR_options.dom_overlay.use_dummy_webgl && "ON")||"OFF"), 3)
+  }
+ ,ended: true
+        }
+      ]
+// 9
+     ,[
+        {
           message: {
-  content: "1. DOM Overlay:{{(!self.XRSession||!('domOverlayState' in XRSession.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.dom_overlay && (MMD_SA_options.WebXR.AR.dom_overlay.enabled!==false) && 'ON')||'OFF')}}\n2. Light Estimation:{{(!self.XRSession||!('updateWorldTrackingState' in XRSession.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && (MMD_SA_options.WebXR.AR.light_estimation_enabled!==false) && 'ON')||'OFF')}}\n3. Anchors:{{(!self.XRHitTestResult||!('createAnchor' in XRHitTestResult.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && (MMD_SA_options.WebXR.AR.anchors_enabled!==false) && 'ON')||'OFF')}}\n4. Framebuffer Scale:x{{((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.framebufferScaleFactor)||System._browser.url_search_params.xr_fb_scale||1)}}"
+  content: "1. DOM Overlay:{{(!self.XRSession||!('domOverlayState' in XRSession.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.dom_overlay && (MMD_SA_options.WebXR.AR.dom_overlay.enabled!==false) && 'ON')||'OFF')}}\n2. Light Estimation:{{(!self.XRSession||!('updateWorldTrackingState' in XRSession.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && (MMD_SA_options.WebXR.AR.light_estimation_enabled!==false) && 'ON')||'OFF')}}\n3. Anchors:{{(!self.XRHitTestResult||!('createAnchor' in XRHitTestResult.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && (MMD_SA_options.WebXR.AR.anchors_enabled!==false) && 'ON')||'OFF')}}\n4. Framebuffer Scale:x{{((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.framebufferScaleFactor)||System._browser.url_search_params.xr_fb_scale||1)}}\n5. Dummy WebGL Layer:{{(MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.dom_overlay && MMD_SA_options.WebXR.AR.dom_overlay.use_dummy_webgl && 'ON')||'OFF'}}"
  ,bubble_index: 3
           }
         }
