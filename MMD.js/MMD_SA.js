@@ -4319,6 +4319,7 @@ if (xr.reticle.visible) {
   xr.hitMatrix_anchor = {
     obj: xr.hitMatrix.obj.clone()
    ,decomposed: xr.hitMatrix.decomposed.slice()
+,_pos_: xr.hitMatrix.decomposed[0]
    ,game_geo: {
       position: model_mesh.position.clone().setY(0)
     }
@@ -4913,7 +4914,7 @@ xr.hitMatrix_anchor.decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.
 
 anchor._data.update(anchor._data.obj);
 
-DEBUG_show(time+'-'+xr.anchors.size+'/'+trackedAnchors.size+':anchor(v4)')
+DEBUG_show(time+','+xr.anchors.size+'/'+trackedAnchors.size+':anchor(v4)\n'+MMD_SA.TEMP_v3.copy(xr.hitMatrix_anchor._pos_).sub(xr.hitMatrix_anchor.decomposed[0]).toArray().join("\n"))
       }
     }
     catch (err) { DEBUG_show('AE:'+err) }
