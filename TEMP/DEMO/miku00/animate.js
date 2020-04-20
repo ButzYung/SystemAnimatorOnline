@@ -1524,6 +1524,26 @@ MMD_SA._force_motion_shuffle = true
 
       return social_distancing;
     })()
+
+   ,"reticle" : {
+  icon_path: Settings.f_path + '/assets/assets.zip#/icon/yellow-target_64x64.png'
+ ,info_short: "AR reticle"
+ ,is_base_inventory: true
+ ,stock_max: 1
+ ,stock_default: 1
+ ,action: {
+    func: function (item) {
+if (!MMD_SA.WebXR.session) {
+  DEBUG_show("(AR mode only)", 3)
+  return true
+}
+
+//SA_AR_dblclick
+var result = { return_value:null }
+window.dispatchEvent(new CustomEvent("SA_AR_dblclick", { detail:{ e:{}, is_item:true, result:result } }));
+    }
+  }
+    }
   }
 
  ,options_by_area_id: {
@@ -1715,6 +1735,14 @@ circle_2m_material.opacity = 0.5;
 circle_2m.visible = false;
 
 
+MMD_SA_options.WebXR.AR.item_reticle_id = "reticle"
+Object.defineProperty(MMD_SA.WebXR, "_item_reticle", {
+  get: function () {
+    let item_reticle_id = MMD_SA_options.WebXR.AR.item_reticle_id
+    return MMD_SA_options.Dungeon.inventory.list.find((item)=>item.item_id==item_reticle_id);
+  }
+});
+
 window.addEventListener("SA_Dungeon_onstart", function () {
 
 let v3a = new THREE.Vector3()
@@ -1776,6 +1804,38 @@ window.addEventListener("SA_MMD_model0_onmotionplaying", function (e) {
 
   d.sound.audio_object_by_name["hit-3"].play(model_mesh)
 });
+
+document.getElementById("Ldungeon_inventory_item" + MMD_SA.WebXR._item_reticle.index + "_icon").style.opacity = 1
+
+window.addEventListener("SA_AR_onSessionStarted", function (e) {
+  let item_reticle = MMD_SA.WebXR._item_reticle
+  item_reticle._opacity_mod_ = -0.025
+  document.getElementById("Ldungeon_inventory_item" + item_reticle.index + "_icon").style.opacity = 1
+});
+
+window.addEventListener("SA_AR_onSessionEnd", function (e) {
+  document.getElementById("Ldungeon_inventory_item" + MMD_SA.WebXR._item_reticle.index + "_icon").style.opacity = 1
+});
+
+window.addEventListener("SA_AR_onARFrame", (function () {
+  function item_reticle_flash() {
+    if (!MMD_SA.WebXR.session)
+      return
+
+    let item_reticle = MMD_SA.WebXR._item_reticle
+    let icon = document.getElementById("Ldungeon_inventory_item" + MMD_SA.WebXR._item_reticle.index + "_icon").style
+    icon.opacity += item_reticle._opacity_mod_
+    if ((icon.opacity >= 1) || (item_reticle._opacity_mod_ <= 0))
+      item_reticle._opacity_mod_ = -item_reticle._opacity_mod_
+  }
+
+  return function (e) {
+    if (!MMD_SA.WebXR.session.domOverlayState)
+      return
+
+    requestAnimationFrame(item_reticle_flash)
+  };
+})());
 
 });
 
