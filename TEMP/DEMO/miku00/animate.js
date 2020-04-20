@@ -1166,6 +1166,7 @@ if (!model_mesh.visible) {
 
 this._groundhit = false
 this._wallhit = true
+this._skip_charging_ = true
 
 var adult_mode = this._adult_mode
 e.detail.result.update_obj = function (model_mesh, first_call) {
@@ -1197,6 +1198,7 @@ e.detail.result.update_obj = function (model_mesh, first_call) {
      ,ongroundhit: function (e) {
 this._groundhit = true
 this._wallhit = false
+this._skip_charging_ = true
 
 //DEBUG_show(9,0,1);return;
 var model_mesh = THREE.MMD.getModels()[0].mesh
@@ -1773,6 +1775,10 @@ window.addEventListener("SA_MMD_model0_onmotionplaying", function (e) {
   _camera_position.copy(v3a)
   _timestamp = RAF_timestamp
 
+  if (MMD_SA_options.WebXR.AR._skip_charging_) {
+    MMD_SA_options.WebXR.AR._skip_charging_ = null
+    return
+  }
   if ((dis > 0.75) || (speed < 1)) return;
 
   var cam_dir = v3a.sub(v3b)
