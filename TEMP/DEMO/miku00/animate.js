@@ -1832,10 +1832,8 @@ window.addEventListener("SA_AR_onARFrame", (function () {
   }
 
   return function (e) {
-    if (!MMD_SA.WebXR.session.domOverlayState)
-      return
-
-    requestAnimationFrame(item_reticle_flash)
+//    if (!MMD_SA.WebXR.session.domOverlayState) return
+//    requestAnimationFrame(item_reticle_flash)
   };
 })());
 
