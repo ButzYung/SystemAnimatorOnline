@@ -1069,7 +1069,7 @@ MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list
 var mm = MMD_SA.MMD.motionManager
 var model = THREE.MMD.getModels()[model_index]
 if (model.skin.time > 1) {
-  if (MMD_SA._v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(MMD_SA._v3b.copy(model.mesh.position).setY(0))/10 / MMD_SA.WebXR.zoom_scale < 2) {
+  if (MMD_SA._v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(MMD_SA._v3b.copy(model.mesh.position).setY(0))/10 / MMD_SA.WebXR.zoom_scale < 1) {
     model.skin.time = 1
     model.morph.time = 1
   }
@@ -1833,7 +1833,7 @@ window.addEventListener("SA_AR_onARFrame", (function () {
 
   return function (e) {
 //    if (!MMD_SA.WebXR.session.domOverlayState) return
-//    requestAnimationFrame(item_reticle_flash)
+    requestAnimationFrame(item_reticle_flash)
   };
 })());
 
