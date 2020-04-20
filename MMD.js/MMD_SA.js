@@ -4349,11 +4349,7 @@ if (MMD_SA_options.Dungeon) {
 
       return function (e) {
 const AR_options = MMD_SA_options.WebXR.AR;
-if (AR_options.item_reticle_id && xr.session.domOverlayState && !e.detail.is_item) {
-  e.detail.result.return_value = true
-  DEBUG_show("(Use item to control AR reticle.)",3)
-}
-else if (xr.reticle.visible) {
+if (xr.reticle.visible) {
   e.detail.result.return_value = true
 
   let update_obj
@@ -4383,6 +4379,10 @@ else if (xr.reticle.visible) {
   }
 
   xr._update_anchor = function (hit) { update_anchor(hit, update_obj) };
+}
+else if (xr.hit_found && AR_options.item_reticle_id && xr.session.domOverlayState && !e.detail.is_item) {
+  e.detail.result.return_value = true
+  DEBUG_show("(Use item to reactivate AR reticle.)",3)
 }
 else if (xr.hit_found) {
   e.detail.result.return_value = true
