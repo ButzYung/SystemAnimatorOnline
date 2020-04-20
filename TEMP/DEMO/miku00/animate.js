@@ -1776,7 +1776,7 @@ window.addEventListener("SA_MMD_model0_onmotionplaying", function (e) {
   _camera_position.copy(v3a)
   _timestamp = RAF_timestamp
 
-  if (AR_options._skip_charging_count && (--AR_options._skip_charging_count == 0)) return;
+  if (AR_options._skip_charging_count && --AR_options._skip_charging_count) return;
   if ((dis > 0.75) || (speed < 1)) return;
 
   var cam_dir = v3a.sub(v3b)
