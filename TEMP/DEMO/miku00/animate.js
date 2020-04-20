@@ -1818,10 +1818,11 @@ window.addEventListener("SA_AR_onSessionEnd", function (e) {
 });
 
 window.addEventListener("SA_AR_onARFrame", (function () {
+var count=0
   function item_reticle_flash() {
     if (!MMD_SA.WebXR.session)
       return
-
+DEBUG_show(++count)
     let item_reticle = MMD_SA.WebXR._item_reticle
     let icon = document.getElementById("Ldungeon_inventory_item" + MMD_SA.WebXR._item_reticle.index + "_icon").style
     let opacity = parseFloat(icon.opacity) + item_reticle._opacity_mod_
