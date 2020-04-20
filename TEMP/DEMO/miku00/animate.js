@@ -1166,7 +1166,7 @@ if (!model_mesh.visible) {
 
 this._groundhit = false
 this._wallhit = true
-this._skip_charging_ = true
+this._skip_charging_count = 10
 
 var adult_mode = this._adult_mode
 e.detail.result.update_obj = function (model_mesh, first_call) {
@@ -1198,7 +1198,7 @@ e.detail.result.update_obj = function (model_mesh, first_call) {
      ,ongroundhit: function (e) {
 this._groundhit = true
 this._wallhit = false
-this._skip_charging_ = true
+this._skip_charging_count = 10
 
 //DEBUG_show(9,0,1);return;
 var model_mesh = THREE.MMD.getModels()[0].mesh
@@ -1763,6 +1763,7 @@ window.addEventListener("SA_MMD_model0_onmotionplaying", function (e) {
   if (!/standmix2_modified/.test(mm.filename))
     return
 
+  var AR_options = MMD_SA_options.WebXR.AR
   var d = MMD_SA_options.Dungeon;
   var dis = v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(v3b.copy(model_mesh.position).setY(0))/10 / MMD_SA.WebXR.zoom_scale;
   var speed = 0, cam_mov;
@@ -1775,18 +1776,14 @@ window.addEventListener("SA_MMD_model0_onmotionplaying", function (e) {
   _camera_position.copy(v3a)
   _timestamp = RAF_timestamp
 
-  if (MMD_SA_options.WebXR.AR._skip_charging_) {
-    MMD_SA_options.WebXR.AR._skip_charging_ = null
-DEBUG_show(9,0,1)
-    return
-  }
+  if (AR_options._skip_charging_count && (--AR_options._skip_charging_count == 0)) return;
   if ((dis > 0.75) || (speed < 1)) return;
 
   var cam_dir = v3a.sub(v3b)
 //  speed && cam_mov && DEBUG_show(cam_mov.angleTo(cam_dir));return;
   if (Math.abs(cam_mov.angleTo(cam_dir)) > Math.PI/4) return;
 
-  if (MMD_SA_options.WebXR.AR._wallhit) {
+  if (AR_options._wallhit) {
     MMD_SA_options._motion_shuffle_list = [MMD_SA_options.motion_index_by_name["emote-mod_おどろく1"]]
     MMD_SA_options.motion_shuffle_list_default = null
     MMD_SA._force_motion_shuffle = true
