@@ -4324,14 +4324,14 @@ hit.createAnchor(new XRRigidTransform()).then(function (anchor) {
 }
 
 xr.hit_found = true
-/*
+
 try {
   xr.xrViewerSpaceHitTestSource && xr.xrViewerSpaceHitTestSource.cancel();
 }
 catch (err) { DEBUG_show("FAILED: xr.xrViewerSpaceHitTestSource.cancel()") }
 xr.xrViewerSpaceHitTestSource = null
 xr.hits_searching = false
-*/
+
 xr.reticle.visible = false
 
 xr.restore_scene()
