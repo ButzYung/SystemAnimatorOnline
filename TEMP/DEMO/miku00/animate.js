@@ -1819,7 +1819,6 @@ window.addEventListener("SA_AR_onSessionEnd", function (e) {
 
 window.addEventListener("SA_AR_onARFrame", (function () {
   function item_reticle_flash() {
-DEBUG_show(Date.now())
     if (!MMD_SA.WebXR.session)
       return
 
@@ -1828,6 +1827,7 @@ DEBUG_show(Date.now())
     icon.opacity += item_reticle._opacity_mod_
     if ((icon.opacity >= 1) || (item_reticle._opacity_mod_ <= 0))
       item_reticle._opacity_mod_ = -item_reticle._opacity_mod_
+DEBUG_show(icon.opacity+'/'+item_reticle._opacity_mod_)
   }
 
   return function (e) {
