@@ -1824,10 +1824,11 @@ window.addEventListener("SA_AR_onARFrame", (function () {
 
     let item_reticle = MMD_SA.WebXR._item_reticle
     let icon = document.getElementById("Ldungeon_inventory_item" + MMD_SA.WebXR._item_reticle.index + "_icon").style
-    icon.opacity += item_reticle._opacity_mod_
-    if ((icon.opacity >= 1) || (item_reticle._opacity_mod_ <= 0))
+    let opacity = parseFloat(icon.opacity) + item_reticle._opacity_mod_
+    icon.opacity = opacity
+    if ((opacity >= 1) || (opacity <= 0))
       item_reticle._opacity_mod_ = -item_reticle._opacity_mod_
-DEBUG_show(icon.opacity+'/'+item_reticle._opacity_mod_)
+//DEBUG_show(opacity+'/'+item_reticle._opacity_mod_)
   }
 
   return function (e) {
