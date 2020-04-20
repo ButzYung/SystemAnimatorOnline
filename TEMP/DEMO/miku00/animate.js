@@ -1777,6 +1777,7 @@ window.addEventListener("SA_MMD_model0_onmotionplaying", function (e) {
 
   if (MMD_SA_options.WebXR.AR._skip_charging_) {
     MMD_SA_options.WebXR.AR._skip_charging_ = null
+DEBUG_show(9,0,1)
     return
   }
   if ((dis > 0.75) || (speed < 1)) return;
