@@ -569,7 +569,10 @@ this.update_UI()
  ,update_UI: function () {
 var index = this.index
 
-document.getElementById("Ldungeon_inventory_item" + index + "_icon").src   = this.item.icon.src
+var icon = document.getElementById("Ldungeon_inventory_item" + index + "_icon")
+icon.src = this.item.icon.src
+icon.style.opacity = 1
+
 document.getElementById("Ldungeon_inventory_item" + index + "_border").src = item_border[this.item.rarity].src
 
 var d_stock = document.getElementById("Ldungeon_inventory_item" + index + "_stock")
