@@ -1819,6 +1819,7 @@ window.addEventListener("SA_AR_onSessionEnd", function (e) {
 
 window.addEventListener("SA_AR_onARFrame", (function () {
   function item_reticle_flash() {
+DEBUG_show(Date.now())
     if (!MMD_SA.WebXR.session)
       return
 
