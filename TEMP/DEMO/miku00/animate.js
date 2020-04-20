@@ -1826,7 +1826,7 @@ window.addEventListener("SA_AR_onARFrame", (function () {
     let icon = document.getElementById("Ldungeon_inventory_item" + MMD_SA.WebXR._item_reticle.index + "_icon").style
     let opacity = parseFloat(icon.opacity) + item_reticle._opacity_mod_
     icon.opacity = opacity
-    if ((opacity >= 1) || (opacity <= 0))
+    if ((opacity >= 1) || (opacity <= 0.25))
       item_reticle._opacity_mod_ = -item_reticle._opacity_mod_
 //DEBUG_show(opacity+'/'+item_reticle._opacity_mod_)
   }
