@@ -4349,7 +4349,11 @@ if (MMD_SA_options.Dungeon) {
 
       return function (e) {
 const AR_options = MMD_SA_options.WebXR.AR;
-if (xr.reticle.visible) {
+if (AR_options.item_reticle_id && xr.session.domOverlayState && !e.detail.is_item) {
+  e.detail.result.return_value = true
+  DEBUG_show("(Use item to control AR reticle.)",3)
+}
+else if (xr.reticle.visible) {
   e.detail.result.return_value = true
 
   let update_obj
@@ -4588,7 +4592,7 @@ this.renderer = MMD_SA.renderer;
 
 this.gl = this.renderer.getContext();
 
-this.use_dummy_webgl = !!session.domOverlayState && AR_options.dom_overlay && AR_options.dom_overlay.use_dummy_webgl;
+this.use_dummy_webgl = session.domOverlayState && AR_options.dom_overlay && AR_options.dom_overlay.use_dummy_webgl;
 if (this.use_dummy_webgl) {
   DEBUG_show("Use dummy WebGL (AR)",5)
   this.gl = document.createElement("canvas").getContext("webgl2");
@@ -4650,7 +4654,6 @@ if (xr.ground_plane)
   if (AR_options.dom_overlay && (AR_options.dom_overlay.enabled !== false)) {
     document.body.addEventListener('beforexrselect', (ev) => {
       ev.preventDefault();
-      xr.is_dom_overlay_activated = true
     });
   }
 }
@@ -4713,6 +4716,8 @@ if (1) {
   }
 }
 
+window.dispatchEvent(new CustomEvent("SA_AR_onSessionStarted"));
+
 session.requestAnimationFrame(xr.onARFrame);
   }
 
@@ -4740,8 +4745,6 @@ this.hit_found = false
 this.hitMatrix = null
 this.hitMatrix_anchor = null
 this._update_anchor = null
-
-this.is_dom_overlay_activated = false
 
 this.reticle.visible = false
 
@@ -4798,6 +4801,8 @@ if (1) {
 this.renderer.device_framebuffer = null;
 window.dispatchEvent(new Event('resize'));
 
+window.dispatchEvent(new CustomEvent("SA_AR_onSessionEnd"));
+
 //DEBUG_show("session ended",0,1)
   }
 
@@ -4851,7 +4856,7 @@ else {
       is_touchstart = true
     }
   });
-  if (!xr.is_dom_overlay_activated && (touches.length == 2)) {
+  if (!session.domOverlayState && (touches.length == 2)) {
     e_touch.touches[0].pageX = touches[0].gamepad.axes[0]
     e_touch.touches[0].pageY = touches[0].gamepad.axes[1]
     e_touch.touches[1].pageX = touches[1].gamepad.axes[0]
@@ -4953,6 +4958,8 @@ anchor._data.update(anchor._data.obj);
   this.camera.updateMatrixWorld(true);
 }
 //else { DEBUG_show(0,0,1) }
+
+window.dispatchEvent(new CustomEvent("SA_AR_onARFrame"));
 
 if (!this.use_dummy_webgl) {
 // a trick to ensure that no frame is skipped
