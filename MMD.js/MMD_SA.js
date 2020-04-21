@@ -4961,7 +4961,7 @@ anchor._data.update(anchor._data.obj);
 
 window.dispatchEvent(new CustomEvent("SA_AR_onARFrame"));
 
-if (!this.use_dummy_webgl) {
+if (1||!this.use_dummy_webgl) {
 // a trick to ensure that no frame is skipped
   RAF_timestamp = null
   Animate_RAF(time)
