@@ -4521,7 +4521,7 @@ session.addEventListener('inputsourceschange', function (e) {
   for (var i = 0, i_max = inputSources.length; i < i_max; i++) {
     xr.input_event.inputSources[i] = inputSources[i];
   }
-
+DEBUG_show(xr.input_event.inputSources.length,0,1)
   xr.input_event.touches = xr.input_event.inputSources.filter(inputSource => ((inputSource.targetRayMode == "screen") && inputSource.gamepad));
 });
 
