@@ -3046,7 +3046,7 @@ top.document.body.dispatchEvent(evt)
       SVG_Clock.update()
 
 EV_sync_update.fps_count_func()
-if (EV_sync_update.fps_last && ((is_SA_child_animation_host) ? is_SA_child_animation : !is_SA_child_animation)) { if (parent.EV_sync_update.fps_log) console.log('FPS:' + EV_sync_update.fps_last); EV_sync_update.fps_last=0; }
+if (EV_sync_update.fps_last && ((is_SA_child_animation_host) ? is_SA_child_animation : !is_SA_child_animation)) { if (parent.EV_sync_update.fps_log) {console.log('FPS:' + EV_sync_update.fps_last); EV_sync_update.fps_last=0;} }
   }
 
   // 3D billboard START

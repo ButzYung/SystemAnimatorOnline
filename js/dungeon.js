@@ -10517,6 +10517,33 @@ DEBUG_show("Dummy WebGL Layer:" + ((AR_options.dom_overlay.use_dummy_webgl && "O
 // 9
      ,[
         {
+  func: (function () {
+    var show_fps = false
+    var timerID = null
+
+    function fps() {
+timerID = requestAnimationFrame(fps)
+if (EV_sync_update.fps_last) {
+  DEBUG_show(EV_sync_update.fps_last)
+  EV_sync_update.fps_last = 0
+}
+    }
+
+    return function () {
+show_fps = !show_fps
+if (show_fps) {
+  if (!timerID)
+    timerID = requestAnimationFrame(fps)
+}
+else {
+  DEBUG_show("(FPS counter:hidden)", 2)
+  if (timerID) {
+    cancelAnimationFrame(timerID)
+    timerID = null
+  }
+}
+    };
+  })(),
           message: {
   content: "1. DOM Overlay:{{(!self.XRSession||!('domOverlayState' in XRSession.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.dom_overlay && (MMD_SA_options.WebXR.AR.dom_overlay.enabled!==false) && 'ON')||'OFF')}}\n2. Light Estimation:{{(!self.XRSession||!('updateWorldTrackingState' in XRSession.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && (MMD_SA_options.WebXR.AR.light_estimation_enabled!==false) && 'ON')||'OFF')}}\n3. Anchors:{{(!self.XRHitTestResult||!('createAnchor' in XRHitTestResult.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && (MMD_SA_options.WebXR.AR.anchors_enabled!==false) && 'ON')||'OFF')}}\n4. Framebuffer Scale:x{{((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.framebufferScaleFactor)||System._browser.url_search_params.xr_fb_scale||1)}}\n5. Dummy WebGL Layer:{{(MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.dom_overlay && MMD_SA_options.WebXR.AR.dom_overlay.use_dummy_webgl && 'ON')||'OFF'}}"
  ,bubble_index: 3
