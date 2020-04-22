@@ -4807,8 +4807,6 @@ window.dispatchEvent(new CustomEvent("SA_AR_onSessionEnd"));
   }
 
  ,onARFrame: function (time, frame) {
-let now = performance.now();
-
 let session = frame.session;
 session.requestAnimationFrame(this.onARFrame);
 
@@ -4821,6 +4819,7 @@ try {
 
 if (pose) {
 //DEBUG_show(1,0,1)
+let _now = performance.now();
   if (!this.use_dummy_webgl) {
     this.renderer.device_framebuffer = session.renderState.baseLayer.framebuffer;
   }
@@ -4846,7 +4845,7 @@ else {
     _camera.matrixWorld.copy(this.camera.matrixWorld);
     _camera.projectionMatrix.copy(this.camera.projectionMatrix);
   }
-
+DEBUG_show(parseInt(performance.now()-_now))
 // https://immersive-web.github.io/webxr/#xrinputsource
 // https://github.com/immersive-web/webxr-gamepads-module/blob/master/gamepads-module-explainer.md
   let is_touchstart
@@ -4961,8 +4960,6 @@ anchor._data.update(anchor._data.obj);
 //else { DEBUG_show(0,0,1) }
 
 window.dispatchEvent(new CustomEvent("SA_AR_onARFrame"));
-
-DEBUG_show(performance.now()-now)
 
 if (!this.use_dummy_webgl) {
 // a trick to ensure that no frame is skipped
