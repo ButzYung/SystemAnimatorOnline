@@ -4807,6 +4807,7 @@ window.dispatchEvent(new CustomEvent("SA_AR_onSessionEnd"));
   }
 
  ,onARFrame: function (time, frame) {
+//let _now = performance.now();
 let session = frame.session;
 session.requestAnimationFrame(this.onARFrame);
 
@@ -4818,8 +4819,6 @@ try {
 } catch (err) { DEBUG_show("Err:no pose",0,1)}
 
 if (pose) {
-//DEBUG_show(1,0,1)
-let _now = performance.now();
   if (!this.use_dummy_webgl) {
     this.renderer.device_framebuffer = session.renderState.baseLayer.framebuffer;
   }
@@ -4845,7 +4844,8 @@ else {
     _camera.matrixWorld.copy(this.camera.matrixWorld);
     _camera.projectionMatrix.copy(this.camera.projectionMatrix);
   }
-DEBUG_show(parseInt(performance.now()-_now))
+//DEBUG_show(parseInt(performance.now()-_now))
+
 // https://immersive-web.github.io/webxr/#xrinputsource
 // https://github.com/immersive-web/webxr-gamepads-module/blob/master/gamepads-module-explainer.md
   let is_touchstart
