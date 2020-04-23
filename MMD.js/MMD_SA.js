@@ -4465,7 +4465,12 @@ try {
   let options = (xr.can_requestHitTestSource) ? {requiredFeatures:["hit-test"]} : {};
   if (AR_options.dom_overlay && (AR_options.dom_overlay.enabled !== false)) {
     options.domOverlay = {root:AR_options.dom_overlay.root};
-    options.optionalFeatures = ["dom-overlay","dom-overlay-for-handheld-ar"];//,"xr-global-light-estimation"
+    options.optionalFeatures = ["dom-overlay","dom-overlay-for-handheld-ar"];
+  }
+  if (AR_options.light_estimation_enabled !== false) {
+    if (!options.optionalFeatures)
+      options.optionalFeatures = []
+    options.optionalFeatures.push("xr-global-light-estimation")
   }
   const session = await navigator.xr.requestSession('immersive-ar', options);
 
@@ -4479,7 +4484,7 @@ catch (err) {
 // for Chrome 80
     let options = {};
     if (AR_options.dom_overlay && (AR_options.dom_overlay.enabled !== false)) {
-      options.optionalFeatures = ["dom-overlay","dom-overlay-for-handheld-ar"];//,"xr-global-light-estimation"
+      options.optionalFeatures = ["dom-overlay","dom-overlay-for-handheld-ar"];
     }
     const session = await navigator.xr.requestSession('immersive-ar', options);
 
@@ -4613,16 +4618,25 @@ catch (err) {
 
 this.light_color_base = jThree("#MMD_DirLight").three(0).color.clone()
 this.light_position_base = jThree("#MMD_DirLight").three(0).position.clone()
-if (session.updateWorldTrackingState && (AR_options.light_estimation_enabled !== false)) {
-  try {
-    session.updateWorldTrackingState({
-// https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/modules/xr/xr_world_tracking_state.idl
-//      "planeDetectionState" : { "enabled" : true}
-      "lightEstimationState" : { "enabled" : true}
+if (AR_options.light_estimation_enabled !== false) {
+  if (session.requestLightProbe) {
+    session.requestLightProbe().then(function () {
+      DEBUG_show("light-estimation (.requestLightProbe) OK")
+    }).catch(function () {
+      DEBUG_show("light-estimation (.requestLightProbe) FAILED")
     });
   }
-  catch (err) {
-    DEBUG_show("light-estimation failed to init")
+  else if (session.updateWorldTrackingState) {
+    try {
+      session.updateWorldTrackingState({
+// https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/modules/xr/xr_world_tracking_state.idl
+//        "planeDetectionState" : { "enabled" : true}
+        "lightEstimationState" : { "enabled" : true}
+      });
+    }
+    catch (err) {
+      DEBUG_show("light-estimation failed to init")
+    }
   }
 }
 
