@@ -4619,7 +4619,7 @@ catch (err) {
 this.light_color_base = jThree("#MMD_DirLight").three(0).color.clone()
 this.light_position_base = jThree("#MMD_DirLight").three(0).position.clone()
 if (AR_options.light_estimation_enabled !== false) {
-DEBUG_show(".requestLightProbe:" + ("requestLightProbe" in XRSession.prototype))
+//DEBUG_show(".requestLightProbe:" + ("requestLightProbe" in XRSession.prototype))
   if (session.requestLightProbe) {
     session.requestLightProbe().then(function () {
       DEBUG_show("light-estimation (.requestLightProbe) OK")
