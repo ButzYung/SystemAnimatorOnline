@@ -4302,25 +4302,22 @@ if (!update_obj)
 update_obj(model_mesh, true)
 
 if (xr.can_requestHitTestSource && hit.createAnchor && (AR_options.anchors_enabled !== false)) {
-  try {
-hit.createAnchor(new XRRigidTransform()).then(function (anchor) {
-//  DEBUG_show("anchor created")
-  if (model_mesh._anchor) {
-    model_mesh._anchor.detach()
-    xr.anchors.delete(model_mesh._anchor)
-  }
-  model_mesh._anchor = anchor
+  hit.createAnchor(new XRRigidTransform()).then(function (anchor) {
+//    DEBUG_show("anchor created")
+    if (model_mesh._anchor) {
+      model_mesh._anchor.detach()
+      xr.anchors.delete(model_mesh._anchor)
+    }
+    model_mesh._anchor = anchor
 
-  anchor._data = {
-    obj: model_mesh
-   ,update: update_obj
-  };
-  xr.anchors.add(anchor)
-}).catch(function (err) {
-  DEBUG_show("anchor creation failed")
-});
-  }
-  catch (err) {DEBUG_show(".createAnchor ERROR:" + err)}
+    anchor._data = {
+      obj: model_mesh
+     ,update: update_obj
+    };
+    xr.anchors.add(anchor)
+  }).catch(function (err) {
+    DEBUG_show(".createAnchor ERROR:" + err)
+  });
 }
 
 xr.hit_found = true
