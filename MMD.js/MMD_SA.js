@@ -4320,7 +4320,7 @@ hit.createAnchor(new XRRigidTransform()).then(function (anchor) {
   DEBUG_show("anchor creation failed")
 });
   }
-  catch (err) {DEBUG_show(".createAnchor error")}
+  catch (err) {DEBUG_show(".createAnchor ERROR:" + err)}
 }
 
 xr.hit_found = true
