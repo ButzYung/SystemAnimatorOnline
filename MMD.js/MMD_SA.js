@@ -4623,8 +4623,8 @@ if (AR_options.light_estimation_enabled !== false) {
   if (session.requestLightProbe) {
     session.requestLightProbe().then(function () {
       DEBUG_show("light-estimation (.requestLightProbe) OK")
-    }).catch(function () {
-      DEBUG_show("light-estimation (.requestLightProbe) FAILED")
+    }).catch(function (err) {
+      DEBUG_show("light-estimation (.requestLightProbe) ERROR:" + err)
     });
   }
   else if (session.updateWorldTrackingState) {
@@ -5025,12 +5025,6 @@ if (this.hits.length) {
 if (!this.hits_searching) {
   this.hits_searching = true
 
-  this.raycaster = this.raycaster || new THREE.Raycaster();
-  this.raycaster.setFromCamera({ x:0, y:0 }, _camera);
-  const ray = this.raycaster.ray;
-
-  let xrray = new XRRay(new DOMPoint(ray.origin.x, ray.origin.y, ray.origin.z), new DOMPoint(ray.direction.x, ray.direction.y, ray.direction.z));
-
   if (xr.can_requestHitTestSource) {
 // https://storage.googleapis.com/chromium-webxr-test/r740830/proposals/phone-ar-hit-test.html
     this.session.requestHitTestSource({
@@ -5048,6 +5042,12 @@ if (!this.hits_searching) {
     });
   }
   else {
+    this.raycaster = this.raycaster || new THREE.Raycaster();
+    this.raycaster.setFromCamera({ x:0, y:0 }, _camera);
+    const ray = this.raycaster.ray;
+
+    let xrray = new XRRay(new DOMPoint(ray.origin.x, ray.origin.y, ray.origin.z), new DOMPoint(ray.direction.x, ray.direction.y, ray.direction.z));
+
     this.session.requestHitTest(xrray, this.frameOfRef).then(function (hits) {
       xr.hits = hits;
       xr.hits_searching = false;
