@@ -4623,10 +4623,10 @@ if (AR_options.light_estimation_enabled !== false) {
   if (session.requestLightProbe) {
     try {
       this.lightProbe = await session.requestLightProbe();
-      DEBUG_show("light-estimation (.requestLightProbe) OK")
+//      DEBUG_show(".requestLightProbe OK")
     }
     catch (err) {
-      DEBUG_show("light-estimation (.requestLightProbe) ERROR:" + err)
+      DEBUG_show(".requestLightProbe ERROR:" + err)
     }
   }
   else if (session.updateWorldTrackingState) {
@@ -4764,6 +4764,8 @@ this.hitMatrix_anchor = null
 this._update_anchor = null
 
 this.reticle.visible = false
+
+this.lightProbe = null
 
 for (const anchor of this.anchors) {
   anchor._data.obj._anchor = null
@@ -4904,21 +4906,32 @@ else {
   }
 
   try {
+    if (AR_options.light_estimation_enabled !== false) {
+      let lightEstimate, li, ld
+      if (this.lightProbe) {
+// https://github.com/immersive-web/lighting-estimation/blob/master/lighting-estimation-explainer.md
+        lightEstimate = frame.getLightEstimate(this.lightProbe)
+        li = lightEstimate.primaryLightIntensity
+        ld = lightEstimate.primaryLightDirection
+      }
+      else if (frame.worldInformation && frame.worldInformation.lightEstimation) {
 // https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/modules/xr/xr_world_information.idl
 // https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/modules/xr/xr_light_estimation.idl
 // https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/modules/xr/xr_light_probe.idl
-    if ((AR_options.light_estimation_enabled !== false) && frame.worldInformation && frame.worldInformation.lightEstimation) {
-      let lightProbe = frame.worldInformation.lightEstimation.lightProbe
-      let li = lightProbe.mainLightIntensity
-      let ld = lightProbe.mainLightDirection
+        lightEstimate = frame.worldInformation.lightEstimation.lightProbe
+        li = lightEstimate.mainLightIntensity
+        ld = lightEstimate.mainLightDirection
+      }
+      if (lightEstimate) {
 //DEBUG_show([ld.x, ld.y, ld.z, ld.w])
-      let L = jThree("#MMD_DirLight").three(0)
-//      L.position.copy(ld).multiplyScalar(MMD_SA_options.light_position_scale)
-      let c = L.color
-      c.copy(this.light_color_base)
-      c.r *= Math.min(1.5, 0.75 * Math.sqrt(li.x))
-      c.g *= Math.min(1.5, 0.75 * Math.sqrt(li.y))
-      c.b *= Math.min(1.5, 0.75 * Math.sqrt(li.z))
+        let L = jThree("#MMD_DirLight").three(0)
+//        L.position.copy(ld).multiplyScalar(MMD_SA_options.light_position_scale)
+        let c = L.color
+        c.copy(this.light_color_base)
+        c.r *= Math.min(1.5, 0.75 * Math.sqrt(li.x))
+        c.g *= Math.min(1.5, 0.75 * Math.sqrt(li.y))
+        c.b *= Math.min(1.5, 0.75 * Math.sqrt(li.z))
+      }
     }
   }
   catch (err) { DEBUG_show(".lightEstimation failed") }
