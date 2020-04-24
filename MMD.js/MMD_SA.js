@@ -4469,6 +4469,11 @@ try {
       options.optionalFeatures = []
     options.optionalFeatures.push("light-estimation")
   }
+  if (AR_options.anchors_enabled !== false) {
+    if (!options.optionalFeatures)
+      options.optionalFeatures = []
+    options.optionalFeatures.push("anchors")
+  }
   const session = await navigator.xr.requestSession('immersive-ar', options);
 
   this.onSessionStart(session)
