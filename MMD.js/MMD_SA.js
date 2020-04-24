@@ -4470,7 +4470,7 @@ try {
   if (AR_options.light_estimation_enabled !== false) {
     if (!options.optionalFeatures)
       options.optionalFeatures = []
-    options.optionalFeatures.push("xr-global-light-estimation")
+    options.optionalFeatures.push("light-estimation")
   }
   const session = await navigator.xr.requestSession('immersive-ar', options);
 
@@ -4621,11 +4621,13 @@ this.light_position_base = jThree("#MMD_DirLight").three(0).position.clone()
 if (AR_options.light_estimation_enabled !== false) {
 //DEBUG_show(".requestLightProbe:" + ("requestLightProbe" in XRSession.prototype))
   if (session.requestLightProbe) {
-    session.requestLightProbe().then(function () {
+    try {
+      this.lightProbe = await session.requestLightProbe();
       DEBUG_show("light-estimation (.requestLightProbe) OK")
-    }).catch(function (err) {
+    }
+    catch (err) {
       DEBUG_show("light-estimation (.requestLightProbe) ERROR:" + err)
-    });
+    }
   }
   else if (session.updateWorldTrackingState) {
     try {
