@@ -4305,7 +4305,10 @@ if (xr.can_requestHitTestSource && hit.createAnchor && (AR_options.anchors_enabl
   hit.createAnchor(new XRRigidTransform()).then(function (anchor) {
 //    DEBUG_show("anchor created")
     if (model_mesh._anchor) {
-      model_mesh._anchor.detach()
+      if (model_mesh._anchor.delete)
+        model_mesh._anchor.delete()
+      else
+        model_mesh._anchor.detach()
       xr.anchors.delete(model_mesh._anchor)
     }
     model_mesh._anchor = anchor
