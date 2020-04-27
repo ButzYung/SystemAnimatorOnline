@@ -5703,6 +5703,7 @@ mesh.material.materials.forEach( function( v ,idx ) {
   if (self.MMD_SA) {
     let img, w, h;
     let m = material_para[v.name] || {};
+    if (m.depthWrite != null) { v.depthWrite = m.depthWrite; }
     let auto_detect = auto_detect_material_para && (m.transparent == null)// && !material_para[v.name]
     if (auto_detect) {
       if (v.opacity < 1) {
