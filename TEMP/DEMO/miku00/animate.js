@@ -1093,7 +1093,6 @@ if (model.skin.time > 1) {
 
    ,"chair_sit01_armIK": {
   onstart: function () {
-MMD_SA.WebXR.ground_plane.visible = false
   }
 
  ,onended: function (loop_end) {
@@ -1102,6 +1101,7 @@ MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
   }
 
  ,onplaying: function () {
+MMD_SA.WebXR.ground_plane.visible = false
 //var model_para = MMD_SA_options.model_para_obj
 //model_para._custom_skin = [{ key:{ name:"右腕ＩＫ", pos:[0,1,0] ,rot:[0,0,0,1] ,interp:MMD_SA._skin_interp_default }, idx:mesh.bones_by_name["右腕ＩＫ"]._index }]
   }
