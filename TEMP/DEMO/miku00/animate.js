@@ -1143,7 +1143,8 @@ posR.z -= ground_y_diff
  ,adjustment_per_model: {
     _default_ : {
   skin_default: {
-    "両目": { rot_add:{x:-5*0, y:2.5, z:0} }
+//    "両目": { rot_add:{x:-5, y:2.5, z:0} }
+    "頭": { keys:[{time:0, rot:{x:-11.3,y:0,z:0}}] }
   }
  ,morph_default:{
 //    "笑い": { weight:0.2 }
@@ -1153,8 +1154,8 @@ posR.z -= ground_y_diff
 
  ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
 ,look_at_screen_bone_list: [
-  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:-1.5 }
- ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:-1.5 }
+  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
  ,{ name:"上半身2", weight_screen:0.75, weight_screen_x:0,weight_screen_y:1, weight_motion:1 }
 ]
 
