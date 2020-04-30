@@ -1665,6 +1665,72 @@ if (!cloned) {
 	while ( n-- > 0 ) {
 		this.bones.push( new Bone( bin ) );
 	}
+// AT: add armIK
+let make_armIK = self.MMD_SA && (model_para_obj.make_armIK || MMD_SA_options.make_armIK);
+if (make_armIK) {
+//bone = f
+  let bone_index = this.bones.length;
+  let bones_length = this.bones.length;
+  this.bones.forEach((b)=>(b.deformHierachy*=1.1));
+
+  let LR_array = (this.bones.findIndex((b)=>(b.name=="左腕")) < this.bones.findIndex((b)=>(b.name=="右腕"))) ? ["左","右"] : ["右","左"];
+  LR_array.forEach(function (LR) {
+    let mask, IK_link = [];
+    let bone, bone_plus;
+
+    let bone_index_ini = that.bones.findIndex((b)=>(b.name==LR+"腕"));
+
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Bitwise_Operators
+    bone = that.bones.find((b)=>(b.name==LR+"腕"));
+    bone_plus = Object.assign({}, bone);
+    bone_plus.name = bone_plus.nameEn = LR+"腕+";
+    that.bones.push(bone_plus);
+    mask = 0x300 | 0x100;
+    bone.flags |= mask;
+    bone.additionalTransform = [ bone_index, 1 ];
+    IK_link.unshift(bone_index);
+    bone_index++;
+
+    bone = that.bones.find((b)=>(b.name==LR+"ひじ"));
+    bone_plus = Object.assign({}, bone);
+    bone_plus.name = bone_plus.nameEn = LR+"ひじ+";
+    bone_plus.parent = bone_index-1;
+    that.bones.push(bone_plus);
+    mask = 0x300 | 0x100;
+    bone.flags |= mask;
+    bone.additionalTransform = [ bone_index, 1 ];
+    IK_link.unshift(bone_index);
+    bone_index++;
+
+    bone = that.bones.find((b)=>(b.name==LR+"手首"));
+    bone_plus = Object.assign({}, bone);
+    bone_plus.name = bone_plus.nameEn = LR+"手首+";
+    bone_plus.parent = bone_index-1;
+    that.bones.push(bone_plus);
+
+    bone_plus = Object.assign({}, bone);
+    bone_plus.name = bone_plus.nameEn = LR+"腕ＩＫ";
+    bone_plus.parent = that.bones.findIndex((b)=>(b.name=="上半身"));
+    bone_plus.IK = {
+  control: 57.29578/180*Math.PI
+ ,effector: bone_index
+ ,iteration: 20
+ ,links: IK_link.map((ik)=>({bone:ik}))
+    };
+    bone_plus.flags |= 0x20;
+    that.bones.push(bone_plus);
+
+    mask = 0x300 | 0x100;
+    bone.flags |= mask;
+    bone.additionalTransform = [ bone_index, 1 ];
+    bone_index+=2;
+
+    for (let i = bone_index_ini; i < bones_length; i++) {
+      that.bones[i].deformHierachy += 0.01
+    }
+  });
+
+}
 
 // AT: skin_weight
 if (model_para_obj.skin_weight) {
@@ -6168,7 +6234,7 @@ self.MMD_SA && MMD_SA_options.Dungeon && MMD_SA_options.Dungeon.SFX_check(this, 
 
 // AT: process_bones (before skin_MMD_SA_extra)
 if (self.MMD_SA) {
-  if (!para_SA.process_bones || para_SA.process_bones(this, this.skin)) {
+  if (!para_SA.process_bones || !para_SA.process_bones(this, this.skin)) {
     model_para.process_bones && model_para.process_bones(this, this.skin)
     window.dispatchEvent(new CustomEvent("SA_MMD_model" + this._model_index + "_process_bones", { detail:{ model:this, skin:this.skin } }));
   }
@@ -6476,7 +6542,7 @@ if (self.MMD_SA && (this._model_index == 0)) {
 
 // AT: custom skin (before IK update)
 if (self.MMD_SA) {
-//if (this._model_index == 3) model_para._custom_skin = [{ key:{ name:"全ての親", pos:[0,-10,0] ,rot:[0,0,0,1] ,interp:MMD_SA._skin_interp_default }, idx:mesh.bones_by_name["全ての親"]._index }]
+//model_para._custom_skin = [{ key:{ name:"右腕ＩＫ", pos:[0,1,0] ,rot:[0,0,0,1] ,interp:MMD_SA._skin_interp_default }, idx:mesh.bones_by_name["右腕ＩＫ"]._index }]
   var _custom_skin = model_para._custom_skin || MMD_SA._custom_skin
   _custom_skin.forEach(function (s) {
 if (!s.condition || s.condition(that)) {
