@@ -1127,9 +1127,9 @@ if (ground_y_diff < -chair_ground_y)
 var posL = mesh.bones_by_name["左足ＩＫ"].position
 var posR = mesh.bones_by_name["右足ＩＫ"].position
 posL.y -= ground_y_diff
-posL.z -= ground_y_diff/2
+posL.z -= ground_y_diff
 posR.y -= ground_y_diff
-posR.z -= ground_y_diff/2
+posR.z -= ground_y_diff
   }
 
  ,freeze_onended: true
@@ -1143,7 +1143,7 @@ posR.z -= ground_y_diff/2
  ,adjustment_per_model: {
     _default_ : {
   skin_default: {
-    "両目": { rot_add:{x:-5, y:2.5, z:0} }
+    "両目": { rot_add:{x:-5*0, y:2.5, z:0} }
   }
  ,morph_default:{
 //    "笑い": { weight:0.2 }
@@ -1153,8 +1153,8 @@ posR.z -= ground_y_diff/2
 
  ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
 ,look_at_screen_bone_list: [
-  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:0.5 }
- ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:0.5 }
+  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:-1.5 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:-1.5 }
  ,{ name:"上半身2", weight_screen:0.75, weight_screen_x:0,weight_screen_y:1, weight_motion:1 }
 ]
 
