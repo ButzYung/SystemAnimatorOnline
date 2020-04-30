@@ -4277,6 +4277,7 @@ return drop_list
     window.addEventListener("SA_AR_dblclick", (function () {
       function update_obj_default(model_mesh, first_call) {
 xr.hit_ground_y = xr.hitMatrix_anchor.decomposed[0].y;
+xr.hit_ground_y_lowest = (xr.hit_ground_y_lowest == null) ? xr.hit_ground_y : Math.min(xr.hit_ground_y, xr.hit_ground_y_lowest);
 
 if (first_call) {
   model_mesh.lookAt(MMD_SA.TEMP_v3.copy(model_mesh.position).add(xr.camera._pos_XR).sub(xr.hitMatrix_anchor.decomposed[0]).setY(model_mesh.position.y))
@@ -4681,6 +4682,9 @@ if (xr.ground_plane)
 }
 this.reticle.visible = false
 
+this.hit_ground_y = null
+this.hit_ground_y_lowest = null
+
 MMD_SA.reset_camera()
 MMD_SA._reset_camera = MMD_SA.reset_camera
 MMD_SA.reset_camera = function () {}
@@ -4767,6 +4771,9 @@ this.hit_found = false
 this.hitMatrix = null
 this.hitMatrix_anchor = null
 this._update_anchor = null
+
+this.hit_ground_y = null
+this.hit_ground_y_lowest = null
 
 this.reticle.visible = false
 
