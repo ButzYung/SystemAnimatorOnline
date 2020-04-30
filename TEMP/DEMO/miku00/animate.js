@@ -162,6 +162,8 @@ var MMD_SA_options = {
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_よろめく2.vmd' }
 
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_おどろく1.vmd' }
+
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/chair_sit01_armIK.vmd' }
   ]
 
 
@@ -1089,6 +1091,75 @@ if (model.skin.time > 1) {
 */
     }
 
+   ,"chair_sit01_armIK": {
+  onstart: function () {
+MMD_SA.WebXR.ground_plane.visible = false
+  }
+
+ ,onended: function (loop_end) {
+MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
+//MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice();
+  }
+
+ ,onplaying: function () {
+//var model_para = MMD_SA_options.model_para_obj
+//model_para._custom_skin = [{ key:{ name:"右腕ＩＫ", pos:[0,1,0] ,rot:[0,0,0,1] ,interp:MMD_SA._skin_interp_default }, idx:mesh.bones_by_name["右腕ＩＫ"]._index }]
+  }
+
+ ,process_bones: function (model, skin) {
+var mesh = model.mesh
+var chair_ground_y = mesh.bones_by_name["下半身"].pmxBone.origin[1] - 8
+mesh.bones_by_name["全ての親"].position.y -= chair_ground_y
+
+var xr = MMD_SA.WebXR
+if (!xr.session) {
+  xr.hit_ground_y = 0
+  xr.hit_ground_y_lowest = -0.1
+}
+
+var ground_y_diff = (xr.hit_ground_y - xr.hit_ground_y_lowest) * 10 * xr.zoom_scale - chair_ground_y
+if (ground_y_diff > 0)
+  return
+
+if (ground_y_diff < -chair_ground_y)
+  ground_y_diff = -chair_ground_y
+
+var posL = mesh.bones_by_name["左足ＩＫ"].position
+var posR = mesh.bones_by_name["右足ＩＫ"].position
+posL.y -= ground_y_diff
+posL.z -= ground_y_diff/2
+posR.y -= ground_y_diff
+posR.z -= ground_y_diff/2
+  }
+
+ ,freeze_onended: true
+
+ ,object_click_disabled: true
+
+ ,auto_blink: true
+// ,adjust_center_view_disabled: true
+ ,center_view: [0,-4,0]
+
+ ,adjustment_per_model: {
+    _default_ : {
+  skin_default: {
+    "両目": { rot_add:{x:-5, y:2.5, z:0} }
+  }
+ ,morph_default:{
+//    "笑い": { weight:0.2 }
+  }
+    }
+  }
+
+ ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
+,look_at_screen_bone_list: [
+  { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:0.5 }
+ ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:0.5 }
+ ,{ name:"上半身2", weight_screen:0.75, weight_screen_x:0,weight_screen_y:1, weight_motion:1 }
+]
+
+    }
+
   }
 
  ,custom_action: [
@@ -1217,6 +1288,9 @@ if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle
  ,use_shadowMap: true
  ,shadow_darkness: 0.1
  ,ground_shadow_only: true
+
+ ,make_armIK: {
+  }
 
 // END
 };
@@ -1387,12 +1461,12 @@ if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle
   }
 
   if (++morph_form_index == morph_form.length) {
-    morph_form_index = 0
-
-    if (MMD_SA_options.motion_shuffle_list_default[0] == MMD_SA_options.motion_index_by_name["standmix2_modified"])
-      MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["gal_model_motion_with_legs-2_loop_v01"]]
-    else
-      MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["standmix2_modified"]]
+    morph_form_index = 0;
+    let motion_list = ["standmix2_modified","gal_model_motion_with_legs-2_loop_v01","chair_sit01_armIK"];
+    let motion_index = motion_list.findIndex((m)=>(MMD_SA_options.motion_shuffle_list_default[0]==MMD_SA_options.motion_index_by_name[m]));
+    if (++motion_index >= motion_list.length)
+      motion_index = 0
+    MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name[motion_list[motion_index]]]
 
     MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice()
     MMD_SA._force_motion_shuffle = true
