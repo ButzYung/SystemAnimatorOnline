@@ -10597,6 +10597,8 @@ navigator.mediaDevices.getUserMedia({ video:{ facingMode:"user" } }).then(functi
   SL_Host.appendChild(video)
 
   video.srcObject = stream
+
+  DEBUG_show("(User camera activated)")
 }).catch(function (err) {
   DEBUG_show("(ERROR: User camera not available)")
 });
