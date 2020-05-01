@@ -10579,6 +10579,8 @@ DEBUG_show("Dummy WebGL Layer:" + ((AR_options.dom_overlay.use_dummy_webgl && "O
 
     function create_video() {
 video = document.createElement("video")
+video.playsinline = true
+video.autoplay = true
 
 var vs = video.style
 vs.position = "absolute"
@@ -10602,7 +10604,6 @@ if (user_camera_activated) {
 
 navigator.mediaDevices.getUserMedia({ video:{ facingMode:"user" } }).then(function (stream) {
   create_video()
-
   video.srcObject = stream
 
   DEBUG_show("(User camera activated)")
