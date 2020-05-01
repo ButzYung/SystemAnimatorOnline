@@ -10577,6 +10577,21 @@ DEBUG_show("Dummy WebGL Layer:" + ((AR_options.dom_overlay.use_dummy_webgl && "O
     var user_camera_activated
     var video
 
+    function create_video() {
+video = document.createElement("video")
+
+var vs = video.style
+vs.position = "absolute"
+vs.left = "0px"
+vs.top = "0px"
+//vs.width = "800px"
+//vs.height = "600px"
+//vs.backgroundColor = "black"
+vs.zIndex = 0
+SL_Host.appendChild(video)
+//video.src = toFileProtocol("C:\\Users\\user\\Videos\\TEMP\\AR Miku - Social Distancing.mp4")
+    }
+
     return function () {
 var AR_options = MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR;
 
@@ -10586,20 +10601,13 @@ if (user_camera_activated) {
 }
 
 navigator.mediaDevices.getUserMedia({ video:{ facingMode:"user" } }).then(function (stream) {
-  video = document.createElement("video")
-  var vs = video.style
-  vs.position = "absolute"
-  vs.right = "0px"
-  vs.top = "0px"
-  vs.width = "50%"
-  vs.height = "50%"
-  vs.zIndex = 0
-  SL_Host.appendChild(video)
+  create_video()
 
   video.srcObject = stream
 
   DEBUG_show("(User camera activated)")
 }).catch(function (err) {
+//  create_video()
   DEBUG_show("(ERROR: User camera not available)")
 });
     };
