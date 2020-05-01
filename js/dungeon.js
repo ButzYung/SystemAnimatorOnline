@@ -10338,7 +10338,7 @@ DEBUG_show("Shadow:" + ((MMD_SA_options.use_shadowMap && "ON")||"OFF"), 3)
       [
         {
           message: {
-  content: "1. DOM Overlay\n2. Light Estimation\n3. Anchors\n4. Framebuffer Scale\n5. Dummy WebGL Layer\n6. Check Status\n7. Cancel"
+  content: "1. DOM Overlay\n2. Light Estimation\n3. Anchors\n4. Framebuffer Scale\n5. Check Status\n6. DEBUG TEST\n7. Cancel"
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:1 }
@@ -10346,7 +10346,7 @@ DEBUG_show("Shadow:" + ((MMD_SA_options.use_shadowMap && "ON")||"OFF"), 3)
    ,{ key:3, branch_index:3 }
    ,{ key:4, branch_index:4 }
    ,{ key:5, branch_index:8 }
-   ,{ key:6, branch_index:9 }
+   ,{ key:6, branch_index:10 }
    ,{ key:7 }
   ]
           }
@@ -10496,27 +10496,6 @@ DEBUG_show("Framebuffer Scale:x0.25", 3)
 // 8
      ,[
         {
-  func: function () {
-var AR_options = MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR;
-if (!AR_options || !AR_options.dom_overlay) {
-  DEBUG_show("(No WebXR mode available)", 3)
-  return
-}
-var xr = MMD_SA.WebXR;
-if (xr.session) {
-  DEBUG_show("(This option cannot be changed during WebXR mode.)", 3)
-  return
-}
-
-AR_options.dom_overlay.use_dummy_webgl = !AR_options.dom_overlay.use_dummy_webgl;
-DEBUG_show("Dummy WebGL Layer:" + ((AR_options.dom_overlay.use_dummy_webgl && "ON")||"OFF"), 3)
-  }
- ,ended: true
-        }
-      ]
-// 9
-     ,[
-        {
   func: (function () {
     var show_fps = false
     var timerID = null
@@ -10554,6 +10533,76 @@ else {
      ,[
         {
   ended: true
+        }
+      ]
+// 10
+     ,[
+        {
+          message: {
+  content: "1. Dummy WebGL Layer\n2. Front Camera\n3. Cancel"
+ ,bubble_index: 3
+ ,branch_list: [
+    { key:1, branch_index:11 }
+   ,{ key:2, branch_index:12 }
+   ,{ key:3 }
+  ]
+          }
+        }
+      ]
+// 11
+     ,[
+        {
+  func: function () {
+var AR_options = MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR;
+if (!AR_options || !AR_options.dom_overlay) {
+  DEBUG_show("(No WebXR mode available)", 3)
+  return
+}
+var xr = MMD_SA.WebXR;
+if (xr.session) {
+  DEBUG_show("(This option cannot be changed during WebXR mode.)", 3)
+  return
+}
+
+AR_options.dom_overlay.use_dummy_webgl = !AR_options.dom_overlay.use_dummy_webgl;
+DEBUG_show("Dummy WebGL Layer:" + ((AR_options.dom_overlay.use_dummy_webgl && "ON")||"OFF"), 3)
+  }
+ ,ended: true
+        }
+      ]
+// 12
+     ,[
+        {
+  func: (function () {
+    var user_camera_activated
+    var video
+
+    return function () {
+var AR_options = MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR;
+
+if (user_camera_activated) {
+  DEBUG_show("(User camera already activated)")
+  return
+}
+
+navigator.mediaDevices.getUserMedia({ video:{ facingMode:"user" } }).then(function (stream) {
+  video = document.createElement("video")
+  var vs = video.style
+  vs.position = "absolute"
+  vs.right = "0px"
+  vs.top = "0px"
+  vs.width = "50%"
+  vs.height = "50%"
+  vs.zIndex = 0
+  SL_Host.appendChild(video)
+
+  video.srcObject = stream
+}).catch(function (err) {
+  DEBUG_show("(ERROR: User camera not available)")
+});
+    };
+  })()
+ ,ended: true
         }
       ]
 
