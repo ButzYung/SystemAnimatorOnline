@@ -10524,7 +10524,7 @@ else {
     };
   })(),
           message: {
-  content: "1. DOM Overlay:{{(!self.XRSession||!('domOverlayState' in XRSession.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.dom_overlay && (MMD_SA_options.WebXR.AR.dom_overlay.enabled!==false) && 'ON')||'OFF')}}\n2. Light Estimation:{{(!self.XRSession||!('updateWorldTrackingState' in XRSession.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && (MMD_SA_options.WebXR.AR.light_estimation_enabled!==false) && 'ON')||'OFF')}}\n3. Anchors:{{(!self.XRHitTestResult||!('createAnchor' in XRHitTestResult.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && (MMD_SA_options.WebXR.AR.anchors_enabled!==false) && 'ON')||'OFF')}}\n4. Framebuffer Scale:x{{((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.framebufferScaleFactor)||System._browser.url_search_params.xr_fb_scale||1)}}\n5. Dummy WebGL Layer:{{(MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.dom_overlay && MMD_SA_options.WebXR.AR.dom_overlay.use_dummy_webgl && 'ON')||'OFF'}}\n6 User Camera:{{(MMD_SA.WebXR.user_camera_video)?MMD_SA.WebXR.user_camera_video.width+'x'+MMD_SA.WebXR.user_camera_video.height:'NOT IN USE'}}"
+  content: "1. DOM Overlay:{{(!self.XRSession||!('domOverlayState' in XRSession.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.dom_overlay && (MMD_SA_options.WebXR.AR.dom_overlay.enabled!==false) && 'ON')||'OFF')}}\n2. Light Estimation:{{(!self.XRSession||!('updateWorldTrackingState' in XRSession.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && (MMD_SA_options.WebXR.AR.light_estimation_enabled!==false) && 'ON')||'OFF')}}\n3. Anchors:{{(!self.XRHitTestResult||!('createAnchor' in XRHitTestResult.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && (MMD_SA_options.WebXR.AR.anchors_enabled!==false) && 'ON')||'OFF')}}\n4. Framebuffer Scale:x{{((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.framebufferScaleFactor)||System._browser.url_search_params.xr_fb_scale||1)}}\n5. Dummy WebGL Layer:{{(MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.dom_overlay && MMD_SA_options.WebXR.AR.dom_overlay.use_dummy_webgl && 'ON')||'OFF'}}\n6. User Camera:{{(MMD_SA.WebXR.user_camera && (MMD_SA.WebXR.user_camera.video.videoWidth+'x'+MMD_SA.WebXR.user_camera.video.videoHeight))||'NOT IN USE'}}"
  ,bubble_index: 3
           }
         }
@@ -10577,8 +10577,8 @@ DEBUG_show("Dummy WebGL Layer:" + ((AR_options.dom_overlay.use_dummy_webgl && "O
     var user_camera_activated
     var video
 
-    function create_video() {
-MMD_SA.WebXR.user_camera_video = video = document.createElement("video")
+    function init_stream(stream) {
+video = document.createElement("video")
 video.playsinline = true
 video.autoplay = true
 
@@ -10592,6 +10592,11 @@ vs.top = "0px"
 vs.zIndex = 0
 SL_Host.appendChild(video)
 //video.src = toFileProtocol("C:\\Users\\user\\Videos\\TEMP\\AR Miku - Social Distancing.mp4")
+
+MMD_SA.WebXR.user_camera = {
+  stream:stream
+ ,video:video
+};
     }
 
     return function () {
@@ -10603,12 +10608,12 @@ if (user_camera_activated) {
 }
 
 navigator.mediaDevices.getUserMedia({ video:{ facingMode:"user" } }).then(function (stream) {
-  create_video()
+  init_stream()
   video.srcObject = stream
 
   DEBUG_show("(User camera activated)")
 }).catch(function (err) {
-//  create_video()
+//  init_stream()
   DEBUG_show("(ERROR: User camera not available)")
 });
     };
