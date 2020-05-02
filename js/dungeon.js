@@ -10601,14 +10601,16 @@ vs.zIndex = 0
 SL_Host.appendChild(video)
 //video.src = toFileProtocol("C:\\Users\\user\\Videos\\TEMP\\AR Miku - Social Distancing.mp4")
 
+if (stream) {
+  System._browser.console.log(JSON.stringify(stream.getVideoTracks()[0].getSettings()))
+}
+
 MMD_SA.WebXR.user_camera = {
   stream:stream
  ,video:video
 };
 
-if (stream) {
-  System._browser.console.log(JSON.stringify(stream.getSettings()))
-}
+user_camera_activated = true
     }
 
     return function () {
