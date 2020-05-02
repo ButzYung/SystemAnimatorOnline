@@ -10602,6 +10602,7 @@ SL_Host.appendChild(video)
 //video.src = toFileProtocol("C:\\Users\\user\\Videos\\TEMP\\AR Miku - Social Distancing.mp4")
 
 if (stream) {
+  video.srcObject = stream
   System._browser.console.log(JSON.stringify(stream.getVideoTracks()[0].getSettings()))
 }
 
@@ -10622,10 +10623,9 @@ if (user_camera_activated) {
 }
 
 navigator.mediaDevices.getUserMedia({ video:{ facingMode:"user" } }).then(function (stream) {
-  init_stream()
-  video.srcObject = stream
+  init_stream(stream)
 
-  DEBUG_show("(User camera activated)")
+  DEBUG_show("(User camera:ON)")
 }).catch(function (err) {
 //  init_stream()
   DEBUG_show("(ERROR: User camera not available)")
