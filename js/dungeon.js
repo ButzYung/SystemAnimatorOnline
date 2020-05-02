@@ -10622,7 +10622,7 @@ if (user_camera_activated) {
   return
 }
 
-navigator.mediaDevices.getUserMedia({ video:{ facingMode:"user", aspectRatio:1.777777778 } }).then(function (stream) {
+navigator.mediaDevices.getUserMedia({ video:{ facingMode:"user", width:screen.availWidth, height:screen.availHeight /*aspectRatio:1.777777778*/ } }).then(function (stream) {
   init_stream(stream)
 
   DEBUG_show("(User camera:ON)")
