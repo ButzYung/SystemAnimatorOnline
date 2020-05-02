@@ -10524,7 +10524,7 @@ else {
     };
   })(),
           message: {
-  content: "1. DOM Overlay:{{(!self.XRSession||!('domOverlayState' in XRSession.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.dom_overlay && (MMD_SA_options.WebXR.AR.dom_overlay.enabled!==false) && 'ON')||'OFF')}}\n2. Light Estimation:{{(!self.XRSession||!('updateWorldTrackingState' in XRSession.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && (MMD_SA_options.WebXR.AR.light_estimation_enabled!==false) && 'ON')||'OFF')}}\n3. Anchors:{{(!self.XRHitTestResult||!('createAnchor' in XRHitTestResult.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && (MMD_SA_options.WebXR.AR.anchors_enabled!==false) && 'ON')||'OFF')}}\n4. Framebuffer Scale:x{{((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.framebufferScaleFactor)||System._browser.url_search_params.xr_fb_scale||1)}}\n5. Dummy WebGL Layer:{{(MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.dom_overlay && MMD_SA_options.WebXR.AR.dom_overlay.use_dummy_webgl && 'ON')||'OFF'}}"
+  content: "1. DOM Overlay:{{(!self.XRSession||!('domOverlayState' in XRSession.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.dom_overlay && (MMD_SA_options.WebXR.AR.dom_overlay.enabled!==false) && 'ON')||'OFF')}}\n2. Light Estimation:{{(!self.XRSession||!('updateWorldTrackingState' in XRSession.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && (MMD_SA_options.WebXR.AR.light_estimation_enabled!==false) && 'ON')||'OFF')}}\n3. Anchors:{{(!self.XRHitTestResult||!('createAnchor' in XRHitTestResult.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && (MMD_SA_options.WebXR.AR.anchors_enabled!==false) && 'ON')||'OFF')}}\n4. Framebuffer Scale:x{{((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.framebufferScaleFactor)||System._browser.url_search_params.xr_fb_scale||1)}}\n5. Dummy WebGL Layer:{{(MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.dom_overlay && MMD_SA_options.WebXR.AR.dom_overlay.use_dummy_webgl && 'ON')||'OFF'}}\n6 User Camera:{{(MMD_SA.WebXR.user_camera_video)?MMD_SA.WebXR.user_camera_video.width+'x'+MMD_SA.WebXR.user_camera_video.height:'NOT IN USE'}}"
  ,bubble_index: 3
           }
         }
@@ -10539,7 +10539,7 @@ else {
      ,[
         {
           message: {
-  content: "1. Dummy WebGL Layer\n2. Front Camera\n3. Cancel"
+  content: "1. Dummy WebGL Layer\n2. User Camera\n3. Cancel"
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:11 }
@@ -10578,7 +10578,7 @@ DEBUG_show("Dummy WebGL Layer:" + ((AR_options.dom_overlay.use_dummy_webgl && "O
     var video
 
     function create_video() {
-video = document.createElement("video")
+MMD_SA.WebXR.user_camera_video = video = document.createElement("video")
 video.playsinline = true
 video.autoplay = true
 
