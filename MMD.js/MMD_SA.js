@@ -4996,7 +4996,15 @@ anchor._data.update(anchor._data.obj);
     this.camera.matrix.elements[14] += this.hitMatrix_anchor.game_geo.position.z - this.hitMatrix_anchor.decomposed[0].z*10
   }
 
-  this.camera.position.getPositionFromMatrix(this.camera.matrix)
+  if (this.user_camera && (this.user_camera.video.style.visibility != "hidden")) {
+    let cm_decomposed = this.camera.matrix.decompose()
+    this.camera.position.copy(cm_decomposed[0])
+    this.camera.matrix.makeFromPositionQuaternionScale(cm_decomposed[0], cm_decomposed[1].inverse(), cm_decomposed[2])
+  }
+  else {
+    this.camera.position.getPositionFromMatrix(this.camera.matrix)
+  }
+
   this.camera.updateMatrixWorld(true);
 }
 //else { DEBUG_show(0,0,1) }
