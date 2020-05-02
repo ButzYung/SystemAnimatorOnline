@@ -5000,7 +5000,7 @@ anchor._data.update(anchor._data.obj);
     let cm_decomposed = this.camera.matrix.decompose()
     this.camera.position.copy(cm_decomposed[0])
     let axis_angle = cm_decomposed[1].toAxisAngle()
-    this.camera.matrix.makeFromPositionQuaternionScale(cm_decomposed[0], cm_decomposed[1].setFromAxisAngle(axis_angle[0], axis_angle[1]+Math.PI)), cm_decomposed[2])
+    this.camera.matrix.makeFromPositionQuaternionScale(cm_decomposed[0], cm_decomposed[1].setFromAxisAngle(axis_angle[0], axis_angle[1]+Math.PI), cm_decomposed[2])
   }
   else {
     this.camera.position.getPositionFromMatrix(this.camera.matrix)
