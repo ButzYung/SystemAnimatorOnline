@@ -10643,7 +10643,10 @@ return constraints
 var AR_options = MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR;
 
 if (user_camera_activated) {
-  DEBUG_show("(User camera already activated)")
+  if (MMD_SA.WebXR.user_camera) {
+    MMD_SA.WebXR.user_camera.video.style.visibility = (MMD_SA.WebXR.user_camera.video.style.visibility != "hidden") ? "hidden" : "visible"
+    DEBUG_show("User camera:" + MMD_SA.WebXR.user_camera.video.style.visibility, 2)
+  }
   return
 }
 
@@ -10653,6 +10656,8 @@ constraints.video.facingMode = "user"
 
 navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
   init_stream(stream)
+
+  AR_options.dom_overlay.use_dummy_webgl = true
 
   DEBUG_show("(User camera:ON)")
 }).catch(function (err) {
