@@ -10214,13 +10214,14 @@ if (s.auto_damage && !s.dialogue_mode) {
       [
         {
           message: {
-  content: "1. Graphics Presets (PC)\n2. Graphics Effects (Scene)\n3. WebXR Options\n4. Cancel"
+  content: "1. Graphics Presets (PC)\n2. Graphics Effects (Scene)\n3. WebXR Options\n4. Debug Log\n5. Cancel"
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:1 }
    ,{ key:2, branch_index:6 }
    ,{ key:3, branch_index:8 }
-   ,{ key:4 }
+   ,{ key:4, branch_index:9 }
+   ,{ key:5 }
   ]
           }
         }
@@ -10322,12 +10323,19 @@ DEBUG_show("Shadow:" + ((MMD_SA_options.use_shadowMap && "ON")||"OFF"), 3)
  ,ended: true
         }
       ]
-
-
 // 8
      ,[
         {
           goto_event: { id:"_WEBXR_OPTIONS_", branch_index:0 }
+        }
+      ]
+// 9
+     ,[
+        {
+  func: function () {
+DEBUG_show(System._browser.console.output_text, 10)
+  }
+ ,ended: true
         }
       ]
 
@@ -10597,6 +10605,10 @@ MMD_SA.WebXR.user_camera = {
   stream:stream
  ,video:video
 };
+
+if (stream) {
+  System._browser.console.log(JSON.stringify(stream.getSettings()))
+}
     }
 
     return function () {
