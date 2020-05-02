@@ -10614,6 +10614,22 @@ MMD_SA.WebXR.user_camera = {
 user_camera_activated = true
     }
 
+    function set_constraints() {
+var constraints = {}
+
+var w = screen.availWidth
+var h = screen.availHeight
+if (!is_mobile || !screen.orientation || /landscape/.test(screen.orientation.type)) {
+  constraints.width =  w
+  constraints.height = h
+}
+else {
+  constraints.width =  h
+  constraints.height = w
+}
+return constraints
+    }
+
     return function () {
 var AR_options = MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR;
 
@@ -10622,7 +10638,11 @@ if (user_camera_activated) {
   return
 }
 
-navigator.mediaDevices.getUserMedia({ video:{ facingMode:"user", width:screen.availWidth, height:screen.availHeight /*aspectRatio:1.777777778*/ } }).then(function (stream) {
+/*aspectRatio:1.777777778*/
+var constraints = { video:set_constraints() }
+constraints.video.facingMode = "user"
+
+navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
   init_stream(stream)
 
   DEBUG_show("(User camera:ON)")
