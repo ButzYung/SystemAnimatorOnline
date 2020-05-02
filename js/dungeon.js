@@ -10603,7 +10603,16 @@ SL_Host.appendChild(video)
 
 if (stream) {
   video.srcObject = stream
+
   System._browser.console.log(Object.entries(stream.getVideoTracks()[0].getSettings()).map(s=>s.join(':')).join('\n'))
+
+  window.addEventListener("resize", function () {
+stream.getVideoTracks()[0].applyConstraints(set_constraints()).then(function () {
+  DEBUG_show("(camera size updated)", 2)
+}).catch(function (err) {
+  DEBUG_show("ERROR:camera size failed to update")
+});
+  });
 }
 
 MMD_SA.WebXR.user_camera = {
