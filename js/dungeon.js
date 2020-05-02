@@ -10603,7 +10603,7 @@ SL_Host.appendChild(video)
 
 if (stream) {
   video.srcObject = stream
-  System._browser.console.log(JSON.stringify(stream.getVideoTracks()[0].getSettings()))
+  System._browser.console.log(Object.entries(stream.getVideoTracks()[0].getSettings()).forEach((s)=>(s.join(':')+'\n')))
 }
 
 MMD_SA.WebXR.user_camera = {
