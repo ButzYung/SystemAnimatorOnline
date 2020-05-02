@@ -2759,6 +2759,24 @@ return msg
 return net;
     })()
 
+   ,console: {
+  content_list: []
+
+ ,log: function () {
+for (var i=0; i < arguments.length; i++) {
+  this.content_list.push(arguments[i])
+}
+  }
+
+ ,reset: function () {
+this.content_list = []
+  }
+
+ ,get output_text() {
+return this.content_list.join("\n") || "(EMPTY)"
+  }
+    }
+
   }
 
 
