@@ -680,11 +680,16 @@ mmd.frame_time_ref = t
   if (MMD_SA.fadeout_opacity != null) {
     MMD_SA.fadeout_opacity -= delta
 
-    var context = SL_2D_front.getContext("2d")
+    let context = SL_2D_front.getContext("2d")
     if (MMD_SA.fadeout_opacity > 0) {
 // for desktop and mobile
-      SL_2D_front.width  = SL.width  / window.devicePixelRatio
-      SL_2D_front.height = SL.height / window.devicePixelRatio
+      let w,h
+      w = parseInt(SL.width  / window.devicePixelRatio)
+      h = parseInt(SL.height / window.devicePixelRatio)
+      if ((SL_2D_front.width != w) || (SL_2D_front.height != h)) {
+        SL_2D_front.width  = w
+        SL_2D_front.height = h
+      }
       context.globalCompositeOperation = 'copy'
       context.globalAlpha = MMD_SA.fadeout_opacity
       context.drawImage(MMD_SA.fadeout_canvas, 0,0)
@@ -707,7 +712,7 @@ mmd.frame_time_ref = t
       context.clearRect(0,0, SL_2D_front.width,SL_2D_front.height)
       SL_2D_front.style.display = "none"
       if (use_WebGL_2D) {
-        var w2d = SL_2D_front._WebGL_2D
+        let w2d = SL_2D_front._WebGL_2D
         w2d.gl.clear(w2d.gl.COLOR_BUFFER_BIT);
         w2d.canvas.style.display = "none"
       }

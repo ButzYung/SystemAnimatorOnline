@@ -2765,7 +2765,7 @@ return net;
       var frame_skipped = 99
       function update_video_canvas() {
 // update alternate frame if necessary
-if ((!RAF_animation_frame_unlimited || MMD_SA.WebXR.session) && !frame_skipped) {
+if ((RAF_animation_frame_unlimited && !MMD_SA.WebXR.session) && !frame_skipped) {
   frame_skipped = 1
   return
 }
@@ -2840,6 +2840,10 @@ if (this.visible)
   return
 this.visible = true
 
+if (self.MMD_SA) {
+  SL.style.transform = SL_2D_front.style.transform = "scaleX(-1)"
+}
+
 frame_skipped = 99
 this.video_canvas.style.visibility = "visible"
 System._browser.on_animation_update.add(update_video_canvas,0,0,-1)
@@ -2849,6 +2853,10 @@ System._browser.on_animation_update.add(update_video_canvas,0,0,-1)
 if (!this.visible)
   return
 this.visible = false
+
+if (self.MMD_SA) {
+  SL.style.transform = SL_2D_front.style.transform = ""
+}
 
 this.video_canvas.style.visibility = "hidden"
 System._browser.on_animation_update.remove(update_video_canvas,0)
