@@ -2759,6 +2759,120 @@ return msg
 return net;
     })()
 
+   ,camera: (function () {
+      var camera
+
+      var frame_skipped = 99
+      function update_video_canvas() {
+// update alternate frame if necessary
+if ((!RAF_animation_frame_unlimited || MMD_SA.WebXR.session) && !frame_skipped) {
+  frame_skipped = 1
+  return
+}
+frame_skipped = 0
+
+var video = camera.video
+if (!video.videoWidth)
+  return
+
+var video_canvas = camera.video_canvas
+var context = video_canvas.getContext("2d")
+if ((video_canvas.width != video.videoWidth) || (video_canvas.height != video.videoHeight)) {
+  video_canvas.width  = video.videoWidth
+  video_canvas.height = video.videoHeight
+
+  context.globalCompositeOperation = 'copy'
+  context.translate(video.videoWidth, 0)
+  context.scale(-1, 1)
+}
+
+//context.save()
+context.drawImage(video, 0,0)
+//context.restore()
+      }
+
+      camera = {
+  init: function (constraints) {
+return navigator.mediaDevices.getUserMedia(constraints);
+  }
+
+ ,init_stream: function (stream) {
+if (!this.video) {
+  this.video = document.createElement("video")
+//  this.video.playsinline = true
+  this.video.autoplay = true
+
+  this.video_canvas = document.createElement("canvas") 
+  let vs = this.video_canvas.style
+  vs.position = "absolute"
+  vs.left = "0px"
+  vs.top = "0px"
+//  vs.width = "800px"
+//  vs.height = "600px"
+//  vs.backgroundColor = "black"
+  vs.zIndex = 0
+  vs.visibility = "hidden"
+  SL_Host.appendChild(this.video_canvas)
+}
+
+if (!stream) {
+  return
+}
+
+this.stream = stream
+this.video.srcObject = stream
+
+System._browser.console.log(Object.entries(stream.getVideoTracks()[0].getSettings()).map(s=>s.join(':')).join('\n'));
+
+window.addEventListener("resize", function () {
+  stream.getVideoTracks()[0].applyConstraints(System._browser.camera.set_constraints()).then(function () {
+    DEBUG_show("(camera size updated)", 2)
+  }).catch(function (err) {
+    DEBUG_show("ERROR:camera size failed to update")
+  });
+});
+
+this.initialized = true
+  }
+
+ ,show: function () {
+if (this.visible)
+  return
+this.visible = true
+
+frame_skipped = 99
+this.video_canvas.style.visibility = "visible"
+System._browser.on_animation_update.add(update_video_canvas,0,0,-1)
+  }
+
+ ,hide: function () {
+if (!this.visible)
+  return
+this.visible = false
+
+this.video_canvas.style.visibility = "hidden"
+System._browser.on_animation_update.remove(update_video_canvas,0)
+  }
+
+ ,set_constraints: function () {
+var constraints = {}
+
+var w = screen.availWidth
+var h = screen.availHeight
+if (!is_mobile || !screen.orientation || /landscape/.test(screen.orientation.type)) {
+  constraints.width =  w
+  constraints.height = h
+}
+else {
+  constraints.width =  h
+  constraints.height = w
+}
+return constraints
+  }
+      };
+      return camera;
+    })()
+
    ,console: {
   content_list: []
 

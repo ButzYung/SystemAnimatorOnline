@@ -10532,7 +10532,7 @@ else {
     };
   })(),
           message: {
-  content: "1. DOM Overlay:{{(!self.XRSession||!('domOverlayState' in XRSession.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.dom_overlay && (MMD_SA_options.WebXR.AR.dom_overlay.enabled!==false) && 'ON')||'OFF')}}\n2. Light Estimation:{{(!self.XRSession||!('updateWorldTrackingState' in XRSession.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && (MMD_SA_options.WebXR.AR.light_estimation_enabled!==false) && 'ON')||'OFF')}}\n3. Anchors:{{(!self.XRHitTestResult||!('createAnchor' in XRHitTestResult.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && (MMD_SA_options.WebXR.AR.anchors_enabled!==false) && 'ON')||'OFF')}}\n4. Framebuffer Scale:x{{((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.framebufferScaleFactor)||System._browser.url_search_params.xr_fb_scale||1)}}\n5. Dummy WebGL Layer:{{(MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.dom_overlay && MMD_SA_options.WebXR.AR.dom_overlay.use_dummy_webgl && 'ON')||'OFF'}}\n6. User Camera:{{(MMD_SA.WebXR.user_camera && (MMD_SA.WebXR.user_camera.video.videoWidth+'x'+MMD_SA.WebXR.user_camera.video.videoHeight+','+window.devicePixelRatio))||'NOT IN USE'}}"
+  content: "1. DOM Overlay:{{(!self.XRSession||!('domOverlayState' in XRSession.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.dom_overlay && (MMD_SA_options.WebXR.AR.dom_overlay.enabled!==false) && 'ON')||'OFF')}}\n2. Light Estimation:{{(!self.XRSession||!('updateWorldTrackingState' in XRSession.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && (MMD_SA_options.WebXR.AR.light_estimation_enabled!==false) && 'ON')||'OFF')}}\n3. Anchors:{{(!self.XRHitTestResult||!('createAnchor' in XRHitTestResult.prototype))?'NOT SUPPORTED':((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && (MMD_SA_options.WebXR.AR.anchors_enabled!==false) && 'ON')||'OFF')}}\n4. Framebuffer Scale:x{{((MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.framebufferScaleFactor)||System._browser.url_search_params.xr_fb_scale||1)}}\n5. Dummy WebGL Layer:{{(MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR && MMD_SA_options.WebXR.AR.dom_overlay && MMD_SA_options.WebXR.AR.dom_overlay.use_dummy_webgl && 'ON')||'OFF'}}\n6. User Camera:{{(MMD_SA.WebXR.user_camera.video && (MMD_SA.WebXR.user_camera.video.videoWidth+'x'+MMD_SA.WebXR.user_camera.video.videoHeight+','+window.devicePixelRatio))||'NOT IN USE'}}"
  ,bubble_index: 3
           }
         }
@@ -10581,91 +10581,47 @@ DEBUG_show("Dummy WebGL Layer:" + ((AR_options.dom_overlay.use_dummy_webgl && "O
 // 12
      ,[
         {
-  func: (function () {
-    var user_camera_activated
-    var video
-
-    function init_stream(stream) {
-video = document.createElement("video")
-video.playsinline = true
-video.autoplay = true
-
-var vs = video.style
-vs.position = "absolute"
-vs.left = "0px"
-vs.top = "0px"
-//vs.width = "800px"
-//vs.height = "600px"
-//vs.backgroundColor = "black"
-vs.zIndex = 0
-SL_Host.appendChild(video)
-//video.src = toFileProtocol("C:\\Users\\user\\Videos\\TEMP\\AR Miku - Social Distancing.mp4")
-
-if (stream) {
-  video.srcObject = stream
-
-  System._browser.console.log(Object.entries(stream.getVideoTracks()[0].getSettings()).map(s=>s.join(':')).join('\n'))
-
-  window.addEventListener("resize", function () {
-stream.getVideoTracks()[0].applyConstraints(set_constraints()).then(function () {
-  DEBUG_show("(camera size updated)", 2)
-}).catch(function (err) {
-  DEBUG_show("ERROR:camera size failed to update")
-});
-  });
+  func: function () {
+if (!MMD_SA_options.WebXR) {
+  DEBUG_show("(AR mode only)", 2)
+  return
 }
 
-MMD_SA.WebXR.user_camera = {
-  stream:stream
- ,video:video
-};
+var AR_options = MMD_SA_options.WebXR.AR
+var user_camera = MMD_SA.WebXR.user_camera
 
-user_camera_activated = true
-    }
-
-    function set_constraints() {
-var constraints = {}
-
-var w = screen.availWidth
-var h = screen.availHeight
-if (!is_mobile || !screen.orientation || /landscape/.test(screen.orientation.type)) {
-  constraints.width =  w
-  constraints.height = h
-}
-else {
-  constraints.width =  h
-  constraints.height = w
-}
-return constraints
-    }
-
-    return function () {
-var AR_options = MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR;
-
-if (user_camera_activated) {
-  if (MMD_SA.WebXR.user_camera) {
-    MMD_SA.WebXR.user_camera.video.style.visibility = (MMD_SA.WebXR.user_camera.video.style.visibility != "hidden") ? "hidden" : "visible"
-    DEBUG_show("User camera:" + MMD_SA.WebXR.user_camera.video.style.visibility, 2)
-  }
+if (user_camera.initialized) {
+  if (user_camera.visible)
+    user_camera.show()
+  else
+    user_camera.hide()
+  DEBUG_show("User camera:" + ((user_camera.visible && "VISIBLE") || "HIDDEN"), 2)
   return
 }
 
 /*aspectRatio:1.777777778*/
-var constraints = { video:set_constraints() }
+var constraints = { video:user_camera.set_constraints() }
 constraints.video.facingMode = "user"
 
-navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
-  init_stream(stream)
+user_camera.init(constraints).then(function (stream) {
+  user_camera.init_stream(stream)
 
-  AR_options.dom_overlay.use_dummy_webgl = true
+  if (AR_options.dom_overlay)
+    AR_options.dom_overlay.use_dummy_webgl = true
+
+  user_camera.show()
 
   DEBUG_show("(User camera:ON)")
 }).catch(function (err) {
-//  init_stream()
+  user_camera.init_stream()
+
+  user_camera.video.src = toFileProtocol("C:\\Users\\user\\Videos\\TEMP\\AR Miku - Social Distancing.mp4")
+  user_camera.initialized = true
+  user_camera.show()
+
   DEBUG_show("(ERROR: User camera not available)")
 });
-    };
-  })()
+  }
  ,ended: true
         }
       ]

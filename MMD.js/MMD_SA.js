@@ -4996,7 +4996,7 @@ anchor._data.update(anchor._data.obj);
     this.camera.matrix.elements[14] += this.hitMatrix_anchor.game_geo.position.z - this.hitMatrix_anchor.decomposed[0].z*10
   }
 
-  if (this.user_camera && (this.user_camera.video.style.visibility != "hidden")) {
+  if (this.user_camera.visible) {
     let cm_decomposed = this.camera.matrix.decompose()
     this.camera.position.copy(cm_decomposed[0])
     this.camera.matrix.makeFromPositionQuaternionScale(cm_decomposed[0], cm_decomposed[1].multiply(MMD_SA.TEMP_q.setFromAxisAngle(MMD_SA.TEMP_v3.set(0,1,0), Math.PI)), cm_decomposed[2])
@@ -5094,6 +5094,9 @@ if (!this.hits_searching) {
 
 return null
   }
+
+ ,user_camera: System._browser.camera
+
     };
 
     try {
