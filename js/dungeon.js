@@ -10592,9 +10592,9 @@ var user_camera = MMD_SA.WebXR.user_camera
 
 if (user_camera.initialized) {
   if (user_camera.visible)
-    user_camera.show()
-  else
     user_camera.hide()
+  else
+    user_camera.show()
   DEBUG_show("User camera:" + ((user_camera.visible && "VISIBLE") || "HIDDEN"), 2)
   return
 }
