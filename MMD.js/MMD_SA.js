@@ -4744,6 +4744,8 @@ if (1) {
 
 window.dispatchEvent(new CustomEvent("SA_AR_onSessionStarted"));
 
+this.user_camera.hide()
+
 session.requestAnimationFrame(xr.onARFrame);
   }
 

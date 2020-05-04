@@ -10582,46 +10582,7 @@ DEBUG_show("Dummy WebGL Layer:" + ((AR_options.dom_overlay.use_dummy_webgl && "O
      ,[
         {
   func: function () {
-if (!MMD_SA_options.WebXR) {
-  DEBUG_show("(AR mode only)", 2)
-  return
-}
-
-var AR_options = MMD_SA_options.WebXR.AR
-var user_camera = MMD_SA.WebXR.user_camera
-
-if (user_camera.initialized) {
-  if (user_camera.visible)
-    user_camera.hide()
-  else
-    user_camera.show()
-  DEBUG_show("User camera:" + ((user_camera.visible && "VISIBLE") || "HIDDEN"), 2)
-  return
-}
-
-/*aspectRatio:1.777777778*/
-var constraints = { video:user_camera.set_constraints() }
-constraints.video.facingMode = "user"
-
-user_camera.init(constraints).then(function (stream) {
-  user_camera.init_stream(stream)
-
-  if (AR_options.dom_overlay)
-    AR_options.dom_overlay.use_dummy_webgl = true
-
-  user_camera.show()
-
-  DEBUG_show("(User camera:ON)")
-}).catch(function (err) {
-  user_camera.init_stream()
-
-  user_camera.video.loop = true
-  user_camera.video.src = "js/headtrackr.mp4"//toFileProtocol("C:\\Users\\user\\Videos\\TEMP\\AR Miku - Social Distancing.mp4")//
-  user_camera.initialized = true
-  user_camera.show()
-
-  DEBUG_show("(ERROR: User camera not available)")
-});
+MMD_SA.WebXR.user_camera.start()
   }
  ,ended: true
         }

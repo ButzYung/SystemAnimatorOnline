@@ -36,7 +36,7 @@ function process_video_buffer(rgba, w,h, threshold) {
 				}
 				params = {
 					"shiftfactor": 0.1, // move the detection window by 10% of its size
-					"minsize": 100,     // minimum size of a face
+					"minsize": 50,//100,     // minimum size of a face
 					"maxsize": 1000,    // maximum size of a face
 					"scalefactor": 1.1  // for multiscale processing: resize the detection window by 10% when moving to the higher scale
 				}
@@ -46,21 +46,7 @@ function process_video_buffer(rgba, w,h, threshold) {
 				dets = pico.run_cascade(image, facefinder_classify_region, params);
 				dets = update_memory(dets);
 				dets = pico.cluster_detections(dets, 0.2); // set IoU threshold to 0.2
-				// draw detections
-/*
-				for(i=0; i<dets.length; ++i)
-					// check the detection score
-					// if it's above the threshold, draw it
-					// (the constant 50.0 is empirical: other cascades might require a different one)
-					if(dets[i][3]>50.0)
-					{
-						ctx.beginPath();
-						ctx.arc(dets[i][1], dets[i][0], dets[i][2]/2, 0, 2*Math.PI, false);
-						ctx.lineWidth = 3;
-						ctx.strokeStyle = 'red';
-						ctx.stroke();
-					}
-*/
+
   dets = dets.filter((d)=>(d[3]>threshold));
   postMessage(JSON.stringify({ dets:dets }));
 }

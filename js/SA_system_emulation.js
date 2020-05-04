@@ -2776,7 +2776,7 @@ if (!video.videoWidth)
   return
 
 var overlay = camera.video_canvas_overlay;
-var use_overlay = camera.face_detection.initialized && camera.face_detection.face_cover.complete;
+var use_overlay = camera.face_detection.started && camera.face_detection.face_cover.complete;
 overlay.style.visibility = (use_overlay) ? "visible" : "hidden";
 
 var video_canvas = camera.video_canvas
@@ -2827,8 +2827,43 @@ if (use_overlay && !camera.face_detection.busy) {
       }
 
       camera = {
-  init: function (constraints) {
-return navigator.mediaDevices.getUserMedia(constraints);
+  initialized: false
+ ,start: function () {
+var AR_options = MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR
+var user_camera = this
+
+if (this.initialized) {
+  if (this.visible)
+    this.hide()
+  else
+    this.show()
+  DEBUG_show("User camera:" + ((this.visible && "VISIBLE") || "HIDDEN"), 2)
+  return
+}
+
+/*aspectRatio:1.777777778*/
+var constraints = { video:this.set_constraints() }
+constraints.video.facingMode = "user"
+
+navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
+  user_camera.init_stream(stream)
+
+  if (AR_options && AR_options.dom_overlay)
+    AR_options.dom_overlay.use_dummy_webgl = true
+
+  user_camera.show()
+
+  DEBUG_show("(User camera:ON)", 2)
+}).catch(function (err) {
+  user_camera.init_stream()
+
+  user_camera.video.loop = true
+  user_camera.video.src = "js/headtrackr.mp4"//toFileProtocol("C:\\Users\\user\\Videos\\TEMP\\AR Miku - Social Distancing.mp4")//
+  user_camera.initialized = true
+  user_camera.show()
+
+  DEBUG_show("(ERROR: Camera unavailable, using fallback video instead)", 3)
+});
   }
 
  ,init_stream: function (stream) {
@@ -2859,7 +2894,7 @@ if (!this.video) {
   vs.visibility = "hidden"
   SL_Host.appendChild(this.video_canvas_overlay)
 
-  this.face_detection.init()
+//  this.face_detection.init()
 }
 
 if (!stream) {
@@ -2886,7 +2921,7 @@ this.initialized = true
     var fd_worker;
 
     var canvs_pre;
-    function start_capture() {
+    function video_capture() {
 if (face_detection.busy)
   return
 face_detection.busy = true
@@ -2928,7 +2963,17 @@ data = undefined
     }
 
     var face_detection = {
-      init: function () {
+      initialized: false
+     ,started: false
+     ,worker_initialized: false
+
+     ,init: function () {
+if (this.initialized) {
+  if (this.worker_initialized)
+    this.start_capture()
+  return
+}
+
 this.face_cover = new Image()
 this.face_cover.src = "images/laughing_man_134x120.png"
 
@@ -2938,30 +2983,41 @@ fd_worker.onmessage = function (e) {
   var data = ((typeof e.data == "string") && (e.data.charAt(0) === "{")) ? JSON.parse(e.data) : e.data;
 
   if (typeof data === "string") {
-DEBUG_show(data)
+DEBUG_show(data, 2)
+    face_detection.worker_initialized = true
+    face_detection.start_capture()
   }
   else {
 //DEBUG_show(Date.now()+":"+data.dets.length)
     face_detection.dets = data.dets
     face_detection.busy = false
   }
-
-  if (!face_detection.initialized)
-    face_detection.start_capture()
 };
+
+this.initialized = true
       }
 
      ,dets: []
      ,start_capture: function () {
-face_detection.initialized = true
-System._browser.on_animation_update.add(start_capture, 1,1,-1);
+if (!this.initialized || this.started)
+  return
+this.started = true
+
+System._browser.on_animation_update.add(video_capture, 2,1,-1);
+      }
+     ,stop_capture: function () {
+if (!this.initialized || !this.started)
+  return
+this.started = false
+
+System._browser.on_animation_update.remove(video_capture, 1);
       }
     };
     return face_detection;
   })()
 
  ,show: function () {
-if (this.visible)
+if (!this.initialized || this.visible)
   return
 this.visible = true
 
@@ -2975,7 +3031,7 @@ System._browser.on_animation_update.add(update_video_canvas,0,0,-1)
   }
 
  ,hide: function () {
-if (!this.visible)
+if (!this.initialized || !this.visible)
   return
 this.visible = false
 
@@ -2984,6 +3040,7 @@ if (self.MMD_SA) {
 }
 
 this.video_canvas.style.visibility = "hidden"
+this.video_canvas_overlay.style.visibility = "hidden"
 System._browser.on_animation_update.remove(update_video_canvas,0)
   }
 

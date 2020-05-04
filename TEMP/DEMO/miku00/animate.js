@@ -1367,7 +1367,27 @@ window.addEventListener("GOML_ready", function () {
   ]
 
  ,item_base: {
-    "air_blower": (function () {
+    "reticle" : {
+  icon_path: Settings.f_path + '/assets/assets.zip#/icon/yellow-target_64x64.png'
+ ,info_short: "AR reticle"
+ ,is_base_inventory: true
+ ,stock_max: 1
+ ,stock_default: 1
+ ,action: {
+    func: function (item) {
+if (!MMD_SA.WebXR.session) {
+  DEBUG_show("(AR mode only)", 3)
+  return true
+}
+
+//SA_AR_dblclick
+var result = { return_value:null }
+window.dispatchEvent(new CustomEvent("SA_AR_dblclick", { detail:{ e:{}, is_item:true, result:result } }));
+    }
+  }
+    }
+
+   ,"air_blower": (function () {
       function air_blower_frame() {
 if (MMD_SA.ammo_proxy && MMD_SA.ammo_proxy._timeStep) return// {DEBUG_show(Date.now()); return; }
 
@@ -1602,25 +1622,83 @@ MMD_SA._force_motion_shuffle = true
       return social_distancing;
     })()
 
-   ,"reticle" : {
-  icon_path: Settings.f_path + '/assets/assets.zip#/icon/yellow-target_64x64.png'
- ,info_short: "AR reticle"
- ,is_base_inventory: true
+   ,"selfie" : {
+  icon_path: Settings.f_path + '/assets/assets.zip#/icon/selfie_64x64.png'
+ ,info_short: "Selfie AR"
+// ,is_base_inventory: true
  ,stock_max: 1
  ,stock_default: 1
  ,action: {
     func: function (item) {
-if (!MMD_SA.WebXR.session) {
-  DEBUG_show("(AR mode only)", 3)
+if (MMD_SA.WebXR.session && !MMD_SA.WebXR.user_camera.initialized) {
+  DEBUG_show("(You need to activate it before entering AR mode.)", 3)
   return true
 }
 
-//SA_AR_dblclick
-var result = { return_value:null }
-window.dispatchEvent(new CustomEvent("SA_AR_dblclick", { detail:{ e:{}, is_item:true, result:result } }));
+if (!MMD_SA.WebXR.user_camera.initialized) {
+  if (MMD_SA_options.Dungeon.inventory.action_disabled)
+    return true
+  MMD_SA_options.Dungeon.run_event("_SELFIE_",0)
+}
+else {
+  MMD_SA.WebXR.user_camera.start()
+}
     }
+   ,anytime: true
   }
     }
+
+   ,"laughing_man" : {
+  icon_path: Settings.f_path + '/assets/assets.zip#/icon/laughing_man_64x64.png'
+ ,info_short: "Laughing Man"
+// ,is_base_inventory: true
+ ,stock_max: 1
+ ,stock_default: 1
+ ,action: {
+    func: function (item) {
+if (!MMD_SA.WebXR.user_camera.initialized) {
+  DEBUG_show("(You need to activate selfie AR first.)", 3)
+  return true
+}
+
+if (MMD_SA.WebXR.user_camera.face_detection.started) {
+  MMD_SA.WebXR.user_camera.face_detection.stop_capture()
+  DEBUG_show("Laughing Man:OFF", 2)
+}
+else {
+  MMD_SA.WebXR.user_camera.face_detection.init()
+  DEBUG_show("Laughing Man:ON", 2)
+}
+    }
+   ,anytime: true
+  }
+    }
+
+  }
+
+ ,events_default: {
+    "_SELFIE_": [
+//0
+      [
+        {
+          message: {
+  content: "Enable selfie camera for AR purpose? 1. Yes\n2. No"
+ ,bubble_index: 3
+ ,branch_list: [
+    { key:1, branch_index:1 }
+   ,{ key:2 }
+  ]
+          }
+        }
+      ]
+// 1
+     ,[
+        {
+          func: function () { MMD_SA.WebXR.user_camera.start() }
+         ,ended: true
+        }
+      ]
+    ]
   }
 
  ,options_by_area_id: {
