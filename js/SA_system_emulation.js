@@ -2805,11 +2805,12 @@ if (use_overlay && !camera.face_detection.busy) {
   context.clearRect(0,0,overlay.width,overlay.height)
   let h,w,x,y;
   if (camera.face_detection.dets.length) {
+    let scale = 1 / camera.face_detection.scale
     camera.face_detection.dets.forEach(function (det) {
-      h = det[2]
+      h = det[2] * scale
       w = h * cw/ch
-      x = det[1] - w/2
-      y = det[0] - h/2
+      x = det[1] * scale - w/2
+      y = det[0] * scale - h/2
       context.drawImage(face_cover, 0,0,cw,ch, x,y,w,h)
     });
   }
@@ -2884,16 +2885,42 @@ this.initialized = true
  ,face_detection: (function () {
     var fd_worker
 
+    var canvs_pre = document.createElement("canvas")
     function start_capture() {
 if (face_detection.busy)
   return
 face_detection.busy = true
 
 var video_canvas = camera.video_canvas
-var context = video_canvas.getContext("2d")
-var rgba = context.getImageData(0, 0, video_canvas.width, video_canvas.height).data.buffer;
+var w = video_canvas.width
+var h = video_canvas.height
+var dim = Math.max(w,h)
+var context
+if (dim > 480) {
+  face_detection.scale = (dim/2 < 480) ? 0.5 : 480/dim;
+  let w_resized = Math.round(w * face_detection.scale)
+  let h_resized = Math.round(h * face_detection.scale)
 
-var data = { rgba:rgba, w:video_canvas.width, h:video_canvas.height };//, threshold:1 };
+  video_canvas = canvs_pre
+  if ((video_canvas.width != w_resized) || (video_canvas.height != h_resized)) {
+    video_canvas.width  = w_resized
+    video_canvas.height = h_resized
+    DEBUG_show("(Face detection canvas resized)", 2)
+  }
+
+  context = video_canvas.getContext("2d")
+  context.drawImage(camera.video_canvas, 0,0,w,h, 0,0,w_resized,h_resized)
+  w = w_resized
+  h = h_resized
+}
+else {
+  face_detection.scale = 1
+  context = video_canvas.getContext("2d")
+}
+
+var rgba = context.getImageData(0,0,w,h).data.buffer;
+
+var data = { rgba:rgba, w:w, h:h };//, threshold:1 };
 fd_worker.postMessage(data, [data.rgba]);
 
 data.rgba = rgba = undefined

@@ -10616,7 +10616,7 @@ user_camera.init(constraints).then(function (stream) {
   user_camera.init_stream()
 
   user_camera.video.loop = true
-  user_camera.video.src = "js/headtrackr.mp4"//toFileProtocol("C:\\Users\\user\\Videos\\TEMP\\AR Miku - Social Distancing.mp4")
+  user_camera.video.src = "js/headtrackr.mp4"//toFileProtocol("C:\\Users\\user\\Videos\\TEMP\\AR Miku - Social Distancing.mp4")//
   user_camera.initialized = true
   user_camera.show()
 
