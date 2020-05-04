@@ -1838,6 +1838,9 @@ window.addEventListener("SA_MMD_model0_onmotionplaying", function (e) {
   if (!/standmix2_modified/.test(mm.filename))
     return
 
+  if (MMD_SA.WebXR.user_camera.visible)
+    return
+
   var AR_options = MMD_SA_options.WebXR.AR
   var d = MMD_SA_options.Dungeon;
   var dis = v3a.copy(MMD_SA.camera_position).setY(0).distanceTo(v3b.copy(model_mesh.position).setY(0))/10 / MMD_SA.WebXR.zoom_scale;

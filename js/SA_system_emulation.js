@@ -2775,11 +2775,18 @@ var video = camera.video
 if (!video.videoWidth)
   return
 
+var overlay = camera.video_canvas_overlay;
+var use_overlay = camera.face_detection.initialized && camera.face_detection.face_cover.complete;
+overlay.style.visibility = (use_overlay) ? "visible" : "hidden";
+
 var video_canvas = camera.video_canvas
 var context = video_canvas.getContext("2d")
 if ((video_canvas.width != video.videoWidth) || (video_canvas.height != video.videoHeight)) {
   video_canvas.width  = video.videoWidth
   video_canvas.height = video.videoHeight
+
+  overlay.width  = video.videoWidth
+  overlay.height = video.videoHeight
 
   context.globalCompositeOperation = 'copy'
   context.translate(video.videoWidth, 0)
@@ -2789,6 +2796,33 @@ if ((video_canvas.width != video.videoWidth) || (video_canvas.height != video.vi
 //context.save()
 context.drawImage(video, 0,0)
 //context.restore()
+
+if (use_overlay && !camera.face_detection.busy) {
+  let face_cover = camera.face_detection.face_cover
+  let cw = face_cover.width
+  let ch = face_cover.height
+  context = overlay.getContext("2d")
+  context.clearRect(0,0,overlay.width,overlay.height)
+  let h,w,x,y;
+  if (camera.face_detection.dets.length) {
+    camera.face_detection.dets.forEach(function (det) {
+      h = det[2]
+      w = h * cw/ch
+      x = det[1] - w/2
+      y = det[0] - h/2
+      context.drawImage(face_cover, 0,0,cw,ch, x,y,w,h)
+    });
+  }
+  else {
+    h = Math.min(overlay.width, overlay.height)
+    w = h * cw/ch
+    x = (overlay.width -w)/2
+    y = (overlay.height-h)/2
+    context.drawImage(face_cover, 0,0,cw,ch, x,y,w,h)
+  }
+//DEBUG_show(Date.now()+":"+camera.face_detection.dets.length)
+}
+
       }
 
       camera = {
@@ -2802,8 +2836,9 @@ if (!this.video) {
 //  this.video.playsinline = true
   this.video.autoplay = true
 
-  this.video_canvas = document.createElement("canvas") 
-  let vs = this.video_canvas.style
+  let vs
+  this.video_canvas = document.createElement("canvas")
+  vs = this.video_canvas.style
   vs.position = "absolute"
   vs.left = "0px"
   vs.top = "0px"
@@ -2813,6 +2848,17 @@ if (!this.video) {
   vs.zIndex = 0
   vs.visibility = "hidden"
   SL_Host.appendChild(this.video_canvas)
+
+  this.video_canvas_overlay = document.createElement("canvas")
+  vs = this.video_canvas_overlay.style
+  vs.position = "absolute"
+  vs.left = "0px"
+  vs.top = "0px"
+  vs.zIndex = 0
+  vs.visibility = "hidden"
+  SL_Host.appendChild(this.video_canvas_overlay)
+
+  this.face_detection.init()
 }
 
 if (!stream) {
@@ -2834,6 +2880,58 @@ window.addEventListener("resize", function () {
 
 this.initialized = true
   }
+
+ ,face_detection: (function () {
+    var fd_worker
+
+    function start_capture() {
+if (face_detection.busy)
+  return
+face_detection.busy = true
+
+var video_canvas = camera.video_canvas
+var context = video_canvas.getContext("2d")
+var rgba = context.getImageData(0, 0, video_canvas.width, video_canvas.height).data.buffer;
+
+var data = { rgba:rgba, w:video_canvas.width, h:video_canvas.height };//, threshold:1 };
+fd_worker.postMessage(data, [data.rgba]);
+
+data.rgba = rgba = undefined
+data = undefined
+    }
+
+    var face_detection = {
+      init: function () {
+this.face_cover = new Image()
+this.face_cover.src = "images/laughing_man_134x120.png"
+
+fd_worker = new Worker("js/pico.worker.js");
+
+fd_worker.onmessage = function (e) {
+  var data = ((typeof e.data == "string") && (e.data.charAt(0) === "{")) ? JSON.parse(e.data) : e.data;
+
+  if (typeof data === "string") {
+DEBUG_show(data)
+  }
+  else {
+//DEBUG_show(Date.now()+":"+data.dets.length)
+    face_detection.dets = data.dets
+    face_detection.busy = false
+  }
+
+  if (!face_detection.initialized)
+    face_detection.start_capture()
+};
+      }
+
+     ,dets: []
+     ,start_capture: function () {
+face_detection.initialized = true
+System._browser.on_animation_update.add(start_capture, 1,1,-1);
+      }
+    };
+    return face_detection;
+  })()
 
  ,show: function () {
 if (this.visible)
