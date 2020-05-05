@@ -2932,7 +2932,7 @@ var h = video_canvas.height
 var dim = Math.max(w,h)
 var context
 if (dim > 480) {
-  face_detection.scale = (dim/2 < 480) ? 0.5 : 480/dim;
+  face_detection.scale = 1//(dim/2 < 480) ? 0.5 : 480/dim;
   let w_resized = Math.round(w * face_detection.scale)
   let h_resized = Math.round(h * face_detection.scale)
 
