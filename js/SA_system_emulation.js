@@ -2944,7 +2944,8 @@ if (0&& dim > 480) {
   }
 
   context = video_canvas.getContext("2d")
-  context.drawImage(camera.video_canvas, 0,0,w,h, 0,0,w_resized,h_resized)
+  context.globalCompositeOperation = "copy"
+  context.drawImage(camera.video_canvas, 0,0,w_resized,h_resized)
   w = w_resized
   h = h_resized
 }
