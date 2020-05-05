@@ -2920,7 +2920,7 @@ this.initialized = true
  ,face_detection: (function () {
     var fd_worker;
 
-    var canvs_pre;
+    var canvas_pre;
     function video_capture() {
 if (face_detection.busy)
   return
@@ -2932,13 +2932,13 @@ var h = video_canvas.height
 var dim = Math.max(w,h)
 var context
 if (0&& dim > 480) {
-// slow if the canvas is resized (.scale != 1)
+// slow on mobile if the canvas is resized (.scale != 1)
 //let _t=performance.now()
   face_detection.scale = (dim/2 < 480) ? 0.5 : 480/dim;
   let w_resized = Math.round(w * face_detection.scale)
   let h_resized = Math.round(h * face_detection.scale)
 
-  video_canvas = canvs_pre = canvs_pre || document.createElement("canvas");
+  video_canvas = canvas_pre = canvas_pre || document.createElement("canvas");
   if ((video_canvas.width != w_resized) || (video_canvas.height != h_resized)) {
     video_canvas.width  = w_resized
     video_canvas.height = h_resized
@@ -2955,7 +2955,10 @@ if (0&& dim > 480) {
 else {
   face_detection.scale = 1
   context = video_canvas.getContext("2d")
-context.getImageData(0,0,w,h).data.buffer
+canvas_pre = canvas_pre || document.createElement("canvas")
+canvas_pre.width  = w
+canvas_pre.height = h
+canvas_pre.getContext("2d").drawImage(SL, 0,0,w,h)
 }
 
 var rgba = context.getImageData(0,0,w,h).data.buffer;
