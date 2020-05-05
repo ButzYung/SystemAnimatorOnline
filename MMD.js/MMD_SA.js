@@ -4858,7 +4858,8 @@ if (pose) {
 
   for (let view of pose.views) {
     const viewport = session.renderState.baseLayer.getViewport(view);
-    this.renderer.setViewport(viewport.x, viewport.y, viewport.width, viewport.height);
+    const DPR = MMD_SA._renderer.devicePixelRatio / window.devicePixelRatio;
+    this.renderer.setViewport(viewport.x*DPR, viewport.y*DPR, viewport.width*DPR, viewport.height*DPR);
 
     this.camera.projectionMatrix.fromArray(view.projectionMatrix);
     this.camera.matrix.fromArray(view.transform.matrix);
