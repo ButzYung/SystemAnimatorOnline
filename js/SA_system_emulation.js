@@ -2765,8 +2765,8 @@ return net;
       var frame_skipped = 99
       function update_video_canvas() {
 // update alternate frame if necessary
-if ((RAF_animation_frame_unlimited && !MMD_SA.WebXR.session) && !frame_skipped) {
-  frame_skipped = 1
+if (camera.bodyPix.busy || ((RAF_animation_frame_unlimited && !MMD_SA.WebXR.session) && !frame_skipped)) {
+  frame_skipped++
   return
 }
 frame_skipped = 0
@@ -2775,18 +2775,14 @@ var video = camera.video
 if (!video.videoWidth)
   return
 
-var overlay = camera.video_canvas_overlay;
-var use_overlay = camera.face_detection.started && camera.face_detection.face_cover.complete;
-overlay.style.visibility = (use_overlay) ? "visible" : "hidden";
+var use_face_detection = camera.face_detection.started;
+camera.video_canvas_face_detection.style.visibility = (use_face_detection) ? "visible" : "hidden";
 
 var video_canvas = camera.video_canvas
 var context = video_canvas.getContext("2d")
 if ((video_canvas.width != video.videoWidth) || (video_canvas.height != video.videoHeight)) {
   video_canvas.width  = video.videoWidth
   video_canvas.height = video.videoHeight
-
-  overlay.width  = video.videoWidth
-  overlay.height = video.videoHeight
 
   context.globalCompositeOperation = 'copy'
   context.translate(video.videoWidth, 0)
@@ -2796,34 +2792,6 @@ if ((video_canvas.width != video.videoWidth) || (video_canvas.height != video.vi
 //context.save()
 context.drawImage(video, 0,0)
 //context.restore()
-
-if (use_overlay && !camera.face_detection.busy) {
-  let face_cover = camera.face_detection.face_cover
-  let cw = face_cover.width
-  let ch = face_cover.height
-  context = overlay.getContext("2d")
-  context.clearRect(0,0,overlay.width,overlay.height)
-  let h,w,x,y;
-  if (camera.face_detection.dets.length) {
-    let scale = 1 / camera.face_detection.scale
-    camera.face_detection.dets.forEach(function (det) {
-      h = det[2] * scale
-      w = h * cw/ch
-      x = det[1] * scale - w/2
-      y = det[0] * scale - h/2
-      context.drawImage(face_cover, 0,0,cw,ch, x,y,w,h)
-    });
-  }
-  else {
-    h = Math.min(overlay.width, overlay.height)
-    w = h * cw/ch
-    x = (overlay.width -w)/2
-    y = (overlay.height-h)/2
-    context.drawImage(face_cover, 0,0,cw,ch, x,y,w,h)
-  }
-//DEBUG_show(Date.now()+":"+camera.face_detection.dets.length)
-}
-
       }
 
       camera = {
@@ -2885,14 +2853,23 @@ if (!this.video) {
   vs.visibility = "hidden"
   SL_Host.appendChild(this.video_canvas)
 
-  this.video_canvas_overlay = document.createElement("canvas")
-  vs = this.video_canvas_overlay.style
+  this.video_canvas_bodyPix = document.createElement("canvas")
+  vs = this.video_canvas_bodyPix.style
   vs.position = "absolute"
   vs.left = "0px"
   vs.top = "0px"
   vs.zIndex = 0
   vs.visibility = "hidden"
-  SL_Host.appendChild(this.video_canvas_overlay)
+  SL_Host.appendChild(this.video_canvas_bodyPix)
+
+  this.video_canvas_face_detection = document.createElement("canvas")
+  vs = this.video_canvas_face_detection.style
+  vs.position = "absolute"
+  vs.left = "0px"
+  vs.top = "0px"
+  vs.zIndex = 0
+  vs.visibility = "hidden"
+  SL_Host.appendChild(this.video_canvas_face_detection)
 
 //  this.face_detection.init()
 }
@@ -2917,6 +2894,62 @@ window.addEventListener("resize", function () {
 this.initialized = true
   }
 
+// https://github.com/tensorflow/tfjs-models/tree/master/body-pix
+ ,bodyPix: (function () {
+    var net;
+
+    var _bodyPix = {
+  enabled: false
+ ,busy: false
+
+ ,load: async function (options) {
+this.enabled = true
+
+if (net) return;
+
+net = await bodyPix.load(options || {
+  architecture: 'MobileNetV1',
+  outputStride: 16,
+  multiplier: 0.5,
+  quantBytes: 2
+});
+
+console.log("bodyPix loaded");
+  }
+
+ ,segmentPerson: async function (image, options) {
+await this.load();
+
+return await net.segmentPerson(image, options || {
+  flipHorizontal: false,
+  internalResolution: 'medium',
+  segmentationThreshold: 0.7
+});
+  }
+
+ ,toMask: async function (image, options_seg, options) {
+const seg = await this.segmentPerson(image, options_seg);
+
+return bodyPix.toMask(seg);
+  }
+
+ ,drawMask: async function (image, options_seg, options_mask, options_draw) {
+if (this.busy)
+  return
+this.busy = true
+
+const mask = await this.toMask(image, options_seg, options_mask)
+
+options_draw.canvas.style.visibility = "visible"
+bodyPix.drawMask(options_draw.canvas, options_draw.img||image, mask, options_draw.opacity||1, options_draw.maskBlurAmount||3, options_draw.flipHorizontal);
+
+this.busy = false
+  }
+    };
+
+    return _bodyPix;
+  })()
+
  ,face_detection: (function () {
     var fd_worker;
 
@@ -2931,9 +2964,9 @@ var w = video_canvas.width
 var h = video_canvas.height
 var dim = Math.max(w,h)
 var context
+//let _t=performance.now()
 if (0&& dim > 480) {
 // slow on mobile if the canvas is resized (.scale != 1)
-//let _t=performance.now()
   face_detection.scale = (dim/2 < 480) ? 0.5 : 480/dim;
   let w_resized = Math.round(w * face_detection.scale)
   let h_resized = Math.round(h * face_detection.scale)
@@ -2950,21 +2983,32 @@ if (0&& dim > 480) {
   context.drawImage(camera.video_canvas, 0,0,w_resized,h_resized)
   w = w_resized
   h = h_resized
-//DEBUG_show(performance.now()-_t)
 }
 else {
   face_detection.scale = 1
   context = video_canvas.getContext("2d")
+/*
 canvas_pre = canvas_pre || document.createElement("canvas")
 canvas_pre.width  = w
 canvas_pre.height = h
 canvas_pre.getContext("2d").drawImage(SL, 0,0,w,h)
+*/
 }
+//DEBUG_show(performance.now()-_t)
+
+face_detection.busy=false
+camera.bodyPix.drawMask(video_canvas, null, null, { canvas:camera.video_canvas_bodyPix });
+return
+
 
 var rgba = context.getImageData(0,0,w,h).data.buffer;
 
 var data = { rgba:rgba, w:w, h:h };//, threshold:1 };
-fd_worker.postMessage(data, [data.rgba]);
+if (!camera.video_canvas_face_detection._offscreen) {
+  data.canvas = camera.video_canvas_face_detection.transferControlToOffscreen()
+  camera.video_canvas_face_detection._offscreen = true
+}
+fd_worker.postMessage(data, (data.canvas)?[data.canvas,data.rgba]:[data.rgba]);
 
 data.rgba = rgba = undefined
 data = undefined
@@ -3048,7 +3092,7 @@ if (self.MMD_SA) {
 }
 
 this.video_canvas.style.visibility = "hidden"
-this.video_canvas_overlay.style.visibility = "hidden"
+this.video_canvas_face_detection.style.visibility = "hidden"
 System._browser.on_animation_update.remove(update_video_canvas,0)
   }
 
