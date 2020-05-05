@@ -16,6 +16,23 @@ postMessage('pico.js cascade loaded');
 	})
 });
 
+var face_cover;
+// https://dev.to/trezy/loading-images-with-web-workers-49ap
+fetch("../images/laughing_man_134x120.png").then(function (response) {
+//console.log(response)
+  response.blob().then(function (blob) {
+    createImageBitmap(blob).then(function (img) {
+//console.log(face_cover)
+      face_cover = img
+      console.log("face cover OK")
+    });
+  });
+}).catch(function (err) {
+  console.log("ERROR: face cover FAILED")
+});
+
+var canvas, RAF_timerID;
+
 function rgba_to_grayscale(rgba, nrows, ncols) {
 	var gray = new Uint8Array(nrows*ncols);
 	for(var r=0; r<nrows; ++r)
@@ -26,15 +43,18 @@ function rgba_to_grayscale(rgba, nrows, ncols) {
 }
 
 function process_video_buffer(rgba, w,h, threshold) {
+  if (!face_cover)
+    return
+
   rgba = new Uint8ClampedArray(rgba);
 				// prepare input to `run_cascade`
-				image = {
+				const image = {
 					"pixels": rgba_to_grayscale(rgba, h, w),
 					"nrows": h,
 					"ncols": w,
 					"ldim": w
 				}
-				params = {
+				const params = {
 					"shiftfactor": 0.1, // move the detection window by 10% of its size
 					"minsize": 50,//100,     // minimum size of a face
 					"maxsize": 1000,    // maximum size of a face
@@ -43,17 +63,57 @@ function process_video_buffer(rgba, w,h, threshold) {
 				// run the cascade over the frame and cluster the obtained detections
 				// dets is an array that contains (r, c, s, q) quadruplets
 				// (representing row, column, scale and detection score)
-				dets = pico.run_cascade(image, facefinder_classify_region, params);
+				let dets = pico.run_cascade(image, facefinder_classify_region, params);
 				dets = update_memory(dets);
 				dets = pico.cluster_detections(dets, 0.2); // set IoU threshold to 0.2
 
   dets = dets.filter((d)=>(d[3]>threshold));
   postMessage(JSON.stringify({ dets:dets }));
+
+  if (RAF_timerID)
+    cancelAnimationFrame(RAF_timerID)
+  RAF_timerID = requestAnimationFrame(function () {
+    RAF_timerID = null
+    draw_dets(dets, w,h)
+  });
+}
+
+function draw_dets(dets, ww,hh) {
+  let cw = face_cover.width
+  let ch = face_cover.height
+
+  if ((canvas.width != ww) || (canvas.height != hh)) {
+    canvas.width  = ww
+    canvas.height = hh
+  }
+  context = canvas.getContext("2d")
+  context.clearRect(0,0,ww,hh)
+  let h,w,x,y;
+  if (dets.length) {
+    let scale = 1
+    dets.forEach(function (det) {
+      h = det[2] * scale
+      w = h * cw/ch
+      x = det[1] * scale - w/2
+      y = det[0] * scale - h/2
+      context.drawImage(face_cover, 0,0,cw,ch, x,y,w,h)
+    });
+  }
+  else {
+    h = Math.min(ww,hh)
+    w = h * cw/ch
+    x = (ww - w)/2
+    y = (hh - h)/2
+    context.drawImage(face_cover, 0,0,cw,ch, x,y,w,h)
+  }
 }
 
 onmessage = function (e) {
   var t = performance.now()
   var data = (typeof e.data === "string") ? JSON.parse(e.data) : e.data;
+
+  if (data.canvas)
+    canvas = data.canvas
 
   if (data.rgba) {
     process_video_buffer(data.rgba, data.w,data.h, data.threshold||50);
