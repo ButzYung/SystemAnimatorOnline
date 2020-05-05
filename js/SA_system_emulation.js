@@ -2897,15 +2897,41 @@ this.initialized = true
 // https://github.com/tensorflow/tfjs-models/tree/master/body-pix
  ,bodyPix: (function () {
     var net;
+    var enabled = false;
 
     var _bodyPix = {
-  enabled: false
+  get enabled() {
+return enabled;
+  }
+ ,set enabled(v) {
+if (enabled == !!v)
+  return
+enabled = !!v
+
+if (enabled) {
+  MMD_SA._renderer.devicePixelRatio = 1
+  MMD_SA._renderer.__resize(EV_width, EV_height)
+  SL.style.visibility = "hidden"
+}
+else {
+  MMD_SA._renderer.devicePixelRatio = window.devicePixelRatio
+  MMD_SA._renderer.__resize(EV_width, EV_height)
+  SL.style.visibility = "visible"
+}
+  }
+
+
  ,busy: false
+ ,mask: null
 
  ,load: async function (options) {
 this.enabled = true
 
 if (net) return;
+
+if (!this.mask) {
+  this.mask = document.createElement("canvas")
+}
 
 net = await bodyPix.load(options || {
   architecture: 'MobileNetV1',
@@ -2930,7 +2956,8 @@ return await net.segmentPerson(image, options || {
  ,toMask: async function (image, options_seg, options) {
 const seg = await this.segmentPerson(image, options_seg);
 
-return bodyPix.toMask(seg);
+options = options || { foregroundColor:{r: 0, g: 0, b: 0, a: 255}, backgroundColor:{r: 0, g: 0, b: 0, a: 0} };
+return bodyPix.toMask(seg, options.foregroundColor, options.backgroundColor);
   }
 
  ,drawMask: async function (image, options_seg, options_mask, options_draw) {
@@ -2939,9 +2966,35 @@ if (this.busy)
 this.busy = true
 
 const mask = await this.toMask(image, options_seg, options_mask)
+//console.log(mask)
+if ((this.mask.width != mask.width) || (this.mask.height != mask.height)) {
+  this.mask.width  = mask.width
+  this.mask.height = mask.height
+}
+this.mask.getContext("2d").putImageData(mask, 0,0);
 
-options_draw.canvas.style.visibility = "visible"
-bodyPix.drawMask(options_draw.canvas, options_draw.img||image, mask, options_draw.opacity||1, options_draw.maskBlurAmount||3, options_draw.flipHorizontal);
+if ((camera.video_canvas_bodyPix.width != mask.width) || (camera.video_canvas_bodyPix.height != mask.height)) {
+  camera.video_canvas_bodyPix.width  = mask.width
+  camera.video_canvas_bodyPix.height = mask.height
+}
+
+let context = camera.video_canvas_bodyPix.getContext("2d")
+context.globalCompositeOperation = "copy"
+context.filter = "blur(3px)"
+context.drawImage(this.mask, 0,0)
+
+context.globalCompositeOperation = "source-out"
+context.filter = "none"
+context.save()
+context.translate(mask.width, 0)
+context.scale(-1, 1)
+context.drawImage(SL, 0,0,mask.width,mask.height, 0,0,mask.width,mask.height)
+context.restore()
+
+camera.video_canvas_bodyPix.style.visibility = "inherit"
+
+//options_draw.canvas.style.visibility = "visible"
+//bodyPix.drawMask(options_draw.canvas, options_draw.img||image, mask, options_draw.opacity||1, options_draw.maskBlurAmount||3, options_draw.flipHorizontal);
 
 this.busy = false
   }
@@ -2997,7 +3050,7 @@ canvas_pre.getContext("2d").drawImage(SL, 0,0,w,h)
 //DEBUG_show(performance.now()-_t)
 
 face_detection.busy=false
-camera.bodyPix.drawMask(video_canvas, null, null, { canvas:camera.video_canvas_bodyPix });
+camera.bodyPix.drawMask(video_canvas);//, null, null, { canvas:camera.video_canvas_bodyPix });
 return
 
 
@@ -3079,6 +3132,7 @@ if (self.MMD_SA) {
 
 frame_skipped = 99
 this.video_canvas.style.visibility = "visible"
+
 System._browser.on_animation_update.add(update_video_canvas,0,0,-1)
   }
 
@@ -3092,6 +3146,9 @@ if (self.MMD_SA) {
 }
 
 this.video_canvas.style.visibility = "hidden"
+
+this.bodyPix.enabled = false
+
 this.video_canvas_face_detection.style.visibility = "hidden"
 System._browser.on_animation_update.remove(update_video_canvas,0)
   }
@@ -3099,8 +3156,8 @@ System._browser.on_animation_update.remove(update_video_canvas,0)
  ,set_constraints: function () {
 var constraints = {}
 
-var w = screen.availWidth
-var h = screen.availHeight
+var w = window.innerWidth
+var h = window.innerHeight
 if (!is_mobile || !screen.orientation || /landscape/.test(screen.orientation.type)) {
   constraints.width =  w
   constraints.height = h
