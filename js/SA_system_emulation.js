@@ -2932,7 +2932,8 @@ var h = video_canvas.height
 var dim = Math.max(w,h)
 var context
 if (dim > 480) {
-  face_detection.scale = 1//(dim/2 < 480) ? 0.5 : 480/dim;
+let _t=performance.now()
+  face_detection.scale = (dim/2 < 480) ? 0.5 : 480/dim;
   let w_resized = Math.round(w * face_detection.scale)
   let h_resized = Math.round(h * face_detection.scale)
 
@@ -2940,7 +2941,7 @@ if (dim > 480) {
   if ((video_canvas.width != w_resized) || (video_canvas.height != h_resized)) {
     video_canvas.width  = w_resized
     video_canvas.height = h_resized
-    DEBUG_show("Face detection canvas:" + w_resized+"x"+h_resized, 2)
+//    DEBUG_show("Face detection canvas:" + w_resized+"x"+h_resized, 2)
   }
 
   context = video_canvas.getContext("2d")
@@ -2948,6 +2949,7 @@ if (dim > 480) {
   context.drawImage(camera.video_canvas, 0,0,w_resized,h_resized)
   w = w_resized
   h = h_resized
+DEBUG_show(performance.now()-_t)
 }
 else {
   face_detection.scale = 1
