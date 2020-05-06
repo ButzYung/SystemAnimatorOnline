@@ -31,7 +31,7 @@ fetch("../images/laughing_man_134x120.png").then(function (response) {
   console.log("ERROR: face cover FAILED")
 });
 
-var canvas, RAF_timerID;
+var canvas, context, RAF_timerID;
 
 function rgba_to_grayscale(rgba, nrows, ncols) {
 	var gray = new Uint8Array(nrows*ncols);
@@ -86,7 +86,7 @@ function draw_dets(dets, ww,hh) {
     canvas.width  = ww
     canvas.height = hh
   }
-  context = canvas.getContext("2d")
+
   context.clearRect(0,0,ww,hh)
   let h,w,x,y;
   if (dets.length) {
@@ -112,8 +112,10 @@ onmessage = function (e) {
   var t = performance.now()
   var data = (typeof e.data === "string") ? JSON.parse(e.data) : e.data;
 
-  if (data.canvas)
+  if (data.canvas) {
     canvas = data.canvas
+    context = canvas.getContext("2d")
+  }
 
   if (data.rgba) {
     process_video_buffer(data.rgba, data.w,data.h, data.threshold||50);
