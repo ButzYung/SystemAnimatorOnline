@@ -1656,18 +1656,44 @@ else {
  ,stock_default: 1
  ,action: {
     func: function (item) {
-if (!MMD_SA.WebXR.user_camera.initialized) {
+if (!MMD_SA.WebXR.user_camera.visible) {
   DEBUG_show("(You need to activate selfie AR first.)", 3)
   return true
 }
 
-if (MMD_SA.WebXR.user_camera.face_detection.started) {
-  MMD_SA.WebXR.user_camera.face_detection.stop_capture()
+if (MMD_SA.WebXR.user_camera.face_detection.enabled) {
+  MMD_SA.WebXR.user_camera.face_detection.enabled = false
   DEBUG_show("Laughing Man:OFF", 2)
 }
 else {
-  MMD_SA.WebXR.user_camera.face_detection.init()
+  MMD_SA.WebXR.user_camera.face_detection.enabled = true
   DEBUG_show("Laughing Man:ON", 2)
+}
+    }
+   ,anytime: true
+  }
+    }
+
+   ,"body_pix" : {
+  icon_path: Settings.f_path + '/assets/assets.zip#/icon/people_64x64.png'
+ ,info_short: "BodyPix AI"
+// ,is_base_inventory: true
+ ,stock_max: 1
+ ,stock_default: 1
+ ,action: {
+    func: function (item) {
+if (!MMD_SA.WebXR.user_camera.visible) {
+  DEBUG_show("(You need to activate selfie AR first.)", 3)
+  return true
+}
+
+if (MMD_SA.WebXR.user_camera.bodyPix.enabled) {
+  MMD_SA.WebXR.user_camera.bodyPix.enabled = false
+  DEBUG_show("BodyPix AI:OFF", 2)
+}
+else {
+  MMD_SA.WebXR.user_camera.bodyPix.enabled = true
+  DEBUG_show("BodyPix AI:ON", 2)
 }
     }
    ,anytime: true
