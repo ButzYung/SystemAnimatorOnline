@@ -532,6 +532,8 @@ MMD_SA_options.Dungeon.PC_follower_list.forEach(function (para) {
   }
 
  ,inventory: (function () {
+var inventory;
+
 var INV = function (index) {
   this.index = index
   this.item_id = ""
@@ -542,7 +544,15 @@ var INV = function (index) {
 INV.prototype = {
   constructor: INV
 
- ,add: function (item_id, stock) {
+ ,add: function (item_id, stock, swap_if_necessary) {
+var item_id_old, stock_old;
+if (swap_if_necessary && this.item_id) {
+  if (this.item_id != item_id) {
+    item_id_old = this.item_id
+    stock_old = this.stock
+  }
+}
+
 this.item = MMD_SA_options.Dungeon.item_base[item_id]
 var stock_ini = (this.item_id == item_id) ? this.stock : 0
 var stock_added = (this.item.stock_max && (stock + stock_ini > this.item.stock_max)) ? this.item.stock_max - stock_ini : stock
@@ -551,6 +561,10 @@ this.item_id = item_id
 
 if (stock_added)
   this.update_UI()
+
+if (item_id_old) {
+  inventory.add(item_id_old, stock_old)
+}
 
 return stock - stock_added
   }
@@ -591,7 +605,7 @@ if (!action) {
   return false
 }
 
-if (!action.anytime && MMD_SA_options.Dungeon.inventory.action_disabled) {
+if (!action.anytime && inventory.action_disabled) {
   MMD_SA_options.Dungeon.sound.audio_object_by_name[sound_item_deny.name].play()
   return false
 }
@@ -606,7 +620,7 @@ System._browser.load_file(System.Gadget.path + '/images/_dungeon/item_icon.zip#/
 item_border.normal = new Image()
 System._browser.load_file(System.Gadget.path + '/images/_dungeon/item_icon.zip#/inventory/RarityBorders/monoV11.png', item_border.normal)
 
-return {
+inventory = {
   max_row: 4
  ,max_base: 8
  ,list: []
@@ -700,7 +714,7 @@ for (var id in MMD_SA_options.Dungeon.item_base) {
   var item = MMD_SA_options.Dungeon.item_base[id]
   item.reset && item.reset()
   if (item.index_default >= 0) {
-    this.list[item.index_default].add(id, item.stock_default||1)
+    this.list[item.index_default].add(id, item.stock_default||1, true)
   }
   else if (item.stock_default) {
     this.add(id, item.stock_default)
@@ -718,6 +732,8 @@ else
 }
   }
 };
+
+return inventory;
   })()
 
 
