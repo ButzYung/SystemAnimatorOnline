@@ -4834,6 +4834,8 @@ if (1) {
 this.renderer.device_framebuffer = null;
 window.dispatchEvent(new Event('resize'));
 
+this.user_camera.hide()
+
 window.dispatchEvent(new CustomEvent("SA_AR_onSessionEnd"));
 
 //DEBUG_show("session ended",0,1)
@@ -4856,9 +4858,9 @@ if (pose) {
     this.renderer.device_framebuffer = session.renderState.baseLayer.framebuffer;
   }
 
+  const DPR = MMD_SA._renderer.devicePixelRatio / window.devicePixelRatio;
   for (let view of pose.views) {
     const viewport = session.renderState.baseLayer.getViewport(view);
-    const DPR = MMD_SA._renderer.devicePixelRatio / window.devicePixelRatio;
     this.renderer.setViewport(viewport.x*DPR, viewport.y*DPR, viewport.width*DPR, viewport.height*DPR);
 
     this.camera.projectionMatrix.fromArray(view.projectionMatrix);
