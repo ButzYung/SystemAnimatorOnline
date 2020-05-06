@@ -3000,6 +3000,7 @@ this.busy = true
 const mask = await this.toMask(image||camera.video_canvas, options_seg, options_mask)
 //console.log(mask)
 
+this.busy = false
 if (!this.enabled)
   return
 
@@ -3031,8 +3032,6 @@ camera.video_canvas_bodyPix.style.visibility = "visible"
 
 //options_draw.canvas.style.visibility = "visible"
 //bodyPix.drawMask(options_draw.canvas, options_draw.img||image, mask, options_draw.opacity||1, options_draw.maskBlurAmount||3, options_draw.flipHorizontal);
-
-this.busy = false
 
 this.update_frame_for_face_detection()
   }
