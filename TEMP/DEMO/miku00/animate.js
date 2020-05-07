@@ -1387,55 +1387,6 @@ window.dispatchEvent(new CustomEvent("SA_AR_dblclick", { detail:{ e:{}, is_item:
   }
     }
 
-   ,"air_blower": (function () {
-      function air_blower_frame() {
-if (MMD_SA.ammo_proxy && MMD_SA.ammo_proxy._timeStep) return// {DEBUG_show(Date.now()); return; }
-
-var camera = MMD_SA._trackball_camera.object
-var gravity = MMD_SA.TEMP_v3.copy(camera.position).sub(camera._lookAt).normalize().multiplyScalar((state==2) ? 2 : -2).toArray()
-//DEBUG_show(gravity)
-THREE.MMD.setGravity( gravity[0]*9.8*10, gravity[1]*9.8*10, gravity[2]*9.8*10 )
-      }
-
-      var state = 0
-      var air_blower = {
-  icon_path: Settings.f_path + '/assets/assets.zip#/icon/hair_dryer_64x64.png'
- ,info_short: "Air blower"
-// ,is_base_inventory: true
- ,stock_max: 1
- ,stock_default: 1
- ,action: {
-    func: function () {
-var phase = 1
-if (++state <= 2) {
-  if (state == 1) {
-    System._browser.on_animation_update.add(air_blower_frame,0,phase,-1)
-    DEBUG_show("(air blowing)", 2)
-  }
-  else {
-    DEBUG_show("(air sucking)", 2)
-  }
-}
-else {
-  System._browser.on_animation_update.remove(air_blower_frame,phase)
-  DEBUG_show("(air blower stopped)", 2)
-  air_blower.reset()
-}
-    }
-   ,anytime: true
-  }
- ,reset: function () {
-if (!MMD_SA.MMD_started || !state) return
-
-state = 0
-var gravity = MMD_SA.MMD.motionManager.para_SA.gravity || [0,-1,0]
-THREE.MMD.setGravity( gravity[0]*9.8*10, gravity[1]*9.8*10, gravity[2]*9.8*10 )
-  }
-      };
-
-      return air_blower;
-    })()
-
    ,"magic_wand": (function () {
       function morph_event(e) {
 var mf = morph_form[morph_form_index]
@@ -1510,6 +1461,149 @@ if (morph_event_registered) {
 MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["standmix2_modified"]]
   }
       };
+    })()
+
+   ,"selfie" : {
+  icon_path: Settings.f_path + '/assets/assets.zip#/icon/selfie_64x64.png'
+ ,info_short: "Selfie AR"
+// ,is_base_inventory: true
+ ,stock_max: 1
+ ,stock_default: 1
+ ,action: {
+    func: function (item) {
+if (MMD_SA.WebXR.session && !MMD_SA.WebXR.user_camera.initialized) {
+  DEBUG_show("(You need to activate it before entering AR mode.)", 3)
+  return true
+}
+
+if (!MMD_SA.WebXR.user_camera.initialized) {
+  if (MMD_SA_options.Dungeon.inventory.action_disabled)
+    return true
+  MMD_SA_options.Dungeon.run_event("_SELFIE_",0)
+}
+else {
+  MMD_SA.WebXR.user_camera.start()
+}
+    }
+   ,anytime: true
+  }
+    }
+
+   ,"laughing_man" : {
+  icon_path: Settings.f_path + '/assets/assets.zip#/icon/laughing_man_64x64.png'
+ ,info_short: "Laughing Man"
+// ,is_base_inventory: true
+ ,stock_max: 1
+ ,stock_default: 1
+ ,action: {
+    func: function (item) {
+if (!MMD_SA.WebXR.user_camera.visible) {
+  DEBUG_show("(You need to activate selfie AR first.)", 3)
+  return true
+}
+
+if (MMD_SA.WebXR.user_camera.face_detection.enabled) {
+  MMD_SA.WebXR.user_camera.face_detection.enabled = false
+  DEBUG_show("Laughing Man:OFF", 2)
+}
+else {
+  MMD_SA.WebXR.user_camera.face_detection.enabled = true
+  DEBUG_show("Laughing Man:ON", 2)
+}
+    }
+   ,anytime: true
+  }
+    }
+
+   ,"body_pix" : {
+  icon_path: Settings.f_path + '/assets/assets.zip#/icon/people_64x64.png'
+ ,info_short: "BodyPix AI"
+// ,is_base_inventory: true
+ ,stock_max: 1
+ ,stock_default: 1
+ ,action: {
+    func: function (item) {
+if (!MMD_SA.WebXR.user_camera.visible) {
+  DEBUG_show("(You need to activate selfie AR first.)", 3)
+  return true
+}
+
+if (MMD_SA.WebXR.user_camera.bodyPix.enabled) {
+  MMD_SA.WebXR.user_camera.bodyPix.enabled = false
+  DEBUG_show("BodyPix AI:OFF", 2)
+}
+else {
+  MMD_SA.WebXR.user_camera.bodyPix.enabled = true
+  DEBUG_show("BodyPix AI:ON", 2)
+}
+    }
+   ,anytime: true
+  }
+    }
+
+   ,"taking-a-selfie" : {
+  icon_path: Settings.f_path + '/assets/assets.zip#/icon/taking-a-selfie_64x64.png'
+ ,info_short: "Take a Selfie"
+// ,is_base_inventory: true
+ ,stock_max: 1
+ ,stock_default: 1
+ ,action: {
+    func: function (item) {
+SL.toBlob(function(blob) {
+  saveAs(blob, "SA_test.png");
+});
+    }
+   ,anytime: true
+  }
+    }
+
+   ,"air_blower": (function () {
+      function air_blower_frame() {
+if (MMD_SA.ammo_proxy && MMD_SA.ammo_proxy._timeStep) return// {DEBUG_show(Date.now()); return; }
+
+var camera = MMD_SA._trackball_camera.object
+var gravity = MMD_SA.TEMP_v3.copy(camera.position).sub(camera._lookAt).normalize().multiplyScalar((state==2) ? 2 : -2).toArray()
+//DEBUG_show(gravity)
+THREE.MMD.setGravity( gravity[0]*9.8*10, gravity[1]*9.8*10, gravity[2]*9.8*10 )
+      }
+
+      var state = 0
+      var air_blower = {
+  icon_path: Settings.f_path + '/assets/assets.zip#/icon/hair_dryer_64x64.png'
+ ,info_short: "Air blower"
+// ,is_base_inventory: true
+ ,stock_max: 1
+ ,stock_default: 1
+ ,action: {
+    func: function () {
+var phase = 1
+if (++state <= 2) {
+  if (state == 1) {
+    System._browser.on_animation_update.add(air_blower_frame,0,phase,-1)
+    DEBUG_show("(air blowing)", 2)
+  }
+  else {
+    DEBUG_show("(air sucking)", 2)
+  }
+}
+else {
+  System._browser.on_animation_update.remove(air_blower_frame,phase)
+  DEBUG_show("(air blower stopped)", 2)
+  air_blower.reset()
+}
+    }
+   ,anytime: true
+  }
+ ,reset: function () {
+if (!MMD_SA.MMD_started || !state) return
+
+state = 0
+var gravity = MMD_SA.MMD.motionManager.para_SA.gravity || [0,-1,0]
+THREE.MMD.setGravity( gravity[0]*9.8*10, gravity[1]*9.8*10, gravity[2]*9.8*10 )
+  }
+      };
+
+      return air_blower;
     })()
 
    ,"social_distancing": (function () {
@@ -1621,84 +1715,6 @@ MMD_SA._force_motion_shuffle = true
 
       return social_distancing;
     })()
-
-   ,"selfie" : {
-  icon_path: Settings.f_path + '/assets/assets.zip#/icon/selfie_64x64.png'
- ,info_short: "Selfie AR"
-// ,is_base_inventory: true
- ,stock_max: 1
- ,stock_default: 1
- ,action: {
-    func: function (item) {
-if (MMD_SA.WebXR.session && !MMD_SA.WebXR.user_camera.initialized) {
-  DEBUG_show("(You need to activate it before entering AR mode.)", 3)
-  return true
-}
-
-if (!MMD_SA.WebXR.user_camera.initialized) {
-  if (MMD_SA_options.Dungeon.inventory.action_disabled)
-    return true
-  MMD_SA_options.Dungeon.run_event("_SELFIE_",0)
-}
-else {
-  MMD_SA.WebXR.user_camera.start()
-}
-    }
-   ,anytime: true
-  }
-    }
-
-   ,"laughing_man" : {
-  icon_path: Settings.f_path + '/assets/assets.zip#/icon/laughing_man_64x64.png'
- ,info_short: "Laughing Man"
-// ,is_base_inventory: true
- ,stock_max: 1
- ,stock_default: 1
- ,action: {
-    func: function (item) {
-if (!MMD_SA.WebXR.user_camera.visible) {
-  DEBUG_show("(You need to activate selfie AR first.)", 3)
-  return true
-}
-
-if (MMD_SA.WebXR.user_camera.face_detection.enabled) {
-  MMD_SA.WebXR.user_camera.face_detection.enabled = false
-  DEBUG_show("Laughing Man:OFF", 2)
-}
-else {
-  MMD_SA.WebXR.user_camera.face_detection.enabled = true
-  DEBUG_show("Laughing Man:ON", 2)
-}
-    }
-   ,anytime: true
-  }
-    }
-
-   ,"body_pix" : {
-  icon_path: Settings.f_path + '/assets/assets.zip#/icon/people_64x64.png'
- ,info_short: "BodyPix AI"
-// ,is_base_inventory: true
- ,stock_max: 1
- ,stock_default: 1
- ,action: {
-    func: function (item) {
-if (!MMD_SA.WebXR.user_camera.visible) {
-  DEBUG_show("(You need to activate selfie AR first.)", 3)
-  return true
-}
-
-if (MMD_SA.WebXR.user_camera.bodyPix.enabled) {
-  MMD_SA.WebXR.user_camera.bodyPix.enabled = false
-  DEBUG_show("BodyPix AI:OFF", 2)
-}
-else {
-  MMD_SA.WebXR.user_camera.bodyPix.enabled = true
-  DEBUG_show("BodyPix AI:ON", 2)
-}
-    }
-   ,anytime: true
-  }
-    }
 
   }
 

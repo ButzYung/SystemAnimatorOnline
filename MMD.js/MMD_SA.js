@@ -6436,8 +6436,11 @@ if (use_WebGL_2D) {
 }
 
 // Tensorflow - BodyPix
+// FileSaver.js
 if (MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR) {
   console.log("Use BodyPix");
   document.write('<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.2"></scr'+'ipt>');
   document.write('<script async src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.0"></scr'+'ipt>');
+
+  document.write('<script async src="js/FileSaver.min.js"></scr'+'ipt>');
 }
