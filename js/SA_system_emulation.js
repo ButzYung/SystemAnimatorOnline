@@ -3185,7 +3185,7 @@ if (!this.initialized || !this.visible)
 this.visible = false
 
 if (self.MMD_SA) {
-  SL.style.transform = SL_2D_front.style.transform = ""
+  SL.style.transform = SL_2D_front.style.transform = "none"
 }
 
 this.video_canvas.style.visibility = "hidden"
