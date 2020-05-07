@@ -3383,7 +3383,7 @@ var constraints = {}
 
 var w = window.innerWidth
 var h = window.innerHeight
-if (!is_mobile || !screen.orientation || /landscape/.test(screen.orientation.type)) {
+if (1|| !is_mobile || !screen.orientation || /landscape/.test(screen.orientation.type)) {
   constraints.width =  w
   constraints.height = h
 }
