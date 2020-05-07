@@ -2928,13 +2928,13 @@ if (enabled == !!v)
 enabled = !!v
 
 if (enabled) {
-  MMD_SA._renderer.devicePixelRatio = window.devicePixelRatio/2
-  MMD_SA._renderer.__resize(EV_width, EV_height)
+//  MMD_SA._renderer.devicePixelRatio = 1
+//  MMD_SA._renderer.__resize(EV_width, EV_height)
   SL.style.visibility = "hidden"
 }
 else {
-  MMD_SA._renderer.devicePixelRatio = window.devicePixelRatio
-  MMD_SA._renderer.__resize(EV_width, EV_height)
+//  MMD_SA._renderer.devicePixelRatio = window.devicePixelRatio
+//  MMD_SA._renderer.__resize(EV_width, EV_height)
   SL.style.visibility = "visible"
   camera.video_canvas_bodyPix.style.visibility = "hidden"
 }
