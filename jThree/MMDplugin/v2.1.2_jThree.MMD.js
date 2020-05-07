@@ -683,10 +683,11 @@ mmd.frame_time_ref = t
     let context = SL_2D_front.getContext("2d")
     if (MMD_SA.fadeout_opacity > 0) {
 // for desktop and mobile
-      let w,h
-      w = parseInt(SL.width  / window.devicePixelRatio)
-      h = parseInt(SL.height / window.devicePixelRatio)
+      let w,h, update_size
+      w = MMD_SA.fadeout_canvas.width
+      h = MMD_SA.fadeout_canvas.height
       if ((SL_2D_front.width != w) || (SL_2D_front.height != h)) {
+        update_size = true
         SL_2D_front.width  = w
         SL_2D_front.height = h
       }
@@ -697,10 +698,18 @@ mmd.frame_time_ref = t
         if (SL_2D_front._WebGL_2D.canvas.style.display != "inline")
           SL_2D_front._WebGL_2D.canvas.style.display = "inline"
         SL_2D_front._WebGL_2D.draw()
+        if (update_size) {
+          SL_2D_front._WebGL_2D.canvas.style.width  = SL.style.width
+          SL_2D_front._WebGL_2D.canvas.style.height = SL.style.height
+        }
       }
       else {
         if (SL_2D_front.style.display != "inline")
           SL_2D_front.style.display = "inline"
+        if (update_size) {
+          SL_2D_front.style.width  = SL.style.width
+          SL_2D_front.style.height = SL.style.height
+        }
       }
 //DEBUG_show(MMD_SA.fadeout_opacity,0,1)
     }
