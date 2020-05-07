@@ -1490,11 +1490,11 @@ for (var i = 0; i < 8; i++)
   DEBUG_show(MMD_SA.fadeout_image[ini + i],0,1)
 */
 // for desktop and mobile
-MMD_SA.fadeout_canvas.width  = SL.width  / window.devicePixelRatio
-MMD_SA.fadeout_canvas.height = SL.height / window.devicePixelRatio
+MMD_SA.fadeout_canvas.width  = SL.width
+MMD_SA.fadeout_canvas.height = SL.height
 var context = MMD_SA.fadeout_canvas.getContext("2d")
 context.globalCompositeOperation = 'copy'
-context.drawImage(SL, 0,0,MMD_SA.fadeout_canvas.width,MMD_SA.fadeout_canvas.height)
+context.drawImage(SL, 0,0)
 /*
 var imagedata = context.getImageData(0,0,w,h).data
 for (var i = 0; i < 8; i++)
