@@ -1549,10 +1549,7 @@ else {
  ,stock_default: 1
  ,action: {
     func: function (item) {
-SL.toBlob(function(blob) {
-  var url = URL.createObjectURL(blob)
-  window.open(url)
-});
+return System._browser.camera.snapshot.init();
     }
    ,anytime: true
   }
