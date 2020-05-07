@@ -1550,7 +1550,8 @@ else {
  ,action: {
     func: function (item) {
 SL.toBlob(function(blob) {
-  saveAs(blob, "SA_test.png");
+  var url = URL.createObjectURL(blob)
+  window.open(url)
 });
     }
    ,anytime: true
