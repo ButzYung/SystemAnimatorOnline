@@ -2412,7 +2412,7 @@ return {
   }
 
  ,remove: function (func, phase) {
-    events[phase] = events[phase].filter(e => (e.func != func));
+    events[phase].filter(e => (e.func == func)).forEach(e => { e.canceled=true });
   }
 
  ,run: function (phase) {
@@ -2421,17 +2421,21 @@ return {
     if (!ep.length)
       return
 
-    ep.forEach(function (e, idx) {
-      if (--e.frame_count >= 0)
-        e_index_list.push(idx)
+    var ep_new = []
+    ep.forEach(function (e) {
+      if (e.canceled) return;
+
+      if (--e.frame_count >= 0) {
+        ep_new.push(e)
+      }
       else {
-        if (e.loop && (--e.loop != 0))
-          e_index_list.push(idx)
         e.func()
+        if (e.loop && (--e.loop != 0))
+          ep_new.push(e)
       }
     });
 
-    events[phase] = e_index_list.map(function (index) { return ep[index]; });
+    events[phase] = ep_new;
   }
 };
     })()
@@ -2763,6 +2767,7 @@ return net;
       var camera
       var face_detection, fd_worker
       var _bodyPix
+      var snapshot
 
       var frame_skipped = 99
       function update_video_canvas() {
@@ -2779,17 +2784,41 @@ if (!video.videoWidth)
 
 var video_canvas = camera.video_canvas
 var context = video_canvas.getContext("2d")
-if ((video_canvas.width != video.videoWidth) || (video_canvas.height != video.videoHeight)) {
-  video_canvas.width  = video.videoWidth
-  video_canvas.height = video.videoHeight
+var w = window.innerWidth
+var h = window.innerHeight
+if ((video_canvas.width != w) || (video_canvas.height != h)) {
+  video_canvas.width  = w
+  video_canvas.height = h
+  video_canvas.style.width  = window.innerWidth  + "px"
+  video_canvas.style.height = window.innerHeight + "px"
 
   context.globalCompositeOperation = 'copy'
-  context.translate(video.videoWidth, 0)
+  context.translate(w, 0)
   context.scale(-1, 1)
 }
 
 //context.save()
-context.drawImage(video, 0,0)
+if ((w == video.videoWidth) && (h == video.videoHeight)) {
+  context.drawImage(video, 0,0)
+}
+else {
+  let ar = w/h
+  let ar_video = video.videoWidth/video.videoHeight
+  let xx, yy, ww, hh
+  if (ar <= ar_video) {
+    ww = video.videoHeight * ar
+    xx = (video.videoWidth - ww) / 2
+    hh = video.videoHeight
+    yy = 0
+  }
+  else {
+    ww = video.videoWidth
+    xx = 0
+    hh = video.videoWidth / ar
+    yy = (video.videoHeight - hh) / 2
+  }
+  context.drawImage(video, xx,yy,ww,hh, 0,0,w,h)
+}
 //context.restore()
       }
 
@@ -2903,7 +2932,7 @@ this.video.srcObject = stream
 System._browser.console.log(Object.entries(stream.getVideoTracks()[0].getSettings()).map(s=>s.join(':')).join('\n'));
 
 window.addEventListener("resize", function () {
-  stream.getVideoTracks()[0].applyConstraints(System._browser.camera.set_constraints()).then(function () {
+  stream.getVideoTracks()[0].applyConstraints(camera.set_constraints()).then(function () {
     DEBUG_show("(camera size updated)", 2)
   }).catch(function (err) {
     DEBUG_show("ERROR:camera size failed to update")
@@ -2944,7 +2973,6 @@ check_video_capture()
 
  ,busy: false
  ,mask: null
- ,face_cover: null
  ,allPoses: null
 
  ,load: async function (options) {
@@ -2955,8 +2983,8 @@ if (net) return;
 if (!this.mask) {
   this.mask = document.createElement("canvas")
 
-  this.face_cover = new Image()
-  this.face_cover.src = "images/laughing_man_134x120.png"
+  face_detection.face_cover = new Image()
+  face_detection.face_cover.src = "images/laughing_man_134x120.png"
 }
 
 net = await bodyPix.load(options || {
@@ -2989,12 +3017,12 @@ options = options || { foregroundColor:{r: 0, g: 0, b: 0, a: 255}, backgroundCol
 return bodyPix.toMask(seg, options.foregroundColor, options.backgroundColor);
   }
 
- ,update_frame: async function (image, options_seg, options_mask, options_draw) {
+ ,update_frame: async function (image=camera.video_canvas, options_seg, options_mask, options_draw) {
 if (this.busy)
   return
 this.busy = true
 
-const mask = await this.toMask(image||camera.video_canvas, options_seg, options_mask)
+const mask = await this.toMask(image, options_seg, options_mask)
 //console.log(mask)
 
 this.busy = false
@@ -3010,11 +3038,13 @@ this.mask.getContext("2d").putImageData(mask, 0,0);
 if ((camera.video_canvas_bodyPix.width != mask.width) || (camera.video_canvas_bodyPix.height != mask.height)) {
   camera.video_canvas_bodyPix.width  = mask.width
   camera.video_canvas_bodyPix.height = mask.height
+  camera.video_canvas_bodyPix.style.width  = window.innerWidth  + "px"
+  camera.video_canvas_bodyPix.style.height = window.innerHeight + "px"
 }
 
 let context = camera.video_canvas_bodyPix.getContext("2d")
 context.globalCompositeOperation = "copy"
-context.filter = "blur(3px)"
+context.filter = "blur(" + Math.ceil(3/window.devicePixelRatio) + "px)"
 context.drawImage(this.mask, 0,0)
 
 context.globalCompositeOperation = "source-out"
@@ -3025,16 +3055,21 @@ context.scale(-1, 1)
 context.drawImage(SL, 0,0)//,Math.min(mask.width,SL.width),Math.min(mask.height,SL.height), 0,0,mask.width,mask.height)
 context.restore()
 
+context.globalCompositeOperation = "destination-over"
+context.drawImage(image, 0,0)
+
 camera.video_canvas_bodyPix.style.visibility = "visible"
 
 //options_draw.canvas.style.visibility = "visible"
 //bodyPix.drawMask(options_draw.canvas, options_draw.img||image, mask, options_draw.opacity||1, options_draw.maskBlurAmount||3, options_draw.flipHorizontal);
 
 this.update_frame_for_face_detection()
+
+snapshot.check_status()
   }
 
  ,update_frame_for_face_detection: function () {
-let face_cover = this.face_cover
+let face_cover = face_detection.face_cover
 if ((!face_detection.enabled) || !face_cover.complete)
   return
 
@@ -3042,9 +3077,6 @@ camera.video_canvas_face_detection.style.visibility = "hidden"
 
 let cw = face_cover.width
 let ch = face_cover.height
-
-let context = camera.video_canvas_bodyPix.getContext("2d")
-context.globalCompositeOperation = "source-over"
 
 let dets = [];
 this.allPoses.forEach(function (pose) {
@@ -3055,34 +3087,20 @@ this.allPoses.forEach(function (pose) {
 
   let leftEye  = keypoints.find(kp=>kp.part=="leftEye");
   let rightEye = keypoints.find(kp=>kp.part=="rightEye");
-  let dim = 0;
+  let dim;
   if (leftEye && rightEye) {
     let x_diff = leftEye.position.x - rightEye.position.x
     let y_diff = leftEye.position.y - rightEye.position.y
     dim = Math.sqrt(x_diff*x_diff + y_diff*y_diff) * 4
   }
-  dets.push([nose.position.y, nose.position.x, dim, 100])
+  else {
+    dim = ch
+  }
+  dets.push([nose.position.y, nose.position.x, Math.max(dim, ch/2), 100])
 });
 this.allPoses = undefined;
 
-let h,w,x,y;
-if (dets.length) {
-  let scale = 1
-  dets.forEach(function (det) {
-    h = Math.max((det[2] || ch) * scale, ch/2)
-    w = h * cw/ch
-    x = det[1] * scale - w/2
-    y = det[0] * scale - h/2
-    context.drawImage(face_cover, 0,0,cw,ch, x,y,w,h)
-  });
-}
-else {
-  h = Math.min(ww,hh)
-  w = h * cw/ch
-  x = (ww - w)/2
-  y = (hh - h)/2
-  context.drawImage(face_cover, 0,0,cw,ch, x,y,w,h)
-}
+face_detection.update_frame_external(camera.video_canvas_bodyPix, dets);
   }
     };
 
@@ -3140,7 +3158,7 @@ check_video_capture()
 
      ,dets: []
 
-     ,update_frame: function() {
+     ,update_frame:  function () {
 if (!this.enabled || this.busy)
   return
 this.busy = true
@@ -3149,6 +3167,12 @@ let video_canvas = camera.video_canvas
 let w = video_canvas.width
 let h = video_canvas.height
 let rgba = video_canvas.getContext("2d").getImageData(0,0,w,h).data.buffer;
+
+let cs = camera.video_canvas_face_detection.style
+if ((cs.width != video_canvas.style.width) || (cs.height != video_canvas.style.height)) {
+  cs.width  = video_canvas.style.width
+  cs.height = video_canvas.style.height
+}
 
 let data = { rgba:rgba, w:w, h:h };//, threshold:1 };
 if (!camera.video_canvas_face_detection._offscreen) {
@@ -3160,8 +3184,166 @@ fd_worker.postMessage(data, (data.canvas)?[data.canvas,data.rgba]:[data.rgba]);
 data.rgba = rgba = undefined
 data = undefined
       }
+
+     ,update_frame_external: function (canvas, dets) {
+let context = canvas.getContext("2d")
+context.globalCompositeOperation = "source-over"
+
+let face_cover = this.face_cover
+let cw = face_cover.width
+let ch = face_cover.height
+
+let h,w,x,y;
+if (dets.length) {
+  let scale = 1
+  dets.forEach(function (det) {
+    h = det[2] * scale
+    w = h * cw/ch
+    x = det[1] * scale - w/2
+    y = det[0] * scale - h/2
+    context.drawImage(face_cover, 0,0,cw,ch, x,y,w,h)
+  });
+}
+else {
+  h = Math.min(ww,hh)
+  w = h * cw/ch
+  x = (ww - w)/2
+  y = (hh - h)/2
+  context.drawImage(face_cover, 0,0,cw,ch, x,y,w,h)
+}
+      }
+
     };
     return face_detection;
+  })()
+
+ ,snapshot: (function () {
+    var waiting = false;
+    var waiting_for_bodyPix = false;
+
+    var time_ini;
+    var countdown;
+    function countdown_to_snapshot() {
+var countdown_now = Math.ceil(3 - (Date.now() - time_ini)/1000)
+if (countdown_now <= 0) {
+  if (!camera.visible) {
+    canvas_capture(SL)
+    return
+  }
+
+  DEBUG_show("Capturing...")
+
+  if (!camera.stream) {
+    if (!_bodyPix.enabled) {
+      draw_video_and_3D()
+      return
+    }
+
+    waiting_for_bodyPix = true
+  }
+  else {
+    camera.stream.getVideoTracks()[0].applyConstraints(camera.set_constraints()).then(function () {
+      DEBUG_show("(camera size updated)", 2)
+    }).catch(function (err) {
+      DEBUG_show("ERROR:camera size failed to update")
+    });
+  }
+
+  System._browser.on_animation_update.remove(countdown_to_snapshot,0);
+}
+else if (countdown != countdown_now) {
+  countdown = countdown_now
+  DEBUG_show(countdown)
+}
+    }
+
+    function draw_video_and_3D() {
+let canvas = camera.video_canvas_bodyPix
+canvas.width  = SL.width
+canvas.height = SL.height
+
+let context = canvas.getContext("2d")
+context.globalCompositeOperation = "source-over"
+context.drawImage(camera.video_canvas, 0,0)
+if (face_detection.enabled)
+  context.drawImage(camera.video_canvas_face_detection, 0,0)
+context.save()
+context.translate(canvas.width, 0)
+context.scale(-1, 1)
+context.drawImage(SL, 0,0)
+context.restore()
+
+canvas_capture(canvas)
+    }
+
+    function canvas_capture(canvas) {
+waiting = true
+
+waiting_for_bodyPix = false
+System._browser.on_animation_update.remove(countdown_to_snapshot,0);
+
+canvas.toBlob(function(blob) {
+  var url = URL.createObjectURL(blob)
+  window.open(url)
+
+  clear()
+});
+    }
+
+    function clear() {
+Ldebug.style.posLeft = Ldebug.style.posTop = 0
+Ldebug.style.transform = Ldebug.style.transformOrigin = ""
+DEBUG_show()
+
+waiting_for_bodyPix = false
+
+waiting = false
+    }
+
+    snapshot = {
+  init: function () {
+if (waiting) {
+  return true
+}
+
+if (MMD_SA.WebXR.session) {
+  let AR_options = MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR;
+  if (!AR_options.dom_overlay || !AR_options.dom_overlay.use_dummy_webgl) {
+    DEBUG_show("(No snapshot in AR WebGL)", 3)
+    return true
+  }
+}
+
+if (!camera.visible) {
+  canvas_capture(SL)
+}
+else {
+  waiting = true
+
+  time_ini = Date.now()
+
+  Ldebug.style.posLeft = Ldebug.style.posTop = 50
+  Ldebug.style.transformOrigin = "0 0"
+  Ldebug.style.transform = "scale(5,5)"
+  countdown = 3
+  DEBUG_show()
+  DEBUG_show(countdown)
+
+  System._browser.on_animation_update.add(countdown_to_snapshot,0,0,-1);
+}
+  }
+
+ ,check_status: function () {
+if (!waiting)
+  return
+
+if (waiting_for_bodyPix) {
+  canvas_capture(camera.video_canvas_bodyPix)
+}
+  }
+    };
+
+    return snapshot;
   })()
 
  ,show: function () {
