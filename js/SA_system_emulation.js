@@ -2870,9 +2870,6 @@ if (!this.video) {
   vs.position = "absolute"
   vs.left = "0px"
   vs.top = "0px"
-//  vs.width = "800px"
-//  vs.height = "600px"
-//  vs.backgroundColor = "black"
   vs.zIndex = 0
   vs.visibility = "hidden"
   SL_Host.appendChild(this.video_canvas)
@@ -2931,7 +2928,7 @@ if (enabled == !!v)
 enabled = !!v
 
 if (enabled) {
-  MMD_SA._renderer.devicePixelRatio = 1
+  MMD_SA._renderer.devicePixelRatio = window.devicePixelRatio/2
   MMD_SA._renderer.__resize(EV_width, EV_height)
   SL.style.visibility = "hidden"
 }
