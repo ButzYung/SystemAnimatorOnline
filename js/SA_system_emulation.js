@@ -2932,14 +2932,11 @@ this.video.srcObject = stream
 System._browser.console.log(Object.entries(stream.getVideoTracks()[0].getSettings()).map(s=>s.join(':')).join('\n'));
 
 window.addEventListener("resize", function () {
-// make absolutely sure that window.innerWidth/innerHeight is accurate after resizing/rotation.
-  System._browser.on_animation_update.add(function () {
-    stream.getVideoTracks()[0].applyConstraints(camera.set_constraints()).then(function () {
-      DEBUG_show("(camera size updated)", 2)
-    }).catch(function (err) {
-      DEBUG_show("ERROR:camera size failed to update")
-    });
-  },0,0);
+  stream.getVideoTracks()[0].applyConstraints(camera.set_constraints()).then(function () {
+    DEBUG_show("(camera size updated)", 2)
+  }).catch(function (err) {
+    DEBUG_show("ERROR:camera size failed to update")
+  });
 });
 
 this.initialized = true
@@ -3386,7 +3383,7 @@ var constraints = {}
 
 var w = window.innerWidth
 var h = window.innerHeight
-if (1|| !is_mobile || !screen.orientation || /landscape/.test(screen.orientation.type)) {
+if (!is_mobile || !screen.orientation || /landscape/.test(screen.orientation.type)) {
   constraints.width =  w
   constraints.height = h
 }
