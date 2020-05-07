@@ -2932,11 +2932,14 @@ this.video.srcObject = stream
 System._browser.console.log(Object.entries(stream.getVideoTracks()[0].getSettings()).map(s=>s.join(':')).join('\n'));
 
 window.addEventListener("resize", function () {
-  stream.getVideoTracks()[0].applyConstraints(camera.set_constraints()).then(function () {
-    DEBUG_show("(camera size updated)", 2)
-  }).catch(function (err) {
-    DEBUG_show("ERROR:camera size failed to update")
-  });
+// make absolutely sure that window.innerWidth/innerHeight is accurate after resizing/rotation.
+  System._browser.on_animation_update.add(function () {
+    stream.getVideoTracks()[0].applyConstraints(camera.set_constraints()).then(function () {
+      DEBUG_show("(camera size updated)", 2)
+    }).catch(function (err) {
+      DEBUG_show("ERROR:camera size failed to update")
+    });
+  },0,0);
 });
 
 this.initialized = true
