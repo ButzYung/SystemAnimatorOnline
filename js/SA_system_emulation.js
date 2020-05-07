@@ -3022,7 +3022,7 @@ context.filter = "none"
 context.save()
 context.translate(mask.width, 0)
 context.scale(-1, 1)
-context.drawImage(SL, 0,0,Math.min(mask.width,SL.width),Math.min(mask.height,SL.height), 0,0,mask.width,mask.height)
+context.drawImage(SL, 0,0)//,Math.min(mask.width,SL.width),Math.min(mask.height,SL.height), 0,0,mask.width,mask.height)
 context.restore()
 
 camera.video_canvas_bodyPix.style.visibility = "visible"
