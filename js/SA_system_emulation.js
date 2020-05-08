@@ -3231,10 +3231,10 @@ if (countdown_now <= 0) {
     waiting_for_bodyPix = true
   }
   else {
-    let w = window.innerWidth  * window.devicePixelRatio
-    let h = window.innerHeight * window.devicePixelRatio
+    let w = window.innerWidth  * window.devicePixelRatio * 0.5
+    let h = window.innerHeight * window.devicePixelRatio * 0.5
     let options = {}
-    if (w > h) {
+    if (1|| w > h) {
       options.imageWidth  = w
       options.imageHeight = h
     }
