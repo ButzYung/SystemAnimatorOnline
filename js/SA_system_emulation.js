@@ -2982,6 +2982,7 @@ if (!this.mask) {
 
 net = await bodyPix.load(options || {
   architecture: 'MobileNetV1',
+internalResolution:"low",
   outputStride: 16,
   multiplier: 0.5,
   quantBytes: 1//2
