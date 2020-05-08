@@ -2820,6 +2820,11 @@ else {
   context.drawImage(video, xx,yy,ww,hh, 0,0,w,h)
 }
 //context.restore()
+
+if (!face_detection.initialized && face_detection.enabled_by_default)
+  face_detection.enabled = true
+
+video_canvas.style.visibility = (_bodyPix.enabled || ((face_detection.enabled_by_default || (face_detection.initialized && face_detection.worker_initialized)) && !face_detection.dets)) ? "hidden" : "visible";
       }
 
       function video_capture() {
@@ -2927,12 +2932,17 @@ if (!stream) {
 }
 
 this.stream = stream
+this.video_track = stream.getVideoTracks()[0]
+this.imageCapture = new ImageCapture(this.video_track)
 this.video.srcObject = stream
 
-System._browser.console.log(Object.entries(stream.getVideoTracks()[0].getSettings()).map(s=>s.join(':')).join('\n'));
+//System._browser.console.log(Object.entries(this.video_track.getSettings()).map(s=>s.join(':')).join('\n'));
+this.imageCapture.getPhotoCapabilities().then(function (capabilities) {
+  System._browser.console.log(JSON.stringify(capabilities).replace(/\,/g, ",\n"));
+});
 
 window.addEventListener("resize", function () {
-  stream.getVideoTracks()[0].applyConstraints(camera.set_constraints()).then(function () {
+  camera.video_track.applyConstraints(camera.set_constraints()).then(function () {
     DEBUG_show("(camera size updated)", 2)
   }).catch(function (err) {
     DEBUG_show("ERROR:camera size failed to update")
@@ -3134,6 +3144,7 @@ DEBUG_show(data, 2)
     face_detection = {
       initialized: false
      ,worker_initialized: false
+     ,enabled_by_default: true
 
      ,get enabled() {
 return enabled;
@@ -3143,6 +3154,9 @@ if (enabled == !!v)
   return
 
 if (v) {
+// a trick to let the camera know that no face has been detected yet
+  this.dets = null
+
   if (!this.initialized)
     init()
   else if (!this.worker_initialized)
@@ -3156,7 +3170,7 @@ camera.video_canvas_face_detection.style.visibility = (enabled) ? "visible" : "h
 check_video_capture()
       }
 
-     ,dets: []
+     ,dets: null
 
      ,update_frame:  function () {
 if (!this.enabled || this.busy)
@@ -3242,11 +3256,7 @@ if (countdown_now <= 0) {
     waiting_for_bodyPix = true
   }
   else {
-    camera.stream.getVideoTracks()[0].applyConstraints(camera.set_constraints()).then(function () {
-      DEBUG_show("(camera size updated)", 2)
-    }).catch(function (err) {
-      DEBUG_show("ERROR:camera size failed to update")
-    });
+
   }
 
   System._browser.on_animation_update.remove(countdown_to_snapshot,0);
