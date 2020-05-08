@@ -2784,8 +2784,8 @@ if (!video.videoWidth)
 
 var video_canvas = camera.video_canvas
 var context = video_canvas.getContext("2d")
-var w = window.innerWidth  *2
-var h = window.innerHeight *2
+var w = window.innerWidth  *window.devicePixelRatio
+var h = window.innerHeight *window.devicePixelRatio
 if ((video_canvas.width != w) || (video_canvas.height != h)) {
   video_canvas.width  = w
   video_canvas.height = h
@@ -3385,8 +3385,8 @@ System._browser.on_animation_update.remove(video_capture,1)
  ,set_constraints: function () {
 var constraints = {}
 
-var w = window.innerWidth  *2
-var h = window.innerHeight *2
+var w = window.innerWidth  *window.devicePixelRatio
+var h = window.innerHeight *window.devicePixelRatio
 if (!is_mobile || !screen.orientation || /landscape/.test(screen.orientation.type)) {
   constraints.width =  w
   constraints.height = h
