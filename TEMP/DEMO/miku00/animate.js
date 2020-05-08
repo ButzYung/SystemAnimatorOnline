@@ -1497,11 +1497,12 @@ else {
  ,stock_default: 1
  ,action: {
     func: function (item) {
+/*
 if (!MMD_SA.WebXR.user_camera.visible) {
   DEBUG_show("(You need to activate selfie AR first.)", 3)
   return true
 }
-
+*/
 if (MMD_SA.WebXR.user_camera.face_detection.enabled) {
   MMD_SA.WebXR.user_camera.face_detection.enabled = false
   DEBUG_show("Laughing Man:OFF", 2)
