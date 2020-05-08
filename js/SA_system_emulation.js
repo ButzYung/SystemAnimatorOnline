@@ -2982,10 +2982,10 @@ if (!this.mask) {
 
 net = await bodyPix.load(options || {
   architecture: 'MobileNetV1',
-internalResolution:"low",
+//internalResolution:"low",
   outputStride: 16,
   multiplier: 0.5,
-  quantBytes: 1//2
+  quantBytes: 2//1//
 });
 
 console.log("bodyPix loaded");
