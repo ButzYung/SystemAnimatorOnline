@@ -2821,34 +2821,15 @@ else {
 }
 //context.restore()
 
-if (!face_detection.initialized && face_detection.enabled_by_default)
-  face_detection.enabled = true
-
-video_canvas.style.visibility = (_bodyPix.enabled || ((face_detection.enabled_by_default || (face_detection.initialized && face_detection.worker_initialized)) && !face_detection.dets)) ? "hidden" : "visible";
+video_canvas.style.visibility = (_bodyPix.enabled || (face_detection.initialized && face_detection.worker_initialized && !face_detection.dets)) ? "hidden" : "visible";
       }
 
       function video_capture() {
 if (_bodyPix.enabled) {
   _bodyPix.update_frame()
 }
-else {
+else if (face_detection.enabled) {
   face_detection.update_frame()
-}
-      }
-
-      var video_capture_started
-      function check_video_capture() {
-if (face_detection.enabled || _bodyPix.enabled) {
-  if (!video_capture_started) {
-    video_capture_started = true;
-    System._browser.on_animation_update.add(video_capture, 2,1,-1);
-  }
-}
-else {
-  if (video_capture_started) {
-    video_capture_started = false;
-    System._browser.on_animation_update.remove(video_capture, 1);
-  }
 }
       }
 
@@ -2856,7 +2837,6 @@ else {
   initialized: false
  ,start: function () {
 var AR_options = MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR
-var user_camera = this
 
 if (this.initialized) {
   if (this.visible)
@@ -2872,21 +2852,17 @@ var constraints = { video:this.set_constraints() }
 constraints.video.facingMode = "user"
 
 navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
-  user_camera.init_stream(stream)
+  camera.init_stream(stream)
 
   if (AR_options && AR_options.dom_overlay)
     AR_options.dom_overlay.use_dummy_webgl = true
 
-  user_camera.show()
-
   DEBUG_show("(User camera:ON)", 2)
 }).catch(function (err) {
-  user_camera.init_stream()
+  camera.init_stream()
 
-  user_camera.video.loop = true
-  user_camera.video.src = "js/headtrackr.mp4"//toFileProtocol("C:\\Users\\user\\Videos\\TEMP\\AR Miku - Social Distancing.mp4")//
-  user_camera.initialized = true
-  user_camera.show()
+  camera.video.loop = true
+  camera.video.src = "js/headtrackr.mp4"//toFileProtocol("C:\\Users\\user\\Videos\\TEMP\\AR Miku - Social Distancing.mp4")//
 
   DEBUG_show("(ERROR: Camera unavailable, using fallback video instead)", 3)
 });
@@ -2927,6 +2903,9 @@ if (!this.video) {
   SL_Host.appendChild(this.video_canvas_face_detection)
 }
 
+this.initialized = true
+this.show()
+
 if (!stream) {
   return
 }
@@ -2948,8 +2927,6 @@ window.addEventListener("resize", function () {
     DEBUG_show("ERROR:camera size failed to update")
   });
 });
-
-this.initialized = true
   }
 
 // https://github.com/tensorflow/tfjs-models/tree/master/body-pix
@@ -2977,8 +2954,6 @@ else {
   SL.style.visibility = "visible"
   camera.video_canvas_bodyPix.style.visibility = "hidden"
 }
-
-check_video_capture()
   }
 
  ,busy: false
@@ -3144,7 +3119,6 @@ DEBUG_show(data, 2)
     face_detection = {
       initialized: false
      ,worker_initialized: false
-     ,enabled_by_default: true
 
      ,get enabled() {
 return enabled;
@@ -3162,20 +3136,21 @@ if (v) {
   else if (!this.worker_initialized)
     return
 }
+else {
+  camera.video_canvas_face_detection.style.visibility = "hidden"
+}
 
 enabled = !!v
-
-camera.video_canvas_face_detection.style.visibility = (enabled) ? "visible" : "hidden"
-
-check_video_capture()
       }
 
      ,dets: null
 
      ,update_frame:  function () {
-if (!this.enabled || this.busy)
+if (!this.enabled || !this.worker_initialized || this.busy)
   return
 this.busy = true
+
+camera.video_canvas_face_detection.style.visibility = "visible"
 
 let video_canvas = camera.video_canvas
 let w = video_canvas.width
@@ -3256,7 +3231,23 @@ if (countdown_now <= 0) {
     waiting_for_bodyPix = true
   }
   else {
+    let w = window.innerWidth  * window.devicePixelRatio
+    let h = window.innerHeight * window.devicePixelRatio
+    let options = {}
+    if (w > h) {
+      options.imageWidth  = w
+      options.imageHeight = h
+    }
+    else {
+      options.imageWidth  = h
+      options.imageHeight = w
+    }
+    camera.imageCapture.takePhoto(options).then(function (blob) {
+      var url = URL.createObjectURL(blob)
+      window.open(url)
 
+      clear()
+    });
   }
 
   System._browser.on_animation_update.remove(countdown_to_snapshot,0);
@@ -3366,9 +3357,9 @@ if (self.MMD_SA) {
 }
 
 frame_skipped = 99
-this.video_canvas.style.visibility = "visible"
 
 System._browser.on_animation_update.add(update_video_canvas,0,0,-1)
+System._browser.on_animation_update.add(video_capture,2,1,-1)
   }
 
  ,hide: function () {
@@ -3386,6 +3377,7 @@ face_detection.enabled = false
 _bodyPix.enabled = false
 
 System._browser.on_animation_update.remove(update_video_canvas,0)
+System._browser.on_animation_update.remove(video_capture,1)
   }
 
  ,set_constraints: function () {
