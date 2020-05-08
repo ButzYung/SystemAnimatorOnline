@@ -2784,8 +2784,8 @@ if (!video.videoWidth)
 
 var video_canvas = camera.video_canvas
 var context = video_canvas.getContext("2d")
-var w = window.innerWidth
-var h = window.innerHeight
+var w = window.innerWidth  * 2
+var h = window.innerHeight * 2
 if ((video_canvas.width != w) || (video_canvas.height != h)) {
   video_canvas.width  = w
   video_canvas.height = h
