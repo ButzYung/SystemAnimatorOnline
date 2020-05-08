@@ -3153,7 +3153,8 @@ if (v) {
     return
 }
 else {
-  camera.video_canvas_face_detection.style.visibility = "hidden"
+  if (camera.initialized)
+    camera.video_canvas_face_detection.style.visibility = "hidden"
 }
 
 enabled = !!v
