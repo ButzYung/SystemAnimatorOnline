@@ -2784,8 +2784,9 @@ if (!video.videoWidth)
 
 var video_canvas = camera.video_canvas
 var context = video_canvas.getContext("2d")
-var w = window.innerWidth  *window.devicePixelRatio
-var h = window.innerHeight *window.devicePixelRatio
+var DPR = window.devicePixelRatio / camera.target_devicePixelRatio
+var w = window.innerWidth  * DPR
+var h = window.innerHeight * DPR
 if ((video_canvas.width != w) || (video_canvas.height != h)) {
   video_canvas.width  = w
   video_canvas.height = h
@@ -2835,6 +2836,11 @@ else if (face_detection.enabled) {
 
       camera = {
   initialized: false
+
+ ,get target_devicePixelRatio() {
+return window.devicePixelRatio;
+  }
+
  ,start: function () {
 var AR_options = MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR
 
@@ -3005,6 +3011,13 @@ return bodyPix.toMask(seg, options.foregroundColor, options.backgroundColor);
   }
 
  ,update_frame: async function (image=camera.video_canvas, options_seg, options_mask, options_draw) {
+if (snapshot.check_status()) {
+  camera.video_canvas.style.visibility = "visible"
+  camera.video_canvas_bodyPix.style.visibility = "hidden"
+  SL.style.visibility = "visible"
+  return
+}
+
 if (this.busy)
   return
 this.busy = true
@@ -3046,6 +3059,7 @@ context.globalCompositeOperation = "destination-over"
 context.drawImage(image, 0,0)
 
 camera.video_canvas_bodyPix.style.visibility = "visible"
+SL.style.visibility = "hidden"
 
 //options_draw.canvas.style.visibility = "visible"
 //bodyPix.drawMask(options_draw.canvas, options_draw.img||image, mask, options_draw.opacity||1, options_draw.maskBlurAmount||3, options_draw.flipHorizontal);
@@ -3343,6 +3357,8 @@ if (!waiting)
 if (waiting_for_bodyPix) {
   canvas_capture(camera.video_canvas_bodyPix)
 }
+
+return true
   }
     };
 
@@ -3385,8 +3401,9 @@ System._browser.on_animation_update.remove(video_capture,1)
  ,set_constraints: function () {
 var constraints = {}
 
-var w = window.innerWidth  *window.devicePixelRatio
-var h = window.innerHeight *window.devicePixelRatio
+var DPR = window.devicePixelRatio / this.target_devicePixelRatio
+var w = window.innerWidth  * DPR
+var h = window.innerHeight * DPR
 if (!is_mobile || !screen.orientation || /landscape/.test(screen.orientation.type)) {
   constraints.width =  w
   constraints.height = h
