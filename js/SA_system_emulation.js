@@ -2784,8 +2784,8 @@ if (!video.videoWidth)
 
 var video_canvas = camera.video_canvas
 var context = video_canvas.getContext("2d")
-var w = window.innerWidth  * 2
-var h = window.innerHeight * 2
+var w = window.innerWidth  *2
+var h = window.innerHeight *2
 if ((video_canvas.width != w) || (video_canvas.height != h)) {
   video_canvas.width  = w
   video_canvas.height = h
@@ -2912,13 +2912,15 @@ if (!stream) {
 
 this.stream = stream
 this.video_track = stream.getVideoTracks()[0]
-this.imageCapture = new ImageCapture(this.video_track)
 this.video.srcObject = stream
 
-//System._browser.console.log(Object.entries(this.video_track.getSettings()).map(s=>s.join(':')).join('\n'));
+System._browser.console.log(Object.entries(this.video_track.getSettings()).map(s=>s.join(':')).join('\n'));
+/*
+this.imageCapture = new ImageCapture(this.video_track)
 this.imageCapture.getPhotoCapabilities().then(function (capabilities) {
   System._browser.console.log('PhotoCapabilities:\nimageHeight:'+[capabilities.imageHeight.min,capabilities.imageHeight.max,capabilities.imageHeight.step].join(',')+'\nimageWidth:'+[capabilities.imageWidth.min,capabilities.imageWidth.max,capabilities.imageWidth.step].join(','));
 });
+*/
 
 window.addEventListener("resize", function () {
   camera.video_track.applyConstraints(camera.set_constraints()).then(function () {
@@ -3383,8 +3385,8 @@ System._browser.on_animation_update.remove(video_capture,1)
  ,set_constraints: function () {
 var constraints = {}
 
-var w = window.innerWidth
-var h = window.innerHeight
+var w = window.innerWidth  *2
+var h = window.innerHeight *2
 if (!is_mobile || !screen.orientation || /landscape/.test(screen.orientation.type)) {
   constraints.width =  w
   constraints.height = h
