@@ -2938,7 +2938,7 @@ this.video.srcObject = stream
 
 //System._browser.console.log(Object.entries(this.video_track.getSettings()).map(s=>s.join(':')).join('\n'));
 this.imageCapture.getPhotoCapabilities().then(function (capabilities) {
-  System._browser.console.log(JSON.stringify(capabilities).replace(/\,/g, ",\n"));
+  System._browser.console.log('PhotoCapabilities:\nimageHeight:'+[capabilities.imageHeight.min,capabilities.imageHeight.max,capabilities.imageHeight.step].join(',')+'\nimageWidth:'+[capabilities.imageWidth.min,capabilities.imageWidth.max,capabilities.imageWidth.step].join(','));
 });
 
 window.addEventListener("resize", function () {
