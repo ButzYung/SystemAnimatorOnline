@@ -1,4 +1,4 @@
-﻿(Document version 2.3)
+﻿(Document version 2.4)
 
 Introduction:
 
@@ -40,7 +40,7 @@ Augmented Reality (AR) support:
 2) Install "Google Play Services for AR" (ARCore) on Google Play.
    https://play.google.com/store/apps/details?id=com.google.ar.core
 
-3) Install Chrome browser (tested on v76-81).
+3) Install Chrome browser (tested on v76-84).
 
 4) Enable some WebXR-related flags on Chrome (optional for v81+).
 
@@ -69,6 +69,19 @@ Augmented Reality (AR) support:
   Check out these videos for demonstration.
   https://youtu.be/SkPRVoZGbPU
   https://youtu.be/G4tBwlAhFxY
+  https://youtu.be/mdJAuW48CnQ
+
+
+Selfie feature:
+
+  The latested demo supports the AR selfie feature, using both the frond camera (for AR) AND the "selfie" camera, allowing you take a selfie with Miku in AR mode. It runs directly on Chrome 83+ (which is still Beta right now). For Chrome 81 or older, some WebXR-related flags need to be enabled in order to use the AR selfie feature. To enjoy all features, the "WebXR Incubations" flag need to be enabled.
+
+  Before you enter the AR mode, you need to click the Selfie icon and enable the Selfie mode first. Then you can toggle the Selfie mode at any time during the AR session. By default, Miku is always displayed in front of you in Selfie mode. Click the "BodyPix AI" icon to enable the AI mode, which detects your shape inside the camera, allowing Miku to blend into the background and appear to be behind you. Note that the AI mode is SLOW. You will probably need the latest Android phone to get a smooth frame rate.
+
+  Lastly, click the Snapshot icon and a still photo will be generated. This can be saved into your phone for whatever purpose you want, showing off to your friends perhaps!
+
+  Check out the following video for demonstration.
+  https://youtu.be/TIMPqV9lVH8
 
 ----------------------------
 
