@@ -2,6 +2,20 @@ System Animator - Changelog
 
 -------------------------------
 
+v10.9.3.1
+
+- Fix relunching issues on some Linux systems.
+
+- Fix the model path for demo "3D - Miku - Child Animations"
+
+-------------------------------
+
+v10.9.3.0
+
+- Update MMD physics to use the latest ammo.js and the WASM version, which should significantly improve performance.
+
+-------------------------------
+
 v10.9.2.1
 
 - Fix the partial click-thru and "opacity on hover" feature to work with the newer version of Electron (webContents.capturePage is now Promise-based).
