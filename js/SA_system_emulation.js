@@ -2834,11 +2834,15 @@ else if (face_detection.enabled) {
 }
       }
 
+      var target_devicePixelRatio = 0
       camera = {
   initialized: false
 
  ,get target_devicePixelRatio() {
-return window.devicePixelRatio;
+return target_devicePixelRatio || window.devicePixelRatio;
+  }
+ ,set target_devicePixelRatio(v) {
+target_devicePixelRatio = v
   }
 
  ,start: function () {
@@ -3249,6 +3253,7 @@ if (countdown_now <= 0) {
     waiting_for_bodyPix = true
   }
   else {
+/*
     let w = window.innerWidth  * window.devicePixelRatio * 0.5
     let h = window.innerHeight * window.devicePixelRatio * 0.5
     let options = {}
@@ -3264,6 +3269,27 @@ if (countdown_now <= 0) {
       var url = URL.createObjectURL(blob)
       window.open(url)
 
+      clear()
+    });
+*/
+    camera.target_devicePixelRatio = 1
+    camera.video_track.applyConstraints(camera.set_constraints()).then(function () {
+      System._browser.console.log("(Ready to capture)")
+      System._browser.on_animation_update.add(function () {
+        MMD_SA._renderer.devicePixelRatio = window.devicePixelRatio
+        MMD_SA._renderer.__resize(EV_width, EV_height)
+
+        if (!_bodyPix.enabled) {
+          System._browser.on_animation_update.add(function () {
+            draw_video_and_3D()
+          },0,1);
+          return
+        }
+
+        waiting_for_bodyPix = true
+      },0,0);
+    }).catch(function (err) {
+      DEBUG_show("ERROR:camera size failed to update")
       clear()
     });
   }
@@ -3315,6 +3341,8 @@ Ldebug.style.transform = Ldebug.style.transformOrigin = ""
 DEBUG_show()
 
 waiting_for_bodyPix = false
+
+camera.target_devicePixelRatio = 0
 
 waiting = false
     }
