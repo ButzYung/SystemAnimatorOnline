@@ -1,6 +1,6 @@
 /*
 
-_SA.js (v10.7.0.0)
+_SA.js (05-12-2020)
 
 System Animator
 (c) Butz Yung / Anime Theme. All rights reserved.
@@ -1116,9 +1116,9 @@ if (RAF_timerID) {
   RAF_timerID = null
 }
 
-if (!self.oHTA && (app_path == app_path_current)) {
+if (!self.oHTA) {
   if (webkit_electron_mode) {
-    if (WMI_perfmon.loaded || !webkit_version_milestone["1.4.11"] || (!WallpaperEngine_mode && ((path_to_launch != Settings.f_path) || System.Gadget.Settings._changed["DisableTransparency"])) || (!WallpaperEngine_mode && System.Gadget.Settings._changed["AutoItStayOnDesktop"] && webkit_transparent_mode)) {
+    if ((app_path != app_path_current) || WMI_perfmon.loaded || !webkit_version_milestone["1.4.11"] || (!WallpaperEngine_mode && ((!linux_mode && (path_to_launch != Settings.f_path)) || System.Gadget.Settings._changed["DisableTransparency"])) || (!WallpaperEngine_mode && System.Gadget.Settings._changed["AutoItStayOnDesktop"] && webkit_transparent_mode)) {
       restart_app = true
     }
 
@@ -1136,7 +1136,7 @@ if (!self.oHTA && (app_path == app_path_current)) {
         DEBUG_show("NOTE: Please reload the wallpaper from Wallpaper Engine's panel for the changes to take effect.", 30)
       }
       else {
-        webkit_electron_remote.getGlobal("relaunch")([path_to_launch])
+        webkit_electron_remote.getGlobal("relaunch")([path_to_launch], (((app_path != app_path_current) && app_path) || ""))
       }
       return
     }

@@ -1,4 +1,4 @@
-// SA Electron - Main EXTENDED (v1.2.5)
+// SA Electron - Main EXTENDED (05-12-2020)
 
 /*
 eval on Electron v1.6.x has some scope issues/bugs which makes the global variables on this script inaccessible inside functions.
@@ -1198,8 +1198,11 @@ global.mainWindow_postMessage = function (channel, msg) {
   webContents.send(channel, msg)
 }
 
-global.relaunch = function (args) {
-  app.relaunch({ args:args })
+global.relaunch = function (args, execPath) {
+  var options = { args:args }
+  if (execPath)
+    options.execPath = execPath
+  app.relaunch(options)
   app.quit()
 //  mainWindow.close()
 }

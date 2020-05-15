@@ -10,6 +10,7 @@
 <script type="text/javascript" language="javascript" src="js/SA_dialog.js"></script>
 
 <script type="text/javascript">
+// (05-12-2020)
 var tabberOptions = {manualStartup:true};
 //onerror = function (msg, filename, line) { alert([msg, filename, line]) }
 //alert(parseInt("777",8)+'/'+0o777)
@@ -841,10 +842,11 @@ if (use_SA_system_emulation && (!v || /^demo/.test(v))) {
 // WebKit
   try {
     if (LWebKit_browse.value) {
-      var temp_config_webkit_path = System.Gadget.path + '\\TEMP\\_config_webkit_path.tmp'
-      var f = FSO_OBJ.OpenTextFile(temp_config_webkit_path, 2, true);
-      f.Write(LWebKit_browse.value)
+      let temp_config_webkit_path = System.Gadget.path + '\\TEMP\\_config_webkit_path.tmp'
+      let f = FSO_OBJ.OpenTextFile(temp_config_webkit_path, 2, true);
+      f.Write(LWebKit_browse.value && LWebKit_browse.files[0].path)
       f.Close()
+      SystemEXT._default["WebKit_path_user"] = null
     }
   }
   catch (err) {}
@@ -1043,7 +1045,7 @@ function getWebKitPath(path) {
     return ""
   }
 
-  var _webkit_path = LWebKit_browse.value
+  var _webkit_path = LWebKit_browse.value && LWebKit_browse.files[0].path
   if (!_webkit_path)
     _webkit_path = SystemEXT.GetWebKitPath(path)
 
@@ -2552,15 +2554,7 @@ Edge scale <a href="#" onclick="return false" title="Change the edge scale for M
 :</h5>
 
 <ul>
-<li><a href="http://www.animetheme.com/dl.htm?url=http%3A%2F%2Fwww.animetheme.com%2Fsidebar%2Felectron-v1.7.9-win32-ia32_SA.zp" target="_blank">Download Electron v1.7.9</a> / <a href="http://electron.atom.io/" target="_blank">Homepage</a>
-<!--
-<li><a href="http://www.animetheme.com/dl.htm?url=http%3A%2F%2Fwww.animetheme.com%2Fsidebar%2Felectron-v1.4.15-win32-ia32_SA.zp" target="_blank">Download Electron v1.4.15</a> / <a href="http://electron.atom.io/" target="_blank">Homepage</a>
-<li><a href="http://www.mediafire.com/download/69pncbbs7bgag96/nwjs-v0.12.3-win-ia32_SA.zip" target="_blank">Download NW.js v0.12.3</a> / <a href="https://github.com/rogerwang/node-webkit" target="_blank">Homepage</a>
-<ul>
-<li><a href="http://www.mediafire.com/download/c66vxbru8muicn7/node-webkit-v0.11.6-win-ia32_SA.zip" target="_blank">v0.11.6</a> (previous version)</li>
-</ul>
-</li>
--->
+<li><a href="https://www.animetheme.com/dl.htm?url=https%3A%2F%2Fwww.animetheme.com%2Fsidebar%2Felectron-v7.1.7-win32-x64_SA.zp" target="_blank">Download Electron v7.1.7</a> / <a href="http://electron.atom.io/" target="_blank">Homepage</a>
 </ul>
 
 <div style="font-size:10px;">
