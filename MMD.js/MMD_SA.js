@@ -4859,6 +4859,9 @@ if (pose) {
   if (!this.use_dummy_webgl || (this.user_camera.initialized && !this.user_camera.visible)) {
     this.renderer.device_framebuffer = session.renderState.baseLayer.framebuffer;
   }
+  else {
+    this.renderer.device_framebuffer = null;
+  }
 
   const DPR = MMD_SA._renderer.devicePixelRatio / window.devicePixelRatio;
   for (let view of pose.views) {
