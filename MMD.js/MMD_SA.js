@@ -1469,7 +1469,8 @@ if (mm.firstFrame_)
 
 if (MMD_SA._no_fading)
   fading = MMD_SA._no_fading = false
-this.fading = fading && (!this.WebXR.session || this.WebXR.use_dummy_webgl)
+var xr = this.WebXR
+this.fading = fading && (!xr.session || (xr.use_dummy_webgl && (!xr.user_camera.initialized || xr.user_camera.visible)));
 if (!fading)
   return motion_changed
 
@@ -4608,7 +4609,8 @@ this.gl = this.renderer.getContext();
 this.use_dummy_webgl = session.domOverlayState && AR_options.dom_overlay && AR_options.dom_overlay.use_dummy_webgl;
 if (this.use_dummy_webgl) {
   DEBUG_show("Use dummy WebGL (AR)",5)
-//  this.gl = document.createElement("canvas").getContext("webgl2");
+  if (!this.user_camera.initialized)
+    this.gl = document.createElement("canvas").getContext("webgl2");
 }
 
 try {
@@ -4854,7 +4856,7 @@ try {
 } catch (err) { DEBUG_show("Err:no pose",0,1)}
 
 if (pose) {
-  if (!this.use_dummy_webgl) {
+  if (!this.use_dummy_webgl || (this.user_camera.initialized && !this.user_camera.visible)) {
     this.renderer.device_framebuffer = session.renderState.baseLayer.framebuffer;
   }
 
@@ -5021,7 +5023,7 @@ anchor._data.update(anchor._data.obj);
 
 window.dispatchEvent(new CustomEvent("SA_AR_onARFrame"));
 
-if (!this.use_dummy_webgl) {
+if (1||!this.use_dummy_webgl) {
 // a trick to ensure that no frame is skipped
   RAF_timestamp = null
   Animate_RAF(time)
