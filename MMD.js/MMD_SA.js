@@ -4867,7 +4867,8 @@ if (pose) {
     this.renderer.device_framebuffer = null;
     if (framebuffer_changed) {
       document.getElementById("SL").style.visibility = "visible"
-      window.dispatchEvent(new Event('resize'))
+      MMD_SA._renderer.__resize(EV_width, EV_height)
+//      window.dispatchEvent(new Event('resize'))
     }
   }
 
