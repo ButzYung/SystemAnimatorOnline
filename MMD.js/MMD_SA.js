@@ -4860,7 +4860,10 @@ if (pose) {
     this.renderer.device_framebuffer = session.renderState.baseLayer.framebuffer;
   }
   else {
+    let framebuffer_changed = !!this.renderer.device_framebuffer;
     this.renderer.device_framebuffer = null;
+    if (framebuffer_changed)
+      window.dispatchEvent(new Event('resize'))
   }
 
   const DPR = MMD_SA._renderer.devicePixelRatio / window.devicePixelRatio;
