@@ -4826,8 +4826,8 @@ if (1||!this.use_dummy_webgl) {
 }
 
 if (1) {
-  document.getElementById("SL").style.visibility = "inherit"
-  document.getElementById("LdesktopBG_host").style.visibility = "inherit"
+  document.getElementById("SL").style.visibility = "visible"
+  document.getElementById("LdesktopBG_host").style.visibility = "visible"
   document.getElementById("Lquick_menu").style.display = "block"
 
   c_host.removeEventListener("dblclick", DOM_event_dblclick)
@@ -4856,14 +4856,19 @@ try {
 } catch (err) { DEBUG_show("Err:no pose",0,1)}
 
 if (pose) {
+  let framebuffer_changed = !!this.renderer.device_framebuffer;
   if (!this.use_dummy_webgl || (this.user_camera.initialized && !this.user_camera.visible)) {
     this.renderer.device_framebuffer = session.renderState.baseLayer.framebuffer;
+    if (framebuffer_changed) {
+      document.getElementById("SL").style.visibility = "hidden"
+    }
   }
   else {
-    let framebuffer_changed = !!this.renderer.device_framebuffer;
     this.renderer.device_framebuffer = null;
-    if (framebuffer_changed)
+    if (framebuffer_changed) {
+      document.getElementById("SL").style.visibility = "visible"
       window.dispatchEvent(new Event('resize'))
+    }
   }
 
   const DPR = MMD_SA._renderer.devicePixelRatio / window.devicePixelRatio;
