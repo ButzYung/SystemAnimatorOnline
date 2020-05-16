@@ -2034,10 +2034,16 @@ else if ((k >= 96) && (k < 96+10)) {
   if (self.MMD_SA && MMD_SA_options.motion_shuffle && MMD_SA.use_jThree && MMD_SA.MMD_started) {
     if (k == 96) {
       if (MMD_SA_options._motion_shuffle) {
-        MMD_SA_options.motion_shuffle = MMD_SA_options._motion_shuffle.slice(0)
-        MMD_SA_options.motion_shuffle_list_default = null
-        MMD_SA._force_motion_shuffle = true
-        DEBUG_show("(MMD motions shuffled)", 2)
+        if (!MMD_SA_options.motion_shuffle_list_default && MMD_SA_options._motion_shuffle_list_default) {
+          MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice()
+          MMD_SA._force_motion_shuffle = true
+        }
+        else {
+          MMD_SA_options.motion_shuffle = MMD_SA_options._motion_shuffle.slice(0)
+          MMD_SA_options.motion_shuffle_list_default = null
+          MMD_SA._force_motion_shuffle = true
+          DEBUG_show("(MMD motions shuffled)", 2)
+        }
       }
     }
     else {
