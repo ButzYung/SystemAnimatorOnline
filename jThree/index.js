@@ -1,8 +1,11 @@
-//setTimeout('alert(jThree.getReferent("#vmd1").three(0).generateSkinAnimation)', 1000)
-//THREE.MMD.getModels()
+// (2020-05-22)
 
 MMD_SA.fn = {
-	length: 1, // 1 for the "dummy" place reserved for external motion
+/*
++1 for the "dummy" place reserved for external motion
++1 for "motion_blending_model0"
+*/
+	length: 1+1,
 
 	load_length_extra: MMD_SA_options.load_length_extra||0,
 
@@ -170,8 +173,9 @@ MMD_SA._model_list = _model_list
 //  var RE = [/^(\u5DE6|\u53F3)(\u80A9|\u8155|\u3072\u3058|\u624B\u9996|\u624B\u6369|.\u6307.)/] //cover undies
 //[/^(\u5DE6)(\u80A9|\u8155|\u3072\u3058|\u624B\u9996|\u624B\u6369|.\u6307.)/] //meter motion
 THREE.MMD.getModels().forEach(function (_model) {
-  _model.skin_MMD_SA_extra = []
-  _model.morph_MMD_SA_extra = []
+// index 0 reserved for "motion_blending" custom action
+  _model.skin_MMD_SA_extra = [MMD_SA.Animation_dummy]
+  _model.morph_MMD_SA_extra = [MMD_SA.Animation_dummy]
 });
 
 MMD_SA.MMD = {
@@ -241,7 +245,7 @@ var motion_default = (MMD_SA_options.motion_shuffle_list_default && MMD_SA_optio
 for (var i = 0, len = MMD_SA_options.motion.length; i < len; i++) {
   var motion = MMD_SA_options.motion[i]
   if (!motion.path) {
-// should be the case of "dummy" motion reserved for external load
+// "dummy" motion reserved for external load / "motion_blending" custom action
     MMD_SA.motion.push(new MMD_SA.MMD.MotionManager())
     continue
   }

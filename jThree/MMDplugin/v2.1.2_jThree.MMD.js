@@ -1,3 +1,5 @@
+// (2020-05-22)
+
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
  * http://www.jthree.com/
@@ -419,9 +421,9 @@ if (debug_msg.length) {
     multi_model_motion_reset[i] = !MMD_SA.motion_shuffle_started || MMD_SA_options.model_para_obj_all[i]._motion_name_next
   }
 
-  var _delta0_from_last_loop = 0
-  if (MMD_SA._force_motion_shuffle || multi_model_motion_reset[0] || (skin.time+delta > mm.lastFrame_/30)) {
-    var adjust_center_view = !MMD_SA.motion_shuffle_started
+  var _delta0_from_last_loop = Math.max(Math.min(skin.time+delta - mm.lastFrame_/30, 0.1), 0)
+  if (MMD_SA._force_motion_shuffle || multi_model_motion_reset[0] || _delta0_from_last_loop) {
+    let adjust_center_view = !MMD_SA.motion_shuffle_started
     mmd.frame_time_ref = 0
 
     if (!onended_done) {
@@ -432,7 +434,10 @@ if (debug_msg.length) {
       }
     }
 
-    var motion_changed = !MMD_SA.motion_shuffle_started
+    let motion_blending_disabled = !MMD_SA.motion_shuffle_started
+    let mm_old = mm
+
+    let motion_changed = !MMD_SA.motion_shuffle_started
     if (MMD_SA.motion_shuffle())
       motion_changed = true
 
@@ -440,8 +445,8 @@ if (debug_msg.length) {
     MMD_SA_options.onmotionended && MMD_SA_options.onmotionended(motion_changed)
 
 // check the backup list ._motion_shuffle_list_default instead of .motion_shuffle_list_default since .motion_shuffle_list_default can be null sometimes
-    var motion_index = (MMD_SA_options.motion_shuffle || MMD_SA_options._motion_shuffle_list_default) ? MMD_SA_options.motion_shuffle_list[MMD_SA.motion_shuffle_index] : 0
-    var motion = MMD_SA_options.motion[motion_index]
+    let motion_index = (MMD_SA_options.motion_shuffle || MMD_SA_options._motion_shuffle_list_default) ? MMD_SA_options.motion_shuffle_list[MMD_SA.motion_shuffle_index] : 0
+    let motion = MMD_SA_options.motion[motion_index]
 
     if (MMD_SA._force_motion_shuffle)
       adjust_center_view = true
@@ -449,6 +454,8 @@ if (debug_msg.length) {
 
 // a trick for certain extra animations to avoid an extreme condition in which (Animation.time===now), which causes error
     _delta = (1/59)/1000
+
+    let blending_options
 
     if (motion_changed) {
       adjust_center_view = true
@@ -459,7 +466,36 @@ if (debug_msg.length) {
       playbackRate = (vo.BPM_mode) ? vo._sender.playbackRate : 120/BPM
       _playbackRate = playbackRate * (para._playbackRate || 1) * MMD_SA.playbackRate
 
-      var obj = model._MMD_SA_cache_current = model._MMD_SA_cache[motion.path]
+      let para_SA = mm.para_SA
+      let para_SA_old = mm_old.para_SA
+/*
+para_SA.motion_blending = {
+  fadeout: {}
+};
+*/
+      blending_options = !motion_blending_disabled && ((para_SA_old.motion_blending && para_SA_old.motion_blending.fadeout && (!para_SA_old.motion_blending.fadeout.condition || para_SA_old.motion_blending.fadeout.condition(mm_old, mm)) && (!para_SA.motion_blending || !para_SA.motion_blending.fadein || !para_SA.motion_blending.fadein.condition || para_SA.motion_blending.fadein.condition(mm_old, mm)) && para_SA_old.motion_blending.fadeout) || (para_SA.motion_blending && para_SA.motion_blending.fadein && (!para_SA.motion_blending.fadein.condition || para_SA.motion_blending.fadein.condition(mm_old, mm)) && (!para_SA_old.motion_blending || !para_SA_old.motion_blending.fadeout || !para_SA_old.motion_blending.fadeout.condition || para_SA_old.motion_blending.fadeout.condition(mm_old, mm)) && para_SA.motion_blending.fadein));
+
+      if (blending_options) {
+        let skin_blend = Object.create(model.skin)
+        skin_blend._is_skin = true
+        skin_blend._motion_index_MMD_SA_extra = 0
+        skin_blend._is_MMD_SA_custom_animation = skin_blend._is_MMD_SA_animation = skin_blend._MMD_SA_disabled = skin_blend.freeze_onended = true
+        model.skin_MMD_SA_extra[0] = skin_blend
+/*
+        let morph_blend = Object.create(model.morph)
+        morph_blend._is_morph = true
+        morph_blend._motion_index_MMD_SA_extra = 0
+        morph_blend._is_MMD_SA_custom_animation = morph_blend._is_MMD_SA_animation = morph_blend._MMD_SA_disabled = morph_blend.freeze_onended = true
+        model.morph_MMD_SA_extra[0] = morph_blend
+*/
+        let ca = MMD_SA_options.custom_action[0]
+        ca.blending_options = blending_options
+        ca._time_ini = RAF_timestamp
+        ca._seek_time_ = (mm_old.para_SA.loop_on_blending && !mm_old.para_SA.freeze_onended && _delta0_from_last_loop && (_delta0_from_last_loop + ((mm_old.firstFrame_ && mm_old.firstFrame_/30) || 0))) || Math.min(skin_blend.time+delta, mm_old.lastFrame_/30-(1/59)/1000);
+//console.log(mm_old.filename, !!mm_old.para_SA.freeze_onended, ca._seek_time_)
+      }
+
+      let obj = model._MMD_SA_cache_current = model._MMD_SA_cache[motion.path]
       model.skin  = obj.skin
       model.morph = obj.morph
 
@@ -470,13 +506,18 @@ if (debug_msg.length) {
       THREE.MMD.adjustMotionDuration()
 
       MMD_SA_options.model_para_obj.onMotionChange && MMD_SA_options.model_para_obj.onMotionChange();
+
+      _delta0_from_last_loop = 0
     }
     else {
-      _delta0_from_last_loop = Math.max(Math.min(skin.time+delta - mm.lastFrame_/30, 0.1), 0)
-      var ignore_physics_reset = ((mm.para_SA.loopback_physics_reset == false) || ((mm.lastFrame_ == mm.lastFrame) && !mm.firstFrame_ && !mm.para_SA.loopback_fading))
+      let ignore_physics_reset = ((mm.para_SA.loopback_physics_reset == false) || ((mm.lastFrame_ == mm.lastFrame) && !mm.firstFrame_ && !mm.para_SA.loopback_fading))
       model.resetMotion(ignore_physics_reset || MMD_SA._ignore_physics_reset)
     }
 //DEBUG_show(motion.path.replace(/^.+[\/\\]/, "")+"/"+mmd.motionManager.filename+'/'+(MMD_SA_options.motion[model.skin._motion_index].path.replace(/^.+[\/\\]/, ""))+'/'+parseInt(mm.lastFrame_/30)+'/'+Date.now())
+
+    if (!blending_options) {
+      model.skin_MMD_SA_extra[0] = model.morph_MMD_SA_extra[0] = MMD_SA.Animation_dummy
+    }
 
     for (var i = 1, i_max = MMD_SA_options.model_para_obj_all.length; i < i_max; i++) {
       if (MMD_SA_options.model_para_obj_all[i].mirror_motion_from_first_model)
@@ -499,6 +540,9 @@ if (debug_msg.length) {
 //self._TEST=true
 //DEBUG_show(obj.skin.duration,0,1)
   }
+  else {
+    _delta0_from_last_loop = 0
+  }
 
   for (var i = 1, i_max = MMD_SA_options.model_para_obj_all.length; i < i_max; i++) {
     if (!multi_model_motion_reset_check[i])
@@ -515,13 +559,15 @@ if (debug_msg.length) {
 // ignore frame range for online character with BPM motion (ie. use the full motion duration as lastFrame)
     var lastFrame = (model_para.is_OPC && mm.para_SA.BPM) ? mm.lastFrame : mm.lastFrame_
 
-    var _delta_from_last_loop = 0
+    var _delta_from_last_loop = Math.max(Math.min(_model.skin.time+delta - lastFrame/30, 0.1), 0)
     if (!multi_model_motion_reset[i]) {
-      if (_model.skin.time+delta <= lastFrame/30)
+      if (!_delta_from_last_loop)
         continue
-      _delta_from_last_loop = Math.min(_model.skin.time+delta - lastFrame/30, 0.1)
 // ignore onended_NPC for online PC (for now at least)
       !mm.para_SA.is_OPC && mm.para_SA.onended_NPC && mm.para_SA.onended_NPC(i)
+    }
+    else {
+      _delta_from_last_loop = 0
     }
 
     var motion_changed = false
@@ -4818,6 +4864,7 @@ Animation.prototype.update = function( dt, force ) {
 var freeze_onended_finished
 var morph_to_skip = {}
 var MMDmorphs = THREE.MMD.getModels()[this._model_index].pmx.morphs
+var ca_index = (this._motion_index_MMD_SA_extra != null) ? this._motion_index_MMD_SA_extra : this._motion_index-MMD_SA.custom_action_index;
 
 	this.targets.forEach( function( v, idx ) {
 		var currKey, nextKey, ratio;
@@ -4850,12 +4897,14 @@ if (that.freeze_onended) {
   ended = false; //skip default loop/onended handle
   if (that._is_MMD_SA_custom_animation && that._is_skin && !freeze_onended_finished) {
     freeze_onended_finished = true
-    MMD_SA_options.custom_action[that._motion_index-MMD_SA.custom_action_index].onFinish(that._model_index)
+    MMD_SA_options.custom_action[ca_index].onFinish(that._model_index)
   }
   that.time = that.duration - (1/59)/1000
   ratio = 1
-  if (!that._MMD_SA_animation_check || that._MMD_SA_animation_check(idx))
+  if (!that._MMD_SA_animation_check || that._MMD_SA_animation_check(idx)) {
     that.onupdate( currKey, nextKey, ratio, idx );
+    return
+  }
 }
 else
 				if ( that.loop /* && !that.resetOnLoop */ ) {
@@ -4902,7 +4951,7 @@ if (!that._MMD_SA_animation_check || that._MMD_SA_animation_check(idx))
 	});
 // AT: special case for "empty" skin animation
 if (that.freeze_onended && (that._is_MMD_SA_custom_animation && that._is_skin && !freeze_onended_finished) && (now > that.duration)) {
-  MMD_SA_options.custom_action[that._motion_index-MMD_SA.custom_action_index].onFinish(that._model_index)
+  MMD_SA_options.custom_action[ca_index].onFinish(that._model_index)
 }
 	if ( ended ) {
 		if ( !this.loop ) {
@@ -5209,21 +5258,35 @@ this._timeMax = animation._timeMax;
 MMDSkin.prototype = Object.create( Animation.prototype );
 MMDSkin.prototype.constructor = MMDSkin;
 
-MMDSkin.prototype.onupdate = function( currKey, nextKey, ratio, idx ) {
+// AT: motion_blending support
+MMDSkin.prototype.onupdate = (function () {
+  var pos = new THREE.Vector3()
+  var rot = new THREE.Quaternion()
+
+  return function( currKey, nextKey, ratio, idx ) {
 	var bone = this.mesh.bones[ idx ],
 		gbone = this.mesh.geometry.bones[ idx ],
 		interp;
 // AT: geometry bone custom adjustment
+let motion_para
 if (self.MMD_SA) {
-  var model_para_obj = MMD_SA_options.model_para_obj_all[this.mesh._model_index]
-  model = THREE.MMD.getModels()[this.mesh._model_index]
-  motion_name = (model.skin && MMD_SA.motion[model.skin._motion_index].filename) || ""
-  var motion_para = MMD_SA_options.motion_para[motion_name];
-  var motion_sd = motion_para && motion_para.adjustment_per_model && (motion_para.adjustment_per_model[model_para_obj._filename] || motion_para.adjustment_per_model[model_para_obj._filename_cleaned] || motion_para.adjustment_per_model._default_);
+  let model_para_obj = MMD_SA_options.model_para_obj_all[this.mesh._model_index];
+  let motion_name
+  if (this._motion_index != null) {
+    motion_name = MMD_SA.motion[this._motion_index].filename
+  }
+  else {
+    let model_skin = THREE.MMD.getModels()[this.mesh._model_index].skin
+    if (model_skin) {
+      motion_name = MMD_SA.motion[model_skin._motion_index].filename
+    }
+  }
+  motion_para = MMD_SA_options.motion_para[motion_name];
+  let motion_sd = motion_para && motion_para.adjustment_per_model && (motion_para.adjustment_per_model[model_para_obj._filename] || motion_para.adjustment_per_model[model_para_obj._filename_cleaned] || motion_para.adjustment_per_model._default_);
   motion_sd = (motion_sd && motion_sd.skin_default) || {};
-  var sd = motion_sd[gbone.name] || model_para_obj.skin_default[gbone.name]
+  let sd = motion_sd[gbone.name] || model_para_obj.skin_default[gbone.name]
   if (sd && sd.gpos_add) {
-    var pos_new = []
+    let pos_new = []
     gbone.pos.forEach(function (v, idx) {
       pos_new[idx] = v + sd.gpos_add[idx]
     });
@@ -5233,6 +5296,46 @@ if (self.MMD_SA) {
 	//if (nextKey.interp) { // curr ではなく next 側を参照のこと。
 		interp = nextKey.interp;
 		// cubic bezier
+// AT: motion_blending support
+pos.x = gbone.pos[0] + currKey.pos[0] + ( nextKey.pos[0] - currKey.pos[0] ) * bezierp( ratio, interp, 0 );
+pos.y = gbone.pos[1] + currKey.pos[1] + ( nextKey.pos[1] - currKey.pos[1] ) * bezierp( ratio, interp, 1 );
+pos.z = gbone.pos[2] + currKey.pos[2] + ( nextKey.pos[2] - currKey.pos[2] ) * bezierp( ratio, interp, 2 );
+slerp( currKey.rot, nextKey.rot, _q, bezierp( ratio, interp, 3) );
+rot.x = _q[0];
+rot.y = _q[1];
+rot.z = _q[2];
+rot.w = _q[3];
+
+if (this._blending_ratio_ == null) {
+  bone.position.copy(pos)
+  bone.quaternion.copy(rot)
+}
+else {
+  let ratio = this._blending_ratio_
+/*
+  if (gbone.name == "左足ＩＫ")
+    ratio = Math.pow(ratio, 2)
+  else if (gbone.name == "右足ＩＫ")
+    ratio = Math.pow(ratio, 0.5)
+*/
+  let pos_updated = false
+  if (motion_para && motion_para.bone_to_position) {
+    let b_name = (gbone.name.indexOf("足ＩＫ") != -1) ? "センター" : gbone.name;
+    let b_target = motion_para.bone_to_position.find(b=>b.name==b_name);
+    if (b_target) {
+      let scale = b_target.scale
+      bone.position.x += (pos.x - bone.position.x) * ratio * (1-scale.x)
+      bone.position.y += (pos.y - bone.position.y) * ratio * (1-scale.y)
+      bone.position.z += (pos.z - bone.position.z) * ratio * (1-scale.z)
+      pos_updated = true
+    }
+  }
+  if (!pos_updated)
+    bone.position.lerp(pos, ratio)
+
+  bone.quaternion.slerp(rot, this._blending_ratio_)
+}
+/*
 		bone.position.x = gbone.pos[0] + currKey.pos[0] + ( nextKey.pos[0] - currKey.pos[0] ) * bezierp( ratio, interp, 0 );
 		bone.position.y = gbone.pos[1] + currKey.pos[1] + ( nextKey.pos[1] - currKey.pos[1] ) * bezierp( ratio, interp, 1 );
 		bone.position.z = gbone.pos[2] + currKey.pos[2] + ( nextKey.pos[2] - currKey.pos[2] ) * bezierp( ratio, interp, 2 );
@@ -5241,7 +5344,7 @@ if (self.MMD_SA) {
 		bone.quaternion.y = _q[1];
 		bone.quaternion.z = _q[2];
 		bone.quaternion.w = _q[3];
-
+*/
 	//} else {
 	//	// linear
 	//	bone.position.x = currKey.pos[0] + ( nextKey.pos[0] - currKey.pos[0] ) * ratio;
@@ -5253,7 +5356,8 @@ if (self.MMD_SA) {
 	//	bone.quaternion.z = _q[2];
 	//	bone.quaternion.w = _q[3];
 	//}
-};
+  };
+})();
 
 // AT: make skin.onupdate portable (mainly for ._custom_skin)
 MMD_SA._skin_onupdate = MMDSkin.prototype.onupdate
@@ -6111,7 +6215,7 @@ if (this.morph_MMD_SA_extra) {
   this.morph_MMD_SA_extra.forEach(function (morph, _idx) {
 if (morph._is_dummy || !morph.targets.length)
   return
-var idx = morph._motion_index - MMD_SA.custom_action_index//_idx//
+var idx = (morph._motion_index_MMD_SA_extra != null) ? morph._motion_index_MMD_SA_extra : morph._motion_index - MMD_SA.custom_action_index//_idx//
 if (idx < MMD_SA_options.custom_action.length) {
   var ca = MMD_SA_options.custom_action[idx]
   var frame = ca.frame = ca.para_by_model_index[that._model_index].frame = (morph._MMD_SA_disabled) ? 0 : ~~(((morph.time < morph.duration) ? morph.time : morph.duration) * 30)
@@ -6132,7 +6236,19 @@ if (idx < MMD_SA_options.custom_action.length) {
   }
 }
 
-if (!morph._MMD_SA_disabled) morph.update( dt );
+if (!morph._MMD_SA_disabled) {
+  morph.update( dt )
+/*
+// not blending morph for now
+  if (morph._seek_time_ != null) {
+    morph.seek(morph._seek_time_)
+    morph._seek_time_ = null
+  }
+  else
+    morph.update( dt )
+  morph._blending_ratio_ = null
+*/
+}
   })
 }
 if (morph_extra_played) { this.morph.time += dt } else// extra morph END
@@ -6266,7 +6382,7 @@ if (this.skin_MMD_SA_extra) {
   this.skin_MMD_SA_extra.forEach(function (skin, _idx) {
 if (skin._is_dummy)
   return
-var idx = skin._motion_index - MMD_SA.custom_action_index//_idx//
+var idx = (skin._motion_index_MMD_SA_extra != null) ? skin._motion_index_MMD_SA_extra : skin._motion_index - MMD_SA.custom_action_index//_idx//
 //DEBUG_show(_idx+'/'+idx+'/'+MMD_SA_options.custom_action.length,0,1)
 if (idx < MMD_SA_options.custom_action.length) {
 //if (that._model_index==4) DEBUG_show('444-'+that.skin_MMD_SA_extra.length+'/'+Date.now())
@@ -6295,7 +6411,15 @@ if (idx < MMD_SA_options.custom_action.length) {
   }
 }
 
-if (!skin._MMD_SA_disabled) skin.update( dt );
+if (!skin._MMD_SA_disabled) {
+  if (skin._seek_time_ != null) {
+    skin.seek(skin._seek_time_)
+    skin._seek_time_ = null
+  }
+  else
+    skin.update( dt )
+  skin._blending_ratio_ = null
+}
   })
 }
 // extra skin END

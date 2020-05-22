@@ -1,4 +1,4 @@
-// Dungeon (v1.0.2)
+// Dungeon (2020-05-22)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -7763,12 +7763,12 @@ this.motion_by_name = {}
 this.motion = options.motion || {}
 if (!this.motion["PC default"]) {
   this.motion["PC default"] = { path:System.Gadget.path + '/MMD.js/motion/motion_rpg_pack01.zip#/tsuna/tsuna_standby.vmd',
-    para: { adjust_center_view_disabled:true, onended: function () { MMD_SA._no_fading=true; } }
+    para: { adjust_center_view_disabled:true, loop_on_blending:true, onended: function () { MMD_SA._no_fading=true; } }
   };
 }
 if (!this.motion["PC movement forward"]) {
   this.motion["PC movement forward"] = { path:System.Gadget.path + '/MMD.js/motion/motion_rpg_pack01.zip#/walk_n_run/run_H57_f0-20.vmd',
-    para: { adjust_center_view_disabled:true, onended: function () { MMD_SA._no_fading=true; }
+    para: { adjust_center_view_disabled:true, loop_on_blending:true, onended: function () { MMD_SA._no_fading=true; }
  ,adjustment_per_model: {
     _default_ : {
   skin_default: {}
@@ -7882,6 +7882,12 @@ if (!this.motion["PC high jump"]) {
   skin_filter: { test:function(name){ return ((name.indexOf("胸")==-1) && (name.indexOf("乳")==-1)) } }
     }
   }
+
+ ,motion_blending: {
+    fadein: {}
+   ,fadeout: { condition:()=>false }
+  }
+
  ,bone_to_position: [{ name:"センター", frame_range:[[23,89]], scale:{x:0,y:1,z:0}, position_disabled:true }]
  ,mov_speed: (function () {
 var va_y1 = _jump_physics((100), 28)
@@ -8018,6 +8024,10 @@ if (!MMD_SA_options.Dungeon._states.event_mode) {
   }
     }
   }
+
+     ,motion_blending: {
+        fadein: { duration:10/30 }
+      }
     }
   };
 }
@@ -8079,6 +8089,10 @@ MMD_SA_options.Dungeon._states.object_click_disabled = false;
   "全ての親": { pos_add:{x:0, y:0, z:3} }
       }
         }
+      }
+
+     ,motion_blending: {
+        fadein: { duration:10/30 }
       }
     }
   };
@@ -8226,7 +8240,7 @@ return RE_parry.test(motion_id) && twin_weapon_equipped(objs._model_index);
 
   if (!this.motion["PC combat default"]) {
     this.motion["PC combat default"] = { path:'MMD.js\\motion\\motion_rpg_pack01.zip#\\攻撃配布用\\咲夜　待機.vmd',
-      para: { adjust_center_view_disabled:true, onended: function () { MMD_SA._no_fading=true; }
+      para: { adjust_center_view_disabled:true, loop_on_blending:true, onended: function () { MMD_SA._no_fading=true; }
        ,model_index_list:[0]
       }
     };
@@ -8234,7 +8248,7 @@ return RE_parry.test(motion_id) && twin_weapon_equipped(objs._model_index);
   }
   if (!this.motion["PC combat movement forward"]) {
     this.motion["PC combat movement forward"] = { path:'MMD.js\\motion\\motion_rpg_pack01.zip#\\攻撃配布用\\咲夜　構え歩き前進.vmd',
-      para: { adjust_center_view_disabled:true, onended: function () { MMD_SA._no_fading=true; }
+      para: { adjust_center_view_disabled:true, loop_on_blending:true, onended: function () { MMD_SA._no_fading=true; }
        ,model_index_list: [0]
        ,PC_parry_level: 3
       }
@@ -8243,7 +8257,7 @@ return RE_parry.test(motion_id) && twin_weapon_equipped(objs._model_index);
   }
   if (!this.motion["PC combat movement backward"]) {
     this.motion["PC combat movement backward"] = { path:'MMD.js\\motion\\motion_rpg_pack01.zip#\\攻撃配布用\\咲夜　構え歩きバック.vmd',
-      para: { adjust_center_view_disabled:true, onended: function () { MMD_SA._no_fading=true; }
+      para: { adjust_center_view_disabled:true, loop_on_blending:true, onended: function () { MMD_SA._no_fading=true; }
        ,model_index_list: [0]
        ,PC_parry_level: 3
       }
@@ -8252,7 +8266,7 @@ return RE_parry.test(motion_id) && twin_weapon_equipped(objs._model_index);
   }
   if (!this.motion["PC combat movement left"]) {
     this.motion["PC combat movement left"] = { path:'MMD.js\\motion\\motion_rpg_pack01.zip#\\攻撃配布用\\咲夜　構え歩き左.vmd',
-      para: { adjust_center_view_disabled:true, onended: function () { MMD_SA._no_fading=true; }
+      para: { adjust_center_view_disabled:true, loop_on_blending:true, onended: function () { MMD_SA._no_fading=true; }
        ,model_index_list: [0]
        ,PC_parry_level: 3
       }
@@ -8261,7 +8275,7 @@ return RE_parry.test(motion_id) && twin_weapon_equipped(objs._model_index);
   }
   if (!this.motion["PC combat movement right"]) {
     this.motion["PC combat movement right"] = { path:'MMD.js\\motion\\motion_rpg_pack01.zip#\\攻撃配布用\\咲夜　構え歩き右.vmd',
-      para: { adjust_center_view_disabled:true, onended: function () { MMD_SA._no_fading=true; }
+      para: { adjust_center_view_disabled:true, loop_on_blending:true, onended: function () { MMD_SA._no_fading=true; }
        ,model_index_list: [0]
        ,PC_parry_level: 3
       }
@@ -9279,7 +9293,7 @@ this.motion_filename_by_id = {}
 this.motion_id_by_filename = {}
 
 for (var name in this.motion) {
-  var motion = this.motion[name]
+  let motion = this.motion[name]
   motion.name = decodeURIComponent(((motion.path)?motion:MMD_SA_options.motion[motion.index]).path.replace(/^.+[\/\\]/, "").replace(/\.vmd$/i, ""))
 
   this.motion_filename_by_id[name] = motion.name
@@ -9291,7 +9305,7 @@ for (var name in this.motion) {
     }
   }
   else {
-    var index = MMD_SA_options.motion.findIndex(function (obj) { return (!obj || (obj.path == motion.path)) })
+    let index = MMD_SA_options.motion.findIndex(function (obj) { return (!obj || (obj.path == motion.path)) })
     if ((index == -1) || (!MMD_SA_options.motion[index])) {
       motion.index = (index == -1) ? MMD_SA_options.motion.length : index
       MMD_SA_options.motion[motion.index] = { must_load:true, no_shuffle:true, path:motion.path }
@@ -9300,7 +9314,7 @@ for (var name in this.motion) {
       motion.index = index
   }
 
-  var para = motion.para
+  let para = motion.para
   if (para) {
     if (para.combat_para) {
       if (para.look_at_screen == null)
@@ -9324,6 +9338,15 @@ for (var name in this.motion) {
       });
     }
     MMD_SA_options.motion_para[motion.name] = para
+  }
+  else {
+    para = MMD_SA_options.motion_para[motion.name]
+  }
+
+  if (para && !para.motion_blending) {
+    para.motion_blending = {
+      fadein: {}
+    };
   }
 
   if (name == "PC default") {

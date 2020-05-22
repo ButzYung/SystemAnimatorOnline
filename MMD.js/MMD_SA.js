@@ -1,4 +1,4 @@
-// MMD for System Animator (v3.7.1)
+// MMD for System Animator (2020-05-22)
 
 var use_full_spectrum = true
 
@@ -498,7 +498,7 @@ MMD_SA._init_my_model = function () {
   if (!model_para_obj.skin_default)
     model_para_obj.skin_default = { _is_empty:true }
 // save some headaches and make sure that every VMD has morph (at least a dummy) in "Dungeon" mode
-  if (!model_para_obj.morph_default) model_para_obj.morph_default = { _is_empty:!MMD_SA_options.Dungeon }
+  if (!model_para_obj.morph_default) model_para_obj.morph_default = {}//{ _is_empty:!MMD_SA_options.Dungeon }//
 
   MMD_SA_options._MME = Object.clone(MMD_SA_options._MME_)
   if (Object.keys(MMD_SA_options._MME).length == 0) {
@@ -1175,7 +1175,42 @@ return list
   }
 
  ,custom_action_default: {
-    "kissing": {
+    "motion_blending_model0": {
+      action: {
+        condition: function (is_bone_action, objs) {
+if (objs._model_index) return false
+
+if (objs != MMD_SA.Animation_dummy) {
+  let mm = MMD_SA.motion[objs._motion_index]
+
+  let duration = this.blending_options.duration || 5/30
+  let blending_ratio = 1 - ((RAF_timestamp - this._time_ini)/1000 / duration)
+  if (blending_ratio <= 0) {
+    let model = THREE.MMD.getModels()[0]
+    model.skin_MMD_SA_extra[0] = model.morph_MMD_SA_extra[0] = MMD_SA.Animation_dummy
+    return false
+  }
+  objs._blending_ratio_ = blending_ratio
+//DEBUG_show(mm.filename + '/'+this._delta0_from_last_loop+'/'+blending_ratio);return false;
+  if (this._seek_time_ != null) {
+    objs._seek_time_ = this._seek_time_
+    this._seek_time_ = null
+  }
+
+  return true
+}
+
+return false
+        }
+
+       ,onFinish: function (model_index) {
+        }
+      }
+
+     ,motion: {}
+    }
+
+   ,"kissing": {
       action: {
         condition: function (is_bone_action, objs) {
 var is_kissing
@@ -5233,7 +5268,7 @@ if (navigator.xr) {
   if (!MMD_SA_options.model_para_obj.skin_default)
     MMD_SA_options.model_para_obj.skin_default = { _is_empty:true }
 // save some headaches and make sure that every VMD has morph (at least a dummy) in "Dungeon" mode
-  if (!MMD_SA_options.model_para_obj.morph_default) MMD_SA_options.model_para_obj.morph_default = { _is_empty:!MMD_SA_options.Dungeon }
+  if (!MMD_SA_options.model_para_obj.morph_default) MMD_SA_options.model_para_obj.morph_default = {}//{ _is_empty:!MMD_SA_options.Dungeon }//
 
 //window.addEventListener("MMDStarted", function () { console.log(MMD_SA_options.model_para_obj.motion_name_default) });
 //  MMD_SA_options.model_para_obj.motion_name_default_combat = MMD_SA_options.model_para_obj.motion_name_default
@@ -5266,6 +5301,7 @@ if (navigator.xr) {
     MMD_SA_options.x_object = []
   if (!MMD_SA_options.custom_action)
     MMD_SA_options.custom_action = ["kissing"]
+  MMD_SA_options.custom_action.unshift("motion_blending_model0")
   if (!MMD_SA_options.AR_camera_mod)
     MMD_SA_options.AR_camera_mod = 1.2
   if (!MMD_SA_options.light_mod)
@@ -5403,7 +5439,7 @@ return this.model_para_obj.MME || this._MME
     if (!model_para_obj.skin_default)
       model_para_obj.skin_default = { _is_empty:true }
 // save some headaches and make sure that every VMD has morph (at least a dummy) in "Dungeon" mode
-  if (!model_para_obj.morph_default) model_para_obj.morph_default = { _is_empty:!MMD_SA_options.Dungeon }
+  if (!model_para_obj.morph_default) model_para_obj.morph_default = {}//{ _is_empty:!MMD_SA_options.Dungeon }//
 
     if (!model_para_obj.MME)
       model_para_obj.MME = {}
