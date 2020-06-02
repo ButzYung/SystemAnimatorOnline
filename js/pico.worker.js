@@ -4,6 +4,8 @@
 
 importScripts("pico.js");
 
+var face_cover;
+
 var update_memory = pico.instantiate_detection_memory(5); // we will use the detecions of the last 5 frames
 var facefinder_classify_region = function(r, c, s, pixels, ldim) {return -1.0;};
 var cascadeurl = 'https://raw.githubusercontent.com/nenadmarkus/pico/c2e81f9d23cc11d1a612fd21e4f9de0921a5d0d9/rnt/cascades/facefinder';
@@ -12,11 +14,7 @@ fetch(cascadeurl).then(function(response) {
 		var bytes = new Int8Array(buffer);
 		facefinder_classify_region = pico.unpack_cascade(bytes);
 		console.log('pico.js cascade loaded');
-postMessage('pico.js cascade loaded');
-	})
-});
 
-var face_cover;
 // https://dev.to/trezy/loading-images-with-web-workers-49ap
 fetch("../images/laughing_man_134x120.png").then(function (response) {
 //console.log(response)
@@ -25,10 +23,14 @@ fetch("../images/laughing_man_134x120.png").then(function (response) {
 //console.log(face_cover)
       face_cover = img
       console.log("face cover OK")
+      postMessage('pico.js cascade loaded');
     });
   });
 }).catch(function (err) {
   console.log("ERROR: face cover FAILED")
+});
+
+	})
 });
 
 var canvas, context, RAF_timerID;
