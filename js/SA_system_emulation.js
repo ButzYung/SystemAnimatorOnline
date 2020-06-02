@@ -3267,7 +3267,7 @@ DEBUG_show(data, 2)
     _facemesh.enabled = true
   }
   else {
-//DEBUG_show(data.faces.length+'/'+data._t+'\n'+Date.now())
+DEBUG_show(data.faces.length+'/'+data._t+'\n'+Date.now())
 self._faces_=data.faces
     _facemesh.busy = false
   }
