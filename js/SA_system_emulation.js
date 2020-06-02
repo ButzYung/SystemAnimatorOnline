@@ -2773,6 +2773,7 @@ return net;
       var camera
       var face_detection, fd_worker
       var _bodyPix
+      var _facemesh, fm_worker
       var snapshot
 
       var frame_skipped = 99
@@ -2828,15 +2829,20 @@ else {
 }
 //context.restore()
 
-video_canvas.style.visibility = (_bodyPix.enabled || (face_detection.initialized && face_detection.worker_initialized && !face_detection.dets)) ? "hidden" : "visible";
+video_canvas.style.visibility = (!camera.visible || _bodyPix.enabled || (face_detection.initialized && face_detection.worker_initialized && !face_detection.dets)) ? "hidden" : "visible";
       }
 
       function video_capture() {
 if (_bodyPix.enabled) {
   _bodyPix.update_frame()
 }
-else if (face_detection.enabled) {
-  face_detection.update_frame()
+else {
+  if (_facemesh.enabled) {
+    _facemesh.update_frame()
+  }
+  else if (face_detection.enabled) {
+    face_detection.update_frame()
+  }
 }
       }
 
@@ -2878,7 +2884,7 @@ navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
   camera.init_stream()
 
   camera.video.loop = true
-  camera.video.src = "js/headtrackr.mp4"//toFileProtocol("C:\\Users\\user\\Videos\\TEMP\\AR Miku - Social Distancing.mp4")//
+  camera.video.src = "js/headtrackr.mp4"//toFileProtocol("C:\\Users\\user\\Documents\\_.mp4")//
 
   DEBUG_show("(ERROR: Camera unavailable, using fallback video instead)", 3)
 });
@@ -3039,7 +3045,7 @@ const mask = await this.toMask(image, options_seg, options_mask)
 this.busy = false
 if (!this.enabled)
   return
-
+//SL.style.visibility="visible";return;
 if ((this.mask.width != mask.width) || (this.mask.height != mask.height)) {
   this.mask.width  = mask.width
   this.mask.height = mask.height
@@ -3233,6 +3239,143 @@ else {
     };
     return face_detection;
   })()
+
+ ,facemesh: (function () {
+    var enabled = false;
+
+    function init() {
+_facemesh.initialized = true
+
+/*
+// non-worker Facemesh TEST
+facemesh.load({maxFaces:1}).then(function (model) {
+  _facemesh.model = model
+  _facemesh.worker_initialized = true
+  _facemesh.enabled = true
+});
+return;
+*/
+
+fm_worker = new Worker("js/facemesh_worker.js");
+
+fm_worker.onmessage = function (e) {
+  var data = ((typeof e.data == "string") && (e.data.charAt(0) === "{")) ? JSON.parse(e.data) : e.data;
+
+  if (typeof data === "string") {
+DEBUG_show(data, 2)
+    _facemesh.worker_initialized = true
+    _facemesh.enabled = true
+  }
+  else {
+//DEBUG_show(data.faces.length+'/'+data._t+'\n'+Date.now())
+self._faces_=data.faces
+    _facemesh.busy = false
+  }
+};
+    }
+
+    _facemesh = {
+      initialized: false
+     ,worker_initialized: false
+
+     ,get enabled() {
+return enabled;
+      }
+     ,set enabled(v) {
+if (enabled == !!v)
+  return
+
+if (v) {
+  if (!this.initialized)
+    init()
+  else if (!this.worker_initialized)
+    return
+}
+else {
+  if (camera.initialized)
+    camera.video_canvas_face_detection.style.visibility = "hidden"
+}
+
+enabled = !!v
+      }
+
+     ,update_frame:  function () {
+if (!this.enabled || !this.worker_initialized || this.busy)
+  return
+this.busy = true
+
+//camera.video_canvas.style.visibility="hidden"
+/*
+// non-worker Facemesh TEST
+_facemesh.model.estimateFaces(camera.video_canvas).then(function (faces) {
+//  DEBUG_show(faces.length+'/'+Date.now())
+  self._faces_=faces
+  _facemesh.busy = false
+});
+return;
+*/
+
+if (camera.visible) {
+  camera.video_canvas_face_detection.style.visibility = "visible"
+}
+else {
+  update_video_canvas()
+}
+
+let video_canvas = camera.video_canvas
+let w = video_canvas.width
+let h = video_canvas.height
+let rgba = video_canvas.getContext("2d").getImageData(0,0,w,h).data.buffer;
+
+let cs = camera.video_canvas_face_detection.style
+if ((cs.width != video_canvas.style.width) || (cs.height != video_canvas.style.height)) {
+  cs.width  = video_canvas.style.width
+  cs.height = video_canvas.style.height
+}
+
+let data = { rgba:rgba, w:w, h:h, draw_canvas:true };//, threshold:1 };
+if (!camera.video_canvas_face_detection._offscreen) {
+  data.canvas = camera.video_canvas_face_detection.transferControlToOffscreen()
+  camera.video_canvas_face_detection._offscreen = true
+}
+fm_worker.postMessage(data, (data.canvas)?[data.canvas,data.rgba]:[data.rgba]);
+
+data.rgba = rgba = undefined
+data = undefined
+      }
+
+     ,update_frame_external: function (canvas, dets) {
+let context = canvas.getContext("2d")
+context.globalCompositeOperation = "source-over"
+
+let face_cover = this.face_cover
+let cw = face_cover.width
+let ch = face_cover.height
+
+let h,w,x,y;
+if (dets.length) {
+  let scale = 1
+  dets.forEach(function (det) {
+    h = det[2] * scale
+    w = h * cw/ch
+    x = det[1] * scale - w/2
+    y = det[0] * scale - h/2
+    context.drawImage(face_cover, 0,0,cw,ch, x,y,w,h)
+  });
+}
+else {
+  h = Math.min(ww,hh)
+  w = h * cw/ch
+  x = (ww - w)/2
+  y = (hh - h)/2
+  context.drawImage(face_cover, 0,0,cw,ch, x,y,w,h)
+}
+      }
+
+    };
+    return _facemesh;
+  })()
+
 
  ,snapshot: (function () {
     var waiting = false;

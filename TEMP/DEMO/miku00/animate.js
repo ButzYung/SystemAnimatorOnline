@@ -1556,6 +1556,33 @@ return System._browser.camera.snapshot.init();
   }
     }
 
+   ,"facemesh" : {
+  icon_path: Settings.f_path + '/assets/assets.zip#/icon/laughing_man_64x64.png'
+ ,info_short: "Facemesh AI"
+// ,is_base_inventory: true
+ ,stock_max: 1
+ ,stock_default: 1
+ ,action: {
+    func: function (item) {
+/*
+if (!MMD_SA.WebXR.user_camera.visible) {
+  DEBUG_show("(You need to activate selfie AR first.)", 3)
+  return true
+}
+*/
+if (MMD_SA.WebXR.user_camera.facemesh.enabled) {
+  MMD_SA.WebXR.user_camera.facemesh.enabled = false
+  DEBUG_show("Facemesh AI:OFF", 2)
+}
+else {
+  MMD_SA.WebXR.user_camera.facemesh.enabled = true
+  DEBUG_show("Facemesh AI:ON", 2)
+}
+    }
+   ,anytime: true
+  }
+    }
+
    ,"air_blower": (function () {
       function air_blower_frame() {
 if (MMD_SA.ammo_proxy && MMD_SA.ammo_proxy._timeStep) return// {DEBUG_show(Date.now()); return; }
