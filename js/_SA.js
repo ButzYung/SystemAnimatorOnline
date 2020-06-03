@@ -2549,6 +2549,7 @@ this.count_to_10fps_ = v
 var use_RAF = !!window.requestAnimationFrame
 var RAF_timerID = null
 var RAF_timestamp = 0
+var RAF_timestamp_delta = 0
 var RAF_frame_time_delayed = 0
 var RAF_frame_drop = 0
 
@@ -2566,8 +2567,10 @@ var Animate_RAF = function (timestamp) {
   }
 
   if (RAF_timestamp) {
-    var ms_per_frame = 1000 / (EV_sync_update.count_to_10fps_ * 10)
-    var time_diff = (timestamp - RAF_timestamp) - ms_per_frame
+    RAF_timestamp_delta = timestamp - RAF_timestamp
+
+    let ms_per_frame = 1000 / (EV_sync_update.count_to_10fps_ * 10)
+    let time_diff = RAF_timestamp_delta - ms_per_frame
     RAF_frame_time_delayed += time_diff
     if (RAF_frame_time_delayed < -ms_per_frame) {
       RAF_frame_time_delayed += time_diff
