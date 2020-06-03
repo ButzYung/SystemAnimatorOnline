@@ -2923,6 +2923,15 @@ if (!this.video) {
   vs.zIndex = 0
   vs.visibility = "hidden"
   SL_Host.appendChild(this.video_canvas_face_detection)
+
+  this.video_canvas_facemesh = document.createElement("canvas")
+  vs = this.video_canvas_facemesh.style
+  vs.position = "absolute"
+  vs.left = "0px"
+  vs.top = "0px"
+  vs.zIndex = 0
+  vs.visibility = "hidden"
+  SL_Host.appendChild(this.video_canvas_facemesh)
 }
 
 this.initialized = true
@@ -3159,8 +3168,9 @@ return enabled;
      ,set enabled(v) {
 if (enabled == !!v)
   return
+enabled = !!v
 
-if (v) {
+if (enabled) {
 // a trick to let the camera know that no face has been detected yet
   this.dets = null
 
@@ -3173,8 +3183,6 @@ else {
   if (camera.initialized)
     camera.video_canvas_face_detection.style.visibility = "hidden"
 }
-
-enabled = !!v
       }
 
      ,dets: null
@@ -3267,7 +3275,38 @@ DEBUG_show(data, 2)
     _facemesh.enabled = true
   }
   else {
-DEBUG_show(data.faces.length+'/'+data._t+'\n'+Date.now())
+let info = ""
+if (data.faces.length) {
+  let face = data.faces[0]
+
+// LR:234,454
+  let x_diff = face.mesh[454][0] - face.mesh[234][0]
+  let y_diff = face.mesh[454][1] - face.mesh[234][1]
+  let z_diff = face.mesh[454][2] - face.mesh[234][2]
+  let dis = MMD_SA.TEMP_v3.fromArray(face.mesh[234]).distanceTo(MMD_SA._v3a.fromArray(face.mesh[454]))
+
+  let y_rot = -Math.atan2(z_diff, x_diff)
+  let z_rot = Math.asin(y_diff / dis)
+  let rot = new THREE.Quaternion().setFromEuler(MMD_SA.TEMP_v3.set(0,y_rot,z_rot),"YZX")
+
+// TB:10,152
+  let y_axis = MMD_SA.TEMP_v3.fromArray(face.mesh[152]).sub(MMD_SA._v3a.fromArray(face.mesh[10]))
+  let x_rot = -MMD_SA._v3b.set(0,1,0).applyQuaternion(rot).angleTo(y_axis)
+
+  let sign = (camera.visible) ? 1 : -1;
+  rot.setFromEuler(MMD_SA.TEMP_v3.set(x_rot,y_rot*sign,z_rot*sign),"YZX")
+
+  let head = { absolute:true, rot:rot }
+  let neck = { absolute:true, rot:new THREE.Quaternion() }
+
+  _facemesh.frames.add("skin", "頭", head)
+  _facemesh.frames.add("skin", "首", neck)
+
+  _facemesh.frames.t_delta = data._t
+
+  info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, data._dis+'/'+dis].join('\n')
+}
+DEBUG_show(info+'\n'+data._t)
 self._faces_=data.faces
     _facemesh.busy = false
   }
@@ -3284,19 +3323,71 @@ return enabled;
      ,set enabled(v) {
 if (enabled == !!v)
   return
+enabled = !!v
 
-if (v) {
+if (enabled) {
   if (!this.initialized)
     init()
   else if (!this.worker_initialized)
     return
+
+  this.frames.reset()
+
+  window.addEventListener("SA_MMD_model0_process_bones", _facemesh.process_bones);
 }
 else {
-  if (camera.initialized)
+  if (camera.initialized) {
     camera.video_canvas_face_detection.style.visibility = "hidden"
+    camera.video_canvas_facemesh.style.visibility = "hidden"
+    camera.clear_video_capture()
+  }
+  window.removeEventListener("SA_MMD_model0_process_bones", _facemesh.process_bones);
 }
+      }
 
-enabled = !!v
+     ,frames: {
+  add: function (type, name, obj) {
+obj.t_delta = 0
+
+var target = this[type][name]
+if (target) {
+  if (obj.rot) {
+    obj.rot.slerp(target[0].rot, 0.5)
+  }
+  this[type][name] = [obj, target[0]]
+}
+else {
+  this[type][name] = [obj, obj]
+}
+  }
+
+ ,reset: function () {
+this.skin = {}
+this.morph = {}
+  }
+
+ ,skin:  {}
+ ,morph: {}
+      }
+
+     ,process_bones: function (e) {
+var mesh = e.detail.model.mesh
+
+skin = this.frames.skin
+for (var name in skin) {
+  let bone = mesh.bones_by_name[name]
+  if (!bone)
+    continue
+
+  let s = skin[name]
+  s[0].t_delta += RAF_timestamp_delta
+  if (s[0].rot) {
+    if (s[0].absolute)
+      bone.quaternion.set(0,0,0,1)
+    bone.quaternion.multiply(MMD_SA.TEMP_q.copy(s[1].rot).slerp(s[0].rot, Math.max(Math.min(s[0].t_delta/Math.min(this.frames.t_delta,200),1),0) ))
+//DEBUG_show(s[0].t_delta/100)
+  }
+}
       }
 
      ,update_frame:  function () {
@@ -3315,11 +3406,8 @@ _facemesh.model.estimateFaces(camera.video_canvas).then(function (faces) {
 return;
 */
 
+camera.video_canvas_facemesh.style.visibility = "visible"
 if (camera.visible) {
-  camera.video_canvas_face_detection.style.visibility = "visible"
-}
-else {
-  update_video_canvas()
 }
 
 let video_canvas = camera.video_canvas
@@ -3327,16 +3415,17 @@ let w = video_canvas.width
 let h = video_canvas.height
 let rgba = video_canvas.getContext("2d").getImageData(0,0,w,h).data.buffer;
 
-let cs = camera.video_canvas_face_detection.style
-if ((cs.width != video_canvas.style.width) || (cs.height != video_canvas.style.height)) {
-  cs.width  = video_canvas.style.width
-  cs.height = video_canvas.style.height
+let cs = camera.video_canvas_facemesh.style
+if ((cs.pixelWidth != ~~video_canvas.style.pixelWidth/4) || (cs.pixelHeight != ~~video_canvas.style.pixelHeight/4)) {
+  cs.pixelWidth  = ~~video_canvas.style.pixelWidth/4
+  cs.pixelHeight = ~~video_canvas.style.pixelHeight/4
+  cs.posLeft = video_canvas.style.pixelWidth - cs.pixelWidth
 }
 
 let data = { rgba:rgba, w:w, h:h, draw_canvas:true };//, threshold:1 };
-if (!camera.video_canvas_face_detection._offscreen) {
-  data.canvas = camera.video_canvas_face_detection.transferControlToOffscreen()
-  camera.video_canvas_face_detection._offscreen = true
+if (!camera.video_canvas_facemesh._offscreen) {
+  data.canvas = camera.video_canvas_facemesh.transferControlToOffscreen()
+  camera.video_canvas_facemesh._offscreen = true
 }
 fm_worker.postMessage(data, (data.canvas)?[data.canvas,data.rgba]:[data.rgba]);
 
@@ -3373,6 +3462,9 @@ else {
       }
 
     };
+
+    _facemesh.process_bones = _facemesh.process_bones.bind(_facemesh);
+
     return _facemesh;
   })()
 
@@ -3555,6 +3647,7 @@ if (self.MMD_SA) {
 
 frame_skipped = 99
 
+this.clear_video_capture()
 System._browser.on_animation_update.add(update_video_canvas,0,0,-1)
 System._browser.on_animation_update.add(video_capture,2,1,-1)
   }
@@ -3573,8 +3666,14 @@ this.video_canvas.style.visibility = "hidden"
 face_detection.enabled = false
 _bodyPix.enabled = false
 
-System._browser.on_animation_update.remove(update_video_canvas,0)
-System._browser.on_animation_update.remove(video_capture,1)
+this.clear_video_capture()
+  }
+
+ ,clear_video_capture: function () {
+if (!this.visible && !_facemesh.enabled) {
+  System._browser.on_animation_update.remove(update_video_canvas,0)
+  System._browser.on_animation_update.remove(video_capture,1)
+}
   }
 
  ,set_constraints: function () {
