@@ -7,7 +7,6 @@ importScripts("https://cdn.jsdelivr.net/npm/@tensorflow-models/facemesh");
 var model;
 var face_cover;
 
-
 importScripts("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tf-backend-wasm.js");
 tf.wasm.setWasmPath("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tfjs-backend-wasm.wasm");
 tf.setBackend("wasm").then(function () {
@@ -23,19 +22,18 @@ async function init() {
 // https://github.com/tensorflow/tfjs-models/tree/master/facemesh
   model = await facemesh.load({maxFaces:1});
   console.log('(Facemesh initialized)')
-
+/*
 // https://dev.to/trezy/loading-images-with-web-workers-49ap
   const response = await fetch("../images/laughing_man_134x120.png");
   const blob = await response.blob();
   face_cover = await createImageBitmap(blob);
   console.log("face cover OK")
-
+*/
   postMessage('(Facemesh initialized)')
 }
 
 async function process_video_buffer(rgba, w,h, draw_canvas) {
-  if (!face_cover)
-    return
+//  if (!face_cover) return
 
 let _t=performance.now()
 
@@ -43,6 +41,7 @@ let _t=performance.now()
 
   const faces = await model.estimateFaces(new ImageData(rgba, w,h));
 
+/*
   let _dis
   if (faces.length) {
 // LR:234,454
@@ -53,10 +52,11 @@ let _t=performance.now()
     let sm1 = faces[0].scaledMesh[152]
     _dis = Math.sqrt(Math.pow(sm0[0]-sm1[0],2)+Math.pow(sm0[1]-sm1[1],2)) / Math.sqrt(Math.pow(m0[0]-m1[0],2)+Math.pow(m0[1]-m1[1],2))
   }
+*/
 
 _t=performance.now()-_t
 
-  postMessage(JSON.stringify({ faces:(faces.length)?[{mesh:faces[0].mesh}]:[], _t:_t ,_dis:_dis }));
+  postMessage(JSON.stringify({ faces:(faces.length)?[{mesh:faces[0].mesh}]:[], _t:_t }));
 //return
   if (draw_canvas && faces.length) {
     if (RAF_timerID)

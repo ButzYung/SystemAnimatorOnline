@@ -3285,16 +3285,16 @@ if (data.faces.length) {
   let z_diff = face.mesh[454][2] - face.mesh[234][2]
   let dis = MMD_SA.TEMP_v3.fromArray(face.mesh[234]).distanceTo(MMD_SA._v3a.fromArray(face.mesh[454]))
 
-  let y_rot = -Math.atan2(z_diff, x_diff)
+  let y_rot = Math.atan2(z_diff, x_diff)
   let z_rot = Math.asin(y_diff / dis)
   let rot = new THREE.Quaternion().setFromEuler(MMD_SA.TEMP_v3.set(0,y_rot,z_rot),"YZX")
 
 // TB:10,152
-  let y_axis = MMD_SA.TEMP_v3.fromArray(face.mesh[152]).sub(MMD_SA._v3a.fromArray(face.mesh[10]))
+  let y_axis = MMD_SA.TEMP_v3.fromArray(face.mesh[152]).sub(MMD_SA._v3a.fromArray(face.mesh[10])).normalize()
   let x_rot = -MMD_SA._v3b.set(0,1,0).applyQuaternion(rot).angleTo(y_axis)
 
   let sign = (camera.visible) ? 1 : -1;
-  rot.setFromEuler(MMD_SA.TEMP_v3.set(x_rot,y_rot*sign,z_rot*sign),"YZX")
+  rot.setFromEuler(MMD_SA._v3a.set(x_rot, y_rot*-1*sign, z_rot*sign),"YZX")
 
   let head = { absolute:true, rot:rot }
   let neck = { absolute:true, rot:new THREE.Quaternion() }
@@ -3304,7 +3304,7 @@ if (data.faces.length) {
 
   _facemesh.frames.t_delta = data._t
 
-  info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, data._dis+'/'+dis].join('\n')
+  info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, y_axis.toArray().join(",")].join('\n')
 }
 DEBUG_show(info+'\n'+data._t)
 self._faces_=data.faces
