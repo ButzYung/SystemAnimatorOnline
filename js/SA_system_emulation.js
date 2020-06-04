@@ -3289,11 +3289,11 @@ if (data.faces.length) {
   let z_rot = Math.asin(y_diff / dis)
 
 // TB:10,152
-  let y_axis = MMD_SA.TEMP_v3.fromArray(face.mesh[152]).sub(MMD_SA._v3a.fromArray(face.mesh[10])).normalize()
+  let y_axis = MMD_SA.TEMP_v3.fromArray(face.mesh[152]).sub(MMD_SA._v3a.fromArray(face.mesh[10]))
 //  let rot = new THREE.Quaternion().setFromEuler(MMD_SA.TEMP_v3.set(0,y_rot,z_rot),"YZX")
-//  let x_rot  = MMD_SA._v3b.set(0,1,0).applyQuaternion(rot).angleTo(y_axis)
+//  let x_rot  = MMD_SA._v3b.set(0,1,0).applyQuaternion(rot).angleTo(y_axis.normalize())
   let rot = new THREE.Quaternion().setFromEuler(new THREE.Vector3().set(0,-y_rot,-z_rot),"XZY")
-  let x_rot = MMD_SA._v3b.set(0,1,0).angleTo(y_axis.applyQuaternion(rot)) * ((y_axis.z > 0) ? 1 : -1)
+  let x_rot = MMD_SA._v3b.set(0,1,0).angleTo(y_axis.applyQuaternion(rot).setX(0).normalize()) * ((y_axis.z > 0) ? 1 : -1)
 
   let sign = (camera.visible) ? 1 : -1;
   rot.setFromEuler(MMD_SA._v3a.set(x_rot, y_rot*-1*sign, z_rot*sign),"YZX")
