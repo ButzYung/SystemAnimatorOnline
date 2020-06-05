@@ -5969,27 +5969,11 @@ MMD_SA_options.model_para_obj_all.forEach(function (model_para_obj) {
   model_para_obj.use_default_boundingBox = true
 });
 
-MMD_SA_options.motion.some(function (motion) {
-  var name = motion.path.replace(/^.+[\/\\]/, "").replace(/\.vmd$/i, "")
-  var motion_para = MMD_SA_options.motion_para[name]
-  if (!motion_para)
-    return false
-
-  var adjustment_per_model = motion_para.adjustment_per_model = motion_para.adjustment_per_model || {
-    _default_: { skin_default:{}, morph_default:{} }
-  };
-
-  for (var model_name in adjustment_per_model) {
-    let model = adjustment_per_model[model_name];
-    let morph_default = model.morph_default = model.morph_default || {};
-    if (!morph_default["あ"])
-      morph_default["あ"] = { weight:0 }
-    if (!morph_default["にやり"])
-      morph_default["にやり"] = { weight:0 }
-  }
-
-  return true
-});
+var morph_default = MMD_SA_options.model_para_obj.morph_default = MMD_SA_options.model_para_obj.morph_default || {};
+if (!morph_default["あ"])
+  morph_default["あ"] = { weight:0 }
+if (!morph_default["にやり"])
+  morph_default["にやり"] = { weight:0 }
     });
 
     window.addEventListener("MMDStarted", function () {

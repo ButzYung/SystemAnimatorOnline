@@ -2885,7 +2885,7 @@ navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
   camera.init_stream()
 
   camera.video.loop = true
-  camera.video.src = "js/headtrackr.mp4"//toFileProtocol("C:\\Users\\user\\Documents\\_.mp4")//
+  camera.video.src = (webkit_electron_mode) ? toFileProtocol("C:\\Users\\user\\Documents\\_.mp4") : "js/headtrackr.mp4"//"js/headtrackr.mp4"//
 
   DEBUG_show("(ERROR: Camera unavailable, using fallback video instead)", 3)
 });
@@ -3333,7 +3333,20 @@ if (data.faces.length) {
     }
   }
 
-  info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, lips_inner_height,lips_width_average+'/'+lips_width].join('\n')
+  let mouth_open = 0
+  let mouth_wide = 0
+  if (_lips_width_average) {
+    if (lips_inner_height > 2) {
+      mouth_open = Math.sqrt( Math.min((lips_inner_height-2) / (_lips_width_average*0.5), 1) )
+    }
+    if (lips_width > _lips_width_average*1.05) {
+      mouth_wide = Math.sqrt( Math.min((lips_width-_lips_width_average*1.05) / (_lips_width_average*1.25), 1) )
+    }
+  }
+  _facemesh.frames.add("morph", "あ", { weight:mouth_open })
+  _facemesh.frames.add("morph", "にやり", { weight:mouth_wide })
+
+//  info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, lips_inner_height,lips_width_average+'/'+lips_width].join('\n')
 }
 DEBUG_show(info+'\n'+data._t)
 self._faces_=data.faces
@@ -3341,6 +3354,79 @@ self._faces_=data.faces
   }
 };
     }
+
+    function process_bones(e) {
+var mesh = e.detail.model.mesh
+
+var skin = _facemesh.frames.skin
+for (var name in skin) {
+  let bone = mesh.bones_by_name[name]
+  if (!bone)
+    continue
+
+  let s = skin[name]
+  s[0].t_delta += RAF_timestamp_delta
+  if (s[0].rot) {
+    if (s[0].absolute)
+      bone.quaternion.set(0,0,0,1)
+    bone.quaternion.multiply(MMD_SA.TEMP_q.copy(s[1].rot).slerp(s[0].rot, Math.max(Math.min(s[0].t_delta/Math.min(_facemesh.frames.t_delta,200),1),0) ))
+//DEBUG_show(s[0].t_delta/100)
+  }
+}
+      }
+
+    function process_morphs(e) {
+var model = e.detail.model
+var mesh = model.mesh
+var targets = model.morph.targets
+model.pmx.morphs.forEach(function (m) {
+  if (m.panel != 3)
+    return
+
+  var name = m.name
+  if ((name=="あ") || (name=="にやり"))
+    return
+  if (!model.pmx.morphs_weight_by_name[name])
+    return
+
+  var morph_index = model.morph.target_index_by_name[name]
+  if (morph_index == null)
+    return
+
+  var target = targets[morph_index]
+  var key0 = target.keys[0]
+  if (key0.morph_type == 1) {
+    mesh.morphTargetInfluences[morph_index] = 0
+  }
+  else {
+    let key_new = { name:name, weight:0, morph_type:key0.morph_type, morph_index:key0.morph_index }
+    model.morph.onupdate(key_new, key_new, 0, morph_index)
+  }
+});
+
+var morph = _facemesh.frames.morph
+for (var name in morph) {
+  let morph_index = model.morph.target_index_by_name[name]
+  if (morph_index == null)
+    return
+
+  let m = morph[name]
+  m[0].t_delta += RAF_timestamp_delta
+
+  let ratio = Math.max(Math.min(m[0].t_delta/Math.min(_facemesh.frames.t_delta,200),1),0)
+  let weight = m[1].weight * ratio + m[0].weight * (1-ratio)
+
+  let target = targets[morph_index]
+  let key0 = target.keys[0]
+  if (key0.morph_type == 1) {
+    mesh.morphTargetInfluences[morph_index] = weight
+  }
+  else {
+    let key_new = { name:name, weight:weight, morph_type:key0.morph_type, morph_index:key0.morph_index }
+    model.morph.onupdate(key_new, key_new, 0, morph_index)
+  }
+}
+      }
 
     _facemesh = {
       initialized: false
@@ -3364,7 +3450,8 @@ if (enabled) {
   lips_width_data = []
   this.frames.reset()
 
-  window.addEventListener("SA_MMD_model0_process_bones", _facemesh.process_bones);
+  window.addEventListener("SA_MMD_model0_process_morphs", process_morphs);
+  window.addEventListener("SA_MMD_model0_process_bones", process_bones);
 }
 else {
   if (camera.initialized) {
@@ -3372,7 +3459,8 @@ else {
     camera.video_canvas_facemesh.style.visibility = "hidden"
     camera.clear_video_capture()
   }
-  window.removeEventListener("SA_MMD_model0_process_bones", _facemesh.process_bones);
+  window.removeEventListener("SA_MMD_model0_process_morphs", process_morphs);
+  window.removeEventListener("SA_MMD_model0_process_bones", process_bones);
 }
       }
 
@@ -3384,6 +3472,9 @@ var target = this[type][name]
 if (target) {
   if (obj.rot) {
     obj.rot.slerp(target[0].rot, 0.5)
+  }
+  if (obj.weight) {
+    obj.weight = (obj.weight + target[0].weight) * 0.5
   }
   this[type][name] = [obj, target[0]]
 }
@@ -3399,26 +3490,6 @@ this.morph = {}
 
  ,skin:  {}
  ,morph: {}
-      }
-
-     ,process_bones: function (e) {
-var mesh = e.detail.model.mesh
-
-skin = this.frames.skin
-for (var name in skin) {
-  let bone = mesh.bones_by_name[name]
-  if (!bone)
-    continue
-
-  let s = skin[name]
-  s[0].t_delta += RAF_timestamp_delta
-  if (s[0].rot) {
-    if (s[0].absolute)
-      bone.quaternion.set(0,0,0,1)
-    bone.quaternion.multiply(MMD_SA.TEMP_q.copy(s[1].rot).slerp(s[0].rot, Math.max(Math.min(s[0].t_delta/Math.min(this.frames.t_delta,200),1),0) ))
-//DEBUG_show(s[0].t_delta/100)
-  }
-}
       }
 
      ,update_frame:  function () {
@@ -3493,8 +3564,6 @@ else {
       }
 
     };
-
-    _facemesh.process_bones = _facemesh.process_bones.bind(_facemesh);
 
     return _facemesh;
   })()
