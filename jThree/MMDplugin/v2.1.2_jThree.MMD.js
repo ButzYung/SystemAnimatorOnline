@@ -6585,7 +6585,8 @@ MMD_SA._mouse_pos_3D[that._model_index][axis] += diff
       ry = r.y
     }
 
-    let _ratio = b.weight_motion + (1 - ratio) * (1 - b.weight_motion)
+    let weight_motion = (System._browser.camera.facemesh.enabled && ((b.name=="首")||(b.name=="頭"))) ? 1 : b.weight_motion
+    let _ratio = weight_motion + (1 - ratio) * (1 - weight_motion)
     let sx = (b.weight_screen_x != null) ? b.weight_screen_x : 1
     let sy = (b.weight_screen_y != null) ? b.weight_screen_y : 1
     MMD_SA.process_bone(bone, MMD_SA.TEMP_v3.set(rx * weight_screen * sx, ry * weight_screen * sy, 0), [_ratio+(1-_ratio)*(1-sx),_ratio+(1-_ratio)*(1-sy),1])
