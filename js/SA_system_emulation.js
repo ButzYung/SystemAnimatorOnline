@@ -3340,7 +3340,7 @@ if (data.faces.length) {
       mouth_open = Math.min((lips_inner_height-2) / (_lips_width_average*1/3), 1)
     }
     if (lips_width > _lips_width_average*1.05) {
-      mouth_wide = Math.min((lips_width-_lips_width_average*1.05) / (_lips_width_average*1.2), 1)
+      mouth_wide = Math.min((lips_width-_lips_width_average*1.05) / (_lips_width_average*0.25), 1)
     }
   }
   _facemesh.frames.add("morph", "あ", { weight:mouth_open })
