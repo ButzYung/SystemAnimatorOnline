@@ -3414,7 +3414,7 @@ for (var name in morph) {
   m[0].t_delta += RAF_timestamp_delta
 
   let ratio = Math.max(Math.min(m[0].t_delta/Math.min(_facemesh.frames.t_delta,200),1),0)
-  let weight = m[1].weight * ratio + m[0].weight * (1-ratio)
+  let weight = m[0].weight * ratio + m[1].weight * (1-ratio)
 
   let target = targets[morph_index]
   let key0 = target.keys[0]
