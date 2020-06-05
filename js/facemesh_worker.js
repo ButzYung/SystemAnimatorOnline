@@ -56,7 +56,7 @@ let _t=performance.now()
 
 _t=performance.now()-_t
 
-  postMessage(JSON.stringify({ faces:(faces.length)?[{mesh:faces[0].mesh}]:[], _t:_t }));
+  postMessage(JSON.stringify({ faces:(faces.length)?[{ faceInViewConfidence:faces[0].faceInViewConfidence, mesh:faces[0].mesh }]:[], _t:_t }));
 //return
   if (draw_canvas && faces.length) {
     if (RAF_timerID)

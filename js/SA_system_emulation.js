@@ -2776,14 +2776,15 @@ return net;
       var _facemesh, fm_worker
       var snapshot
 
-      var frame_skipped = 99
+      var frame_delta_threshold = 1000/30
+      var frame_delta = frame_delta_threshold
       function update_video_canvas() {
-// skip frame if necessary
-if (_bodyPix.busy || ((RAF_animation_frame_unlimited && !MMD_SA.WebXR.session) && !frame_skipped)) {
-  frame_skipped++
+// skip frame if necessary (fps target:30)
+frame_delta += RAF_timestamp_delta
+if (_bodyPix.busy || ((RAF_animation_frame_unlimited && !MMD_SA.WebXR.session) && (frame_delta < frame_delta_threshold))) {
   return
 }
-frame_skipped = 0
+frame_delta -= frame_delta_threshold
 
 var video = camera.video
 if (!video.videoWidth)
@@ -3251,6 +3252,9 @@ else {
  ,facemesh: (function () {
     var enabled = false;
 
+    var lips_width_average = 0
+    var lips_width_data = []
+
     function init() {
 _facemesh.initialized = true
 
@@ -3306,7 +3310,30 @@ if (data.faces.length) {
 
   _facemesh.frames.t_delta = data._t
 
-  info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI].join('\n')
+// lips inner:13,14
+// lips outer:0,17
+// lips LR:61,291
+// .faceInViewConfidence
+  let lips_inner_height = MMD_SA._v3a.fromArray(face.mesh[13]).distanceTo(MMD_SA._v3b.fromArray(face.mesh[14]))
+  let lips_width = MMD_SA._v3a.fromArray(face.mesh[61]).distanceTo(MMD_SA._v3b.fromArray(face.mesh[291]))
+
+  let _lips_width_average = lips_width_average
+  if (!_lips_width_average) {
+    if ((face.faceInViewConfidence > 0.9) && (lips_inner_height < 3))
+      lips_width_data.push(lips_width)
+    if (!lips_width_data.length) {
+      _lips_width_average = 0
+    }
+    else {
+      let edge_size = parseInt(lips_width_data.length*0.1)
+      _lips_width_average = lips_width_data.sort().slice(edge_size, lips_width_data.length-edge_size).reduce((accumulator, currentValue) => accumulator + currentValue) / (lips_width_data.length-edge_size*2)
+      if (lips_width_data.length == 30) {
+        lips_width_average = _lips_width_average
+      }
+    }
+  }
+
+  info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, lips_inner_height,lips_width_average+'/'+lips_width].join('\n')
 }
 DEBUG_show(info+'\n'+data._t)
 self._faces_=data.faces
@@ -3333,6 +3360,8 @@ if (enabled) {
   else if (!this.worker_initialized)
     return
 
+  lips_width_average = 0
+  lips_width_data = []
   this.frames.reset()
 
   window.addEventListener("SA_MMD_model0_process_bones", _facemesh.process_bones);
@@ -3647,7 +3676,14 @@ if (self.MMD_SA) {
   SL.style.transform = SL_2D_front.style.transform = "scaleX(-1)"
 }
 
-frame_skipped = 99
+if (camera.target_devicePixelRatio != window.devicePixelRatio) {
+  camera.target_devicePixelRatio = 0
+  camera.video_track.applyConstraints(camera.set_constraints()).then(function () {
+    DEBUG_show("(camera size updated)", 2)
+  }).catch(function (err) {
+    DEBUG_show("ERROR:camera size failed to update")
+  });
+}
 
 this.clear_video_capture()
 System._browser.on_animation_update.add(update_video_canvas,0,0,-1)
@@ -3668,11 +3704,22 @@ this.video_canvas.style.visibility = "hidden"
 face_detection.enabled = false
 _bodyPix.enabled = false
 
+
+if (_facemesh.enabled && (camera.target_devicePixelRatio != window.devicePixelRatio*2)) {
+  camera.target_devicePixelRatio = window.devicePixelRatio*2
+  camera.video_track.applyConstraints(camera.set_constraints()).then(function () {
+    DEBUG_show("(camera size updated)", 2)
+  }).catch(function (err) {
+    DEBUG_show("ERROR:camera size failed to update")
+  });
+}
+
 this.clear_video_capture()
   }
 
  ,clear_video_capture: function () {
 if (!this.visible && !_facemesh.enabled) {
+  frame_delta = frame_delta_threshold
   System._browser.on_animation_update.remove(update_video_canvas,0)
   System._browser.on_animation_update.remove(video_capture,1)
 }
