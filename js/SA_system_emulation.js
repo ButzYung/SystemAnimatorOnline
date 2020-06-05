@@ -3319,7 +3319,7 @@ if (data.faces.length) {
 
   let _lips_width_average = lips_width_average
   if (!_lips_width_average) {
-    if ((face.faceInViewConfidence > 0.9) && (lips_inner_height < 3))
+    if ((face.faceInViewConfidence > 0.9) && (lips_inner_height < 2))
       lips_width_data.push(lips_width)
     if (!lips_width_data.length) {
       _lips_width_average = 0
