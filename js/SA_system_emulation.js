@@ -2847,6 +2847,25 @@ else {
 }
       }
 
+      var video_capture_active
+      function add_video_capture() {
+if (!video_capture_active && camera.initialized) {
+  video_capture_active = true
+  frame_delta = frame_delta_threshold
+  System._browser.on_animation_update.add(update_video_canvas,0,0,-1)
+  System._browser.on_animation_update.add(video_capture,2,1,-1)
+}
+      }
+
+      function remove_video_capture() {
+if (video_capture_active && (!camera.visible && !_facemesh.enabled)) {
+  video_capture_active = false
+  frame_delta = frame_delta_threshold
+  System._browser.on_animation_update.remove(update_video_canvas,0)
+  System._browser.on_animation_update.remove(video_capture,1)
+}
+      }
+
       var target_devicePixelRatio = 0
       camera = {
   initialized: false
@@ -3446,6 +3465,8 @@ if (enabled) {
   else if (!this.worker_initialized)
     return
 
+  add_video_capture()
+
   lips_width_average = 0
   lips_width_data = []
   this.frames.reset()
@@ -3457,7 +3478,7 @@ else {
   if (camera.initialized) {
     camera.video_canvas_face_detection.style.visibility = "hidden"
     camera.video_canvas_facemesh.style.visibility = "hidden"
-    camera.clear_video_capture()
+    remove_video_capture()
   }
   window.removeEventListener("SA_MMD_model0_process_morphs", process_morphs);
   window.removeEventListener("SA_MMD_model0_process_bones", process_bones);
@@ -3533,34 +3554,6 @@ fm_worker.postMessage(data, (data.canvas)?[data.canvas,data.rgba]:[data.rgba]);
 
 data.rgba = rgba = undefined
 data = undefined
-      }
-
-     ,update_frame_external: function (canvas, dets) {
-let context = canvas.getContext("2d")
-context.globalCompositeOperation = "source-over"
-
-let face_cover = this.face_cover
-let cw = face_cover.width
-let ch = face_cover.height
-
-let h,w,x,y;
-if (dets.length) {
-  let scale = 1
-  dets.forEach(function (det) {
-    h = det[2] * scale
-    w = h * cw/ch
-    x = det[1] * scale - w/2
-    y = det[0] * scale - h/2
-    context.drawImage(face_cover, 0,0,cw,ch, x,y,w,h)
-  });
-}
-else {
-  h = Math.min(ww,hh)
-  w = h * cw/ch
-  x = (ww - w)/2
-  y = (hh - h)/2
-  context.drawImage(face_cover, 0,0,cw,ch, x,y,w,h)
-}
       }
 
     };
@@ -3754,9 +3747,7 @@ if (camera.target_devicePixelRatio != window.devicePixelRatio) {
   });
 }
 
-this.clear_video_capture()
-System._browser.on_animation_update.add(update_video_canvas,0,0,-1)
-System._browser.on_animation_update.add(video_capture,2,1,-1)
+add_video_capture()
   }
 
  ,hide: function () {
@@ -3773,9 +3764,9 @@ this.video_canvas.style.visibility = "hidden"
 face_detection.enabled = false
 _bodyPix.enabled = false
 
-
-if (_facemesh.enabled && (camera.target_devicePixelRatio != window.devicePixelRatio*2)) {
-  camera.target_devicePixelRatio = window.devicePixelRatio*2
+var target_ratio = (is_mobile) ? 4 : 2
+if (_facemesh.enabled && (camera.target_devicePixelRatio < target_ratio)) {
+  camera.target_devicePixelRatio = target_ratio
   camera.video_track.applyConstraints(camera.set_constraints()).then(function () {
     DEBUG_show("(camera size updated)", 2)
   }).catch(function (err) {
@@ -3783,15 +3774,7 @@ if (_facemesh.enabled && (camera.target_devicePixelRatio != window.devicePixelRa
   });
 }
 
-this.clear_video_capture()
-  }
-
- ,clear_video_capture: function () {
-if (!this.visible && !_facemesh.enabled) {
-  frame_delta = frame_delta_threshold
-  System._browser.on_animation_update.remove(update_video_canvas,0)
-  System._browser.on_animation_update.remove(video_capture,1)
-}
+remove_video_capture()
   }
 
  ,set_constraints: function () {
