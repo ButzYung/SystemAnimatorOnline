@@ -3313,8 +3313,6 @@ if (data.faces.length) {
 
 // TB:10,152
   let y_axis = MMD_SA.TEMP_v3.fromArray(face.mesh[152]).sub(MMD_SA._v3a.fromArray(face.mesh[10]))
-//  let rot = new THREE.Quaternion().setFromEuler(MMD_SA.TEMP_v3.set(0,y_rot,z_rot),"YZX")
-//  let x_rot  = MMD_SA._v3b.set(0,1,0).applyQuaternion(rot).angleTo(y_axis.normalize())
   let rot = new THREE.Quaternion().setFromEuler(new THREE.Vector3().set(0,-y_rot,-z_rot),"XZY")
   let x_rot = MMD_SA._v3b.set(0,1,0).angleTo(y_axis.applyQuaternion(rot).setX(0).normalize()) * ((y_axis.z > 0) ? 1 : -1)
 
@@ -3323,9 +3321,11 @@ if (data.faces.length) {
 
   let head = { absolute:true, rot:rot }
   let neck = { absolute:true, rot:new THREE.Quaternion() }
+  let chest = { rot:new THREE.Quaternion().slerp(rot,0.2) }
 
   _facemesh.frames.add("skin", "頭", head)
   _facemesh.frames.add("skin", "首", neck)
+  _facemesh.frames.add("skin", "上半身2", chest)
 
   _facemesh.frames.t_delta = data._t
 
@@ -3365,7 +3365,7 @@ if (data.faces.length) {
   _facemesh.frames.add("morph", "あ", { weight:mouth_open })
   _facemesh.frames.add("morph", "にやり", { weight:mouth_wide })
 
-  let rot_inv = new THREE.Quaternion().setFromEuler(new THREE.Vector3().set(x_rot,0,0))
+  let rot_inv = new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(x_rot,y_rot,z_rot),"YZX").conjugate()
   let L = [];
   [13,14,61,291].forEach(function(index){
     L[index] = new THREE.Vector3().fromArray(face.mesh[index]).applyQuaternion(rot_inv).setZ(0)
@@ -3378,7 +3378,7 @@ if (data.faces.length) {
 
 // ∧
 
-info = [(mouth_up+mouth_down)*10].join('\n')
+info = [(mouth_up+mouth_down)*180/Math.PI].join('\n')
 //info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, lips_inner_height,lips_width_average+'/'+lips_width].join('\n')
 }
 DEBUG_show(info+'\n'+data._t)
