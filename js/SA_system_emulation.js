@@ -3378,7 +3378,7 @@ if (data.faces.length) {
 
 // ∧
 
-info = [(mouth_up-mouth_down)*10].join('\n')
+info = [(mouth_up+mouth_down)*10].join('\n')
 //info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, lips_inner_height,lips_width_average+'/'+lips_width].join('\n')
 }
 DEBUG_show(info+'\n'+data._t)
