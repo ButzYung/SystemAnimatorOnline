@@ -3365,7 +3365,7 @@ if (data.faces.length) {
   _facemesh.frames.add("morph", "あ", { weight:mouth_open })
   _facemesh.frames.add("morph", "にやり", { weight:mouth_wide })
 
-  let rot_inv = new THREE.Quaternion().setFromEuler(new THREE.Vector3().set(-x_rot,-y_rot,-z_rot),"ZYX")
+  let rot_inv = new THREE.Quaternion().setFromEuler(new THREE.Vector3().set(x_rot,0,0))
   let L = [];
   [13,14,61,291].forEach(function(index){
     L[index] = new THREE.Vector3().fromArray(face.mesh[index]).applyQuaternion(rot_inv).setZ(0)
