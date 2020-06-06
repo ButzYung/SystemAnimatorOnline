@@ -3274,6 +3274,8 @@ else {
     var lips_width_average = 0
     var lips_width_data = []
 
+    var _v3 = []
+
     function init() {
 _facemesh.initialized = true
 
@@ -3286,6 +3288,9 @@ facemesh.load({maxFaces:1}).then(function (model) {
 });
 return;
 */
+
+for (var i = 0; i < 4; i++)
+  _v3[i] = new THREE.Vector3()
 
 fm_worker = new Worker("js/facemesh_worker.js");
 
@@ -3365,20 +3370,23 @@ if (data.faces.length) {
   _facemesh.frames.add("morph", "あ", { weight:mouth_open })
   _facemesh.frames.add("morph", "にやり", { weight:mouth_wide })
 
-  let rot_inv = new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(x_rot,y_rot,z_rot),"YZX").conjugate()
+  let rot_inv = MMD_SA.TEMP_q.setFromEuler(MMD_SA._v3a.set(x_rot,y_rot,z_rot),"YZX").conjugate()
   let L = [];
-  [13,14,61,291].forEach(function(index){
-    L[index] = new THREE.Vector3().fromArray(face.mesh[index]).applyQuaternion(rot_inv).setZ(0)
+  [13,14,61,291].forEach(function(index, i){
+    L[index] = _v3[i].fromArray(face.mesh[index]).applyQuaternion(rot_inv).setZ(0)
   });
-  let L_center = L[61].clone().add(L[291]).multiplyScalar(0.5)
+  let L_center = MMD_SA._v3a.copy(L[61]).add(L[291]).multiplyScalar(0.5)
   let L_half = L[61].distanceTo(L[291])*0.5
 
-  let mouth_up = Math.atan2(L[13].y-L_center.y, L_half)
-  let mouth_down = Math.atan2(L[14].y-L_center.y, L_half)
+  let m_up = Math.atan2(L[13].y-L_center.y, L_half)
+  let m_down = Math.atan2(L[14].y-L_center.y, L_half)
 
-// ∧
+  let mouth_up = Math.min((m_down-m_up)*180/Math.PI + 10*mouth_open, 0)
+  if (mouth_up)
+    mouth_up = Math.max(mouth_up/15, 0.75)
+  _facemesh.frames.add("morph", "∧", { weight:mouth_up })
 
-info = [(mouth_up+mouth_down)*180/Math.PI].join('\n')
+info = [mouth_up].join('\n')
 //info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, lips_inner_height,lips_width_average+'/'+lips_width].join('\n')
 }
 DEBUG_show(info+'\n'+data._t)
