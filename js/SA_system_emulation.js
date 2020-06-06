@@ -3365,7 +3365,11 @@ if (data.faces.length) {
   _facemesh.frames.add("morph", "あ", { weight:mouth_open })
   _facemesh.frames.add("morph", "にやり", { weight:mouth_wide })
 
-//  info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, lips_inner_height,lips_width_average+'/'+lips_width].join('\n')
+  let mouth_up = MMD_SA._v3a.fromArray(face.mesh[0]).distanceTo(MMD_SA._v3b.fromArray(face.mesh[61])) + MMD_SA._v3a.fromArray(face.mesh[0]).distanceTo(MMD_SA._v3b.fromArray(face.mesh[291]))
+  let mouth_down = MMD_SA._v3a.fromArray(face.mesh[17]).distanceTo(MMD_SA._v3b.fromArray(face.mesh[61])) + MMD_SA._v3a.fromArray(face.mesh[17]).distanceTo(MMD_SA._v3b.fromArray(face.mesh[291]))
+
+info = [mouth_up/mouth_down].join('\n')
+//info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, lips_inner_height,lips_width_average+'/'+lips_width].join('\n')
 }
 DEBUG_show(info+'\n'+data._t)
 self._faces_=data.faces
