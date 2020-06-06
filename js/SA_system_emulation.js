@@ -3330,7 +3330,7 @@ if (data.faces.length) {
 
   _facemesh.frames.add("skin", "頭", head)
   _facemesh.frames.add("skin", "首", neck)
-  _facemesh.frames.add("skin", "上半身2", chest)
+  _facemesh.frames.add("skin", "上半身", chest)
 
   _facemesh.frames.t_delta = data._t
 
@@ -3381,12 +3381,12 @@ if (data.faces.length) {
   let m_up = Math.atan2(L[13].y-L_center.y, L_half)
   let m_down = Math.atan2(L[14].y-L_center.y, L_half)
 
-  let mouth_up = Math.max((m_down-m_up)*180/Math.PI - 10*(1-mouth_open), 0)
+  let mouth_up = Math.max((m_up-m_down)*180/Math.PI + 10*(mouth_open), 0)
   if (mouth_up)
     mouth_up = Math.min(mouth_up/15, 0.75)
   _facemesh.frames.add("morph", "∧", { weight:mouth_up })
 
-info = [mouth_up].join('\n')
+info = [(m_up-m_down)*180/Math.PI,mouth_up].join('\n')
 //info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, lips_inner_height,lips_width_average+'/'+lips_width].join('\n')
 }
 DEBUG_show(info+'\n'+data._t)
