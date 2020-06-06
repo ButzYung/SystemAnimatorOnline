@@ -1489,9 +1489,9 @@ else {
   }
     }
 
-   ,"laughing_man" : {
-  icon_path: Settings.f_path + '/assets/assets.zip#/icon/laughing_man_64x64.png'
- ,info_short: "Laughing Man"
+   ,"facemesh" : {
+  icon_path: Settings.f_path + '/assets/assets.zip#/icon/face_scan_64x64.png'
+ ,info_short: "Facemesh AI"
 // ,is_base_inventory: true
  ,stock_max: 1
  ,stock_default: 1
@@ -1503,13 +1503,13 @@ if (!MMD_SA.WebXR.user_camera.visible) {
   return true
 }
 */
-if (MMD_SA.WebXR.user_camera.face_detection.enabled) {
-  MMD_SA.WebXR.user_camera.face_detection.enabled = false
-  DEBUG_show("Laughing Man:OFF", 2)
+if (MMD_SA.WebXR.user_camera.facemesh.enabled) {
+  MMD_SA.WebXR.user_camera.facemesh.enabled = false
+  DEBUG_show("Facemesh AI:OFF", 2)
 }
 else {
-  MMD_SA.WebXR.user_camera.face_detection.enabled = true
-  DEBUG_show("Laughing Man:ON", 2)
+  MMD_SA.WebXR.user_camera.facemesh.enabled = true
+  DEBUG_show("Facemesh AI:ON", 2)
 }
     }
    ,anytime: true
@@ -1556,9 +1556,9 @@ return System._browser.camera.snapshot.init();
   }
     }
 
-   ,"facemesh" : {
+   ,"laughing_man" : {
   icon_path: Settings.f_path + '/assets/assets.zip#/icon/laughing_man_64x64.png'
- ,info_short: "Facemesh AI"
+ ,info_short: "Laughing Man"
 // ,is_base_inventory: true
  ,stock_max: 1
  ,stock_default: 1
@@ -1570,13 +1570,13 @@ if (!MMD_SA.WebXR.user_camera.visible) {
   return true
 }
 */
-if (MMD_SA.WebXR.user_camera.facemesh.enabled) {
-  MMD_SA.WebXR.user_camera.facemesh.enabled = false
-  DEBUG_show("Facemesh AI:OFF", 2)
+if (MMD_SA.WebXR.user_camera.face_detection.enabled) {
+  MMD_SA.WebXR.user_camera.face_detection.enabled = false
+  DEBUG_show("Laughing Man:OFF", 2)
 }
 else {
-  MMD_SA.WebXR.user_camera.facemesh.enabled = true
-  DEBUG_show("Facemesh AI:ON", 2)
+  MMD_SA.WebXR.user_camera.face_detection.enabled = true
+  DEBUG_show("Laughing Man:ON", 2)
 }
     }
    ,anytime: true
