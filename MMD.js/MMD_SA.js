@@ -5974,6 +5974,8 @@ if (!morph_default["あ"])
   morph_default["あ"] = { weight:0 }
 if (!morph_default["にやり"])
   morph_default["にやり"] = { weight:0 }
+if (!morph_default["∧"])
+  morph_default["∧"] = { weight:0 }
     });
 
     window.addEventListener("MMDStarted", function () {

@@ -3370,10 +3370,15 @@ if (data.faces.length) {
   [13,14,61,291].forEach(function(index){
     L[index] = new THREE.Vector3().fromArray(face.mesh[index]).applyQuaternion(rot_inv).setZ(0)
   });
-  let mouth_up = L[13].distanceTo(L[61]) + L[13].distanceTo(L[291])
-  let mouth_down = L[14].distanceTo(L[61]) + L[14].distanceTo(L[291])
+  let L_center = L[61].clone().add(L[291]).multiplyScalar(0.5)
+  let L_half = L[61].distanceTo(L[291])*0.5
 
-info = [((mouth_up/mouth_down)-1)*10].join('\n')
+  let mouth_up = Math.atan2(L[13].y-L_center.y, L_half)
+  let mouth_down = Math.atan2(L[14].y-L_center.y, L_half)
+
+// ∧
+
+info = [(mouth_up-mouth_down)*10].join('\n')
 //info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, lips_inner_height,lips_width_average+'/'+lips_width].join('\n')
 }
 DEBUG_show(info+'\n'+data._t)
@@ -3412,7 +3417,7 @@ model.pmx.morphs.forEach(function (m) {
     return
 
   var name = m.name
-  if ((name=="あ") || (name=="にやり"))
+  if ((name=="あ") || (name=="にやり") || (name=="∧"))
     return
   if (!model.pmx.morphs_weight_by_name[name])
     return
