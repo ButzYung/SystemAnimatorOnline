@@ -3381,9 +3381,9 @@ if (data.faces.length) {
   let m_up = Math.atan2(L[13].y-L_center.y, L_half)
   let m_down = Math.atan2(L[14].y-L_center.y, L_half)
 
-  let mouth_up = Math.max((m_up-m_down)*180/Math.PI + 10*(mouth_open), 0)
+  let mouth_up = Math.max(-(m_up+m_down)*180/Math.PI + 20*(mouth_open), 0)
   if (mouth_up)
-    mouth_up = Math.min(mouth_up/15, 0.75)
+    mouth_up = Math.min(mouth_up/20, 0.75)
   _facemesh.frames.add("morph", "∧", { weight:mouth_up })
 
 info = [(m_up)*180/Math.PI,(m_down)*180/Math.PI,mouth_up].join('\n')
