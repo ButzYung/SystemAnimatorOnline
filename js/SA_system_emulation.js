@@ -3365,10 +3365,15 @@ if (data.faces.length) {
   _facemesh.frames.add("morph", "あ", { weight:mouth_open })
   _facemesh.frames.add("morph", "にやり", { weight:mouth_wide })
 
-  let mouth_up = MMD_SA._v3a.fromArray(face.mesh[0]).distanceTo(MMD_SA._v3b.fromArray(face.mesh[61])) + MMD_SA._v3a.fromArray(face.mesh[0]).distanceTo(MMD_SA._v3b.fromArray(face.mesh[291]))
-  let mouth_down = MMD_SA._v3a.fromArray(face.mesh[17]).distanceTo(MMD_SA._v3b.fromArray(face.mesh[61])) + MMD_SA._v3a.fromArray(face.mesh[17]).distanceTo(MMD_SA._v3b.fromArray(face.mesh[291]))
+  let rot_inv = rot.clone().conjugate()
+  let L = [];
+  [13,14,61,291].forEach(function(index){
+    L[index] = new THREE.Vector3().fromArray(face.mesh[index]).applyQuaternion(rot_inv).setZ(0)
+  });
+  let mouth_up = L[13].distanceTo(L[61]) + L[13].distanceTo(L[291])
+  let mouth_down = L[14].distanceTo(L[61]) + L[14].distanceTo(L[291])
 
-info = [mouth_up/mouth_down].join('\n')
+info = [((mouth_up/mouth_down)-1)*10].join('\n')
 //info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, lips_inner_height,lips_width_average+'/'+lips_width].join('\n')
 }
 DEBUG_show(info+'\n'+data._t)
