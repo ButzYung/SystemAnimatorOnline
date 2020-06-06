@@ -3386,10 +3386,10 @@ if (data.faces.length) {
     mouth_up = Math.min(mouth_up/20, 0.75)
   _facemesh.frames.add("morph", "∧", { weight:mouth_up })
 
-info = [(m_up)*180/Math.PI,(m_down)*180/Math.PI,mouth_up].join('\n')
+//info = [(m_up)*180/Math.PI,(m_down)*180/Math.PI,mouth_up].join('\n')
 //info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, lips_inner_height,lips_width_average+'/'+lips_width].join('\n')
 }
-DEBUG_show(info+'\n'+data._t)
+DEBUG_show(((info && (info+'\n'))||'')+data._t)
 self._faces_=data.faces
     _facemesh.busy = false
   }
