@@ -18,6 +18,7 @@ tf.setBackend("wasm").then(function () {
 importScripts("lploc.js");
 var gray, gray_w, gray_h;
 var eyes;
+var eyes_xy_last = [[0,0],[0,0]]
 var do_puploc = function(r, c, s, nperturbs, pixels, nrows, ncols, ldim) {return [-1.0, -1.0];};
 			var puplocurl = 'https://f002.backblazeb2.com/file/tehnokv-www/posts/puploc-with-trees/demo/puploc.bin';
 			fetch(puplocurl).then(function(response) {
@@ -137,11 +138,25 @@ _t = _t_now
   let eye_bb, eye_center, eye_w, eye_h, eye_radius;
   let r,c,s;
 
+// face LR:234,454
 // right eye
 // LR: 33,133
 // TB: 159,145
+// left eye
+// LR: 362,263
+// TB: 386,374
 
-  eye_bb = [[Math.min(sm[33][0],sm[133][0],sm[159][0],sm[145][0]), Math.min(sm[33][1],sm[133][1],sm[159][1],sm[145][1])], [Math.max(sm[33][0],sm[133][0],sm[159][0],sm[145][0]), Math.max(sm[33][1],sm[133][1],sm[159][1],sm[145][1])]];
+  let z_diff = face.mesh[454][2] - face.mesh[234][2]
+  let eye_LR
+  if (z_diff > 0) {
+    eye_LR = "L"
+    eye_bb = [[Math.min(sm[33][0],sm[133][0],sm[159][0],sm[145][0]), Math.min(sm[33][1],sm[133][1],sm[159][1],sm[145][1])], [Math.max(sm[33][0],sm[133][0],sm[159][0],sm[145][0]), Math.max(sm[33][1],sm[133][1],sm[159][1],sm[145][1])]];
+  }
+  else {
+    eye_LR = "R"
+    eye_bb = [[Math.min(sm[362][0],sm[263][0],sm[386][0],sm[374][0]), Math.min(sm[362][1],sm[263][1],sm[386][1],sm[374][1])], [Math.max(sm[362][0],sm[263][0],sm[386][0],sm[374][0]), Math.max(sm[362][1],sm[263][1],sm[386][1],sm[374][1])]];
+  }
+
   eye_center = [(eye_bb[0][0] + eye_bb[1][0])/2, (eye_bb[0][1] + eye_bb[1][1])/2]
   eye_w = eye_bb[1][0]-eye_bb[0][0]
   eye_h = eye_bb[1][1]-eye_bb[0][1]
@@ -153,16 +168,19 @@ _t = _t_now
   rgba_to_grayscale(rgba, eye_center, eye_radius)
   let yx = do_puploc(r, c, s, 63, image);
 
-  let eye_x = Math.max(Math.min((eye_center[0] - yx[1]) / eye_radius, 1), -1)
-  let eye_y = Math.max(Math.min((eye_center[1] - yx[0]) / eye_radius, 1), -1)
-
-  eyes.push([yx[1],yx[0], eye_x,eye_y])
-
 _t_now = performance.now()
 _t_list[1] = _t_now-_t
-_t = _t_now
+_t = _t_list.reduce((a,c)=>a+c)
 
-  postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:faces[0].faceInViewConfidence, mesh:faces[0].mesh, eyes:eyes }], _t:_t_list[1] }));
+  if ((yx[0] >=0) && (yx[1] >= 0)) {
+    let confidence = (0.25 + Math.min(Math.max(eye_radius-5,0)/30, 1) * 0.5)
+    let eye_x = eyes_xy_last[0][0] = Math.max(Math.min((eye_center[0] - yx[1]) / eye_radius, 1), -1) * confidence + eyes_xy_last[0][0] * (1-confidence)
+    let eye_y = eyes_xy_last[0][1] = Math.max(Math.min((eye_center[1] - yx[0]) / eye_radius, 1), -1) * confidence + eyes_xy_last[0][1] * (1-confidence)
+
+    eyes.push([yx[1],yx[0], eye_x,eye_y, eye_LR])
+  }
+
+  postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:faces[0].faceInViewConfidence, mesh:faces[0].mesh, eyes:eyes }], _t:_t }));
 
 //return
 
