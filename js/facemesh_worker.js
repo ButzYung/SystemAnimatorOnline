@@ -147,8 +147,8 @@ _t = _t_now
   rgba_to_grayscale(rgba, eye_center, eye_radius)
   let yx = do_puploc(r, c, s, 63, image);
 
-  let eye_x = Math.max(Math.min((eye_center[0] - yx[1]) / eye_w, 1), -1)
-  let eye_y = Math.max(Math.min((eye_center[1] - yx[0]) / eye_h, 1), -1)
+  let eye_x = Math.max(Math.min((eye_center[0] - yx[1]) / eye_radius, 1), -1)
+  let eye_y = Math.max(Math.min((eye_center[1] - yx[0]) / eye_radius, 1), -1)
 
   eyes.push([yx[1],yx[0], eye_x,eye_y])
 
