@@ -49,10 +49,16 @@ function rgba_to_grayscale(rgba, center, radius) {
     ncols = gray_w-1
   }
 
+// https://stackoverflow.com/questions/10521978/html5-canvas-image-contrast/37714937
+
+  var contrast = 20
+  contrast = (contrast/100) + 1;  //convert to decimal & shift range: [0..2]
+  var intercept = 128 * (1 - contrast);
+
 				for(var r=r_min; r<nrows; ++r)
 					for(var c=c_min; c<ncols; ++c)
 						// gray = 0.2*red + 0.7*green + 0.1*blue
-						gray[r*ncols + c] = (2*rgba[r*4*ncols+4*c+0]+7*rgba[r*4*ncols+4*c+1]+1*rgba[r*4*ncols+4*c+2])/10;
+						gray[r*ncols + c] = ((2*rgba[r*4*ncols+4*c+0]+7*rgba[r*4*ncols+4*c+1]+1*rgba[r*4*ncols+4*c+2])/10 +24)*contrast+intercept;
 				return gray;
 }
 
