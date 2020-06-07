@@ -14,7 +14,47 @@ tf.setBackend("wasm").then(function () {
   init()
 });
 
-//init()
+// https://tehnokv.com/posts/puploc-with-trees/demo/
+importScripts("lploc.js");
+var gray, gray_w, gray_h;
+var eyes;
+var do_puploc = function(r, c, s, nperturbs, pixels, nrows, ncols, ldim) {return [-1.0, -1.0];};
+			var puplocurl = 'https://f002.backblazeb2.com/file/tehnokv-www/posts/puploc-with-trees/demo/puploc.bin';
+			fetch(puplocurl).then(function(response) {
+				response.arrayBuffer().then(function(buffer) {
+					var bytes = new Int8Array(buffer);
+					do_puploc = lploc.unpack_localizer(bytes);
+					console.log('* puploc loaded');
+				})
+			});
+
+function rgba_to_grayscale(rgba, center, radius) {
+  radius *= 1.2
+  var r_min = parseInt(center[1]-radius)
+  var c_min = parseInt(center[0]-radius)
+  var nrows = parseInt(center[1]+radius)+r_min
+  var ncols = parseInt(center[0]+radius)+c_min
+  if (r_min < 0) {
+    nrows += r_min
+    r_min = 0
+  }
+  if (nrows > gray_h) {
+    nrows = gray_h-1
+  }
+  if (c_min < 0) {
+    ncols += c_min
+    c_min = 0
+  }
+  if (ncols > gray_w) {
+    ncols = gray_w-1
+  }
+
+				for(var r=r_min; r<nrows; ++r)
+					for(var c=c_min; c<ncols; ++c)
+						// gray = 0.2*red + 0.7*green + 0.1*blue
+						gray[r*ncols + c] = (2*rgba[r*4*ncols+4*c+0]+7*rgba[r*4*ncols+4*c+1]+1*rgba[r*4*ncols+4*c+2])/10;
+				return gray;
+}
 
 var canvas, context, RAF_timerID;
 
@@ -35,7 +75,11 @@ async function init() {
 async function process_video_buffer(rgba, w,h, draw_canvas) {
 //  if (!face_cover) return
 
-let _t=performance.now()
+let _t_list = []
+let _t, t_now
+_t = _t_now = performance.now()
+
+  eyes = []
 
   rgba = new Uint8ClampedArray(rgba);
 
@@ -54,10 +98,68 @@ let _t=performance.now()
   }
 */
 
-_t=performance.now()-_t
+_t_now = performance.now()
+_t_list[0] = _t_now-_t
+_t = _t_now
 
-  postMessage(JSON.stringify({ faces:(faces.length)?[{ faceInViewConfidence:faces[0].faceInViewConfidence, mesh:faces[0].mesh }]:[], _t:_t }));
+  if (!faces.length) {
+    postMessage(JSON.stringify({ faces:[], _t:_t_list.reduce((a,c)=>a+c) }));
+    return
+  }
+
+  let face = faces[0]
+
+  if ((gray_w != w) || (gray_h != h)) {
+    gray_w = w
+    gray_h = h
+    gray = new Uint8Array(w*h);
+  }
+
+  const image = {
+    "pixels": gray,
+    "nrows": h,
+    "ncols": w,
+    "ldim": w
+  };
+
+  let bb = face.boundingBox;
+  let face_center = [(bb.topLeft[0] + bb.bottomRight[0])/2, (bb.topLeft[1] + bb.bottomRight[1])/2];
+  let face_radius = Math.max(bb.bottomRight[0] - bb.topLeft[0], bb.bottomRight[1] - bb.topLeft[1])/2;
+
+  let sm = face.scaledMesh;
+
+  let eye_bb, eye_center, eye_w, eye_h, eye_radius;
+  let r,c,s;
+
+// right eye
+// LR: 33,133
+// TB: 159,145
+
+  eye_bb = [[Math.min(sm[33][0],sm[133][0],sm[159][0],sm[145][0]), Math.min(sm[33][1],sm[133][1],sm[159][1],sm[145][1])], [Math.max(sm[33][0],sm[133][0],sm[159][0],sm[145][0]), Math.max(sm[33][1],sm[133][1],sm[159][1],sm[145][1])]];
+  eye_center = [(eye_bb[0][0] + eye_bb[1][0])/2, (eye_bb[0][1] + eye_bb[1][1])/2]
+  eye_w = eye_bb[1][0]-eye_bb[0][0]
+  eye_h = eye_bb[1][1]-eye_bb[0][1]
+  eye_radius = Math.max(eye_w, eye_h)/2
+
+  r = eye_center[1];
+  c = eye_center[0];
+  s = eye_radius*1.5;
+  rgba_to_grayscale(rgba, eye_center, eye_radius)
+  let yx = do_puploc(r, c, s, 63, image);
+
+  let eye_x = Math.max(Math.min((eye_center[0] - yx[1]) / eye_w, 1), -1)
+  let eye_y = Math.max(Math.min((eye_center[1] - yx[0]) / eye_h, 1), -1)
+
+  eyes.push([yx[1],yx[0], eye_x,eye_y])
+
+_t_now = performance.now()
+_t_list[1] = _t_now-_t
+_t = _t_now
+
+  postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:faces[0].faceInViewConfidence, mesh:faces[0].mesh, eyes:eyes }], _t:_t_list[1] }));
+
 //return
+
   if (draw_canvas && faces.length) {
     if (RAF_timerID)
       cancelAnimationFrame(RAF_timerID)
@@ -91,6 +193,16 @@ TRIANGULATION[i * 3 + 2]
     ].map(index => keypoints[index]);
     drawPath(context, points, true);
   }
+
+  eyes.forEach(function (eye) {
+    var c = eye[0]/2
+    var r = eye[1]/2
+    context.beginPath();
+    context.arc(c, r, 1, 0, 2*Math.PI, false);
+    context.lineWidth = 3;
+    context.strokeStyle = 'red';
+    context.stroke();
+  });
 }
 
 // https://github.com/tensorflow/tfjs-models/tree/master/facemesh/demo

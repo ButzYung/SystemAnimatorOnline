@@ -3386,6 +3386,7 @@ if (data.faces.length) {
     mouth_up = Math.min(mouth_up/20, 0.75)
   _facemesh.frames.add("morph", "∧", { weight:mouth_up })
 
+info = face.eyes[0] && [face.eyes[0][2]*100,face.eyes[0][3]*100].join("\n")
 //info = [(m_up)*180/Math.PI,(m_down)*180/Math.PI,mouth_up].join('\n')
 //info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, lips_inner_height,lips_width_average+'/'+lips_width].join('\n')
 }
