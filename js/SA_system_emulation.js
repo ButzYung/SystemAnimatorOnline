@@ -2464,19 +2464,28 @@ Lnumpad_rows.style.display = (visible) ? "block"  : "none";
 ev.preventDefault()
 ev.stopPropagation()
 
+var combat_mode = MMD_SA_options.Dungeon && MMD_SA_options.Dungeon.character.combat_mode;
+
 var key = ev.target.textContent
 var key_obj = key_objs[key] = key_objs[key] || {}
 var keyCode, shiftKey
 switch (key) {
-  case "+":
-    keyCode = 107
-    key_obj.pressed = !key_obj.pressed
-    e_type = (key_obj.pressed) ? "keydown" : "keyup"
-    break
   case "S":
     keyCode = 16
     key_obj.pressed = !key_obj.pressed
     e_type = (key_obj.pressed) ? "keydown" : "keyup"
+    break
+  case "+":
+    keyCode = 107
+    if (combat_mode) {
+      if (e_type == "keyup")
+        return
+      key_obj.pressed = !key_obj.pressed
+      e_type = (key_obj.pressed) ? "keydown" : "keyup"
+    }
+    break
+  case "-":
+    keyCode = 109
     break
   case "*":
     keyCode = 106
@@ -2513,7 +2522,7 @@ key_obj.timeoutID = key_obj.intervalID = null
 let e = new KeyboardEvent(e_type, {bubbles:true, cancelable:true, key:key, keyCode:keyCode, shiftKey:(key_objs["S"] && key_objs["S"].pressed)});
 document.dispatchEvent(e);
 if (e_type == "keydown") {
-  if (/[\+S]/.test(key)) {
+  if (/[\+S]/.test(key) && ((key != "+") || combat_mode)) {
     ev.target.style.opacity = "0.75"
   }
   else {
@@ -2792,6 +2801,7 @@ if (!video.videoWidth)
 
 var video_canvas = camera.video_canvas
 var context = video_canvas.getContext("2d")
+
 var DPR = window.devicePixelRatio / camera.target_devicePixelRatio
 var w = window.innerWidth  * DPR
 var h = window.innerHeight * DPR
@@ -2864,6 +2874,28 @@ if (video_capture_active && (!camera.visible && !_facemesh.enabled)) {
   System._browser.on_animation_update.remove(update_video_canvas,0)
   System._browser.on_animation_update.remove(video_capture,1)
 }
+      }
+
+      var video_brightness = 100
+      function adjust_video_brightness(e) {
+if (!camera.visible)
+  return
+
+var keyCode = e.detail.keyCode
+video_brightness += (keyCode == 107) ? 10 : -10
+video_brightness = Math.max(Math.min(video_brightness,180),20)
+
+var context = camera.video_canvas.getContext("2d")
+if (video_brightness == 1) {
+  context.filter = "none"
+  DEBUG_show("Brightness:100%", 2)
+}
+else {
+  context.filter = "brightness(" + (video_brightness) + "%) contrast(" + (100+(video_brightness-100)*0.5) + "%)"
+  DEBUG_show("Brightness:" + (video_brightness) + "%", 2)
+}
+
+e.detail.result.return_value = true
       }
 
       var target_devicePixelRatio = 0
@@ -3610,7 +3642,6 @@ data = undefined
     return _facemesh;
   })()
 
-
  ,snapshot: (function () {
     var waiting = false;
     var waiting_for_bodyPix = false;
@@ -3796,6 +3827,8 @@ if (camera.target_devicePixelRatio != window.devicePixelRatio) {
   });
 }
 
+window.addEventListener("SA_keydown", adjust_video_brightness);
+
 add_video_capture()
   }
 
@@ -3822,6 +3855,8 @@ if (_facemesh.enabled && (camera.target_devicePixelRatio < target_ratio)) {
     DEBUG_show("ERROR:camera size failed to update")
   });
 }
+
+window.removeEventListener("SA_keydown", adjust_video_brightness);
 
 remove_video_capture()
   }

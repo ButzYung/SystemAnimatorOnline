@@ -432,7 +432,7 @@ function SA_load_body() {
 + '<span id="Lnumpad_row0" style="display:none">\n'
 + '      <button class="Lnumpad_button">/</button>\n'
 + '      <button class="Lnumpad_button">*</button>\n'
-+ '      <button class="Lnumpad_button">S</button>\n'
++ '      <button class="Lnumpad_button">-</button>\n'
 + '</span>\n'
 + '    </div>\n'
 + '<div id="Lnumpad_rows" style="display:none">\n'
@@ -458,7 +458,8 @@ function SA_load_body() {
 + '      <button class="Lnumpad_button">.</button>\n'
 + '	     <button class="Lnumpad_button">←</button>\n'
 + '	     <button class="Lnumpad_button">→</button>\n'
-+ '      <button class="Lnumpad_button">⏎</button>\n'
++ '      <button class="Lnumpad_button">S</button>\n'
+//+ '      <button class="Lnumpad_button">⏎</button>\n'
 + '    </div>\n'
 + '	   <div>\n'
 + '      <button class="Lnumpad_button" style="width:80px;max-width:80px;min-width:80px;">J</button>\n'
@@ -597,7 +598,7 @@ System._browser.virtual_numpad_toggle()
     b.addEventListener(ev_start, function (e) {
 System._browser.virtual_numpad(e, 'keydown')
     }, true);
-    if (!/[\+S]/.test(b.textContent)) {
+    if (!/[S]/.test(b.textContent)) {
       b.addEventListener(ev_end, function (e) {
 System._browser.virtual_numpad(e, 'keyup')
       }, true);
