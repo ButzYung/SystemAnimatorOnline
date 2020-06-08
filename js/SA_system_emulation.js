@@ -2965,8 +2965,10 @@ this.stream = stream
 this.video_track = stream.getVideoTracks()[0]
 this.video.srcObject = stream
 
-//System._browser.console.log(Object.entries(this.video_track.getSettings()).map(s=>s.join(':')).join('\n'));
-setTimeout(function () { System._browser.console.log(Object.entries(camera.video_track.getCapabilities()).map(s=>s.join(':')).join('\n')); }, 2000);
+setTimeout(function () {
+  System._browser.console.log(Object.entries(camera.video_track.getCapabilities()).map(s=>s.join(':')).join('\n'));
+  System._browser.console.log(Object.entries(camera.video_track.getSettings()).map(s=>s.join(':')).join('\n'));
+}, 2000);
 /*
 this.imageCapture = new ImageCapture(this.video_track)
 this.imageCapture.getPhotoCapabilities().then(function (capabilities) {
