@@ -3796,7 +3796,7 @@ this.video_canvas.style.visibility = "hidden"
 face_detection.enabled = false
 _bodyPix.enabled = false
 
-var target_ratio = (is_mobile) ? 4 : 2
+var target_ratio = (is_mobile) ? 3 : 2
 if (_facemesh.enabled && (camera.target_devicePixelRatio < target_ratio)) {
   camera.target_devicePixelRatio = target_ratio
   camera.video_track.applyConstraints(camera.set_constraints()).then(function () {
