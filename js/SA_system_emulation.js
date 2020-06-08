@@ -2891,7 +2891,7 @@ if (video_brightness == 1) {
   DEBUG_show("Brightness:100%", 2)
 }
 else {
-  context.filter = "brightness(" + (video_brightness) + "%) contrast(" + (100+(video_brightness-100)*0.5) + "%)"
+  context.filter = "brightness(" + (video_brightness) + "%) contrast(" + (100+(video_brightness-100)*0.25) + "%)"
   DEBUG_show("Brightness:" + (video_brightness) + "%", 2)
 }
 
