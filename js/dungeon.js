@@ -10372,7 +10372,7 @@ DEBUG_show("Shadow:" + ((MMD_SA_options.use_shadowMap && "ON")||"OFF"), 3)
      ,[
         {
   func: function () {
-DEBUG_show(System._browser.console.output_text, 10)
+DEBUG_show(System._browser.console.output_text, 60)
   }
  ,ended: true
         }
