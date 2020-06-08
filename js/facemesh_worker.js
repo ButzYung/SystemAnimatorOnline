@@ -58,7 +58,7 @@ function rgba_to_grayscale(rgba, center, radius) {
 				for(var r=r_min; r<nrows; ++r)
 					for(var c=c_min; c<ncols; ++c)
 						// gray = 0.2*red + 0.7*green + 0.1*blue
-						gray[r*ncols + c] = ((2*rgba[r*4*ncols+4*c+0]+7*rgba[r*4*ncols+4*c+1]+1*rgba[r*4*ncols+4*c+2])/10 +32)*contrast+intercept;
+						gray[r*ncols + c] = ((2*rgba[r*4*ncols+4*c+0]+7*rgba[r*4*ncols+4*c+1]+1*rgba[r*4*ncols+4*c+2])/10)// +32)*contrast+intercept;
 				return gray;
 }
 
