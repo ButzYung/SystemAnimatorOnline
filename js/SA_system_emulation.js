@@ -3333,7 +3333,7 @@ if (data.faces.length) {
 
   let eyes = face.eyes[0]
   if (eyes) {
-    let two_eyes = { absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(Math.max(Math.min(eyes[3]*2,1),-1)*10/180*Math.PI, Math.max(Math.min(eyes[2]*2,1),-1)*sign*15/180*Math.PI, 0),"YZX") }
+    let two_eyes = { absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(-Math.max(Math.min(eyes[3]*2,1),-1)*15/180*Math.PI, Math.max(Math.min(eyes[2]*2,1),-1)*sign*20/180*Math.PI, 0),"YZX") }
     _facemesh.frames.add("skin", "両目", two_eyes)
   }
 
