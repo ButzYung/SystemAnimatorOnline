@@ -128,9 +128,8 @@ _t = _t_now
     "ldim": w
   };
 
-  let bb = face.boundingBox;
-  let face_center = [(bb.topLeft[0] + bb.bottomRight[0])/2, (bb.topLeft[1] + bb.bottomRight[1])/2];
-  let face_radius = Math.max(bb.bottomRight[0] - bb.topLeft[0], bb.bottomRight[1] - bb.topLeft[1])/2;
+//  let bb = face.boundingBox;
+//  let face_radius = Math.min(bb.bottomRight[0][0]-bb.topLeft[0][0], bb.bottomRight[0][1]-bb.topLeft[0][1])/2;
 
   let sm = face.scaledMesh;
 
@@ -163,7 +162,7 @@ _t = _t_now
 
   r = eye_center[1];
   c = eye_center[0];
-  s = eye_radius*1.5;
+  s = eye_radius*3;
   rgba_to_grayscale(rgba, eye_center, eye_radius)
   let yx = do_puploc(r, c, s, 63, image);
 
@@ -176,7 +175,7 @@ _t = _t_list.reduce((a,c)=>a+c)
     let eye_x = eyes_xy_last[0][0] = Math.max(Math.min((eye_center[0] - yx[1]) / eye_radius, 1), -1) * confidence + eyes_xy_last[0][0] * (1-confidence)
     let eye_y = eyes_xy_last[0][1] = Math.max(Math.min((eye_center[1] - yx[0]) / eye_radius, 1), -1) * confidence + eyes_xy_last[0][1] * (1-confidence)
 
-    eyes.push([yx[1],yx[0], eye_x,eye_y, eye_LR])
+    eyes.push([yx[1],yx[0], eye_x,eye_y, eye_LR+":"+s+"/"+_t_list[1]])
   }
 
   postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:faces[0].faceInViewConfidence, mesh:faces[0].mesh, eyes:eyes }], _t:_t }));
