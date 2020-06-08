@@ -3331,11 +3331,28 @@ if (data.faces.length) {
   let neck = { absolute:true, rot:new THREE.Quaternion() }
   let chest = { rot:new THREE.Quaternion().slerp(rot,0.2) }
 
-  let eyes = face.eyes[0]
-  if (eyes) {
-    let two_eyes = { absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(-Math.max(Math.min(eyes[3]*2,1),-1)*15/180*Math.PI, Math.max(Math.min(eyes[2]*2,1),-1)*sign*20/180*Math.PI, 0),"YZX") }
+  let eye = face.eyes[0]
+  if (eye) {
+    let two_eyes = { absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(-Math.max(Math.min(eye[3]*2,1),-1)*15/180*Math.PI, Math.max(Math.min(eye[2]*2,1),-1)*sign*20/180*Math.PI, 0),"YZX") }
     _facemesh.frames.add("skin", "両目", two_eyes)
   }
+
+if (eye && camera.visible) {
+  let c = camera.video_canvas_face_detection
+  c.width  = camera.video_canvas.width
+  c.height = camera.video_canvas.height
+  c.style.visibility = "visible"
+  let context = c.getContext("2d")
+
+  context.beginPath();
+  context.arc(eye[0], eye[1], 1, 0, 2*Math.PI, false);
+  context.lineWidth = 3;
+  context.strokeStyle = 'red';
+  context.stroke();
+}
+else {
+  camera.video_canvas_face_detection.style.visibility = "hidden"
+}
 
   _facemesh.frames.add("skin", "頭", head)
   _facemesh.frames.add("skin", "首", neck)
