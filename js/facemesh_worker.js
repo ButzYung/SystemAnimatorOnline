@@ -190,7 +190,7 @@ _t = _t_list.reduce((a,c)=>a+c)
     else {
       eyes[0][4] = "L"
     }
-    eyes[0][4] += '/'+ _t_list[1]
+    eyes[0][4] += '/'+_t_list[1]//score//
   }
 
   postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:faces[0].faceInViewConfidence, mesh:faces[0].mesh, eyes:eyes }], _t:_t }));

@@ -113,7 +113,7 @@ lploc.unpack_localizer = function(bytes)
 // AT: deviation
 let y = rows[Math.round(nperturbs/2)]
 let x = cols[Math.round(nperturbs/2)]
-return [y,x, (rows.reduce((a,c)=>a+Math.abs(c-y))+cols.reduce((a,c)=>a+Math.abs(c-x)))/(nperturbs*2)*s];
+return [y,x, (rows.reduce((a,c)=>a+Math.abs(c-y))+cols.reduce((a,c)=>a+Math.abs(c-x)))/(nperturbs*2)/s*100];
 
 //		return [rows[Math.round(nperturbs/2)], cols[Math.round(nperturbs/2)]];
 	}
