@@ -162,7 +162,7 @@ _t = _t_now
 
   r = eye_center[1];
   c = eye_center[0];
-  s = eye_radius*2;
+  s = eye_radius*4;
   rgba_to_grayscale(rgba, eye_center, eye_radius)
   let yx = do_puploc(r, c, s, 63, image);
 
