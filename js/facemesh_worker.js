@@ -144,38 +144,53 @@ _t = _t_now
 // LR: 362,263
 // TB: 386,374
 
-  let z_diff = face.mesh[454][2] - face.mesh[234][2]
-  let eye_LR
-  if (z_diff > 0) {
-    eye_LR = "L"
-    eye_bb = [[Math.min(sm[33][0],sm[133][0],sm[159][0],sm[145][0]), Math.min(sm[33][1],sm[133][1],sm[159][1],sm[145][1])], [Math.max(sm[33][0],sm[133][0],sm[159][0],sm[145][0]), Math.max(sm[33][1],sm[133][1],sm[159][1],sm[145][1])]];
-  }
-  else {
-    eye_LR = "R"
-    eye_bb = [[Math.min(sm[362][0],sm[263][0],sm[386][0],sm[374][0]), Math.min(sm[362][1],sm[263][1],sm[386][1],sm[374][1])], [Math.max(sm[362][0],sm[263][0],sm[386][0],sm[374][0]), Math.max(sm[362][1],sm[263][1],sm[386][1],sm[374][1])]];
-  }
+//  let z_diff = face.mesh[454][2] - face.mesh[234][2]
+//  let eye_LR = (z_diff > 0) ? ["L","R"] : ["R","L"]
+  let eye_LR = ["L","R"] 
 
-  eye_center = [(eye_bb[0][0] + eye_bb[1][0])/2, (eye_bb[0][1] + eye_bb[1][1])/2]
-  eye_w = eye_bb[1][0]-eye_bb[0][0]
-  eye_h = eye_bb[1][1]-eye_bb[0][1]
-  eye_radius = Math.max(eye_w, eye_h)/2
+  for (var i = 0; i < 2; i++) {
+    let LR = eye_LR[i]
+    if (LR == "L") {
+      eye_bb = [[Math.min(sm[33][0],sm[133][0],sm[159][0],sm[145][0]), Math.min(sm[33][1],sm[133][1],sm[159][1],sm[145][1])], [Math.max(sm[33][0],sm[133][0],sm[159][0],sm[145][0]), Math.max(sm[33][1],sm[133][1],sm[159][1],sm[145][1])]];
+    }
+    else {
+      eye_bb = [[Math.min(sm[362][0],sm[263][0],sm[386][0],sm[374][0]), Math.min(sm[362][1],sm[263][1],sm[386][1],sm[374][1])], [Math.max(sm[362][0],sm[263][0],sm[386][0],sm[374][0]), Math.max(sm[362][1],sm[263][1],sm[386][1],sm[374][1])]];
+    }
 
-  r = eye_center[1];
-  c = eye_center[0];
-  s = eye_radius*4;
-  rgba_to_grayscale(rgba, eye_center, eye_radius)
-  let yx = do_puploc(r, c, s, 63, image);
+    eye_center = [(eye_bb[0][0] + eye_bb[1][0])/2, (eye_bb[0][1] + eye_bb[1][1])/2]
+    eye_w = eye_bb[1][0]-eye_bb[0][0]
+    eye_h = eye_bb[1][1]-eye_bb[0][1]
+    eye_radius = Math.max(eye_w, eye_h)/2
+
+    r = eye_center[1];
+    c = eye_center[0];
+    s = eye_radius*2;
+    rgba_to_grayscale(rgba, eye_center, eye_radius)
+    let yx = do_puploc(r, c, s, 63, image);
+
+    if ((yx[0] >=0) && (yx[1] >= 0)) {
+      let confidence = (0.25 + Math.min(Math.max(eye_radius-5,0)/30, 1) * 0.5)
+      let eye_x = eyes_xy_last[i][0] = Math.max(Math.min((eye_center[0] - yx[1]) / eye_radius, 1), -1) * confidence + eyes_xy_last[i][0] * (1-confidence)
+      let eye_y = eyes_xy_last[i][1] = Math.max(Math.min((eye_center[1] - yx[0]) / eye_radius, 1), -1) * confidence + eyes_xy_last[i][1] * (1-confidence)
+
+      eyes.push([yx[1],yx[0], eye_x,eye_y, yx[2]])
+    }
+  }
 
 _t_now = performance.now()
 _t_list[1] = _t_now-_t
 _t = _t_list.reduce((a,c)=>a+c)
 
-  if ((yx[0] >=0) && (yx[1] >= 0)) {
-    let confidence = (0.25 + Math.min(Math.max(eye_radius-5,0)/30, 1) * 0.5)
-    let eye_x = eyes_xy_last[0][0] = Math.max(Math.min((eye_center[0] - yx[1]) / eye_radius, 1), -1) * confidence + eyes_xy_last[0][0] * (1-confidence)
-    let eye_y = eyes_xy_last[0][1] = Math.max(Math.min((eye_center[1] - yx[0]) / eye_radius, 1), -1) * confidence + eyes_xy_last[0][1] * (1-confidence)
-
-    eyes.push([yx[1],yx[0], eye_x,eye_y, eye_LR+":"+s+"/"+_t_list[1]])
+  if (eyes.length == 2) {
+    let score = ((((eyes[0] && eyes[0][4])||0) - ((eyes[1] && eyes[1][4])||99999)))
+    if (score > 0) {
+      eyes = [eyes[1],eyes[0]]
+      eyes[0][4] = "R"
+    }
+    else {
+      eyes[0][4] = "L"
+    }
+    eyes[0][4] += '/'+ _t_list[1]
   }
 
   postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:faces[0].faceInViewConfidence, mesh:faces[0].mesh, eyes:eyes }], _t:_t }));

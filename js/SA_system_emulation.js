@@ -3369,18 +3369,23 @@ if (data.faces.length) {
     _facemesh.frames.add("skin", "両目", two_eyes)
   }
 
-if (eye && camera.visible) {
+if (camera.visible) {
   let c = camera.video_canvas_face_detection
   c.width  = camera.video_canvas.width
   c.height = camera.video_canvas.height
   c.style.visibility = "visible"
   let context = c.getContext("2d")
 
-  context.beginPath();
-  context.arc(eye[0], eye[1], 1, 0, 2*Math.PI, false);
-  context.lineWidth = 3;
-  context.strokeStyle = 'red';
-  context.stroke();
+  for (let i = 0; i < 2; i++) {
+    let _eye = face.eyes[i]
+    if (_eye) {
+      context.beginPath();
+      context.arc(_eye[0], _eye[1], 1, 0, 2*Math.PI, false);
+      context.lineWidth = 3;
+      context.strokeStyle = 'red';
+      context.stroke();
+    }
+  }
 }
 else {
   camera.video_canvas_face_detection.style.visibility = "hidden"
