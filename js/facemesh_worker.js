@@ -49,12 +49,12 @@ function rgba_to_grayscale(rgba, center, radius) {
   if (ncols > gray_w) {
     ncols = gray_w-1
   }
-
+/*
 // https://stackoverflow.com/questions/10521978/html5-canvas-image-contrast/37714937
   var contrast = 100/8
   contrast = (contrast/100) + 1;  //convert to decimal & shift range: [0..2]
   var intercept = 128 * (1 - contrast);
-
+*/
 				for(var r=r_min; r<nrows; ++r)
 					for(var c=c_min; c<ncols; ++c)
 						// gray = 0.2*red + 0.7*green + 0.1*blue
@@ -162,7 +162,7 @@ _t = _t_now
 
   r = eye_center[1];
   c = eye_center[0];
-  s = eye_radius*3;
+  s = eye_radius*2.5;
   rgba_to_grayscale(rgba, eye_center, eye_radius)
   let yx = do_puploc(r, c, s, 63, image);
 
