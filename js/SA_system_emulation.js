@@ -3056,8 +3056,7 @@ if (net) return;
 if (!this.mask) {
   this.mask = document.createElement("canvas")
 
-  face_detection.face_cover = new Image()
-  face_detection.face_cover.src = "images/laughing_man_134x120.png"
+  face_detection.load_face_cover()
 }
 
 net = await bodyPix.load(options || {
@@ -3182,7 +3181,7 @@ this.allPoses.forEach(function (pose) {
 });
 this.allPoses = undefined;
 
-face_detection.update_frame_external(camera.video_canvas_bodyPix, dets);
+face_detection.update_frame_local(camera.video_canvas_bodyPix, dets);
   }
     };
 
@@ -3194,6 +3193,9 @@ face_detection.update_frame_external(camera.video_canvas_bodyPix, dets);
 
     function init() {
 face_detection.initialized = true
+
+if (!self.OffscreenCanvas)
+  face_detection.load_face_cover()
 
 fd_worker = new Worker("js/pico.worker.js");
 
@@ -3209,6 +3211,11 @@ DEBUG_show(data, 2)
 //DEBUG_show(Date.now()+":"+data.dets.length)
     face_detection.dets = data.dets
     face_detection.busy = false
+    if (!self.OffscreenCanvas) {
+      System._browser.on_animation_update.add(function() {
+face_detection.update_frame_local(null, face_detection.dets)
+      },0,0);
+    }
   }
 };
     }
@@ -3240,6 +3247,13 @@ else {
 }
       }
 
+     ,load_face_cover: function () {
+if (!this.face_cover) {
+  this.face_cover = new Image()
+  this.face_cover.src = "images/laughing_man_134x120.png"
+}
+      }
+
      ,dets: null
 
      ,update_frame:  function () {
@@ -3261,9 +3275,10 @@ if ((cs.width != video_canvas.style.width) || (cs.height != video_canvas.style.h
 }
 
 let data = { rgba:rgba, w:w, h:h };//, threshold:1 };
-if (!camera.video_canvas_face_detection._offscreen) {
+if (!camera.video_canvas_face_detection._offscreen && self.OffscreenCanvas) {
   data.canvas = camera.video_canvas_face_detection.transferControlToOffscreen()
   camera.video_canvas_face_detection._offscreen = true
+  console.log("(Face detection: use offscreen canvas)")
 }
 fd_worker.postMessage(data, (data.canvas)?[data.canvas,data.rgba]:[data.rgba]);
 
@@ -3271,8 +3286,23 @@ data.rgba = rgba = undefined
 data = undefined
       }
 
-     ,update_frame_external: function (canvas, dets) {
-let context = canvas.getContext("2d")
+     ,update_frame_local: function (canvas, dets) {
+let ww = camera.video_canvas.width
+let hh = camera.video_canvas.height
+let context
+if (!canvas) {
+  canvas = camera.video_canvas_face_detection
+  if ((canvas.width != ww) || (canvas.height != hh)) {
+    canvas.width  = ww
+    canvas.height = hh
+  }
+  context = canvas.getContext("2d")
+  context.clearRect(0,0,ww,hh)
+}
+else {
+  context = canvas.getContext("2d")
+}
+
 context.globalCompositeOperation = "source-over"
 
 let face_cover = this.face_cover
@@ -3311,6 +3341,8 @@ else {
 
     var _v3 = []
 
+    var TRIANGULATION
+
     function init() {
 _facemesh.initialized = true
 
@@ -3323,6 +3355,8 @@ facemesh.load({maxFaces:1}).then(function (model) {
 });
 return;
 */
+
+fetch("js/facemesh_triangulation.json").then(response => response.json()).then(data => {TRIANGULATION=data});
 
 for (var i = 0; i < 4; i++)
   _v3[i] = new THREE.Vector3()
@@ -3456,6 +3490,12 @@ info = face.eyes[0] && [face.eyes[0][2]*100,face.eyes[0][3]*100,face.eyes[0][4]]
 DEBUG_show(((info && (info+'\n'))||'')+data._t)
 self._faces_=data.faces
     _facemesh.busy = false
+
+    if (data.faces.length && !self.OffscreenCanvas && TRIANGULATION) {
+      System._browser.on_animation_update.add(function() {
+draw_facemesh(data.faces, Math.round(camera.video_canvas.width/2),Math.round(camera.video_canvas.height/2))
+      },0,0);
+    }
   }
 };
     }
@@ -3532,6 +3572,65 @@ for (var name in morph) {
   }
 }
       }
+
+function draw_facemesh(faces, w,h) {
+  var canvas = camera.video_canvas_facemesh
+  var context = canvas.getContext("2d")
+  var eyes = faces[0].eyes
+
+  if ((canvas.width != w) || (canvas.height != h)) {
+    canvas.width  = w
+    canvas.height = h
+  }
+
+  context.clearRect(0,0,w,h)
+
+  context.globalAlpha = 0.5
+  context.fillStyle = 'black'
+  context.fillRect(0,0,w,h)
+
+  context.fillStyle = '#32EEDB';
+  context.strokeStyle = '#32EEDB';
+  context.lineWidth = 0.5;
+  const keypoints = faces[0].scaledMesh;
+  for (let i = 0, i_max=TRIANGULATION.length/3; i < i_max; i++) {
+    const points = [
+TRIANGULATION[i * 3], TRIANGULATION[i * 3 + 1],
+TRIANGULATION[i * 3 + 2]
+    ].map(index => keypoints[index]);
+    drawPath(context, points, true);
+  }
+
+  eyes.forEach(function (eye) {
+    var c = eye[0]/2
+    var r = eye[1]/2
+    context.beginPath();
+    context.arc(c, r, 1, 0, 2*Math.PI, false);
+    context.lineWidth = 3;
+    context.strokeStyle = 'red';
+    context.stroke();
+  });
+}
+
+// https://github.com/tensorflow/tfjs-models/tree/master/facemesh/demo
+// START
+
+// https://github.com/tensorflow/tfjs-models/blob/master/facemesh/demo/index.js
+function drawPath(ctx, points, closePath) {
+  const region = new Path2D();
+  region.moveTo(points[0][0]/2, points[0][1]/2);
+  for (let i = 1; i < 3; i++) {
+    const point = points[i];
+    region.lineTo(point[0]/2, point[1]/2);
+  }
+
+  if (closePath) {
+    region.closePath();
+  }
+  ctx.stroke(region);
+}
+
+// END
 
     _facemesh = {
       initialized: false
@@ -3632,9 +3731,10 @@ if ((cs.pixelWidth != ~~video_canvas.style.pixelWidth/4) || (cs.pixelHeight != ~
 }
 
 let data = { rgba:rgba, w:w, h:h, draw_canvas:true };//, threshold:1 };
-if (!camera.video_canvas_facemesh._offscreen) {
+if (!camera.video_canvas_facemesh._offscreen && self.OffscreenCanvas) {
   data.canvas = camera.video_canvas_facemesh.transferControlToOffscreen()
   camera.video_canvas_facemesh._offscreen = true
+  console.log("(Facemesh: use offscreen canvas)")
 }
 fm_worker.postMessage(data, (data.canvas)?[data.canvas,data.rgba]:[data.rgba]);
 

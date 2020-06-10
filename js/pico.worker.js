@@ -72,12 +72,14 @@ function process_video_buffer(rgba, w,h, threshold) {
   dets = dets.filter((d)=>(d[3]>threshold));
   postMessage(JSON.stringify({ dets:dets }));
 
-  if (RAF_timerID)
-    cancelAnimationFrame(RAF_timerID)
-  RAF_timerID = requestAnimationFrame(function () {
-    RAF_timerID = null
-    draw_dets(dets, w,h)
-  });
+  if (canvas) {
+    if (RAF_timerID)
+      cancelAnimationFrame(RAF_timerID)
+    RAF_timerID = requestAnimationFrame(function () {
+      RAF_timerID = null
+      draw_dets(dets, w,h)
+    });
+  }
 }
 
 function draw_dets(dets, ww,hh) {
