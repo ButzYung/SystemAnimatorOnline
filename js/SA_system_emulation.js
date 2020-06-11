@@ -3398,8 +3398,12 @@ if (data.faces.length) {
   let chest = { rot:new THREE.Quaternion().slerp(rot,0.2) }
 
   let eye = face.eyes[0]
+  let eye_x_rot = 0
+  let eye_y_rot = 0
   if (eye) {
-    let two_eyes = { absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(-Math.max(Math.min(eye[3]*2,1),-1)*15/180*Math.PI, Math.max(Math.min(eye[2]*2,1),-1)*sign*20/180*Math.PI, 0),"YZX") }
+    eye_x_rot = Math.max(Math.min((eye[3]*2+x_rot/(Math.PI/2))*(1-Math.abs(x_rot)/Math.PI),1),-1)
+    eye_y_rot = Math.max(Math.min((eye[2]*2-y_rot/(Math.PI/2))*(1-Math.abs(y_rot)/Math.PI),1),-1)
+    let two_eyes = { absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(-eye_x_rot*15/180*Math.PI, eye_y_rot*sign*20/180*Math.PI, 0),"YZX") }
     _facemesh.frames.add("skin", "両目", two_eyes)
   }
 
@@ -3458,7 +3462,7 @@ else {
   let mouth_wide = 0
   if (_lips_width_average) {
     if (lips_inner_height > 2) {
-      mouth_open = Math.min((lips_inner_height-2) / (_lips_width_average*1/3), 1)
+      mouth_open = Math.sqrt(Math.min((lips_inner_height-2) / (_lips_width_average*1/3), 1))
     }
     if (lips_width > _lips_width_average*1.05) {
       mouth_wide = Math.min((lips_width-_lips_width_average*1.05) / (_lips_width_average*0.25), 1)
@@ -3483,7 +3487,7 @@ else {
     mouth_up = Math.min(mouth_up/20, 0.75)
   _facemesh.frames.add("morph", "∧", { weight:mouth_up })
 
-info = face.eyes[0] && [face.eyes[0][2]*100,face.eyes[0][3]*100,face.eyes[0][4]].join("\n")
+info = face.eyes[0] && [eye_x_rot*100, eye_y_rot*100, face.eyes[0][4]].join("\n")
 //info = [(m_up)*180/Math.PI,(m_down)*180/Math.PI,mouth_up].join('\n')
 //info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, lips_inner_height,lips_width_average+'/'+lips_width].join('\n')
 }
