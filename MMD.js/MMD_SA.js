@@ -1385,20 +1385,13 @@ var _vmd = MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename];
 if (this._is_skin) {
   return _vmd && !_vmd.use_armIK && !MMD_SA._horse_machine_mode_;
 }
-
+/*
 var keys = this.targets[idx].keys
 var name = keys[0].name
 var model_para_obj = MMD_SA_options.model_para_obj_all[this._model_index]
 var md = model_para_obj.morph_default && model_para_obj.morph_default[name]
 if (md && (!md.weight_scale || md.weight)) {
-  keys[0].weight = keys[1].weight = (!md.motion_filter || md.motion_filter.test(decodeURIComponent(_vmd.url))) ? (md.weight||1) : 0
-}
-/*
-//DEBUG_show(name,0,1)
-if ((name=="お")) {
-//DEBUG_show([keys[0].weight, keys[1].weight],0,1);
-//keys[0].weight = keys[1].weight = keys[2].weight = 0.1
-//return false;
+  keys[0].weight = keys[1].weight = (!md.motion_filter || md.motion_filter.test(decodeURIComponent(_vmd.url))) ? ((md.weight!=null)?md.weight:1) : 0
 }
 */
 return true
