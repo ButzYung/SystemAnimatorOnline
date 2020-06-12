@@ -2882,7 +2882,13 @@ if (!camera.visible)
   return
 
 var keyCode = e.detail.keyCode
-video_brightness += (keyCode == 107) ? 10 : -10
+if (key_code == 107)
+  video_brightness += 10
+else if (key_code == 109)
+  video_brightness -= 10
+else
+  return
+
 video_brightness = Math.max(Math.min(video_brightness,180),20)
 
 var context = camera.video_canvas.getContext("2d")
@@ -3209,6 +3215,7 @@ DEBUG_show(data, 2)
   }
   else {
 //DEBUG_show(Date.now()+":"+data.dets.length)
+    if (data._t) DEBUG_show(data._t)
     face_detection.dets = data.dets
     face_detection.busy = false
     if (!self.OffscreenCanvas) {
