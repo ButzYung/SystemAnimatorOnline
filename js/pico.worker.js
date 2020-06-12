@@ -36,17 +36,22 @@ fetch("../images/laughing_man_134x120.png").then(function (response) {
 var canvas, context, RAF_timerID;
 
 function rgba_to_grayscale(rgba, nrows, ncols) {
-	var gray = new Uint8Array(nrows*ncols);
-	for(var r=0; r<nrows; ++r)
-		for(var c=0; c<ncols; ++c)
-			// gray = 0.2*red + 0.7*green + 0.1*blue
-			gray[r*ncols + c] = (2*rgba[r*4*ncols+4*c+0]+7*rgba[r*4*ncols+4*c+1]+1*rgba[r*4*ncols+4*c+2])/10;
-	return gray;
+  var gray = new Uint8Array(nrows*ncols);
+  for(var r=0; r<nrows; ++r) {
+    for(var c=0; c<ncols; ++c) {
+    // gray = 0.2*red + 0.7*green + 0.1*blue
+      const idx = r*4*ncols+4*c
+      gray[r*ncols + c] = (2*rgba[idx+0]+7*rgba[idx+1]+1*rgba[idx+2])/10;
+    }
+  }
+  return gray;
 }
 
 function process_video_buffer(rgba, w,h, threshold) {
   if (!face_cover)
     return
+
+var _t=performance.now()
 
   rgba = new Uint8ClampedArray(rgba);
 				// prepare input to `run_cascade`
@@ -69,8 +74,10 @@ function process_video_buffer(rgba, w,h, threshold) {
 				dets = update_memory(dets);
 				dets = pico.cluster_detections(dets, 0.2); // set IoU threshold to 0.2
 
+_t=performance.now()-_t
+
   dets = dets.filter((d)=>(d[3]>threshold));
-  postMessage(JSON.stringify({ dets:dets }));
+  postMessage(JSON.stringify({ dets:dets, _t:_t }));
 
   if (canvas) {
     if (RAF_timerID)
