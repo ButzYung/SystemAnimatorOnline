@@ -191,16 +191,18 @@ let eye_pixel_count = 0
 for (let rr = r_min; rr <= r_max; rr++) {
   for (let cc = c_min; cc <= c_max; cc++) {
     if (gray[rr*gray_w + cc] < 80) { eye_pixel_count++ }
+/*
+//    else {
 
-    else {
       const idx = rr*4*gray_w+4*cc
       let R = rgba[idx+0]
       let G = rgba[idx+1]
       let B = rgba[idx+2]
       let color_diff = Math.abs(R-G) + Math.abs(G-B)
       if ((R > 64) && (color_diff < R/4)) { eye_pixel_count++ }
-    }
 
+//    }
+*/
   }
 }
 eyes[i][6] = eye_pixel_count / (eye_w*eye_h)

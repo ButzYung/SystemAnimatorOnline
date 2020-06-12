@@ -2882,9 +2882,9 @@ if (!camera.visible)
   return
 
 var keyCode = e.detail.keyCode
-if (key_code == 107)
+if (keyCode == 107)
   video_brightness += 10
-else if (key_code == 109)
+else if (keyCode == 109)
   video_brightness -= 10
 else
   return
