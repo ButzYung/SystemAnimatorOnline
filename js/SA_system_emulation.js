@@ -3339,6 +3339,13 @@ else {
     var lips_width_average = 0
     var lips_width_data = []
 
+    var eye_data = {
+  L:{eye_open_average:0, eye_open_lower:1, eye_open_data:[]}
+ ,R:{eye_open_average:0, eye_open_lower:1, eye_open_data:[]}
+    };
+
+    var auto_blink_default
+
     var _v3 = []
 
     var TRIANGULATION
@@ -3439,20 +3446,23 @@ else {
 // lips outer:0,17
 // lips LR:61,291
 // .faceInViewConfidence
+  let calibration_max = 30
+  let calibration_condition = (face.faceInViewConfidence > 0.9) && (Math.abs(y_rot) < Math.PI/4);
+
   let lips_inner_height = MMD_SA._v3a.fromArray(face.mesh[13]).distanceTo(MMD_SA._v3b.fromArray(face.mesh[14]))
   let lips_width = MMD_SA._v3a.fromArray(face.mesh[61]).distanceTo(MMD_SA._v3b.fromArray(face.mesh[291]))
 
   let _lips_width_average = lips_width_average
   if (!_lips_width_average) {
-    if ((face.faceInViewConfidence > 0.9) && (lips_inner_height < 2))
+    if (calibration_condition && (lips_inner_height < 2))
       lips_width_data.push(lips_width)
     if (!lips_width_data.length) {
       _lips_width_average = 0
     }
     else {
       let edge_size = parseInt(lips_width_data.length*0.1)
-      _lips_width_average = lips_width_data.sort().slice(edge_size, lips_width_data.length-edge_size).reduce((accumulator, currentValue) => accumulator + currentValue) / (lips_width_data.length-edge_size*2)
-      if (lips_width_data.length == 30) {
+      _lips_width_average = lips_width_data.sort((a,b)=>a-b).slice(edge_size, lips_width_data.length-edge_size).reduce((accumulator, currentValue) => accumulator + currentValue) / (lips_width_data.length-edge_size*2)
+      if (lips_width_data.length >= calibration_max) {
         lips_width_average = _lips_width_average
       }
     }
@@ -3487,7 +3497,47 @@ else {
     mouth_up = Math.min(mouth_up/20, 0.75)
   _facemesh.frames.add("morph", "∧", { weight:mouth_up })
 
-info = face.eyes[0] && [eye_x_rot*100, eye_y_rot*100, face.eyes[0][4]].join("\n")
+
+  let blink = {L:0,R:0}
+  face.eyes.forEach(function (e, idx) {
+    let dir = e[4].charAt(0)
+    let LR = eye_data[dir]
+
+    let _eye_open_average = LR.eye_open_average
+    if (!_eye_open_average) {
+      if (calibration_condition) {
+        LR.eye_open_data.push(e[6])
+      }
+    }
+    if (!LR.eye_open_data.length) {
+      _eye_open_average = 0
+    }
+    else {
+      let edge_size = parseInt(LR.eye_open_data.length*0.2)
+      _eye_open_average = LR.eye_open_data.sort((a,b)=>a-b).slice(edge_size, LR.eye_open_data.length-edge_size).reduce((accumulator, currentValue) => accumulator + currentValue) / (LR.eye_open_data.length-edge_size*2)
+      if (LR.eye_open_data.length >= calibration_max) {
+        LR.eye_open_average = _eye_open_average
+      }
+    }
+    if (calibration_condition) {
+      if (LR.eye_open_lower>e[6])
+        LR.eye_open_lower=e[6]
+    }
+
+    if (_eye_open_average) {
+      let b = e[6]
+      if (b < _eye_open_average) {
+        let _eye_open_lower = Math.min(LR.eye_open_lower, _eye_open_average*0.4)
+        b = Math.min((_eye_open_average-b)/_eye_open_lower,1)
+        blink[dir] = b*b
+      }
+    }
+  });
+
+  _facemesh.frames.add("morph", "まばたき", { weight:Math.max(blink.L,blink.R) })
+
+
+info = face.eyes[0] && [eye_x_rot*100, eye_y_rot*100, ~~(eye_data.L.eye_open_average*100)+'/'+~~(eye_data.L.eye_open_lower*100)].join("\n")
 //info = [(m_up)*180/Math.PI,(m_down)*180/Math.PI,mouth_up].join('\n')
 //info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, lips_inner_height,lips_width_average+'/'+lips_width].join('\n')
 }
@@ -3658,6 +3708,15 @@ if (enabled) {
 
   lips_width_average = 0
   lips_width_data = []
+
+  eye_data = {
+    L:{eye_open_average:0, eye_open_lower:1, eye_open_data:[]}
+   ,R:{eye_open_average:0, eye_open_lower:1, eye_open_data:[]}
+  };
+
+  auto_blink_default = MMD_SA_options.auto_blink
+  MMD_SA_options.auto_blink = false
+
   this.frames.reset()
 
   window.addEventListener("SA_MMD_model0_process_morphs", process_morphs);
@@ -3669,6 +3728,7 @@ else {
     camera.video_canvas_facemesh.style.visibility = "hidden"
     remove_video_capture()
   }
+  MMD_SA_options.auto_blink = auto_blink_default
   window.removeEventListener("SA_MMD_model0_process_morphs", process_morphs);
   window.removeEventListener("SA_MMD_model0_process_bones", process_bones);
 }

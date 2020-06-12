@@ -34,23 +34,25 @@ var do_puploc = function(r, c, s, nperturbs, pixels, nrows, ncols, ldim) {return
 
 function rgba_to_grayscale(rgba, center, radius) {
   radius *= 1.2
+  const ncols = gray_w
+
   var r_min = parseInt(center[1]-radius)
   var c_min = parseInt(center[0]-radius)
-  var nrows = parseInt(center[1]+radius)+r_min
-  var ncols = parseInt(center[0]+radius)+c_min
+  var r_max = parseInt(center[1]+radius)+r_min
+  var c_max = parseInt(center[0]+radius)+c_min
   if (r_min < 0) {
-    nrows += r_min
+    r_max += r_min
     r_min = 0
   }
-  if (nrows > gray_h) {
-    nrows = gray_h-1
+  if (r_max >= gray_h) {
+    r_max = gray_h-1
   }
   if (c_min < 0) {
-    ncols += c_min
+    c_max += c_min
     c_min = 0
   }
-  if (ncols > gray_w) {
-    ncols = gray_w-1
+  if (c_max >= gray_w) {
+    c_max = gray_w-1
   }
 /*
 // https://stackoverflow.com/questions/10521978/html5-canvas-image-contrast/37714937
@@ -58,8 +60,8 @@ function rgba_to_grayscale(rgba, center, radius) {
   contrast = (contrast/100) + 1;  //convert to decimal & shift range: [0..2]
   var intercept = 128 * (1 - contrast);
 */
-				for(var r=r_min; r<nrows; ++r)
-					for(var c=c_min; c<ncols; ++c)
+				for(var r=r_min; r<r_max; ++r)
+					for(var c=c_min; c<c_max; ++c)
 						// gray = 0.2*red + 0.7*green + 0.1*blue
 						gray[r*ncols + c] = ((2*rgba[r*4*ncols+4*c+0]+7*rgba[r*4*ncols+4*c+1]+1*rgba[r*4*ncols+4*c+2])/10)// +32)*contrast+intercept;
 				return gray;
@@ -176,7 +178,21 @@ _t = _t_now
       let eye_x = eyes_xy_last[i][0] = Math.max(Math.min((eye_center[0] - yx[1]) / eye_radius, 1), -1) * confidence + eyes_xy_last[i][0] * (1-confidence)
       let eye_y = eyes_xy_last[i][1] = Math.max(Math.min((eye_center[1] - yx[0]) / eye_radius, 1), -1) * confidence + eyes_xy_last[i][1] * (1-confidence)
 
-      eyes.push([yx[1],yx[0], eye_x,eye_y, yx[2]])
+      eyes[i] = [yx[1],yx[0], eye_x,eye_y, LR, yx[2]]
+
+let r_min = ~~eye_bb[0][1]
+let c_min = ~~eye_bb[0][0]
+let r_max = ~~eye_bb[1][1]
+let c_max = ~~eye_bb[1][0]
+let eye_pixel_count = 0
+for (let rr = r_min; rr <= r_max; rr++) {
+  for (let cc = c_min; cc <= c_max; cc++) {
+    if (gray[rr*gray_w + cc] < 80)
+      eye_pixel_count++
+  }
+}
+eyes[i][6] = eye_pixel_count / (eye_w*eye_h)
+
     }
   }
 
@@ -188,10 +204,6 @@ _t = _t_list.reduce((a,c)=>a+c)
     let score = ((((eyes[0] && eyes[0][4])||0) - ((eyes[1] && eyes[1][4])||99999)))
     if (score > 0) {
       eyes = [eyes[1],eyes[0]]
-      eyes[0][4] = "R"
-    }
-    else {
-      eyes[0][4] = "L"
     }
     eyes[0][4] += '/'+_t_list[1]//score//
   }
