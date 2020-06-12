@@ -1837,6 +1837,25 @@ if (model_para_obj.skin_weight) {
 		this.morphs.push( new Morph( bin, model_para_obj ) );
 	}
 
+// AT: まばたきL/R
+let blink = this.morphs.find((m)=>m.name=="まばたき");
+if (blink && self.MMD_SA && MMD_SA_options.WebXR) {
+  let blink_L = Object.assign({}, blink);
+  let blink_R = Object.assign({}, blink);
+  blink_L.name = blink_L.nameEn = "まばたきL"
+  blink_R.name = blink_R.nameEn = "まばたきR"
+  let blink_updated
+  if (blink.type == 1) {
+    blink_L.items = blink.items.filter((v)=>that.vertices[v.target].pos[0]>0);
+    blink_R.items = blink.items.filter((v)=>that.vertices[v.target].pos[0]<0);
+    blink_updated = true
+  }
+  if (blink_updated) {
+    this.morphs.push(blink_L)
+    this.morphs.push(blink_R)
+  }
+}
+
 	n = bin.readInt32();
 	//console.log('frames = ' + n);
 	while ( n-- > 0 ) {
