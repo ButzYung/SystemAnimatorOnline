@@ -3410,6 +3410,8 @@ if (data.faces.length) {
   if (eye) {
     eye_x_rot = Math.max(Math.min((eye[3]*2+x_rot/(Math.PI/2))*(1-Math.abs(x_rot)/Math.PI),1),-1)
     eye_y_rot = Math.max(Math.min((eye[2]*2-y_rot/(Math.PI/2))*(1-Math.abs(y_rot)/Math.PI),1),-1)
+    eye_x_rot = Math.sign(eye_x_rot) * eye_x_rot*eye_x_rot
+    eye_y_rot = Math.sign(eye_y_rot) * eye_y_rot*eye_y_rot
     let two_eyes = { absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(-eye_x_rot*15/180*Math.PI, eye_y_rot*sign*20/180*Math.PI, 0),"YZX") }
     _facemesh.frames.add("skin", "両目", two_eyes)
   }
@@ -3528,13 +3530,19 @@ else {
       let b = e[6]
       if (b < _eye_open_average*0.9) {
         let _eye_open_lower = Math.min(LR.eye_open_lower, _eye_open_average*0.4)
-        b = Math.min((_eye_open_average*0.9-b)/_eye_open_lower,1)
+        b = Math.min((_eye_open_average*0.9-b)/(_eye_open_lower+_eye_open_average*0.1),1)
         blink[dir] = b*b
       }
     }
   });
 
-  _facemesh.frames.add("morph", "まばたき", { weight:Math.max(blink.L,blink.R) })
+  if ((Math.abs(blink-L,blink.R)>0.1) && (THREE.MMD.getModels()[0].pmx.morphs_index_by_name["まばたきL"] != null)) {
+    _facemesh.frames.add("morph", "まばたきL", { weight:blink.L })
+    _facemesh.frames.add("morph", "まばたきR", { weight:blink.R })
+  }
+  else {
+    _facemesh.frames.add("morph", "まばたき", { weight:Math.max(blink.L,blink.R) })
+  }
 
 
 info = face.eyes[0] && [eye_x_rot*100, eye_y_rot*100, ~~(eye_data.L.eye_open_average*100)+'/'+~~(eye_data.L.eye_open_lower*100)].join("\n")
@@ -3579,10 +3587,10 @@ var model = e.detail.model
 var mesh = model.mesh
 var targets = model.morph.targets
 model.pmx.morphs.forEach(function (m) {
-  if (m.panel != 3)
+  var name = m.name
+  if ((m.panel != 3) && (name != "まばたき"))
     return
 
-  var name = m.name
   if ((name=="あ") || (name=="にやり") || (name=="∧"))
     return
   if (!model.pmx.morphs_weight_by_name[name])
