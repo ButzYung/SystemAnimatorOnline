@@ -60,11 +60,14 @@ function rgba_to_grayscale(rgba, center, radius) {
   contrast = (contrast/100) + 1;  //convert to decimal & shift range: [0..2]
   var intercept = 128 * (1 - contrast);
 */
-				for(var r=r_min; r<r_max; ++r)
-					for(var c=c_min; c<c_max; ++c)
-						// gray = 0.2*red + 0.7*green + 0.1*blue
-						gray[r*ncols + c] = ((2*rgba[r*4*ncols+4*c+0]+7*rgba[r*4*ncols+4*c+1]+1*rgba[r*4*ncols+4*c+2])/10)// +32)*contrast+intercept;
-				return gray;
+  for(var r=r_min; r<r_max; ++r) {
+    for(var c=c_min; c<c_max; ++c) {
+    // gray = 0.2*red + 0.7*green + 0.1*blue
+      const idx = r*4*ncols+4*c
+      gray[r*ncols + c] = ((2*rgba[idx+0]+7*rgba[idx+1]+1*rgba[idx+2])/10)// +32)*contrast+intercept;
+    }
+  }
+  return gray;
 }
 
 var canvas, context, RAF_timerID;
@@ -187,8 +190,17 @@ let c_max = ~~eye_bb[1][0]
 let eye_pixel_count = 0
 for (let rr = r_min; rr <= r_max; rr++) {
   for (let cc = c_min; cc <= c_max; cc++) {
-    if (gray[rr*gray_w + cc] < 80)
-      eye_pixel_count++
+    if (gray[rr*gray_w + cc] < 80) { eye_pixel_count++ }
+
+    else {
+      const idx = rr*4*gray_w+4*cc
+      let R = rgba[idx+0]
+      let G = rgba[idx+1]
+      let B = rgba[idx+2]
+      let color_diff = Math.abs(R-G) + Math.abs(G-B)
+      if ((R > 64) && (color_diff < R/4)) { eye_pixel_count++ }
+    }
+
   }
 }
 eyes[i][6] = eye_pixel_count / (eye_w*eye_h)
