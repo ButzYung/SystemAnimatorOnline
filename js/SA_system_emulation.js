@@ -3537,7 +3537,7 @@ else {
       let b = e[6]
       if (b < _eye_open_average*0.9) {
         let _eye_open_lower = Math.min(LR.eye_open_lower, _eye_open_average*0.4)
-        b = Math.min((_eye_open_average*0.9-b)/(_eye_open_lower+_eye_open_average*0.1),1)
+        b = Math.min((_eye_open_average*0.9-b)/(_eye_open_lower+_eye_open_average*0),1)
         blink[dir] = b*b
       }
     }
