@@ -1840,6 +1840,7 @@ if (model_para_obj.skin_weight) {
 // AT: まばたきL/R
 let blink = this.morphs.find((m)=>m.name=="まばたき");
 if (blink && self.MMD_SA && MMD_SA_options.WebXR) {
+  console.log("Use まばたきL/R")
   let blink_L = Object.assign({}, blink);
   let blink_R = Object.assign({}, blink);
   blink_L.name = blink_L.nameEn = "まばたきL"
