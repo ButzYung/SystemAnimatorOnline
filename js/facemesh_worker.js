@@ -188,8 +188,8 @@ let c_min = ~~eye_bb[0][0]
 let r_max = ~~eye_bb[1][1]
 let c_max = ~~eye_bb[1][0]
 let eye_pixel_count = 0
-let R,G,B,s
-let s_total = 0
+let R,G,B,S
+let S_total = 0
 for (let rr = r_min; rr <= r_max; rr++) {
   for (let cc = c_min; cc <= c_max; cc++) {
 //    if (gray[rr*gray_w + cc] < 80) { eye_pixel_count++ }
@@ -200,11 +200,14 @@ const idx = rr*4*gray_w+4*cc
 R = rgba[idx+0]
 //let G = rgba[idx+1]
 B = rgba[idx+2]
-s = (R-B)/R
-//if (R > 16) eye_pixel_count += s;
-//let maxColor = Math.max(R,G,B); let minColor = Math.min(R,G,B); s = (maxColor != 0) ? (maxColor - minColor) / maxColor : 0;
+S = (R-B)/R
+//if (R > 16) eye_pixel_count += S;
+//let maxColor = Math.max(R,G,B); let minColor = Math.min(R,G,B); S = (maxColor != 0) ? (maxColor - minColor) / maxColor : 0;
 if (R > 16) {
-  eye_pixel_count += (s < 0.25) ? 1 : Math.max(Math.min((0.5-s)*4, 1),0);
+  eye_pixel_count += (S < 0.25) ? 1 : Math.max(Math.min((0.5-S)*4, 1),0);
+}
+else {
+  eye_pixel_count += 1
 }
 
 //    }
