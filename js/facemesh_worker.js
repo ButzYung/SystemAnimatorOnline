@@ -156,6 +156,14 @@ _t = _t_now
 //  let eye_LR = (z_diff > 0) ? ["L","R"] : ["R","L"]
   let eye_LR = ["L","R"] 
 
+  let m454 = face.mesh[454]
+  let m234 = face.mesh[234]
+  let dx = m454[0] - m234[0]
+  let dy = m454[1] - m234[1]
+  let dz = m454[2] - m234[2]
+  let dis = Math.sqrt(dx*dx + dy*dy + dz*dz)
+  let z_rot = Math.asin(dy / dis)
+
   for (var i = 0; i < 2; i++) {
     let LR = eye_LR[i]
     if (LR == "L") {
@@ -178,8 +186,12 @@ _t = _t_now
 
     if ((yx[0] >=0) && (yx[1] >= 0)) {
       let confidence = (0.25 + Math.min(Math.max(eye_radius-5,0)/30, 1) * 0.5)
-      let eye_x = eyes_xy_last[i][0] = Math.max(Math.min((eye_center[0] - yx[1]) / eye_radius, 1), -1) * confidence + eyes_xy_last[i][0] * (1-confidence)
-      let eye_y = eyes_xy_last[i][1] = Math.max(Math.min((eye_center[1] - yx[0]) / eye_radius, 1), -1) * confidence + eyes_xy_last[i][1] * (1-confidence)
+      dx = (eye_center[0] - yx[1]) / eye_radius
+      dy = (eye_center[1] - yx[0]) / eye_radius
+      dis = Math.sqrt(dx*dx + dy*dy)
+      z_rot = Math.atan2(dy, dx) - z_rot
+      let eye_x = eyes_xy_last[i][0] = Math.max(Math.min(Math.cos(z_rot)*dis, 1), -1) * confidence + eyes_xy_last[i][0] * (1-confidence)
+      let eye_y = eyes_xy_last[i][1] = Math.max(Math.min(Math.sin(z_rot)*dis, 1), -1) * confidence + eyes_xy_last[i][1] * (1-confidence)
 
       eyes[i] = [yx[1],yx[0], eye_x,eye_y, LR, yx[2]]
 
