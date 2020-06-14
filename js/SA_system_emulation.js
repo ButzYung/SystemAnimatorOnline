@@ -3552,7 +3552,7 @@ else {
   }
 
 
-info = face.eyes[0] && [eye_x_rot*100, eye_y_rot*100, ~~(eye_data.L.eye_open_average*100)+'/'+~~(eye_data.L.eye_open_lower*100)].join("\n")
+info = face.eyes[0] && [eye_x_rot*100, eye_y_rot*100, ((THREE.MMD.getModels()[0].pmx.morphs_index_by_name["まばたきL"]||0)+':')+ ~~(eye_data.L.eye_open_average*100)+'/'+~~(eye_data.L.eye_open_lower*100)].join("\n")
 //info = [(m_up)*180/Math.PI,(m_down)*180/Math.PI,mouth_up].join('\n')
 //info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, lips_inner_height,lips_width_average+'/'+lips_width].join('\n')
 }
