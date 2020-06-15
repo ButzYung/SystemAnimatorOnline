@@ -199,35 +199,50 @@ let r_min = ~~eye_bb[0][1]
 let c_min = ~~eye_bb[0][0]
 let r_max = ~~eye_bb[1][1]
 let c_max = ~~eye_bb[1][0]
-let eye_pixel_count = 0
-let R,G,B,S
+let eye_pixel_count = [0,0,0,0]
+let R,G,B,S,S_threshold
 let S_total = 0
 for (let rr = r_min; rr <= r_max; rr++) {
   for (let cc = c_min; cc <= c_max; cc++) {
 //    if (gray[rr*gray_w + cc] < 80) { eye_pixel_count++ }
-
-//    else {
 
 const idx = rr*4*gray_w+4*cc
 R = rgba[idx+0]
 //let G = rgba[idx+1]
 B = rgba[idx+2]
 S = (R-B)/R
-//if (R > 16) eye_pixel_count += S;
+
+//if (R > 16) S_total += S;
+
 //let maxColor = Math.max(R,G,B); let minColor = Math.min(R,G,B); S = (maxColor != 0) ? (maxColor - minColor) / maxColor : 0;
 if (R > 16) {
-  eye_pixel_count += (S < 0.25) ? 1 : Math.max(Math.min((0.5-S)*4, 1),0);
+  for (let i = 0; i < 4; i++) {
+    S_threshold = 0.15 + i*0.05
+    eye_pixel_count[i] += (S < S_threshold) ? 1 : Math.max(Math.min(((S_threshold+S_threshold)-S)/S_threshold, 1),0);
+  }
 }
 else {
-  eye_pixel_count += 1
+  eye_pixel_count[i] += 1
 }
-
-//    }
 
   }
 }
-eyes[i][6] = eye_pixel_count / (eye_w*eye_h)
-
+eyes[i][6] = eye_pixel_count.map((count)=>count/(eye_w*eye_h));
+/*
+// forehead:9,8
+// cheek:105,125
+let S_list = [];
+[9,8,105,125].forEach(function (c) {
+  let idx = ~~sm[c][1]*4*gray_w + 4*~~sm[c][0]
+  let R = rgba[idx+0]
+  let B = rgba[idx+2]
+  let S = (R-B)/R
+  S_list.push(S)
+});
+S_list.sort((a,b)=>a-b)
+let S_skin_average = (S_list[1]+S_list[2])/2
+eyes[i][7] = ~~(S_total/(eye_w*eye_h)*100) + '/' + ~~(S_skin_average*100)
+*/
     }
   }
 
