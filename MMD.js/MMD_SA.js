@@ -5969,6 +5969,8 @@ if (!morph_default["にやり"])
   morph_default["にやり"] = { weight:0 }
 if (!morph_default["∧"])
   morph_default["∧"] = { weight:0 }
+if (!morph_default["上"])
+  morph_default["上"] = { weight:0 }
 if (!morph_default["まばたきL"])
   morph_default["まばたきL"] = { weight:0 }
 if (!morph_default["まばたきR"])

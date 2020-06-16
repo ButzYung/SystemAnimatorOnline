@@ -3506,9 +3506,13 @@ else {
 
   let mouth_open = 0
   let mouth_wide = 0
+  let eyebrow_up = 0
   if (_lips_width_average) {
     if (lips_inner_height > 2) {
       mouth_open = Math.sqrt(Math.min((lips_inner_height-2) / (_lips_width_average*1/3), 1))
+      if (mouth_open > 0.25) {
+        eyebrow_up = Math.pow(mouth_open/0.75, 3) * 0.3
+      }
     }
     if (lips_width > _lips_width_average*1.05) {
       mouth_wide = Math.min((lips_width-_lips_width_average*1.05) / (_lips_width_average*0.25), 1)
@@ -3516,6 +3520,7 @@ else {
   }
   _facemesh.frames.add("morph", "あ", { weight:mouth_open })
   _facemesh.frames.add("morph", "にやり", { weight:mouth_wide })
+  _facemesh.frames.add("morph", "上", { weight:eyebrow_up })
 
   let rot_inv = MMD_SA.TEMP_q.setFromEuler(MMD_SA._v3a.set(x_rot,y_rot,z_rot),"YZX").conjugate()
   let L = [];
@@ -3594,7 +3599,13 @@ else {
       let index = eye_data_qualified[0].index
       _eye_data_order[dir][0] = index
       let b = _blink[index]
-//      if (eye_data_qualified.length >= 2) { b = (b + _blink[eye_data_qualified[1].index]) / 2; }
+/*
+      if (eye_data_qualified.length >= 3) {
+        index = eye_data_qualified[1].index
+        b = (b + _blink[index]) / 2
+        _eye_data_order[dir].push(index)
+      }
+*/
       _blink[0] = b
     }
   });
@@ -3607,12 +3618,14 @@ else {
   }
   else {
     let weight = (blink.L[0]+blink.R[0])/2
-    _facemesh.frames.add("morph", "まばたきL", { weight:weight })
-    _facemesh.frames.add("morph", "まばたきR", { weight:weight })
+    _facemesh.frames.add("morph", "まばたき", { weight:weight })
+//    _facemesh.frames.add("morph", "まばたきL", { weight:weight })
+//    _facemesh.frames.add("morph", "まばたきR", { weight:weight })
   }
 
 
-info = info || (face.eyes.length==2 && [((calibrating)?'Calibrating('+calibration_percent+'%):Make a calm face!':'(face data calibrated)'),/*eye_x_rot*100, eye_y_rot*100,*/((THREE.MMD.getModels()[0].pmx.morphs_index_by_name["まばたきL"]||0)+'/'+(THREE.MMD.getModels()[0].pmx.morphs_index_by_name["まばたきR"]||0)), (_eye_data_order.L.length&&_eye_data_order.R.length)?_eye_data_order.L[0]+'/'+_eye_data_order.R[0]+':'+~~(eye_data.L[_eye_data_order.L[0]].eye_open_average*100)+'/'+~~(eye_data.L[_eye_data_order.L[0]].eye_open_lower*100):'(calibrating)'].join("\n"));
+info = info || (face.eyes.length==2 && [((calibrating)?'Calibrating('+calibration_percent+'%):Make a calm face!':'(face data calibrated)'),/*eye_x_rot*100, eye_y_rot*100,*/(_eye_data_order.L.length&&_eye_data_order.R.length)?_eye_data_order.L.join('+')+'/'+_eye_data_order.R.join('+')+':'+~~(eye_data.L[_eye_data_order.L[0]]._eye_open_average*100)+'/'+~~(eye_data.L[_eye_data_order.L[0]].eye_open_lower*100):'(no blink data)'].join("\n"));
+//((THREE.MMD.getModels()[0].pmx.morphs_index_by_name["まばたきL"]||0)+'/'+(THREE.MMD.getModels()[0].pmx.morphs_index_by_name["まばたきR"]||0))
 //info = [(m_up)*180/Math.PI,(m_down)*180/Math.PI,mouth_up].join('\n')
 //info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, lips_inner_height,lips_width_average+'/'+lips_width].join('\n')
 }
@@ -3655,9 +3668,9 @@ var mesh = model.mesh
 var targets = model.morph.targets
 model.pmx.morphs.forEach(function (m) {
   var name = m.name
-  if ((m.panel != 3) && (name != "まばたき"))
+  if ((name=="あ") || (name=="にやり") || (name=="∧") || (name == "まばたき") || (name=="上"))
     return
-  if ((name=="あ") || (name=="にやり") || (name=="∧"))
+  if ((m.panel != 3))
     return
   if (!model.pmx.morphs_weight_by_name[name])
     return
@@ -3811,10 +3824,10 @@ obj.t_delta = 0
 var target = this[type][name]
 if (target) {
   if (obj.rot) {
-    obj.rot.slerp(target[0].rot, 0.5)
+    obj.rot.slerp(target[0].rot, 0.25)
   }
   if (obj.weight != null) {
-    obj.weight = (obj.weight + target[0].weight) * 0.5
+    obj.weight = obj.weight * 0.75 + target[0].weight * 0.25
   }
   this[type][name] = [obj, target[0]]
 }
