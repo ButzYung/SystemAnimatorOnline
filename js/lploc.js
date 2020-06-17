@@ -107,8 +107,9 @@ lploc.unpack_localizer = function(bytes)
 		}
 
 		// return the median along each axis
-		rows.sort()
-		cols.sort()
+// AT: add sort func (a,b)=>a-b
+		rows.sort((a,b)=>a-b)
+		cols.sort((a,b)=>a-b)
 
 // AT: deviation
 //let y = rows[Math.round(nperturbs/2)]
