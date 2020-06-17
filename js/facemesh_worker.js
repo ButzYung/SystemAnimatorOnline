@@ -255,8 +255,20 @@ _t = _t_list.reduce((a,c)=>a+c)
       eyes = [eyes[1]]
 //    let score = eyes[0][5] - ((eyes[1] && eyes[1][5])||99999)
 //    if (score > 0) eyes = [eyes[1],eyes[0]]
-let eye_x=0; eyes.forEach((e)=>{eye_x+=e[2]}); eye_x/=eyes.length;
-let eye_y=0; eyes.forEach((e)=>{eye_y+=e[3]}); eye_y/=eyes.length;
+
+let eye_x = null
+let eye_y = null
+//_eyes = (eyes.length==1) ? [eyes[0],eyes[0]] : eyes
+//eye_x = (Math.sign(_eyes[0][2]) + Math.sign(_eyes[1][2]) == 0) ? null : ((Math.abs(_eyes[0][2]) > Math.abs(_eyes[1][2])) ? Math.abs(_eyes[0][2]) : Math.abs(_eyes[1][2]));
+//eye_y = (Math.sign(_eyes[0][3]) + Math.sign(_eyes[1][3]) == 0) ? null : ((Math.abs(_eyes[0][3]) > Math.abs(_eyes[1][3])) ? Math.abs(_eyes[0][3]) : Math.abs(_eyes[1][3]));
+if (eye_x == null) {
+  eyes.forEach((e)=>{eye_x+=e[2]})
+  eye_x /= eyes.length
+}
+if (eye_y == null) {
+  eyes.forEach((e)=>{eye_y+=e[3]})
+  eye_y /= eyes.length
+}
 eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
     eyes[0][4].push(_t_list[1])
   }
