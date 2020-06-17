@@ -3364,6 +3364,7 @@ eye_data = {L:[],R:[]};
   for (var i = 0; i < 4; i++) {
     let data = eye_data[dir][i] = {}
     data.index = i
+    data._eye_open_average = 0
     data.eye_open_average = 0
     data.eye_open_lower = 1
     data.eye_open_data = []
@@ -3437,10 +3438,6 @@ if (data.faces.length) {
   if (eye) {
     eye_x_rot = Math.max(Math.min((eye[3]*2+x_rot/(Math.PI/2))*(1-Math.abs(x_rot)/Math.PI),1),-1)
     eye_y_rot = Math.max(Math.min((eye[2]*2-y_rot/(Math.PI/2))*(1-Math.abs(y_rot)/Math.PI),1),-1)
-    eye_x_rot = Math.sign(eye_x_rot) * eye_x_rot*eye_x_rot
-    eye_y_rot = Math.sign(eye_y_rot) * eye_y_rot*eye_y_rot
-    let two_eyes = { absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(-eye_x_rot*15/180*Math.PI, eye_y_rot*sign*20/180*Math.PI, 0),"YZX") }
-    _facemesh.frames.add("skin", "両目", two_eyes)
   }
 
 if (camera.visible) {
@@ -3509,13 +3506,13 @@ else {
   let eyebrow_up = 0
   if (_lips_width_average) {
     if (lips_inner_height > 2) {
-      mouth_open = Math.sqrt(Math.min((lips_inner_height-2) / (_lips_width_average*1/3), 1))
+      mouth_open = Math.pow(Math.min((lips_inner_height-2) / (_lips_width_average*1/3), 1), 1/3)
       if (mouth_open > 0.25) {
         eyebrow_up = Math.pow(mouth_open/0.75, 3) * 0.3
       }
     }
     if (lips_width > _lips_width_average*1.05) {
-      mouth_wide = Math.min((lips_width-_lips_width_average*1.05) / (_lips_width_average*0.25), 1)
+      mouth_wide = Math.sqrt(Math.min((lips_width-_lips_width_average*1.05) / (_lips_width_average*0.25), 1))
     }
   }
   _facemesh.frames.add("morph", "あ", { weight:mouth_open })
@@ -3539,29 +3536,28 @@ else {
   _facemesh.frames.add("morph", "∧", { weight:mouth_up })
 
 
-  let blink = {L:[],R:[]}
+  let blink = {L:[0],R:[0]}
   let _eye_data_order = {L:[],R:[]}
   face.eyes.forEach(function (e, idx) {
-    let dir = e[4].charAt(0)
+    let dir = e[4][0]
     for (let i = 0; i < 4; i++) {
       blink[dir][i] = 0
       let LR = eye_data[dir][i]
-      let e_data = e[6][i]
+      let e_data = e[5][i]
 
       let _eye_open_average = LR.eye_open_average
       if (!_eye_open_average) {
         if (calibration_condition) {
           LR.eye_open_data.push(e_data)
+
+          let edge_size = parseInt(LR.eye_open_data.length*0.3)
+          _eye_open_average = LR.eye_open_data.sort((a,b)=>a-b).slice(edge_size, LR.eye_open_data.length-edge_size).reduce((accumulator, currentValue) => accumulator + currentValue) / (LR.eye_open_data.length-edge_size*2)
+          if (!calibrating) {
+            LR.eye_open_average = _eye_open_average
+          }
         }
-      }
-      if (!LR.eye_open_data.length) {
-        _eye_open_average = 0
-      }
-      else {
-        let edge_size = parseInt(LR.eye_open_data.length*0.3)
-        _eye_open_average = LR.eye_open_data.sort((a,b)=>a-b).slice(edge_size, LR.eye_open_data.length-edge_size).reduce((accumulator, currentValue) => accumulator + currentValue) / (LR.eye_open_data.length-edge_size*2)
-        if (!calibrating) {
-          LR.eye_open_average = _eye_open_average
+        else {
+          _eye_open_average = LR._eye_open_average
         }
       }
       if (calibration_condition) {
@@ -3573,7 +3569,7 @@ else {
       if (_eye_open_average) {
         let b = e_data
         if (b < _eye_open_average*0.9) {
-          let _eye_open_lower = Math.min(LR.eye_open_lower, _eye_open_average*0.6)
+          let _eye_open_lower = Math.max(Math.min(LR.eye_open_lower, _eye_open_average*0.6), _eye_open_average*0.2)
           b = Math.min((_eye_open_average*0.9-b)/(_eye_open_lower+_eye_open_average*0),1)
           blink[dir][i] = b*b
         }
@@ -3585,7 +3581,7 @@ else {
         return false
       if ((e._eye_open_average > 0.8) || (e._eye_open_average < 0.2))
         return false
-      if ((e.eye_open_lower > e._eye_open_average*0.7) || (e.eye_open_lower < e._eye_open_average*0.1))
+      if ((e.eye_open_lower > e._eye_open_average*0.7)/* || (e.eye_open_lower < e._eye_open_average*0.1)*/)
         return false
       return true
     });
@@ -3623,8 +3619,14 @@ else {
 //    _facemesh.frames.add("morph", "まばたきR", { weight:weight })
   }
 
+  let eye_rot_confidence = 1.25 + Math.pow((blink.L[0]+blink.R[0])/2,2)*1.75
+  eye_x_rot = Math.sign(eye_x_rot) * Math.pow(Math.abs(eye_x_rot), eye_rot_confidence)
+  eye_y_rot = Math.sign(eye_y_rot) * Math.pow(Math.abs(eye_y_rot), eye_rot_confidence)
+  let two_eyes = { absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(-eye_x_rot*15/180*Math.PI, eye_y_rot*sign*20/180*Math.PI, 0),"YZX") }
+  _facemesh.frames.add("skin", "両目", two_eyes)
 
-info = info || (face.eyes.length==2 && [((calibrating)?'Calibrating('+calibration_percent+'%):Make a calm face!':'(face data calibrated)'),/*eye_x_rot*100, eye_y_rot*100,*/(_eye_data_order.L.length&&_eye_data_order.R.length)?_eye_data_order.L.join('+')+'/'+_eye_data_order.R.join('+')+':'+~~(eye_data.L[_eye_data_order.L[0]]._eye_open_average*100)+'/'+~~(eye_data.L[_eye_data_order.L[0]].eye_open_lower*100):'(no blink data)'].join("\n"));
+
+info = info || (face.eyes.length && [((calibrating)?'Calibrating('+calibration_percent+'%):Make a calm face!':'(face data calibrated)'),/*eye_x_rot*100, eye_y_rot*100,*/(_eye_data_order.L.length&&_eye_data_order.R.length)?_eye_data_order.L.join('+')+':'+~~(eye_data.L[_eye_data_order.L[0]]._eye_open_average*100)+'/'+~~(eye_data.L[_eye_data_order.L[0]].eye_open_lower*100)+'/'+_eye_data_order.R.join('+')+':'+~~(eye_data.R[_eye_data_order.R[0]]._eye_open_average*100)+'/'+~~(eye_data.R[_eye_data_order.R[0]].eye_open_lower*100):'(no blink data)'].join("\n"));
 //((THREE.MMD.getModels()[0].pmx.morphs_index_by_name["まばたきL"]||0)+'/'+(THREE.MMD.getModels()[0].pmx.morphs_index_by_name["まばたきR"]||0))
 //info = [(m_up)*180/Math.PI,(m_down)*180/Math.PI,mouth_up].join('\n')
 //info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, lips_inner_height,lips_width_average+'/'+lips_width].join('\n')

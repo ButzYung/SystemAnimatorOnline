@@ -193,7 +193,7 @@ _t = _t_now
       let eye_x = eyes_xy_last[i][0] = Math.max(Math.min(Math.cos(z_rot)*dis, 1), -1) * confidence + eyes_xy_last[i][0] * (1-confidence)
       let eye_y = eyes_xy_last[i][1] = Math.max(Math.min(Math.sin(z_rot)*dis, 1), -1) * confidence + eyes_xy_last[i][1] * (1-confidence)
 
-      eyes[i] = [yx[1],yx[0], eye_x,eye_y, LR, yx[2]]
+      eyes[i] = [yx[1],yx[0], eye_x,eye_y, [LR]]
 
 let r_min = ~~eye_bb[0][1]
 let c_min = ~~eye_bb[0][0]
@@ -227,7 +227,7 @@ else {
 
   }
 }
-eyes[i][6] = eye_pixel_count.map((count)=>count/(eye_w*eye_h));
+eyes[i][5] = eye_pixel_count.map((count)=>count/(eye_w*eye_h));
 /*
 // forehead:9,8
 // cheek:105,125
@@ -250,12 +250,15 @@ _t_now = performance.now()
 _t_list[1] = _t_now-_t
 _t = _t_list.reduce((a,c)=>a+c)
 
-  if (eyes.length == 2) {
-    let score = ((((eyes[0] && eyes[0][4])||0) - ((eyes[1] && eyes[1][4])||99999)))
-    if (score > 0) {
-      eyes = [eyes[1],eyes[0]]
-    }
-    eyes[0][4] += '/'+_t_list[1]//score//
+  if (eyes.length) {
+    if (!eyes[0])
+      eyes = [eyes[1]]
+//    let score = eyes[0][5] - ((eyes[1] && eyes[1][5])||99999)
+//    if (score > 0) eyes = [eyes[1],eyes[0]]
+let eye_x=0; eyes.forEach((e)=>{eye_x+=e[2]}); eye_x/=eyes.length;
+let eye_y=0; eyes.forEach((e)=>{eye_y+=e[3]}); eye_y/=eyes.length;
+eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
+    eyes[0][4].push(_t_list[1])
   }
 
   postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:faces[0].faceInViewConfidence, scaledMesh:(canvas)?undefined:sm, mesh:faces[0].mesh, eyes:eyes }], _t:_t }));
