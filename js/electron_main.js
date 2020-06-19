@@ -193,6 +193,7 @@ if (c_json) {
     mainWindow = new BrowserWindow({icon:__dirname + toLocalPath("\\") + icon_name, width:width, height:height, resizable:false, frame:false, transparent:global.is_transparent, show:false
  ,webPreferences: {
     nodeIntegration: true
+//   ,nodeIntegrationInWorker: true
 //    preload: toLocalPath(SA_path + '\\' + 'js\\electron_preload.js')
 //    backgroundThrottling: false
   }

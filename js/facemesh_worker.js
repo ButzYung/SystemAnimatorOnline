@@ -1,11 +1,9 @@
 // https://blog.tensorflow.org/2020/03/face-and-hand-tracking-in-browser-with-mediapipe-and-tensorflowjs.html
 
 // https://blog.tensorflow.org/2020/03/introducing-webassembly-backend-for-tensorflow-js.html
+
 importScripts("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs");
 importScripts("https://cdn.jsdelivr.net/npm/@tensorflow-models/facemesh");
-
-var model;
-var face_cover;
 
 importScripts("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tf-backend-wasm.js");
 tf.wasm.setWasmPath("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tfjs-backend-wasm.wasm");
@@ -13,6 +11,18 @@ tf.setBackend("wasm").then(function () {
   console.log("TFJS WASM backend")
   init()
 });
+
+/*
+var tf = require('@tensorflow/tfjs-node')
+tf.setBackend("tensorflow").then(function () {
+  console.log("TFJS node.js backend")
+  importScripts("https://cdn.jsdelivr.net/npm/@tensorflow-models/facemesh");
+  init()
+});
+*/
+
+var model;
+var face_cover;
 
 var TRIANGULATION;
 fetch("facemesh_triangulation.json").then(response => response.json()).then(data => {TRIANGULATION=data});
