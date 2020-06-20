@@ -3595,13 +3595,13 @@ else {
       let index = eye_data_qualified[0].index
       _eye_data_order[dir][0] = index
       let b = _blink[index]
-/*
-      if (eye_data_qualified.length >= 3) {
+
+      if (eye_data_qualified.length >= 2) {
         index = eye_data_qualified[1].index
         b = (b + _blink[index]) / 2
         _eye_data_order[dir].push(index)
       }
-*/
+
       _blink[0] = b
     }
   });
