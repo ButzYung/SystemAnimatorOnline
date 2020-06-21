@@ -3004,8 +3004,22 @@ this.video_track = stream.getVideoTracks()[0]
 this.video.srcObject = stream
 
 setTimeout(function () {
-  System._browser.console.log(Object.entries(camera.video_track.getCapabilities()).map(s=>s[0]+':'+JSON.stringify(s[1])).join('\n'));
-  System._browser.console.log(Object.entries(camera.video_track.getSettings()).map(s=>s[0]+':'+JSON.stringify(s[1])).join('\n'));
+  let capabilities = camera.video_track.getCapabilities()
+  System._browser.console.log(Object.entries(capabilities).map(s=>s[0]+':'+JSON.stringify(s[1])).join('\n'));
+
+  let settings = camera.video_track.getSettings()
+//  System._browser.console.log(Object.entries(settings).map(s=>s[0]+':'+JSON.stringify(s[1])).join('\n'));
+
+  if (capabilities.iso && settings.iso) {
+    camera.video_track.applyConstraints(camera.set_constraints({ iso:settings.iso*2 })).then(function () {
+      DEBUG_show("(camera settings updated)", 2)
+
+      settings = camera.video_track.getSettings()
+      System._browser.console.log(Object.entries(settings).map(s=>s[0]+':'+JSON.stringify(s[1])).join('\n'));
+    }).catch(function (err) {
+      DEBUG_show("ERROR:camera settings failed to update")
+    });
+  }
 }, 2000);
 /*
 this.imageCapture = new ImageCapture(this.video_track)
@@ -4115,7 +4129,7 @@ window.removeEventListener("SA_keydown", adjust_video_brightness);
 remove_video_capture()
   }
 
- ,set_constraints: function () {
+ ,set_constraints: function (constraints_extra) {
 var constraints = {}
 
 var DPR = window.devicePixelRatio / this.target_devicePixelRatio
@@ -4129,6 +4143,10 @@ else {
   constraints.width =  h
   constraints.height = w
 }
+
+if (constraints_extra)
+  constraints = Object.assign(constraints, constraints_extra)
+
 return constraints
   }
       };
