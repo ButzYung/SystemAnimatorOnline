@@ -3011,7 +3011,7 @@ setTimeout(function () {
 //  System._browser.console.log(Object.entries(settings).map(s=>s[0]+':'+JSON.stringify(s[1])).join('\n'));
 
   if (capabilities.iso && settings.iso) {
-    camera.video_track.applyConstraints(camera.set_constraints({ iso:settings.iso*2 })).then(function () {
+    camera.video_track.applyConstraints(camera.set_constraints({ iso:200 })).then(function () {
       DEBUG_show("(camera settings updated)", 2)
 
       settings = camera.video_track.getSettings()
