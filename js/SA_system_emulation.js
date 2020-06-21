@@ -3008,8 +3008,8 @@ setTimeout(function () {
   System._browser.console.log(Object.entries(capabilities).map(s=>s[0]+':'+JSON.stringify(s[1])).join('\n'));
 
   let settings = camera.video_track.getSettings()
-//  System._browser.console.log(Object.entries(settings).map(s=>s[0]+':'+JSON.stringify(s[1])).join('\n'));
-
+  System._browser.console.log(Object.entries(settings).map(s=>s[0]+':'+JSON.stringify(s[1])).join('\n'));
+/*
   if (capabilities.iso && settings.iso) {
     camera.video_track.applyConstraints(camera.set_constraints({ iso:200 })).then(function () {
       DEBUG_show("(camera settings updated)", 2)
@@ -3020,6 +3020,7 @@ setTimeout(function () {
       DEBUG_show("ERROR:camera settings failed to update")
     });
   }
+*/
 }, 2000);
 /*
 this.imageCapture = new ImageCapture(this.video_track)
