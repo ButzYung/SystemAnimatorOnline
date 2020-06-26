@@ -1,3 +1,5 @@
+// (2020-06-27)
+
 /*!
  * jThree JavaScript Library v2.1.2
  * http://jthree.com/
@@ -15671,7 +15673,7 @@ if (parameters.canvas) parameters.canvas = document.getElementById(parameters.ca
 	var _gl;
 
 // AT: VAO
-var _use_VAO
+var _use_VAO;
 
 	var _glExtensionTextureFloat;
 	var _glExtensionStandardDerivatives;
@@ -19134,29 +19136,22 @@ var vao;
 		}
 
 // AT: VAO
-var use_VAO, load_VAO, update_VAO;
-vao = null;
-if (_use_VAO) {
-  use_VAO = material._vao;
-  if (use_VAO) {
-    vao = material._vao[geometryGroupHash];
-    update_VAO = updateBuffers && !vao;
-    if (update_VAO) {
-      vao = material._vao[geometryGroupHash] = { vao:_gl.createVertexArray(), morph_state:{} }
-    }
-    else if (vao) {
-      updateBuffers = false
-      load_VAO = true
-    }
-    else {
-      use_VAO = false
+var use_VAO;
+if (updateBuffers) {
+  if (_use_VAO) {
+    use_VAO = material._vao;
+    if (use_VAO) {
+      vao = material._vao[geometryGroupHash];
+      if (!vao) {
+        vao = material._vao[geometryGroupHash] = { vao:_gl.createVertexArray(), morph_state:{} }
+      }
+      else {
+        updateBuffers = false
+      }
+      _gl.bindVertexArray(vao.vao);
     }
   }
 }
-
-// AT: VAO
-// BEFORE morphTargets attributes update
-if (use_VAO) _gl.bindVertexArray(vao.vao);
 
 		// vertices
 
@@ -19294,9 +19289,6 @@ if (use_VAO) _gl.bindVertexArray(vao.vao);
 			}
 		}
 
-// AT: VAO
-if (use_VAO) _gl.bindVertexArray(null);
-
 		// render mesh
 	function renderMesh() { // MOD by katwat | http://www20.atpages.jp/katwat/wp/
 		if ( object instanceof THREE.Mesh ) {
@@ -19369,6 +19361,11 @@ if (use_VAO) _gl.bindVertexArray(null);
 	};
 
 	function disableAttributes() {
+// AT: VAO
+if (vao) {
+  _gl.bindVertexArray(null);
+  vao = null;
+}
 
 		for ( var attribute in _enabledAttributes ) {
 
@@ -19878,6 +19875,11 @@ if (renderTarget && renderTarget._use_multisample) {
 
 		}
 
+// AT: VAO
+if (vao) {
+  _gl.bindVertexArray(null);
+  vao = null;
+}
 	};
 
 	function renderObjectsImmediate ( renderList, materialType, camera, lights, fog, useBlending, overrideMaterial ) {
