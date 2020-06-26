@@ -705,6 +705,9 @@ function SA_OnKeyDown(event, enforced) {
 // event object used here may not be native, and thus it may not have native properties/functions.
   event.preventDefault && event.preventDefault();
 
+  var k = event.keyCode
+  if (k > 249) return
+
   var p_win = (is_SA_child_animation) ? parent : self
   if (!enforced && webkit_electron_mode && p_win.returnBoolean("AutoItStayOnDesktop") && !p_win.webkit_IgnoreMouseEvents_disabled) {
     return
@@ -721,7 +724,6 @@ function SA_OnKeyDown(event, enforced) {
     }
   }
 
-  var k = event.keyCode
   var result = { return_value:null }
   window.dispatchEvent(new CustomEvent("SA_keydown", { detail:{ e:event, keyCode:k, result:result } }));
 
