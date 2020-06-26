@@ -3776,13 +3776,13 @@ if (!this.item_base.menu) {
       [
         {
           message: {
-  content: "1. Restart\n2. Restart (full)\n3. Player Manual\n4. Settings\n5. Cancel"
+  content: "1. Restart\n2. Player Manual\n3. Settings\n4. Misc\n5. Cancel"
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:1 }
-   ,{ key:2, branch_index:3 }
-   ,{ key:3, branch_index:5 }
-   ,{ key:4, branch_index:6 }
+   ,{ key:2, branch_index:6 }
+   ,{ key:3, branch_index:7 }
+   ,{ key:4, branch_index:8 }
    ,{ key:5 }
   ]
           }
@@ -3792,12 +3792,12 @@ if (!this.item_base.menu) {
      ,[
         {
           message: {
-  content: "This will restart the game, preserving all procedurally generated maps and content.\n1. OK\n2. Cancel"
+  content: "1. Restart\n2. Restart (full)\n3. Cancel"
  ,bubble_index: 3
- ,para: { scale:1.5, font_scale:1 }
  ,branch_list: [
     { key:1, branch_index:2 }
-   ,{ key:2 }
+   ,{ key:2, branch_index:4 }
+   ,{ key:3 }
   ]
           }
         }
@@ -3805,10 +3805,24 @@ if (!this.item_base.menu) {
 //2
      ,[
         {
-          load_area: { id:'start', refresh_state:1 }
+          message: {
+  content: "This will restart the game, preserving all procedurally generated maps and content.\n1. OK\n2. Cancel"
+ ,bubble_index: 3
+ ,para: { scale:1.5, font_scale:1 }
+ ,branch_list: [
+    { key:1, branch_index:3 }
+   ,{ key:2 }
+  ]
+          }
         }
       ]
 //3
+     ,[
+        {
+          load_area: { id:'start', refresh_state:1 }
+        }
+      ]
+//4
      ,[
         {
           message: {
@@ -3816,28 +3830,34 @@ if (!this.item_base.menu) {
  ,bubble_index: 3
  ,para: { scale:1.5, font_scale:1 }
  ,branch_list: [
-    { key:1, branch_index:4 }
+    { key:1, branch_index:5 }
    ,{ key:2 }
   ]
           }
         }
       ]
-//4
+//5
      ,[
         {
           load_area: { id:'start', refresh_state:0 }
         }
       ]
-//5
+//6
      ,[
         {
           goto_event: { id:"_PLAYER_MANUAL_", branch_index:0 }
         }
       ]
-//6
+//7
      ,[
         {
           goto_event: { id:"_SETTINGS_", branch_index:0 }
+        }
+      ]
+//8
+     ,[
+        {
+          goto_event: { id:"_MISC_", branch_index:0 }
         }
       ]
   ];
@@ -7783,7 +7803,7 @@ if (!this.motion["PC movement forward"]) {
  ,"困る":{weight:0.23}
  ,"下":{weight:0.64}
   }
- ,skin_filter: { test:function(name){ return ((name.indexOf("スカート")==-1) && (name.indexOf("パーカー")==-1) && (name.indexOf("胸")==-1) && (name.indexOf("乳")==-1)) } }
+// ,skin_filter: { test:function(name){ return ((name.indexOf("スカート")==-1) && (name.indexOf("パーカー")==-1) && (name.indexOf("胸")==-1) && (name.indexOf("乳")==-1)) } }
     }
    ,"TdaHaku_Bikini_TypeB.pmx" : {
   skin_default: {}
@@ -7847,10 +7867,10 @@ if (!this.motion["PC forward jump"]) {
     para: { adjust_center_view_disabled:true, motion_duration:(46-12)/30, onended: function () { MMD_SA._no_fading=true; }
  ,adjustment_per_model: {
     _default_ : {
-  skin_filter: { test:function(name){ return ((name.indexOf("スカート")==-1) && (name.indexOf("パーカー")==-1) && (name.indexOf("胸")==-1) && (name.indexOf("乳")==-1)) } }
+//  skin_filter: { test:function(name){ return ((name.indexOf("スカート")==-1) && (name.indexOf("パーカー")==-1) && (name.indexOf("胸")==-1) && (name.indexOf("乳")==-1)) } }
     }
    ,"TdaHaku_Bikini_TypeB.pmx" : {
-  skin_filter: { test:function(name){ return ((name.indexOf("前髪")==-1) && (name.indexOf("胸")==-1)) } }
+//  skin_filter: { test:function(name){ return ((name.indexOf("前髪")==-1) && (name.indexOf("胸")==-1)) } }
     }
   }
  ,mov_speed: (function () {
@@ -7879,7 +7899,7 @@ if (!this.motion["PC high jump"]) {
  ,range:[{time:[10,0]}]
  ,adjustment_per_model: {
     _default_ : {
-  skin_filter: { test:function(name){ return ((name.indexOf("胸")==-1) && (name.indexOf("乳")==-1)) } }
+//  skin_filter: { test:function(name){ return ((name.indexOf("胸")==-1) && (name.indexOf("乳")==-1)) } }
     }
   }
 
@@ -7922,7 +7942,7 @@ if (loop_end) {
  ,range:[{time:[11,0]}]
  ,adjustment_per_model: {
     _default_ : {
-  skin_filter: { test:function(name){ return ((name.indexOf("胸")==-1) && (name.indexOf("乳")==-1)) } },
+//  skin_filter: { test:function(name){ return ((name.indexOf("胸")==-1) && (name.indexOf("乳")==-1)) } },
   skin_default: {
     "全ての親": { pos_add:{x:0, y:0, z:4} }
   }
@@ -10627,6 +10647,70 @@ MMD_SA.WebXR.user_camera.start()
         }
       ]
 
+    ]
+
+   ,"_MISC_": [
+//0
+      [
+        {
+          message: {
+  content: "1. Character form\n2. Cancel"
+ ,bubble_index: 3
+ ,branch_list: [
+    { key:1, branch_index:1 }
+   ,{ key:2 }
+  ]
+          }
+        }
+      ]
+//1
+     ,[
+        {
+  func: (function () {
+    function morph_event(e) {
+var mf = morph_form[morph_form_index]
+if (mf) {
+  let model = e.detail.model
+  for (const morph_name in mf) {
+    let _m_idx = model.pmx.morphs_index_by_name[morph_name]
+    let _m = model.pmx.morphs[_m_idx]
+    MMD_SA._custom_morph.push({ key:{ weight:mf[morph_name], morph_type:_m.type, morph_index:_m_idx }, idx:model.morph.target_index_by_name[morph_name] })
+  }
+}
+//DEBUG_show(Date.now()+":"+MMD_SA._custom_morph.length)
+    }
+
+    var morph_event_registered = false
+
+    var morph_form = [null]
+    var morph_form_index = 0
+
+    return function () {
+var mf = MMD_SA_options.model_para_obj.morph_form
+if (!mf) {
+  DEBUG_show("(No other character form available)", 3)
+  return
+}
+
+morph_form = [null].concat(Object.values(mf))
+
+if (++morph_form_index >= morph_form.length) {
+  morph_form_index = 0
+  window.removeEventListener("SA_MMD_model0_process_morphs", morph_event)
+  DEBUG_show("Character form:DEFAULT", 3)
+}
+else {
+  if (!morph_event_registered) {
+    morph_event_registered = true
+    window.addEventListener("SA_MMD_model0_process_morphs", morph_event)
+  }
+  DEBUG_show("Character form:" + morph_form_index, 3)
+}
+    };
+  })()
+ ,ended: true
+        }
+      ]
     ]
 
    ,"_onplayerdefeated_default_": [
