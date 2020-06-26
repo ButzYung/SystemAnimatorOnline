@@ -5367,6 +5367,9 @@ return _trackball_camera_limit_adjust(eye)
   if (MMD_SA_options.reset_rigid_body_physics_step == null)
     MMD_SA_options.reset_rigid_body_physics_step = 10
 
+  if (MMD_SA_options.matrixWorld_physics_scale == null)
+    MMD_SA_options.matrixWorld_physics_scale = 0.25
+
   if (MMD_SA_options.SeriousShader_OverBright_adjust == null)
     MMD_SA_options.SeriousShader_OverBright_adjust = 0
 
