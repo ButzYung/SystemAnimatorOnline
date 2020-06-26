@@ -570,12 +570,15 @@ function SA_load_body() {
 + '</scr'+'ipt>\n'
 
 window.addEventListener('DOMContentLoaded', function () {
-  Lnumpad.addEventListener("touchstart", function (e) {
-    e.stopPropagation()
-  });
-  Lnumpad.addEventListener("touchmove", function (e) {
-    e.stopPropagation()
-  });
+  function cancel_event(e) {
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    e.preventDefault();
+  }
+  Lnumpad.addEventListener("touchstart", cancel_event);
+  Lnumpad.addEventListener("touchmove", cancel_event);
+  Lnumpad.addEventListener("mousedown", cancel_event);
+
   var buttons = document.getElementsByClassName("Lnumpad_button")
   var ev_start, ev_end
   if (is_mobile) {
@@ -586,6 +589,7 @@ window.addEventListener('DOMContentLoaded', function () {
     ev_start = "mousedown"
     ev_end = "mouseup"
   }
+
   for (var i = 0; i < buttons.length; i++) {
     var b = buttons[i]
     if (b.textContent == "K") {
