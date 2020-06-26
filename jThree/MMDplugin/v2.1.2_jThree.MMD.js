@@ -1,4 +1,4 @@
-// (2020-05-22)
+// (2020-06-26)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -4261,7 +4261,11 @@ self.MMD_SA && AP && AP.update_worker()
 MMDPhysi.prototype.preSimulate = function() { // ボーン→静的剛体
 	var mesh;
 	mesh = this.mesh;
-	_q2.setFromRotationMatrix( mesh.matrixWorld );
+// AT: matrixWorld_physics
+if (mesh.matrixWorld_physics) mesh.matrixWorld_physics.update()
+var matrixWorld_physics = (mesh.matrixWorld_physics && mesh.matrixWorld_physics.m4) || mesh.matrixWorld;
+_q2.setFromRotationMatrix(matrixWorld_physics)
+//	_q2.setFromRotationMatrix( mesh.matrixWorld );
 // AT: ammo proxy
 var use_optimized_command = false
 if (AP) {
@@ -4280,7 +4284,9 @@ if ((mesh._reset_rigid_body_physics_>0 || (v._reset_physics_ && (!AP || !AP.data
 			// ボーンの位置と回転を剛体へ変換
 			_v.set( v.ofs[0], v.ofs[1], v.ofs[2] );
 			_v.applyMatrix4( skin ); // ボーンorigin→剛体origin
-			_v.applyMatrix4( mesh.matrixWorld ); // モデルローカル→ワールド
+// AT: matrixWorld_physics
+_v.applyMatrix4(matrixWorld_physics);
+//			_v.applyMatrix4( mesh.matrixWorld ); // モデルローカル→ワールド
 			_q.setFromRotationMatrix( skin ); // ボーンのグローバル回転量。
 			_q.multiplyQuaternions( _q, v.q ); // バインドポーズ時の回転量を加える。
 			_q.multiplyQuaternions( _q2, _q ); // モデルローカル→ワールド
@@ -4329,6 +4335,8 @@ function update_afterPhysics(p) {
 var model_index = mesh._model_index
 var use_ammo_proxy = self.MMD_SA && AP && !Ammo_local;
 
+var matrixWorld_physics = (mesh.matrixWorld_physics && mesh.matrixWorld_physics.m4) || mesh.matrixWorld;
+
 var cache, cache_temp, ammo_proxy_cache_enabled
 var use_optimized_command = false
 if (use_ammo_proxy) {
@@ -4337,10 +4345,12 @@ if (use_ammo_proxy) {
   cache_temp = use_ammo_proxy && AP.cache_by_model_temp.list[model_index]
   ammo_proxy_cache_enabled = use_ammo_proxy && AP.cache_by_model.get_enabled(model_index)
 
-  AP.cache_by_model_temp.set_matrixWorld(model_index, mesh.matrixWorld)
+  AP.cache_by_model_temp.set_matrixWorld(model_index, matrixWorld_physics)
   AP.cache_by_model_temp.set_skin(model_index, mesh.bones, ammo_proxy_cache_enabled)
 }
-	_mtx2.getInverse( mesh.matrixWorld );
+// AT: matrixWorld_physics
+_mtx2.getInverse(matrixWorld_physics)
+//	_mtx2.getInverse( mesh.matrixWorld );
 	_q3.setFromRotationMatrix( _mtx2 );
 // AT: bone constraint, physics check, group rigid reset
 var bc, ignore_physics
@@ -4424,7 +4434,9 @@ else {
 
 				_v.set( v.ofs[0], v.ofs[1], v.ofs[2] );
 				_v.applyMatrix4( skin ); // ボーンorigin→剛体origin
-				_v.applyMatrix4( mesh.matrixWorld ); // モデルローカル→ワールド
+// AT: matrixWorld_physics
+_v.applyMatrix4(matrixWorld_physics)
+//				_v.applyMatrix4( mesh.matrixWorld ); // モデルローカル→ワールド
 
 if (!use_optimized_command) {
 				body = v.body;
@@ -4588,13 +4600,16 @@ if (0&&mesh.bones[v.bone].name=="右前スカート") {
 
 			_q4.copy(_q2)
 
-			_q2.setFromRotationMatrix( mesh.matrixWorld );
-//			var _skin = _mtx.makeRotationFromQuaternion(_q).setPosition( _v3 );
+// AT: matrixWorld_physics
+_q2.setFromRotationMatrix(matrixWorld_physics)
+//			_q2.setFromRotationMatrix( mesh.matrixWorld );
 
 			// ボーンの位置と回転を剛体へ変換
 			_v.set( v.ofs[0], v.ofs[1], v.ofs[2] );
 			_v.applyMatrix4( skin ); // ボーンorigin→剛体origin
-			_v.applyMatrix4( mesh.matrixWorld ); // モデルローカル→ワールド
+// AT: matrixWorld_physics
+_v.applyMatrix4(matrixWorld_physics)
+//			_v.applyMatrix4( mesh.matrixWorld ); // モデルローカル→ワールド
 			_q.setFromRotationMatrix( skin ); // ボーンのグローバル回転量。
 			_q.multiplyQuaternions( _q, v.q ); // バインドポーズ時の回転量を加える。
 			_q.multiplyQuaternions( _q2, _q ); // モデルローカル→ワールド
@@ -4638,7 +4653,7 @@ if (use_optimized_command && !AP.locked) { AP._locked = false; AP.add_optimized_
 let _skip;
 if (use_ammo_proxy) {
   if (!ammo_proxy_cache_enabled) {
-    _v.copy(MMD_SA._v3a.set(v.ofs[0], v.ofs[1], v.ofs[2]).applyMatrix4(skin)).add(skin_pos).applyMatrix4(mesh.matrixWorld);
+    _v.copy(MMD_SA._v3a.set(v.ofs[0], v.ofs[1], v.ofs[2]).applyMatrix4(skin)).add(skin_pos).applyMatrix4(matrixWorld_physics);
   }
   else {
     _v.applyProjection(cache.matrixWorld_inv);
@@ -4653,7 +4668,7 @@ if (!_skip)
 				skin.setPosition( _v );
 
 // AT: ammo proxy
-ammo_proxy_cache_enabled && skin.setPosition(_v.sub(new THREE.Vector3().getPositionFromMatrix(cache.skin[v.bone])).add(new THREE.Vector3().getPositionFromMatrix(cache_temp._skin[v.bone])));
+ammo_proxy_cache_enabled && skin.setPosition(_v.sub(MMD_SA._v3a_.getPositionFromMatrix(cache.skin[v.bone])).add(MMD_SA._v3b_.getPositionFromMatrix(cache_temp._skin[v.bone])));
 
 			} else {
 
@@ -4663,7 +4678,9 @@ ammo_proxy_cache_enabled && skin.setPosition(_v.sub(new THREE.Vector3().getPosit
 
 				_v.set( v.ofs[0], v.ofs[1], v.ofs[2] );
 				_v.applyMatrix4( skin ); // ボーンorigin→剛体origin
-				_v.applyMatrix4( mesh.matrixWorld ); // モデルローカル→ワールド
+// AT: matrixWorld_physics
+_v.applyMatrix4(matrixWorld_physics)
+//				_v.applyMatrix4( mesh.matrixWorld ); // モデルローカル→ワールド
 
 				body = v.body;
 // AT: ammo proxy
@@ -4732,10 +4749,16 @@ MMDPhysi.prototype.reset = function() { // 初期位置と回転を剛体に設�
 	var mesh;
 	mesh = this.mesh;
 	mesh.updateMatrixWorld( true ); // いつ呼ばれるか分からないからこれ必要。
-	_q2.setFromRotationMatrix( mesh.matrixWorld );
+// AT: matrixWorld_physics
+if (mesh.matrixWorld_physics) mesh.matrixWorld_physics.update()
+var matrixWorld_physics = (mesh.matrixWorld_physics && mesh.matrixWorld_physics.m4) || mesh.matrixWorld;
+_q2.setFromRotationMatrix(matrixWorld_physics)
+//	_q2.setFromRotationMatrix( mesh.matrixWorld );
 	mesh.MMDrigids.forEach( function( v ) {
 		var body;
-		_v.set( v.pos[0], v.pos[1], v.pos[2] ).applyMatrix4( mesh.matrixWorld );
+// AT: matrixWorld_physics
+_v.set( v.pos[0], v.pos[1], v.pos[2] ).applyMatrix4(matrixWorld_physics)
+//		_v.set( v.pos[0], v.pos[1], v.pos[2] ).applyMatrix4( mesh.matrixWorld );
 		_q.multiplyQuaternions( _q2, v.q );
 		body = v.body;
 		body.getMotionState().getWorldTransform( _btransform );
@@ -5282,6 +5305,7 @@ MMDSkin.prototype.constructor = MMDSkin;
 MMDSkin.prototype.onupdate = (function () {
   var pos = new THREE.Vector3()
   var rot = new THREE.Quaternion()
+  var scale1 = {x:1,y:1,z:1}
 
   return function( currKey, nextKey, ratio, idx ) {
 	var bone = this.mesh.bones[ idx ],
@@ -5343,7 +5367,7 @@ else {
     let b_name = (gbone.name.indexOf("足ＩＫ") != -1) ? "センター" : gbone.name;
     let b_target = motion_para.bone_to_position.find(b=>b.name==b_name);
     if (b_target) {
-      let scale = b_target.scale
+      let scale = b_target.scale || scale1
       bone.position.x += (pos.x - bone.position.x) * ratio * (1-scale.x)
       bone.position.y += (pos.y - bone.position.y) * ratio * (1-scale.y)
       bone.position.z += (pos.z - bone.position.z) * ratio * (1-scale.z)
@@ -7657,7 +7681,7 @@ THREE.MMDPhysicsHelper = function ( mesh ) {
 
 	this.root = mesh;
 
-	this.matrix = mesh.matrixWorld;
+	this.matrix = mesh.matrixWorld.clone();
 	this.matrixAutoUpdate = false;
 
 	this.materials = [];
@@ -7786,7 +7810,7 @@ THREE.MMDPhysicsHelper.prototype.update = function () {
 	function getPosition( origin ) {
 
 		vector.set( origin.x(), origin.y(), origin.z() );
-		vector.applyMatrix4( matrixWorldInv );
+//		vector.applyMatrix4( matrixWorldInv );
 
 		return vector;
 
@@ -7804,16 +7828,17 @@ THREE.MMDPhysicsHelper.prototype.update = function () {
 
 	for ( var i = 0, il = rigidBodies.length; i < il; i ++ ) {
 
-		var body = rigidBodies[i].body;
-		var mesh = this.children[ i ];
+		let body = rigidBodies[i].body;
+		let mesh = this.children[ i ];
 
-		var tr = body.getCenterOfMassTransform();
+		let tr = body.getCenterOfMassTransform();
 
 		mesh.position.copy( getPosition( tr.getOrigin() ) );
 		mesh.quaternion.copy( getQuaternion( tr.getRotation() ) );
 
 	}
 
+this.matrix.copy(this.root.matrix)
 this.updateMatrix()
 
 };

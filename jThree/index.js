@@ -1,4 +1,4 @@
-// (2020-05-22)
+// (2020-06-26)
 
 MMD_SA.fn = {
 /*
@@ -537,6 +537,44 @@ THREE.MMD.getModels().forEach(function (_model, idx) {
     if (model_para.scale)
       mesh.scale.set(model_para.scale,model_para.scale,model_para.scale)
   });
+
+  THREE.MMD.getModels().forEach((function () {
+    function matrixWorld_physics(mesh) {
+this.mesh = mesh
+
+this.m4 = new THREE.Matrix4()
+this.pos = new THREE.Vector3()
+this.pos_world = new THREE.Vector3()
+
+this.reset()
+    }
+
+    matrixWorld_physics.prototype.reset = function () {
+this.pos.set(0,0,0)
+this.pos_world.set(0,0,0)
+    }
+
+    matrixWorld_physics.prototype.update = function () {
+this.m4.copy(this.mesh.matrixWorld)
+
+_v3a.getPositionFromMatrix(this.m4)
+_v3b.copy(_v3a).sub(this.pos_world)
+_v3b.multiplyScalar(MMD_SA_options.matrixWorld_physics_scale)
+
+this.pos.add(_v3b)
+this.pos_world.copy(_v3a)
+//if (this.mesh._model_index==0) DEBUG_show(this.pos_world.toArray().join("\n")+"\n"+this.pos.toArray().join("\n"))
+this.m4.setPosition(this.pos)
+    }
+
+    var _v3a = new THREE.Vector3()
+    var _v3b = new THREE.Vector3()
+
+    return function (_model) {
+let mesh = _model.mesh
+mesh.matrixWorld_physics = new matrixWorld_physics(mesh)
+    };
+  })());
 
   MMD_SA_options.onstart && MMD_SA_options.onstart();
   window.dispatchEvent(new CustomEvent("MMDStarted"));

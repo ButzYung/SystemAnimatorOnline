@@ -15670,6 +15670,9 @@ if (parameters.canvas) parameters.canvas = document.getElementById(parameters.ca
 
 	var _gl;
 
+// AT: VAO
+var _use_VAO
+
 	var _glExtensionTextureFloat;
 	var _glExtensionStandardDerivatives;
 	var _glExtensionTextureFilterAnisotropic;
@@ -17432,6 +17435,15 @@ material.waveNoiseTexture ||
 		morphTargets = geometry.morphTargets,
 		morphNormals = geometry.morphNormals;
 
+// AT: VAO
+if (_use_VAO) {
+  if (material._vao) {
+    for (let id in material._vao)
+      _gl.deleteVertexArray(material._vao[id].vao)
+  }
+  material._vao = {};
+}
+
 		if ( dirtyVertices ) {
 
 			for ( f = 0, fl = chunk_faces3.length; f < fl; f ++ ) {
@@ -19091,6 +19103,9 @@ if (!vka) { continue; }
 
 	};
 
+// AT: VAO
+var vao;
+
 	this.renderBuffer = function ( camera, lights, fog, material, geometryGroup, object ) {
 
 		if ( material.visible === false ) return;
@@ -19118,6 +19133,31 @@ if (!vka) { continue; }
 
 		}
 
+// AT: VAO
+var use_VAO, load_VAO, update_VAO;
+vao = null;
+if (_use_VAO) {
+  use_VAO = material._vao;
+  if (use_VAO) {
+    vao = material._vao[geometryGroupHash];
+    update_VAO = updateBuffers && !vao;
+    if (update_VAO) {
+      vao = material._vao[geometryGroupHash] = { vao:_gl.createVertexArray(), morph_state:{} }
+    }
+    else if (vao) {
+      updateBuffers = false
+      load_VAO = true
+    }
+    else {
+      use_VAO = false
+    }
+  }
+}
+
+// AT: VAO
+// BEFORE morphTargets attributes update
+if (use_VAO) _gl.bindVertexArray(vao.vao);
+
 		// vertices
 
 		if ( !material.morphTargets && attributes.position >= 0 ) {
@@ -19133,13 +19173,12 @@ if (!vka) { continue; }
 		} else {
 
 			if ( object.morphTargetBase ) {
-
-				setupMorphTargets( material, geometryGroup, object );
+// AT: ,updateBuffers
+				setupMorphTargets( material, geometryGroup, object ,updateBuffers);
 
 			}
 
 		}
-
 
 		if ( updateBuffers ) {
 
@@ -19255,6 +19294,9 @@ if (!vka) { continue; }
 			}
 		}
 
+// AT: VAO
+if (use_VAO) _gl.bindVertexArray(null);
+
 		// render mesh
 	function renderMesh() { // MOD by katwat | http://www20.atpages.jp/katwat/wp/
 		if ( object instanceof THREE.Mesh ) {
@@ -19340,13 +19382,15 @@ if (!vka) { continue; }
 		}
 
 	};
-
-	function setupMorphTargets ( material, geometryGroup, object ) {
+// AT: ,updateBuffers
+	function setupMorphTargets ( material, geometryGroup, object ,updateBuffers) {
 
 		// set base
 
 		var attributes = material.program.attributes;
 
+// AT: VAO
+if (updateBuffers) {
 		if ( object.morphTargetBase !== -1 && attributes.position >= 0 ) {
 
 			_gl.bindBuffer( _gl.ARRAY_BUFFER, geometryGroup.__webglMorphTargetsBuffers[ object.morphTargetBase ] );
@@ -19360,6 +19404,7 @@ if (!vka) { continue; }
 			_gl.vertexAttribPointer( attributes.position, 3, _gl.FLOAT, false, 0, 0 );
 
 		}
+}
 
 		if ( object.morphTargetForcedOrder.length ) {
 
@@ -19435,6 +19480,9 @@ if (!vka) { continue; }
 
 					influenceIndex = activeInfluenceIndices[ m ][ 1 ];
 
+// AT: VAO
+if (!vao || (vao.morph_state[m] != influenceIndex)) {
+  if (vao) vao.morph_state[m] = influenceIndex;
 					if ( attributes[ "morphTarget" + m ] >= 0 ) {
 
 						_gl.bindBuffer( _gl.ARRAY_BUFFER, geometryGroup.__webglMorphTargetsBuffers[ influenceIndex ] );
@@ -19449,8 +19497,8 @@ if (!vka) { continue; }
 						enableAttribute( attributes[ "morphNormal" + m ] );
 						_gl.vertexAttribPointer( attributes[ "morphNormal" + m ], 3, _gl.FLOAT, false, 0, 0 );
 
-
 					}
+}
 
 					object.__webglMorphTargetInfluences[ m ] = influences[ influenceIndex ];
 
@@ -22729,7 +22777,7 @@ else
 // AT: WebGL2
 // https://github.com/mrdoob/three.js/pull/8120/files
 // FIXME: We don't support !depth !stencil
-if (renderTarget._use_multisample && MMD_SA.use_webgl2) {
+if (renderTarget._use_multisample) {
   console.log("FIXME: We don't support !depth !stencil")
   _gl.renderbufferStorageMultisample( _gl.RENDERBUFFER, renderTarget._use_multisample, _gl.RGBA8, renderTarget.width, renderTarget.height );
 }
@@ -23165,7 +23213,9 @@ else
 		}
 
 // AT: WebGL2
+// AT: VAO
 if (self.MMD_SA && MMD_SA.use_webgl2) {
+  _use_VAO = true
   _glExtensionTextureFloat = true
   _glExtensionStandardDerivatives = true
 }
