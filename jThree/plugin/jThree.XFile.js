@@ -1,3 +1,5 @@
+// (2020-07-03)
+
 /*!
  * jThree.XFile.js JavaScript Library v1.1
  * http://www.jthree.com/
@@ -597,6 +599,16 @@ if (!loaded) return
 //console.log(mesh)
 //mesh.castShadow=true
 //if (self.MMD_SA) mesh.castShadow = !!MMD_SA_options.use_shadowMap;
+
+// AT: model_para
+// AT: instanced drawing
+var model_filename = toLocalPath(url).replace(/^.+[\/\\]/, "")
+var model_filename_cleaned = model_filename.replace(/[\-\_]copy\d+\.x$/, ".x").replace(/[\-\_]v\d+\.x$/, ".x")
+var model_para = MMD_SA_options.model_para[model_filename] || MMD_SA_options.model_para[model_filename_cleaned]
+if (model_para && model_para.instanced_drawing)
+  mesh.instanced_drawing = model_para.instanced_drawing
+//mesh.instanced_drawing = 99
+
 		loaded( mesh );
 		loaded = errored = null;
 	}, function() {

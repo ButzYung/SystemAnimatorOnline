@@ -1,4 +1,4 @@
-// (2020-06-27)
+// (2020-07-03)
 
 /*!
  * jThree JavaScript Library v2.1.2
@@ -6946,6 +6946,9 @@ THREE.Object3D.prototype = {
 
 		object.userData = this.userData.dom ? jQuery.extend( true, {}, this.userData ) : JSON.parse( JSON.stringify( this.userData ) );
 		object._lookAt.copy( this._lookAt );
+
+// AT: instanced drawing
+object.instanced_drawing = this.instanced_drawing
 
 		for ( var i = 0; i < this.children.length; i ++ ) {
 
@@ -15674,6 +15677,8 @@ if (parameters.canvas) parameters.canvas = document.getElementById(parameters.ca
 
 // AT: VAO
 var _use_VAO;
+// AT: instanced drawing
+var _use_InstancedDrawing;
 
 	var _glExtensionTextureFloat;
 	var _glExtensionStandardDerivatives;
@@ -17439,11 +17444,11 @@ material.waveNoiseTexture ||
 
 // AT: VAO
 if (_use_VAO) {
-  if (material._vao) {
-    for (let id in material._vao)
-      _gl.deleteVertexArray(material._vao[id].vao)
+  if (geometryGroup._vao) {
+    for (let id in geometryGroup._vao)
+      _gl.deleteVertexArray(geometryGroup._vao[id].vao)
   }
-  material._vao = {};
+  geometryGroup._vao = {};
 }
 
 		if ( dirtyVertices ) {
@@ -19107,7 +19112,7 @@ if (!vka) { continue; }
 
 // AT: VAO
 var vao;
-
+var _draw=0,_redraw=0,_redraw_max=0,_redraw_=0;
 	this.renderBuffer = function ( camera, lights, fog, material, geometryGroup, object ) {
 
 		if ( material.visible === false ) return;
@@ -19126,9 +19131,9 @@ var vao;
 
 			_currentGeometryGroupHash = geometryGroupHash;
 			updateBuffers = true;
-
+//_redraw_=0;
 		}
-
+//else{_redraw++;_redraw_++;if(_redraw_&&_redraw_>_redraw_max)_redraw_max=_redraw_;};_draw++;
 		if ( updateBuffers ) {
 
 			disableAttributes();
@@ -19136,14 +19141,15 @@ var vao;
 		}
 
 // AT: VAO
-var use_VAO;
+var use_VAO, first_instance;
 if (updateBuffers) {
+  first_instance = true
   if (_use_VAO) {
-    use_VAO = material._vao;
+    use_VAO = geometryGroup._vao;
     if (use_VAO) {
-      vao = material._vao[geometryGroupHash];
+      vao = geometryGroup._vao[geometryGroupHash];
       if (!vao) {
-        vao = material._vao[geometryGroupHash] = { vao:_gl.createVertexArray(), morph_state:{} }
+        vao = geometryGroup._vao[geometryGroupHash] = { vao:_gl.createVertexArray(), morph_state:{} }
       }
       else {
         updateBuffers = false
@@ -19273,6 +19279,51 @@ if (updateBuffers) {
 
 		}
 
+// AT: instanced drawing
+var instanced_draw = false
+if (_use_InstancedDrawing && object.instanced_drawing) {
+  instanced_draw = true;
+  for (let i = _i_+_delta_; i !== _end_; i += _delta_) {
+    let webglObject = _renderList_[ i ];
+    if (!webglObject.render) continue;
+    let _material = _overrideMaterial_ || webglObject.opaque || webglObject.transparent;
+    if (!_material || !_material.visible) continue;
+
+    if (!_material.program) break;
+
+    let _geometryGroupHash = ( webglObject.buffer.id * 0xffffff ) + ( _material.program.id * 2 ) + (_material.wireframe ? 1 : 0);
+    instanced_draw = ( _geometryGroupHash !== _currentGeometryGroupHash ) || (_material.id !== _currentMaterialId);
+    break
+  }
+
+  if (!first_instance && geometryGroup.__instanced && !geometryGroup.__instanced._instances.length) {
+    first_instance = true
+  }
+
+  if (first_instance) {
+    if (!geometryGroup.__instanced)
+      geometryGroup.__instanced = new InstancedDrawing(program, object.instanced_drawing)
+  }
+  geometryGroup.__instanced._instances.push({
+    instance_index: [geometryGroup.__instanced._instances.length]
+   ,modelViewMatrix: object._modelViewMatrix.elements
+   ,modelMatrix: object.matrixWorld.elements
+   ,normalMatrix: object._normalMatrix.elements
+  });
+
+//_draw++;_redraw++;_redraw_++;if(_redraw_&&_redraw_>_redraw_max)_redraw_max=_redraw_;
+  if (instanced_draw || (geometryGroup.__instanced._instances.length >= geometryGroup.__instanced.instance_max)) {
+    instanced_draw = geometryGroup.__instanced._instances.length
+    geometryGroup.__instanced.update(program)
+// update gl.ELEMENT_ARRAY_BUFFER
+    updateBuffers = true
+//_redraw--;_redraw_=0;
+  }
+  else {
+    return
+  }
+}
+
 		// ADD by katwat | http://www20.atpages.jp/katwat/wp/
 		var renderCancel;
 		il = material.passes || 1;
@@ -19307,6 +19358,10 @@ if (updateBuffers) {
 			} else {
 
 				if ( updateBuffers ) _gl.bindBuffer( _gl.ELEMENT_ARRAY_BUFFER, geometryGroup.__webglFaceBuffer );
+// AT: instanced drawing
+if (instanced_draw) {
+  _gl.drawElementsInstanced( _gl.TRIANGLES, geometryGroup.__webglFaceCount, _gl.UNSIGNED_SHORT, 0, instanced_draw);
+} else
 				_gl.drawElements( _gl.TRIANGLES, geometryGroup.__webglFaceCount, _gl.UNSIGNED_SHORT, 0 );
 
 			}
@@ -19348,6 +19403,155 @@ if (updateBuffers) {
 	}
 
 	};
+
+// AT: instanced drawing
+// https://webgl2fundamentals.org/webgl/lessons/webgl-instanced-drawing.html
+var InstancedDrawing = (function () {
+
+function InstancedDrawing(program, instance_max) {
+  this.attributes = {
+    instance_index: { type:'float' }
+   ,modelViewMatrix: { type:'mat4' }
+   ,modelMatrix: { type:'mat4' }
+   ,normalMatrix: { type:'mat3'}
+  };
+
+  update_program.call(this, program)
+
+  this.buffer = {}
+  this.instance_max = instance_max
+
+  this._instances = []
+
+  init.call(this)
+}
+
+function init() {
+  this.delete()
+
+  for (var name in this.attributes) {
+    const type = this.attributes[name].type
+    let a_length = (type=='float') ? 1 : parseInt(type.charAt(3));
+    a_length *= a_length;
+
+    const matrixData = new Float32Array(this.instance_max * a_length);
+    this.buffer[name] = matrixData
+
+    const matrixLoc = this.attributes_location[name];
+    if (matrixLoc == null) continue;
+
+    const matrixBuffer = _gl.createBuffer();
+    this.attributes[name].buffer = matrixBuffer
+
+    _gl.bindBuffer(_gl.ARRAY_BUFFER, matrixBuffer);
+    // just allocate the buffer
+    _gl.bufferData(_gl.ARRAY_BUFFER, matrixData.byteLength, _gl.DYNAMIC_DRAW);
+
+    init_attributes(matrixLoc, a_length)
+  }
+}
+
+function init_attributes(matrixLoc, a_length) {
+  const a_dim = Math.sqrt(a_length);
+  const bytesPerMatrix = 4 * a_length;
+  for (let i = 0; i < a_dim; ++i) {
+    const loc = matrixLoc + i;
+//    _gl.enableVertexAttribArray(loc);
+    enableAttribute( loc );
+    // note the stride and offset
+    const offset = i * a_dim*4; // 3-4 floats per row, 4 bytes per float
+    _gl.vertexAttribPointer(
+        loc,              // location
+        a_dim,                // size (num values to pull from buffer per iteration)
+        _gl.FLOAT,         // type of data in buffer
+        false,            // normalize
+        bytesPerMatrix,   // stride, num bytes to advance to get to next set of values
+        offset           // offset in buffer
+    );
+    // this line says this attribute only changes for each 1 instance
+    _gl.vertexAttribDivisor(loc, 1);
+  }
+}
+
+function update_program(program) {
+  if (this.program == program)
+    return false
+  this.program = program
+
+  this.attributes_location = {}
+  this.uniforms_location = {}
+  for (let name in this.attributes) {
+    let loc = program.attributes[name]
+    this.attributes_location[name] = ((loc == null) || (loc == -1)) ? null : loc
+
+    loc = program.uniforms["_"+name]
+    this.uniforms_location["_"+name] = ((loc == null) || (loc == -1)) ? null : loc
+  }
+  return true
+}
+
+InstancedDrawing.prototype.delete = function () {
+  for (var name in this.attributes) {
+    if (this.attributes[name].buffer != null)
+      _gl.deleteBuffer(this.attributes[name].buffer)
+  }
+}
+
+InstancedDrawing.prototype.update = function (program) {
+  var program_updated = update_program.call(this, program)
+/*
+if (this.instance_max < this._instances.length) {
+  this.instance_max = this._instances.length
+  init.call(this)
+}
+*/
+  var needs_init = !vao || program_updated;// !_gl.getVertexAttrib(0, _gl.VERTEX_ATTRIB_ARRAY_ENABLED)
+
+  for (var name in this.attributes) {
+    const type = this.attributes[name].type
+    let a_length = (type=='float') ? 1 : parseInt(type.charAt(3));
+    a_length *= a_length;
+
+    const matrixData = this.buffer[name]
+    this._instances.forEach(function (instance, idx) {
+      const elements = instance[name]
+      const ini = idx * a_length
+      for (var j = 0; j < a_length; j++)
+        matrixData[ini+j] = elements[j]
+    });
+
+    const matrixLoc = this.attributes_location[name];
+    if (matrixLoc == null) {
+// uniforms
+      const u_loc = _gl.getUniformLocation(program, "_" + name)//this.uniforms_location["_" + name]
+      if (u_loc != null) {
+        if (a_length == 16) {
+          _gl.uniformMatrix4fv( u_loc, false, matrixData );
+        }
+        else {
+          _gl.uniformMatrix3fv( u_loc, false, matrixData );
+        }
+      }
+    }
+    else {
+// attributes
+      const matrixBuffer = this.attributes[name].buffer
+
+      // upload the new matrix data
+      _gl.bindBuffer(_gl.ARRAY_BUFFER, matrixBuffer);
+      _gl.bufferSubData(_gl.ARRAY_BUFFER, 0, matrixData);
+
+      if (needs_init) {
+        init_attributes(matrixLoc, a_length)
+      }
+    }
+  }
+
+  this._instances = []
+}
+
+  return InstancedDrawing;
+})();
 
 	function enableAttribute( attribute ) {
 
@@ -19533,6 +19737,32 @@ if (!vao || (vao.morph_state[m] != influenceIndex)) {
 
 	// Sorting
 
+// AT: group by factors other than .z
+function AT_painterSortStable(a,b) {
+  if ( a.renderOrder !== b.renderOrder ) {
+    return b.z - a.z;
+  }
+
+  var ma = a.opaque || a.transparent
+  var mb = b.opaque || b.transparent
+  if ( ma.program && mb.program && ma.program !== mb.program ) {
+    return ma.program.id - mb.program.id;
+  }
+  else if (a.buffer.id != b.buffer.id) { return a.buffer.id - b.buffer.id; }
+  else if ( ma.id !== mb.id ) { return ma.id - mb.id; }
+  else
+		if ( a.z !== b.z ) {
+
+			return b.z - a.z;
+
+		} else {
+
+			return a.id - b.id;
+
+		}
+
+}
+
 	function painterSortStable ( a, b ) {
 
 		if ( a.z !== b.z ) {
@@ -19676,8 +19906,38 @@ if (object._model_index != null) {
 
 		}
 
+// AT: _opaque, _transparent
+var _opaque = renderList
+var _transparent = renderList
+
 		if ( this.sortObjects ) {
 
+// AT: _opaque, _transparent
+//DEBUG_show(renderList.length)
+if (!scene.overrideMaterial) {
+  _opaque = []
+  _transparent = []
+  renderList.forEach(function (o) {
+    if (o.render) ((o.opaque)?_opaque:_transparent).push(o);
+  });
+  _opaque.sort( AT_painterSortStable );
+  _transparent.sort( AT_painterSortStable );
+/*
+let p = {}
+let p_count = 0
+_opaque.concat(_transparent).forEach((o)=>{
+  let _p = o.buffer//(o.opaque||o.transparent).program
+  if (_p) {
+    if (!p[_p.id]) {
+      p_count++;
+      p[_p.id] = true;
+    }
+  }
+});
+*/
+//  if (_draw) { DEBUG_show(_opaque.length+'+'+_transparent.length+','+_redraw_max+'/'+_redraw+'/'+_draw); _redraw=_draw=_redraw_max=_redraw_=0; }
+}
+else
 			renderList.sort( painterSortStable );
 
 		}
@@ -19720,8 +19980,9 @@ if (object._model_index != null) {
 			// opaque pass (front-to-back order)
 
 			this.setBlending( THREE.NoBlending );
-
-			renderObjects( scene.__webglObjects, true, "opaque", camera, lights, fog, false, material );
+// AT: _opaque
+renderObjects( _opaque, true, "opaque", camera, lights, fog, false, material );
+//			renderObjects( scene.__webglObjects, true, "opaque", camera, lights, fog, false, material );
 			renderObjectsImmediate( scene.__webglObjectsImmediate, "opaque", camera, lights, fog, false, material );
 
 			// transparent pass (back-to-front order)
@@ -19729,7 +19990,9 @@ if (object._model_index != null) {
 // AT: depth buffer Test
 var useBlending = !(self.MMD_SA && MMD_SA._depth_render_mode_)
 
-			renderObjects( scene.__webglObjects, false, "transparent", camera, lights, fog, useBlending, material );
+// AT: _transparent
+renderObjects( _transparent, false, "transparent", camera, lights, fog, useBlending, material );
+//			renderObjects( scene.__webglObjects, false, "transparent", camera, lights, fog, useBlending, material );
 			renderObjectsImmediate( scene.__webglObjectsImmediate, "transparent", camera, lights, fog, useBlending, material );
 
 		}
@@ -19812,6 +20075,9 @@ if (renderTarget && renderTarget._use_multisample) {
 
 	};
 
+// AT: instanced drawing
+var _renderList_, _i_, _delta_, _end_, _overrideMaterial_;
+
 	function renderObjects ( renderList, reverse, materialType, camera, lights, fog, useBlending, overrideMaterial ) {
 
 		var webglObject, object, buffer, material, start, end, delta;
@@ -19829,7 +20095,16 @@ if (renderTarget && renderTarget._use_multisample) {
 			delta = 1;
 		}
 
+// AT: instanced drawing
+_renderList_ = renderList;
+_end_ = end;
+_delta_ = delta;
+_overrideMaterial_ = overrideMaterial;
+
 		for ( var i = start; i !== end; i += delta ) {
+
+// AT: instanced drawing
+_i_ = i;
 
 			webglObject = renderList[ i ];
 
@@ -20677,6 +20952,9 @@ shadowMapAlpha: object.receiveShadowAlpha,
 			doubleSided: material.side === THREE.DoubleSide,
 			flipSided: material.side === THREE.BackSide
 
+// AT: instanced drawing
+,instanced_drawing: _use_InstancedDrawing && object.instanced_drawing
+
 		};
 
 		material.program = buildProgram( shaderID, material.fragmentShader, material.vertexShader, material.uniforms, material.attributes, material.defines, parameters );
@@ -21258,7 +21536,8 @@ uniforms.shadowPara.value[ j ] = _light._shadowPara;
 	// Uniforms (load to GPU)
 
 	function loadUniformsMatrices ( uniforms, object ) {
-
+// AT: instanced drawing
+if (uniforms.modelViewMatrix)
 		_gl.uniformMatrix4fv( uniforms.modelViewMatrix, false, object._modelViewMatrix.elements );
 
 		if ( uniforms.normalMatrix ) {
@@ -22026,6 +22305,23 @@ if (/^\D/.test(end)) {
 		var p, pl, d, program, code;
 		var chunks = [];
 
+// AT: instanced drawing
+var ID_attributes = [
+  'instance_index', 'modelViewMatrix'
+];
+var ID_uniforms = [
+  '_modelMatrix', '_normalMatrix'
+];
+if (parameters.instanced_drawing) {
+  shaderID = null
+  let ID_vars = []
+  ID_uniforms.forEach(function (id) {
+    let type = (id == '_normalMatrix') ? 'mat3' : 'mat4'
+    ID_vars.push(type + ' ' + id.substring(1) + '=' + id + '[int(instance_index)];')
+  });
+  vertexShader = vertexShader.replace(/void main\(\)\s?\{/, 'void main() {\n' + ID_vars.join('\n') + '\n');
+}
+
 		// Generate code
 
 		if ( shaderID ) {
@@ -22156,11 +22452,20 @@ parameters.mirrorTexture ? "#define USE_MIRROR_TEXTURE" : "",
 
 			parameters.sizeAttenuation ? "#define USE_SIZEATTENUATION" : "",
 
+// AT: instanced drawing
+parameters.instanced_drawing ? "#define INSTANCED_DRAWING " + parameters.instanced_drawing : "",
+"#ifdef INSTANCED_DRAWING",
+"attribute float instance_index;",
+((ID_attributes.indexOf("modelMatrix")!=-1) ? "attribute mat4 modelMatrix;" : "uniform mat4 _modelMatrix[INSTANCED_DRAWING];"),
+((ID_attributes.indexOf("modelViewMatrix")!=-1) ? "attribute mat4 modelViewMatrix;" : "uniform mat4 _modelViewMatrix[INSTANCED_DRAWING];"),
+((ID_attributes.indexOf("normalMatrix")!=-1) ? "attribute mat3 normalMatrix;" : "uniform mat3 _normalMatrix[INSTANCED_DRAWING];"),
+"#else",
 			"uniform mat4 modelMatrix;",
 			"uniform mat4 modelViewMatrix;",
+			"uniform mat3 normalMatrix;",
+"#endif",
 			"uniform mat4 projectionMatrix;",
 			"uniform mat4 viewMatrix;",
-			"uniform mat3 normalMatrix;",
 			"uniform vec3 cameraPosition;",
 
 			"attribute vec3 position;",
@@ -22316,6 +22621,16 @@ console.error(_gl.getProgramInfoLog(program));
 
 		// cache uniform locations
 
+// AT: instanced drawing
+if (parameters.instanced_drawing) {
+  identifiers = [
+
+			'viewMatrix', 'projectionMatrix', 'cameraPosition',
+			'morphTargetInfluences'
+
+  ].concat(ID_uniforms);
+}
+else
 		identifiers = [
 
 			'viewMatrix', 'modelViewMatrix', 'projectionMatrix', 'normalMatrix', 'modelMatrix', 'cameraPosition',
@@ -22349,6 +22664,9 @@ console.error(_gl.getProgramInfoLog(program));
 			"skinIndex", "skinWeight", "lineDistance"
 
 		];
+
+// AT: instanced drawing
+if (parameters.instanced_drawing) identifiers = identifiers.concat(ID_attributes);
 
 		for ( i = 0; i < parameters.maxMorphTargets; i ++ ) {
 
@@ -23216,8 +23534,10 @@ else
 
 // AT: WebGL2
 // AT: VAO
+// AT: instanced drawing
 if (self.MMD_SA && MMD_SA.use_webgl2) {
-  _use_VAO = true
+  _use_VAO = true; console.log("Use VAO");
+//  _use_InstancedDrawing = true; console.log("Use instanced drawing");
   _glExtensionTextureFloat = true
   _glExtensionStandardDerivatives = true
 }
@@ -37528,7 +37848,14 @@ return function () {
 
 		$.each( tmp_list.MESH/*.concat( tmp_list.PTS )*/, function() {
 			//setObj( this, new THREE[ this.tagName === "MESH" ? "Mesh": "ParticleSystem" ]( new THREE.Geometry, new THREE.Material ) );
-			setObj( this, new THREE.Mesh( new THREE.Geometry, new THREE.Material ) );
+// AT: instanced drawing
+let mesh = new THREE.Mesh( new THREE.Geometry, new THREE.Material )
+let instanced_drawing = this.getAttribute( "instanced_drawing" )
+if (instanced_drawing) {
+//  mesh.instanced_drawing = parseInt(instanced_drawing)
+}
+//mesh.instanced_drawing = 99
+			setObj( this, mesh );
 
 		} );
 

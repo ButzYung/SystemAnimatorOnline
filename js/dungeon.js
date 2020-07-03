@@ -1,4 +1,4 @@
-// Dungeon (2020-05-22)
+// (2020-07-03)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -937,8 +937,9 @@ p_obj.displacementMap = canvas_d.toDataURL()
     var geo = p_obj.geo_by_lvl[lvl]
     var geo_id = geo[0]+"x"+geo[1]
     geo_dim[geo_id] = true
+    var instanced_drawing = (p_obj.instanced_drawing_by_lvl && p_obj.instanced_drawing_by_lvl[lvl]) || 0;
     mesh_scene +=
-  '<mesh id="DungeonPlane'+i+'MESH_LV'+lvl+'" geo="#DungeonGEO_'+geo_id+'" mtl="#DungeonPlane'+i+'MTL' + ((p_obj.displacementMap && (geo_id != "1x1"))?'_D':'') + '" style="scale:0;' + ((p_obj.opacity != null)?'opacity:'+p_obj.opacity+';':'') + '" />\n';
+  '<mesh id="DungeonPlane'+i+'MESH_LV'+lvl+'" geo="#DungeonGEO_'+geo_id+'" mtl="#DungeonPlane'+i+'MTL' + ((p_obj.displacementMap && (geo_id != "1x1"))?'_D':'') + '" ' + ((instanced_drawing)?'instanced_drawing="'+instanced_drawing+'" ':'') + 'style="scale:0;' + ((p_obj.opacity != null)?'opacity:'+p_obj.opacity+';':'') + '" />\n';
     MMD_SA_options.mesh_obj.push( { id:'DungeonPlane'+i+'MESH_LV'+lvl } );
   }
 }
