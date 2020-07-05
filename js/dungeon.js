@@ -10279,8 +10279,8 @@ if (s.auto_damage && !s.dialogue_mode) {
  ,branch_list: [
     { key:1, branch_index:1 }
    ,{ key:2, branch_index:6 }
-   ,{ key:3, branch_index:8 }
-   ,{ key:4, branch_index:9 }
+   ,{ key:3, branch_index:10 }
+   ,{ key:4, branch_index:11 }
    ,{ key:5 }
   ]
           }
@@ -10363,11 +10363,13 @@ System._browser.update_tray()
      ,[
         {
           message: {
-  content: "1. Shadow\n2. Cancel"
+  content: "1. Shadow\n2. Model Outline\n3. 3D Resolution\n4. Cancel"
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:6+1 }
-   ,{ key:2 }
+   ,{ key:2, branch_index:6+2 }
+   ,{ key:3, branch_index:6+3 }
+   ,{ key:4 }
   ]
           }
         }
@@ -10386,10 +10388,42 @@ DEBUG_show("Shadow:" + ((MMD_SA_options.use_shadowMap && "ON")||"OFF"), 3)
 // 8
      ,[
         {
-          goto_event: { id:"_WEBXR_OPTIONS_", branch_index:0 }
+  func: (function () {
+    var edgeScale_default = 0
+    return function () {
+var edgeScale = jThree.MMD.edgeScale
+if (edgeScale) {
+  edgeScale_default = edgeScale
+  edgeScale = 0
+}
+else
+  edgeScale = edgeScale_default
+jThree.MMD.edgeScale = edgeScale
+DEBUG_show("Model Outline:" + ((edgeScale && "ON")||"OFF"), 3)
+    };
+  })()
+ ,ended: true
         }
       ]
 // 9
+     ,[
+        {
+  func: function () {
+var is_default_res = (MMD_SA._renderer.devicePixelRatio == window.devicePixelRatio)
+MMD_SA._renderer.devicePixelRatio = (is_default_res) ? ((window.devicePixelRatio > 1) ? 1 : 0.5) : window.devicePixelRatio
+MMD_SA._renderer.__resize(EV_width, EV_height)
+DEBUG_show("3D Resolution:" + (((is_default_res) && (Math.round(MMD_SA._renderer.devicePixelRatio/window.devicePixelRatio*100)+"%")) || "100%"), 3)
+  }
+ ,ended: true
+        }
+      ]
+// 10
+     ,[
+        {
+          goto_event: { id:"_WEBXR_OPTIONS_", branch_index:0 }
+        }
+      ]
+// 11
      ,[
         {
   func: function () {
