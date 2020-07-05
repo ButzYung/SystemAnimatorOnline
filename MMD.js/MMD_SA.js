@@ -4645,8 +4645,8 @@ try {
   await this.gl.makeXRCompatible();
   let DPR = MMD_SA._renderer.devicePixelRatio / window.devicePixelRatio
   let framebufferScaleFactor
-  if (DPR < 1) {
-    framebufferScaleFactor = 1/DPR
+  if (DPR != 1) {
+    framebufferScaleFactor = DPR
     MMD_SA._renderer.devicePixelRatio = window.devicePixelRatio
   }
   session.updateRenderState({ baseLayer: new XRWebGLLayer(session, this.gl, ((framebufferScaleFactor||AR_options.framebufferScaleFactor||System._browser.url_search_params.xr_fb_scale) && {framebufferScaleFactor:Math.max(0,Math.min(1,framebufferScaleFactor||AR_options.framebufferScaleFactor||parseFloat(System._browser.url_search_params.xr_fb_scale)||1))}) || null) });
