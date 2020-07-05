@@ -4645,7 +4645,7 @@ try {
   await this.gl.makeXRCompatible();
   let DPR = MMD_SA._renderer.devicePixelRatio / window.devicePixelRatio
   let framebufferScaleFactor
-  if (DPR > 1) {
+  if (DPR < 1) {
     framebufferScaleFactor = 1/DPR
     MMD_SA._renderer.devicePixelRatio = window.devicePixelRatio
   }
