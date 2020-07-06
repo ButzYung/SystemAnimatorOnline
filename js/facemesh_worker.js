@@ -199,9 +199,9 @@ _t = _t_now
       dx = (eye_center[0] - yx[1]) / eye_radius
       dy = (eye_center[1] - yx[0]) / eye_radius
       dis = Math.sqrt(dx*dx + dy*dy)
-      z_rot = Math.atan2(dy, dx) - z_rot
-      let eye_x = eyes_xy_last[i][0] = Math.max(Math.min(Math.cos(z_rot)*dis*1, 1), -1) * confidence + eyes_xy_last[i][0] * (1-confidence)
-      let eye_y = eyes_xy_last[i][1] = Math.max(Math.min(Math.sin(z_rot)*dis*2, 1), -1) * confidence + eyes_xy_last[i][1] * (1-confidence)
+      let eye_z_rot = Math.atan2(dy, dx) - z_rot
+      let eye_x = eyes_xy_last[i][0] = Math.max(Math.min(Math.cos(eye_z_rot)*dis, 1), -1) * confidence + eyes_xy_last[i][0] * (1-confidence)
+      let eye_y = eyes_xy_last[i][1] = Math.max(Math.min(Math.sin(eye_z_rot)*dis*Math.max(2-Math.abs(z_rot)/(Math.PI/4),1), 1), -1) * confidence + eyes_xy_last[i][1] * (1-confidence)
 
       eyes[i] = [yx[1],yx[0], eye_x,eye_y, [LR]]
 
