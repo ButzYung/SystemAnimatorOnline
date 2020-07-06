@@ -201,7 +201,7 @@ _t = _t_now
       dis = Math.sqrt(dx*dx + dy*dy)
       let eye_z_rot = Math.atan2(dy, dx) - z_rot
       let eye_x = eyes_xy_last[i][0] = Math.max(Math.min(Math.cos(eye_z_rot)*dis, 1), -1) * confidence + eyes_xy_last[i][0] * (1-confidence)
-      let eye_y = eyes_xy_last[i][1] = Math.max(Math.min(Math.sin(eye_z_rot)*dis*Math.max(2-Math.abs(z_rot)/(Math.PI/4),1), 1), -1) * confidence + eyes_xy_last[i][1] * (1-confidence)
+      let eye_y = eyes_xy_last[i][1] = Math.max(Math.min(Math.sin(eye_z_rot)*dis*Math.max(1.5-Math.abs(z_rot)/(Math.PI/4)*0.5,1), 1), -1) * confidence + eyes_xy_last[i][1] * (1-confidence)
 
       eyes[i] = [yx[1],yx[0], eye_x,eye_y, [LR]]
 
