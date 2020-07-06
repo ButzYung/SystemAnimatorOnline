@@ -200,8 +200,8 @@ _t = _t_now
       dy = (eye_center[1] - yx[0]) / eye_radius
       dis = Math.sqrt(dx*dx + dy*dy)
       z_rot = Math.atan2(dy, dx) - z_rot
-      let eye_x = eyes_xy_last[i][0] = Math.max(Math.min(Math.cos(z_rot)*dis, 1), -1) * confidence + eyes_xy_last[i][0] * (1-confidence)
-      let eye_y = eyes_xy_last[i][1] = Math.max(Math.min(Math.sin(z_rot)*dis, 1), -1) * confidence + eyes_xy_last[i][1] * (1-confidence)
+      let eye_x = eyes_xy_last[i][0] = Math.max(Math.min(Math.cos(z_rot)*dis*1, 1), -1) * confidence + eyes_xy_last[i][0] * (1-confidence)
+      let eye_y = eyes_xy_last[i][1] = Math.max(Math.min(Math.sin(z_rot)*dis*2, 1), -1) * confidence + eyes_xy_last[i][1] * (1-confidence)
 
       eyes[i] = [yx[1],yx[0], eye_x,eye_y, [LR]]
 
@@ -268,9 +268,9 @@ _t = _t_list.reduce((a,c)=>a+c)
 
 let eye_x = null
 let eye_y = null
-//_eyes = (eyes.length==1) ? [eyes[0],eyes[0]] : eyes
+_eyes = (eyes.length==1) ? [eyes[0],eyes[0]] : eyes
 //eye_x = (Math.sign(_eyes[0][2]) + Math.sign(_eyes[1][2]) == 0) ? null : ((Math.abs(_eyes[0][2]) > Math.abs(_eyes[1][2])) ? Math.abs(_eyes[0][2]) : Math.abs(_eyes[1][2]));
-//eye_y = (Math.sign(_eyes[0][3]) + Math.sign(_eyes[1][3]) == 0) ? null : ((Math.abs(_eyes[0][3]) > Math.abs(_eyes[1][3])) ? Math.abs(_eyes[0][3]) : Math.abs(_eyes[1][3]));
+eye_y = (Math.sign(_eyes[0][3]) + Math.sign(_eyes[1][3]) == 0) ? null : ((Math.abs(_eyes[0][3]) > Math.abs(_eyes[1][3])) ? Math.abs(_eyes[0][3]) : Math.abs(_eyes[1][3]));
 if (eye_x == null) {
   eyes.forEach((e)=>{eye_x+=e[2]})
   eye_x /= eyes.length
