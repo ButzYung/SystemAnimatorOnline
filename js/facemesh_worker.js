@@ -268,9 +268,9 @@ _t = _t_list.reduce((a,c)=>a+c)
 
 let eye_x = null
 let eye_y = null
-_eyes = (eyes.length==1) ? [eyes[0],eyes[0]] : eyes
+//_eyes = (eyes.length==1) ? [eyes[0],eyes[0]] : eyes
 //eye_x = (Math.sign(_eyes[0][2]) + Math.sign(_eyes[1][2]) == 0) ? null : ((Math.abs(_eyes[0][2]) > Math.abs(_eyes[1][2])) ? Math.abs(_eyes[0][2]) : Math.abs(_eyes[1][2]));
-eye_y = (Math.sign(_eyes[0][3]) + Math.sign(_eyes[1][3]) == 0) ? null : ((Math.abs(_eyes[0][3]) > Math.abs(_eyes[1][3])) ? Math.abs(_eyes[0][3]) : Math.abs(_eyes[1][3]));
+//eye_y = (Math.sign(_eyes[0][3]) + Math.sign(_eyes[1][3]) == 0) ? null : ((Math.abs(_eyes[0][3]) > Math.abs(_eyes[1][3])) ? Math.abs(_eyes[0][3]) : Math.abs(_eyes[1][3]));
 if (eye_x == null) {
   eyes.forEach((e)=>{eye_x+=e[2]})
   eye_x /= eyes.length
