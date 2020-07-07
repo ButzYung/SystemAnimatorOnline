@@ -3366,6 +3366,8 @@ else {
 
     var eye_data = { L:{}, R:{} }
 
+    var blink_detection = true
+
     function reset_calibration() {
 calibration_timestamp = 0
 calibrating = true
@@ -3454,7 +3456,7 @@ if (data.faces.length) {
     eye_x_rot = Math.max(Math.min((eye[3]*2+x_rot/(Math.PI/2))*(1-Math.abs(x_rot)/Math.PI),1),-1)
     eye_y_rot = Math.max(Math.min((eye[2]*2-y_rot/(Math.PI/2))*(1-Math.abs(y_rot)/Math.PI),1),-1)
   }
-
+/*
 if (camera.visible) {
   let c = camera.video_canvas_face_detection
   c.width  = camera.video_canvas.width
@@ -3476,7 +3478,7 @@ if (camera.visible) {
 else {
   camera.video_canvas_face_detection.style.visibility = "hidden"
 }
-
+*/
   _facemesh.frames.t_delta = data._t
 
   _facemesh.frames.add("skin", "頭", head)
@@ -3621,17 +3623,19 @@ else {
     }
   });
 
-  let LR_exists = (THREE.MMD.getModels()[0].pmx.morphs_index_by_name["まばたきL"] != null)
-  if (0) {//LR_exists && (Math.abs(blink.L[0] - blink.R[0]) > 0.75)) {
-    let weight = (blink.L[0]+blink.R[0])/4
-    _facemesh.frames.add("morph", "まばたきL", { weight:blink.L[0]/2+weight })
-    _facemesh.frames.add("morph", "まばたきR", { weight:blink.R[0]/2+weight })
-  }
-  else {
-    let weight = (blink.L[0]+blink.R[0])/2
-    _facemesh.frames.add("morph", "まばたき", { weight:weight })
-//    _facemesh.frames.add("morph", "まばたきL", { weight:weight })
-//    _facemesh.frames.add("morph", "まばたきR", { weight:weight })
+  if (blink_detection) {
+    let LR_exists = (THREE.MMD.getModels()[0].pmx.morphs_index_by_name["まばたきL"] != null)
+    if (0) {//LR_exists && (Math.abs(blink.L[0] - blink.R[0]) > 0.75)) {
+      let weight = (blink.L[0]+blink.R[0])/4
+      _facemesh.frames.add("morph", "まばたきL", { weight:blink.L[0]/2+weight })
+      _facemesh.frames.add("morph", "まばたきR", { weight:blink.R[0]/2+weight })
+    }
+    else {
+      let weight = (blink.L[0]+blink.R[0])/2
+      _facemesh.frames.add("morph", "まばたき", { weight:weight })
+//      _facemesh.frames.add("morph", "まばたきL", { weight:weight })
+//      _facemesh.frames.add("morph", "まばたきR", { weight:weight })
+    }
   }
 
   let eye_rot_confidence = 1.25 + Math.pow((blink.L[0]+blink.R[0])/2,2)*1.75
@@ -3796,6 +3800,24 @@ function drawPath(ctx, points, closePath) {
       initialized: false
      ,worker_initialized: false
 
+     ,get blink_detection() {
+return blink_detection;
+      }
+     ,set blink_detection(v) {
+blink_detection = v
+if (enabled) {
+  if (blink_detection) {
+    MMD_SA_options.auto_blink = false
+  }
+  else {
+    MMD_SA_options.auto_blink = auto_blink_default
+    this.frames.remove("morph", "まばたき")
+    this.frames.remove("morph", "まばたきL")
+    this.frames.remove("morph", "まばたきR")
+  }
+}
+      }
+
      ,get enabled() {
 return enabled;
       }
@@ -3815,7 +3837,8 @@ if (enabled) {
   reset_calibration()
 
   auto_blink_default = MMD_SA_options.auto_blink
-  MMD_SA_options.auto_blink = false
+  if (blink_detection)
+    MMD_SA_options.auto_blink = false
 
   this.frames.reset()
 
@@ -3851,6 +3874,10 @@ if (target) {
 else {
   this[type][name] = [obj, obj]
 }
+  }
+
+ ,remove: function (type, name) {
+delete this[type][name]
   }
 
  ,reset: function () {

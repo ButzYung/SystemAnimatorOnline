@@ -10274,7 +10274,7 @@ if (s.auto_damage && !s.dialogue_mode) {
       [
         {
           message: {
-  content: "1. Graphics Presets (PC)\n2. Graphics Effects (Scene)\n3. WebXR Options\n4. Debug Log\n5. Cancel"
+  content: "1. Graphics Presets (PC)\n2. Graphics Effects (Scene)\n3. WebXR Options\n4. Facemesh\n5. Cancel"
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:1 }
@@ -10426,13 +10426,27 @@ DEBUG_show("3D Resolution:" + (((is_default_res) && (Math.round(MMD_SA._renderer
 // 11
      ,[
         {
+          message: {
+  content: "1. Blink Detection\n2. Cancel"
+ ,bubble_index: 3
+ ,branch_list: [
+    { key:1, branch_index:12 }
+   ,{ key:2 }
+  ]
+          }
+        }
+      ]
+// 12
+     ,[
+        {
   func: function () {
-DEBUG_show(System._browser.console.output_text, 60)
+var bd = System._browser.camera.facemesh.blink_detection
+System._browser.camera.facemesh.blink_detection = !bd
+DEBUG_show('Facemesh - Blink Detection:' + ((bd)?'OFF':'ON'), 3)
   }
  ,ended: true
         }
       ]
-
     ]
 
    ,"_WEBXR_OPTIONS_": [
@@ -10689,11 +10703,12 @@ MMD_SA.WebXR.user_camera.start()
       [
         {
           message: {
-  content: "1. Character form\n2. Cancel"
+  content: "1. Character form\n2. Debug Log\n3. Cancel"
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:1 }
-   ,{ key:2 }
+   ,{ key:2, branch_index:2 }
+   ,{ key:3 }
   ]
           }
         }
@@ -10743,6 +10758,15 @@ else {
 }
     };
   })()
+ ,ended: true
+        }
+      ]
+//2
+     ,[
+        {
+  func: function () {
+DEBUG_show(System._browser.console.output_text, 60)
+  }
  ,ended: true
         }
       ]
