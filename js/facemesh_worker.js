@@ -96,7 +96,7 @@ async function init() {
   postMessage('(Facemesh initialized)')
 }
 
-async function process_video_buffer(rgba, w,h, draw_canvas) {
+async function process_video_buffer(rgba, w,h, options) {
 //  if (!face_cover) return
 
 let _t_list = []
@@ -205,11 +205,12 @@ _t = _t_now
 
       eyes[i] = [yx[1],yx[0], eye_x,eye_y, [LR]]
 
+      let eye_pixel_count = [0,0,0,0]
+      if (options.blink_detection) {
 let r_min = ~~eye_bb[0][1]
 let c_min = ~~eye_bb[0][0]
 let r_max = ~~eye_bb[1][1]
 let c_max = ~~eye_bb[1][0]
-let eye_pixel_count = [0,0,0,0]
 let R,G,B,S,S_threshold
 let S_total = 0
 for (let rr = r_min; rr <= r_max; rr++) {
@@ -237,7 +238,6 @@ else {
 
   }
 }
-eyes[i][5] = eye_pixel_count.map((count)=>count/(eye_w*eye_h));
 /*
 // forehead:9,8
 // cheek:105,125
@@ -253,6 +253,9 @@ S_list.sort((a,b)=>a-b)
 let S_skin_average = (S_list[1]+S_list[2])/2
 eyes[i][7] = ~~(S_total/(eye_w*eye_h)*100) + '/' + ~~(S_skin_average*100)
 */
+      }
+      eyes[i][5] = eye_pixel_count.map((count)=>count/(eye_w*eye_h));
+
     }
   }
 
@@ -287,7 +290,7 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
 
 //return
 
-  if (canvas && TRIANGULATION && draw_canvas && faces.length) {
+  if (canvas && TRIANGULATION && options.draw_canvas && faces.length) {
     if (RAF_timerID)
       cancelAnimationFrame(RAF_timerID)
     RAF_timerID = requestAnimationFrame(function () {
@@ -362,7 +365,7 @@ onmessage = function (e) {
   }
 
   if (data.rgba) {
-    process_video_buffer(data.rgba, data.w,data.h, data.draw_canvas);
+    process_video_buffer(data.rgba, data.w,data.h, data.options);
 
     data.rgba = undefined
     data = undefined

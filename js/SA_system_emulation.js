@@ -3366,7 +3366,7 @@ else {
 
     var eye_data = { L:{}, R:{} }
 
-    var blink_detection = true
+    var blink_detection = false
 
     function reset_calibration() {
 calibration_timestamp = 0
@@ -3493,7 +3493,7 @@ else {
     calibration_timestamp = Date.now()
   let calibration_percent = 0
   if (calibrating) {
-    calibration_percent = ~~(Math.min((Date.now() - calibration_timestamp)/5000, lips_width_data.length/30, eye_data.L[0].eye_open_data.length/30, 1) * 100)
+    calibration_percent = ~~(Math.min((Date.now() - calibration_timestamp)/5000, lips_width_data.length/30, (blink_detection)?eye_data.L[0].eye_open_data.length/30:1, 1) * 100)
     calibrating = (calibration_percent < 100)
   }
 
@@ -3522,19 +3522,21 @@ else {
   let mouth_wide = 0
   let eyebrow_up = 0
   if (_lips_width_average) {
+    if (lips_width > _lips_width_average*1.05) {
+      mouth_wide = Math.sqrt(Math.min((lips_width-_lips_width_average*1.05) / (_lips_width_average*0.25), 1))
+    }
     if (lips_inner_height > 2) {
       mouth_open = Math.pow(Math.min((lips_inner_height-2) / (_lips_width_average*1/3), 1), 1/3)
       if (mouth_open > 0.25) {
-        eyebrow_up = Math.pow(mouth_open/0.75, 3) * 0.3
+        eyebrow_up = Math.pow((mouth_open-0.25)/0.75, 2) * 0.3
+        if (mouth_wide > 0.25)
+          eyebrow_up -= (mouth_wide-0.25)/0.75 * 0.3
       }
-    }
-    if (lips_width > _lips_width_average*1.05) {
-      mouth_wide = Math.sqrt(Math.min((lips_width-_lips_width_average*1.05) / (_lips_width_average*0.25), 1))
     }
   }
   _facemesh.frames.add("morph", "あ", { weight:mouth_open })
   _facemesh.frames.add("morph", "にやり", { weight:mouth_wide })
-  _facemesh.frames.add("morph", "上", { weight:eyebrow_up })
+  _facemesh.frames.add("morph", "上", { weight:Math.max(eyebrow_up,0) })
 
   let rot_inv = MMD_SA.TEMP_q.setFromEuler(MMD_SA._v3a.set(x_rot,y_rot,z_rot),"YZX").conjugate()
   let L = [];
@@ -3555,6 +3557,8 @@ else {
 
   let blink = {L:[0],R:[0]}
   let _eye_data_order = {L:[],R:[]}
+
+if (blink_detection) {
   face.eyes.forEach(function (e, idx) {
     let dir = e[4][0]
     for (let i = 0; i < 4; i++) {
@@ -3623,19 +3627,27 @@ else {
     }
   });
 
-  if (blink_detection) {
-    let LR_exists = (THREE.MMD.getModels()[0].pmx.morphs_index_by_name["まばたきL"] != null)
-    if (0) {//LR_exists && (Math.abs(blink.L[0] - blink.R[0]) > 0.75)) {
-      let weight = (blink.L[0]+blink.R[0])/4
-      _facemesh.frames.add("morph", "まばたきL", { weight:blink.L[0]/2+weight })
-      _facemesh.frames.add("morph", "まばたきR", { weight:blink.R[0]/2+weight })
-    }
-    else {
-      let weight = (blink.L[0]+blink.R[0])/2
-      _facemesh.frames.add("morph", "まばたき", { weight:weight })
-//      _facemesh.frames.add("morph", "まばたきL", { weight:weight })
-//      _facemesh.frames.add("morph", "まばたきR", { weight:weight })
-    }
+  let LR_exists = (THREE.MMD.getModels()[0].pmx.morphs_index_by_name["まばたきL"] != null)
+  if (0) {//LR_exists && (Math.abs(blink.L[0] - blink.R[0]) > 0.75)) {
+    let weight = (blink.L[0]+blink.R[0])/4
+    _facemesh.frames.add("morph", "まばたきL", { weight:blink.L[0]/2+weight })
+   _facemesh.frames.add("morph", "まばたきR", { weight:blink.R[0]/2+weight })
+  }
+  else {
+    let weight = (blink.L[0]+blink.R[0])/2
+    _facemesh.frames.add("morph", "まばたき", { weight:weight })
+//    _facemesh.frames.add("morph", "まばたきL", { weight:weight })
+//    _facemesh.frames.add("morph", "まばたきR", { weight:weight })
+  }
+}
+else {
+  let weight = Math.max(Math.min(0.2 - eye_x_rot*0.2 - Math.max(eyebrow_up*0.5,0), 0.4), 0)
+  _facemesh.frames.add("morph", "まばたき", { weight:weight })
+}
+
+  if (eyebrow_up < 0) {
+    _facemesh.frames.add("morph", "笑い", { weight:-eyebrow_up })
+    _facemesh.frames.add("morph", "にこり", { weight:-eyebrow_up })
   }
 
   let eye_rot_confidence = 1.25 + Math.pow((blink.L[0]+blink.R[0])/2,2)*1.75
@@ -3645,7 +3657,7 @@ else {
   _facemesh.frames.add("skin", "両目", two_eyes)
 
 
-info = info || (face.eyes.length && [((calibrating)?'Calibrating('+calibration_percent+'%):Make a calm face!':'(face data calibrated)'),/*eye_x_rot*100, eye_y_rot*100,*/(_eye_data_order.L.length&&_eye_data_order.R.length)?_eye_data_order.L.join('+')+':'+~~(eye_data.L[_eye_data_order.L[0]]._eye_open_average*100)+'/'+~~(eye_data.L[_eye_data_order.L[0]].eye_open_lower*100)+'/'+_eye_data_order.R.join('+')+':'+~~(eye_data.R[_eye_data_order.R[0]]._eye_open_average*100)+'/'+~~(eye_data.R[_eye_data_order.R[0]].eye_open_lower*100):'(no blink data)'].join("\n"));
+info = info || (face.eyes.length && [((calibrating)?'Calibrating('+calibration_percent+'%):Make a calm face!':'(face data calibrated)'),/*eye_x_rot*100, eye_y_rot*100,*/(!blink_detection)?'auto blink':(_eye_data_order.L.length&&_eye_data_order.R.length)?_eye_data_order.L.join('+')+':'+~~(eye_data.L[_eye_data_order.L[0]]._eye_open_average*100)+'/'+~~(eye_data.L[_eye_data_order.L[0]].eye_open_lower*100)+'/'+_eye_data_order.R.join('+')+':'+~~(eye_data.R[_eye_data_order.R[0]]._eye_open_average*100)+'/'+~~(eye_data.R[_eye_data_order.R[0]].eye_open_lower*100):'(no blink data)'].join("\n"));
 //((THREE.MMD.getModels()[0].pmx.morphs_index_by_name["まばたきL"]||0)+'/'+(THREE.MMD.getModels()[0].pmx.morphs_index_by_name["まばたきR"]||0))
 //info = [(m_up)*180/Math.PI,(m_down)*180/Math.PI,mouth_up].join('\n')
 //info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, lips_inner_height,lips_width_average+'/'+lips_width].join('\n')
@@ -3808,12 +3820,15 @@ blink_detection = v
 if (enabled) {
   if (blink_detection) {
     MMD_SA_options.auto_blink = false
+    reset_calibration()
   }
   else {
     MMD_SA_options.auto_blink = auto_blink_default
+/*
     this.frames.remove("morph", "まばたき")
     this.frames.remove("morph", "まばたきL")
     this.frames.remove("morph", "まばたきR")
+*/
   }
 }
       }
@@ -3921,7 +3936,7 @@ if ((cs.pixelWidth != ~~video_canvas.style.pixelWidth/4) || (cs.pixelHeight != ~
   cs.posLeft = video_canvas.style.pixelWidth - cs.pixelWidth
 }
 
-let data = { rgba:rgba, w:w, h:h, draw_canvas:true };//, threshold:1 };
+let data = { rgba:rgba, w:w, h:h, options:{draw_canvas:true, blink_detection:blink_detection} };//, threshold:1 };
 if (!camera.video_canvas_facemesh._offscreen && self.OffscreenCanvas) {
   data.canvas = camera.video_canvas_facemesh.transferControlToOffscreen()
   camera.video_canvas_facemesh._offscreen = true
