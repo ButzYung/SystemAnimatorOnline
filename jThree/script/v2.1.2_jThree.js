@@ -1,4 +1,4 @@
-// (2020-07-03)
+// (2020-07-12)
 
 /*!
  * jThree JavaScript Library v2.1.2
@@ -19921,7 +19921,7 @@ if (!scene.overrideMaterial) {
     if (o.render) ((o.opaque)?_opaque:_transparent).push(o);
   });
   _opaque.sort( AT_painterSortStable );
-  _transparent.sort( AT_painterSortStable );
+  _transparent.sort( painterSortStable );
 /*
 let p = {}
 let p_count = 0
