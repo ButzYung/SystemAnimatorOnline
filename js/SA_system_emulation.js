@@ -3641,13 +3641,17 @@ if (blink_detection) {
   }
 }
 else {
-  let weight = Math.max(Math.min(0.2 - eye_x_rot*0.2 - Math.max(eyebrow_up*0.5,0), 0.4), 0)
+  let weight = Math.max(Math.min(0.1 - eye_x_rot*0.2 - Math.max(eyebrow_up*0.5,0), 0.4), 0)
   _facemesh.frames.add("morph", "まばたき", { weight:weight })
 }
 
   if (eyebrow_up < 0) {
     _facemesh.frames.add("morph", "笑い", { weight:-eyebrow_up })
     _facemesh.frames.add("morph", "にこり", { weight:-eyebrow_up })
+  }
+  else {
+    _facemesh.frames.add("morph", "笑い", { weight:0 })
+    _facemesh.frames.add("morph", "にこり", { weight:0 })
   }
 
   let eye_rot_confidence = 1.25 + Math.pow((blink.L[0]+blink.R[0])/2,2)*1.75
@@ -3701,9 +3705,9 @@ var mesh = model.mesh
 var targets = model.morph.targets
 model.pmx.morphs.forEach(function (m) {
   var name = m.name
-  if ((name=="あ") || (name=="にやり") || (name=="∧") || (name == "まばたき") || (name=="上"))
-    return
   if ((m.panel != 3))
+    return
+  if ((name=="あ") || (name=="にやり") || (name=="∧"))// || (name == "まばたき") || (name=="笑い") || (name=="上") || (name=="にこり"))
     return
   if (!model.pmx.morphs_weight_by_name[name])
     return

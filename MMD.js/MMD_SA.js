@@ -5972,18 +5972,11 @@ MMD_SA_options.model_para_obj_all.forEach(function (model_para_obj) {
 });
 
 var morph_default = MMD_SA_options.model_para_obj.morph_default = MMD_SA_options.model_para_obj.morph_default || {};
-if (!morph_default["あ"])
-  morph_default["あ"] = { weight:0 }
-if (!morph_default["にやり"])
-  morph_default["にやり"] = { weight:0 }
-if (!morph_default["∧"])
-  morph_default["∧"] = { weight:0 }
-if (!morph_default["上"])
-  morph_default["上"] = { weight:0 }
-if (!morph_default["まばたきL"])
-  morph_default["まばたきL"] = { weight:0 }
-if (!morph_default["まばたきR"])
-  morph_default["まばたきR"] = { weight:0 }
+// "まばたきL", "まばたきR"
+["あ", "にやり", "∧", "上", "にこり", "笑い"].forEach(function (m) {
+  if (!morph_default[m])
+    morph_default[m] = { weight:0 }
+});
     });
 
     window.addEventListener("MMDStarted", function () {
