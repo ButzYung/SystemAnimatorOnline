@@ -3364,7 +3364,8 @@ else {
     var lips_width_average = 0
     var lips_width_data = []
 
-    var eye_data = { L:{}, R:{} }
+    var eyebrow_data
+    var eye_data
 
     var blink_detection = false
 
@@ -3375,6 +3376,7 @@ calibrating = true
 lips_width_average = 0
 lips_width_data = []
 
+eyebrow_data = {};
 eye_data = {L:[],R:[]};
 
 ["L","R"].forEach(function (dir) {
@@ -3386,6 +3388,16 @@ eye_data = {L:[],R:[]};
     data.eye_open_lower = 1
     data.eye_open_data = []
   }
+
+// L eyebrow height:334,374
+// R eyebrow height:105,145
+
+  eyebrow_data[dir] = {
+    _height_average: 0
+   ,height_average: 0
+   ,height_data: []
+   ,height_ref_pts: (dir=="L") ? [334,374] : [105,145]
+  };
 });
     }
 
@@ -3518,25 +3530,54 @@ else {
     }
   }
 
-  let mouth_open = 0
-  let mouth_wide = 0
-  let eyebrow_up = 0
+  let mouth_open = 0;
+  let mouth_wide = 0;
+  let eyebrow_up = 0;
+  let smile = 0;
+
+  ["L","R"].forEach(function (dir) {
+    let e = eyebrow_data[dir]
+    e.height = MMD_SA._v3a.fromArray(face.mesh[e.height_ref_pts[0]]).distanceTo(MMD_SA._v3b.fromArray(face.mesh[e.height_ref_pts[1]]))
+
+    e._height_average = e.height_average
+    if (!e._height_average) {
+      if (calibration_condition)
+        e.height_data.push(e.height)
+      if (!e.height_data.length) {
+        e._height_average = e.height
+      }
+      else {
+        let edge_size = parseInt(lips_width_data.length*0.3)
+        e._height_average = e.height_data.sort((a,b)=>a-b).slice(edge_size, e.height_data.length-edge_size).reduce((accumulator, currentValue) => accumulator + currentValue) / (e.height_data.length-edge_size*2)
+        if (!calibrating) {
+          e.height_average = e._height_average
+        }
+      }
+    }
+
+    eyebrow_up += e.height/e._height_average
+  });
+  eyebrow_up = Math.max(Math.min((eyebrow_up/2-1)/0.25, 1), -1)
+
   if (_lips_width_average) {
     if (lips_width > _lips_width_average*1.05) {
       mouth_wide = Math.sqrt(Math.min((lips_width-_lips_width_average*1.05) / (_lips_width_average*0.25), 1))
     }
     if (lips_inner_height > 2) {
       mouth_open = Math.pow(Math.min((lips_inner_height-2) / (_lips_width_average*1/3), 1), 1/3)
-      if (mouth_open > 0.25) {
-        eyebrow_up = Math.pow((mouth_open-0.25)/0.75, 2) * 0.3
-        if (mouth_wide > 0.25)
-          eyebrow_up -= (mouth_wide-0.25)/0.75 * 0.3
-      }
+      if (mouth_wide > 0.25)
+        smile = (mouth_wide-0.25)/0.75 * 0.3
     }
   }
+
+  _facemesh.frames.add("morph", "笑い", { weight:smile })
+  _facemesh.frames.add("morph", "にこり", { weight:smile })
+
   _facemesh.frames.add("morph", "あ", { weight:mouth_open })
   _facemesh.frames.add("morph", "にやり", { weight:mouth_wide })
+
   _facemesh.frames.add("morph", "上", { weight:Math.max(eyebrow_up,0) })
+  _facemesh.frames.add("morph", "下", { weight:(eyebrow_up < 0)?-eyebrow_up:0 })
 
   let rot_inv = MMD_SA.TEMP_q.setFromEuler(MMD_SA._v3a.set(x_rot,y_rot,z_rot),"YZX").conjugate()
   let L = [];
@@ -3641,18 +3682,12 @@ if (blink_detection) {
   }
 }
 else {
-  let weight = Math.max(Math.min(0.1 - eye_x_rot*0.2 - Math.max(eyebrow_up*0.5,0), 0.4), 0)
+  let eyebrow_factor = eyebrow_up*0.25
+  if (eyebrow_factor < 0)
+    eyebrow_factor = Math.min(eyebrow_factor + smile, 0)
+  let weight = Math.max(Math.min(0.1 - eye_x_rot*((eye_x_rot<0)?2:1)*0.2 - eyebrow_factor, 0.5), 0)
   _facemesh.frames.add("morph", "まばたき", { weight:weight })
 }
-
-  if (eyebrow_up < 0) {
-    _facemesh.frames.add("morph", "笑い", { weight:-eyebrow_up })
-    _facemesh.frames.add("morph", "にこり", { weight:-eyebrow_up })
-  }
-  else {
-    _facemesh.frames.add("morph", "笑い", { weight:0 })
-    _facemesh.frames.add("morph", "にこり", { weight:0 })
-  }
 
   let eye_rot_confidence = 1.25 + Math.pow((blink.L[0]+blink.R[0])/2,2)*1.75
   eye_x_rot = Math.sign(eye_x_rot) * Math.pow(Math.abs(eye_x_rot), eye_rot_confidence)
@@ -3707,7 +3742,7 @@ model.pmx.morphs.forEach(function (m) {
   var name = m.name
   if ((m.panel != 3))
     return
-  if ((name=="あ") || (name=="にやり") || (name=="∧"))// || (name == "まばたき") || (name=="笑い") || (name=="上") || (name=="にこり"))
+  if ((name=="あ") || (name=="にやり") || (name=="∧"))
     return
   if (!model.pmx.morphs_weight_by_name[name])
     return

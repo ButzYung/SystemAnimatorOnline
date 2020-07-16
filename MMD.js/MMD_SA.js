@@ -5973,7 +5973,7 @@ MMD_SA_options.model_para_obj_all.forEach(function (model_para_obj) {
 
 var morph_default = MMD_SA_options.model_para_obj.morph_default = MMD_SA_options.model_para_obj.morph_default || {};
 // "まばたきL", "まばたきR"
-["あ", "にやり", "∧", "上", "にこり", "笑い"].forEach(function (m) {
+["あ","にやり","∧", "上","下","にこり", "笑い"].forEach(function (m) {
   if (!morph_default[m])
     morph_default[m] = { weight:0 }
 });
