@@ -2504,9 +2504,18 @@ var bb = (flipH_bubble) ? b.bounding_box_flipH : b.bounding_box
 var x = bb[0] + parseInt((bb[2] - w)/2) + ((para.text_offset && para.text_offset.x) || 0)
 var y = bb[1] + parseInt((bb[3] - h)/2) + ((para.text_offset && para.text_offset.y) || 0)
 
+context.save()
+
+if (System._browser.camera.visible) {
+  context.translate(canvas.width, 0);
+  context.scale(-1, 1);
+}
+
 for (var i = 0, i_length = msg_line.length; i < i_length; i++) {
   context.fillText(msg_line[i], x, y + i*(h_max+10))
 }
+
+context.restore()
 
 this._txr.needsUpdate = true
     }
@@ -5973,13 +5982,13 @@ MMD_SA_options.model_para_obj_all.forEach(function (model_para_obj) {
 
 var morph_default = MMD_SA_options.model_para_obj.morph_default = MMD_SA_options.model_para_obj.morph_default || {};
 // "まばたきL", "まばたきR"
-var facemesh_morph = ["あ","にやり","∧", "上","下","にこり", "まばたき","笑い"];
-var facemesh_morph_translate = MMD_SA_options.model_para_obj.facemesh_morph_translate = MMD_SA_options.model_para_obj.facemesh_morph_translate || {};
-facemesh_morph.forEach(function (m) {
-  if (!facemesh_morph_translate[m])
-    facemesh_morph_translate[m] = m
+var _morph = ["あ","∧","にやり","ω", "上","下","にこり", "まばたき","笑い"];
+var facemesh_morph = MMD_SA_options.model_para_obj.facemesh_morph = MMD_SA_options.model_para_obj.facemesh_morph || {};
+_morph.forEach(function (m) {
+  if (!facemesh_morph[m])
+    facemesh_morph[m] = {name:m}
 
-  var mm = facemesh_morph_translate[m]
+  var mm = facemesh_morph[m].name
   if (!morph_default[mm])
     morph_default[mm] = { weight:0 }
 });
