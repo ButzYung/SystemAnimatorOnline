@@ -3570,14 +3570,16 @@ else {
     }
   }
 
-  _facemesh.frames.add("morph", "笑い", { weight:smile })
-  _facemesh.frames.add("morph", "にこり", { weight:smile })
+  var facemesh_morph_translate = MMD_SA_options.model_para_obj.facemesh_morph_translate
 
-  _facemesh.frames.add("morph", "あ", { weight:mouth_open })
-  _facemesh.frames.add("morph", "にやり", { weight:mouth_wide })
+  _facemesh.frames.add("morph", facemesh_morph_translate["笑い"], { weight:smile })
+  _facemesh.frames.add("morph", facemesh_morph_translate["にこり"], { weight:smile })
 
-  _facemesh.frames.add("morph", "上", { weight:Math.max(eyebrow_up,0) })
-  _facemesh.frames.add("morph", "下", { weight:(eyebrow_up < 0)?-eyebrow_up:0 })
+  _facemesh.frames.add("morph", facemesh_morph_translate["あ"], { weight:mouth_open })
+  _facemesh.frames.add("morph", facemesh_morph_translate["にやり"], { weight:mouth_wide })
+
+  _facemesh.frames.add("morph", facemesh_morph_translate["上"], { weight:Math.max(eyebrow_up,0) })
+  _facemesh.frames.add("morph", facemesh_morph_translate["下"], { weight:(eyebrow_up < 0)?-eyebrow_up:0 })
 
   let rot_inv = MMD_SA.TEMP_q.setFromEuler(MMD_SA._v3a.set(x_rot,y_rot,z_rot),"YZX").conjugate()
   let L = [];
@@ -3593,7 +3595,7 @@ else {
   let mouth_up = Math.max(-(m_up+m_down)*180/Math.PI + 20*(mouth_open), 0)
   if (mouth_up)
     mouth_up = Math.min(mouth_up/20, 0.75)
-  _facemesh.frames.add("morph", "∧", { weight:mouth_up })
+  _facemesh.frames.add("morph", facemesh_morph_translate["∧"], { weight:mouth_up })
 
 
   let blink = {L:[0],R:[0]}
@@ -3686,7 +3688,7 @@ else {
   if (eyebrow_factor < 0)
     eyebrow_factor = Math.min(eyebrow_factor + smile, 0)
   let weight = Math.max(Math.min(0.1 - eye_x_rot*((eye_x_rot<0)?2:1)*0.2 - eyebrow_factor, 0.5), 0)
-  _facemesh.frames.add("morph", "まばたき", { weight:weight })
+  _facemesh.frames.add("morph", facemesh_morph_translate["まばたき"], { weight:weight })
 }
 
   let eye_rot_confidence = 1.25 + Math.pow((blink.L[0]+blink.R[0])/2,2)*1.75
@@ -3738,11 +3740,12 @@ for (var name in skin) {
 var model = e.detail.model
 var mesh = model.mesh
 var targets = model.morph.targets
+var facemesh_morph_translate = MMD_SA_options.model_para_obj.facemesh_morph_translate
 model.pmx.morphs.forEach(function (m) {
   var name = m.name
   if ((m.panel != 3))
     return
-  if ((name=="あ") || (name=="にやり") || (name=="∧"))
+  if ((name==facemesh_morph_translate["あ"]) || (name==facemesh_morph_translate["にやり"]) || (name==facemesh_morph_translate["∧"]))
     return
   if (!model.pmx.morphs_weight_by_name[name])
     return

@@ -5973,9 +5973,15 @@ MMD_SA_options.model_para_obj_all.forEach(function (model_para_obj) {
 
 var morph_default = MMD_SA_options.model_para_obj.morph_default = MMD_SA_options.model_para_obj.morph_default || {};
 // "まばたきL", "まばたきR"
-["あ","にやり","∧", "上","下","にこり", "笑い"].forEach(function (m) {
-  if (!morph_default[m])
-    morph_default[m] = { weight:0 }
+var facemesh_morph = ["あ","にやり","∧", "上","下","にこり", "まばたき","笑い"];
+var facemesh_morph_translate = MMD_SA_options.model_para_obj.facemesh_morph_translate = MMD_SA_options.model_para_obj.facemesh_morph_translate || {};
+facemesh_morph.forEach(function (m) {
+  if (!facemesh_morph_translate[m])
+    facemesh_morph_translate[m] = m
+
+  var mm = facemesh_morph_translate[m]
+  if (!morph_default[mm])
+    morph_default[mm] = { weight:0 }
 });
     });
 
