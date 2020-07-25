@@ -3557,11 +3557,15 @@ else {
 
     eyebrow_up += e.height/e._height_average
   });
-  eyebrow_up = Math.max(Math.min((eyebrow_up/2-1)/0.25, 1), -1)
+  eyebrow_up /= 2
+  eyebrow_up = Math.max(Math.min((eyebrow_up-1)/0.25*((eyebrow_up>1)?4:1), 1), -1)
 
   if (_lips_width_average) {
     if (lips_width > _lips_width_average*1.05) {
       mouth_wide = Math.sqrt(Math.min((lips_width-_lips_width_average*1.05) / (_lips_width_average*0.25), 1))
+    }
+    else if (lips_width < _lips_width_average*0.98) {
+      mouth_wide = -Math.sqrt(Math.min((_lips_width_average*0.98-lips_width) / (_lips_width_average*0.2), 1))
     }
     if (lips_inner_height > 2) {
       mouth_open = Math.pow(Math.min((lips_inner_height-2) / (_lips_width_average*1/3), 1), 1/3)
@@ -3570,16 +3574,13 @@ else {
     }
   }
 
-  var facemesh_morph_translate = MMD_SA_options.model_para_obj.facemesh_morph_translate
+  _facemesh.frames.add("morph", "笑い", { weight:smile })
+  _facemesh.frames.add("morph", "にこり", { weight:smile })
 
-  _facemesh.frames.add("morph", facemesh_morph_translate["笑い"], { weight:smile })
-  _facemesh.frames.add("morph", facemesh_morph_translate["にこり"], { weight:smile })
+  _facemesh.frames.add("morph", "あ", { weight:mouth_open })
+  _facemesh.frames.add("morph", "にやり", { weight:mouth_wide })
 
-  _facemesh.frames.add("morph", facemesh_morph_translate["あ"], { weight:mouth_open })
-  _facemesh.frames.add("morph", facemesh_morph_translate["にやり"], { weight:mouth_wide })
-
-  _facemesh.frames.add("morph", facemesh_morph_translate["上"], { weight:Math.max(eyebrow_up,0) })
-  _facemesh.frames.add("morph", facemesh_morph_translate["下"], { weight:(eyebrow_up < 0)?-eyebrow_up:0 })
+  _facemesh.frames.add("morph", "上", { weight:eyebrow_up })
 
   let rot_inv = MMD_SA.TEMP_q.setFromEuler(MMD_SA._v3a.set(x_rot,y_rot,z_rot),"YZX").conjugate()
   let L = [];
@@ -3595,7 +3596,7 @@ else {
   let mouth_up = Math.max(-(m_up+m_down)*180/Math.PI + 20*(mouth_open), 0)
   if (mouth_up)
     mouth_up = Math.min(mouth_up/20, 0.75)
-  _facemesh.frames.add("morph", facemesh_morph_translate["∧"], { weight:mouth_up })
+  _facemesh.frames.add("morph", "∧", { weight:mouth_up })
 
 
   let blink = {L:[0],R:[0]}
@@ -3688,7 +3689,7 @@ else {
   if (eyebrow_factor < 0)
     eyebrow_factor = Math.min(eyebrow_factor + smile, 0)
   let weight = Math.max(Math.min(0.1 - eye_x_rot*((eye_x_rot<0)?2:1)*0.2 - eyebrow_factor, 0.5), 0)
-  _facemesh.frames.add("morph", facemesh_morph_translate["まばたき"], { weight:weight })
+  _facemesh.frames.add("morph", "まばたき", { weight:weight })
 }
 
   let eye_rot_confidence = 1.25 + Math.pow((blink.L[0]+blink.R[0])/2,2)*1.75
@@ -3740,13 +3741,10 @@ for (var name in skin) {
 var model = e.detail.model
 var mesh = model.mesh
 var targets = model.morph.targets
-var facemesh_morph_translate = MMD_SA_options.model_para_obj.facemesh_morph_translate
 model.pmx.morphs.forEach(function (m) {
-  var name = m.name
   if ((m.panel != 3))
     return
-  if ((name==facemesh_morph_translate["あ"]) || (name==facemesh_morph_translate["にやり"]) || (name==facemesh_morph_translate["∧"]))
-    return
+  var name = m.name
   if (!model.pmx.morphs_weight_by_name[name])
     return
 
@@ -3765,12 +3763,9 @@ model.pmx.morphs.forEach(function (m) {
   }
 });
 
+var facemesh_morph = MMD_SA_options.model_para_obj.facemesh_morph
 var morph = _facemesh.frames.morph
 for (var name in morph) {
-  let morph_index = model.morph.target_index_by_name[name]
-  if (morph_index == null)
-    return
-
   let m = morph[name]
   if (m.disabled)
     return
@@ -3779,13 +3774,31 @@ for (var name in morph) {
   let ratio = Math.max(Math.min(m[0].t_delta/Math.min(_facemesh.frames.t_delta,200),1),0)
   let weight = m[0].weight * ratio + m[1].weight * (1-ratio)
 
+  if (weight < 0) {
+    switch (name) {
+      case "にやり":
+        name = "ω"
+        break
+      case "上":
+        name = "下"
+        break
+    }
+    weight = -weight
+  }
+
+  let m_name = (facemesh_morph[name] && facemesh_morph[name].name) || name
+
+  let morph_index = model.morph.target_index_by_name[m_name]
+  if (morph_index == null)
+    return
+
   let target = targets[morph_index]
   let key0 = target.keys[0]
   if (key0.morph_type == 1) {
     mesh.morphTargetInfluences[morph_index] = weight
   }
   else {
-    let key_new = { name:name, weight:weight, morph_type:key0.morph_type, morph_index:key0.morph_index }
+    let key_new = { name:m_name, weight:weight, morph_type:key0.morph_type, morph_index:key0.morph_index }
     model.morph.onupdate(key_new, key_new, 0, morph_index)
   }
 }
