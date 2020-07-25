@@ -1,4 +1,4 @@
-// (2020-06-26)
+// (2020-07-25)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -2225,9 +2225,10 @@ material_para = material_para[p.name] || material_para._default_ || {};
 		p.shininess = v.power;
 		p.opacity = v.alpha;
 //		p.transparent = true; // 問題回避のために描画順は全て「奥から手前」にする。
-// AT: transparent by para
+// AT: transparent/side by para
 p.transparent = (material_para.transparent != null) ? material_para.transparent : true;
 //if (that._model_index==3) console.log(MMD_SA_options.model_para_obj_all[that._model_index])
+if (material_para.side != null) { p.side = material_para.side } else
 		if ( ( v.drawFlags & 0x01 ) !== 0 ) {
 			p.side = THREE.DoubleSide;
 		}
