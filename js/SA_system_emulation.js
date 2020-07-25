@@ -3568,7 +3568,7 @@ else {
       mouth_wide = -Math.sqrt(Math.min((_lips_width_average*0.98-lips_width) / (_lips_width_average*0.2), 1))
     }
     if (lips_inner_height > 2) {
-      mouth_open = Math.pow(Math.min((lips_inner_height-2) / (_lips_width_average*1/3), 1), 1/3)
+      mouth_open = Math.pow(Math.min((lips_inner_height-2) / (_lips_width_average*1/3), 1), 0.5)
       if (mouth_wide > 0.25)
         smile = (mouth_wide-0.25)/0.75 * 0.3
     }
