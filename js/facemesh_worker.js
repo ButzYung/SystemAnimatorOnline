@@ -1,11 +1,9 @@
 // https://blog.tensorflow.org/2020/03/face-and-hand-tracking-in-browser-with-mediapipe-and-tensorflowjs.html
-
 // https://blog.tensorflow.org/2020/03/introducing-webassembly-backend-for-tensorflow-js.html
 
 importScripts("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs");
-importScripts("https://cdn.jsdelivr.net/npm/@tensorflow-models/facemesh");
-
 importScripts("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tf-backend-wasm.js");
+
 tf.wasm.setWasmPath("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tfjs-backend-wasm.wasm");
 tf.setBackend("wasm").then(function () {
   console.log("TFJS WASM backend")
@@ -87,6 +85,8 @@ var canvas, context, RAF_timerID;
 async function init() {
 // https://github.com/tensorflow/tfjs-models/tree/master/facemesh
   try {
+    importScripts("https://cdn.jsdelivr.net/npm/@tensorflow-models/facemesh");
+
     model = await facemesh.load({maxFaces:1});
     console.log('(Facemesh initialized)')
 /*
