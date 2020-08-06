@@ -3431,9 +3431,12 @@ fm_worker.onmessage = function (e) {
   var data = ((typeof e.data == "string") && (e.data.charAt(0) === "{")) ? JSON.parse(e.data) : e.data;
 
   if (typeof data === "string") {
-DEBUG_show(data, 2)
-    _facemesh.worker_initialized = true
-    _facemesh.enabled = true
+    if (data == "OK") {
+      _facemesh.worker_initialized = true
+      _facemesh.enabled = true
+    }
+    else
+      DEBUG_show(data, 2)
   }
   else {
 let info = ""

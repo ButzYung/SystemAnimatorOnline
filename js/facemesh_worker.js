@@ -10,6 +10,8 @@ tf.wasm.setWasmPath("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/
 tf.setBackend("wasm").then(function () {
   console.log("TFJS WASM backend")
   init()
+}).catch(function (err) {
+  postMessage('TFJS WASM ERROR:' + err)
 });
 
 /*
@@ -94,6 +96,7 @@ async function init() {
   console.log("face cover OK")
 */
   postMessage('(Facemesh initialized)')
+  postMessage('OK')
 }
 
 async function process_video_buffer(rgba, w,h, options) {
