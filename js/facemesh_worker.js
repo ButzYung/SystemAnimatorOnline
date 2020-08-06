@@ -86,8 +86,9 @@ var canvas, context, RAF_timerID;
 
 async function init() {
 // https://github.com/tensorflow/tfjs-models/tree/master/facemesh
-  model = await facemesh.load({maxFaces:1});
-  console.log('(Facemesh initialized)')
+  try {
+    model = await facemesh.load({maxFaces:1});
+    console.log('(Facemesh initialized)')
 /*
 // https://dev.to/trezy/loading-images-with-web-workers-49ap
   const response = await fetch("../images/laughing_man_134x120.png");
@@ -95,8 +96,10 @@ async function init() {
   face_cover = await createImageBitmap(blob);
   console.log("face cover OK")
 */
-  postMessage('(Facemesh initialized)')
-  postMessage('OK')
+    postMessage('(Facemesh initialized)')
+    postMessage('OK')
+  }
+  catch (err) { postMessage('Facemesh ERROR:' + err) }
 }
 
 async function process_video_buffer(rgba, w,h, options) {
