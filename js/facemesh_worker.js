@@ -4,10 +4,11 @@
 importScripts("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs");
 importScripts("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tf-backend-wasm.js");
 
-//tf.wasm.setWasmPath("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tfjs-backend-wasm.wasm");
-tf.wasm.setWasmPath("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tfjs-backend-wasm-simd.wasm");
+// https://github.com/tensorflow/tfjs/tree/master/tfjs-backend-wasm
+var use_SIMD = new URLSearchParams(self.location.search.substring(1)).get('simd');
+tf.wasm.setWasmPath('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tfjs-backend-wasm' + ((use_SIMD)?'-simd':'') + '.wasm');
 tf.setBackend("wasm").then(function () {
-  console.log("TFJS WASM backend")
+  console.log('TFJS WASM' + ((use_SIMD)?'-SIMD':'') + ' backend')
   init()
 }).catch(function (err) {
   postMessage('TFJS WASM ERROR:' + err)
@@ -97,7 +98,7 @@ async function init() {
   face_cover = await createImageBitmap(blob);
   console.log("face cover OK")
 */
-    postMessage('(Facemesh initialized)')
+    postMessage('(Facemesh initialized' + ((use_SIMD)?'/use SIMD':'') + ')')
     postMessage('OK')
   }
   catch (err) { postMessage('Facemesh ERROR:' + err) }

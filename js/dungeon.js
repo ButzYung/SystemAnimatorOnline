@@ -10655,12 +10655,11 @@ else {
      ,[
         {
           message: {
-  content: "1. Dummy WebGL Layer\n2. User Camera\n3. Cancel"
+  content: "1. Dummy WebGL Layer\n2. Cancel"
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:11 }
-   ,{ key:2, branch_index:12 }
-   ,{ key:3 }
+   ,{ key:2 }
   ]
           }
         }
@@ -10686,15 +10685,6 @@ DEBUG_show("Dummy WebGL Layer:" + ((AR_options.dom_overlay.use_dummy_webgl && "O
  ,ended: true
         }
       ]
-// 12
-     ,[
-        {
-  func: function () {
-MMD_SA.WebXR.user_camera.start()
-  }
- ,ended: true
-        }
-      ]
 
     ]
 
@@ -10703,12 +10693,13 @@ MMD_SA.WebXR.user_camera.start()
       [
         {
           message: {
-  content: "1. Character form\n2. Debug Log\n3. Cancel"
+  content: "1. Character form\n2. Use WASM-SIMD\n3. Debug Log\n4. Cancel"
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:1 }
    ,{ key:2, branch_index:2 }
-   ,{ key:3 }
+   ,{ key:3, branch_index:3 }
+   ,{ key:4 }
   ]
           }
         }
@@ -10762,6 +10753,16 @@ else {
         }
       ]
 //2
+     ,[
+        {
+  func: function () {
+System._browser.use_WASM_SIMD = !System._browser.use_WASM_SIMD
+DEBUG_show('WASM-SIMD:' + ((System._browser.use_WASM_SIMD)?'ON':'OFF'), 3)
+  }
+ ,ended: true
+        }
+      ]
+//3
      ,[
         {
   func: function () {
