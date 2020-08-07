@@ -3707,7 +3707,7 @@ info = info || (face.eyes.length && [((calibrating)?'Calibrating('+calibration_p
 //info = [(m_up)*180/Math.PI,(m_down)*180/Math.PI,mouth_up].join('\n')
 //info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, lips_inner_height,lips_width_average+'/'+lips_width].join('\n')
 }
-DEBUG_show(((info && (info+'\n'))||'')+data._t)
+DEBUG_show(((info && (info+'\n'+'FPS:'+EV_sync_update.fps_last+'\n'))||'')+data._t)
 self._faces_=data.faces
     _facemesh.busy = false
 
