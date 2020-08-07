@@ -1,12 +1,21 @@
 // https://blog.tensorflow.org/2020/03/face-and-hand-tracking-in-browser-with-mediapipe-and-tensorflowjs.html
 // https://blog.tensorflow.org/2020/03/introducing-webassembly-backend-for-tensorflow-js.html
 
+// temporary fix for issues on Eletron when loading the latest TFJS WASM
+var tfjs_wasm_version = (self.location.protocol == "file:") ? '@2.1.0' : '';
+
 importScripts("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs");
-importScripts("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tf-backend-wasm.js");
+importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm' + tfjs_wasm_version + '/dist/tf-backend-wasm.js');
+
+// https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tf-backend-wasm.js
+// https://github.com/GoogleChromeLabs/wasm-feature-detect
+var use_SIMD = WebAssembly.validate(new Uint8Array([
+      0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 96, 0, 0, 3,
+      2, 1, 0, 10, 9, 1, 7, 0, 65, 0, 253, 15, 26, 11
+])) || new URLSearchParams(self.location.search.substring(1)).get('simd');
 
 // https://github.com/tensorflow/tfjs/tree/master/tfjs-backend-wasm
-var use_SIMD = new URLSearchParams(self.location.search.substring(1)).get('simd');
-tf.wasm.setWasmPath('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tfjs-backend-wasm' + ((use_SIMD)?'-simd':'') + '.wasm');
+tf.wasm.setWasmPath('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm' + tfjs_wasm_version + '/dist/tfjs-backend-wasm' + ((use_SIMD)?'-simd':'') + '.wasm');
 tf.setBackend("wasm").then(function () {
   console.log('TFJS WASM' + ((use_SIMD)?'-SIMD':'') + ' backend')
   init()
@@ -18,7 +27,6 @@ tf.setBackend("wasm").then(function () {
 var tf = require('@tensorflow/tfjs-node')
 tf.setBackend("tensorflow").then(function () {
   console.log("TFJS node.js backend")
-  importScripts("https://cdn.jsdelivr.net/npm/@tensorflow-models/facemesh");
   init()
 });
 */
