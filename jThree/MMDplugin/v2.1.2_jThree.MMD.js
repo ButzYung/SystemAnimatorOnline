@@ -1,4 +1,4 @@
-// (2020-07-25)
+// (2020-08-07)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -6630,7 +6630,7 @@ MMD_SA._mouse_pos_3D[that._model_index][axis] += diff
       ry = r.y
     }
 
-    let weight_motion = (System._browser.camera.facemesh.enabled && ((b.name=="首")||(b.name=="頭"))) ? 1 : b.weight_motion
+    let weight_motion = (System._browser.camera.facemesh.enabled && ((b.name=="首")||(b.name=="頭")||(b.name=="両目"))) ? 1 : b.weight_motion
     let _ratio = weight_motion + (1 - ratio) * (1 - weight_motion)
     let sx = (b.weight_screen_x != null) ? b.weight_screen_x : 1
     let sy = (b.weight_screen_y != null) ? b.weight_screen_y : 1
