@@ -1093,9 +1093,11 @@ if (model.skin.time > 1) {
 
    ,"chair_sit01_armIK": {
   onstart: function () {
+this._ground_plane_visible = MMD_SA.WebXR.ground_plane.visible
   }
 
  ,onended: function (loop_end) {
+MMD_SA.WebXR.ground_plane.visible = this._ground_plane_visible
 MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
 //MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice();
   }
