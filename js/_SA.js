@@ -2188,9 +2188,6 @@ if (fullscreen) {
   oBody.pixelWidth  = B_content_width
   oBody.pixelHeight = B_content_height
 
-  if (webkit_mode)
-    document.body.style._set()
-
   if (use_SA_system_emulation) {
     var ls = Lquick_menu.style
     var qmb_list = document.getElementsByClassName("QuickMenu_button")
@@ -2305,18 +2302,33 @@ if (fullscreen) {
       System._browser._s_left = System._browser._s_top = null
       if (System._browser._window_move_timerID) {
         clearTimeout(System._browser._window_move_timerID)
+        System._browser._window_move_timerID = null
       }
-      System._browser._window_move_timerID = setTimeout("System._browser._window_move_timerID=null; SA_top_window.moveToAbsolute(" + sx + "," + sy + "); System._browser.moveWallpaper(" + sx + "," + sy + ");", 0)
+      let xy = SA_top_window.getPos()
+      if ((xy[0] != sx) || (xy[1] != sy)) {
+        System._browser._window_move_timerID = setTimeout("System._browser._window_move_timerID=null; SA_top_window.moveToAbsolute(" + sx + "," + sy + "); System._browser.moveWallpaper(" + sx + "," + sy + ");", 0)
+      }
     }
   }
 
   if ((System._browser._s_left != null) && (System._browser._s_top != null)) {
-    System._browser._window_move_timerID = setTimeout(function () {
+    if (System._browser._window_move_timerID) {
+      clearTimeout(System._browser._window_move_timerID)
+      System._browser._window_move_timerID = null
+    }
+    let xy = SA_top_window.getPos()
+    if ((xy[0] != System._browser._s_left) || (xy[1] != System._browser._s_top)) {
+      System._browser._window_move_timerID = setTimeout(function () {
 System._browser._window_move_timerID = null
 SA_top_window.moveToAbsolute(System._browser._s_left, System._browser._s_top)
 System._browser._s_left = System._browser._s_top = null
-    }, 0);
+      }, 0);
+    }
   }
+
+// after all window moving/resizing timers (Electron v9+)
+  if (webkit_mode)
+    document.body.style._set()
 
   if (self.SL_MC_video_obj)
     SL_MC_Place(SL_MC_Place_scale_last)
