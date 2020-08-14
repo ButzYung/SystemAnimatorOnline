@@ -5039,7 +5039,7 @@ if (checksum == xr.hitMatrix_anchor._checksum)
 
 // position/etc offset between the original hit-test result and the INITIAL anchor update
 if (!xr.hitMatrix_anchor._decomposed_offset) {
-  xr.hitMatrix_anchor._decomposed_offset = [(createAnchor_compatibility_mode) ? xr.hitMatrix_anchor.decomposed[0].sub(transform.position) : new THREE.Vector3()];
+  xr.hitMatrix_anchor._decomposed_offset = [(createAnchor_compatibility_mode) ? xr.hitMatrix_anchor.decomposed[0].sub(transform.position).multiplyScalar(0.5) : new THREE.Vector3()];
 }
 
 xr.hitMatrix_anchor._checksum = checksum
