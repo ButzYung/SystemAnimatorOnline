@@ -2,7 +2,7 @@
 // https://blog.tensorflow.org/2020/03/introducing-webassembly-backend-for-tensorflow-js.html
 
 // temporary fix for issues on Eletron when loading the latest TFJS WASM
-var tfjs_wasm_version = '@2.1.0';//(self.location.protocol == "file:") ? '@2.1.0' : '';
+var tfjs_wasm_version = (self.location.protocol == "file:") ? '@2.1.0' : '';
 
 importScripts("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs");
 importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm' + tfjs_wasm_version + '/dist/tf-backend-wasm.js');
@@ -15,7 +15,12 @@ var use_SIMD = WebAssembly.validate(new Uint8Array([
 ])) || new URLSearchParams(self.location.search.substring(1)).get('simd');
 
 // https://github.com/tensorflow/tfjs/tree/master/tfjs-backend-wasm
-tf.wasm.setWasmPath('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm' + tfjs_wasm_version + '/dist/tfjs-backend-wasm' + ((use_SIMD)?'-simd':'') + '.wasm');
+if (!tfjs_wasm_version) {
+  tf.wasm.setWasmPaths('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm' + tfjs_wasm_version + '/dist/');
+}
+else {
+  tf.wasm.setWasmPath('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm' + tfjs_wasm_version + '/dist/tfjs-backend-wasm' + ((use_SIMD)?'-simd':'') + '.wasm');
+}
 tf.setBackend("wasm").then(function () {
   console.log('TFJS WASM' + ((use_SIMD)?'-SIMD':'') + ' backend')
   init()
