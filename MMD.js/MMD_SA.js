@@ -5037,14 +5037,9 @@ let checksum = transform.matrix.reduce((n0,n1)=>n0+n1);
 if (checksum == xr.hitMatrix_anchor._checksum)
   continue
 
-// position/etc offset between the original hit-test result and the INITIAL anchor update
-if (!xr.hitMatrix_anchor._decomposed_offset) {
-  xr.hitMatrix_anchor._decomposed_offset = [(0&&createAnchor_compatibility_mode) ? xr.hitMatrix_anchor.decomposed[0].sub(transform.position).multiplyScalar(0.5) : new THREE.Vector3()];
-}
-
 xr.hitMatrix_anchor._checksum = checksum
 xr.hitMatrix_anchor.obj = (xr.hitMatrix_anchor.obj||new THREE.Matrix4()).fromArray(transform.matrix);
-xr.hitMatrix_anchor.decomposed = [new THREE.Vector3().copy(transform.position).add(xr.hitMatrix_anchor._decomposed_offset[0]), new THREE.Quaternion().copy(transform.orientation), null];
+xr.hitMatrix_anchor.decomposed = [new THREE.Vector3().copy(transform.position), new THREE.Quaternion().copy(transform.orientation), null];
 xr.hitMatrix_anchor.decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.hitMatrix_anchor.decomposed[1]);
 
 anchor._data.update(anchor._data.obj);
