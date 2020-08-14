@@ -5028,7 +5028,7 @@ if (checksum == xr.hitMatrix_anchor._checksum)
 
 // position/etc offset between the original hit-test result and the INITIAL anchor update
 if (!xr.hitMatrix_anchor._decomposed_offset) {
-  xr.hitMatrix_anchor._decomposed_offset = [xr.hitMatrix_anchor.decomposed[0].sub(transform.position)]
+  xr.hitMatrix_anchor._decomposed_offset = [MMD_SA.TEMP_v3.set(0,0,0)]//[xr.hitMatrix_anchor.decomposed[0].sub(transform.position)]
 }
 
 xr.hitMatrix_anchor._checksum = checksum
