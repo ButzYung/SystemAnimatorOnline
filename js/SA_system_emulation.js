@@ -90,21 +90,27 @@ SA_top_window.resizeToAbsolute = function (w, h) {
 //console.log("resizeToAbsolute("+w+","+h+"):"+Date.now())
   this.resizeTo(w, h)
   if (absolute_screen_mode && !System._browser._window_move_timerID) {
-    System._browser._window_move_timerID = setTimeout(
+    System._browser._window_move_timerID = setInterval(
 (function () {
   var x = SA_top_window.screenLeftAbsolute
   var y = SA_top_window.screenTopAbsolute
+  var loop = 0
   return function () {
-System._browser._window_move_timerID = null
 var xy = SA_top_window.getPos(true)
+//console.log(xy,[x,y])
 if ((x != xy[0]) || (y != xy[1])) {
   DEBUG_show("(window position adjusted)", 3)
   webkit_window.setPosition(x,y)
   System._browser.moveWallpaper(x,y)
+  loop = 999
+}
+if (++loop > 10) {
+  clearInterval(System._browser._window_move_timerID)
+  System._browser._window_move_timerID = null
 }
   };
 })(),
-    0);
+    100);
   }
 }
 
@@ -683,11 +689,24 @@ this.document_body_style_pixelWidth  = Object.getOwnPropertyDescriptor(s, "pixel
 this.document_body_style_pixelHeight = Object.getOwnPropertyDescriptor(s, "pixelHeight");
 
 var _set = function () {
-  if (System._browser.resize_timerID) {
+  if (System._browser.resize_timerID)
     clearTimeout(System._browser.resize_timerID)
-    System._browser.resize_timerID = null
+  if (System._browser._window_move_timerID) {
+    let xy = SA_top_window.getPos()
+    System._browser.resize_timerID = setInterval((function () {
+      var loop = 0
+      return function () {
+        let _xy = SA_top_window.getPos(true)
+//console.log(xy,_xy)
+        if ((++loop > 10) || (xy[0] != _xy[0]) || (xy[1] != _xy[1])) {
+          clearInterval(System._browser.resize_timerID)
+          System._browser.resize_timerID = setTimeout("System._browser.resize()", 0)
+        }
+      };
+    })(), 10);
   }
-  System._browser.resize_timerID = setTimeout("System._browser.resize()", 0)
+  else
+    System._browser.resize_timerID = setTimeout("System._browser.resize()", 0)
 }
 
 // need getter to make it work on WebKit
@@ -1526,6 +1545,13 @@ else
    ,resize: (function () {
       var resized_once = false
 
+      function on_first_resize() {
+if (!resized_once) {
+  resized_once = true
+  setTimeout(function () { window.dispatchEvent(new CustomEvent("SA_resized_once")); }, 0)
+}
+      }
+
       return function () {
 this.resize_timerID = null
 
@@ -1535,6 +1561,7 @@ if (use_SA_browser_mode) {
     var i_obj = parent.document.getElementById("Ichild_animation" + SA_child_animation_id).style
     i_obj.width  = oBody.pixelWidth  + "px"
     i_obj.height = oBody.pixelHeight + "px"
+    on_first_resize()
   }
   else {
     if (webkit_electron_mode && top.System._browser.capturePage_in_process) {
@@ -1548,13 +1575,8 @@ if (use_SA_browser_mode) {
 //webkit_window.setContentSize(oBody.pixelWidth, oBody.pixelHeight)
 //webkit_window.setBounds({x:0, y:0, width:oBody.pixelWidth*8, height:oBody.pixelHeight*5})
 //DEBUG_show(webkit_window.getContentSize(),0,1)
+    on_first_resize()
   }
-
-  if (!resized_once) {
-    resized_once = true
-    setTimeout(function () { window.dispatchEvent(new CustomEvent("SA_resized_once")); }, 0)
-  }
-
 }
       };
     })()
@@ -3435,8 +3457,10 @@ fm_worker.onmessage = function (e) {
       _facemesh.worker_initialized = true
       _facemesh.enabled = true
     }
-    else
+    else {
       DEBUG_show(data, 2)
+      System._browser.console.log(data)
+    }
   }
   else {
 let info = ""
