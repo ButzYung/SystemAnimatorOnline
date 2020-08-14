@@ -4362,12 +4362,12 @@ update_obj(model_mesh, true)
 
 if (xr.can_requestHitTestSource && hit.createAnchor && (AR_options.anchors_enabled !== false)) {
   if (!createAnchor_compatibility_mode) {
-　　  hit.createAnchor().then(init_anchor(anchor)).catch(function (err) {
+　　  hit.createAnchor().then(init_anchor).catch(function (err) {
 　　　　　　createAnchor_compatibility_mode = true
  　　　});
   }
   if (createAnchor_compatibility_mode) {
-　　  hit.createAnchor(new XRRigidTransform()).then(init_anchor(anchor)).catch(function (err) {
+　　  hit.createAnchor(new XRRigidTransform()).then(init_anchor).catch(function (err) {
 　　    DEBUG_show(".createAnchor ERROR:" + err)
  　　　});
   }
