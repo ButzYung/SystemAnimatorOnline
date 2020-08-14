@@ -5030,6 +5030,7 @@ if (checksum == xr.hitMatrix_anchor._checksum)
 if (!xr.hitMatrix_anchor._decomposed_offset) {
   xr.hitMatrix_anchor._decomposed_offset = [xr.hitMatrix_anchor.decomposed[0].sub(transform.position)]
 DEBUG_show(xr.hitMatrix_anchor._decomposed_offset[0].toArray().join('\n')+'\n')
+xr.hitMatrix_anchor._decomposed_offset = [new THREE.Vector3()]
 }
 
 xr.hitMatrix_anchor._checksum = checksum
