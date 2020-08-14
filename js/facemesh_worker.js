@@ -2,7 +2,7 @@
 // https://blog.tensorflow.org/2020/03/introducing-webassembly-backend-for-tensorflow-js.html
 
 // temporary fix for issues on Eletron when loading the latest TFJS WASM
-var tfjs_wasm_version = (self.location.protocol == "file:") ? '@2.1.0' : '';
+var tfjs_wasm_version = '@2.1.0';//(self.location.protocol == "file:") ? '@2.1.0' : '';
 
 importScripts("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs");
 importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm' + tfjs_wasm_version + '/dist/tf-backend-wasm.js');
