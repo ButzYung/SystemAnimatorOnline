@@ -4303,6 +4303,8 @@ return drop_list
     var xr;
     var _camera;
 
+    var createAnchor_compatibility_mode;
+
     window.addEventListener("MMDStarted", function () {
       _camera = MMD_SA._trackball_camera.object.clone()
 
@@ -4324,6 +4326,24 @@ if (first_call) {
       }
 
       function update_anchor(hit, update_obj) {
+function init_anchor(anchor) {
+//  DEBUG_show("anchor created")
+  if (model_mesh._anchor) {
+    if (model_mesh._anchor.delete)
+      model_mesh._anchor.delete()
+    else
+      model_mesh._anchor.detach()
+    xr.anchors.delete(model_mesh._anchor)
+  }
+  model_mesh._anchor = anchor
+
+  anchor._data = {
+    obj: model_mesh
+   ,update: update_obj
+  };
+  xr.anchors.add(anchor)
+}
+
 const AR_options = MMD_SA_options.WebXR.AR;
 let model_mesh = THREE.MMD.getModels()[0].mesh;
 
@@ -4341,25 +4361,16 @@ if (!update_obj)
 update_obj(model_mesh, true)
 
 if (xr.can_requestHitTestSource && hit.createAnchor && (AR_options.anchors_enabled !== false)) {
-  hit.createAnchor().then(function (anchor) {
-//    DEBUG_show("anchor created")
-    if (model_mesh._anchor) {
-      if (model_mesh._anchor.delete)
-        model_mesh._anchor.delete()
-      else
-        model_mesh._anchor.detach()
-      xr.anchors.delete(model_mesh._anchor)
-    }
-    model_mesh._anchor = anchor
-
-    anchor._data = {
-      obj: model_mesh
-     ,update: update_obj
-    };
-    xr.anchors.add(anchor)
-  }).catch(function (err) {
-    DEBUG_show(".createAnchor ERROR:" + err)
-  });
+  if (!createAnchor_compatibility_mode) {
+　　  hit.createAnchor().then(init_anchor(anchor)).catch(function (err) {
+　　　　　　createAnchor_compatibility_mode = true
+ 　　　});
+  }
+  if (createAnchor_compatibility_mode) {
+　　  hit.createAnchor(new XRRigidTransform()).then(init_anchor(anchor)).catch(function (err) {
+　　    DEBUG_show(".createAnchor ERROR:" + err)
+ 　　　});
+  }
 }
 
 xr.hit_found = true
@@ -5028,14 +5039,12 @@ if (checksum == xr.hitMatrix_anchor._checksum)
 
 // position/etc offset between the original hit-test result and the INITIAL anchor update
 if (!xr.hitMatrix_anchor._decomposed_offset) {
-  xr.hitMatrix_anchor._decomposed_offset = [xr.hitMatrix_anchor.decomposed[0].sub(transform.position)]
-DEBUG_show(xr.hitMatrix_anchor._decomposed_offset[0].toArray().join('\n')+'\n')
-xr.hitMatrix_anchor._decomposed_offset = [new THREE.Vector3()]
+  xr.hitMatrix_anchor._decomposed_offset = [(createAnchor_compatibility_mode) ? xr.hitMatrix_anchor.decomposed[0].sub(transform.position) : new THREE.Vector3()];
 }
 
 xr.hitMatrix_anchor._checksum = checksum
 xr.hitMatrix_anchor.obj = (xr.hitMatrix_anchor.obj||new THREE.Matrix4()).fromArray(transform.matrix);
-xr.hitMatrix_anchor.decomposed = [new THREE.Vector3().copy(transform.position).sub(xr.hitMatrix_anchor._decomposed_offset[0]), new THREE.Quaternion().copy(transform.orientation), null];
+xr.hitMatrix_anchor.decomposed = [new THREE.Vector3().copy(transform.position).add(xr.hitMatrix_anchor._decomposed_offset[0]), new THREE.Quaternion().copy(transform.orientation), null];
 xr.hitMatrix_anchor.decomposed[3] = new THREE.Vector3(0,1,0).applyQuaternion(xr.hitMatrix_anchor.decomposed[1]);
 
 anchor._data.update(anchor._data.obj);
