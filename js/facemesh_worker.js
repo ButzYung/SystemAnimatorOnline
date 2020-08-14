@@ -1,26 +1,28 @@
 // https://blog.tensorflow.org/2020/03/face-and-hand-tracking-in-browser-with-mediapipe-and-tensorflowjs.html
 // https://blog.tensorflow.org/2020/03/introducing-webassembly-backend-for-tensorflow-js.html
 
-// temporary fix for issues when loading the latest TFJS WASM (> 2.1.0) on certain platforms
-var tfjs_wasm_version = '@2.1.0';//(self.location.protocol == "file:") ? '@2.1.0' : '';
+// temporary fix for issues when loading the latest TFJS WASM on certain platforms
+var tfjs_version = '@2.2.0';//(self.location.protocol == "file:") ? '@2.1.0' : '';
 
-importScripts("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs");
-importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm' + tfjs_wasm_version + '/dist/tf-backend-wasm.js');
+importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs' + tfjs_version);
+importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm' + tfjs_version + '/dist/tf-backend-wasm.js');
 
-// https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tf-backend-wasm.js
-// https://github.com/GoogleChromeLabs/wasm-feature-detect
-var use_SIMD = WebAssembly.validate(new Uint8Array([
-      0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 96, 0, 0, 3,
-      2, 1, 0, 10, 9, 1, 7, 0, 65, 0, 253, 15, 26, 11
-])) || new URLSearchParams(self.location.search.substring(1)).get('simd');
+var use_SIMD;
 
 // https://github.com/tensorflow/tfjs/tree/master/tfjs-backend-wasm
-if (!tfjs_wasm_version) {
-  tf.wasm.setWasmPaths('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm' + tfjs_wasm_version + '/dist/');
+if (tfjs_version == '@2.1.0') {
+// https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tf-backend-wasm.js
+// https://github.com/GoogleChromeLabs/wasm-feature-detect
+  use_SIMD = WebAssembly.validate(new Uint8Array([
+      0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 96, 0, 0, 3,
+      2, 1, 0, 10, 9, 1, 7, 0, 65, 0, 253, 15, 26, 11
+  ])) || new URLSearchParams(self.location.search.substring(1)).get('simd');
+  tf.wasm.setWasmPath('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm' + tfjs_version + '/dist/tfjs-backend-wasm' + ((use_SIMD)?'-simd':'') + '.wasm');
 }
 else {
-  tf.wasm.setWasmPath('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm' + tfjs_wasm_version + '/dist/tfjs-backend-wasm' + ((use_SIMD)?'-simd':'') + '.wasm');
+  tf.wasm.setWasmPaths('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm' + tfjs_version + '/dist/');
 }
+
 tf.setBackend("wasm").then(function () {
   console.log('TFJS WASM' + ((use_SIMD)?'-SIMD':'') + ' backend')
   init()
@@ -100,7 +102,8 @@ var canvas, context, RAF_timerID;
 async function init() {
 // https://github.com/tensorflow/tfjs-models/tree/master/facemesh
   try {
-    importScripts("https://cdn.jsdelivr.net/npm/@tensorflow-models/facemesh");
+    let facemesh_version = '@0.0.3';
+    importScripts('https://cdn.jsdelivr.net/npm/@tensorflow-models/facemesh' + facemesh_version);
 
     model = await facemesh.load({maxFaces:1});
     console.log('(Facemesh initialized)')
@@ -153,7 +156,7 @@ _t = _t_now
   }
 
   let face = faces[0]
-
+//if (!self._TEST_) {self._TEST_=true;console.log(face);}
   if ((gray_w != w) || (gray_h != h)) {
     gray_w = w
     gray_h = h
