@@ -3447,7 +3447,15 @@ fetch("js/facemesh_triangulation.json").then(response => response.json()).then(d
 for (var i = 0; i < 4; i++)
   _v3[i] = new THREE.Vector3()
 
-fm_worker = new Worker('js/facemesh_worker.js' + ((System._browser.use_WASM_SIMD)?'?simd=1':''));
+var params = []
+if (System._browser.use_WASM_SIMD) {
+  params.push('simd=1')
+}
+if (System._browser.url_search_params['use_latest_facemesh']) {
+  params.push('use_latest_facemesh=1')
+}
+
+fm_worker = new Worker('js/facemesh_worker.js' + ((params.length)?'?'+params.join('&'):''));
 
 fm_worker.onmessage = function (e) {
   var data = ((typeof e.data == "string") && (e.data.charAt(0) === "{")) ? JSON.parse(e.data) : e.data;
@@ -3472,7 +3480,7 @@ if (data.faces.length) {
   let y_diff = face.mesh[454][1] - face.mesh[234][1]
   let z_diff = face.mesh[454][2] - face.mesh[234][2]
   let dis = MMD_SA.TEMP_v3.fromArray(face.mesh[234]).distanceTo(MMD_SA._v3a.fromArray(face.mesh[454]))
-info=y_diff
+
   let y_rot = -Math.atan2(z_diff, x_diff)
   let z_rot = Math.asin(y_diff / dis)
 
