@@ -102,7 +102,7 @@ var canvas, context, RAF_timerID;
 async function init() {
 // https://github.com/tensorflow/tfjs-models/tree/master/facemesh
   try {
-    let facemesh_version = '@0.0.3';
+    let facemesh_version = ''//'@0.0.3';
     importScripts('https://cdn.jsdelivr.net/npm/@tensorflow-models/facemesh' + facemesh_version);
 
     model = await facemesh.load({maxFaces:1});
