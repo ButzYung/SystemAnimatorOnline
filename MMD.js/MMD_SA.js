@@ -4660,7 +4660,7 @@ if (this.use_dummy_webgl) {
   if (!this.user_camera.initialized)
     this.gl = document.createElement("canvas").getContext("webgl2");
 }
-
+DEBUG_show("A",0,1)
 try {
   await this.gl.makeXRCompatible();
   let DPR = MMD_SA._renderer.devicePixelRatio / window.devicePixelRatio
@@ -4679,7 +4679,7 @@ catch (err) {
   DEBUG_show("AR session error:" + err,0,1)
   return
 }
-
+DEBUG_show("B",0,1)
 this.light_color_base = jThree("#MMD_DirLight").three(0).color.clone()
 this.light_position_base = jThree("#MMD_DirLight").three(0).position.clone()
 if (AR_options.light_estimation_enabled !== false) {
