@@ -5083,11 +5083,12 @@ anchor._data.update(anchor._data.obj);
 //else { DEBUG_show(0,0,1) }
 
 window.dispatchEvent(new CustomEvent("SA_AR_onARFrame"));
-DEBUG_show('-F',0,1)
+DEBUG_show('-E',0,1)
 if (1||!this.use_dummy_webgl) {
 // a trick to ensure that no frame is skipped
   RAF_timestamp = null
   Animate_RAF(time)
+DEBUG_show('-F',0,1)
 }
 else {
   if (!RAF_timerID)
