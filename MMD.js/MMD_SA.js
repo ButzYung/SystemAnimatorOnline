@@ -4518,6 +4518,7 @@ try {
   if (AR_options.dom_overlay && (AR_options.dom_overlay.enabled !== false)) {
     options.domOverlay = {root:AR_options.dom_overlay.root};
     options.optionalFeatures = ["dom-overlay","dom-overlay-for-handheld-ar"];
+AR_options.dom_overlay.root.style.visibility="hidden"
   }
   if (AR_options.light_estimation_enabled !== false) {
     if (!options.optionalFeatures)
@@ -4679,7 +4680,7 @@ catch (err) {
   DEBUG_show("AR session error:" + err,0,1)
   return
 }
-DEBUG_show('-A',0,1)
+
 this.light_color_base = jThree("#MMD_DirLight").three(0).color.clone()
 this.light_position_base = jThree("#MMD_DirLight").three(0).position.clone()
 if (AR_options.light_estimation_enabled !== false) {
@@ -4779,7 +4780,7 @@ if (1||!this.use_dummy_webgl) {
     RAF_timerID = null
   }
 }
-DEBUG_show('-BB',0,1);//AR_options.dom_overlay.root.style.visibility="hidden";
+
 if (1) {
   if (!this.use_dummy_webgl) {
     document.getElementById("SL").style.visibility = "hidden"
@@ -4801,7 +4802,7 @@ if (1) {
 }
 
 window.dispatchEvent(new CustomEvent("SA_AR_onSessionStarted"));
-DEBUG_show('-C',0,1)
+
 session.requestAnimationFrame(xr.onARFrame);
   }
 
@@ -4901,7 +4902,7 @@ window.dispatchEvent(new CustomEvent("SA_AR_onSessionEnd"));
 //let _now = performance.now();
 let session = frame.session;
 session.requestAnimationFrame(this.onARFrame);
-DEBUG_show('-D',0,1)
+
 const AR_options = MMD_SA_options.WebXR.AR;
 
 let pose;
@@ -5083,12 +5084,11 @@ anchor._data.update(anchor._data.obj);
 //else { DEBUG_show(0,0,1) }
 
 window.dispatchEvent(new CustomEvent("SA_AR_onARFrame"));
-DEBUG_show('-E',0,1)
+
 if (1||!this.use_dummy_webgl) {
 // a trick to ensure that no frame is skipped
   RAF_timestamp = null
   Animate_RAF(time)
-DEBUG_show('-F',0,1)
 }
 else {
   if (!RAF_timerID)
