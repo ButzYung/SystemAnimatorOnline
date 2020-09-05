@@ -110,10 +110,10 @@ content: attr(data-title);
 }
 
 div {
-  user-select: none;
   -moz-user-select: none;
   -webkit-user-select: none;
   -ms-user-select: none;
+  user-select: none;
 }
 
 #Lbody3D, #Lbody3D_camera, #Lbody3D_main, #Lbody3D_navigation, #Lbody , #Lchild_animation_parent {
