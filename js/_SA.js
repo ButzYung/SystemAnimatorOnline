@@ -225,6 +225,7 @@ this._onmouseout_waiting_custom.push(func)
 
     if (browser_native_mode && !webkit_window && !is_SA_child_animation) {
       window.addEventListener("resize", function (e) {
+DEBUG_show(9,0,1)
 if (1||Settings.CSSTransformFullscreen) {
 //  SA_zoom = 1
   resize()
