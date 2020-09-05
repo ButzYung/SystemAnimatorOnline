@@ -1,4 +1,4 @@
-// WMI JS library (v2.7.1)
+// WMI JS library (2020-09-04)
 // NOTE: "SWbemRefresher" can be used ONLY on "Win32_Perf" data. Using it on other objects causes MEMORY LEAK.
 
 var WMI_obj
@@ -121,8 +121,9 @@ catch (ex) {}
 function WMI_Refresher_update(query_str) {
   var objs = []
 try {
-  if (this.refresh() && (this.refreshed_count_last == PC_count_absolute))
+  if (this.refresh() && (this.refreshed_count_last == PC_count_absolute)) {
     objs = this.collection
+  }
   else {
     if (WMI_AL_mode && this.refresher_id) {
       var filename = WMI_AL_temp_path+'\\'+WMI_AL_temp_filename + '.txt'
@@ -329,7 +330,6 @@ else {
     perfmon: null
 
    ,counter: {}
-   ,counter_list: []
 
    ,loaded: false
    ,init: function (obj) {
@@ -363,6 +363,15 @@ WMI_perfmon.NetworkInterface_init(err, data)
       });
     }
     break
+  case "Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine":
+    obj.update = WMI_perfmon.update_func("GPU Engine")
+
+    if (!WMI_perfmon.GPUEngine_counter_list) {
+      WMI_perfmon.perfmon.list("GPU Engine", function (err, data) {
+WMI_perfmon.GPUEngine_init(err, data)
+      });
+    }
+    break
   case "Win32_PerfFormattedData_PerfOS_Memory":
     obj.update = WMI_perfmon.update_func("Memory")
 
@@ -383,17 +392,16 @@ return function () {
     }
 
    ,run_timerID: null
-   ,run: function (id_list) {
+   ,run: function (id_list, skip_counter_cache) {
 if (this.run_timerID) {
   clearTimeout(this.run_timerID)
 }
 
-id_list.forEach(function (id) {
-  WMI_perfmon.counter[id] = true
-});
-
-for (var id in this.counter)
-  this.counter_list.push(id)
+if (!skip_counter_cache) {
+  id_list.forEach(function (id) {
+    WMI_perfmon.counter[id] = true
+  });
+}
 
 this.run_timerID = setTimeout(function () { WMI_perfmon.run_timerID=null; WMI_perfmon.counter_start() }, 1000)
     }
@@ -401,13 +409,18 @@ this.run_timerID = setTimeout(function () { WMI_perfmon.run_timerID=null; WMI_pe
    ,counter_result: {
   "LogicalDisk": []
  ,"Network Interface": []
+ ,"GPU Engine": []
  ,"Memory": []
     }
 
+   ,counter_started: false
    ,counter_start: function () {
-DEBUG_show("Use Perfmon", 2)
+if (!this.counter_started) {
+  this.counter_started = true
+  DEBUG_show("Use Perfmon", 2)
+}
 
-this.perfmon(this.counter_list, function (err, data) {
+WMI_perfmon.perfmon(Object.keys(WMI_perfmon.counter).concat(WMI_perfmon.GPUEngine_counter_list||[]), function (err, data) {
   WMI_perfmon.counter_process(err, data)
 });
     }
@@ -420,6 +433,7 @@ if (err) {
 
 this.counter_result.LogicalDisk = []
 this.counter_result["Network Interface"] = []
+this.counter_result["GPU Engine"] = []
 this.counter_result.Memory = []
 
 var _NetworkInterface = {}
@@ -441,6 +455,9 @@ for (var name in data.counters) {
     else if (/Bytes Sent\/sec/.test(name)) {
       obj.BytesSentPerSec = v
     }
+  }
+  else if (/GPU Engine/.test(name)) {
+    this.counter_result["GPU Engine"].push({ UtilizationPercentage:v })
   }
   else if (/Memory/.test(name)) {
     var m = this.counter_result.Memory
@@ -485,7 +502,6 @@ data.counters.forEach(function (counter) {
   }
 });
 
-//DEBUG_show(WMI_perfmon.LogicalDisk_counter_list)
 this.run(this.LogicalDisk_counter_list)
     }
 
@@ -506,6 +522,35 @@ data.counters.forEach(function (counter) {
 });
 
 this.run(this.NetworkInterface_counter_list)
+    }
+
+   ,GPUEngine_counter_list: null
+   ,GPUEngine_init: function (err, data) {
+if (err) {
+  DEBUG_show(err.message)
+  return
+}
+
+var counter_list = []
+data.counters.filter((name)=>name.indexOf("3D)\\Utilization Percentage")!=-1).forEach(function (counter) {
+  counter_list.push(counter)
+});
+
+if (!this._GPUEngine_counter_list_timerID) {
+  this._GPUEngine_counter_list_timerID = setInterval(function () {
+    WMI_perfmon.perfmon.list("GPU Engine", function (err, data) {
+WMI_perfmon.GPUEngine_init(err, data)
+    });
+  }, 5*1000);
+}
+else {
+  if ((this.GPUEngine_counter_list.length == counter_list.length) && this.GPUEngine_counter_list.every((c)=>counter_list.indexOf(c)!=-1))
+    return
+}
+
+this.GPUEngine_counter_list = counter_list
+
+this.run(this.GPUEngine_counter_list, true)
     }
   }
 }

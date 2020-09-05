@@ -1,6 +1,6 @@
 /*
 
-_SA.js (05-12-2020)
+_SA.js (2020-09-04)
 
 System Animator
 (c) Butz Yung / Anime Theme. All rights reserved.
@@ -1320,6 +1320,21 @@ catch (err) {}
     upload_peak: 1000*1000*10/8
   }
   t = 'Network usage (general)'
+  break
+
+case "GPU_ENGINE":
+
+try {
+  if ((num > 0) && /GPU_ENGINE/.test(EV_object[0].EV_parser()))
+    ev_obj.WMI_ev_obj = EV_object[0].WMI_ev_obj
+  else {
+    ev_obj.WMI_ev_obj = new WMI_Refresher("Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine", "EV")
+    ev_obj.WMI_ev_obj.init()
+  }
+}
+catch (err) {}
+
+  t = 'GPU engine 3D usage (general)'
   break
 
 case "SOUND":
@@ -3459,6 +3474,18 @@ try {
     EV_usage_PROCESS(EV_usage_list[0], dl_ratio*100)
     EV_usage_PROCESS(EV_usage_list[1], ul_ratio*100)
   }
+}
+catch (err) {}
+  break
+
+case "GPU_ENGINE":
+
+try {
+  var o = WMI_ev_obj.update()
+  for (var n = 0, n_max = o.length; n < n_max; n++) {
+    usage += Math.max(parseInt(o[n].UtilizationPercentage), 0)
+  }
+//DEBUG_show(usage+'/'+Date.now())
 }
 catch (err) {}
   break

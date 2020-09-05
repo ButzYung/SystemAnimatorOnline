@@ -1,4 +1,4 @@
-// WMI AL core (v1.1.0)
+// (2020-09-04)
 
 var WMI_AL_ref = {
   Win32_PerfFormattedData_PerfOS_Processor: {
@@ -51,6 +51,14 @@ var WMI_AL_ref = {
      ,BytesReceivedPerSec: 0
      ,BytesSentPerSec: 0
 //     ,CurrentBandwidth: 0
+    }
+   ,collection_length_default: 1
+   ,timer_interval: "PC_count_max"
+  }
+
+ ,Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine: {
+    properties: {
+      UtilizationPercentage: 0
     }
    ,collection_length_default: 1
    ,timer_interval: "PC_count_max"
