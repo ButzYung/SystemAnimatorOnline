@@ -2,6 +2,12 @@ System Animator - Changelog
 
 -------------------------------
 
+v10.9.4.0
+
+- Add support for monitoring graphics card 3D engine usage, with Electron updated (v10.1.1) to support this change.
+
+-------------------------------
+
 v10.9.3.1
 
 - Fix relunching issues on some Linux systems.

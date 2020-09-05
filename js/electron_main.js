@@ -1,4 +1,4 @@
-// SA Electron - Main EXTENDED (05-12-2020)
+// SA Electron - Main EXTENDED (2020-08-07)
 
 /*
 eval on Electron v1.6.x has some scope issues/bugs which makes the global variables on this script inaccessible inside functions.

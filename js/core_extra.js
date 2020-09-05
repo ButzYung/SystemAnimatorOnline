@@ -1,4 +1,4 @@
-// System Animator core - EXTRA (v10.7.0.0)
+// System Animator core - EXTRA (2020-06-26)
 
 var use_SA_browser_mode
 var use_SA_system_emulation, use_SA_gimage_emulation

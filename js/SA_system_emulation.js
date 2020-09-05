@@ -1,4 +1,4 @@
-// System object emultaion (v3.8.1)
+// System object emultaion (2020-09-05)
 
 var use_SA_system_emulation = true
 var use_SA_browser_mode
