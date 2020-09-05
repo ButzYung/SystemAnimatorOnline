@@ -4733,7 +4733,7 @@ if (xr.ground_plane)
   });
 
   if (AR_options.dom_overlay && (AR_options.dom_overlay.enabled !== false)) {
-    document.body.addEventListener('beforexrselect', (ev) => {
+    AR_options.dom_overlay.root.addEventListener('beforexrselect', (ev) => {
       ev.preventDefault();
     });
   }
@@ -4779,7 +4779,7 @@ if (1||!this.use_dummy_webgl) {
     RAF_timerID = null
   }
 }
-DEBUG_show('-B',0,1)
+DEBUG_show('-BB',0,1);AR_options.dom_overlay.root.style.visibility="hidden";
 if (1) {
   if (!this.use_dummy_webgl) {
     document.getElementById("SL").style.visibility = "hidden"
