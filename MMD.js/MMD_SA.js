@@ -871,8 +871,7 @@ let init = function () {
     Ldebug.removeEventListener("click", MMD_SA._click_to_reset);
     MMD_SA._click_to_reset = null;
   }
-  if (is_mobile)
-    document.documentElement.requestFullscreen()
+//  if (is_mobile) document.documentElement.requestFullscreen();
 
   MMD_SA.MME_init()
   MMD_SA.jThree_ready()
@@ -4517,7 +4516,7 @@ try {
   let options = (xr.can_requestHitTestSource) ? {requiredFeatures:["hit-test"]} : {};
   if (AR_options.dom_overlay && (AR_options.dom_overlay.enabled !== false)) {
     options.domOverlay = {root:AR_options.dom_overlay.root};
-    options.optionalFeatures = ["dom-overlay"]//,"dom-overlay-for-handheld-ar"];
+    options.optionalFeatures = ["dom-overlay","dom-overlay-for-handheld-ar"];
   }
   if (AR_options.light_estimation_enabled !== false) {
     if (!options.optionalFeatures)
