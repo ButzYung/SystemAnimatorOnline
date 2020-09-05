@@ -247,7 +247,7 @@ if (is_SA_child_animation) {
 if (is_mobile && (is_SA_child_animation_host || self.MMD_SA)) {
   LbuttonFullscreen.style.visibility = "hidden"
   LbuttonRestore.style.visibility = "inherit"
-  document.documentElement.requestFullscreen().then(()=>{DEBUG_show('Fullscreen:ON',2)});
+  document.documentElement.requestFullscreen().then(()=>{DEBUG_show('Fullscreen:ON',0,1)});
   return
 }
 
@@ -271,7 +271,7 @@ if (is_SA_child_animation_host && is_SA_child_animation) {
 if (is_mobile && (is_SA_child_animation_host || self.MMD_SA)) {
   LbuttonFullscreen.style.visibility = "inherit"
   LbuttonRestore.style.visibility = "hidden"
-  document.exitFullscreen().then(()=>{DEBUG_show('Fullscreen:OFF',2)});
+  document.exitFullscreen().then(()=>{DEBUG_show('Fullscreen:OFF',0,1)});
   return
 }
 
