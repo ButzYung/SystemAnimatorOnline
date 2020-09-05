@@ -871,7 +871,7 @@ let init = function () {
     Ldebug.removeEventListener("click", MMD_SA._click_to_reset);
     MMD_SA._click_to_reset = null;
   }
-//  if (is_mobile) document.documentElement.requestFullscreen();
+  if (is_mobile) document.documentElement.requestFullscreen();
 
   MMD_SA.MME_init()
   MMD_SA.jThree_ready()
