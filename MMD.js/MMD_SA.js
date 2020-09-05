@@ -4518,7 +4518,6 @@ try {
   if (AR_options.dom_overlay && (AR_options.dom_overlay.enabled !== false)) {
     options.domOverlay = {root:AR_options.dom_overlay.root};
     options.optionalFeatures = ["dom-overlay","dom-overlay-for-handheld-ar"];
-AR_options.dom_overlay.root.style.visibility="hidden"
   }
   if (AR_options.light_estimation_enabled !== false) {
     if (!options.optionalFeatures)
