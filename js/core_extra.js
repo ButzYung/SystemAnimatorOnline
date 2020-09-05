@@ -527,7 +527,7 @@ function SA_load_body() {
 //+ '   <img src="images/icon_gallery.png" class="QuickMenu_image" />\n'
 + '<span>🖼️</span>'
 + '  </div>\n'
-+ '  <div id="Lquick_menu_ar_button" class="QuickMenu_button" style="left:' + ((is_mobile)?'144px;width:36px;':'72px') + '" onclick="MMD_SA_options.WebXR.AR.dom_overlay.root.style.visibility=\'hidden\';setTimeout(function(){MMD_SA.WebXR.enter_AR()},100);" title="AR mode">\n'
++ '  <div id="Lquick_menu_ar_button" class="QuickMenu_button" style="left:' + ((is_mobile)?'144px;width:36px;':'72px') + '" onclick="MMD_SA.WebXR.enter_AR()" title="AR mode">\n'
 + '<span>📱️</span>'
 + '  </div>\n'
 + ' </div>\n'
