@@ -2350,7 +2350,7 @@ System._browser._s_left = System._browser._s_top = null
   }
 
 // after all window moving/resizing timers (Electron v9+)
-  if (webkit_mode)
+  if (webkit_electron_mode)//webkit_mode)
     document.body.style._set()
 
   if (self.SL_MC_video_obj)
