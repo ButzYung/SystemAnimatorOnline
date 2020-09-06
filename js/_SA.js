@@ -1749,7 +1749,7 @@ if (use_native_img) {
   }
   if (Settings.CSSTransform3DBoxAnimate && Box3D.init)
     Box3D.init()
-if (self.MMD_SA && MMD_SA.WebXR.session) return;
+
   if (Canvas_Effect && !Canvas_Effect._initialized) {
     Canvas_Effect._initialized = true
     DEBUG_show("Use " + Canvas_Effect.name + " effect", 2)
@@ -1914,7 +1914,7 @@ else {
     if (!is_SA_fullscreen_offset_custom)
       SA_fullscreen_offsetX = SA_fullscreen_offsetY = 0
   }
-
+if (self.MMD_SA && MMD_SA.WebXR.session) return;
 /*
   if ((SA_zoom != 1) && self.EQP_size_scale && use_WebGL_2D && (EQP_size_scale != SA_zoom)) {
 //DEBUG_show(EQP_size_scale +','+ SA_zoom,0,1)
