@@ -2167,7 +2167,7 @@ if (fullscreen) {
     cs.pixelHeight = B_height * SA_zoom - (cs.posTop  * 2)
     cs.filter = (SA_zoom == 1) ? "" : "progid:DXImageTransform.Microsoft.Matrix(M11=" + SA_zoom + ", M22=" + SA_zoom + ", FilterType='" + SA_zoom_filterType + "')"
   }
-if (self.MMD_SA && MMD_SA.WebXR.session) return;
+
   if (Canvas_Effect && Canvas_Effect._use_default_canvas) {
     var cw = (Canvas_Effect.width)  ? Canvas_Effect.width  : B_width
     var ch = (Canvas_Effect.height) ? Canvas_Effect.height : B_height
@@ -2210,7 +2210,7 @@ if (self.MMD_SA && MMD_SA.WebXR.session) return;
 
   oBody.pixelWidth  = B_content_width
   oBody.pixelHeight = B_content_height
-
+if (self.MMD_SA && MMD_SA.WebXR.session) return;
   if (use_SA_system_emulation) {
     var ls = Lquick_menu.style
     var qmb_list = document.getElementsByClassName("QuickMenu_button")
