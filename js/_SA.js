@@ -229,7 +229,7 @@ function _resize() {
 //  SA_zoom = 1
   resize()
 }
-
+return
 if (1||Settings.CSSTransformFullscreen) {
   System._browser.on_animation_update.remove(_resize, 0)
   System._browser.on_animation_update.add(_resize, 1,0)
