@@ -2348,7 +2348,7 @@ System._browser._s_left = System._browser._s_top = null
       }, 0);
     }
   }
-if (self.MMD_SA && MMD_SA.WebXR.session) return;
+
 // after all window moving/resizing timers (Electron v9+)
   if (webkit_mode)
     document.body.style._set()
@@ -2360,7 +2360,7 @@ if (self.MMD_SA && MMD_SA.WebXR.session) return;
   if (!ie9_native) {
     window.dispatchEvent(new CustomEvent("SA_resize"));
   }
-
+if (self.MMD_SA && MMD_SA.WebXR.session) return;
   if (!no_focus) {
 //if (!is_SA_child_animation) console.log(999)
     setTimeout('self.focus()', 250)//; if (webkit_mode) {System._browser.moveWallpaper()}', 300)
