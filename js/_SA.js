@@ -225,10 +225,14 @@ this._onmouseout_waiting_custom.push(func)
 
     if (browser_native_mode && !webkit_window && !is_SA_child_animation) {
       window.addEventListener("resize", function (e) {
-return;
-if (1||Settings.CSSTransformFullscreen) {
+function _resize() {
 //  SA_zoom = 1
   resize()
+}
+
+if (1||Settings.CSSTransformFullscreen) {
+  System._browser.on_animation_update.remove(_resize, 0)
+  System._browser.on_animation_update.add(_resize, 1,0)
 }
       });
     }
