@@ -228,7 +228,7 @@ this._onmouseout_waiting_custom.push(func)
       window.addEventListener("resize", function (e) {
 function _resize() {
 // temp fix for a WebXR dom overlay issue
-  if (self.MMD_SA && MMD_SA.WebXR.session && (parseInt(navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)||0) > -1)) return;
+  if (self.MMD_SA && MMD_SA.WebXR.session && (parseInt(navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)||0) > 85000)) return;
 //  SA_zoom = 1
   resize()
 }
