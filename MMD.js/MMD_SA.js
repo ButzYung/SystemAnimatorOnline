@@ -4509,6 +4509,12 @@ if (this.session) {
 
 this.user_camera.hide()
 
+EV_sync_update.requestAnimationFrame_auto = false
+if (RAF_timerID) {
+  cancelAnimationFrame(RAF_timerID)
+  RAF_timerID = null
+}
+
 const AR_options = MMD_SA_options.WebXR.AR;
 try {
 // https://immersive-web.github.io/dom-overlays/
@@ -4549,6 +4555,13 @@ catch (err) {
   catch (err2) {
     console.error(err2)
     DEBUG_show("(AR session failed 02)")
+
+    EV_sync_update.requestAnimationFrame_auto = true
+    if (RAF_timerID) {
+      cancelAnimationFrame(RAF_timerID)
+      RAF_timerID = null
+    }
+    RAF_timerID = requestAnimationFrame(Animate_RAF)
   }
 }
   }
@@ -4771,14 +4784,6 @@ if (ao && !ao.paused) {
   SL_MC_Play()
 }
 
-if (1||!this.use_dummy_webgl) {
-  EV_sync_update.requestAnimationFrame_auto = false
-  if (RAF_timerID) {
-    cancelAnimationFrame(RAF_timerID)
-    RAF_timerID = null
-  }
-}
-
 if (1) {
   if (!this.use_dummy_webgl) {
     document.getElementById("SL").style.visibility = "hidden"
@@ -4869,14 +4874,12 @@ MMD_SA.reset_camera()
 MMD_SA._trackball_camera.enabled = true
 this.camera.matrixAutoUpdate = true
 
-if (1||!this.use_dummy_webgl) {
-  EV_sync_update.requestAnimationFrame_auto = true
-  if (RAF_timerID) {
-    cancelAnimationFrame(RAF_timerID)
-    RAF_timerID = null
-  }
-  RAF_timerID = requestAnimationFrame(Animate_RAF)
+EV_sync_update.requestAnimationFrame_auto = true
+if (RAF_timerID) {
+  cancelAnimationFrame(RAF_timerID)
+  RAF_timerID = null
 }
+RAF_timerID = requestAnimationFrame(Animate_RAF)
 
 if (1) {
   document.getElementById("SL").style.visibility = "visible"
