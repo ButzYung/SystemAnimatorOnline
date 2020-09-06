@@ -2285,7 +2285,7 @@ if (fullscreen) {
     Lbody_host.style.posLeft = Math.max((screen_w - B_content_width) /2, 0)
     Lbody_host.style.posTop  = Math.max((screen_h - B_content_height)/2, 0)
   }
-if (self.MMD_SA && MMD_SA.WebXR.session) return;
+
   if (use_SVG_Clock)
     SVG_Clock.resize(B_width, B_height)
 
@@ -2348,7 +2348,7 @@ System._browser._s_left = System._browser._s_top = null
       }, 0);
     }
   }
-
+if (self.MMD_SA && MMD_SA.WebXR.session) return;
 // after all window moving/resizing timers (Electron v9+)
   if (webkit_mode)
     document.body.style._set()
