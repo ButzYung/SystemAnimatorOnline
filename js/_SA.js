@@ -228,7 +228,7 @@ this._onmouseout_waiting_custom.push(func)
       window.addEventListener("resize", function (e) {
 function _resize() {
 // temp fix for a WebXR dom overlay issue
-  if (self.MMD_SA && MMD_SA.WebXR.session && (parseInt(navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)||0) > 85000)) return;
+//  if (self.MMD_SA && MMD_SA.WebXR.session && (parseInt(navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)||0) > 85)) return;
 //  SA_zoom = 1
   resize()
 }
@@ -1749,7 +1749,7 @@ if (use_native_img) {
   }
   if (Settings.CSSTransform3DBoxAnimate && Box3D.init)
     Box3D.init()
-
+if (self.MMD_SA && MMD_SA.WebXR.session) return;
   if (Canvas_Effect && !Canvas_Effect._initialized) {
     Canvas_Effect._initialized = true
     DEBUG_show("Use " + Canvas_Effect.name + " effect", 2)
@@ -2361,7 +2361,7 @@ System._browser._s_left = System._browser._s_top = null
     window.dispatchEvent(new CustomEvent("SA_resize"));
   }
 
-  if (!is_mobile&& !no_focus) {
+  if (!no_focus) {
 //if (!is_SA_child_animation) console.log(999)
     setTimeout('self.focus()', 250)//; if (webkit_mode) {System._browser.moveWallpaper()}', 300)
   }
