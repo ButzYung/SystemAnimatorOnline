@@ -1914,7 +1914,7 @@ else {
     if (!is_SA_fullscreen_offset_custom)
       SA_fullscreen_offsetX = SA_fullscreen_offsetY = 0
   }
-if (self.MMD_SA && MMD_SA.WebXR.session) return;
+
 /*
   if ((SA_zoom != 1) && self.EQP_size_scale && use_WebGL_2D && (EQP_size_scale != SA_zoom)) {
 //DEBUG_show(EQP_size_scale +','+ SA_zoom,0,1)
@@ -2167,7 +2167,7 @@ if (fullscreen) {
     cs.pixelHeight = B_height * SA_zoom - (cs.posTop  * 2)
     cs.filter = (SA_zoom == 1) ? "" : "progid:DXImageTransform.Microsoft.Matrix(M11=" + SA_zoom + ", M22=" + SA_zoom + ", FilterType='" + SA_zoom_filterType + "')"
   }
-
+if (self.MMD_SA && MMD_SA.WebXR.session) return;
   if (Canvas_Effect && Canvas_Effect._use_default_canvas) {
     var cw = (Canvas_Effect.width)  ? Canvas_Effect.width  : B_width
     var ch = (Canvas_Effect.height) ? Canvas_Effect.height : B_height
