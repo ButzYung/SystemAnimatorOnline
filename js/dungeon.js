@@ -4314,7 +4314,7 @@ var draw_UI = function (e) {
 }
 
 window.addEventListener("SA_Dungeon_after_map_generation", function (e) { draw_UI(); });
-window.addEventListener("SA_resize", function (e) { if (self.MMD_SA && MMD_SA.WebXR.session) return; draw_UI(); if (MMD_SA_options.Dungeon.started) MMD_SA_options.Dungeon.update_dungeon_blocks(true); });
+window.addEventListener("SA_resize", function (e) { draw_UI(); if (MMD_SA_options.Dungeon.started) MMD_SA_options.Dungeon.update_dungeon_blocks(true); });
 
 })();
 // UI END
