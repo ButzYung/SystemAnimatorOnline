@@ -224,6 +224,7 @@ this._onmouseout_waiting_custom.push(func)
 });
 
     if (browser_native_mode && !webkit_window && !is_SA_child_animation) {
+document.addEventListener('fullscreenerror', (e) => {DEBUG_show(9,0,1)});
       window.addEventListener("resize", function (e) {
 function _resize() {
   if (self.MMD_SA && MMD_SA.WebXR.session) return;

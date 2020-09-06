@@ -4309,7 +4309,7 @@ return drop_list
 
       var AR_options = MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR;
       if (AR_options && AR_options.dom_overlay) {
-        AR_options.dom_overlay.root = (AR_options.dom_overlay.root && document.getElementById(AR_options.dom_overlay.root)) || document.body;
+        AR_options.dom_overlay.root = document.documentElement//(AR_options.dom_overlay.root && document.getElementById(AR_options.dom_overlay.root)) || document.body;
       }
     });
 
