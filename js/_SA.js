@@ -224,10 +224,11 @@ this._onmouseout_waiting_custom.push(func)
 });
 
     if (browser_native_mode && !webkit_window && !is_SA_child_animation) {
-document.addEventListener('fullscreenerror', (e) => {DEBUG_show(9,0,1)});
+//document.addEventListener('fullscreenerror', (e) => {DEBUG_show(9,0,1)});
       window.addEventListener("resize", function (e) {
 function _resize() {
-  if (self.MMD_SA && MMD_SA.WebXR.session) return;
+// temp fix for a WebXR dom overlay issue
+  if (self.MMD_SA && MMD_SA.WebXR.session && (parseInt(navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)||0) > -1)) return;
 //  SA_zoom = 1
   resize()
 }
@@ -2360,7 +2361,7 @@ System._browser._s_left = System._browser._s_top = null
     window.dispatchEvent(new CustomEvent("SA_resize"));
   }
 
-  if (!no_focus) {
+  if (!is_mobile&& !no_focus) {
 //if (!is_SA_child_animation) console.log(999)
     setTimeout('self.focus()', 250)//; if (webkit_mode) {System._browser.moveWallpaper()}', 300)
   }
