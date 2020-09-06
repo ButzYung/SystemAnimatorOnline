@@ -2358,6 +2358,7 @@ System._browser._s_left = System._browser._s_top = null
 
 // skip for HTA
   if (!ie9_native) {
+self.MMD_SA && MMD_SA.WebXR.session) return;
     window.dispatchEvent(new CustomEvent("SA_resize"));
   }
 
