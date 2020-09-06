@@ -2210,7 +2210,7 @@ if (fullscreen) {
 
   oBody.pixelWidth  = B_content_width
   oBody.pixelHeight = B_content_height
-if (self.MMD_SA && MMD_SA.WebXR.session) return;
+
   if (use_SA_system_emulation) {
     var ls = Lquick_menu.style
     var qmb_list = document.getElementsByClassName("QuickMenu_button")
@@ -2285,7 +2285,7 @@ if (self.MMD_SA && MMD_SA.WebXR.session) return;
     Lbody_host.style.posLeft = Math.max((screen_w - B_content_width) /2, 0)
     Lbody_host.style.posTop  = Math.max((screen_h - B_content_height)/2, 0)
   }
-
+if (self.MMD_SA && MMD_SA.WebXR.session) return;
   if (use_SVG_Clock)
     SVG_Clock.resize(B_width, B_height)
 
