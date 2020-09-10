@@ -6321,12 +6321,12 @@ if (MMD_SA.initialized) {
 // MMD_SA.jThree_ready finished already
   if (!MMD_SA.jThree_ready)
     MMD_SA._renderer.__resize(w,h)
-
+/*
   if (self.ChatboxAT) {
     let zoom = Math.min(w/1280, h/720)
     document.getElementById("CB_Lwindow0").style.transform = (zoom >= 1) ? "" : "scale(" + zoom + ")";
   }
-
+*/
   SA_zoom = 1
   if (MMD_SA_options.use_JSARToolKit) {
     SL_webcam.width  = w

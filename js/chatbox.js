@@ -8,7 +8,6 @@ var Chatbox_online_mode = /^http/i.test(self.location.href) || true;
 var Chatbox_enabled = true;
 
 (function () {
-
 var SystemAnimator_mode = !!self.System
 
 // backward compatibility
@@ -23,7 +22,7 @@ else {
 }
 
 
-var Chatbox_version = "2.0.5"
+var Chatbox_version = "2.1.0"
 
 function w3c_chatDisplay(state) {
   if (!_w3c_dom)
@@ -61,7 +60,11 @@ function chatW_dimension(obj) {
   return { min:min, max:max }
 }
 
+var chatW_state = 1
+
 function chatW_minimize(n, forced_minimize) {
+  Chatbox_zoom(1)
+
   var minB = document.getElementById("CB_SminimizeB" + n)
   var c_content = document.getElementById("CB_Lchat_content" + n)
 
@@ -73,6 +76,8 @@ function chatW_minimize(n, forced_minimize) {
     chatW_resize(n, Chatbox_buttons.normal)
   }
   else {
+    chatW_state = 0
+
     minB.innerText = Chatbox_buttons.normal
     document.getElementById("CB_SresizeB" + n).innerText = Chatbox_buttons.max
 
@@ -90,6 +95,8 @@ w3c_chatDisplay(0)
 }
 
 function chatW_resize(n, b) {
+  Chatbox_zoom(1)
+
   var resizeB = document.getElementById("CB_SresizeB" + n)
   var w_content = document.getElementById("CB_Lwindow_content" + n)
   var c_content = document.getElementById("CB_Lchat_content" + n)
@@ -99,10 +106,12 @@ function chatW_resize(n, b) {
 
   var h
   if (b == Chatbox_buttons.normal) {
+    chatW_state = 1
     h = chatW_dimension(c_content).min.h
     resizeB.innerText = Chatbox_buttons.max
   }
   else {
+    chatW_state = 2
     h = chatW_dimension(c_content).max.h
     resizeB.innerText = Chatbox_buttons.normal
   }
@@ -153,6 +162,8 @@ if (!w) { w = 414 }
   }
 
   document.getElementById("CB_Lcaption" + n).style.pixelWidth = w
+  document.getElementById("CB_Lmenu_upper" + n).style.pixelWidth = w
+  document.getElementById("CB_Lmenu_lower" + n).style.pixelWidth = w - 2*2
 
   var x_offset = 0
   if (document.getElementById("CB_LcloseB" + n)) {
@@ -307,19 +318,24 @@ function Chatbox_Write() {
 + '.AutoChatCommand:hover { color:blue }\n'
 + '</style>\n'
 
-+ '<DIV id=CB_Lwindow0 class=Taskbar style="background-color:' + css_color("MENU","CB_Lwindow0") + '; position:absolute; color:black; font-family:Arial; font-size:12px; z-index:99; visibility:hidden">\n'
++ '<DIV id=CB_Lwindow0 class=Taskbar style="background-color:transparent; position:absolute; color:black; font-family:Arial; font-size:12px; z-index:99; visibility:hidden">\n'
+
++ '<DIV id=CB_Lmenu_upper0 style="position:absolute; top:0px; left:0px; background-color:' + css_color("MENU","CB_Lmenu") + '; height:' + (18+2*2) + 'px; overflow:hidden">\n'
 + '<DIV id=CB_Lcaption0 style="position:absolute; top:2px; left:2px; background-color:' + css_color("ACTIVECAPTION") + '; height:18px; overflow:hidden" onSelectStart="return false">\n'
 + '<img id=CB_Lchat_status_img style="position:absolute; top:1px; left:1px">\n'
 + '<span id=CB_Lchat_title style="position:absolute; left:20px; top:1px; color:white; cursor:default">Ready</span>\n'
 + '<div id=CB_LminimizeB0 class=Taskbar style="position:absolute; top:2px; width:16px; height:14px; padding:0px; overflow:hidden; cursor:'+cursor+'" onMouseDown="event.cancelBubble=true"><span class=SmallButton id=CB_SminimizeB0>'+Chatbox_buttons.min+'</span></div>\n'
 + '<div id=CB_LresizeB0 class=Taskbar style="position:absolute; top:2px; width:16px; height:14px; padding:0px; overflow:hidden; cursor:'+cursor+'" onMouseDown="event.cancelBubble=true"><span class=SmallButton id=CB_SresizeB0>'+Chatbox_buttons.max+'</span></div>\n'
 + '</DIV>\n'
++ '</DIV>\n'
+
 + '<DIV id=CB_Lwindow_content0 style="position:absolute; top:22px; left:2px; border-style:inset; border-width:2px; border-color:' + button_color + '">\n'
 
-+ '<div id=CB_Lchat_content0 style="background-color:rgba(255,255,255,' + (ChatboxAT.css.opacity.CB_Lchat_content0||1) + '); padding:5px; width:400px; height:100px; overflow:auto"' + ((self.isDesktop) ? ' onClick="var rv_dummy = autoRun(event); if (rv_dummy != null) return rv_dummy"' : '') + '>\n'
++ '<div id=CB_Lchat_content0 style="background-color:' + css_color("WHITE","CB_Lchat_content") + '; padding:5px; width:400px; height:100px; overflow:auto"' + ((self.isDesktop) ? ' onClick="var rv_dummy = autoRun(event); if (rv_dummy != null) return rv_dummy"' : '') + '>\n'
 + Chatbox_intro_msg
 + '</div>\n'
 
++ '<DIV id=CB_Lmenu_lower0 style="background-color:' + css_color("MENU","CB_Lmenu") + '; overflow:hidden">\n'
 + '<div style="width:400px; height:28px; overflow:hidden">\n'
 + '<form id=Fchat>\n'
 + '<table style="width:100%">\n'
@@ -341,10 +357,16 @@ function Chatbox_Write() {
 + '</table>\n'
 + '</form>\n'
 + '</div>\n'
++ '</DIV>\n'
 
 + '</DIV>\n'
 + '</DIV>\n'
   )
+}
+
+function Chatbox_zoom(zoom) {
+  if (SystemAnimator_mode)
+    document.getElementById("CB_Lwindow0").style.transform = (zoom == 1) ? 'none' : 'scale(' + zoom + ')';
 }
 
 function Chatbox_Init() {
@@ -358,7 +380,12 @@ function Chatbox_Init() {
 document.getElementById("CB_Lcaption0").addEventListener("mousedown", function (event) {
   event.preventDefault();
   event.stopPropagation();
-  chatW_dragStart(event, 0, this);
+  if (SystemAnimator_mode) {
+    chatW_minimize(0)
+  }
+  else {
+    chatW_dragStart(event, 0, this);
+  }
 });
 document.getElementById("CB_LminimizeB0").addEventListener("click", function (event) {
   event.preventDefault();
@@ -374,6 +401,7 @@ document.getElementById("Fchat").addEventListener("submit", function (event) {
   event.preventDefault();
   event.stopPropagation();
   SendData_ChatSend();
+  Chatbox_zoom(1)
 });
 
   document.getElementById("Fchat").addEventListener("keydown", function (event) {
@@ -384,22 +412,25 @@ event.stopPropagation();
 //event.preventDefault();
 event.stopPropagation();
 document.getElementById("Fchat_msg").style.color = "black"
+Chatbox_zoom(2)
   });
   document.getElementById("Fchat").addEventListener("focusout", function (event) {
 //event.preventDefault();
 event.stopPropagation();
 document.getElementById("Fchat_msg").style.color = "gray"
+Chatbox_zoom(1)
   });
   document.getElementById("Flogin").addEventListener("keydown", function (event) {
 //event.preventDefault();
 event.stopPropagation();
   });
 
+  document.body.addEventListener("mousedown", function (event) {
+    document.getElementById("Fchat_msg").blur()
+  });
+  document.getElementById("CB_Lwindow0").style.transformOrigin = "top right";
+
   if (SystemAnimator_mode) {
-    Lbody_host.addEventListener("mousedown", function (event) {
-      document.getElementById("Fchat_msg").blur()
-    });
-    document.getElementById("CB_Lwindow0").style.transformOrigin = "top right";
     document.getElementById("CB_Lwindow0").addEventListener("mousedown", function (event) {
       //event.preventDefault();
       event.stopPropagation();
@@ -409,6 +440,7 @@ event.stopPropagation();
 
     window.addEventListener("SA_SpeechBubble_show", function () {
       document.getElementById("CB_Lwindow0").style.opacity = 0.4
+      Chatbox_zoom(1)
     });
     window.addEventListener("SA_SpeechBubble_hide", function () {
       document.getElementById("CB_Lwindow0").style.opacity = 1
@@ -1111,6 +1143,7 @@ self.ChatboxAT = {
    ,BUTTONHIGHLIGHT: [217,217,217]
    ,ACTIVECAPTION: [99,99,99]//[153,180,209]//[198,198,198]
    ,BUTTONSHADOW: [47,47,47]
+   ,WHITE: [255,255,255]
    ,opacity: {}
   }
 };
@@ -1133,12 +1166,12 @@ ChatboxAT.css = {
 };
 */
 
-if (SystemAnimator_mode) {
+//if (SystemAnimator_mode) {
   ChatboxAT.css.opacity = {
-      CB_Lwindow0: 0.75
-     ,CB_Lchat_content0: 0.5
+      CB_Lmenu: 0.75
+     ,CB_Lchat_content: 0.5
   };
-}
+//}
 
 })();
 

@@ -2480,6 +2480,8 @@ if (visible == null)
   visible = (Lnumpad_row0.style.display == "none")
 Lnumpad_row0.style.display = (visible) ? "inline" : "none";
 Lnumpad_rows.style.display = (visible) ? "block"  : "none";
+if (visible && self.ChatboxAT)
+  ChatboxAT.chatW_minimize(0, true)
     }
 
    ,virtual_numpad: (function () {
