@@ -2680,7 +2680,7 @@ function P2P_Peer(para=Object.clone(peer_para_default)) {
   this.para = para
   this.id = null
 
-  var _peer = this._peer = new Peer()
+  var _peer = this._peer = new Peer(null, { host:"9000-fef19c29-a0dd-482d-a2e3-4a858e350891.ws-us02.gitpod.io" })
   this.index = peer_count
 
   this.connections = new P2P_Peer_connections()
