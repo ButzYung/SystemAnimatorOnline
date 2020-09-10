@@ -1556,14 +1556,16 @@ if (!resized_once) {
 this.resize_timerID = null
 
 if (use_SA_browser_mode) {
-  var oBody = document.body.style
+  let oBody = document.body.style
   if (is_SA_child_animation) {
-    var i_obj = parent.document.getElementById("Ichild_animation" + SA_child_animation_id).style
+    let i_obj = parent.document.getElementById("Ichild_animation" + SA_child_animation_id).style
     i_obj.width  = oBody.pixelWidth  + "px"
     i_obj.height = oBody.pixelHeight + "px"
     on_first_resize()
   }
   else {
+// IMPORTANT: stick to webkit_electron_mode only, as this (mainly window.resize() for mobile) is probably not needed for browsers, and it causes issues in Chrome fullscreen mode and WebXR AR mode
+if (webkit_electron_mode) {
     if (webkit_electron_mode && top.System._browser.capturePage_in_process) {
       this.resize_timerID = setTimeout("System._browser.resize()", 50)
       return
@@ -1575,6 +1577,7 @@ if (use_SA_browser_mode) {
 //webkit_window.setContentSize(oBody.pixelWidth, oBody.pixelHeight)
 //webkit_window.setBounds({x:0, y:0, width:oBody.pixelWidth*8, height:oBody.pixelHeight*5})
 //DEBUG_show(webkit_window.getContentSize(),0,1)
+}
     on_first_resize()
   }
 }
