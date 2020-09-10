@@ -22,7 +22,7 @@ else {
 }
 
 
-var Chatbox_version = "2.1.0"
+var Chatbox_version = "2.1.1"
 
 function w3c_chatDisplay(state) {
   if (!_w3c_dom)
@@ -365,8 +365,10 @@ function Chatbox_Write() {
 }
 
 function Chatbox_zoom(zoom) {
-  if (SystemAnimator_mode)
-    document.getElementById("CB_Lwindow0").style.transform = (zoom == 1) ? 'none' : 'scale(' + zoom + ')';
+  if (!SystemAnimator_mode) return;
+
+  zoom /= window.devicePixelRatio
+  document.getElementById("CB_Lwindow0").style.transform = (zoom == 1) ? 'none' : 'scale(' + zoom + ')';
 }
 
 function Chatbox_Init() {
