@@ -22,7 +22,7 @@ else {
 }
 
 
-var Chatbox_version = "2.1.1"
+var Chatbox_version = "2.1.2"
 
 function w3c_chatDisplay(state) {
   if (!_w3c_dom)
@@ -367,6 +367,8 @@ function Chatbox_Write() {
 function Chatbox_zoom(zoom) {
   if (!SystemAnimator_mode) return;
 
+  if ((zoom == 1) && (window.devicePixelRatio > 2))
+    zoom *= 1.5
   zoom /= window.devicePixelRatio
   document.getElementById("CB_Lwindow0").style.transform = (zoom == 1) ? 'none' : 'scale(' + zoom + ')';
 }
@@ -510,6 +512,7 @@ if (_w3c_dom) {
   CB_SresizeB0.innerText = Chatbox_buttons.max
 }
 
+  Chatbox_zoom(1)
   if (Chatbox_no_auto_open || (/chatbox_minimized=1|chatbox_opened=1/.test(document.cookie) && !SystemAnimator_mode))
     chatW_minimize(0)
   else {
