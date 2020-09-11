@@ -22,7 +22,7 @@ else {
 }
 
 
-var Chatbox_version = "2.1.2"
+var Chatbox_version = "2.1.3"
 
 function w3c_chatDisplay(state) {
   if (!_w3c_dom)
@@ -429,7 +429,7 @@ Chatbox_zoom(1)
 event.stopPropagation();
   });
 
-  document.body.addEventListener("mousedown", function (event) {
+  (document.getElementById("Lbody_host")||document.body).addEventListener("mousedown", function (event) {
     document.getElementById("Fchat_msg").blur()
   });
   document.getElementById("CB_Lwindow0").style.transformOrigin = "top right";
