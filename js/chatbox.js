@@ -22,7 +22,7 @@ else {
 }
 
 
-var Chatbox_version = "2.1.5"
+var Chatbox_version = "2.1.6"
 
 function w3c_chatDisplay(state) {
   if (!_w3c_dom)
@@ -480,7 +480,7 @@ if ((target.tagName == "A") && !target.onclick) {
   }
 
   if (!CB_Lwindow0.left)
-    CB_Lwindow0.left = (Chatbox_no_scroll_adjust) ? -5 : -20
+    CB_Lwindow0.left = (Chatbox_no_scroll_adjust || SystemAnimator_mode) ? -5 : -20
   CB_Lchat_content0.max_height = 300
   CB_Lchat_content0.min_height = 100
 
