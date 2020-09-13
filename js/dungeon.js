@@ -3130,7 +3130,7 @@ Ljoystick.style.visibility = "inherit"
      ,size: nipple_radius*2
      ,position: { top:"50%", left:"50%" }
 //,dynamicPage:true
-     ,fadeTime: 50
+     ,fadeTime: 10
     });
 
     d.nipplejs_manager.on("move", function (ev, data) {
