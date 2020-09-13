@@ -22,7 +22,7 @@ else {
 }
 
 
-var Chatbox_version = "2.1.3"
+var Chatbox_version = "2.1.5"
 
 function w3c_chatDisplay(state) {
   if (!_w3c_dom)
@@ -162,7 +162,7 @@ if (!w) { w = 414 }
   }
 
   document.getElementById("CB_Lcaption" + n).style.pixelWidth = w
-  document.getElementById("CB_Lmenu_upper" + n).style.pixelWidth = w
+  document.getElementById("CB_Lmenu_upper" + n).style.pixelWidth = w + 2*2
   document.getElementById("CB_Lmenu_lower" + n).style.pixelWidth = w - 2*2
 
   var x_offset = 0
@@ -480,7 +480,7 @@ if ((target.tagName == "A") && !target.onclick) {
   }
 
   if (!CB_Lwindow0.left)
-    CB_Lwindow0.left = (Chatbox_no_scroll_adjust) ? -10 : -20
+    CB_Lwindow0.left = (Chatbox_no_scroll_adjust) ? -5 : -20
   CB_Lchat_content0.max_height = 300
   CB_Lchat_content0.min_height = 100
 
