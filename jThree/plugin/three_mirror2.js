@@ -1,9 +1,9 @@
 /**
  * @author Slayvin / http://slayvin.net
  * @author Stemkoski / http://www.adelphi.edu/~stemkoski
-
- * @author Butz Yung / http://www.animetheme.com/
  */
+
+// customized by Butz Yung for System Animator (2020-09-23)
 
 THREE.ShaderLib['mirror'] = {
 
@@ -265,8 +265,10 @@ THREE.FlatMirror = function ( renderer, camera, options ) {
 
 	this.mirrorCamera = this.camera.clone();
 
-	this.texture = new THREE.WebGLRenderTarget( width, height );
-	this.tempTexture = new THREE.WebGLRenderTarget( width, height );
+// AT: not using stencil
+var _para = { stencilBuffer: false }
+	this.texture = new THREE.WebGLRenderTarget( width, height, _para );
+	this.tempTexture = new THREE.WebGLRenderTarget( width, height, _para );
 
 	var mirrorShader = THREE.ShaderLib[ "mirror" ];
 	var mirrorUniforms = THREE.UniformsUtils.clone( mirrorShader.uniforms );
@@ -329,12 +331,17 @@ if (self.MMD_SA) {
 }
 
 // AT: WebGL2
+// MMD_SA.use_webgl2 is still undefined at this stage. Wrap things inside init and run it on "WebGL_initialized" event.
+function init(width, height) {
+/*
 	if (( !isPowerOfTwo(width) || !isPowerOfTwo(height) ) && (!self.MMD_SA || !MMD_SA.use_webgl2)) {
 		this.texture.generateMipmaps = false;
 		this.tempTexture.generateMipmaps = false;
 	}
-
-// AT: No mipmap for dynamic texture for better performance (?)
+*/
+// AT: WebGL2
+if (self.MMD_SA && MMD_SA.use_webgl2 && !is_mobile) this.texture._use_multisample = 4;
+// No mipmap for dynamic texture for better performance (?)
 [this.texture, this.tempTexture].forEach(function (tex) {
   tex.generateMipmaps = false
   tex.minFilter = tex.magFilter
@@ -342,6 +349,15 @@ if (self.MMD_SA) {
 
 	this.updateTextureMatrix();
 	this.render();
+
+}
+
+// AT: "WebGL_initialized" event
+var _this = this;
+if (self.MMD_SA && !MMD_SA.WebGL_initialized)
+  window.addEventListener("WebGL_initialized", ()=>{init.call(_this, width,height)})
+else
+  init.call(_this, width,height)
 
 };
 
