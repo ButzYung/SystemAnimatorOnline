@@ -1,4 +1,4 @@
-// (2020-08-07)
+// (2020-10-12)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -3812,10 +3812,13 @@ var model, model_para, mm, para_SA
 var link_sign = []
 var a_ini = 0
 var a_end = iks.length
+var ik_iteration_factor = 1
 if (self.MMD_SA) {
   model = THREE.MMD.getModels()[mesh._model_index]
   model_para = MMD_SA_options.model_para_obj_all[mesh._model_index]
   mm = model.skin && MMD_SA.motion[model.skin._motion_index]
+  ik_iteration_factor = model_para.ik_iteration_factor || ((MMD_SA_options.Dungeon && mesh._model_index) ? MMD_SA_options.Dungeon_options.ik_iteration_factor||0.5 : 1)
+//ik_iteration_factor=0.25
   para_SA = mm && mm.para_SA
   if (para) {
     a_ini = para.ini
@@ -3848,6 +3851,8 @@ if (mm) {
 		setGlobalPosition(mesh, target, targetPos);
 //if (target.name.indexOf("右足非捩IK") != -1) DEBUG_show(targetPos.toArray())
 		il = ik.iteration;
+// AT: ik_iteration_factor
+il = Math.max(Math.floor(il * ik_iteration_factor), 1);
 		jl = ik.links.length;
 		// リンクの回転を初期化。
 		for (j=0; j<jl; j++) {
@@ -6647,12 +6652,26 @@ MMD_SA._mouse_pos_3D[that._model_index][axis] += diff
       if (bone)
         p_rotation.multiply(bone.quaternion, p_rotation)
     }
-    p_rotation.inverse().slerp(MMD_SA._q1.set(0,0,0,1), 2/3)
+    p_rotation.inverse()
 
     for (var j = 0, j_length = b_list.length; j < j_length; j++) {
-      var bone = mesh.bones_by_name[b_list[j]]
-      if (bone)
-        bone.quaternion.multiply(p_rotation)
+      let obj = b_list[j]
+      let rot
+      for (var k = 0, k_length = obj.name.length; k < k_length; k++) {
+        let bone = mesh.bones_by_name[obj.name[k]]
+        if (bone) {
+          if (!rot) {
+            rot = MMD_SA._q1.copy(p_rotation)
+            let ratio = obj.ratio
+            if (ratio < 1) {
+              rot.inverse()
+              ratio = -ratio
+            }
+            rot.slerp(MMD_SA._q2.set(0,0,0,1), 1-ratio/3)
+          }
+          bone.quaternion.multiply(rot)
+        }
+      }
     }
  
     MMD_SA._update_with_look_at_screen_ = null
