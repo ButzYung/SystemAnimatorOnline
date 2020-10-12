@@ -1,4 +1,4 @@
-// (2020-07-12)
+// (2020-10-12)
 
 /*!
  * jThree JavaScript Library v2.1.2
@@ -19112,7 +19112,7 @@ if (!vka) { continue; }
 
 // AT: VAO
 var vao;
-var _draw=0,_redraw=0,_redraw_max=0,_redraw_=0;
+var _draw=0,_redraw=0,_redraw_max=0,_redraw_=0,_updateBuffers=false;
 	this.renderBuffer = function ( camera, lights, fog, material, geometryGroup, object ) {
 
 		if ( material.visible === false ) return;
@@ -19142,6 +19142,7 @@ var _draw=0,_redraw=0,_redraw_max=0,_redraw_=0;
 
 // AT: VAO
 var use_VAO, first_instance;
+_updateBuffers = updateBuffers;
 if (updateBuffers) {
   first_instance = true
   if (_use_VAO) {
@@ -19149,8 +19150,8 @@ if (updateBuffers) {
     if (use_VAO) {
       vao = geometryGroup._vao[geometryGroupHash];
       if (!vao) {
-        vao = geometryGroup._vao[geometryGroupHash] = { vao:_gl.createVertexArray(), morph_state:{} }
-      }
+        vao = geometryGroup._vao[geometryGroupHash] = { vao:_gl.createVertexArray(), morph_state:{}, material_hidden:{} }
+       }
       else {
         updateBuffers = false
       }
@@ -19327,6 +19328,17 @@ if (_use_InstancedDrawing && object.instanced_drawing) {
 		// ADD by katwat | http://www20.atpages.jp/katwat/wp/
 		var renderCancel;
 		il = material.passes || 1;
+// AT: VAO
+// need to update gl.ELEMENT_ARRAY_BUFFER if MMD material's visibility (opacity) has been toggled.
+if (vao && material.passes) {
+  if (material.opacity <= 0) {
+    vao.material_hidden[material.id] = true
+  }
+  else if (vao.material_hidden[material.id]) {
+    vao.material_hidden[material.id] = false
+    updateBuffers = _updateBuffers
+  }
+}
 		for (i = 0; i < il; i++) {
 			renderCancel = false;
 			if (material.preRenderPass) {
@@ -23086,8 +23098,9 @@ else
 		*/
 		} else if ( renderTarget.depthBuffer && renderTarget.stencilBuffer ) {
 // AT: WebGL2
+// NOTE: .DEPTH_STENCIL does not work on renderbufferStorageMultisample. Use DEPTH24_STENCIL8 instead.
 if (renderTarget._use_multisample) {
-  _gl.renderbufferStorageMultisample( _gl.RENDERBUFFER, renderTarget._use_multisample, _gl.DEPTH_STENCIL, renderTarget.width, renderTarget.height );
+  _gl.renderbufferStorageMultisample( _gl.RENDERBUFFER, renderTarget._use_multisample, _gl.DEPTH24_STENCIL8, renderTarget.width, renderTarget.height );
 }
 else
 			_gl.renderbufferStorage( _gl.RENDERBUFFER, _gl.DEPTH_STENCIL, renderTarget.width, renderTarget.height );
@@ -23591,6 +23604,9 @@ else {
 
 			}
 		}
+
+// AT: WebGL_initialized
+if (self.MMD_SA) MMD_SA.WebGL_initialized=true; window.dispatchEvent(new CustomEvent("WebGL_initialized"));
 
 	};
 
@@ -37056,7 +37072,7 @@ if (self.MMD_SA && !src) {
   }
 
   xml +=
-  '		<rdr id="MMD_renderer" param="canvas:SL;antialias:true;clearAlpha:0;preserveDrawingBuffer:true;" frame="MMD_SA" />\n'//" frame="MMD_SA" />\n'//
+  '		<rdr id="MMD_renderer" param="canvas:SL;antialias:true;clearAlpha:0;preserveDrawingBuffer:true; stencil:false;" frame="MMD_SA" />\n'//" frame="MMD_SA" />\n'//
 + '	</head>\n'
 + '	<body>\n'
 + '		<scene id="MMD_scene">\n'
