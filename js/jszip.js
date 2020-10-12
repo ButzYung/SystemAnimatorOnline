@@ -10,6 +10,8 @@ JSZip uses the library pako released under the MIT license :
 https://github.com/nodeca/pako/blob/master/LICENSE
 */
 
+// AT: modified to work with System Animator (2020-09-13)
+
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.JSZip = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 'use strict';
 var utils = require('./utils');
@@ -3407,12 +3409,22 @@ exports.pretty = function(str) {
  * @param {Function} callback the function to call asynchronously.
  * @param {Array} args the arguments to give to the callback.
  */
+// AT: Native setImmediate may cause issues in new versions of Electron after the gadget has restarted (via location.replace()).
+exports.delay = (function () {
+  var _setImmediate = (webkit_electron_mode) ? (f) => { setTimeout(f,0); } : setImmediate;
+  return function(callback, args, self) {
+    _setImmediate(function () {
+        callback.apply(self || null, args || []);
+    });
+  };
+})();
+/*
 exports.delay = function(callback, args, self) {
     setImmediate(function () {
         callback.apply(self || null, args || []);
     });
 };
-
+*/
 /**
  * Extends a prototype with an other, without calling a constructor with
  * side effects. Inspired by nodejs' `utils.inherits`
