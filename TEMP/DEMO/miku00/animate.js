@@ -164,6 +164,8 @@ var MMD_SA_options = {
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_おどろく1.vmd' }
 
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/chair_sit01_armIK.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/i-shaped_balance/i-shaped_balance_TDA_f0-50.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/leg_hold.vmd' }
   ]
 
 
@@ -1163,6 +1165,53 @@ posR.z -= ground_y_diff
 
     }
 
+   ,"i-shaped_balance_TDA_f0-50": {
+  freeze_onended: true
+
+ ,adjustment_per_model: {
+    _default_ : {
+  skin_default: {
+    "左腕": { keys_mod: [{ frame:50, rot:{ x:8.3, y:23.7-15, z:-33.2-10 } }] }
+   ,"右腕": { keys_mod: [{ frame:50, rot:{ x:8.0-3, y:2.3, z:79.6 } }] }
+   ,"cover_undies": {
+      "左腕": { rot:{x:-19.3, y:26.9, z:-20.6} }
+     ,"左ひじ": { rot:{x:19.5, y:14.5, z:90.3} }
+
+     ,"右腕": { rot:{x:23.1, y:-2.2, z:-66.2} }
+     ,"右ひじ": { rot:{x:-1.5, y:27.8, z:-61.9} }
+     ,"右手首": { rot:{x:-18.0, y:21.3, z:-23.8} }
+    }
+  }
+    }
+  }
+
+    }
+
+   ,"leg_hold": {
+  freeze_onended: true
+
+ ,onstart: function () {
+var model = THREE.MMD.getModels()[0].mesh
+this._pos_ = model.position.clone()
+this._rot_ = model.quaternion.clone()
+  }
+
+ ,onended: function (loop_end) {
+var model = THREE.MMD.getModels()[0].mesh
+model.position.copy(this._pos_)
+model.quaternion.copy(this._rot_)
+  }
+
+ ,onplaying: function () {
+var model = THREE.MMD.getModels()[0].mesh
+var camera = MMD_SA._trackball_camera.object
+model.position.copy(camera.position)
+model.position.y -= 12.5
+MMD_SA.TEMP_v3.setEulerFromQuaternion(MMD_SA.TEMP_q.setFromRotationMatrix(camera.matrixWorld)).setX(0).setZ(0)
+model.quaternion.setFromEuler(MMD_SA.TEMP_v3)
+  }
+    }
+
   }
 
  ,custom_action: [
@@ -1436,7 +1485,7 @@ if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle
 
   if (++morph_form_index == morph_form.length) {
     morph_form_index = 0;
-    let motion_list = ["standmix2_modified","gal_model_motion_with_legs-2_loop_v01","chair_sit01_armIK"];
+    let motion_list = ["standmix2_modified","i-shaped_balance_TDA_f0-50","gal_model_motion_with_legs-2_loop_v01","chair_sit01_armIK", "leg_hold"];
     let motion_index = motion_list.findIndex((m)=>(MMD_SA_options.motion_shuffle_list_default[0]==MMD_SA_options.motion_index_by_name[m]));
     if (++motion_index >= motion_list.length)
       motion_index = 0
@@ -1916,6 +1965,12 @@ return true;
 
 
   window.addEventListener("MMDStarted", function () {
+MMD_SA.custom_action_default["cover_undies"].action._condition = function (is_bone_action, objs, _default) {
+  if (/i\-shaped_balance/.test(MMD_SA.MMD.motionManager.filename) && (MMD_SA._ry > 1)) return true;
+
+  return _default;
+};
+
 let geometry = new THREE.PlaneGeometry(1000,1000)
 /*
 let tex = document.createElement("canvas")
