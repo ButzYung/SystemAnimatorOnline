@@ -1333,8 +1333,16 @@ this._kissing = MMD_SA.meter_motion_disabled = false
 if (objs._model_index) return false
 
 var busy = MMD_SA._busy_mode1_ || !MMD_SA_options.look_at_screen
-if (MMD_SA._hit_hip_ || ((MMD_SA_options.model_para_obj._cover_undies != false) && (MMD_SA.MMD.motionManager.para_SA._cover_undies != false) && !busy && !MMD_SA.custom_action_default.kissing.action._kissing && (((MMD_SA._rx*180/Math.PI) % 360 > 45 * ((MMD_SA.use_jThree) ? 0.75 : 1)) || (MMD_SA.use_jThree && MMD_SA_options.use_JSARToolKit && MMD_SA.AR_obj._m4 && (MMD_SA.AR_obj.camera_position.y < 10)))/* && !Audio_BPM.vo.motion_by_song_name_mode*/)) {
+if (MMD_SA._hit_hip_ || ((MMD_SA_options.model_para_obj._cover_undies != false) && (MMD_SA.MMD.motionManager.para_SA._cover_undies != false) && !busy && !MMD_SA.custom_action_default.kissing.action._kissing && this._condition(is_bone_action, objs, (((MMD_SA._rx*180/Math.PI) % 360 > 45 * ((MMD_SA.use_jThree) ? 0.75 : 1)) || (MMD_SA.use_jThree && MMD_SA_options.use_JSARToolKit && MMD_SA.AR_obj._m4 && (MMD_SA.AR_obj.camera_position.y < 10)))/* && !Audio_BPM.vo.motion_by_song_name_mode*/) )) {
   this._undies_visible = true
+
+  if (!this._adjust(is_bone_action, objs)) {
+    if (is_bone_action && MMD_SA.use_jThree) {
+      MMD_SA._update_with_look_at_screen_ = { bone_list:[{name:["左肩","右肩"],ratio:1}], parent_list:["上半身2", "上半身"] }
+//bone_list:[{name:["左肩","右肩"],ratio:0.2}, {name:["左腕","右腕"],ratio:0.2}, {name:["左ひじ","右ひじ"],ratio:1}, {name:["左手首"],ratio:-0.5}, {name:["右手首"],ratio:0.5}]
+    }
+  }
+
   if (!this._cover_undies) {
     this.frame = 0
     if (MMD_SA_options.use_speech_bubble)
@@ -1344,10 +1352,6 @@ if (MMD_SA._hit_hip_ || ((MMD_SA_options.model_para_obj._cover_undies != false) 
     MMD_SA.copy_first_bone_frame(this.motion_index, objs, {bone_group:["腕"], skin_jThree:/^(\u5DE6|\u53F3)(\u80A9|\u8155|\u3072\u3058|\u624B\u9996|\u624B\u6369)/})
   }
 
-  if (is_bone_action && MMD_SA.use_jThree) {
-    MMD_SA._update_with_look_at_screen_ = { bone_list:["左肩", "右肩"], parent_list:["上半身2", "上半身"] }
-  }
-
   this._cover_undies = true
 }
 else
@@ -1355,6 +1359,73 @@ else
 //DEBUG_show(this.frame); 
 return this._cover_undies
         }
+
+       ,_condition: function (is_bone_action, objs, _default) {
+return _default;
+        }
+
+       ,_adjust: (function () {
+var skin;
+var key_by_motion_name = { _default_:{} };
+var key_name = "_default_";
+var bone_list = ["左肩","左腕","左ひじ","左手捩","左手首", "右肩","右腕","右ひじ","右手捩","右手首"];
+
+function assign_motion(name) {
+  if (key_name == name) return;
+  key_name = name
+
+  var key = key_by_motion_name[name]
+  skin.forEach(function (s) {
+    var kb = key[s.keys[0].name]
+    if (kb)
+      s.keys.forEach(k => {k.rot=kb.rot});
+  });
+}
+
+return function (is_bone_action, objs) {
+  if (!is_bone_action)
+    return false
+
+  var mm = MMD_SA.MMD.motionManager
+  if (key_by_motion_name[mm.filename]) {
+    assign_motion(mm.filename)
+    return true
+  }
+
+  var model_para_obj = MMD_SA_options.model_para_obj
+  var motion_para = mm.para_SA
+  var motion_sd = motion_para && motion_para.adjustment_per_model && (motion_para.adjustment_per_model[model_para_obj._filename] || motion_para.adjustment_per_model[model_para_obj._filename_cleaned] || motion_para.adjustment_per_model._default_);
+  motion_sd = motion_sd && motion_sd.skin_default["cover_undies"];
+
+  if (!motion_sd) {
+    assign_motion("_default_")
+    return false
+  }
+
+  if (!skin) {
+    let cache = THREE.MMD.getModels()[0]._MMD_SA_cache
+    skin = cache[Object.keys(cache).find(e => /_cover_undies_blush/.test(e))]
+    if (!skin)
+      return false
+
+    skin = skin.skin.targets.filter(s => s.keys.length && (bone_list.indexOf(s.keys[0].name) != -1));
+    skin.forEach(function (s) {
+      key_by_motion_name._default_[s.keys[0].name] = { rot:s.keys[0].rot } 
+    });
+  }
+
+  var key = key_by_motion_name[mm.filename] = {}
+
+  skin.forEach(function (s) {
+    var name = s.keys[0].name;
+    var kb = motion_sd[name];
+    key[name] = { rot:(kb) ? MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.fromArray([-kb.rot.x, kb.rot.y, -kb.rot.z].map((n,i) => n*Math.PI/180)), 'YXZ').toArray() : [0,0,0,1] };
+  });
+
+  assign_motion(mm.filename)
+  return true
+};
+　　　　　　})()
 
        ,_onmessage: function () {
 if (MMD_SA_options.Dungeon && MMD_SA_options.Dungeon_options.use_PC_click_reaction_default) return
