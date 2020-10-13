@@ -3706,11 +3706,11 @@ if (use_faceLandmarksDetection) {
   blink.R[0] = blink.R[0]*blink_factor + blink0*(1-blink_factor)
 
   if (LR_exists) {
-    _facemesh.frames.add("morph", "まばたきL", { weight:Math.max(Math.min(1-blink.L[0]*0.8-smile/2,1),0) })
-    _facemesh.frames.add("morph", "まばたきR", { weight:Math.max(Math.min(1-blink.R[0]*0.8-smile/2,1),0) })
+    _facemesh.frames.add("morph", "まばたきL", { weight:Math.max(Math.min(1-blink.L[0]*0.8-smile,1),0) })
+    _facemesh.frames.add("morph", "まばたきR", { weight:Math.max(Math.min(1-blink.R[0]*0.8-smile,1),0) })
   }
   else {
-    _facemesh.frames.add("morph", "まばたき", { weight:Math.max(Math.min(1-blink.L[0]*0.8-smile/2,1),0) })
+    _facemesh.frames.add("morph", "まばたき", { weight:Math.max(Math.min(1-blink.L[0]*0.8-smile,1),0) })
   }
 }
 else {
