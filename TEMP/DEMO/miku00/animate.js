@@ -1213,8 +1213,8 @@ MMD_SA.WebXR.zoom_scale = this._zoom_scale_
 var model = THREE.MMD.getModels()[0].mesh
 var camera = MMD_SA._trackball_camera.object
 model.position.copy(camera.position)
-//model.position.y -= 11
-MMD_SA._custom_skin = [{ key:{ name:"全ての親", pos:[0,-11,0] ,rot:[0,0,0,1] ,interp:MMD_SA._skin_interp_default }, idx:model.bones_by_name["全ての親"]._index }]
+//model.position.y -= 11.5
+MMD_SA._custom_skin = [{ key:{ name:"全ての親", pos:[0,-11.5,0] ,rot:[0,0,0,1] ,interp:MMD_SA._skin_interp_default }, idx:model.bones_by_name["全ての親"]._index }]
 
 MMD_SA.TEMP_v3.setEulerFromQuaternion(MMD_SA.TEMP_q.setFromRotationMatrix(camera.matrixWorld),"YZX").setZ(0)
 MMD_SA.TEMP_v3.x = (MMD_SA.TEMP_v3.x < -0.9) ? (MMD_SA.TEMP_v3.x+0.9) : 0
