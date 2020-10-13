@@ -1196,12 +1196,17 @@ posR.z -= ground_y_diff
 var model = THREE.MMD.getModels()[0].mesh
 this._pos_ = model.position.clone()
 this._rot_ = model.quaternion.clone()
+
+this._zoom_scale_ = MMD_SA.WebXR.zoom_scale
+MMD_SA.WebXR.zoom_scale = 1
   }
 
  ,onended: function (loop_end) {
 var model = THREE.MMD.getModels()[0].mesh
 model.position.copy(this._pos_)
 model.quaternion.copy(this._rot_)
+
+MMD_SA.WebXR.zoom_scale = this._zoom_scale_
   }
 
  ,onplaying: function () {
@@ -1212,7 +1217,7 @@ model.position.copy(camera.position)
 MMD_SA._custom_skin = [{ key:{ name:"全ての親", pos:[0,-11,0] ,rot:[0,0,0,1] ,interp:MMD_SA._skin_interp_default }, idx:model.bones_by_name["全ての親"]._index }]
 
 MMD_SA.TEMP_v3.setEulerFromQuaternion(MMD_SA.TEMP_q.setFromRotationMatrix(camera.matrixWorld),"YZX").setZ(0)
-MMD_SA.TEMP_v3.x = (MMD_SA.TEMP_v3.x < -1) ? (MMD_SA.TEMP_v3.x+1) : 0
+MMD_SA.TEMP_v3.x = (MMD_SA.TEMP_v3.x < -0.9) ? (MMD_SA.TEMP_v3.x+0.9) : 0
 model.quaternion.setFromEuler(MMD_SA.TEMP_v3,"YZX")
   }
     }
