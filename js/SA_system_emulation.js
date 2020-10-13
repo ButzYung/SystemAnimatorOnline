@@ -3700,7 +3700,7 @@ if (use_faceLandmarksDetection) {
   _facemesh.frames.add("skin", "両目", two_eyes)
 
   let LR_exists = (THREE.MMD.getModels()[0].pmx.morphs_index_by_name["まばたきL"] != null);
-  let blink_factor = (LR_exists) ? Math.min(Math.max(Math.abs(blink.L[0]-blink.R[0])-(0.25+(1-Math.max((Math.PI/4-Math.abs(y_rot))/(Math.PI/4),0))*1),0)/0.25, 1) : 0;
+  let blink_factor = (LR_exists) ? Math.min(Math.max(Math.abs(blink.L[0]-blink.R[0])-(0.25+(1-Math.min(Math.max((Math.PI/6-Math.abs(y_rot))/(Math.PI/12),0),1))*1),0)/0.25, 1) : 0;
   let blink0 = Math.min(blink.L[0],blink.R[0])
   blink.L[0] = blink.L[0]*blink_factor + blink0*(1-blink_factor)
   blink.R[0] = blink.R[0]*blink_factor + blink0*(1-blink_factor)
