@@ -2,7 +2,7 @@
 // https://blog.tensorflow.org/2020/03/introducing-webassembly-backend-for-tensorflow-js.html
 
 // temporary fix for issues when loading the latest TFJS WASM on certain platforms
-var tfjs_version = '@2.2.0';//(self.location.protocol == "file:") ? '@2.1.0' : '';
+var tfjs_version = '@2.4.0';//(self.location.protocol == "file:") ? '@2.1.0' : '';
 
 importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs' + tfjs_version);
 importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm' + tfjs_version + '/dist/tf-backend-wasm.js');
@@ -98,15 +98,28 @@ function rgba_to_grayscale(rgba, center, radius) {
 }
 
 var canvas, context, RAF_timerID;
+var use_faceLandmarksDetection;
 
 async function init() {
-// https://github.com/tensorflow/tfjs-models/tree/master/facemesh
   try {
     let facemesh_version = new URLSearchParams(self.location.search.substring(1)).get('use_latest_facemesh') ? '' : '@0.0.3';
-    importScripts('https://cdn.jsdelivr.net/npm/@tensorflow-models/facemesh' + facemesh_version);
+    if (!facemesh_version) {
+      use_faceLandmarksDetection = true
+      importScripts('https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@0.0.1/dist/face-landmarks-detection.js');
 
-    model = await facemesh.load({maxFaces:1});
-    console.log('(Facemesh initialized)')
+      model = await faceLandmarksDetection.load(faceLandmarksDetection.SupportedPackages.mediapipeFacemesh, {maxFaces:1});
+
+      postMessage('(Face-landmarks-detection initialized)')
+    }
+    else {
+// https://github.com/tensorflow/tfjs-models/tree/master/facemesh
+      importScripts('https://cdn.jsdelivr.net/npm/@tensorflow-models/facemesh' + facemesh_version);
+
+      model = await facemesh.load({maxFaces:1});
+      console.log('(Facemesh initialized)')
+
+      postMessage('(Facemesh initialized' + ((use_SIMD)?'/use SIMD':'') + ')')
+    }
 /*
 // https://dev.to/trezy/loading-images-with-web-workers-49ap
   const response = await fetch("../images/laughing_man_134x120.png");
@@ -114,7 +127,6 @@ async function init() {
   face_cover = await createImageBitmap(blob);
   console.log("face cover OK")
 */
-    postMessage('(Facemesh initialized' + ((use_SIMD)?'/use SIMD':'') + ')')
     postMessage('OK')
   }
   catch (err) { postMessage('Facemesh ERROR:' + err) }
@@ -131,7 +143,7 @@ _t = _t_now = performance.now()
 
   rgba = new Uint8ClampedArray(rgba);
 
-  const faces = await model.estimateFaces(new ImageData(rgba, w,h));
+  const faces = (use_faceLandmarksDetection) ? await model.estimateFaces({input:new ImageData(rgba, w,h)}) : await model.estimateFaces(new ImageData(rgba, w,h));
 
 /*
   let _dis
@@ -212,11 +224,19 @@ _t = _t_now
     eye_h = eye_bb[1][1]-eye_bb[0][1]
     eye_radius = Math.max(eye_w, eye_h)/2
 
+    let yx;
+if (use_faceLandmarksDetection) {
+// https://github.com/tensorflow/tfjs-models/blob/master/face-landmarks-detection/src/mediapipe-facemesh/keypoints.ts
+// NOTE: video source is assumed to be mirrored (eg. video L == landmarks R)
+    yx = (LR == "L") ? [sm[473][1], sm[473][0]] : [sm[468][1], sm[468][0]];
+}
+else {
     r = eye_center[1];
     c = eye_center[0];
     s = eye_radius*2;
     rgba_to_grayscale(rgba, eye_center, eye_radius)
-    let yx = do_puploc(r, c, s, 63, image);
+    yx = do_puploc(r, c, s, 63, image);
+}
 
     if ((yx[0] >=0) && (yx[1] >= 0)) {
       let confidence = (0.25 + Math.min(Math.max(eye_radius-5,0)/30, 1) * 0.5)
@@ -230,7 +250,7 @@ _t = _t_now
       eyes[i] = [yx[1],yx[0], eye_x,eye_y, [LR]]
 
       let eye_pixel_count = [0,0,0,0]
-      if (options.blink_detection) {
+      if (!use_faceLandmarksDetection && options.blink_detection) {
 let r_min = ~~eye_bb[0][1]
 let c_min = ~~eye_bb[0][0]
 let r_max = ~~eye_bb[1][1]
@@ -287,6 +307,8 @@ _t_now = performance.now()
 _t_list[1] = _t_now-_t
 _t = _t_list.reduce((a,c)=>a+c)
 
+if (!use_faceLandmarksDetection) {
+// practically only the first eye data is used
   if (eyes.length) {
     if (!eyes[0])
       eyes = [eyes[1]]
@@ -309,6 +331,7 @@ if (eye_y == null) {
 eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
     eyes[0][4].push(_t_list[1])
   }
+}
 
   postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:faces[0].faceInViewConfidence, scaledMesh:(canvas)?undefined:sm, mesh:faces[0].mesh, eyes:eyes }], _t:_t }));
 

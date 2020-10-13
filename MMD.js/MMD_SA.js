@@ -6061,7 +6061,7 @@ MMD_SA_options.model_para_obj_all.forEach(function (model_para_obj) {
 
 var morph_default = MMD_SA_options.model_para_obj.morph_default = MMD_SA_options.model_para_obj.morph_default || {};
 // "まばたきL", "まばたきR"
-var _morph = ["あ","∧","にやり","ω", "上","下","にこり", "まばたき","笑い"];
+var _morph = ["あ","∧","にやり","ω", "上","下","にこり", "まばたき","笑い","まばたきL","まばたきR"];
 var facemesh_morph = MMD_SA_options.model_para_obj.facemesh_morph = MMD_SA_options.model_para_obj.facemesh_morph || {};
 _morph.forEach(function (m) {
   if (!facemesh_morph[m])

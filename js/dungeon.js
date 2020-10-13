@@ -10429,7 +10429,7 @@ DEBUG_show("3D Resolution:" + (((is_default_res) && (Math.round(MMD_SA._renderer
      ,[
         {
           message: {
-  content: "1. Blink Detection\n2. Cancel"
+  content: "1. Face landmarks detection\n2. Cancel"
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:12 }
@@ -10442,9 +10442,10 @@ DEBUG_show("3D Resolution:" + (((is_default_res) && (Math.round(MMD_SA._renderer
      ,[
         {
   func: function () {
-var bd = System._browser.camera.facemesh.blink_detection
-System._browser.camera.facemesh.blink_detection = !bd
-DEBUG_show('Facemesh - Blink Detection:' + ((bd)?'OFF':'ON'), 3)
+//var bd = System._browser.camera.facemesh.blink_detection
+//System._browser.camera.facemesh.blink_detection = !bd
+System._browser.camera.facemesh.use_faceLandmarksDetection = !System._browser.camera.facemesh.use_faceLandmarksDetection
+DEBUG_show('Face landmarks detection:' + ((System._browser.camera.facemesh.use_faceLandmarksDetection)?'ON':'OFF'), 3)
   }
  ,ended: true
         }

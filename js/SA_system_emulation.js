@@ -3406,14 +3406,16 @@ lips_width_data = []
 eyebrow_data = {};
 eye_data = {L:[],R:[]};
 
+var eye_data_height_ref_pts = {L:[159,145], R:[386,374]};
 ["L","R"].forEach(function (dir) {
   for (var i = 0; i < 4; i++) {
     let data = eye_data[dir][i] = {}
     data.index = i
     data._eye_open_average = 0
     data.eye_open_average = 0
-    data.eye_open_lower = 1
+    data.eye_open_lower = 999
     data.eye_open_data = []
+    data.height_ref_pts = eye_data_height_ref_pts[dir]
   }
 
 // L eyebrow height:334,374
@@ -3423,7 +3425,8 @@ eye_data = {L:[],R:[]};
     _height_average: 0
    ,height_average: 0
    ,height_data: []
-   ,height_ref_pts: (dir=="L") ? [334,374] : [105,145]
+// NOTE: video source assumed to be mirrored
+   ,height_ref_pts: (dir=="R") ? [334,374] : [105,145]
   };
 });
     }
@@ -3433,6 +3436,8 @@ eye_data = {L:[],R:[]};
     var _v3 = []
 
     var TRIANGULATION
+
+    var use_faceLandmarksDetection = !is_mobile
 
     function init() {
 _facemesh.initialized = true
@@ -3456,7 +3461,9 @@ var params = []
 if (System._browser.use_WASM_SIMD) {
   params.push('simd=1')
 }
-if (System._browser.url_search_params['use_latest_facemesh']) {
+if (use_faceLandmarksDetection || System._browser.url_search_params['use_latest_facemesh']) {
+  use_faceLandmarksDetection = true
+  _facemesh.blink_detection = true
   params.push('use_latest_facemesh=1')
 }
 
@@ -3501,13 +3508,6 @@ if (data.faces.length) {
   let neck = { absolute:true, rot:new THREE.Quaternion() }
   let chest = { rot:new THREE.Quaternion().slerp(rot,0.2) }
 
-  let eye = face.eyes[0]
-  let eye_x_rot = 0
-  let eye_y_rot = 0
-  if (eye) {
-    eye_x_rot = Math.max(Math.min((eye[3]*2+x_rot/(Math.PI/2))*(1-Math.abs(x_rot)/Math.PI),1),-1)
-    eye_y_rot = Math.max(Math.min((eye[2]*2-y_rot/(Math.PI/2))*(1-Math.abs(y_rot)/Math.PI),1),-1)
-  }
 /*
 if (camera.visible) {
   let c = camera.video_canvas_face_detection
@@ -3642,6 +3642,86 @@ else {
   let blink = {L:[0],R:[0]}
   let _eye_data_order = {L:[],R:[]}
 
+if (use_faceLandmarksDetection) {
+  let _eye_x_rot = []
+  let _eye_y_rot = []
+  face.eyes.forEach(function (eye, i) {
+    _eye_x_rot[i] = Math.max(Math.min((eye[3]*2+x_rot/(Math.PI/2))*(1-Math.abs(x_rot)/Math.PI),1),-1)
+    _eye_y_rot[i] = Math.max(Math.min((eye[2]*2-y_rot/(Math.PI/2))*(1-Math.abs(y_rot)/Math.PI),1),-1)
+  });
+
+  ["L","R"].forEach(function (dir) {
+    let i = 0
+
+    blink[dir][i] = 0
+    let LR = eye_data[dir][i]
+    let e_data = MMD_SA._v3a.fromArray(face.mesh[LR.height_ref_pts[0]]).distanceTo(MMD_SA._v3b.fromArray(face.mesh[LR.height_ref_pts[1]]))
+
+    let _eye_open_average = LR.eye_open_average
+    if (!_eye_open_average) {
+      if (calibration_condition) {
+        LR.eye_open_data.push(e_data)
+
+        let edge_size = parseInt(LR.eye_open_data.length*0.3)
+        _eye_open_average = LR.eye_open_data.sort((a,b)=>a-b).slice(edge_size, LR.eye_open_data.length-edge_size).reduce((accumulator, currentValue) => accumulator + currentValue) / (LR.eye_open_data.length-edge_size*2)
+        if (!calibrating) {
+          LR.eye_open_average = _eye_open_average
+        }
+      }
+      else {
+        _eye_open_average = LR._eye_open_average
+      }
+    }
+    if (calibration_condition) {
+      if (LR.eye_open_lower > e_data)
+        LR.eye_open_lower = e_data
+    }
+
+    LR._eye_open_average = _eye_open_average
+    if (_eye_open_average) {
+      if (e_data > _eye_open_average) {
+        blink[dir][i] = Math.min(e_data/_eye_open_average, 1.25);
+      }
+      else {
+        let _eye_open_lower = Math.min(LR.eye_open_lower,_eye_open_average/3);
+        blink[dir][i] = Math.max((e_data-_eye_open_lower)/(_eye_open_average-_eye_open_lower), 0);
+      }
+    }
+  });
+
+  let rot_ratio = blink.L[0]+blink.R[0]
+  if (rot_ratio)
+    rot_ratio = blink.L[0]/rot_ratio
+  else
+    rot_ratio = 0.5
+  let eye_x_rot = _eye_x_rot[0] * rot_ratio + _eye_x_rot[1] * (1-rot_ratio)
+  let eye_y_rot = _eye_y_rot[0] * rot_ratio + _eye_y_rot[1] * (1-rot_ratio)
+  let two_eyes = { absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(-(eye_x_rot-0.3)*15/180*Math.PI, eye_y_rot*sign*20/180*Math.PI, 0),"YZX") }
+  _facemesh.frames.add("skin", "両目", two_eyes)
+
+  let LR_exists = (THREE.MMD.getModels()[0].pmx.morphs_index_by_name["まばたきL"] != null);
+  let blink_factor = (LR_exists) ? Math.min(Math.max(Math.abs(blink.L[0]-blink.R[0])-(0.25+(1-Math.max((Math.PI/4-Math.abs(y_rot))/Math.PI/4,0))*0.75),0)/0.25, 1) : 0;
+  let blink0 = Math.min(blink.L[0],blink.R[0])
+  blink.L[0] = blink.L[0]*blink_factor + blink0*(1-blink_factor)
+  blink.R[0] = blink.R[0]*blink_factor + blink0*(1-blink_factor)
+
+  if (LR_exists) {
+    _facemesh.frames.add("morph", "まばたきL", { weight:Math.max(Math.min(1-blink.L[0]*0.8-smile/2,1),0) })
+    _facemesh.frames.add("morph", "まばたきR", { weight:Math.max(Math.min(1-blink.R[0]*0.8-smile/2,1),0) })
+  }
+  else {
+    _facemesh.frames.add("morph", "まばたき", { weight:Math.max(Math.min(1-blink.L[0]*0.8-smile/2,1),0) })
+  }
+}
+else {
+  let eye = face.eyes[0]
+  let eye_x_rot = 0
+  let eye_y_rot = 0
+  if (eye) {
+    eye_x_rot = Math.max(Math.min((eye[3]*2+x_rot/(Math.PI/2))*(1-Math.abs(x_rot)/Math.PI),1),-1)
+    eye_y_rot = Math.max(Math.min((eye[2]*2-y_rot/(Math.PI/2))*(1-Math.abs(y_rot)/Math.PI),1),-1)
+  }
+
 if (blink_detection) {
   face.eyes.forEach(function (e, idx) {
     let dir = e[4][0]
@@ -3737,6 +3817,7 @@ else {
   eye_y_rot = Math.sign(eye_y_rot) * Math.pow(Math.abs(eye_y_rot), eye_rot_confidence)
   let two_eyes = { absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(-eye_x_rot*15/180*Math.PI, eye_y_rot*sign*20/180*Math.PI, 0),"YZX") }
   _facemesh.frames.add("skin", "両目", two_eyes)
+}
 
 
 info = info || (face.eyes.length && [((calibrating)?'Calibrating('+calibration_percent+'%):Make a calm face!':'(face data calibrated)'),/*eye_x_rot*100, eye_y_rot*100,*/(!blink_detection)?'auto blink':(_eye_data_order.L.length&&_eye_data_order.R.length)?_eye_data_order.L.join('+')+':'+~~(eye_data.L[_eye_data_order.L[0]]._eye_open_average*100)+'/'+~~(eye_data.L[_eye_data_order.L[0]].eye_open_lower*100)+'/'+_eye_data_order.R.join('+')+':'+~~(eye_data.R[_eye_data_order.R[0]]._eye_open_average*100)+'/'+~~(eye_data.R[_eye_data_order.R[0]].eye_open_lower*100):'(no blink data)'].join("\n"));
@@ -3926,6 +4007,15 @@ if (enabled) {
 */
   }
 }
+      }
+
+     ,get use_faceLandmarksDetection() {
+return use_faceLandmarksDetection;
+      }
+
+     ,set use_faceLandmarksDetection(v) {
+if (!this.initialized)
+  use_faceLandmarksDetection = v
       }
 
      ,get enabled() {
