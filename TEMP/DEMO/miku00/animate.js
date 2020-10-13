@@ -1207,8 +1207,10 @@ var model = THREE.MMD.getModels()[0].mesh
 var camera = MMD_SA._trackball_camera.object
 model.position.copy(camera.position)
 model.position.y -= 12.5
-MMD_SA.TEMP_v3.setEulerFromQuaternion(MMD_SA.TEMP_q.setFromRotationMatrix(camera.matrixWorld)).setX(0).setZ(0)
-model.quaternion.setFromEuler(MMD_SA.TEMP_v3)
+
+MMD_SA.TEMP_v3.setEulerFromQuaternion(MMD_SA.TEMP_q.setFromRotationMatrix(camera.matrixWorld),"YZX").setZ(0)
+MMD_SA.TEMP_v3.x = (MMD_SA.TEMP_v3.x < -1) ? -(MMD_SA.TEMP_v3.x+1) : 0
+model.quaternion.setFromEuler(MMD_SA.TEMP_v3,"YZX")
   }
     }
 
