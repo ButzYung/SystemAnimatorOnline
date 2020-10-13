@@ -1190,6 +1190,8 @@ posR.z -= ground_y_diff
    ,"leg_hold": {
   freeze_onended: true
 
+ ,look_at_screen: false
+
  ,onstart: function () {
 var model = THREE.MMD.getModels()[0].mesh
 this._pos_ = model.position.clone()
@@ -1206,10 +1208,11 @@ model.quaternion.copy(this._rot_)
 var model = THREE.MMD.getModels()[0].mesh
 var camera = MMD_SA._trackball_camera.object
 model.position.copy(camera.position)
-model.position.y -= 12.5
+//model.position.y -= 11
+MMD_SA._custom_skin = [{ key:{ name:"全ての親", pos:[0,-11,0] ,rot:[0,0,0,1] ,interp:MMD_SA._skin_interp_default }, idx:model.bones_by_name["全ての親"]._index }]
 
 MMD_SA.TEMP_v3.setEulerFromQuaternion(MMD_SA.TEMP_q.setFromRotationMatrix(camera.matrixWorld),"YZX").setZ(0)
-MMD_SA.TEMP_v3.x = (MMD_SA.TEMP_v3.x < -1) ? -(MMD_SA.TEMP_v3.x+1) : 0
+MMD_SA.TEMP_v3.x = (MMD_SA.TEMP_v3.x < -1) ? (MMD_SA.TEMP_v3.x+1) : 0
 model.quaternion.setFromEuler(MMD_SA.TEMP_v3,"YZX")
   }
     }
