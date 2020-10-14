@@ -1,4 +1,4 @@
-// (2020-10-12)
+// (2020-10-14)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -6306,7 +6306,7 @@ if (morph_extra_played) { this.morph.time += dt } else// extra morph END
 
 // AT: process_morphs
 if (self.MMD_SA) {
-  if (!para_SA.process_morphs || para_SA.process_morphs(this, this.morph)) {
+  if (!para_SA.process_morphs || !para_SA.process_morphs(this, this.morph)) {
     model_para.process_morphs && model_para.process_morphs(this, this.morph)
     window.dispatchEvent(new CustomEvent("SA_MMD_model" + this._model_index + "_process_morphs", { detail:{ model:this, morph:this.morph } }));
   }
