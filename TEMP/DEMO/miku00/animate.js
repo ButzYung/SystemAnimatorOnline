@@ -1317,8 +1317,7 @@ center.position.y -= Math.max(Math.min(model_speed.y/10, 2),-2)
 var rot = MMD_SA.TEMP_v3.set(Math.max(Math.min(model_speed.y/50, Math.PI/4),-Math.PI/4), 0, Math.max(Math.min(model_speed.x/50, Math.PI/4),-Math.PI/4));
 var head = mesh.bones_by_name["首"]
 head.quaternion.setFromEuler(rot,"YZX")
-
-DEBUG_show(model_speed.toArray().join('\n'))
+//DEBUG_show(model_speed.toArray().join('\n'))
   }
       };
     })()
@@ -1594,17 +1593,16 @@ if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle
     window.addEventListener("SA_MMD_model0_process_morphs", morph_event)
   }
 
-  if (++morph_form_index == morph_form.length) {
-    morph_form_index = 0;
-    let motion_list = ["standmix2_modified","i-shaped_balance_TDA_f0-50","gal_model_motion_with_legs-2_loop_v01","chair_sit01_armIK", "leg_hold"];
-    let motion_index = motion_list.findIndex((m)=>(MMD_SA_options.motion_shuffle_list_default[0]==MMD_SA_options.motion_index_by_name[m]));
-    if (++motion_index >= motion_list.length)
-      motion_index = 0
-    MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name[motion_list[motion_index]]]
-
-    MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice()
-    MMD_SA._force_motion_shuffle = true
+  let motion_list = ["standmix2_modified","i-shaped_balance_TDA_f0-50","gal_model_motion_with_legs-2_loop_v01","chair_sit01_armIK", "leg_hold"];
+  let motion_index = motion_list.findIndex((m)=>(MMD_SA_options.motion_shuffle_list_default[0]==MMD_SA_options.motion_index_by_name[m]));
+  if (++motion_index >= motion_list.length) {
+    motion_index = 0
+    if (++morph_form_index == morph_form.length) morph_form_index = 0;
   }
+  MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name[motion_list[motion_index]]]
+
+  MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice()
+  MMD_SA._force_motion_shuffle = true
 
   MMD_SA_options.Dungeon_options.item_base["social_distancing"].reset()
 }
