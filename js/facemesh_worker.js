@@ -333,7 +333,7 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
   }
 }
 
-  postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:faces[0].faceInViewConfidence, scaledMesh:(canvas)?undefined:sm, mesh:faces[0].mesh, eyes:eyes }], _t:_t }));
+  postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:faces[0].faceInViewConfidence, scaledMesh:(canvas)?((use_faceLandmarksDetection)?{454:sm[454],234:sm[234]}:undefined):sm, mesh:faces[0].mesh, eyes:eyes }], _t:_t }));
 
 //return
 
