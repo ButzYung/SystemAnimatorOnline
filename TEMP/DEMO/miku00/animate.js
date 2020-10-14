@@ -1314,7 +1314,7 @@ var center = mesh.bones_by_name["センター"]
 center.position.x -= Math.max(Math.min(model_speed.x/10, 2),-2)
 center.position.y -= Math.max(Math.min(model_speed.y/10, 2),-2)
 
-var rot = MMD_SA.TEMP_v3.set(Math.max(Math.min(model_speed.y/50, Math.PI/4),-Math.PI/4), 0, Math.max(Math.min(model_speed.x/50, Math.PI/4),-Math.PI/4));
+var rot = MMD_SA.TEMP_v3.set(Math.max(Math.min(-model_speed.y/25, Math.PI/4),-Math.PI/4), 0, Math.max(Math.min(model_speed.x/25, Math.PI/4),-Math.PI/4));
 var head = mesh.bones_by_name["首"]
 head.quaternion.setFromEuler(rot,"YZX")
 //DEBUG_show(model_speed.toArray().join('\n'))
