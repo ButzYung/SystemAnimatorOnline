@@ -3501,8 +3501,19 @@ if (data.faces.length) {
   let rot = new THREE.Quaternion().setFromEuler(new THREE.Vector3().set(0,-y_rot,-z_rot),"XZY")
   let x_rot = MMD_SA._v3b.set(0,1,0).angleTo(y_axis.applyQuaternion(rot).setX(0).normalize()) * ((y_axis.z > 0) ? 1 : -1)
 
+  let _z_rot
+  if (use_faceLandmarksDetection) {
+    let _x_diff = face.scaledMesh[454][0] - face.scaledMesh[234][0]
+    let _y_diff = face.scaledMesh[454][1] - face.scaledMesh[234][1]
+    let _dis = Math.sqrt(_x_diff*_x_diff + _y_diff*_y_diff) / Math.cos(y_rot)
+    _z_rot = Math.asin(_y_diff / _dis)
+  }
+  else {
+    _z_rot = z_rot
+  }
+
   let sign = (camera.visible) ? 1 : -1;
-  rot.setFromEuler(MMD_SA._v3a.set(x_rot, y_rot*sign, z_rot*sign),"YZX")
+  rot.setFromEuler(MMD_SA._v3a.set(x_rot, y_rot*sign, _z_rot*sign),"YZX")
 
   let head = { absolute:true, rot:rot }
   let neck = { absolute:true, rot:new THREE.Quaternion() }
@@ -3706,8 +3717,8 @@ if (use_faceLandmarksDetection) {
   blink.R[0] = blink.R[0]*blink_factor + blink0*(1-blink_factor)
 
   if (LR_exists) {
-    _facemesh.frames.add("morph", "まばたきL", { weight:Math.max(Math.min(1-blink.L[0]*0.8-smile,1),0) })
-    _facemesh.frames.add("morph", "まばたきR", { weight:Math.max(Math.min(1-blink.R[0]*0.8-smile,1),0) })
+    _facemesh.frames.add("morph", "まばたき"+((camera.visible)?"L":"R"), { weight:Math.max(Math.min(1-blink.L[0]*0.8-smile,1),0) })
+    _facemesh.frames.add("morph", "まばたき"+((camera.visible)?"R":"L"), { weight:Math.max(Math.min(1-blink.R[0]*0.8-smile,1),0) })
   }
   else {
     _facemesh.frames.add("morph", "まばたき", { weight:Math.max(Math.min(1-blink.L[0]*0.8-smile,1),0) })
