@@ -1276,7 +1276,7 @@ MMD_SA._custom_skin.push({ key:{ name:"全ての親", pos:[0,-11.5,0] ,rot:[0,0,
 
  ,process_morphs: function (model, morph) {
 var morph_name, _m_idx, _m;
-var weight = Math.min(model_speed.length()/10, 1);
+var weight = Math.min(model_speed.length()/4, 1);
 
 morph_name = "あ"
 _m_idx = model.pmx.morphs_index_by_name[morph_name]
@@ -1311,10 +1311,10 @@ if (_m_idx != null) {
 var mesh = model.mesh
 
 var center = mesh.bones_by_name["センター"]
-center.position.x -= model_speed.x/10
-center.position.y -= model_speed.y/10
+center.position.x -= Math.max(Math.min(model_speed.x/10, 2),-2)
+center.position.y -= Math.max(Math.min(model_speed.y/10, 2),-2)
 
-var rot = MMD_SA.TEMP_v3.set(model_speed.y/100, 0, model_speed.x/100)
+var rot = MMD_SA.TEMP_v3.set(Math.max(Math.min(model_speed.y/50, Math.PI/4),-Math.PI/4), 0, Math.max(Math.min(model_speed.x/50, Math.PI/4),-Math.PI/4));
 var head = mesh.bones_by_name["首"]
 head.quaternion.setFromEuler(rot,"YZX")
 
