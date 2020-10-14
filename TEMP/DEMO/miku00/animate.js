@@ -1282,7 +1282,7 @@ morph_name = "あ"
 _m_idx = model.pmx.morphs_index_by_name[morph_name]
 if (_m_idx != null) {
   _m = model.pmx.morphs[_m_idx]
-  MMD_SA._custom_morph.push({ key:{ weight:0+weight*1, morph_type:_m.type, morph_index:_m_idx }, idx:morph.target_index_by_name[morph_name] });
+  MMD_SA._custom_morph.push({ key:{ weight:0.1+weight*0.9, morph_type:_m.type, morph_index:_m_idx }, idx:morph.target_index_by_name[morph_name] });
 }
 
 morph_name = "笑い"
