@@ -3694,7 +3694,7 @@ if (use_faceLandmarksDetection) {
         blink[dir][i] = Math.min(e_data/_eye_open_average, 1.25);
       }
       else {
-        let _eye_open_lower = Math.min(LR.eye_open_lower,_eye_open_average/3);
+        let _eye_open_lower = Math.min(LR.eye_open_lower,_eye_open_average/2);
         blink[dir][i] = Math.max((e_data-_eye_open_lower)/(_eye_open_average-_eye_open_lower), 0);
       }
     }
