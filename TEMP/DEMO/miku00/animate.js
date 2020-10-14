@@ -1238,7 +1238,7 @@ model.position.copy(camera.position)
 //model.position.y -= 11.5
 
 var time_diff = (RAF_timestamp - timestamp) / 1000
-var speed_ratio = Math.min(time_diff/0.1, 1)
+var speed_ratio = Math.min(time_diff/0.2, 1)
 
 var rot = MMD_SA.TEMP_v3.setEulerFromQuaternion(MMD_SA.TEMP_q.setFromRotationMatrix(camera.matrixWorld),"YZX")
 var rot_speed = MMD_SA._v3a.copy(rot).sub(cam_rot).multiplyScalar(1/time_diff)
@@ -1258,7 +1258,15 @@ cam_speed.add(speed.multiplyScalar(speed_ratio))
 model_speed.copy(cam_speed).applyQuaternion(MMD_SA.TEMP_q.copy(model.quaternion).conjugate())
 
 //model_speed.set(0,0,0)
+cam_speed_rot.y = cam_speed_rot.y % (Math.PI*2);
+if (cam_speed_rot.y > Math.PI)
+  cam_speed_rot.y -= Math.PI*2
+else if (cam_speed_rot.y < -Math.PI)
+  cam_speed_rot.y += Math.PI*2
 model_speed.x -= cam_speed_rot.y*30
+
+model_speed.x /= 10
+model_speed.z /= 10
 
 timestamp = RAF_timestamp
 cam_pos.copy(camera.position)
@@ -1304,7 +1312,7 @@ var mesh = model.mesh
 
 var center = mesh.bones_by_name["センター"]
 center.position.x -= model_speed.x/10
-//center.position.y -= model_speed.y/10
+center.position.y -= model_speed.y/10
 
 var rot = MMD_SA.TEMP_v3.set(model_speed.y/100, 0, model_speed.x/100)
 var head = mesh.bones_by_name["首"]
