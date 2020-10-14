@@ -1187,26 +1187,48 @@ posR.z -= ground_y_diff
 
     }
 
-   ,"leg_hold": {
+   ,"leg_hold": (function () {
+      var _pos_, _rot_, _zoom_scale_;
+      var cam_pos, cam_rot, cam_speed, cam_speed_rot;
+      var model_speed;
+      var timestamp;
+
+      window.addEventListener("jThree_ready", function () {
+cam_pos = new THREE.Vector3()
+cam_rot = new THREE.Vector3()
+cam_speed = new THREE.Vector3()
+cam_speed_rot = new THREE.Vector3()
+model_speed = new THREE.Vector3()
+      });
+
+      return {
   freeze_onended: true
 
  ,look_at_screen: false
 
  ,onstart: function () {
 var model = THREE.MMD.getModels()[0].mesh
-this._pos_ = model.position.clone()
-this._rot_ = model.quaternion.clone()
+_pos_ = model.position.clone()
+_rot_ = model.quaternion.clone()
 
-this._zoom_scale_ = MMD_SA.WebXR.zoom_scale
+_zoom_scale_ = MMD_SA.WebXR.zoom_scale
 MMD_SA.WebXR.zoom_scale = 1
+
+var camera = MMD_SA._trackball_camera.object
+cam_pos.copy(camera.position)
+cam_rot.setEulerFromQuaternion(MMD_SA.TEMP_q.setFromRotationMatrix(camera.matrixWorld),"YZX")
+cam_speed.set(0,0,0)
+cam_speed_rot.set(0,0,0)
+model_speed.set(0,0,0)
+timestamp = RAF_timestamp
   }
 
  ,onended: function (loop_end) {
 var model = THREE.MMD.getModels()[0].mesh
-model.position.copy(this._pos_)
-model.quaternion.copy(this._rot_)
+model.position.copy(_pos_)
+model.quaternion.copy(_rot_)
 
-MMD_SA.WebXR.zoom_scale = this._zoom_scale_
+MMD_SA.WebXR.zoom_scale = _zoom_scale_
   }
 
  ,onplaying: function () {
@@ -1214,13 +1236,84 @@ var model = THREE.MMD.getModels()[0].mesh
 var camera = MMD_SA._trackball_camera.object
 model.position.copy(camera.position)
 //model.position.y -= 11.5
-MMD_SA._custom_skin = [{ key:{ name:"全ての親", pos:[0,-11.5,0] ,rot:[0,0,0,1] ,interp:MMD_SA._skin_interp_default }, idx:model.bones_by_name["全ての親"]._index }]
 
-MMD_SA.TEMP_v3.setEulerFromQuaternion(MMD_SA.TEMP_q.setFromRotationMatrix(camera.matrixWorld),"YZX").setZ(0)
-MMD_SA.TEMP_v3.x = (MMD_SA.TEMP_v3.x < -0.9) ? (MMD_SA.TEMP_v3.x+0.9) : 0
-model.quaternion.setFromEuler(MMD_SA.TEMP_v3,"YZX")
+var time_diff = (RAF_timestamp - timestamp) / 1000
+var speed_ratio = Math.min(time_diff/0.1, 1)
+
+var rot = MMD_SA.TEMP_v3.setEulerFromQuaternion(MMD_SA.TEMP_q.setFromRotationMatrix(camera.matrixWorld),"YZX")
+var rot_speed = MMD_SA._v3a.copy(rot).sub(cam_rot).multiplyScalar(1/time_diff)
+cam_speed_rot.multiplyScalar(1-speed_ratio).add(rot_speed.multiplyScalar(speed_ratio))
+
+cam_rot.copy(rot)
+
+rot.z = 0
+rot.x = (rot.x < -0.9) ? (rot.x+0.9) : 0
+//var rot_y = rot.y
+//rot.y = 0
+model.quaternion.setFromEuler(rot,"YZX")
+
+var speed = MMD_SA.TEMP_v3.copy(camera.position).sub(cam_pos).multiplyScalar(1/time_diff)
+cam_speed.multiplyScalar(1-speed_ratio)
+cam_speed.add(speed.multiplyScalar(speed_ratio))
+model_speed.copy(cam_speed).applyQuaternion(MMD_SA.TEMP_q.copy(model.quaternion).conjugate())
+
+//model_speed.set(0,0,0)
+model_speed.x -= cam_speed_rot.y*30
+
+timestamp = RAF_timestamp
+cam_pos.copy(camera.position)
+
+MMD_SA._custom_skin.push({ key:{ name:"全ての親", pos:[0,-11.5,0] ,rot:[0,0,0,1]/*MMD_SA.TEMP_q.setFromEuler(rot.setY(rot_y).setX(0),"YZX").toArray()*/ ,interp:MMD_SA._skin_interp_default }, idx:model.bones_by_name["全ての親"]._index });
   }
-    }
+
+ ,process_morphs: function (model, morph) {
+var morph_name, _m_idx, _m;
+var weight = Math.min(model_speed.length()/10, 1);
+
+morph_name = "あ"
+_m_idx = model.pmx.morphs_index_by_name[morph_name]
+if (_m_idx != null) {
+  _m = model.pmx.morphs[_m_idx]
+  MMD_SA._custom_morph.push({ key:{ weight:0+weight*1, morph_type:_m.type, morph_index:_m_idx }, idx:morph.target_index_by_name[morph_name] });
+}
+
+morph_name = "笑い"
+_m_idx = model.pmx.morphs_index_by_name[morph_name]
+if (_m_idx != null) {
+  _m = model.pmx.morphs[_m_idx]
+  MMD_SA._custom_morph.push({ key:{ weight:0.2+weight*0.2, morph_type:_m.type, morph_index:_m_idx }, idx:morph.target_index_by_name[morph_name] });
+}
+
+morph_name = "困る"
+_m_idx = model.pmx.morphs_index_by_name[morph_name]
+if (_m_idx != null) {
+  _m = model.pmx.morphs[_m_idx]
+  MMD_SA._custom_morph.push({ key:{ weight:0.5+weight*0.5, morph_type:_m.type, morph_index:_m_idx }, idx:morph.target_index_by_name[morph_name] });
+}
+
+morph_name = "涙"
+_m_idx = model.pmx.morphs_index_by_name[morph_name]
+if (_m_idx != null) {
+  _m = model.pmx.morphs[_m_idx]
+  MMD_SA._custom_morph.push({ key:{ weight:(weight>0.5)?1:0, morph_type:_m.type, morph_index:_m_idx }, idx:morph.target_index_by_name[morph_name] });
+}
+  }
+
+ ,process_bones: function (model, skin) {
+var mesh = model.mesh
+
+var center = mesh.bones_by_name["センター"]
+center.position.x -= model_speed.x/10
+//center.position.y -= model_speed.y/10
+
+var rot = MMD_SA.TEMP_v3.set(model_speed.y/100, 0, model_speed.x/100)
+var head = mesh.bones_by_name["首"]
+head.quaternion.setFromEuler(rot,"YZX")
+
+DEBUG_show(model_speed.toArray().join('\n'))
+  }
+      };
+    })()
 
   }
 
