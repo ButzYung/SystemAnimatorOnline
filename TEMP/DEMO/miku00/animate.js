@@ -1270,10 +1270,7 @@ if (cam_speed_rot.y > Math.PI)
   cam_speed_rot.y -= Math.PI*2
 else if (cam_speed_rot.y < -Math.PI)
   cam_speed_rot.y += Math.PI*2
-model_speed.x -= cam_speed_rot.y*30
-
-model_speed.x /= 10
-model_speed.z /= 10
+model_speed.x -= cam_speed_rot.y*3
 
 timestamp = RAF_timestamp
 cam_pos.copy(camera.position)
