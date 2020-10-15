@@ -5105,7 +5105,13 @@ else {
 if (!xr.anchors.has(anchor) || !anchor._data || !anchor._data.update)
   continue
 
-let transform = frame.getPose(anchor.anchorSpace, this.frameOfRef).transform;
+let pose = frame.getPose(anchor.anchorSpace, this.frameOfRef);
+if (!pose)
+  continue
+let transform = pose.transform;
+if (!transform)
+  continue
+
 let checksum = transform.matrix.reduce((n0,n1)=>n0+n1);
 if (checksum == xr.hitMatrix_anchor._checksum)
   continue
