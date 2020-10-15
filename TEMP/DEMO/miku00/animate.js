@@ -1192,6 +1192,7 @@ posR.z -= ground_y_diff
       var cam_pos, cam_rot, cam_speed, cam_speed_rot;
       var model_speed;
       var timestamp;
+      var _ground_plane_visible;
 
       window.addEventListener("jThree_ready", function () {
 cam_pos = new THREE.Vector3()
@@ -1203,8 +1204,8 @@ model_speed = new THREE.Vector3()
 
       return {
   freeze_onended: true
-
  ,look_at_screen: false
+ ,initial_physics_reset: true
 
  ,onstart: function () {
 var model = THREE.MMD.getModels()[0].mesh
@@ -1221,6 +1222,8 @@ cam_speed.set(0,0,0)
 cam_speed_rot.set(0,0,0)
 model_speed.set(0,0,0)
 timestamp = RAF_timestamp
+
+_ground_plane_visible = MMD_SA.WebXR.ground_plane.visible
   }
 
  ,onended: function (loop_end) {
@@ -1229,6 +1232,8 @@ model.position.copy(_pos_)
 model.quaternion.copy(_rot_)
 
 MMD_SA.WebXR.zoom_scale = _zoom_scale_
+
+MMD_SA.WebXR.ground_plane.visible = _ground_plane_visible
   }
 
  ,onplaying: function () {
