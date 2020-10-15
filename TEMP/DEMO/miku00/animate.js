@@ -1237,6 +1237,8 @@ MMD_SA.WebXR.ground_plane.visible = _ground_plane_visible
   }
 
  ,onplaying: function () {
+MMD_SA.WebXR.ground_plane.visible = false
+
 var model = THREE.MMD.getModels()[0].mesh
 var camera = MMD_SA._trackball_camera.object
 model.position.copy(camera.position)
