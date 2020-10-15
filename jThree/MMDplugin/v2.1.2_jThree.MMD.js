@@ -1,4 +1,4 @@
-// (2020-10-14)
+// (2020-10-15)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -499,7 +499,7 @@ para_SA.motion_blending = {
       model.skin  = obj.skin
       model.morph = obj.morph
 
-      model.resetMotion(MMD_SA._ignore_physics_reset)
+      model.resetMotion((mm.para_SA.initial_physics_reset != null) ? !mm.para_SA.initial_physics_reset : MMD_SA._ignore_physics_reset)
 
       MMD_SA.reset_skin(0)
       MMD_SA.reset_morph(0)
@@ -590,15 +590,15 @@ para_SA.motion_blending = {
       _model.skin  = obj.skin
       _model.morph = obj.morph
 
-      _model.resetMotion(MMD_SA._ignore_physics_reset)
+      mm = MMD_SA.motion[obj.skin._motion_index]
+      if (!model_para.mirror_motion_from_first_model)
+        mm0 = mm
+
+      _model.resetMotion((mm.para_SA.initial_physics_reset != null) ? !mm.para_SA.initial_physics_reset : MMD_SA._ignore_physics_reset)
 
       MMD_SA.reset_skin(i)
       MMD_SA.reset_morph(i)
       THREE.MMD.adjustMotionDuration()
-
-      mm = MMD_SA.motion[_model.skin._motion_index]
-      if (!model_para.mirror_motion_from_first_model)
-        mm0 = mm
 
       model_para.onMotionChange && model_para.onMotionChange();
 
