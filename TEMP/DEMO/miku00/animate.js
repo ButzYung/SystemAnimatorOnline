@@ -1294,10 +1294,11 @@ MMD_SA._custom_skin.push({ key:{ name:"全ての親", pos:[0,-11.5,0] ,rot:[0,0,
 
  ,process_morphs: function (model, morph) {
 var morph_name, _m_idx, _m;
-var weight = Math.min(model_speed.length()/4, 1);
+var weight = model_speed.length()/5
+var score = Math.min(weight/2, 1)
 
-var damage = weight * weight
-damage = (weight > 0.2) ? -weight : 0.1+weight
+var damage = score * score
+damage = (damage > 0.4) ? -damage : 0.1+damage
 
 MMD_SA_options.Dungeon.character.hp_add(damage, function (c) {
   var time_diff = (RAF_timestamp - timestamp) / 1000
@@ -1346,6 +1347,8 @@ if (orgy_level > 0.5) {
 
   return
 }
+
+weight = Math.min(weight, 1);
 
 morph_name = "あ"
 _m_idx = model.pmx.morphs_index_by_name[morph_name]
