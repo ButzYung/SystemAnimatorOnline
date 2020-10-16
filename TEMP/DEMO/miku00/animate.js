@@ -1296,7 +1296,7 @@ MMD_SA._custom_skin.push({ key:{ name:"全ての親", pos:[0,-11.5,0] ,rot:[0,0,
 var morph_name, _m_idx, _m;
 var weight = model_speed.length()/5
 
-var score = Math.min((Math.abs(model_speed.y)*2+Math.abs(model_speed.x)+Math.abs(model_speed.z))/20, 1)
+var score = Math.min((Math.abs(model_speed.y)*3+Math.abs(model_speed.x)+Math.abs(model_speed.z))/20, 1)
 var damage = (score > 0.5) ? -score : 0.1
 
 MMD_SA_options.Dungeon.character.hp_add(damage, function (c) {
