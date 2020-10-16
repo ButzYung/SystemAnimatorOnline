@@ -1,4 +1,4 @@
-// (2020-10-15)
+// (2020-10-16)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -5241,7 +5241,7 @@ faces.forEach(function (f) {
 //  geo.buffersNeedUpdate = true;
 //  DEBUG_show(pmx_morph.name,0,1)
 }
-else if (weight > mesh.morphTargetInfluences[idx])
+else if ((weight > mesh.morphTargetInfluences[idx]) || currKey.override_weight)
 	this.mesh.morphTargetInfluences[idx] = weight//currKey.weight + ( nextKey.weight - currKey.weight ) * ratio;
 };
 
