@@ -1193,6 +1193,12 @@ posR.z -= ground_y_diff
       var model_speed;
       var timestamp;
       var _ground_plane_visible;
+      var orgy_level, orgy_cooling, orgy_spasm;
+      var orgy_morph = [
+  {name:"あ",weight:0}, {name:"う",weight:0}
+ ,{name:"笑い",weight:0.5}, {name:"びっくり",weight:0.5}
+ ,{name:"あ２",alt:[{name:"あ",weight:1}],weight:0.75}, {name:"困る",weight:1}, {name:"涙",weight:1}, {name:"はぁと",alt:[{name:"瞳小"}],weight:1}, {name:"ぺろっ",weight:1}
+      ];
 
       window.addEventListener("jThree_ready", function () {
 cam_pos = new THREE.Vector3()
@@ -1224,6 +1230,13 @@ model_speed.set(0,0,0)
 timestamp = RAF_timestamp
 
 _ground_plane_visible = MMD_SA.WebXR.ground_plane.visible
+
+// lower the ground to prevent unexpected collisions due to .matrixWorld_physics_scale
+jThree.MMD.groundLevel -= 10
+
+orgy_level = 0
+orgy_cooling = 0
+orgy_spasm = 0
   }
 
  ,onended: function (loop_end) {
@@ -1234,6 +1247,10 @@ model.quaternion.copy(_rot_)
 MMD_SA.WebXR.zoom_scale = _zoom_scale_
 
 MMD_SA.WebXR.ground_plane.visible = _ground_plane_visible
+
+jThree.MMD.groundLevel = 0
+
+MMD_SA_options.Dungeon.character.hp_add(9999)
   }
 
  ,onplaying: function () {
@@ -1272,21 +1289,69 @@ else if (cam_speed_rot.y < -Math.PI)
   cam_speed_rot.y += Math.PI*2
 model_speed.x -= cam_speed_rot.y*3
 
-timestamp = RAF_timestamp
-cam_pos.copy(camera.position)
-
-MMD_SA._custom_skin.push({ key:{ name:"全ての親", pos:[0,-11.5,0] ,rot:[0,0,0,1]/*MMD_SA.TEMP_q.setFromEuler(rot.setY(rot_y).setX(0),"YZX").toArray()*/ ,interp:MMD_SA._skin_interp_default }, idx:model.bones_by_name["全ての親"]._index });
+MMD_SA._custom_skin.push({ key:{ name:"全ての親", pos:[0,-11.5,0] ,rot:[0,0,0,1], interp:MMD_SA._skin_interp_default }, idx:model.bones_by_name["全ての親"]._index });
   }
 
  ,process_morphs: function (model, morph) {
 var morph_name, _m_idx, _m;
 var weight = Math.min(model_speed.length()/4, 1);
 
+var damage = weight * weight
+damage = (weight > 0.2) ? -weight : 0.1+weight
+
+MMD_SA_options.Dungeon.character.hp_add(damage, function (c) {
+  var time_diff = (RAF_timestamp - timestamp) / 1000
+  if (c.hp == 0) {
+    orgy_cooling = 1
+  }
+  else {
+// 10 sec to 0
+    orgy_cooling = Math.max(orgy_cooling-time_diff/10, 0)
+  }
+
+  if (orgy_cooling) {
+// 0.5 sec to max
+    orgy_level = Math.min(orgy_level+time_diff*2, 1)
+  }
+  else {
+    orgy_level = Math.max(orgy_level-time_diff*2, 0)
+  }
+  return {}
+});
+
+MMD_SA_options.auto_blink = !(orgy_level || (weight > 0.5));
+
+if (orgy_level > 0.5) {
+//DEBUG_show(orgy_level+'\n'+orgy_cooling)
+  orgy_morph.forEach(function (m) {
+    morph_name = m.name
+    _m_idx = model.pmx.morphs_index_by_name[morph_name]
+    if ((_m_idx == null) && m.alt) {
+      m.alt.some(function (m2) {
+        morph_name = m2.name
+        _m_idx = model.pmx.morphs_index_by_name[morph_name]
+        if (_m_idx != null) {
+          if (m2.weight == null)
+            m2.weight = m.weight
+          m = m2
+          return true
+        }
+      });
+    }
+    if (_m_idx != null) {
+      _m = model.pmx.morphs[_m_idx]
+      MMD_SA._custom_morph.push({ key:{ weight:m.weight, morph_type:_m.type, morph_index:_m_idx, override_weight:true }, idx:morph.target_index_by_name[morph_name] });
+    }
+   });
+
+  return
+}
+
 morph_name = "あ"
 _m_idx = model.pmx.morphs_index_by_name[morph_name]
 if (_m_idx != null) {
   _m = model.pmx.morphs[_m_idx]
-  MMD_SA._custom_morph.push({ key:{ weight:0.1+weight*0.9, morph_type:_m.type, morph_index:_m_idx }, idx:morph.target_index_by_name[morph_name] });
+  MMD_SA._custom_morph.push({ key:{ weight:0.1+weight*0.9, morph_type:_m.type, morph_index:_m_idx, override_weight:true }, idx:morph.target_index_by_name[morph_name] });
 }
 
 morph_name = "笑い"
@@ -1300,7 +1365,7 @@ morph_name = "困る"
 _m_idx = model.pmx.morphs_index_by_name[morph_name]
 if (_m_idx != null) {
   _m = model.pmx.morphs[_m_idx]
-  MMD_SA._custom_morph.push({ key:{ weight:0.5+weight*0.5, morph_type:_m.type, morph_index:_m_idx }, idx:morph.target_index_by_name[morph_name] });
+  MMD_SA._custom_morph.push({ key:{ weight:0.5+weight*0.4, morph_type:_m.type, morph_index:_m_idx }, idx:morph.target_index_by_name[morph_name] });
 }
 
 morph_name = "涙"
@@ -1318,11 +1383,44 @@ var center = mesh.bones_by_name["センター"]
 center.position.x -= Math.max(Math.min(model_speed.x/10, 2),-2)
 center.position.y -= Math.max(Math.min(model_speed.y/10, 2),-2)
 
-var rot = MMD_SA.TEMP_v3.set(Math.max(Math.min(-model_speed.y/25-model_speed.z/25, Math.PI/4),-Math.PI/4), 0, Math.max(Math.min(model_speed.x/25, Math.PI/4),-Math.PI/4));
-var head = mesh.bones_by_name["首"]
-head.quaternion.setFromEuler(rot,"YZX")
+var rot
+
+rot = MMD_SA.TEMP_v3.set(Math.max(Math.min(model_speed.y/100, Math.PI/8),-Math.PI/8), Math.max(Math.min(model_speed.x/100, Math.PI/8),-Math.PI/8), 0);
+if (orgy_level) {
+  let time_diff = (RAF_timestamp - timestamp) / 1000
+  orgy_spasm = (!orgy_spasm && (Math.random() < time_diff)) ? 2 : Math.max(orgy_spasm-time_diff*10, 0)
+  let _ratio = orgy_level*orgy_level *(1+((orgy_spasm)?0.1*((orgy_spasm>1)?2-orgy_spasm:orgy_spasm):0)) *Math.PI/180
+  rot.x += -15 *_ratio
+  rot.z += 7.5 *_ratio
+}
+rot = MMD_SA.TEMP_q.setFromEuler(rot, "YZX");
+mesh.bones_by_name["首"].quaternion.multiply(rot)
+mesh.bones_by_name["頭"].quaternion.multiply(rot)
+
+rot = MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.set(Math.max(Math.min(model_speed.y/100, Math.PI/8),-Math.PI/8), Math.max(Math.min(model_speed.x/100, Math.PI/8),-Math.PI/8), 0), "YZX");
+mesh.bones_by_name["左肩"].quaternion.multiply(rot)
+mesh.bones_by_name["右肩"].quaternion.multiply(rot)
+
+// update at the very last (which should be process_bones)
+timestamp = RAF_timestamp
+cam_pos.copy(MMD_SA._trackball_camera.object.position)
+
 //DEBUG_show(model_speed.toArray().join('\n'))
   }
+
+ ,adjustment_per_model: {
+    _default_ : {
+  morph_default: {
+    "涙": { weight:0 }
+   ,"あ２": { weight:0 }
+   ,"はぁと": { weight:0 }
+   ,"ぺろっ": { weight:0 }
+   ,"びっくり": { weight:0 }
+  }
+    }
+  }
+
+
       };
     })()
 
