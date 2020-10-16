@@ -1,4 +1,4 @@
-// (2020-07-03)
+// (2020-10-16)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -326,7 +326,7 @@ if (blocked) {
 
    ,hp: 100
    ,hp_max: 100
-   ,hp_add: function (num) {
+   ,hp_add: function (num, check_hp) {
 if (!num)
   return
 
@@ -344,15 +344,10 @@ else {
 }
 MMD_SA_options.Dungeon.update_status_bar()
 
-if (this.hp == 0) {
-  var d = MMD_SA_options.Dungeon
-  var motion_id = d.motion_id_by_filename[MMD_SA.MMD.motionManager.filename] || ""
-  if (!/^(PC combat hit down|PC down)$/.test(motion_id)) {
-    MMD_SA_options.motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name[d.motion["PC down"].name]]
-    MMD_SA._force_motion_shuffle = true
-    return true
-  }
-}
+if (check_hp && check_hp(this))
+  return
+
+// default events here
     }
 
    ,mount_para: null
@@ -10158,16 +10153,30 @@ return (this._states.character_combat_locked);
  ,get object_click_disabled() { return (this._states.object_click_disabled || this.event_mode || (MMD_SA.WebXR.reticle && MMD_SA.WebXR.reticle.visible)); }
  ,set object_click_disabled(v) { this._states.object_click_disabled = v; }
 
- ,check_states: function () {
+ ,check_states: (function () {
+    function check_hp(c) {
+if (c.hp == 0) {
+  let d = MMD_SA_options.Dungeon
+  let motion_id = d.motion_id_by_filename[MMD_SA.MMD.motionManager.filename] || ""
+  if (!/^(PC combat hit down|PC down)$/.test(motion_id)) {
+    MMD_SA_options.motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name[d.motion["PC down"].name]]
+    MMD_SA._force_motion_shuffle = true
+    return true
+  }
+}
+    }
+
+    return function () {
 var s = this._states
 var t = Date.now()
 if (s.auto_damage && !s.dialogue_mode) {
   var damage = Math.min((s.auto_damage.t||t) - t, 100) / 1000 * s.auto_damage.damage
   s.auto_damage.t = t
-  if (this.character.hp_add(damage))
-    return true
+  this.character.hp_add(damage, check_hp)
+  return (this.character.hp == 0)
 }
-  }
+    };
+  })()
 
 
 // events START
