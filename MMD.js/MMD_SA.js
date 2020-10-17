@@ -1211,9 +1211,16 @@ return false
 
    ,"kissing": {
       action: {
-        condition: function (is_bone_action, objs) {
+        condition: (function () {
+  var motion_name;
+
+  return function (is_bone_action, objs) {
 var is_kissing
-var busy = MMD_SA.use_jThree && (((MMD_SA_options.allows_kissing) ? MMD_SA.MMD.motionManager.para_SA.allows_kissing==false : !MMD_SA.MMD.motionManager.para_SA.allows_kissing) || MMD_SA.music_mode || MMD_SA._busy_mode1_ || MMD_SA._horse_machine_mode_)
+var busy = MMD_SA.use_jThree && (((MMD_SA_options.allows_kissing) ? MMD_SA.MMD.motionManager.para_SA.allows_kissing===false : !MMD_SA.MMD.motionManager.para_SA.allows_kissing) || MMD_SA.music_mode || MMD_SA._busy_mode1_ || MMD_SA._horse_machine_mode_)
+
+if (MMD_SA.use_jThree && this._kissing && motion_name && (motion_name != MMD_SA.MMD.motionManager.filename))
+  this.onFinish()
+motion_name = MMD_SA.MMD.motionManager.filename
 
 if (MMD_SA.use_jThree && !busy && MMD_SA_options.use_JSARToolKit) {
   var AR_obj = MMD_SA.AR_obj
@@ -1228,7 +1235,7 @@ if (MMD_SA.use_jThree && !busy && MMD_SA_options.use_JSARToolKit) {
     }
   }
 }
-else if (MMD_SA.use_jThree && !busy && (MMD_SA.camera_position.y > MMD_SA._head_pos.y) && (Math.abs(MMD_SA.camera_position.x - MMD_SA._head_pos.x) < 10) && (MMD_SA._head_pos.distanceTo(MMD_SA.camera_position) < 18)) {
+else if (MMD_SA.use_jThree && !busy && (MMD_SA.camera_position.y > MMD_SA._head_pos.y-2) && (Math.abs(MMD_SA.camera_position.x - MMD_SA._head_pos.x) < 10) && (MMD_SA._head_pos.distanceTo(MMD_SA.camera_position) < 10)) {
   is_kissing = true
 }
 else {
@@ -1283,15 +1290,14 @@ if (is_bone_action && this._kissing) {
 
       var kiss = MMD_SA_options.mesh_obj_by_id["KissMESH"]
       var head_pos = MMD_SA._v3a.copy(MMD_SA._head_pos)
-      head_pos.y += 1
+//      head_pos.y += 1
       kiss._obj.position.copy(head_pos.add(MMD_SA._v3b.copy(MMD_SA.camera_position).sub(head_pos).multiplyScalar(0.2 + ratio*0.6)))
       kiss._obj.rotation = MMD_SA.face_camera(kiss._obj.position, null, true)
       kiss._obj.scale.x = kiss._obj.scale.y = kiss._obj.scale.z = 0.5 + ratio * 0.5
       kiss.show()
     }
 
-    if (MMD_SA_options.use_speech_bubble && (this.frame == 0))
-      MMD_SA.SpeechBubble.message(0, ["Here is your X'mas kiss~\n\u2661"].shuffle()[0], 5000, { pos_mod:[-3,-5,0] })
+//    if (MMD_SA_options.use_speech_bubble && (this.frame == 0)) MMD_SA.SpeechBubble.message(0, ["Here is your X'mas kiss~\n\u2661"].shuffle()[0], 5000, { pos_mod:[-3,-5,0] });
 //"主人，錫錫～\u2661", "飛吻啊，主人～\u2661"
   }
   else {
@@ -1305,7 +1311,8 @@ if (is_bone_action && this._kissing) {
 }
 
 return this._kissing
-        }
+  };
+        })()
 
        ,look_at_mouse_disabled: true
 
@@ -2646,7 +2653,7 @@ var para_SA = MMD_SA.MMD.motionManager.para_SA
 var cam = MMD_SA.camera_position
 
 // use the most updated head pose
-var head_pos = para.head_pos || MMD_SA.get_bone_position(THREE.MMD.getModels()[0].mesh, "首")//MMD_SA._head_pos//
+var head_pos = para.head_pos || MMD_SA.get_bone_position(THREE.MMD.getModels()[0].mesh, "頭")//MMD_SA._head_pos//
 
 var x_diff = cam.x - head_pos.x
 var left_sided = b.left_sided
@@ -6125,7 +6132,9 @@ THREE.MMD.getModels().forEach(function (model) {
   }
 
 // Kiss
-  if (MMD_SA_options.allows_kissing) {
+  if (MMD_SA_options.allows_kissing && (MMD_SA_options.custom_action.indexOf("kissing") == -1))
+    MMD_SA_options.custom_action.push("kissing")
+  if (MMD_SA_options.custom_action.indexOf("kissing") != -1) {
     MMD_SA.GOML_head +=
   '<geo id="KissGEO" type="Plane" param="1 1" />\n'
 + '<txr id="KissTXR" src="' + (toFileProtocol(System.Gadget.path + '/images/kiss_mark_red_o66.png')) + '" />\n'
