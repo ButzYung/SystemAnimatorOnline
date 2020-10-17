@@ -1402,7 +1402,7 @@ return function (is_bone_action, objs) {
   var model_para_obj = MMD_SA_options.model_para_obj
   var motion_para = mm.para_SA
   var motion_sd = motion_para && motion_para.adjustment_per_model && (motion_para.adjustment_per_model[model_para_obj._filename] || motion_para.adjustment_per_model[model_para_obj._filename_cleaned] || motion_para.adjustment_per_model._default_);
-  motion_sd = motion_sd && motion_sd.skin_default["cover_undies"];
+  motion_sd = motion_sd && motion_sd.skin_default && motion_sd.skin_default["cover_undies"];
 
   if (!motion_sd) {
     assign_motion("_default_")
