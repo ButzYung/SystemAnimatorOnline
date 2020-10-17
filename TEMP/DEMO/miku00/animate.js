@@ -1215,6 +1215,9 @@ model_speed = new THREE.Vector3()
 // ,look_at_screen: false
  ,initial_physics_reset: true
 
+ ,_cover_undies: false
+// ,object_click_disabled: true
+
  ,look_at_screen_bone_list: [
     { name:"両目", weight_screen:0.3, weight_motion:1 }
   ]
@@ -1393,15 +1396,15 @@ center.position.y -= Math.max(Math.min(model_speed.y/10, 2),-2)
 
 var rot
 
-rot = MMD_SA.TEMP_v3.set(Math.max(Math.min(model_speed.y/100, Math.PI/8),-Math.PI/8), 0, Math.max(Math.min(model_speed.x/100, Math.PI/8),-Math.PI/8));
+rot = MMD_SA.TEMP_v3.set(Math.max(Math.min(model_speed.y/100-model_speed.z/100, Math.PI/4),-Math.PI/4), 0, Math.max(Math.min(model_speed.x/100, Math.PI/4),-Math.PI/4));
 if (orgy_level) {
   let time_diff = (RAF_timestamp - timestamp) / 1000
   orgy_spasm = (!orgy_spasm && (Math.random() < time_diff)) ? 2 : Math.max(orgy_spasm-time_diff*10, 0)
   let _ratio = orgy_level*orgy_level *(1+((orgy_spasm)?0.1*((orgy_spasm>1)?2-orgy_spasm:orgy_spasm):0)) *Math.PI/180
-  rot.x += -15 *_ratio
-  rot.z += 7.5 *_ratio
+  rot.x += -30 *_ratio
+  rot.z +=  15 *_ratio
 }
-rot = MMD_SA.TEMP_q.setFromEuler(rot, "YZX");
+rot = MMD_SA.TEMP_q.setFromEuler(rot.multiplyScalar(0.5), "YZX");
 mesh.bones_by_name["首"].quaternion.multiply(rot)
 mesh.bones_by_name["頭"].quaternion.multiply(rot)
 
