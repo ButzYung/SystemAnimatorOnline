@@ -193,6 +193,7 @@ var MMD_SA_options = {
    ,"standmix" : { onended: function () { MMD_SA._no_fading=true; } }
    ,"standmix2_modified" : { onended: function () { MMD_SA._no_fading=true; }
 
+,allows_kissing: true
 ,look_at_screen_bone_list: [
   { name:"首", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
  ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
@@ -292,8 +293,9 @@ return ratio
   }
 
  ,look_at_screen_bone_list: [
-    { name:"首", weight_screen:0.5, weight_motion:1/3 }
-   ,{ name:"頭", weight_screen:0.5, weight_motion:1/3 }
+{ name:"両目", weight_screen:0.3, weight_motion:1 }
+//    { name:"首", weight_screen:0.5, weight_motion:1/3 }
+//   ,{ name:"頭", weight_screen:0.5, weight_motion:1/3 }
   ]
 
  ,onended: function (loop_end) {
@@ -1210,8 +1212,12 @@ model_speed = new THREE.Vector3()
 
       return {
   freeze_onended: true
- ,look_at_screen: false
+// ,look_at_screen: false
  ,initial_physics_reset: true
+
+ ,look_at_screen_bone_list: [
+    { name:"両目", weight_screen:0.3, weight_motion:1 }
+  ]
 
  ,onstart: function () {
 var model = THREE.MMD.getModels()[0].mesh
@@ -1289,7 +1295,7 @@ else if (cam_speed_rot.y < -Math.PI)
   cam_speed_rot.y += Math.PI*2
 model_speed.x -= cam_speed_rot.y*3
 
-MMD_SA._custom_skin.push({ key:{ name:"全ての親", pos:[0,-11.5,0] ,rot:[0,0,0,1], interp:MMD_SA._skin_interp_default }, idx:model.bones_by_name["全ての親"]._index });
+//MMD_SA._custom_skin.push({ key:{ name:"全ての親", pos:[0,-11.5,0] ,rot:[0,0,0,1], interp:MMD_SA._skin_interp_default }, idx:model.bones_by_name["全ての親"]._index });
   }
 
  ,process_morphs: function (model, morph) {
@@ -1403,6 +1409,8 @@ rot = MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.set(Math.max(Math.min(model_spee
 mesh.bones_by_name["左肩"].quaternion.multiply(rot)
 mesh.bones_by_name["右肩"].quaternion.multiply(rot)
 
+mesh.bones_by_name["全ての親"].position.setX(0).setY(-11.5).setZ(0)
+
 // update at the very last (which should be process_bones)
 timestamp = RAF_timestamp
 cam_pos.copy(MMD_SA._trackball_camera.object.position)
@@ -1430,6 +1438,7 @@ cam_pos.copy(MMD_SA._trackball_camera.object.position)
 
  ,custom_action: [
   "cover_undies"
+ ,"kissing"
   ]
 
 // ,use_CircularSpectrum: true
