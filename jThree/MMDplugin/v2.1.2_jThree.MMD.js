@@ -6489,7 +6489,7 @@ if (self.MMD_SA) {
 
 // AT: adjustment for "look at screen" - START
 // always get head position, because it may be needed elsewhere (eg. speech bubble)
-var head_name = "首"//"頭"//
+var head_name = "頭"//"首"//
 var _head_pos = null
 if (self.MMD_SA) {
   if (!model_para.is_object) {
