@@ -1412,6 +1412,11 @@ rot = MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.set(Math.max(Math.min(model_spee
 mesh.bones_by_name["左肩"].quaternion.multiply(rot)
 mesh.bones_by_name["右肩"].quaternion.multiply(rot)
 
+if (orgy_level > 0.5) {
+  rot = MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.set(-10*Math.PI/180,0,0), "YZX");
+  mesh.bones_by_name["両目"].quaternion.multiply(rot)
+}
+
 mesh.bones_by_name["全ての親"].position.setX(0).setY(-11.5).setZ(0)
 
 // update at the very last (which should be process_bones)
