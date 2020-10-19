@@ -1,4 +1,4 @@
-// (2020-10-16)
+// (2020-10-19)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -2214,7 +2214,7 @@ if (_uniforms.length) {
   ]);
 }
 // AT: material_para
-var material_para = MMD_SA_options.model_para_obj_all[that._model_index].material_para || {};
+var material_para = model_para.material_para || {};
 material_para = material_para[p.name] || material_para._default_ || {};
 		p.lights = true; // use scene light
 		p.skinning = true; // use bone skinning
@@ -2257,6 +2257,12 @@ if (material_para.side != null) { p.side = material_para.side } else
 			p.map = createTexture( that.textures[ v.texture ].path, (function(){ var _p=p; return function(){ var c=_p.map.image=document.createElement("canvas"); c.width=c.height=2; var cc=c.getContext("2d"); cc.fillStyle="white"; cc.fillRect(0,0,2,2); _p.map.needsUpdate=true; }; })(), p );
 // (function(){ var _p=p; var _v=v; return function(){_p.map=null;_v.texture=-1;}; })()
 		}
+// AT: normal map
+if (material_para.normalMap && (model_para.use_normalMap !== false)) {
+  p.normalMap = createTexture( material_para.normalMap, (function(){ var _p=p; return function(){ var c=_p.map.image=document.createElement("canvas"); c.width=c.height=2; var cc=c.getContext("2d"); cc.fillStyle="white"; cc.fillRect(0,0,2,2); _p.map.needsUpdate=true; }; })(), p );
+// always us RepeatWrapping
+  p.normalMap.wrapS = p.normalMap.wrapT = THREE.RepeatWrapping;
+}
 		a = null;
 		if (v.sharedToon === 0) {
 			if (v.toonTexture >= 0) {
