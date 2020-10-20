@@ -1216,7 +1216,7 @@ return false
 
   return function (is_bone_action, objs) {
 var is_kissing
-var busy = MMD_SA.use_jThree && (((MMD_SA_options.allows_kissing) ? MMD_SA.MMD.motionManager.para_SA.allows_kissing===false : !MMD_SA.MMD.motionManager.para_SA.allows_kissing) || MMD_SA.music_mode || MMD_SA._busy_mode1_ || MMD_SA._horse_machine_mode_)
+var busy = MMD_SA.use_jThree && (((MMD_SA_options.allows_kissing) ? MMD_SA.MMD.motionManager.para_SA.allows_kissing===false : !MMD_SA.MMD.motionManager.para_SA.allows_kissing) || (MMD_SA_options.Dungeon && MMD_SA_options.Dungeon.event_mode) || MMD_SA.music_mode || MMD_SA._busy_mode1_ || MMD_SA._horse_machine_mode_)
 
 if (MMD_SA.use_jThree && this._kissing && motion_name && (motion_name != MMD_SA.MMD.motionManager.filename))
   this.onFinish()
