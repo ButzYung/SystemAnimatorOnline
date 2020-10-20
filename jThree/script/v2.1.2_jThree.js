@@ -1,4 +1,4 @@
-// (2020-10-12)
+// (2020-10-20)
 
 /*!
  * jThree JavaScript Library v2.1.2
@@ -9605,14 +9605,16 @@ THREE.ImageLoader.prototype = {
 
 // AT: texture_resolution_limit
 var tex
-if (self.MMD_SA && MMD_SA_options.texture_resolution_limit && ((image.width > MMD_SA_options.texture_resolution_limit) || (image.height > MMD_SA_options.texture_resolution_limit))) {
-  tex = document.createElement("canvas")
-  tex.width  = Math.min(MMD_SA_options.texture_resolution_limit, image.width)
-  tex.height = Math.min(MMD_SA_options.texture_resolution_limit, image.height)
-  tex.getContext("2d").drawImage(image, 0,0,tex.width,tex.height)
+if (self.MMD_SA) {
+  let texture_resolution_limit = image._texture_resolution_limit || MMD_SA_options.texture_resolution_limit
+  if ((image.width > texture_resolution_limit) || (image.height > texture_resolution_limit)) {
+    tex = document.createElement("canvas")
+    tex.width  = Math.min(texture_resolution_limit, image.width)
+    tex.height = Math.min(texture_resolution_limit, image.height)
+    tex.getContext("2d").drawImage(image, 0,0,tex.width,tex.height)
+  }
 }
-else
-  tex = image
+if (!tex) tex = image;
 
 			scope.dispatchEvent( { type: 'load', content: tex } );
 
@@ -24450,10 +24452,12 @@ THREE.GeometryUtils.__v2 = new THREE.Vector3();
  */
 
 THREE.ImageUtils = {
-
-	loadTexture: function ( url, mapping, onLoad, onError ) {
+// AT: para
+	loadTexture: function ( url, mapping, onLoad, onError ,para ) {
 
 		var image = new Image();
+// AT: texture_resolution_limit
+if (para && para.texture_resolution_limit) image._texture_resolution_limit = para.texture_resolution_limit;
 		var texture = new THREE.Texture( image, mapping );
 
 		var loader = new THREE.ImageLoader();

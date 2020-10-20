@@ -1,4 +1,4 @@
-// (2020-10-19)
+// (2020-10-20)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -2062,8 +2062,8 @@ console.log([w_new, h_new])
 //console.log([image.width, image.height])
 }
 
-// AT: onerror_func, material
-	createTexture = function( fname, onerror_func, material ) {
+// AT: onerror_func, material, para
+	createTexture = function( fname, onerror_func, material, para ) {
 		var ext, p, texture, onerror;
 
 		// alias
@@ -2115,7 +2115,8 @@ setUVRepeat(texture, _material)
 					monitor.del();
 				};//,
 })(),
-				onerror);
+// AT: para
+				onerror ,para);
 		}
 		texture.flipY = false; // DDSには flipY=true が効かないのでfalseにする。上下逆貼りに注意。
 		texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
@@ -2259,7 +2260,12 @@ if (material_para.side != null) { p.side = material_para.side } else
 		}
 // AT: normal map
 if (material_para.normalMap && (model_para.use_normalMap !== false)) {
-  p.normalMap = createTexture( material_para.normalMap, (function(){ var _p=p; return function(){ var c=_p.map.image=document.createElement("canvas"); c.width=c.height=2; var cc=c.getContext("2d"); cc.fillStyle="white"; cc.fillRect(0,0,2,2); _p.map.needsUpdate=true; }; })(), p );
+  p.normalMap = createTexture(
+    material_para.normalMap
+   ,(function(){ var _p=p; return function(){ var c=_p.map.image=document.createElement("canvas"); c.width=c.height=2; var cc=c.getContext("2d"); cc.fillStyle="white"; cc.fillRect(0,0,2,2); _p.map.needsUpdate=true; }; })()
+   ,p
+   ,(material_para.normalMap_resolution_limit)?{texture_resolution_limit:material_para.normalMap_resolution_limit}:null
+  );
 // always us RepeatWrapping
   p.normalMap.wrapS = p.normalMap.wrapT = THREE.RepeatWrapping;
 }
