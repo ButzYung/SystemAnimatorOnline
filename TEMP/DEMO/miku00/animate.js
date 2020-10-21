@@ -1124,7 +1124,7 @@ if (!xr.session) {
 }
 
 var ground_y_diff = (xr.hit_ground_y - xr.hit_ground_y_lowest) * 10 * xr.zoom_scale - chair_ground_y
-if (ground_y_diff > 0)
+if (ground_y_diff >= 0)
   return
 
 if (ground_y_diff < -chair_ground_y)
@@ -1136,6 +1136,17 @@ posL.y -= ground_y_diff
 posL.z -= ground_y_diff
 posR.y -= ground_y_diff
 posR.z -= ground_y_diff
+
+if (skin.time < 1) {
+  let factor = Math.min(skin.time/1,1)
+  factor = (1 - factor*factor) * Math.abs(ground_y_diff/chair_ground_y)
+  let leg_stretch = 5 * factor
+  let ankle_rot = MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.set(-30*Math.PI/180*factor,0,0), "YZX")
+  posL.z += leg_stretch
+  posR.z += leg_stretch
+  mesh.bones_by_name["左足ＩＫ"].quaternion.multiply(ankle_rot)
+  mesh.bones_by_name["右足ＩＫ"].quaternion.multiply(ankle_rot)
+}
   }
 
  ,freeze_onended: true
@@ -1151,6 +1162,9 @@ posR.z -= ground_y_diff
   skin_default: {
 //    "両目": { rot_add:{x:-5, y:2.5, z:0} }
     "頭": { keys:[{time:0, rot:{x:-11.3,y:0,z:0}}] }
+   ,"下半身": { rot_add:{x:50, y:0, z:0} }
+   ,"上半身": { rot_add:{x:10, y:0, z:0} }
+   ,"上半身2": { rot_add:{x:-10, y:0, z:0} }
   }
  ,morph_default:{
 //    "笑い": { weight:0.2 }
