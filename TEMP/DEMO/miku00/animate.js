@@ -1396,7 +1396,7 @@ center.position.y -= Math.max(Math.min(model_speed.y/10, 2),-2)
 
 var rot
 
-rot = MMD_SA.TEMP_v3.set(Math.max(Math.min(model_speed.y/100-model_speed.z/100, Math.PI/4),-Math.PI/4), 0, Math.max(Math.min(model_speed.x/100, Math.PI/4),-Math.PI/4));
+rot = MMD_SA.TEMP_v3.set(Math.max(Math.min(model_speed.y/50-model_speed.z/100, Math.PI/4),-Math.PI/4), 0, Math.max(Math.min(model_speed.x/100, Math.PI/4),-Math.PI/4));
 if (orgy_level) {
   let time_diff = (RAF_timestamp - timestamp) / 1000
   orgy_spasm = (!orgy_spasm && (Math.random() < time_diff)) ? 2 : Math.max(orgy_spasm-time_diff*10, 0)
