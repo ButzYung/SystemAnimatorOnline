@@ -2932,6 +2932,14 @@ e.detail.result.return_value = true
       }
 
       var target_devicePixelRatio = 0
+
+      function video_fallback(src) {
+camera.init_stream()
+
+camera.video.loop = true
+camera.video.src = (webkit_electron_mode) ? toFileProtocol(src||"C:\\Users\\user\\Documents\\_.mp4") : (src||"js/headtrackr.mp4");
+      }
+
       camera = {
   initialized: false
 
@@ -2942,7 +2950,7 @@ return target_devicePixelRatio || window.devicePixelRatio;
 target_devicePixelRatio = v
   }
 
- ,start: function () {
+ ,start: function (src) {
 var AR_options = MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR
 
 if (this.initialized) {
@@ -2958,21 +2966,22 @@ if (this.initialized) {
 var constraints = { video:this.set_constraints() }
 constraints.video.facingMode = "user"
 
-navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
-  camera.init_stream(stream)
+if (src) {
+  video_fallback(src)
+}
+else {
+  navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
+    camera.init_stream(stream)
 
-  if (AR_options && AR_options.dom_overlay)
-    AR_options.dom_overlay.use_dummy_webgl = true
+    if (AR_options && AR_options.dom_overlay)
+      AR_options.dom_overlay.use_dummy_webgl = true
 
-  DEBUG_show("(User camera:ON)", 2)
-}).catch(function (err) {
-  camera.init_stream()
-
-  camera.video.loop = true
-  camera.video.src = (webkit_electron_mode) ? toFileProtocol("C:\\Users\\user\\Documents\\_.mp4") : "js/headtrackr.mp4"//"js/headtrackr.mp4"//
-
-  DEBUG_show("(ERROR: Camera unavailable, using fallback video instead)", 3)
-});
+    DEBUG_show("(User camera:ON)", 2)
+  }).catch(function (err) {
+    video_fallback()
+    DEBUG_show("(ERROR: Camera unavailable, using fallback video instead)", 3)
+  });
+}
   }
 
  ,init_stream: function (stream) {
@@ -4006,7 +4015,6 @@ return blink_detection;
 blink_detection = v
 if (enabled) {
   if (blink_detection) {
-    MMD_SA_options.auto_blink = false
     reset_calibration()
   }
   else {
@@ -4048,8 +4056,6 @@ if (enabled) {
   reset_calibration()
 
   auto_blink_default = MMD_SA_options.auto_blink
-  if (blink_detection)
-    MMD_SA_options.auto_blink = false
 
   this.frames.reset()
 
@@ -4104,6 +4110,11 @@ this.morph = {}
 if (!this.enabled || !this.worker_initialized || this.busy)
   return
 this.busy = true
+
+// .auto_blink can be eanbled by other features. This ensures that it is properly disabled.
+if (blink_detection) {
+  MMD_SA_options.auto_blink = false
+}
 
 //camera.video_canvas.style.visibility="hidden"
 /*
