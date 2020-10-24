@@ -2057,7 +2057,7 @@ MMD_SA._force_motion_shuffle = true
 // 1
      ,[
         {
-          func: function () { MMD_SA.WebXR.user_camera.start((webkit_electron_mode) ? toFileProtocol("C:\\Users\\user\\Documents\\_.mp4") : null) }
+          func: function () { MMD_SA.WebXR.user_camera.start((0&&webkit_electron_mode) ? toFileProtocol("C:\\Users\\user\\Documents\\_.mp4") : null) }
          ,ended: true
         }
       ]
