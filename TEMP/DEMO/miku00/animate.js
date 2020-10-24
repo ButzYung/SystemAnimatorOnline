@@ -1728,7 +1728,7 @@ if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle
     window.addEventListener("SA_MMD_model0_process_morphs", morph_event)
   }
 
-  let motion_list = ["standmix2_modified","i-shaped_balance_TDA_f0-50", ((MMD_SA_options.WebXR.AR._adult_mode)?"leg_hold":null), "gal_model_motion_with_legs-2_loop_v01","chair_sit01_armIK"].filter(m=>m!=null);
+  let motion_list = ["standmix2_modified","i-shaped_balance_TDA_f0-50", ((1||MMD_SA_options.WebXR.AR._adult_mode)?"leg_hold":null), "gal_model_motion_with_legs-2_loop_v01","chair_sit01_armIK"].filter(m=>m!=null);
   let motion_index = motion_list.findIndex((m)=>(MMD_SA_options.motion_shuffle_list_default[0]==MMD_SA_options.motion_index_by_name[m]));
   if (++motion_index >= motion_list.length) {
     motion_index = 0
