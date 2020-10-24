@@ -3522,11 +3522,11 @@ if (data.faces.length) {
   }
 
   let sign = (camera.visible) ? 1 : -1;
-  rot.setFromEuler(MMD_SA._v3a.set(x_rot, y_rot*sign, _z_rot*sign),"YZX")
+  rot.setFromEuler(MMD_SA._v3a.set(x_rot, y_rot*sign, _z_rot*sign),"YZX").slerp(MMD_SA.TEMP_q.set(0,0,0,1), 0.45)
 
   let head = { absolute:true, rot:rot }
-  let neck = { absolute:true, rot:new THREE.Quaternion() }
-  let chest = { rot:new THREE.Quaternion().slerp(rot,0.2) }
+  let neck = { absolute:true, rot:rot }
+  let chest = { rot:new THREE.Quaternion().slerp(rot, 0.2/0.45) }
 
 /*
 if (camera.visible) {
@@ -3872,7 +3872,7 @@ for (var name in skin) {
   if (s[0].rot) {
     if (s[0].absolute)
       bone.quaternion.set(0,0,0,1)
-    bone.quaternion.multiply(MMD_SA.TEMP_q.copy(s[1].rot).slerp(s[0].rot, Math.max(Math.min(s[0].t_delta/Math.min(_facemesh.frames.t_delta,200),1),0) ))
+    bone.quaternion.multiply(MMD_SA.TEMP_q.copy(s[1].rot).slerp(s[0].rot, Math.max(Math.min(s[0].t_delta/Math.max(Math.min(_facemesh.frames.t_delta,200),100),1),0) ))
 //DEBUG_show(s[0].t_delta/100)
   }
 }
@@ -3912,7 +3912,7 @@ for (var name in morph) {
     return
   m[0].t_delta += RAF_timestamp_delta
 
-  let ratio = Math.max(Math.min(m[0].t_delta/Math.min(_facemesh.frames.t_delta,200),1),0)
+  let ratio = Math.max(Math.min(m[0].t_delta/Math.max(Math.min(_facemesh.frames.t_delta,200),100),1),0)
   let weight = m[0].weight * ratio + m[1].weight * (1-ratio)
 
   if (weight < 0) {
