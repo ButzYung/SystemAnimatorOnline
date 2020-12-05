@@ -1,4 +1,4 @@
-// (2020-10-20)
+// (2020-12-05)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -1451,11 +1451,15 @@ Bone = function( bin ) {
 		//console.log('additionalTransform(' + (this.flags & 0x300).toString(16) + ')', this.additionalTransform);
 	}
 	if ( ( this.flags & 0x400) !== 0 ) {
-		bin.readVector(3); // dummy read
+// AT: fixedAxis
+this.fixedAxis = convV( bin.readVector(3) );
+//		bin.readVector(3); // dummy read
 		//this.fixedAxis = convV( bin.readVector(3) );
 		//console.log('fixedAxis ',this.fixedAxis);
 	}
 	if ( ( this.flags & 0x800) !== 0 ) {
+// AT: localCoordinate
+//this.localCoordinate = [ convV( bin.readVector(3) ), convV( bin.readVector(3) ) ];
 		bin.readVector(3); bin.readVector(3); // dummy read
 		//this.localCoordinate = [ convV( bin.readVector(3) ), convV( bin.readVector(3) ) ];
 		//console.log('localCoordinate ', this.localCoordinate);
@@ -3851,10 +3855,9 @@ if (mm) {
   }
 // arm IK
   if (/\u8155\uFF29\uFF2B/.test(target.name)) {
-    var _vmd = MMD_SA.vmd_by_filename[mm.filename]
-    if (_vmd && !_vmd.use_armIK && !para_SA.use_armIK) { continue }
+    let _vmd = MMD_SA.vmd_by_filename[mm.filename]
+    if (!System._browser.camera.use_armIK && _vmd && !_vmd.use_armIK && !para_SA.use_armIK) { continue }
   }
-
 }
 		effector = bones[ik.effector];
 		//if (effector.omitIK) {
@@ -6803,6 +6806,14 @@ if ( this.ik ) {
 	this.ik.update([2]);
 }
 */
+
+// AT: process_bones (after IK)
+if (self.MMD_SA) {
+  if (!para_SA.process_bones_after_IK || !para_SA.process_bones_after_IK(this, this.skin)) {
+    model_para.process_bones_after_IK && model_para.process_bones_after_IK(this, this.skin)
+    window.dispatchEvent(new CustomEvent("SA_MMD_model" + this._model_index + "_process_bones_after_IK", { detail:{ model:this, skin:this.skin } }));
+  }
+}
 
 // AT: bone connection
 if (self.MMD_SA) {
