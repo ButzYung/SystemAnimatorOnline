@@ -1602,7 +1602,7 @@ if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle
     pixel_limit: {
       _default_: 1920*1080
 //     ,facemesh : 1280*720
-     ,facemesh_bb_ratio: 0.8
+     ,facemesh_bb_ratio: (is_mobile) ? 1 : 0.8
     }
    ,display: {
 //      scale: 1
@@ -1802,7 +1802,7 @@ if (MMD_SA.WebXR.session && !MMD_SA.WebXR.user_camera.initialized) {
   return true
 }
 
-if (!MMD_SA.WebXR.user_camera.initialized) {
+if (!MMD_SA.WebXR.user_camera.initialized || !MMD_SA.WebXR.user_camera.visible) {
   if (MMD_SA_options.Dungeon.inventory.action_disabled)
     return true
   MMD_SA_options.Dungeon.run_event("_SELFIE_",0)
