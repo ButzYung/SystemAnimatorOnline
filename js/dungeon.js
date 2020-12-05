@@ -1,4 +1,4 @@
-// (2020-10-16)
+// (2020-12-05)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -3022,7 +3022,7 @@ var options = MMD_SA_options.Dungeon_options// && Object.clone(MMD_SA_options.Du
 if (!options)
   options = MMD_SA_options.Dungeon_options = {}
 
-if (use_SA_browser_mode && !is_SA_child_animation) {
+if (use_SA_browser_mode && (!is_SA_child_animation && (!webkit_electron_mode || !options.transparent_background))) {
 //  Settings_default._custom_.WallpaperAsBG = "non_default"
   Settings_default._custom_.DisableTransparency = "non_default"
 }
@@ -3034,7 +3034,8 @@ if (browser_native_mode && !webkit_window) {
 SA_fullscreen_stretch_to_cover = true
 
 document.addEventListener("DOMContentLoaded", function(e) {
-  document.body.style.backgroundColor = "black"
+  if (Settings_default._custom_.DisableTransparency == "non_default")
+    document.body.style.backgroundColor = "black"
 
   var d = MMD_SA_options.Dungeon
   for (var item_name in d.item_base) {
@@ -10972,6 +10973,8 @@ var func = function () {
   if (msg.content) {
     var bubble_index = msg.bubble_index || 0
     var para = msg.para || {}
+    if (System._browser.camera.initialized)
+      para.always_update = true
     var duration = (msg.duration) ? msg.duration * 1000 : 0
 
     if (c.mount_para && c.mount_para.msg_para) {
