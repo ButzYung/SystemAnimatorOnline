@@ -166,6 +166,7 @@ var MMD_SA_options = {
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/chair_sit01_armIK.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/i-shaped_balance/i-shaped_balance_TDA_f0-50.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/leg_hold.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/stand_simple.vmd' }
   ]
 
 
@@ -1181,6 +1182,23 @@ if (skin.time < 1) {
 
     }
 
+   ,"stand_simple": {
+  center_view_enforced: true
+
+ ,onstart: function () {
+let model = THREE.MMD.getModels()[0]
+let bones_by_name = model.mesh.bones_by_name
+let bones = model.pmx.bones
+let head = bones[bones_by_name["頭"]._index].origin
+
+this.center_view = [0, (head[1]-1)*0.5-2.5, -22]
+  }
+
+ ,object_click_disabled: true
+
+ ,get look_at_screen() { return !System._browser.camera.facemesh.enabled; }
+    }
+
    ,"i-shaped_balance_TDA_f0-50": {
   freeze_onended: true
 
@@ -1580,6 +1598,17 @@ if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle
     }
   }
 
+ ,user_camera: {
+    pixel_limit: {
+      _default_: 1920*1080
+//     ,facemesh : 1280*720
+     ,facemesh_bb_ratio: 0.8
+    }
+   ,display: {
+//      scale: 1
+    }
+  }
+
  ,light_position: [0,1,0]
 
  ,use_shadowMap: true
@@ -1622,7 +1651,9 @@ if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle
 // dungeon options START
 MMD_SA_options.Dungeon_options = {
 
-  use_PC_click_reaction_default: true
+  transparent_background: true
+
+ ,use_PC_click_reaction_default: true
 
  ,joystick_disabled: true
 
@@ -1728,7 +1759,7 @@ if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle
     window.addEventListener("SA_MMD_model0_process_morphs", morph_event)
   }
 
-  let motion_list = ["standmix2_modified","i-shaped_balance_TDA_f0-50", ((1||MMD_SA_options.WebXR.AR._adult_mode)?"leg_hold":null), "gal_model_motion_with_legs-2_loop_v01","chair_sit01_armIK"].filter(m=>m!=null);
+  let motion_list = ["standmix2_modified","stand_simple","i-shaped_balance_TDA_f0-50", ((1||MMD_SA_options.WebXR.AR._adult_mode)?"leg_hold":null), "gal_model_motion_with_legs-2_loop_v01","chair_sit01_armIK"].filter(m=>m!=null);
   let motion_index = motion_list.findIndex((m)=>(MMD_SA_options.motion_shuffle_list_default[0]==MMD_SA_options.motion_index_by_name[m]));
   if (++motion_index >= motion_list.length) {
     motion_index = 0
@@ -1798,13 +1829,16 @@ if (!MMD_SA.WebXR.user_camera.visible) {
   return true
 }
 */
-if (MMD_SA.WebXR.user_camera.facemesh.enabled) {
-  MMD_SA.WebXR.user_camera.facemesh.enabled = false
-  DEBUG_show("Facemesh AI:OFF", 2)
+if (!MMD_SA.WebXR.user_camera.facemesh.enabled) {
+  if (MMD_SA_options.Dungeon.inventory.action_disabled)
+    return true
+  MMD_SA_options.Dungeon.run_event("_FACEMESH_",0)
 }
-else {
-  MMD_SA.WebXR.user_camera.facemesh.enabled = true
-  DEBUG_show("Facemesh AI:ON", 2)
+else  {
+  MMD_SA.WebXR.user_camera.facemesh.enabled = false
+  MMD_SA.WebXR.user_camera.poseNet.enabled = false
+  MMD_SA.WebXR.user_camera.handpose.enabled = false
+  DEBUG_show("Facemesh AI:OFF", 2)
 }
     }
    ,anytime: true
@@ -2045,11 +2079,12 @@ MMD_SA._force_motion_shuffle = true
       [
         {
           message: {
-  content: "Enable selfie camera for AR purpose? 1. Yes\n2. No"
+  content: "Enable selfie camera for AR purpose?\n1. Yes\n2. Yes (flip video)\n3. No"
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:1 }
-   ,{ key:2 }
+   ,{ key:2, branch_index:2 }
+   ,{ key:3 }
   ]
           }
         }
@@ -2057,7 +2092,68 @@ MMD_SA._force_motion_shuffle = true
 // 1
      ,[
         {
-          func: function () { MMD_SA.WebXR.user_camera.start((0&&webkit_electron_mode) ? toFileProtocol("C:\\Users\\user\\Documents\\_.mp4") : null) }
+          func: function () { MMD_SA.WebXR.user_camera.video_flipped=false; MMD_SA.WebXR.user_camera.start((0&&webkit_electron_mode) ? toFileProtocol("C:\\Users\\user\\Documents\\_.mp4") : null); }
+         ,ended: true
+        }
+      ]
+// 2
+     ,[
+        {
+          func: function () { MMD_SA.WebXR.user_camera.video_flipped=true; MMD_SA.WebXR.user_camera.start((0&&webkit_electron_mode) ? toFileProtocol("C:\\Users\\user\\Documents\\_.mp4") : null); }
+         ,ended: true
+        }
+      ]
+    ]
+
+   ,"_FACEMESH_": [
+//0
+      [
+        {
+          message: {
+  content: "Enable face and body tracking?\n1. Face only\n2. Face + body\n3. Face + body + hands\n4. Cancel"
+ ,bubble_index: 3
+ ,branch_list: [
+    { key:1, branch_index:1 }
+   ,{ key:2, branch_index:2 }
+   ,{ key:3, branch_index:3 }
+   ,{ key:4 }
+  ]
+          }
+        }
+      ]
+// 1
+     ,[
+        {
+          func: function () {
+MMD_SA.WebXR.user_camera.facemesh.enabled = true
+MMD_SA.WebXR.user_camera.poseNet.enabled = false
+MMD_SA.WebXR.user_camera.handpose.enabled = false
+DEBUG_show("Facemesh AI:ON", 2)
+          }
+         ,ended: true
+        }
+      ]
+// 2
+     ,[
+        {
+          func: function () {
+MMD_SA.WebXR.user_camera.facemesh.enabled = true
+MMD_SA.WebXR.user_camera.poseNet.enabled = true
+MMD_SA.WebXR.user_camera.handpose.enabled = false
+DEBUG_show("Facemesh/PoseNet AI:ON", 3)
+          }
+         ,ended: true
+        }
+      ]
+// 3
+     ,[
+        {
+          func: function () {
+MMD_SA.WebXR.user_camera.facemesh.enabled = true
+MMD_SA.WebXR.user_camera.poseNet.enabled = true
+MMD_SA.WebXR.user_camera.handpose.enabled = true
+DEBUG_show("Facemesh/PoseNet/Handpose AI:ON", 4)
+          }
          ,ended: true
         }
       ]
