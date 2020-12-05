@@ -1,4 +1,4 @@
-// MMD for System Animator (2020-05-22)
+// MMD for System Animator (2020-12-05)
 
 var use_full_spectrum = true
 
@@ -803,9 +803,10 @@ if (MMD_SA_options.MMD_disabled)
 var para_SA = this.MMD.motionManager.para_SA
 var cv = (para_SA.center_view || MMD_SA_options.center_view || [0,0,0]).slice()
 if (MMD_SA_options.Dungeon) {
-  cv[2] = -cv[2]
-  var c = MMD_SA_options.Dungeon.character
-  var rot = c.rot//.clone()
+  if (!para_SA.center_view_enforced)
+    cv[2] = -cv[2]
+  let c = MMD_SA_options.Dungeon.character
+  let rot = c.rot//.clone()
 //  if (c.mount_para && c.mount_para.mount_rotation) rot.add(MMD_SA.TEMP_v3.copy(c.mount_para.mount_rotation).multiplyScalar(Math.PI/180))
   cv = MMD_SA._v3a_.fromArray(cv).applyEuler(rot).toArray()
 }
@@ -1216,7 +1217,7 @@ return false
 
   return function (is_bone_action, objs) {
 var is_kissing
-var busy = MMD_SA.use_jThree && (((MMD_SA_options.allows_kissing) ? MMD_SA.MMD.motionManager.para_SA.allows_kissing===false : !MMD_SA.MMD.motionManager.para_SA.allows_kissing) || (MMD_SA_options.Dungeon && MMD_SA_options.Dungeon.event_mode) || MMD_SA.music_mode || MMD_SA._busy_mode1_ || MMD_SA._horse_machine_mode_)
+var busy = MMD_SA.use_jThree && (((MMD_SA_options.allows_kissing) ? MMD_SA.MMD.motionManager.para_SA.allows_kissing===false : !MMD_SA.MMD.motionManager.para_SA.allows_kissing) || (MMD_SA_options.Dungeon && MMD_SA_options.Dungeon.event_mode) || System._browser.camera.facemesh.enabled || MMD_SA.music_mode || MMD_SA._busy_mode1_ || MMD_SA._horse_machine_mode_)
 
 if (MMD_SA.use_jThree && this._kissing && motion_name && (motion_name != MMD_SA.MMD.motionManager.filename))
   this.onFinish()
@@ -2645,7 +2646,7 @@ if (this.msg_timerID) {
   this.msg_timerID = null
 }
 
-var msg_changed = (this.bubble_index != bubble_index) || (this.msg != msg)
+var msg_changed = (this.bubble_index != bubble_index) || (this.msg != msg) || para.always_update;
 var b = this.bubbles[bubble_index]
 
 var para_SA = MMD_SA.MMD.motionManager.para_SA
@@ -5429,6 +5430,13 @@ if (navigator.xr) {
       MMD_SA_options.random_camera.rotation.z = [0,0]
   }
 
+  if (!MMD_SA_options.user_camera)
+    MMD_SA_options.user_camera = {}
+  if (!MMD_SA_options.user_camera.pixel_limit)
+    MMD_SA_options.user_camera.pixel_limit = {}
+  if (!MMD_SA_options.user_camera.display)
+    MMD_SA_options.user_camera.display = {}
+
   var _trackball_camera_limit_adjust = function () {}
   if (MMD_SA_options.trackball_camera_limit) {
     if (MMD_SA_options.trackball_camera_limit.adjust)
@@ -6606,11 +6614,19 @@ if (use_WebGL_2D) {
 
 // Tensorflow - BodyPix
 if (MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR) {
-  console.log("Use BodyPix");
 //  document.write('<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.2"></scr'+'ipt>');
   document.write('<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></scr'+'ipt>');
+
+  console.log("Use BodyPix");
   document.write('<script async src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.0"></scr'+'ipt>');
 
+/*
+  console.log("Use PoseNet");
+  document.write('<script async src="https://cdn.jsdelivr.net/npm/@tensorflow-models/posenet"></scr'+'ipt>');
+
+  console.log("Use Handpose");
+  document.write('<script async src="https://cdn.jsdelivr.net/npm/@tensorflow-models/handpose@0.0.6/dist/handpose.js"></scr'+'ipt>');
+*/
 
 // non-worker Facemesh TEST
 //  document.write('<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/facemesh"></scr'+'ipt>');
