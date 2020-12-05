@@ -4802,7 +4802,7 @@ if (MMD_SA_options.user_camera.pixel_limit.facemesh) {
 }
 
 let facemesh_bb_ratio;
-if (MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio && (!is_mobile || !screen.orientation || /landscape/.test(screen.orientation.type))) {
+if (MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio && (!is_mobile)) {// || !screen.orientation || /landscape/.test(screen.orientation.type))) {
   facemesh_bb_ratio = MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio
   let d = Math.round(Math.min(cw,ch) * facemesh_bb_ratio)
   sx = Math.round(Math.max(Math.min(cw*bb_center[0] - d/2, cw-d), 0))
