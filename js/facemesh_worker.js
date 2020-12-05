@@ -353,7 +353,9 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
   faces[0].bb_ratio = bb.ratio
   faces[0].bb_center = [(face.boundingBox.topLeft[0]+(face.boundingBox.bottomRight[0]-face.boundingBox.topLeft[0])/2+sx)/w, (face.boundingBox.topLeft[1]+(face.boundingBox.bottomRight[1]-face.boundingBox.topLeft[1])/2+sy)/h]
 
-  postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:faces[0].faceInViewConfidence, scaledMesh:(canvas)?((use_faceLandmarksDetection)?{454:sm[454],234:sm[234]}:undefined):sm, mesh:faces[0].mesh, eyes:eyes, bb_center:faces[0].bb_center }], _t:_t }));
+  postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:faces[0].faceInViewConfidence, scaledMesh:(canvas)?{454:sm[454],234:sm[234]}:sm, mesh:faces[0].mesh, eyes:eyes, bb_center:faces[0].bb_center }], _t:_t }));
+
+  rgba = undefined;
 
 //return
 
@@ -528,8 +530,8 @@ function draw_hand() {
 }
 
 onmessage = function (e) {
-  var t = performance.now()
-  var data = (typeof e.data === "string") ? JSON.parse(e.data) : e.data;
+  let t = performance.now()
+  let data = (typeof e.data === "string") ? JSON.parse(e.data) : e.data;
 
   if (data.canvas) {
     canvas = data.canvas

@@ -4255,12 +4255,13 @@ if (data.faces.length) {
   x_rot = axis_rot_v3.x;
 //  z_rot = axis_rot_v3.z;
 
+  let _x_diff = face.scaledMesh[454][0] - face.scaledMesh[234][0]
+  let _y_diff = face.scaledMesh[454][1] - face.scaledMesh[234][1]
+  let _dis = Math.sqrt(_x_diff*_x_diff + _y_diff*_y_diff) / Math.cos(y_rot)
+  _facemesh.face_width = _dis
+
   let _z_rot
   if (use_faceLandmarksDetection) {
-    let _x_diff = face.scaledMesh[454][0] - face.scaledMesh[234][0]
-    let _y_diff = face.scaledMesh[454][1] - face.scaledMesh[234][1]
-    let _dis = Math.sqrt(_x_diff*_x_diff + _y_diff*_y_diff) / Math.cos(y_rot)
-    _facemesh.face_width = _dis
     _z_rot = Math.asin(_y_diff / _dis)
   }
   else {

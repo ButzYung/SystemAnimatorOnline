@@ -26,11 +26,13 @@ async function process_video_buffer(rgba, w,h, options) {
   _t = performance.now() - _t;
 
   postMessage(JSON.stringify({ posenet:pose, handpose:hands, _t:_t }));
+
+  rgba = undefined;
 }
 
 onmessage = function (e) {
-  var t = performance.now()
-  var data = (typeof e.data === "string") ? JSON.parse(e.data) : e.data;
+  let t = performance.now()
+  let data = (typeof e.data === "string") ? JSON.parse(e.data) : e.data;
 
   if (data.canvas) {
     canvas = data.canvas
