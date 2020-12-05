@@ -1,4 +1,4 @@
-// SA Electron - Main EXTENDED (2020-08-07)
+// SA Electron - Main EXTENDED (2020-10-27)
 
 /*
 eval on Electron v1.6.x has some scope issues/bugs which makes the global variables on this script inaccessible inside functions.
@@ -23,6 +23,8 @@ const app = electron.app
 
 // https://stackoverflow.com/questions/55898000/blocked-a-frame-with-origin-file-from-accessing-a-cross-origin-frame
 app.commandLine.appendSwitch('disable-site-isolation-trials');
+
+app.commandLine.appendSwitch('js-flags', '--experimental-wasm-simd');
 
 
 // https://github.com/electron/electron/issues/2170
@@ -668,7 +670,7 @@ const DropArea_show = function (visible) {
 
   contextMenu.items[menu_item_index['Show drop area']].enabled = true
 
-  var win_options = {width:256, height:256, focusable:false, resizable:false, frame:false, transparent:true, webPreferences:{nodeIntegration:true}}
+  var win_options = {width:256, height:256, focusable:false, webPreferences:{nodeIntegration:true,enableRemoteModule:true}, resizable:false, frame:false, transparent:true}
   if ('getChildWindows' in mainWindow) {
     win_options.parent = mainWindow
   }
