@@ -1,8 +1,10 @@
+// (2020-12-05)
+
 // https://blog.tensorflow.org/2020/03/face-and-hand-tracking-in-browser-with-mediapipe-and-tensorflowjs.html
 // https://blog.tensorflow.org/2020/03/introducing-webassembly-backend-for-tensorflow-js.html
 
 // temporary fix for issues when loading the latest TFJS WASM on certain platforms
-var tfjs_version = '@2.4.0';//(self.location.protocol == "file:") ? '@2.1.0' : '';
+var tfjs_version = '';//'@2.4.0';//(self.location.protocol == "file:") ? '@2.1.0' : '';
 
 importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs' + tfjs_version);
 importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm' + tfjs_version + '/dist/tf-backend-wasm.js');
@@ -38,19 +40,24 @@ tf.setBackend("tensorflow").then(function () {
 });
 */
 
+var canvas, context, RAF_timerID;
+var facemesh_version = (new URLSearchParams(self.location.search.substring(1)).get('use_latest_facemesh')) ? '' : '@0.0.3';
+var use_faceLandmarksDetection = !facemesh_version;
+
 var model;
 var face_cover;
 
-var TRIANGULATION;
-fetch("facemesh_triangulation.json").then(response => response.json()).then(data => {TRIANGULATION=data});
-
-// https://tehnokv.com/posts/puploc-with-trees/demo/
-importScripts("lploc.js");
 var gray, gray_w, gray_h;
 var eyes;
-var eyes_xy_last = [[0,0],[0,0]]
-var do_puploc = function(r, c, s, nperturbs, pixels, nrows, ncols, ldim) {return [-1.0, -1.0];};
-			var puplocurl = 'https://f002.backblazeb2.com/file/tehnokv-www/posts/puploc-with-trees/demo/puploc.bin';
+var eyes_xy_last = [[0,0],[0,0]];
+var do_puploc;
+
+if (facemesh_version) {
+// https://tehnokv.com/posts/puploc-with-trees/demo/
+  importScripts("lploc.js");
+
+  do_puploc = function(r, c, s, nperturbs, pixels, nrows, ncols, ldim) {return [-1.0, -1.0];};
+			const puplocurl = 'https://f002.backblazeb2.com/file/tehnokv-www/posts/puploc-with-trees/demo/puploc.bin';
 			fetch(puplocurl).then(function(response) {
 				response.arrayBuffer().then(function(buffer) {
 					var bytes = new Int8Array(buffer);
@@ -58,6 +65,10 @@ var do_puploc = function(r, c, s, nperturbs, pixels, nrows, ncols, ldim) {return
 					console.log('* puploc loaded');
 				})
 			});
+}
+
+var TRIANGULATION;
+fetch("facemesh_triangulation.json").then(response => response.json()).then(data => {TRIANGULATION=data});
 
 function rgba_to_grayscale(rgba, center, radius) {
   radius *= 1.2
@@ -97,14 +108,9 @@ function rgba_to_grayscale(rgba, center, radius) {
   return gray;
 }
 
-var canvas, context, RAF_timerID;
-var use_faceLandmarksDetection;
-
 async function init() {
   try {
-    let facemesh_version = new URLSearchParams(self.location.search.substring(1)).get('use_latest_facemesh') ? '' : '@0.0.3';
-    if (!facemesh_version) {
-      use_faceLandmarksDetection = true
+    if (use_faceLandmarksDetection) {
       importScripts('https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@0.0.1/dist/face-landmarks-detection.js');
 
       model = await faceLandmarksDetection.load(faceLandmarksDetection.SupportedPackages.mediapipeFacemesh, {maxFaces:1});
@@ -139,11 +145,17 @@ let _t_list = []
 let _t, t_now
 _t = _t_now = performance.now()
 
+  const bb = options.bb
+  let sx = bb.x
+  let sy = bb.y
+  let cw = bb.w
+  let ch = bb.h
+
   eyes = []
 
   rgba = new Uint8ClampedArray(rgba);
 
-  const faces = (use_faceLandmarksDetection) ? await model.estimateFaces({input:new ImageData(rgba, w,h)}) : await model.estimateFaces(new ImageData(rgba, w,h));
+  const faces = (use_faceLandmarksDetection) ? await model.estimateFaces({input:new ImageData(rgba, cw,ch)}) : await model.estimateFaces(new ImageData(rgba, cw,ch));
 
 /*
   let _dis
@@ -162,24 +174,24 @@ _t_now = performance.now()
 _t_list[0] = _t_now-_t
 _t = _t_now
 
-  if (!faces.length) {
+  if (!faces.length || (faces[0].faceInViewConfidence < 0.7)) {
     postMessage(JSON.stringify({ faces:[], _t:_t_list.reduce((a,c)=>a+c) }));
     return
   }
 
   let face = faces[0]
 //if (!self._TEST_) {self._TEST_=true;console.log(face);}
-  if ((gray_w != w) || (gray_h != h)) {
-    gray_w = w
-    gray_h = h
-    gray = new Uint8Array(w*h);
+  if ((gray_w != cw) || (gray_h != ch)) {
+    gray_w = cw
+    gray_h = ch
+    gray = new Uint8Array(cw*ch);
   }
 
   const image = {
     "pixels": gray,
-    "nrows": h,
-    "ncols": w,
-    "ldim": w
+    "nrows": ch,
+    "ncols": cw,
+    "ldim": cw
   };
 
 //  let bb = face.boundingBox;
@@ -247,7 +259,7 @@ else {
       let eye_x = eyes_xy_last[i][0] = Math.max(Math.min(Math.cos(eye_z_rot)*dis, 1), -1) * confidence + eyes_xy_last[i][0] * (1-confidence)
       let eye_y = eyes_xy_last[i][1] = Math.max(Math.min(Math.sin(eye_z_rot)*dis*Math.max(1.5-Math.abs(z_rot)/(Math.PI/4)*0.5,1), 1), -1) * confidence + eyes_xy_last[i][1] * (1-confidence)
 
-      eyes[i] = [yx[1],yx[0], eye_x,eye_y, [LR]]
+      eyes[i] = [yx[1]+sx,yx[0]+sy, eye_x,eye_y, [LR]]
 
       let eye_pixel_count = [0,0,0,0]
       if (!use_faceLandmarksDetection && options.blink_detection) {
@@ -333,7 +345,15 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
   }
 }
 
-  postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:faces[0].faceInViewConfidence, scaledMesh:(canvas)?((use_faceLandmarksDetection)?{454:sm[454],234:sm[234]}:undefined):sm, mesh:faces[0].mesh, eyes:eyes }], _t:_t }));
+  if (sx || sy) {
+    sm.forEach(xyz => {xyz[0]+=sx; xyz[1]+=sy;});
+  }
+
+  faces[0].bb = bb
+  faces[0].bb_ratio = bb.ratio
+  faces[0].bb_center = [(face.boundingBox.topLeft[0]+(face.boundingBox.bottomRight[0]-face.boundingBox.topLeft[0])/2+sx)/w, (face.boundingBox.topLeft[1]+(face.boundingBox.bottomRight[1]-face.boundingBox.topLeft[1])/2+sy)/h]
+
+  postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:faces[0].faceInViewConfidence, scaledMesh:(canvas)?((use_faceLandmarksDetection)?{454:sm[454],234:sm[234]}:undefined):sm, mesh:faces[0].mesh, eyes:eyes, bb_center:faces[0].bb_center }], _t:_t }));
 
 //return
 
@@ -343,6 +363,7 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
     RAF_timerID = requestAnimationFrame(function () {
       RAF_timerID = null
       draw_facemesh(faces, Math.round(w/2),Math.round(h/2))
+      draw_pose()
     });
   }
 }
@@ -380,6 +401,21 @@ TRIANGULATION[i * 3 + 2]
     context.strokeStyle = 'red';
     context.stroke();
   });
+
+  context.globalAlpha = 1/3
+  context.strokeStyle = 'white';
+  const region = new Path2D();
+
+  const bb = faces[0].bb
+  region.moveTo(bb.x/2, bb.y/2);
+  region.lineTo(bb.x/2+bb.w/2, bb.y/2);
+  region.lineTo(bb.x/2+bb.w/2, bb.y/2+bb.h/2);
+  region.lineTo(bb.x/2, bb.y/2+bb.h/2);
+
+  region.closePath();
+  context.stroke(region);
+
+  context.globalAlpha = 0.5
 }
 
 // https://github.com/tensorflow/tfjs-models/tree/master/facemesh/demo
@@ -402,6 +438,95 @@ function drawPath(ctx, points, closePath) {
 
 // END
 
+var posenet, pose_w, pose_h;
+var handpose;
+var cw, ch;
+
+//https://github.com/tensorflow/tfjs-models/blob/master/posenet/src/keypoints.ts
+var pose_connected_pairs = [
+  ['leftHip', 'leftShoulder'], ['leftElbow', 'leftShoulder'],
+  ['leftElbow', 'leftWrist'], ['leftHip', 'leftKnee'],
+  ['leftKnee', 'leftAnkle'], ['rightHip', 'rightShoulder'],
+  ['rightElbow', 'rightShoulder'], ['rightElbow', 'rightWrist'],
+  ['rightHip', 'rightKnee'], ['rightKnee', 'rightAnkle'],
+  ['leftShoulder', 'rightShoulder'], ['leftHip', 'rightHip']
+];
+
+function draw_pose() {
+  if (!posenet || (posenet.score < 0.1)) return;
+
+  var scale = pose_w/cw*2
+
+  var part = {}
+  posenet.keypoints.forEach(function (p) {
+    part[p.part] = p
+
+    if (p.score <= 0) return;
+    if (/nose|Eye|Ear/.test(p.part)) return;
+
+    const {y, x} = p.position;
+
+    context.beginPath();
+    context.arc(x/scale, y/scale, 3, 0, 2*Math.PI);
+    context.fillStyle = 'aqua';
+    context.fill();
+  });
+
+  pose_connected_pairs.forEach(function (pair) {
+    var L = part[pair[0]]
+    var R = part[pair[1]]
+    if ((L.score <= 0) || (R.score <= 0)) return;
+
+    var ax = L.position.x, ay = L.position.y, bx = R.position.x, by = R.position.y;
+    context.beginPath();
+    context.moveTo(ax/scale, ay/scale);
+    context.lineTo(bx/scale, by/scale);
+    context.lineWidth = 2;
+    context.strokeStyle = 'aqua';
+    context.stroke();
+  });
+
+  draw_hand();
+}
+
+// https://github.com/tensorflow/tfjs-models/blob/master/handpose/demo/index.js
+var fingerLookupIndices = {
+      thumb: [0, 1, 2, 3, 4],
+      indexFinger: [0, 5, 6, 7, 8],
+      middleFinger: [0, 9, 10, 11, 12],
+      ringFinger: [0, 13, 14, 15, 16],
+      pinky: [0, 17, 18, 19, 20]
+};
+
+function draw_hand() {
+  if (!handpose) return;
+
+  var scale = pose_w/cw*2
+
+  context.strokeStyle = 'pink';
+  context.fillStyle = 'pink';
+
+  const keypoints = handpose[0].landmarks;
+
+  keypoints.forEach(function (p) {
+    context.beginPath();
+    context.arc((p[0]-2)/scale, (p[1]-2)/scale, 3, 0, 2 * Math.PI);
+    context.fill();
+  });
+
+  Object.keys(fingerLookupIndices).forEach(function (finger) {
+    const points = fingerLookupIndices[finger].map(idx => keypoints[idx]);
+
+    const region = new Path2D();
+    region.moveTo(points[0][0]/scale, points[0][1]/scale);
+    for (let i = 1; i < points.length; i++) {
+      const point = points[i];
+      region.lineTo(point[0]/scale, point[1]/scale);
+    }
+    context.stroke(region);
+  });
+}
+
 onmessage = function (e) {
   var t = performance.now()
   var data = (typeof e.data === "string") ? JSON.parse(e.data) : e.data;
@@ -412,9 +537,20 @@ onmessage = function (e) {
   }
 
   if (data.rgba) {
-    process_video_buffer(data.rgba, data.w,data.h, data.options);
-
+    cw = data.w
+    ch = data.h
+    process_video_buffer(data.rgba, cw,ch, data.options);
     data.rgba = undefined
-    data = undefined
   }
+
+  if (data.posenet) {
+    posenet = data.posenet
+    pose_w = data.w
+    pose_h = data.h
+    handpose = data.handpose
+    data.posenet = undefined
+    data.handpose = undefined
+  }
+
+  data = undefined
 };
