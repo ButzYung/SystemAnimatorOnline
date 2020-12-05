@@ -1,4 +1,4 @@
-// audio player with BPM support (v3.1.1)
+// audio player with BPM support (2020-10-27)
 
 var Audio_BPM = {
   audio_obj: null
@@ -481,15 +481,15 @@ vo.BPMFinalize()
 
     vo._get_BPM_WebAudioAPI_worker = function () {
 if (webkit_electron_mode) {
-  var win_pos = SA_top_window.getPos()
-  var win_options = {x:win_pos[0]+30, y:win_pos[1]+30, width:320, height:240, resizable:false, frame:false, transparent:true, webPreferences:{nodeIntegration:true}}
+  let win_pos = SA_top_window.getPos()
+  let win_options = {x:win_pos[0]+30, y:win_pos[1]+30, width:320, height:240, webPreferences:{nodeIntegration:true,enableRemoteModule:true}, resizable:false, frame:false, transparent:true}
   if (webkit_version_milestone["1.2.4"]) {
     win_options.parent = webkit_window
   }
   else {
     win_options.alwaysOnTop = true
   }
-  var win_BPM = new webkit_electron_remote.BrowserWindow(win_options)
+  let win_BPM = new webkit_electron_remote.BrowserWindow(win_options)
   win_BPM.loadURL(toFileProtocol(System.Gadget.path + '\\audio_BPM_detection_portable.html') + "?file=" + encodeURIComponent(DragDrop._item.path) + ((vo.audio_obj.BPM_by_id3) ? "&BPM_by_id3=" + vo.audio_obj.BPM_by_id3 : "") + ((is_SA_child_animation) ? "&window_id=" + SA_child_animation_id: ""))
 
   win_BPM.webContents.on('crashed', function () {
@@ -508,9 +508,7 @@ if (webkit_electron_mode) {
 else {
   if (browser_native_mode) vo.audio_obj._file = DragDrop._item.obj.obj.file
 //console.log(DragDrop._item)
-//  try {
-    Audio_BPM_detection_portable(toFileProtocol(DragDrop._item.path), vo.audio_obj, function (data) { vo._audio_BPM_detection_finished(data) });
-//  } catch (err) { DEBUG_show(err,0,1) }
+  Audio_BPM_detection_portable(toFileProtocol(DragDrop._item.path), vo.audio_obj, function (data) { vo._audio_BPM_detection_finished(data) });
 }
     }
 

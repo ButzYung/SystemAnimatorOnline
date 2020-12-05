@@ -2,6 +2,14 @@ System Animator - Changelog
 
 -------------------------------
 
+v10.9.5.0
+
+- Fix the bug which breaks the audio detection feature when using the newer version of Electron.
+
+- Fix the bug which breaks the drag-n-drop feature in "Stay on desktop" (wallpaper) mode when using the newer version of Electron.
+
+-------------------------------
+
 v10.9.4.1
 
 - Fix a bug when some animations cannot finish loading after settings change/restart.

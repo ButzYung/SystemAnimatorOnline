@@ -1,4 +1,4 @@
-// BPM detection portable (v2.0.0)
+// BPM detection portable (2020-10-27)
 
 var Audio_BPM_detection_portable = (function () {
 
@@ -30,6 +30,7 @@ setTimeout(function () { DEBUG_show(c.currentTime,0,1) }, 100)
 
 return
 */
+
     // Create buffer source
     var source = offlineContext.createBufferSource();
     source.buffer = buffer;
@@ -53,16 +54,11 @@ return
 */
 
 var w = new Worker("js/audio_BPM_detection.js")
-//DEBUG_show(w)
+//console.log(w)
 w.onmessage = function(e) {
 //DEBUG_show(e.data)
   if (typeof e.data == "string") {
-    DEBUG_show(e.data)
-  }
-  else {
-    func_callback(e.data)
-  }
-};
+    if (e.data == "OK") {
 
 if (para.BPM_by_id3) {
   w.postMessage(para.BPM_by_id3)
@@ -70,10 +66,19 @@ if (para.BPM_by_id3) {
 
 //Passing data by transferring ownership (transferable objects)
 //https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers
-var _buffer = buffer.getChannelData(0).buffer
+let _buffer = buffer.getChannelData(0).buffer
 w.postMessage(_buffer, [_buffer])
 
 _buffer = undefined
+
+return
+    }
+    DEBUG_show(e.data)
+  }
+  else {
+    func_callback(e.data)
+  }
+};
   }
 
   function process_Aurora(para, func_callback) {

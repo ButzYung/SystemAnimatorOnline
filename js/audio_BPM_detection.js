@@ -4,7 +4,7 @@
 
   source: https://github.com/JMPerez/beats-audio-api
  */
-// Audio BPM detection for SA (v1.0.1)
+// Audio BPM detection for SA (2020-10-27)
 
 var BPM_by_id3 = 0
 
@@ -312,3 +312,5 @@ group.tempo = Math.round(group.tempo);
   return groups;
 }
 // v2 END
+
+postMessage("OK");
