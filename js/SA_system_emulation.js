@@ -4789,8 +4789,11 @@ if (MMD_SA_options.user_camera.pixel_limit.facemesh) {
     need_resize = true
   }
 }
-if (MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio) {
-  let d = Math.round(Math.min(cw,ch) * MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio)
+
+let facemesh_bb_ratio;
+if (MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio && (!is_mobile || !screen.orientation || /landscape/.test(screen.orientation.type))) {
+  facemesh_bb_ratio = MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio
+  let d = Math.round(Math.min(cw,ch) * facemesh_bb_ratio)
   sx = Math.round(Math.max(Math.min(cw*bb_center[0] - d/2, cw-d), 0))
   sy = Math.round(Math.max(Math.min(ch*bb_center[1] - d/2, ch-d), 0))
   sw = d
@@ -4818,7 +4821,7 @@ if ((cs.pixelWidth != ~~camera.video_canvas.style.pixelWidth/4) || (cs.pixelHeig
   cs.posLeft = camera.video_canvas.style.pixelWidth - cs.pixelWidth
 }
 
-let data = { rgba:rgba, w:cw, h:ch, options:{draw_canvas:true, blink_detection:blink_detection, bb:{x:sx, y:sy, w:sw, h:sh, ratio:MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio||0}} };//, threshold:1 };
+let data = { rgba:rgba, w:cw, h:ch, options:{draw_canvas:true, blink_detection:blink_detection, bb:{x:sx, y:sy, w:sw, h:sh, ratio:facemesh_bb_ratio||0}} };//, threshold:1 };
 if (!camera.video_canvas_facemesh._offscreen && self.OffscreenCanvas) {
   data.canvas = camera.video_canvas_facemesh.transferControlToOffscreen()
   camera.video_canvas_facemesh._offscreen = true
