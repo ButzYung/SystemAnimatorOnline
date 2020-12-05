@@ -2816,6 +2816,8 @@ return net;
 
       var _info_extra = ""
 
+      var video_flipped;
+
       var frame_delta_threshold = 1000/30
       var frame_delta = frame_delta_threshold
       function update_video_canvas() {
@@ -3657,6 +3659,15 @@ return target_devicePixelRatio || window.devicePixelRatio;
   }
  ,set target_devicePixelRatio(v) {
 target_devicePixelRatio = (v == window.devicePixelRatio) ? 0 : v
+  }
+
+ ,get video_flipped() {
+return video_flipped;
+  }
+ ,set video_flipped(v) {
+video_flipped = v;
+if (this.video_canvas)
+  this.video_canvas.width = this.video_canvas.height = 0;
   }
 
  ,start: function (src) {
