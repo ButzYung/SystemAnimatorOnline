@@ -1196,7 +1196,7 @@ this.center_view = [0, (head[1]-1)*0.5-2.5, -22]
 
  ,object_click_disabled: true
 
- ,get look_at_screen() { return !System._browser.camera.facemesh.enabled; }
+// ,get look_at_screen() { return !System._browser.camera.facemesh.enabled; }
     }
 
    ,"i-shaped_balance_TDA_f0-50": {
