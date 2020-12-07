@@ -1191,7 +1191,7 @@ let bones_by_name = model.mesh.bones_by_name
 let bones = model.pmx.bones
 let head = bones[bones_by_name["頭"]._index].origin
 
-this.center_view = [0, (head[1]-1)*0.5-2.5, -22]
+this.center_view = [0, (head[1])*1.05-11.4, -22]
   }
 
  ,object_click_disabled: true
