@@ -1,4 +1,4 @@
-﻿(Document version 2.4)
+﻿(Document version 2.5)
 
 Introduction:
 
@@ -40,21 +40,12 @@ Augmented Reality (AR) support:
 2) Install "Google Play Services for AR" (ARCore) on Google Play.
    https://play.google.com/store/apps/details?id=com.google.ar.core
 
-3) Install Chrome browser (tested on v76-84).
+3) Install Chrome browser.
 
-4) Enable some WebXR-related flags on Chrome (optional for v81+).
+4) While WebXR support is on by default for Chrome, enabling certain WebXR-related flag(s) is recommended for extra features.
 
     1) Type chrome://flags in the URL bar.
     2) Type webxr in the Search flags input field.
-
-    Chrome 80 and older:
-    3) Set the "WebXR Device API" (#webxr) flag to Enabled.
-    4) Set the "WebXR AR Module" (#webxr-ar-module) flag to Enabled.
-    5) Set the "WebXR Hit Test" (#webxr-hit-test) flag to Enabled.
-    6) Set the "WebXR AR DOM Overlay" (#webxr-ar-dom-overlay) flag to Enabled. This one is optional, but highly recommended.
-    7) Tap RELAUNCH NOW to ensure the updated flags take effect.
-
-    Chrome 81+:
     3) Set the "WebXR Incubations" (#webxr-incubations) flag to Enabled. This one is optional, but highly recommended.
     4) Tap RELAUNCH NOW to ensure the updated flags take effect.
 
@@ -82,6 +73,18 @@ Selfie feature:
 
   Check out the following video for demonstration.
   https://youtu.be/TIMPqV9lVH8
+
+----------------------------
+
+Donation:
+
+  System Animator was born more than 10 years ago, and is still growing strong. While System Animator is free, lots of time, efforts and money have been spent to keep this project running. If you like our works, please consider making a donation. Your financial support is needed to keep us going!🙏
+
+- Donate via PayPal.Me
+  https://www.paypal.me/AnimeThemeGadgets
+
+- Donate via Bitcoin
+  1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p
 
 ----------------------------
 
