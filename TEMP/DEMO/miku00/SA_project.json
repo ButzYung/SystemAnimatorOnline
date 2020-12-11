@@ -3,7 +3,6 @@
   "folder_list": ["animate.js", "assets/"]
 
  ,"config_default": {
-    "DisableTransparency": "non_default"
   }
 
 }
