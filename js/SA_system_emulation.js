@@ -3556,7 +3556,8 @@ function process_morphs(e) {
 
   var facemesh_morph = MMD_SA_options.model_para_obj.facemesh_morph
   var morph = _frames.morph
-  for (var name in morph) {
+// use Object.keys instead of for...in loop (unable to read some properties for some unknown reasons)
+  Object.keys(morph).forEach(function (name) {
     let m = morph[name]
     if (m.disabled)
       return
@@ -3592,7 +3593,7 @@ function process_morphs(e) {
       let key_new = { name:m_name, weight:weight, morph_type:key0.morph_type, morph_index:key0.morph_index }
       model.morph.onupdate(key_new, key_new, 0, morph_index)
     }
-  }
+  });
 }
 
 var _frames = {
