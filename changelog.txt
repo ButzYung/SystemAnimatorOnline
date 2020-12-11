@@ -2,6 +2,12 @@ System Animator - Changelog
 
 -------------------------------
 
+v10.9.5.1
+
+- Add the "Donate" tab to settings panel. Please consider making a donation and keep the System Animator project going!
+
+-------------------------------
+
 v10.9.5.0
 
 - Fix the bug which breaks the audio detection feature when using the newer version of Electron.
