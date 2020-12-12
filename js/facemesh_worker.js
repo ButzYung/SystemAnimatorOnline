@@ -108,6 +108,9 @@ function rgba_to_grayscale(rgba, center, radius) {
   return gray;
 }
 
+var use_pose_worker;
+var pose_worker, pose_worker_initialized;
+
 async function init() {
   try {
     if (use_faceLandmarksDetection) {
@@ -315,10 +318,6 @@ eyes[i][7] = ~~(S_total/(eye_w*eye_h)*100) + '/' + ~~(S_skin_average*100)
     }
   }
 
-_t_now = performance.now()
-_t_list[1] = _t_now-_t
-_t = _t_list.reduce((a,c)=>a+c)
-
 if (!use_faceLandmarksDetection) {
 // practically only the first eye data is used
   if (eyes.length) {
@@ -352,6 +351,15 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
   faces[0].bb = bb
   faces[0].bb_ratio = bb.ratio
   faces[0].bb_center = [(face.boundingBox.topLeft[0]+(face.boundingBox.bottomRight[0]-face.boundingBox.topLeft[0])/2+sx)/w, (face.boundingBox.topLeft[1]+(face.boundingBox.bottomRight[1]-face.boundingBox.topLeft[1])/2+sy)/h]
+
+  if (pose_worker_initialized) {
+    let _data = { rgba:rgba.buffer, w:cw, h:ch, options:{ use_handpose:false } };//, threshold:1 };
+    pose_worker.postMessage(_data, [_data.rgba]);
+  }
+
+_t_now = performance.now()
+_t_list[1] = _t_now-_t
+_t = _t_list.reduce((a,c)=>a+c)
 
   postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:faces[0].faceInViewConfidence, scaledMesh:(canvas)?{454:sm[454],234:sm[234]}:sm, mesh:faces[0].mesh, eyes:eyes, bb_center:faces[0].bb_center }], _t:_t }));
 
@@ -529,9 +537,40 @@ function draw_hand() {
   });
 }
 
+function pose_worker_onmessage(e) {
+  var data = ((typeof e.data == "string") && (e.data.charAt(0) === "{")) ? JSON.parse(e.data) : e.data;
+
+  if (typeof data === "string") { 
+    if (data == "OK") {
+      pose_worker_initialized = true
+    }
+    else {
+//      DEBUG_show(data, 2)
+//      System._browser.console.log(data)
+    }
+  }
+  else {
+    postMessage(data);
+
+    posenet = data.posenet
+    pose_w = cw
+    pose_h = ch
+    handpose = data.handpose
+    data.posenet = undefined
+    data.handpose = undefined
+  }
+}
+
 onmessage = function (e) {
   let t = performance.now()
   let data = (typeof e.data === "string") ? JSON.parse(e.data) : e.data;
+
+  if (!pose_worker && data.options && data.options.use_pose_worker) {
+    use_pose_worker = true
+
+    pose_worker = new Worker('pose_worker.js?use_mobilenet=1');
+    pose_worker.onmessage = pose_worker_onmessage;
+  }
 
   if (data.canvas) {
     canvas = data.canvas

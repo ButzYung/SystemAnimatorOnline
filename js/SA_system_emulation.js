@@ -2964,12 +2964,16 @@ camera.video.src = (webkit_electron_mode) ? toFileProtocol(src||"C:\\Users\\user
 v3a = new THREE.Vector3()
       });
 
+      var finger_list = ["親", "人", "中", "薬", "小"];
+      var finger_list_en = ["thumb", "indexFinger", "middleFinger", "ringFinger", "pinky"];
+      var nj_list = ["０","１","２","３"];
+
+      var use_pose_worker = !is_mobile
+
       function pose_init() {
 pose_initialized = true
 
-var finger_list = ["親", "人", "中", "薬", "小"]
-var finger_list_en = ["thumb", "indexFinger", "middleFinger", "ringFinger", "pinky"]
-var nj_list = ["０","１","２","３"]
+if (!use_pose_worker) pose_worker_initialized = true;
 
 if (MMD_SA_options.model_para_obj.left_arm_z_rot == null) {
   let model = THREE.MMD.getModels()[0]
@@ -3027,8 +3031,11 @@ if (MMD_SA_options.model_para_obj.left_arm_z_rot == null) {
 }
 
 pose_worker = new Worker('js/pose_worker.js' + ((is_mobile)?'?use_mobilenet=1':''));
+pose_worker.onmessage = pose_worker_onmessage;
+      }
 
-pose_worker.onmessage = function (e) {
+      function pose_worker_onmessage(e) {
+
   var data = ((typeof e.data == "string") && (e.data.charAt(0) === "{")) ? JSON.parse(e.data) : e.data;
 
   if (typeof data === "string") {
@@ -3394,7 +3401,7 @@ arms.forEach(function (arm) {
 
     _info_extra += ((_info_extra)?'/':'\n') + data._t;
 
-    if (pose) {
+    if (use_pose_worker && pose) {
       let _data = { posenet:pose, w:camera.video_canvas.width, h:camera.video_canvas.height }
       if (data.handpose && data.handpose.length)
         _data.handpose = data.handpose
@@ -3403,10 +3410,12 @@ arms.forEach(function (arm) {
 
     pose_busy = false;
   }
-};
+
       }
 
       function pose_update_frame() {
+if (!use_pose_worker) return;
+
 var pose_ready = _poseNet.enabled && _poseNet.worker_initialized && !_poseNet.busy;
 if (!pose_ready)
   return
@@ -4221,6 +4230,9 @@ fm_worker.onmessage = function (e) {
       System._browser.console.log(data)
     }
   }
+  else if (data.posenet) {
+    pose_worker_onmessage({data:data})
+  }
   else {
 let info = ""
 bb_center = [0.5, 0.5]
@@ -4804,7 +4816,7 @@ if (MMD_SA_options.user_camera.pixel_limit.facemesh) {
 }
 
 let facemesh_bb_ratio;
-if (MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio && (!is_mobile)) {// || !screen.orientation || /landscape/.test(screen.orientation.type))) {
+if (MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio && (!is_mobile && use_pose_worker)) {// || !screen.orientation || /landscape/.test(screen.orientation.type))) {
   facemesh_bb_ratio = MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio
   let d = Math.round(Math.min(cw,ch) * facemesh_bb_ratio)
   sx = Math.round(Math.max(Math.min(cw*bb_center[0] - d/2, cw-d), 0))
@@ -4834,7 +4846,7 @@ if ((cs.pixelWidth != ~~camera.video_canvas.style.pixelWidth/4) || (cs.pixelHeig
   cs.posLeft = camera.video_canvas.style.pixelWidth - cs.pixelWidth
 }
 
-let data = { rgba:rgba, w:cw, h:ch, options:{draw_canvas:true, blink_detection:blink_detection, bb:{x:sx, y:sy, w:sw, h:sh, ratio:facemesh_bb_ratio||0}} };//, threshold:1 };
+let data = { rgba:rgba, w:cw, h:ch, options:{draw_canvas:true, blink_detection:blink_detection, bb:{x:sx, y:sy, w:sw, h:sh, ratio:facemesh_bb_ratio||0}, use_pose_worker:!use_pose_worker} };//, threshold:1 };
 if (!camera.video_canvas_facemesh._offscreen && self.OffscreenCanvas) {
   data.canvas = camera.video_canvas_facemesh.transferControlToOffscreen()
   camera.video_canvas_facemesh._offscreen = true
