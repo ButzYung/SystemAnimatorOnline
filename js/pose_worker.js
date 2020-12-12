@@ -8,12 +8,13 @@ importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs' + tfjs_version);
 
 var posenet_model, handpose_model;
 
-var use_mobilenet = new URLSearchParams(self.location.search.substring(1)).get('use_mobilenet');
+var use_mobilenet = true//new URLSearchParams(self.location.search.substring(1)).get('use_mobilenet');
 
 async function process_video_buffer(rgba, w,h, options) {
   let _t = performance.now()
 
   rgba = new ImageData(new Uint8ClampedArray(rgba), w,h);
+rgba = tf.browser.fromPixels(rgba)
 
   let pose, hands;
 
@@ -27,6 +28,7 @@ async function process_video_buffer(rgba, w,h, options) {
 
   postMessage(JSON.stringify({ posenet:pose, handpose:hands, _t:_t }));
 
+rgba.dispose();
   rgba = undefined;
 }
 
