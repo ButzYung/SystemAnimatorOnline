@@ -1,4 +1,4 @@
-// (2020-12-05)
+// (2020-12-12)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -6550,7 +6550,7 @@ if (self.MMD_SA && _head_pos && (mesh.bones_by_name[head_name]) && (look_at_scre
   var look_at_mouse = (!look_at_mouse_disabled && MMD_SA_options.look_at_mouse) || (model_para.look_at_character != null) || model_para.look_at_target
 
 if (look_at_screen || look_at_mouse) {
-  var p_rotation_inversed = (MMD_SA_options.look_at_screen_parent_rotation || MMD_SA.get_bone_rotation_parent(mesh, head_name)).inverse()
+  var p_rotation_inversed = (MMD_SA_options.look_at_screen_parent_rotation || (System._browser.camera.facemesh.enabled && mesh.bones_by_name["全ての親"].quaternion) || MMD_SA.get_bone_rotation_parent(mesh, head_name)).inverse()
   var r = MMD_SA.face_camera(_head_pos, p_rotation_inversed)
 
   var angle_x_limit = para_SA.look_at_screen_angle_x_limit || [Math.PI*0.5, -Math.PI*0.5]
