@@ -352,7 +352,7 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
   faces[0].bb_ratio = bb.ratio
   faces[0].bb_center = [(face.boundingBox.topLeft[0]+(face.boundingBox.bottomRight[0]-face.boundingBox.topLeft[0])/2+sx)/w, (face.boundingBox.topLeft[1]+(face.boundingBox.bottomRight[1]-face.boundingBox.topLeft[1])/2+sy)/h]
 
-  if (pose_worker_initialized) {
+  if (use_pose_worker && pose_worker_initialized) {
     let _data = { rgba:rgba.buffer, w:cw, h:ch, options:{ use_handpose:false } };//, threshold:1 };
     pose_worker.postMessage(_data, [_data.rgba]);
   }
@@ -565,11 +565,13 @@ onmessage = function (e) {
   let t = performance.now()
   let data = (typeof e.data === "string") ? JSON.parse(e.data) : e.data;
 
-  if (!pose_worker && data.options && data.options.use_pose_worker) {
-    use_pose_worker = true
+  if (data.options) {
+    use_pose_worker = data.options.use_pose_worker
 
-    pose_worker = new Worker('pose_worker.js?use_mobilenet=1');
-    pose_worker.onmessage = pose_worker_onmessage;
+    if (use_pose_worker && !pose_worker) {
+      pose_worker = new Worker('pose_worker.js?use_mobilenet=1');
+      pose_worker.onmessage = pose_worker_onmessage;
+    }
   }
 
   if (data.canvas) {
