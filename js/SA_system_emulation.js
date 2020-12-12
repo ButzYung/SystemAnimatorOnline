@@ -3074,7 +3074,7 @@ if (_poseNet.enabled) {
 
       let hand_dir = [pose.keypoints[9], pose.keypoints[10]]
       let hand_dir_discarded = -1
-      if ((hand_dir[0].score > 0) && (hand_dir[1].score > 0) && (Math.sqrt(Math.pow(hand_dir[0].position.x-hand_dir[1].position.x,2)+Math.pow(hand_dir[0].position.y-hand_dir[1].position.y,2)) < (camera.video_canvas.width+camera.video_canvas.height)/2/50)) {
+      if ((hand_dir[0].score > 0) && (hand_dir[1].score > 0) && (Math.sqrt(Math.pow(hand_dir[0].position.x-hand_dir[1].position.x,2)+Math.pow(hand_dir[0].position.y-hand_dir[1].position.y,2)) < (camera.video_canvas.width+camera.video_canvas.height)/2/25)) {
         hand_dir_discarded = (hand_dir[1].score > hand_dir[0].score) ? 0 : 1
         if (hand_dir[hand_dir_discarded].score > 0.3)
           hand_dir_discarded = -1
