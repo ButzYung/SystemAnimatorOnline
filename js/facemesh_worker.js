@@ -509,7 +509,7 @@ var fingerLookupIndices = {
 };
 
 function draw_hand() {
-  if (!handpose) return;
+  if (!handpose || !handpose.length) return;
 
   var scale = pose_w/cw*2
 
