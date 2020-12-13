@@ -18,18 +18,38 @@ rgba = tf.browser.fromPixels(rgba)
 
   let pose, hands;
 
-  pose = await posenet_model.estimateSinglePose(rgba, {});
+  if (use_mobilenet) {
+    pose = await posenet_model.estimateSinglePose(rgba, {});
 
-  if (options.use_handpose && (pose.score > 0.1) && ((pose.keypoints[9].score > 0.5) || (pose.keypoints[10].score > 0.5))) {
-    hands = await handpose_model.estimateHands(rgba);
-  }
+    if (options.use_handpose && (pose.score > 0.1) && ((pose.keypoints[9].score > 0.5) || (pose.keypoints[10].score > 0.5))) {
+      hands = await handpose_model.estimateHands(rgba);
+    }
 
-  _t = performance.now() - _t;
+    _t = performance.now() - _t;
 
-  postMessage(JSON.stringify({ posenet:pose, handpose:hands, _t:_t }));
+    postMessage(JSON.stringify({ posenet:pose, handpose:hands, _t:_t }));
 
 rgba.dispose();
-  rgba = undefined;
+    rgba = undefined;
+  }
+  else {
+    let p_list = [posenet_model.estimateSinglePose(rgba, {}).then(_pose=>_pose)]
+    if (options.use_handpose) {
+      p_list.push(handpose_model.estimateHands(rgba).then(_hands=>_hands));
+    }
+    Promise.all(p_list).then(values=>{
+      pose = values[0]
+      if ((p_list.length > 1) && (pose.score > 0.1) && ((pose.keypoints[9].score > 0.5) || (pose.keypoints[10].score > 0.5)))
+        hands = values[1]
+
+      _t = performance.now() - _t;
+
+      postMessage(JSON.stringify({ posenet:pose, handpose:hands, _t:_t }));
+
+rgba.dispose();
+      rgba = undefined;
+    });
+  }
 }
 
 onmessage = function (e) {
