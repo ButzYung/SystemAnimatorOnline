@@ -353,8 +353,8 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
   faces[0].bb_center = [(face.boundingBox.topLeft[0]+(face.boundingBox.bottomRight[0]-face.boundingBox.topLeft[0])/2+sx)/w, (face.boundingBox.topLeft[1]+(face.boundingBox.bottomRight[1]-face.boundingBox.topLeft[1])/2+sy)/h]
 
   if (use_pose_worker && pose_worker_initialized) {
-    let _data = { rgba:rgba.buffer, w:cw, h:ch, options:{ use_handpose:false } };//, threshold:1 };
-    pose_worker.postMessage(_data, [_data.rgba]);
+    let data = { rgba:rgba.buffer, w:cw, h:ch, options:{ use_handpose:options.use_handpose } };//, threshold:1 };
+    pose_worker.postMessage(data, [data.rgba]);
   }
 
 _t_now = performance.now()

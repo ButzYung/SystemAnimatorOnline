@@ -4846,7 +4846,7 @@ if ((cs.pixelWidth != ~~camera.video_canvas.style.pixelWidth/4) || (cs.pixelHeig
   cs.posLeft = camera.video_canvas.style.pixelWidth - cs.pixelWidth
 }
 
-let data = { rgba:rgba, w:cw, h:ch, options:{draw_canvas:true, blink_detection:blink_detection, bb:{x:sx, y:sy, w:sw, h:sh, ratio:facemesh_bb_ratio||0}, use_pose_worker:(_poseNet.enabled && !use_pose_worker)} };//, threshold:1 };
+let data = { rgba:rgba, w:cw, h:ch, options:{draw_canvas:true, blink_detection:blink_detection, bb:{x:sx, y:sy, w:sw, h:sh, ratio:facemesh_bb_ratio||0}, use_pose_worker:(_poseNet.enabled && !use_pose_worker), use_handpose:_handpose.enabled} };//, threshold:1 };
 if (!camera.video_canvas_facemesh._offscreen && self.OffscreenCanvas) {
   data.canvas = camera.video_canvas_facemesh.transferControlToOffscreen()
   camera.video_canvas_facemesh._offscreen = true
