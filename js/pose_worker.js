@@ -8,7 +8,9 @@ importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs' + tfjs_version);
 
 var posenet_model, handpose_model;
 
-var use_mobilenet = true//new URLSearchParams(self.location.search.substring(1)).get('use_mobilenet');
+var use_mobilenet = new URLSearchParams(self.location.search.substring(1)).get('use_mobilenet');
+
+var no_hand_countdown = 0, no_hand_countdown_max = 3;
 
 async function process_video_buffer(rgba, w,h, options) {
   let _t = performance.now()
@@ -18,11 +20,17 @@ rgba = tf.browser.fromPixels(rgba)
 
   let pose, hands;
 
-  if (use_mobilenet) {
+  if (no_hand_countdown <= 0) {
     pose = await posenet_model.estimateSinglePose(rgba, {});
 
-    if (options.use_handpose && (pose.score > 0.1) && ((pose.keypoints[9].score > 0.5) || (pose.keypoints[10].score > 0.5))) {
-      hands = await handpose_model.estimateHands(rgba);
+    if (options.use_handpose) {
+      if ((pose.score > 0.1) && ((pose.keypoints[9].score > 0.5) || (pose.keypoints[10].score > 0.5))) {
+        hands = await handpose_model.estimateHands(rgba);
+        no_hand_countdown = no_hand_countdown_max
+      }
+      else {
+        no_hand_countdown--
+      }
     }
 
     _t = performance.now() - _t;
@@ -39,8 +47,15 @@ rgba.dispose();
     }
     Promise.all(p_list).then(values=>{
       pose = values[0]
-      if ((p_list.length > 1) && (pose.score > 0.1) && ((pose.keypoints[9].score > 0.5) || (pose.keypoints[10].score > 0.5)))
-        hands = values[1]
+      if (p_list.length > 1) {
+        if ((pose.score > 0.1) && ((pose.keypoints[9].score > 0.5) || (pose.keypoints[10].score > 0.5))) {
+          hands = values[1]
+          no_hand_countdown = no_hand_countdown_max
+        }
+        else {
+          no_hand_countdown--
+        }
+      }
 
       _t = performance.now() - _t;
 
