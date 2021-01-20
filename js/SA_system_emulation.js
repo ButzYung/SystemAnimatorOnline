@@ -4555,7 +4555,7 @@ q_m4.setFromRotationMatrix(rot_m4);
 let xyz = MMD_SA.TEMP_v3.setEulerFromQuaternion(q_m4, "YZX");
 x_rot = -xyz.x;
 y_rot = -xyz.y;
-z_rot =  xyz.z;
+z_rot = -xyz.z;
 
   let _x_diff = face.scaledMesh[454][0] - face.scaledMesh[234][0]
   let _y_diff = face.scaledMesh[454][1] - face.scaledMesh[234][1]
