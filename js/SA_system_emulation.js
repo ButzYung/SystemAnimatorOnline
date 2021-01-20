@@ -1,4 +1,4 @@
-// System object emultaion (2020-12-05)
+// System object emultaion (2021-01-20)
 
 var use_SA_system_emulation = true
 var use_SA_browser_mode
@@ -2816,6 +2816,7 @@ return net;
 
       var _info_extra = ""
 
+      var double_flip_mode = true;
       var video_flipped;
 
       var frame_delta_threshold = 1000/30
@@ -2846,8 +2847,15 @@ if ((video_canvas.width != w) || (video_canvas.height != h)) {
     video_canvas.style.height = window.innerHeight + "px"
   }
   else {
-    video_canvas.style.width  = (w * MMD_SA_options.user_camera.display.scale) + "px"
-    video_canvas.style.height = (h * MMD_SA_options.user_camera.display.scale) + "px"
+    let _w = (w * MMD_SA_options.user_camera.display.scale)
+    let _h = (h * MMD_SA_options.user_camera.display.scale)
+    video_canvas.style.width  = _w + "px"
+    video_canvas.style.height = _h + "px"
+
+    let w_space = (window.innerWidth -  _w)/2
+    let h_space = (window.innerHeight - _h)/2
+    video_canvas.style.left = (w_space * (1 + MMD_SA_options.user_camera.display.left)) + "px"
+    video_canvas.style.top  = (h_space * (1 + MMD_SA_options.user_camera.display.top))  + "px"
   }
   video_canvas.style.objectFit = "cover"
   context.globalCompositeOperation = 'copy'
@@ -2960,15 +2968,51 @@ camera.video.src = (webkit_electron_mode) ? toFileProtocol(src||"C:\\Users\\user
       var pose_initialized, pose_worker_initialized, pose_busy
 
       var v3a;
+      var q1;
+      var rot_m4, q_m4;
       window.addEventListener("jThree_ready", function () {
 v3a = new THREE.Vector3()
+q1 = new THREE.Quaternion()
+rot_m4 = new THREE.Matrix4()
+q_m4 = new THREE.Quaternion()
       });
 
       var finger_list = ["親", "人", "中", "薬", "小"];
       var finger_list_en = ["thumb", "indexFinger", "middleFinger", "ringFinger", "pinky"];
       var nj_list = ["０","１","２","３"];
 
-      var use_pose_worker = !is_mobile
+      var use_pose_worker = !is_mobile;
+
+      var use_human// = true
+      var use_mixed_human = !is_mobile;
+      var use_tfjs_posenet;
+
+      var posenet_part_name = [
+  "nose"
+, "leftEye"
+, "rightEye"
+, "leftEar"
+, "rightEar"
+, "leftShoulder"
+, "rightShoulder"
+, "leftElbow"
+, "rightElbow"
+, "leftWrist"
+, "rightWrist"
+, "leftHip"
+, "rightHip"
+, "leftKnee"
+, "rightKnee"
+, "leftAnkle"
+, "rightAnkle"
+      ];
+
+      var posenet_part_dummy = []
+      posenet_part_name.forEach(name => {
+        posenet_part_dummy.push({part:name, score:0})
+      });
+
+      var rot_hand_adjust, rot_finger_adjust, rot_thumb_adjust;
 
       function pose_init() {
 pose_initialized = true
@@ -2978,17 +3022,16 @@ if (!use_pose_worker) pose_worker_initialized = true;
 if (MMD_SA_options.model_para_obj.left_arm_z_rot == null) {
   let model = THREE.MMD.getModels()[0]
   let bones_by_name = model.mesh.bones_by_name
-  let bones = model.pmx.bones
-  let armL = bones[bones_by_name["左腕"]._index].origin
-  let elbowL = bones[bones_by_name["左ひじ"]._index].origin
+  let armL = bones_by_name["左腕"].pmxBone.origin
+  let elbowL = bones_by_name["左ひじ"].pmxBone.origin
   MMD_SA_options.model_para_obj.left_arm_z_rot = Math.PI/2 + Math.atan2(elbowL[1]-armL[1], elbowL[0]-armL[0])
 //console.log('A:'+MMD_SA_options.model_para_obj.left_arm_z_rot*180/Math.PI)
-  let armIKL = bones[bones_by_name["左腕ＩＫ"]._index].origin
+  let armIKL = bones_by_name["左腕ＩＫ"].pmxBone.origin
   MMD_SA_options.model_para_obj.left_arm_to_IK_xy = [armL[0]-armIKL[0], armL[1]-armIKL[1]]
   MMD_SA_options.model_para_obj.left_arm_length = Math.sqrt(MMD_SA_options.model_para_obj.left_arm_to_IK_xy[0]*MMD_SA_options.model_para_obj.left_arm_to_IK_xy[0] + MMD_SA_options.model_para_obj.left_arm_to_IK_xy[1]*MMD_SA_options.model_para_obj.left_arm_to_IK_xy[1])
 //  MMD_SA_options.model_para_obj.left_lower_arm_length = Math.sqrt(Math.pow(elbowL[0]-armIKL[0],2) + Math.pow(elbowL[1]-armIKL[1],2))
 //console.log('L:'+MMD_SA_options.model_para_obj.left_arm_length)
-  let armR = bones[bones_by_name["右腕"]._index].origin
+  let armR = bones_by_name["右腕"].pmxBone.origin
   MMD_SA_options.model_para_obj.shoulder_width = Math.abs(armL[0]-armR[0])
 
   MMD_SA_options.model_para_obj.arm_axis = { "左": new THREE.Vector3().fromArray(armIKL).sub(MMD_SA.TEMP_v3.fromArray(armL)).normalize() }
@@ -2996,11 +3039,11 @@ if (MMD_SA_options.model_para_obj.left_arm_z_rot == null) {
 
   MMD_SA_options.model_para_obj.finger_base = {}
   let LR = ["左","右"]
-  LR.forEach(d=>{let palm=bones[bones_by_name[d+"手首"]._index].origin; finger_list.forEach((f,f_idx)=>{
+  LR.forEach(d=>{let palm=bones_by_name[d+"手首"].pmxBone.origin; finger_list.forEach((f,f_idx)=>{
     let name = d + f + "指";
     let f_base_index = ((f_idx==0) && (bones_by_name[name+nj_list[0]])) ? 0 : 1;
-    let f0 = MMD_SA._v3a.fromArray(bones[bones_by_name[name+nj_list[f_base_index+0]]._index].origin)
-    let f1 = MMD_SA._v3b.fromArray(bones[bones_by_name[name+nj_list[f_base_index+1]]._index].origin)
+    let f0 = MMD_SA._v3a.fromArray(bones_by_name[name+nj_list[f_base_index+0]].pmxBone.origin)
+    let f1 = MMD_SA._v3b.fromArray(bones_by_name[name+nj_list[f_base_index+1]].pmxBone.origin)
     let v0 = MMD_SA._v3a_.copy(f0).sub(MMD_SA.TEMP_v3.fromArray(palm)).normalize()
     let v1 = MMD_SA._v3b_.copy(f1).sub(f0).normalize()
 
@@ -3022,19 +3065,142 @@ if (MMD_SA_options.model_para_obj.left_arm_z_rot == null) {
     if (angle) {
       let axis = new THREE.Vector3().crossVectors(v0, v1).normalize()
       rot.setFromAxisAngle(axis, angle)
-      f_obj.axis = axis
     }
-    f_obj.angle = angle
-    f_obj.rot = rot
-    f_obj.rot_v3 = new THREE.Vector3().setEulerFromQuaternion(rot, "YZX")
+    let rot_v3 = new THREE.Vector3().setEulerFromQuaternion(rot, "YZX")
+    rot_v3.set(0,0,rot_v3.z*((d=="左")?-1:1)).negate()
+    f_obj.rot_v3 = rot_v3
+    f_obj.rot = rot.setFromEuler(rot_v3, "YZX")
   })});
+
+  rot_hand_adjust = {
+    "1":new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(0, -Math.PI/2* 1, (-MMD_SA_options.model_para_obj.left_arm_z_rot+Math.PI)* 1, "YZX")),
+   "-1":new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(0, -Math.PI/2*-1, (-MMD_SA_options.model_para_obj.left_arm_z_rot+Math.PI)*-1, "YZX"))
+  };
+
+  rot_finger_adjust = {}
+
+  let x_axis = MMD_SA._v3a.set(0,1,0);
+  let z_axis = MMD_SA._v3b.set(-1,0,0);
+  let y_axis = MMD_SA.TEMP_v3.crossVectors(x_axis, z_axis);
+  let rot_m4 = MMD_SA.TEMP_m4.set(
+    x_axis.x,+x_axis.y, x_axis.z, 0,
+    y_axis.x, y_axis.y,+y_axis.z, 0,
+    z_axis.x, z_axis.y, z_axis.z, 0,
+    0,0,0,1
+  );
+  rot_finger_adjust["-1"] = new THREE.Quaternion().setFromRotationMatrix(rot_m4)
+
+  rot_m4 = MMD_SA.TEMP_m4.set(
+    x_axis.x,-x_axis.y, x_axis.z, 0,
+    y_axis.x, y_axis.y, y_axis.z, 0,
+   -z_axis.x, z_axis.y, z_axis.z, 0,
+    0,0,0,1
+  );
+  rot_finger_adjust["1"]  = new THREE.Quaternion().setFromRotationMatrix(rot_m4)
+
+  rot_thumb_adjust = {}
+
+
+  x_axis = MMD_SA._v3a.set(1,0,0);
+  y_axis = MMD_SA._v3b.set(0,0,1);
+  z_axis = MMD_SA.TEMP_v3.crossVectors(x_axis, y_axis);
+
+/*
+  x_axis = MMD_SA._v3a.set(0,1,0);
+  y_axis = MMD_SA._v3b.set(1,0,0);
+  z_axis = MMD_SA.TEMP_v3.crossVectors(x_axis, y_axis).negate();
+*/
+  rot_m4 = MMD_SA.TEMP_m4.set(
+   -x_axis.x, x_axis.y, x_axis.z, 0,
+    y_axis.x, y_axis.y, y_axis.z, 0,
+    z_axis.x,-z_axis.y, z_axis.z, 0,
+    0,0,0,1
+  );
+  rot_thumb_adjust["-1"] = new THREE.Quaternion().setFromRotationMatrix(rot_m4)//xz
+
+  rot_m4 = MMD_SA.TEMP_m4.set(
+   -x_axis.x, x_axis.y, x_axis.z, 0,
+    y_axis.x, y_axis.y, y_axis.z, 0,
+    z_axis.x,-z_axis.y, z_axis.z, 0,
+    0,0,0,1
+  );
+  rot_thumb_adjust["1"]  = new THREE.Quaternion().setFromRotationMatrix(rot_m4)//xz
 }
 
-pose_worker = new Worker('js/pose_worker.js' + ((is_mobile)?'?use_mobilenet=1':''));
+var para = []
+if (is_mobile) {
+  para.push('use_mobilenet=1')
+}
+
+if (use_human) {
+  para.push('use_human=1')
+
+  use_human = true
+  use_mixed_human = false
+  use_tfjs_posenet = false
+}
+else if (use_mixed_human) {
+  para.push('use_mixed_human=1')
+
+  use_human = true
+  use_mixed_human = true
+  use_tfjs_posenet = true
+}
+else {
+  use_human = false
+  use_mixed_human = false
+  use_tfjs_posenet = true
+}
+
+pose_worker = new Worker('js/pose_worker.js' + ((para.length) ? '?'+para.join('&') : ''))//, ((0&&use_human) ? { type:'module'} : null));
 pose_worker.onmessage = pose_worker_onmessage;
       }
 
       function pose_worker_onmessage(e) {
+  function process_hand(mesh, name) {
+var bone = mesh.bones_by_name[name]
+//var s = frames.skin[name]
+var rot_v3, rot, fixedAxis, angle;
+var _d, _name, _bone;
+
+var d = name.charAt(0)
+
+_bone = mesh.bones_by_name[d+"手捩"]
+if (_bone) {
+  fixedAxis = _bone.pmxBone.fixedAxis;
+  fixedAxis = (fixedAxis && MMD_SA._v3a.fromArray(fixedAxis)) || MMD_SA_options.model_para_obj.arm_axis[d];
+  rot_v3 = MMD_SA.TEMP_v3.setEulerFromQuaternion(bone.quaternion, "YZX")
+  angle = rot_v3.y*0.5
+  _bone.quaternion.setFromAxisAngle(fixedAxis, angle);
+}
+
+if (!mirror_hand) return;
+
+_d = (d == "左") ? "右" : "左";
+_name = _d+"手首"
+_bone = mesh.bones_by_name[_name]
+
+_bone.quaternion.copy(bone.quaternion)//.conjugate()
+_bone.quaternion.y*=-1; _bone.quaternion.w*=-1; _bone.quaternion.conjugate();
+_bone.quaternion.z*=-1; _bone.quaternion.w*=-1; _bone.quaternion.conjugate();
+/*
+rot_v3 = MMD_SA.TEMP_v3.setEulerFromQuaternion(bone.quaternion, "YZX")
+rot_v3.x *= -1
+_bone.quaternion.setFromEuler(rot_v3, "YZX").conjugate()
+*/
+let _s = frames.skin[_name]
+if (_s)
+  _s[0].rot.copy(_bone.quaternion)
+
+_bone = mesh.bones_by_name[_d+"手捩"]
+if (_bone) {
+  fixedAxis = _bone.pmxBone.fixedAxis;
+  fixedAxis = (fixedAxis && MMD_SA._v3a.fromArray(fixedAxis)) || MMD_SA_options.model_para_obj.arm_axis[d];
+  _bone.quaternion.setFromAxisAngle(fixedAxis, -angle);
+}
+  }
+
+  var mirror_hand = !use_human
 
   var data = ((typeof e.data == "string") && (e.data.charAt(0) === "{")) ? JSON.parse(e.data) : e.data;
 
@@ -3054,17 +3220,34 @@ pose_worker.onmessage = pose_worker_onmessage;
 
     let arms = [];
     let hands = [];
-    let sign_flip = (camera.visible) ? 1 : -1
+    let sign_flip = (camera.double_flip_mode || camera.visible) ? 1 : -1
 
 let model = THREE.MMD.getModels()[0]
 let bones_by_name = model.mesh.bones_by_name
-let bones = model.pmx.bones
 
 let pose;
 if (_poseNet.enabled) {
-  if (data.posenet && (data.posenet.score > 0.1)) {
+  if (data.posenet && (data.posenet.score > 0.3)) {
     pose = data.posenet
-    pose.keypoints.forEach(p=>{p.score-=0.5});
+
+    const score_threshold = (use_tfjs_posenet) ? 0.5 : 0.1;
+    pose.keypoints.forEach(p=>{p.score-=score_threshold});
+
+    if (!use_tfjs_posenet) {
+      let _keypoints_map = {}
+      pose.keypoints.forEach(kp=>{_keypoints_map[kp.part]=kp;});
+      let _keypoints = []
+      for (let i = 0; i <= 16; i++) {
+        let kp = pose.keypoints[i]
+        if (!kp)
+          _keypoints.push(posenet_part_dummy[i])
+        else if (kp.part != posenet_part_name[i])
+          _keypoints.push(_keypoints_map[posenet_part_name[i]] || posenet_part_dummy[i])
+        else
+          _keypoints.push(kp)
+      }
+      pose.keypoints = _keypoints
+    }
 
     let armL = pose.keypoints[5]
     let armR = pose.keypoints[6]
@@ -3077,7 +3260,7 @@ if (_poseNet.enabled) {
       a_shoulder = Math.max(Math.min(a_shoulder/(Math.PI/4), 1),-1) * Math.PI/4 * sign_flip
 //_info_extra = '\n' + a_shoulder*180/Math.PI
 
-      let LR = (camera.visible) ? [1,0] : [0,1]
+      let LR = (sign_flip == 1) ? [1,0] : [0,1]
 
       let hand_dir = [pose.keypoints[9], pose.keypoints[10]]
       let hand_dir_discarded = -1
@@ -3113,13 +3296,15 @@ if ((hand.score > 0) && (dir != hand_dir_discarded)) {
 //if (idx==0) _info_extra = '\n' + hand.position.y + '/'+Date.now();
 //  z = frames.skin[d+"腕ＩＫ"] && frames.skin[d+"腕ＩＫ"][0]._pos_z;
 
-  let arm_upper_length = Math.min(Math.sqrt(Math.pow(hand.position.x-elbow.position.x,2)+Math.pow(hand.position.y-elbow.position.y,2))/shoulder_width, 1)
-  let arm_lower_length = Math.min(Math.sqrt(Math.pow(arm.position.x -elbow.position.x,2)+Math.pow(arm.position.y -elbow.position.y,2))/shoulder_width, 1)
-  z_posenet = (0.1 + (Math.sin(Math.acos(arm_upper_length)) + Math.sin(Math.acos(arm_lower_length)))/2 * 0.9) * MMD_SA_options.model_para_obj.left_arm_length
+  if (elbow.score > 0) {
+    let arm_upper_length = Math.min(Math.sqrt(Math.pow(hand.position.x-elbow.position.x,2)+Math.pow(hand.position.y-elbow.position.y,2))/shoulder_width, 1)
+    let arm_lower_length = Math.min(Math.sqrt(Math.pow(arm.position.x -elbow.position.x,2)+Math.pow(arm.position.y -elbow.position.y,2))/shoulder_width, 1)
+    z_posenet = (0.1 + (Math.sin(Math.acos(arm_upper_length)) + Math.sin(Math.acos(arm_lower_length)))/2 * 0.9) * MMD_SA_options.model_para_obj.left_arm_length
+  }
 }
 else {
   let f_hand = frames.skin[d+"手首"]
-  if (f_hand) {
+  if (f_hand && !use_human) {
     f_hand._time_idle = (f_hand._time_idle||0) + data._t
     if (f_hand._time_idle > 1000) {
       frames.remove("skin", d+"手首")
@@ -3147,15 +3332,13 @@ arms.push({ pos:{x:x, y:y, z:z, z_posenet:z_posenet}, dir:dir, d:d })
   }
 }
 
-// reset these values, just in case they are not updated with handpose
-if (frames.skin["左手首"]) frames.skin["左手首"][0].mirror_rot_parent = false;
-if (frames.skin["右手首"]) frames.skin["右手首"][0].mirror_rot_parent = false;
-
 let hand_data;
-if (_handpose.enabled) {
-  if (arms.length && data.handpose && data.handpose.length && (data.handpose[0].handInViewConfidence > 0.6)) {
+if (_handpose.enabled && data.handpose && data.handpose.length && hands.length) {
+  data.handpose.forEach(function (handpose) {
+//    if ((handpose.handInViewConfidence||handpose.confidence) < 0.6) return;
+
 // https://github.com/tensorflow/tfjs-models/blob/master/handpose/src/keypoints.ts
-    hand_data = data.handpose[0].annotations;
+    hand_data = handpose.annotations;
 //console.log(JSON.parse(JSON.stringify(hand_data)))
     const z_scale = 2;
     for (let name in hand_data) {
@@ -3165,6 +3348,7 @@ xyz[2]*=z_scale
     }
 
     let palm = MMD_SA.TEMP_v3.fromArray(hand_data.palmBase[0])
+/*
     let pt = palm.clone()
     let dis = 0
 let z_dis = 0
@@ -3175,18 +3359,18 @@ z_dis += Math.abs(pt.z-p[2])
       }
       pt.fromArray(p)
     });
-
 //_info_extra += '\n' + Math.round(dis) + ':' + Math.round(z_dis) + '\n' + (dis/_facemesh.face_width)
+*/
+ 
+    hands.forEach(function (hand) {
+      hand.offset = Math.sqrt(Math.pow(hand.pos.x-palm.x,2) + Math.pow(hand.pos.y-palm.y,2))
+    });
 
-    if (hands.length) {
-      let hand
-      hands.forEach(function (hand) {
-        hand.offset = Math.sqrt(Math.pow(hand.pos.x-palm.x,2) + Math.pow(hand.pos.y-palm.y,2))
-      });
-      hand = hands.sort((a,b)=>a.offset-b.offset)[0]
+    let hand = (data.handpose[0]._dir == null) ? hands.sort((a,b)=>a.offset-b.offset)[0] : hands.find((h)=>h.dir!=data.handpose[0]._dir);
 
-      if (hand.offset < Math.max(camera.video_canvas.width,camera.video_canvas.height)/10) {
-        let arm = arms.find((arm)=>arm.dir==hand.dir);
+    if (hand && (hand.offset < Math.max(camera.video_canvas.width,camera.video_canvas.height)/6)) {
+      data.handpose[0]._dir = hand.dir
+      let arm = arms.find((arm)=>arm.dir==hand.dir);
 //        arm.pos.z = Math.max(Math.min(((dis/_facemesh.face_width)-0.7)/1.3, 1),0) * MMD_SA_options.model_para_obj.left_arm_length*(0.9-0.2);
 
 let d = hand.d
@@ -3195,8 +3379,9 @@ _info_extra += '\n' + ('('+d+'手)') + '\n'
 
 let LR = (hand.dir == 1) ? [hand_data.indexFinger[0], hand_data.ringFinger[0]] : [hand_data.ringFinger[0], hand_data.indexFinger[0]]
 
-let axis_rotated, axis, axis_angle, axis_rot, axis_rot_v3;
 let x_rot, y_rot, z_rot;
+/*
+let axis_rotated, axis, axis_angle, axis_rot, axis_rot_v3;
 
 // x axis
 axis_rotated = MMD_SA._v3a.fromArray(LR[0]).sub(MMD_SA._v3b.fromArray(LR[1])).normalize();
@@ -3219,6 +3404,32 @@ axis_rot_v3 = MMD_SA.TEMP_v3.setEulerFromQuaternion(axis_rot, "YZX");
 x_rot = axis_rot_v3.x;
 //z_rot = axis_rot_v3.z;
 //x_rot=y_rot=z_rot=0
+*/
+
+let y_axis = MMD_SA._v3a_.fromArray(hand_data.palmBase[0]).sub(MMD_SA._v3b.fromArray(hand_data.middleFinger[0])).normalize();
+y_axis.x = y_axis.x * sign_flip;
+//y_axis.z = y_axis.z * sign_flip;
+let x_axis = MMD_SA._v3b_.fromArray(LR[0]).sub(MMD_SA._v3b.fromArray(LR[1])).normalize();
+x_axis.z = x_axis.z * sign_flip;
+x_axis.y = x_axis.y * sign_flip;
+let z_axis = MMD_SA.TEMP_v3.crossVectors(x_axis, y_axis).normalize();
+// adjust x_axis to make sure that all axis are perpendicular to each other
+x_axis.crossVectors(y_axis, z_axis);
+
+// http://renderdan.blogspot.com/2006/05/rotation-matrix-from-axis-vectors.html
+rot_m4.set(
+  x_axis.x, x_axis.y, x_axis.z, 0,
+  y_axis.x, y_axis.y, y_axis.z, 0,
+  z_axis.x, z_axis.y, z_axis.z, 0,
+  0,0,0,1
+);
+
+q_m4.setFromRotationMatrix(rot_m4);
+
+let xyz = MMD_SA.TEMP_v3.setEulerFromQuaternion(q_m4, "YZX");
+x_rot = -xyz.x;
+y_rot = -xyz.y;
+z_rot = -xyz.z;
 
 //_info_extra = '\n\n' + ([x_rot,y_rot,z_rot].map(a=>a*180/Math.PI).join('\n')) + '\n\n'
 
@@ -3226,66 +3437,38 @@ let sign_LR = (d=="左") ? 1 : -1;
 //MMD_SA.TEMP_v3.set(0,-Math.PI/2,-MMD_SA_options.model_para_obj.left_arm_z_rot+Math.PI)
 let rot = new THREE.Quaternion();
 // xz swapped
-rot.setFromEuler(MMD_SA._v3a.set(-z_rot*sign_LR*sign_flip, -Math.PI/2*sign_LR +y_rot*sign_flip, (-MMD_SA_options.model_para_obj.left_arm_z_rot+Math.PI)*sign_LR -x_rot*sign_LR), "YZX")
+rot.copy(q_m4).conjugate().multiply(rot_hand_adjust[sign_LR]);
+//rot.setFromEuler(MMD_SA._v3a.set(-z_rot*sign_LR*sign_flip, -Math.PI/2*sign_LR +y_rot*sign_flip, (-MMD_SA_options.model_para_obj.left_arm_z_rot+Math.PI)*sign_LR -x_rot*sign_LR), "YZX")
+//rot.setFromEuler(MMD_SA._v3a.set(-z_rot*sign_LR*sign_flip, y_rot*sign_flip, -x_rot*sign_LR), "YZX").multiply(rot_hand_adjust[sign_LR]);
 
 //_info_extra += '\n\n' + data.handpose[0].handInViewConfidence + '\n\n'
-_facemesh.frames.add("skin", d+"手首", {after_IK:true, absolute:true, mirror_rot_parent:true, rot:rot});
-if (bones_by_name[d+"手捩"]) {
-  let fixedAxis = bones[bones_by_name[d+"手捩"]._index].fixedAxis;
-  fixedAxis = (fixedAxis && MMD_SA.TEMP_v3.fromArray(fixedAxis)) || MMD_SA_options.model_para_obj.arm_axis[d];
-  _facemesh.frames.add("skin", d+"手捩", {rot:new THREE.Quaternion().setFromAxisAngle(fixedAxis, y_rot*sign_flip)});
-}
+_facemesh.frames.add("skin", d+"手首", {after_IK:true, absolute:true, rot:rot, priority:-1, onFinish:process_hand });
 
-let _sign_LR = sign_LR * -1;
 let _d = (d=="左") ? "右" : "左";
-if (1) {
-  let rot = new THREE.Quaternion();
-  rot.setFromEuler(MMD_SA._v3a.set(-z_rot*-1*_sign_LR*sign_flip, -Math.PI/2*_sign_LR +y_rot*-1*sign_flip, (-MMD_SA_options.model_para_obj.left_arm_z_rot+Math.PI)*_sign_LR -x_rot*_sign_LR), "YZX")
-
-  _facemesh.frames.add("skin", _d+"手首", {after_IK:true, absolute:true, rot:rot});
-  if (bones_by_name[_d+"手捩"]) {
-    let fixedAxis = bones[bones_by_name[_d+"手捩"]._index].fixedAxis;
-    fixedAxis = (fixedAxis && MMD_SA.TEMP_v3.fromArray(fixedAxis)) || MMD_SA_options.model_para_obj.arm_axis[_d];
-    _facemesh.frames.add("skin", _d+"手捩", {rot:new THREE.Quaternion().setFromAxisAngle(fixedAxis, y_rot*-1*sign_flip)});
-  }
+if (mirror_hand) {
+// dummy, to be mirrored
+  _facemesh.frames.add("skin", _d+"手首", {rot:new THREE.Quaternion()});
 }
 
 let rot_dummy = new THREE.Quaternion()
 
 let f_base = MMD_SA_options.model_para_obj.finger_base
 
-let hand_rot_inv = MMD_SA._q1.setFromEuler(MMD_SA._v3a.set(-x_rot, y_rot, -z_rot).negate(), "YZX")
+let hand_rot_inv = q1.copy(q_m4)
+hand_rot_inv.y*=-1; hand_rot_inv.w*=-1;
+//let hand_rot_inv = MMD_SA._q1.setFromEuler(MMD_SA._v3a.set(-x_rot, y_rot, -z_rot).negate(), "YZX");
+
 //_info_extra += '\n\n' + MMD_SA._v3a.toArray().map(a=>a*180/Math.PI).join('\n') + '\n\n';
 
 finger_list.forEach((f,f_idx)=>{
 //always reference the hand data of the same direction regardless of flipping (i.e. flip the flipped d if necessary)
-  let f_obj = f_base[((camera.visible)?d:((d=="左")?"右":"左")) + f_idx]
+  let f_obj = f_base[((sign_flip == 1)?d:((d=="左")?"右":"左")) + f_idx]
   let f_base_index = f_obj.base_index + ((f_idx == 0) ? 0 : -1)
   let finger = hand_data[finger_list_en[f_idx]]
 
-for (let i=f_base_index; i<3; i++){
-  let name = d + f + "指" + nj_list[f_obj.base_index + (i-f_base_index)]
-/*
-let _axis_q = new THREE.Quaternion()
-let bone = bones[bones_by_name[name]._index]
-if (bone.localCoordinate) {
-//1,1=>-++  1,-1=>+--  -1,1=>-++  -1-1=>+--
-  let x_axis = MMD_SA.TEMP_v3.set(0,0,-1)
-  let x_axis_target = MMD_SA._v3a_.fromArray(bone.localCoordinate[0]).normalize()
-//x_axis_target.y=-x_axis_target.y;//x_axis_target.x=-x_axis_target.x;
+for (let idx=f_base_index; idx<3; idx++){
+  let name = d + f + "指" + nj_list[f_obj.base_index + (idx-f_base_index)]
 
-  _axis_q.setFromAxisAngle(v3a.crossVectors(x_axis, x_axis_target).normalize(), x_axis.angleTo(x_axis_target));
-//if (name=="左中指１") _info_extra += '\n\n' + x_axis.applyQuaternion(_axis_q).toArray().join('\n') + '\n\n'
-  let z_axis = MMD_SA.TEMP_v3.set(-1,0,0).applyQuaternion(_axis_q)
-  let z_axis_target = MMD_SA._v3b_.fromArray(bone.localCoordinate[1]).normalize()
-//z_axis_target.y=-z_axis_target.y;//z_axis_target.x=-z_axis_target.x;
-
-if (name=="左中指１") _info_extra += '\n\n' + v3a.crossVectors(z_axis, z_axis_target).normalize().toArray().join('\n') + '\n\n'
-  _axis_q.multiply(MMD_SA._q1.setFromAxisAngle(x_axis_target, z_axis.angleTo(z_axis_target)))
-//if (name=="左中指１") _info_extra += '\n\n' + MMD_SA.TEMP_v3.set(1,0,0).applyQuaternion(_axis_q).toArray().join('\n') + '\n\n'
-}
-*/
-  let idx = f_base_index + (i-f_base_index)
   let f0 = MMD_SA._v3a.fromArray(finger[idx+0])
   let f1 = MMD_SA._v3b.fromArray(finger[idx+1])
   let _f = MMD_SA.TEMP_v3.fromArray((idx==f_base_index)?hand_data.palmBase[0]:finger[idx-1])
@@ -3295,13 +3478,13 @@ if (name=="左中指１") _info_extra += '\n\n' + v3a.crossVectors(z_axis, z_axi
 
   let v0 = MMD_SA._v3a_.copy(f0).sub(_f)
   let v1 = MMD_SA._v3b_.copy(f1).sub(f0)
-  if (f_idx == 0) { v0.z/=z_scale; v1.z/=z_scale; }
+//  if (f_idx == 0) { v0.z/=z_scale; v1.z/=z_scale; }
   v0.normalize()
   v1.normalize()
 
   let angle
-  let rot_v3
-  if (f_idx == 0) {//(idx == f_base_index) || (f_idx == 0)) {
+  let rot_v3, rot_v3_mirror
+  if (1||f_idx == 0) {//(idx == f_base_index) || (f_idx == 0)) {
 
     v0.applyQuaternion(hand_rot_inv)
     v1.applyQuaternion(hand_rot_inv)
@@ -3315,18 +3498,70 @@ if (name=="左中指１") _info_extra += '\n\n' + v3a.crossVectors(z_axis, z_axi
       v0.set(0,1,0)
     }
 //always reference the hand data of the same direction regardless of flipping (i.e. no need to use sign_flip here)
-    v1.applyQuaternion(rot_to_y)//.applyEuler(MMD_SA.TEMP_v3.set(0, -(y_rot), 0))
+    v1.applyQuaternion(rot_to_y)
 
     angle = v0.angleTo(v1)
 
-    let rot = MMD_SA.TEMP_q.set(0,0,0,1)
+    let rot = MMD_SA._q1.set(0,0,0,1)
+    let rot_mirror
     if (angle) {
       let axis = v3a.crossVectors(v0, v1).normalize()
       rot.setFromAxisAngle(axis, angle)
     }
-    rot_v3 = MMD_SA._v3a.setEulerFromQuaternion(rot, "YZX")
-//if (f_idx==2) _info_extra += '\n\n' + rot_v3.toArray().map(a=>a*180/Math.PI).join('\n') + '\n\n';
-    rot_v3.sub(f_obj.rot_v3)
+
+rot = MMD_SA._q1.set(0,0,0,1)
+rot_mirror = MMD_SA._q2.set(0,0,0,1)
+if (angle) {
+  let axis = v3a.crossVectors(v0, v1).normalize()//.applyQuaternion(rot_finger_adjust[sign_LR].clone().conjugate())
+  rot.setFromAxisAngle(axis, angle)
+  rot_mirror.copy(rot)
+//  rot.z*=-1; rot.w*=-1; rot.conjugate();
+
+  rot_v3 = MMD_SA._v3a.setEulerFromQuaternion(rot, "YZX")
+  if (f_idx > 0)  {
+    rot_v3.y = 0
+    if (idx > f_base_index) rot_v3.z = 0;
+    if (rot_v3.x > 0) rot_v3.x /= (idx > f_base_index) ? 4 : 2;
+  }
+  rot_v3_mirror = MMD_SA._v3b.copy(rot_v3)
+  rot.setFromEuler(rot_v3, "YZX")
+
+  if (mirror_hand) {
+    rot_v3_mirror.y *= -1
+    rot_v3_mirror.z *= -1
+    rot_mirror.setFromEuler(rot_v3_mirror, "YZX")
+  }
+
+  if (idx == f_base_index) {
+//    rot.multiply(f_obj.rot)
+  }
+
+  let aa = rot.toAxisAngle()
+  axis = aa[0]
+  angle = aa[1]
+  axis.applyQuaternion(MMD_SA.TEMP_q.copy((f_idx==0)?rot_thumb_adjust[sign_LR]:rot_finger_adjust[sign_LR]).conjugate())
+  rot.setFromAxisAngle(axis, angle)
+
+  if (mirror_hand) {
+    aa = rot_mirror.toAxisAngle()
+    axis = aa[0]
+    angle = aa[1]
+    axis.applyQuaternion(MMD_SA.TEMP_q.copy((f_idx==0)?rot_thumb_adjust[-sign_LR]:rot_finger_adjust[-sign_LR]).conjugate())
+    rot_mirror.setFromAxisAngle(axis, angle)
+  }
+}
+_facemesh.frames.add("skin", name, {absolute:true, rot:rot.clone()});
+
+if (mirror_hand) {
+  let name = _d + f + "指" + nj_list[f_obj.base_index + (idx-f_base_index)]
+//_info_extra += name + '/'
+  _facemesh.frames.add("skin", name, {absolute:true, rot:rot_mirror.clone()});
+}
+
+continue
+
+    rot_v3 = MMD_SA._v3a.setEulerFromQuaternion(rot.multiply(f_obj.rot), "YZX")
+//    rot_v3.add(f_obj.rot_v3)
 
 if (idx > f_base_index) {
   if (f_idx == 0) {
@@ -3352,11 +3587,9 @@ if (idx > f_base_index) {
 
   if (f_idx > 0) rot_v3.set(rot_v3.y*1, rot_v3.z*sign_flip, rot_v3.x*sign_LR)//Math.max(Math.min(rot_v3.x*1.5, (idx == f_base_index)?Math.PI/4:0),-Math.PI/1.5)*sign_LR);
 
-//if (f_idx==0 && idx==f_base_index+1) _info_extra = '\n\n' + rot_v3.toArray().map(a=>a*180/Math.PI).join('\n') + '\n\n'
-
   _facemesh.frames.add("skin", name, {absolute:true, rot:new THREE.Quaternion().setFromEuler(rot_v3, "YZX")});
 
-  if (1) {
+  if (mirror_hand) {
     if (f_idx > 0) {
       rot_v3.x *= -1
       rot_v3.y *= -1
@@ -3366,16 +3599,15 @@ if (idx > f_base_index) {
       rot_v3.y *= -1
       rot_v3.z *= -1
     }
-    let name = _d + f + "指" + nj_list[f_obj.base_index + (i-f_base_index)]
+    let name = _d + f + "指" + nj_list[f_obj.base_index + (idx-f_base_index)]
     _facemesh.frames.add("skin", name, {absolute:true, rot:new THREE.Quaternion().setFromEuler(rot_v3, "YZX")});
   }
 }
 });
  
-      }
     }
 
-  }
+  });
 }
 
 arms.forEach(function (arm) {
@@ -3388,11 +3620,14 @@ arms.forEach(function (arm) {
   _facemesh.frames.add("skin", d+"腕", {absolute:true, rot:new THREE.Quaternion()})
   _facemesh.frames.add("skin", d+"ひじ", {absolute:true, rot:new THREE.Quaternion()})
 
-// if handpose is not detected, use the last rot_parent (._rot_parent is undefined for updated handpose)
+// if handpose is not detected, use the last rot_parent (for updated handpose, ._rot_parent is undefined, meaning .rot_parent, which is now undefined as well, will be refreshed)
   var hand = frames.skin[d+"手首"]
-  if (hand)
-    hand[0].rot_parent = hand[0]._rot_parent
-//if (hand && hand[0]._rot_parent) _info_extra += '\n' + d
+  if (hand) {
+    hand[0].rot_parent = hand[0]._rot_parent;
+//hand[0].rot_parent = hand[0]._rot_parent = null
+//hand[0].rot.set(0,0,0,1);
+//frames.skin[d+"手捩"][0].rot.set(0,0,0,1);
+  }
 });
 
 //_facemesh.frames.add("skin", "左腕", {absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA.TEMP_v3.set(0,0,-MMD_SA_options.model_para_obj.left_arm_z_rot+Math.PI/4),"YZX")})
@@ -3416,7 +3651,7 @@ arms.forEach(function (arm) {
       function pose_update_frame() {
 if (!use_pose_worker) return;
 
-var pose_ready = _poseNet.enabled && _poseNet.worker_initialized && !_poseNet.busy;
+var pose_ready = _poseNet.enabled && _poseNet.worker_initialized && camera.video_canvas.width && !_poseNet.busy;
 if (!pose_ready)
   return
 pose_busy = true
@@ -3445,26 +3680,14 @@ function process_bones_core(mesh, name) {
   if (s[0].rot) {
     if (s[0].absolute) {
       bone.quaternion.set(0,0,0,1)
-      if (s[0].after_IK) {
-        let rot_parent=s[0].rot_parent, rot_parent_renewed;
-        if (!rot_parent) {
-          rot_parent_renewed = true
-          rot_parent = MMD_SA.get_bone_rotation_parent(mesh, name).inverse();
-        }
-        s[0]._rot_parent = rot_parent
-        bone.quaternion.copy(rot_parent)
-
-        if (s[0].mirror_rot_parent && rot_parent_renewed) {
-          let _name = ((name.charAt(0)=="左")?"右":"左") + name.substring(1)
-          let _s = _frames.skin[_name]
-          if (_s) {
-            let rot_v3 = MMD_SA.TEMP_v3.setEulerFromQuaternion(rot_parent, "YZX")
-            rot_v3.y *= -1
-            rot_v3.z *= -1
-            _s[0].rot_parent = _s[0]._rot_parent = new THREE.Quaternion().setFromEuler(rot_v3, "YZX")
-          }
-        }
+    }
+    if (s[0].after_IK) {
+      let rot_parent = s[0].rot_parent;
+      if (!rot_parent) {
+        rot_parent = MMD_SA.get_bone_rotation_parent(mesh, name).inverse();
       }
+      s[0]._rot_parent = rot_parent
+      bone.quaternion.copy(rot_parent)
     }
     bone.quaternion.multiply((s[0].no_blending) ? s[0].rot : MMD_SA.TEMP_q.copy(s[1].rot).slerp(s[0].rot, ratio))
 /*
@@ -3499,6 +3722,8 @@ function process_bones_core(mesh, name) {
     }
 //DEBUG_show(s[0].t_delta/100)
   }
+
+  s[0].onFinish && s[0].onFinish(mesh, name);
 }
 
 function process_bones(e) {
@@ -3523,8 +3748,8 @@ function process_bones_after_IK(e) {
 
   var skin = _frames.skin
   var skin_sorted = Object.keys(skin).filter(n=>skin[n][0].after_IK).sort((a,b) => {
-let _a = (skin[a][0].mirror_rot_parent) ? -1 : 0
-let _b = (skin[b][0].mirror_rot_parent) ? -1 : 0
+let _a = skin[a][0].priority || 0
+let _b = skin[b][0].priority || 0
 return _a-_b;
   });
 
@@ -3565,6 +3790,9 @@ function process_morphs(e) {
 
   var facemesh_morph = MMD_SA_options.model_para_obj.facemesh_morph
   var morph = _frames.morph
+
+  var morph_weight = {}
+  var morph_weight_non_zero_count = 0
 // use Object.keys instead of for...in loop (unable to read some properties for some unknown reasons)
   Object.keys(morph).forEach(function (name) {
     let m = morph[name]
@@ -3574,6 +3802,25 @@ function process_morphs(e) {
 
     let ratio = Math.max(Math.min(m[0].t_delta/Math.max(Math.min(m[0].t_delta_frame,200),1000/60),1),0)
     let weight = m[0].weight * ratio + m[1].weight * (1-ratio)
+
+    morph_weight[name] = weight
+
+    if (weight)
+      morph_weight_non_zero_count++
+  });
+/*
+  if (morph_weight_non_zero_count > 8) {
+    let order = ["∧", "上","にこり","困る","怒り"]
+    order.sort((a,b)=>(morph_weight[b]||0)-(morph_weight[a]||0))
+    for (let i = 3; i < order.length; i++) {
+      if (morph_weight[order[i]])
+        morph_weight[order[i]] = 0
+    }
+  }
+*/
+  Object.keys(morph_weight).forEach(function (name) {
+    let m = morph[name]
+    let weight = morph_weight[name]
 
     if (weight < 0) {
       switch (name) {
@@ -3671,8 +3918,16 @@ return target_devicePixelRatio || window.devicePixelRatio;
 target_devicePixelRatio = (v == window.devicePixelRatio) ? 0 : v
   }
 
+ ,get double_flip_mode() {
+return double_flip_mode && !camera.visible;
+  }
+ ,set double_flip_mode(v) {
+double_flip_mode = v;
+  }
+
  ,get video_flipped() {
-return video_flipped;
+// XOR
+return (!!video_flipped) ^ (!!camera.double_flip_mode);
   }
  ,set video_flipped(v) {
 video_flipped = v;
@@ -4174,7 +4429,7 @@ var eye_data_height_ref_pts = {L:[159,145], R:[386,374]};
    ,height_average: 0
    ,height_data: []
 // NOTE: video source assumed to be mirrored
-   ,height_ref_pts: (dir=="R") ? [334,374] : [105,145]
+   ,height_ref_pts: (dir=="R") ? [334,330] : [105,101]
   };
 });
     }
@@ -4186,6 +4441,7 @@ var eye_data_height_ref_pts = {L:[159,145], R:[386,374]};
     var TRIANGULATION
 
     var use_faceLandmarksDetection = !is_mobile
+    var use_human_facemesh = true
 
     function init() {
 _facemesh.initialized = true
@@ -4209,13 +4465,19 @@ var params = []
 if (System._browser.use_WASM_SIMD) {
   params.push('simd=1')
 }
-if (use_faceLandmarksDetection || System._browser.url_search_params['use_latest_facemesh']) {
+if (use_faceLandmarksDetection) {
   use_faceLandmarksDetection = true
   _facemesh.blink_detection = true
-  params.push('use_latest_facemesh=1')
+  params.push('use_face_landmarks=1')
+}
+if (use_human_facemesh) {
+  params.push('use_human_facemesh=1')
 }
 
 fm_worker = new Worker('js/facemesh_worker.js' + ((params.length)?'?'+params.join('&'):''));
+
+// holistic (worker TEST)
+//fm_worker = new Worker('js/holistic_worker.js' + ((params.length)?'?'+params.join('&'):''));
 
 fm_worker.onmessage = function (e) {
   var data = ((typeof e.data == "string") && (e.data.charAt(0) === "{")) ? JSON.parse(e.data) : e.data;
@@ -4236,6 +4498,9 @@ fm_worker.onmessage = function (e) {
   else {
 let info = ""
 bb_center = [0.5, 0.5]
+
+let sign_flip = (camera.double_flip_mode || camera.visible) ? 1 : -1
+
 if (data.faces.length) {
   let face = data.faces[0]
 
@@ -4245,8 +4510,9 @@ if (data.faces.length) {
 // LR:234,454
 // TB:10,152
 
-  let axis_rotated, axis, axis_angle, axis_rot, axis_rot_v3;
   let x_rot, y_rot, z_rot;
+/*
+  let axis_rotated, axis, axis_angle, axis_rot, axis_rot_v3;
 
 // x axis
   axis_rotated = MMD_SA._v3a.fromArray(face.mesh[454]).sub(MMD_SA._v3b.fromArray(face.mesh[234])).normalize();
@@ -4267,6 +4533,29 @@ if (data.faces.length) {
   axis_rot_v3 = MMD_SA.TEMP_v3.setEulerFromQuaternion(axis_rot, "YZX");
   x_rot = axis_rot_v3.x;
 //  z_rot = axis_rot_v3.z;
+*/
+
+let y_axis = MMD_SA._v3a_.fromArray(face.mesh[152]).sub(MMD_SA._v3b.fromArray(face.mesh[10])).normalize();
+//y_axis.x = -y_axis.x;
+let x_axis = MMD_SA._v3b_.fromArray(face.mesh[454]).sub(MMD_SA._v3b.fromArray(face.mesh[234])).normalize();
+//x_axis.x = -x_axis.x;
+let z_axis = MMD_SA.TEMP_v3.crossVectors(x_axis, y_axis).normalize();
+// adjust x_axis to make sure that all axis are perpendicular to each other
+x_axis.crossVectors(y_axis, z_axis);
+
+// http://renderdan.blogspot.com/2006/05/rotation-matrix-from-axis-vectors.html
+rot_m4.set(
+  x_axis.x, x_axis.y, x_axis.z, 0,
+  y_axis.x, y_axis.y, y_axis.z, 0,
+  z_axis.x, z_axis.y, z_axis.z, 0,
+  0,0,0,1
+);
+
+q_m4.setFromRotationMatrix(rot_m4);
+let xyz = MMD_SA.TEMP_v3.setEulerFromQuaternion(q_m4, "YZX");
+x_rot = -xyz.x;
+y_rot = -xyz.y;
+z_rot =  xyz.z;
 
   let _x_diff = face.scaledMesh[454][0] - face.scaledMesh[234][0]
   let _y_diff = face.scaledMesh[454][1] - face.scaledMesh[234][1]
@@ -4274,44 +4563,20 @@ if (data.faces.length) {
   _facemesh.face_width = _dis
 
   let _z_rot
-  if (use_faceLandmarksDetection) {
+  if (use_faceLandmarksDetection || use_human_facemesh) {
     _z_rot = Math.asin(_y_diff / _dis)
   }
   else {
     _z_rot = z_rot
   }
 
-  let sign = (camera.visible) ? 1 : -1;
   let rot = new THREE.Quaternion();
-  rot.setFromEuler(MMD_SA._v3a.set(x_rot, y_rot*sign, _z_rot*sign),"YZX").slerp(MMD_SA.TEMP_q.set(0,0,0,1), 1-0.35)
+  rot.setFromEuler(MMD_SA._v3a.set(x_rot, y_rot*sign_flip, _z_rot*sign_flip),"YZX").slerp(MMD_SA.TEMP_q.set(0,0,0,1), 1-0.35)
 
   let head = { absolute:true, rot:rot.clone() }
   let neck = { absolute:true, rot:rot.clone() }
   let chest = { rot:rot.clone().slerp(MMD_SA.TEMP_q.set(0,0,0,1), 1-0.3/0.35) }
 
-/*
-if (camera.visible) {
-  let c = camera.video_canvas_face_detection
-  c.width  = camera.video_canvas.width
-  c.height = camera.video_canvas.height
-  c.style.visibility = "visible"
-  let context = c.getContext("2d")
-
-  for (let i = 0; i < 2; i++) {
-    let _eye = face.eyes[i]
-    if (_eye) {
-      context.beginPath();
-      context.arc(_eye[0], _eye[1], 1, 0, 2*Math.PI, false);
-      context.lineWidth = 3;
-      context.strokeStyle = 'red';
-      context.stroke();
-    }
-  }
-}
-else {
-  camera.video_canvas_face_detection.style.visibility = "hidden"
-}
-*/
   _facemesh.frames.t_delta = data._t
 
   _facemesh.frames.add("skin", "頭", head)
@@ -4330,7 +4595,7 @@ else {
     calibrating = (calibration_percent < 100)
   }
 
-  let calibration_condition = (face.faceInViewConfidence > 0.9) && (Math.abs(y_rot) < Math.PI/4);
+  let calibration_condition = (face.faceInViewConfidence > ((use_human_facemesh)?0.75:0.9)) && (Math.abs(y_rot) < Math.PI/4);
 
   let lips_inner_height = MMD_SA._v3a.fromArray(face.mesh[13]).distanceTo(MMD_SA._v3b.fromArray(face.mesh[14]))
   let lips_width = MMD_SA._v3a.fromArray(face.mesh[61]).distanceTo(MMD_SA._v3b.fromArray(face.mesh[291]))
@@ -4379,9 +4644,10 @@ else {
     eyebrow_up += e.height/e._height_average
   });
   eyebrow_up /= 2
-  eyebrow_up = (eyebrow_up-1)/0.25*((eyebrow_up>1)?4:1)
+  eyebrow_up = (eyebrow_up-1)/0.25*((eyebrow_up>1)?2:1)
 
   if (_lips_width_average) {
+//info = lips_width
     if (lips_width > _lips_width_average*1.05) {
       mouth_wide = Math.sqrt(Math.min((lips_width-_lips_width_average*1.05) / (_lips_width_average*0.25), 1))
     }
@@ -4395,8 +4661,51 @@ else {
     }
   }
 
+  let happy = 0
+  let sad = 0
+  let angry = 0
+  let fear = 0
+  let surprise = 0
+  if (face.emotion) {
+    face.emotion.forEach(e => {
+      switch (e.emotion) {
+        case "happy":
+          happy += e.score
+          break
+        case "sad":
+          sad += e.score
+          break
+        case "angry":
+        case "disgust":
+          angry += e.score
+          break
+        case "fear":
+          fear += e.score
+          break
+        case "surprise":
+          surprise += e.score
+          break
+      }
+    });
+  }
+
+//happy=0.5;sad=angry=fear=surprise=0;
+
+  let happy_abs = happy - (sad + angry + fear + surprise*0.5)
+  if (happy_abs < 0) {
+    smile *= Math.max(1+happy_abs*2, 0)
+  }
+  else {
+    smile = Math.min(happy_abs*0.2 + smile*(1+happy_abs*0.5), 0.4)
+  }
+
+  _facemesh.frames.add("morph", "にこり", { weight:Math.min(smile + happy*0.75, 0.75) })
+  _facemesh.frames.add("morph", "困る", { weight:(sad+fear)/2*0.75 })
+  _facemesh.frames.add("morph", "怒り", { weight:angry*0.75 })
+  eyebrow_up += surprise*0.2
+
   _facemesh.frames.add("morph", "笑い", { weight:smile })
-  _facemesh.frames.add("morph", "にこり", { weight:smile })
+  _facemesh.frames.add("morph", "びっくり", { weight:surprise*0.75 })
 
   _facemesh.frames.add("morph", "あ", { weight:mouth_open })
   _facemesh.frames.add("morph", "にやり", { weight:mouth_wide })
@@ -4415,7 +4724,7 @@ else {
   let mouth_up = Math.max(-(m_up+m_down)*180/Math.PI + 20*(mouth_open), 0)
   if (mouth_up)
     mouth_up = Math.min(mouth_up/20, 0.75)
-  _facemesh.frames.add("morph", "∧", { weight:mouth_up })
+  _facemesh.frames.add("morph", "∧", { weight:Math.min(mouth_up + sad*0.25, 1) })
 
 
   let blink = {L:[0],R:[0]}
@@ -4472,11 +4781,13 @@ if (use_faceLandmarksDetection) {
 
   let eyebrow_factor = (blink.L[0]+blink.R[0])/2
 // eyebrow detection seems inaccurate with iris detetcion
-eyebrow_up = 0
+  if (!use_human_facemesh && !use_faceLandmarksDetection)
+    eyebrow_up = 0
   if (eyebrow_factor > 1)
     eyebrow_up += (eyebrow_factor-1)*2
   else
     eyebrow_up -= (1-eyebrow_factor)*0.5
+  eyebrow_up = Math.min(eyebrow_up, 1)
 
   let rot_ratio = blink.L[0]+blink.R[0]
   if (rot_ratio)
@@ -4485,7 +4796,7 @@ eyebrow_up = 0
     rot_ratio = 0.5
   let eye_x_rot = _eye_x_rot[0] * rot_ratio + _eye_x_rot[1] * (1-rot_ratio)
   let eye_y_rot = _eye_y_rot[0] * rot_ratio + _eye_y_rot[1] * (1-rot_ratio)
-  let two_eyes = { absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(-(eye_x_rot-0.3)*15/180*Math.PI, eye_y_rot*sign*20/180*Math.PI, 0),"YZX") }
+  let two_eyes = { absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(-(eye_x_rot-0.3)*15/180*Math.PI, eye_y_rot*sign_flip*20/180*Math.PI, 0),"YZX") }
   _facemesh.frames.add("skin", "両目", two_eyes)
 
   let LR_exists = (THREE.MMD.getModels()[0].pmx.morphs_index_by_name["まばたきL"] != null);
@@ -4495,8 +4806,8 @@ eyebrow_up = 0
   blink.R[0] = blink.R[0]*blink_factor + blink0*(1-blink_factor)
 
   if (LR_exists) {
-    _facemesh.frames.add("morph", "まばたき"+((camera.visible)?"L":"R"), { weight:Math.max(Math.min(1-blink.L[0]*0.8-smile,1),0) })
-    _facemesh.frames.add("morph", "まばたき"+((camera.visible)?"R":"L"), { weight:Math.max(Math.min(1-blink.R[0]*0.8-smile,1),0) })
+    _facemesh.frames.add("morph", "まばたき"+((sign_flip == 1)?"L":"R"), { weight:Math.max(Math.min(1-blink.L[0]*0.8-smile,1),0) })
+    _facemesh.frames.add("morph", "まばたき"+((sign_flip == 1)?"R":"L"), { weight:Math.max(Math.min(1-blink.R[0]*0.8-smile,1),0) })
     _facemesh.frames.add("morph", "まばたき", { weight:0 })
   }
   else {
@@ -4612,7 +4923,12 @@ else {
 _facemesh.frames.add("morph", "上", { weight:Math.max(Math.min(eyebrow_up,1),-1) })
 
 
-info = info || (face.eyes.length && [((calibrating)?'Calibrating('+calibration_percent+'%):Make a calm face!':'(face data calibrated)')+'/'+(Math.round(face.faceInViewConfidence*100))+'%',/*eye_x_rot*100, eye_y_rot*100,*/(!blink_detection)?'auto blink':(_eye_data_order.L.length&&_eye_data_order.R.length)?_eye_data_order.L.join('+')+':'+~~(eye_data.L[_eye_data_order.L[0]]._eye_open_average*100)+'/'+~~(eye_data.L[_eye_data_order.L[0]].eye_open_lower*100)+'/'+_eye_data_order.R.join('+')+':'+~~(eye_data.R[_eye_data_order.R[0]]._eye_open_average*100)+'/'+~~(eye_data.R[_eye_data_order.R[0]].eye_open_lower*100):'(no blink data)'].join("\n"));
+info = info || (face.eyes.length && [
+((calibrating)?'Calibrating('+calibration_percent+'%):Make a calm face!':'(face data calibrated)')+'/'+(Math.round(face.faceInViewConfidence*100))+'%',
+((face.emotion) ? JSON.stringify(face.emotion) : "Neutral")
+// /*eye_x_rot*100, eye_y_rot*100,*/(!blink_detection)?'auto blink':(_eye_data_order.L.length&&_eye_data_order.R.length)?_eye_data_order.L.join('+')+':'+~~(eye_data.L[_eye_data_order.L[0]]._eye_open_average*100)+'/'+~~(eye_data.L[_eye_data_order.L[0]].eye_open_lower*100)+'/'+_eye_data_order.R.join('+')+':'+~~(eye_data.R[_eye_data_order.R[0]]._eye_open_average*100)+'/'+~~(eye_data.R[_eye_data_order.R[0]].eye_open_lower*100):'(no blink data)'
+].join("\n"));
+
 if (_info_extra) info += _info_extra;
 //((THREE.MMD.getModels()[0].pmx.morphs_index_by_name["まばたきL"]||0)+'/'+(THREE.MMD.getModels()[0].pmx.morphs_index_by_name["まばたきR"]||0))
 //info = [(m_up)*180/Math.PI,(m_down)*180/Math.PI,mouth_up].join('\n')
@@ -4769,7 +5085,7 @@ else {
      ,frames: frames
 
      ,update_frame: function () {
-if (!this.enabled || !this.worker_initialized || this.busy)
+if (!this.enabled || !this.worker_initialized || !camera.video_canvas.width || this.busy)
   return
 this.busy = true
 
@@ -4790,8 +5106,6 @@ return;
 */
 
 camera.video_canvas_facemesh.style.visibility = "visible"
-if (camera.visible) {
-}
 
 let video_canvas;
 let cw, ch;
@@ -4816,7 +5130,7 @@ if (MMD_SA_options.user_camera.pixel_limit.facemesh) {
 }
 
 let facemesh_bb_ratio;
-if (MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio && (!is_mobile && use_pose_worker)) {// || !screen.orientation || /landscape/.test(screen.orientation.type))) {
+if (MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio && use_pose_worker) {// && !is_mobile) {// || !screen.orientation || /landscape/.test(screen.orientation.type))) {//
   facemesh_bb_ratio = MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio
   let d = Math.round(Math.min(cw,ch) * facemesh_bb_ratio)
   sx = Math.round(Math.max(Math.min(cw*bb_center[0] - d/2, cw-d), 0))
@@ -4840,13 +5154,14 @@ if (need_resize) {
 let rgba = ctx.getImageData(sx,sy,sw,sh).data.buffer;
 
 let cs = camera.video_canvas_facemesh.style
-if ((cs.pixelWidth != ~~camera.video_canvas.style.pixelWidth/4) || (cs.pixelHeight != ~~camera.video_canvas.style.pixelHeight/4)) {
-  cs.pixelWidth  = ~~camera.video_canvas.style.pixelWidth/4
-  cs.pixelHeight = ~~camera.video_canvas.style.pixelHeight/4
-  cs.posLeft = camera.video_canvas.style.pixelWidth - cs.pixelWidth
+const scale = (is_mobile) ? 0.25 : 0.4
+if ((cs.pixelWidth != ~~camera.video_canvas.style.pixelWidth*scale) || (cs.pixelHeight != ~~camera.video_canvas.style.pixelHeight*scale)) {
+  cs.pixelWidth  = ~~camera.video_canvas.width*scale
+  cs.pixelHeight = ~~camera.video_canvas.height*scale
+  cs.posLeft = window.innerWidth - cs.pixelWidth
 }
 
-let data = { rgba:rgba, w:cw, h:ch, options:{draw_canvas:true, blink_detection:blink_detection, bb:{x:sx, y:sy, w:sw, h:sh, ratio:facemesh_bb_ratio||0}, use_pose_worker:(_poseNet.enabled && !use_pose_worker), use_handpose:_handpose.enabled} };//, threshold:1 };
+let data = { rgba:rgba, w:cw, h:ch, options:{draw_canvas:true, flip_canvas:camera.double_flip_mode, blink_detection:blink_detection, bb:{x:sx, y:sy, w:sw, h:sh, ratio:facemesh_bb_ratio||0}, use_pose_worker:(_poseNet.enabled && !use_pose_worker), use_handpose:_handpose.enabled} };//, threshold:1 };
 if (!camera.video_canvas_facemesh._offscreen && self.OffscreenCanvas) {
   data.canvas = camera.video_canvas_facemesh.transferControlToOffscreen()
   camera.video_canvas_facemesh._offscreen = true
@@ -4856,6 +5171,9 @@ fm_worker.postMessage(data, (data.canvas)?[data.canvas,data.rgba]:[data.rgba]);
 
 data.rgba = rgba = undefined
 data = undefined
+
+// holistic
+//holistic.send({image:video_canvas});
       }
 
     };
@@ -5102,6 +5420,8 @@ if (self.MMD_SA) {
   SL.style.transform = SL_2D_front.style.transform = "scaleX(-1)"
 }
 
+this.video_canvas.width = this.video_canvas.height = 0
+
 if (camera.target_devicePixelRatio != window.devicePixelRatio) {
   camera.target_devicePixelRatio = 0
   camera.video_track.applyConstraints(camera.set_constraints()).then(function () {
@@ -5126,6 +5446,7 @@ if (self.MMD_SA) {
 }
 
 this.video_canvas.style.visibility = "hidden"
+this.video_canvas.width = this.video_canvas.height = 0
 
 face_detection.enabled = false
 _bodyPix.enabled = false
@@ -5319,7 +5640,59 @@ path = (/\:/.test(path)) ? toFileProtocol(path) : path.replace(/\\/g, "/").repla
 return path
   }
 
-}
+};
 
 System._init();
 
+// holistic
+/*
+var holistic;
+(function () {
+
+window.addEventListener('DOMContentLoaded', (event) => {
+var script = document.createElement('script');
+script.async = true
+script.onload = function () {
+  holistic = new Holistic({locateFile: (file) => {
+    return `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`;
+  }});
+  holistic.setOptions({
+    upperBodyOnly: true,
+    smoothLandmarks: true,
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5
+  });
+  holistic.onResults((results)=>{console.log(results)});
+
+//  var c = document.createElement("canvas");c.getContext("2d");
+var c = document.createElement("video");
+  holistic.send({image:c}).then(a=>a);
+};
+script.src = "https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js";
+
+document.head.appendChild(script);
+});
+
+})();
+*/
+/*
+var handsfree;
+(function () {
+
+window.addEventListener('DOMContentLoaded', (event) => {
+var script = document.createElement('script');
+script.onload = function () {
+  handsfree = new Handsfree({holistic: true})
+  handsfree.start()
+
+  handsfree.use('logger', data => {
+    console.log(data)
+  })
+};
+script.src = "https://unpkg.com/handsfree@8.1.2/build/lib/handsfree.js";
+
+document.head.appendChild(script);
+});
+
+})();
+*/
