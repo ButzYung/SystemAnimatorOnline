@@ -152,7 +152,7 @@ if (!use_faceLandmarksDetection) {
 					var bytes = new Int8Array(buffer);
 					do_puploc = lploc.unpack_localizer(bytes);
 					console.log('* puploc loaded');
-postMessage('(Use lploc.js');
+postMessage('(Use lploc.js)');
 				})
 			});
 }
