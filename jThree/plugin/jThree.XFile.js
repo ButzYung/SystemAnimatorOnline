@@ -1,4 +1,4 @@
-// (2020-07-03)
+// (2021-01-20)
 
 /*!
  * jThree.XFile.js JavaScript Library v1.1
@@ -60,6 +60,10 @@ this.url = url
 	xhr.onload = function() {
 // AT: Ignore xhr.status, since it may be 0 for offline load.
 		if (1 || xhr.status === 200 ) {
+// AT: shift-jis decoder
+if (xhr.responseType == 'arraybuffer') {
+  that.parse(that.shift_jis_decoder.decode(new Uint8Array(xhr.response)))
+} else
 			that.parse( xhr.response );
 		} else {
 			that.onerror && that.onerror( url, xhr.statusText );
@@ -70,7 +74,10 @@ this.url = url
 		that.onerror && that.onerror( url, xhr.statusText );
 	};
 	xhr.open( 'GET', url, true );
-//xhr.overrideMimeType('text\/plain; charset=x-user-defined');
+// AT: shift-jis decoder
+if (!/\.zip/i.test(url)) {
+  xhr.responseType = 'arraybuffer';
+} else
 	xhr.responseType = 'text';
 	xhr.send();
 
@@ -308,7 +315,7 @@ this.mtr.ambient.setStyle(material_para.ambient || "#FFF")
 
 	},
 
-// AT: transparency_check
+// AT: transparency_check, shift-jis decoder
 transparency_check: (function () {
   var material_count = 0
   var opaque_count = 0
@@ -336,37 +343,11 @@ transparency_check: (function () {
   };
 })(),
 
+shift_jis_decoder: new TextDecoder('shift-jis'),
+
 	TextureFilename: function( row ) {
 //console.log(this.txrPath + ',' + row)
 		row = row.split( '"' )[ 1 ].split( "\\" ).join( "/" ).split( "*" )[ 0 ];
-// AT: utf-8
-/*
-var row_array = []
-//var index_utf8 = 0
-for (var i = 0; i < row.length; i++) {
-  var c = row.charAt(i)
-  if (c.charCodeAt(0) <= 255) {
-    row_array.push(c)
-//    index_utf8++
-  }
-  else {
-    row_array.push(encodeURIComponent(c).replace(/\%([0-9A-F]{2})/g, function (match, p1) { console.log("0x" + p1); return String.fromCharCode(parseInt("0x" + p1)); }))
-//    row_array[index_utf8] = (row_array[index_utf8]||"") + encodeURIComponent(c)
-  }
-}
-
-var row_utf8 = row_array.map(function (c) {
-  if (c.length == 1)
-    return c
-  return utf8.encode(c)
-}).join("");
-console.log(row_utf8)
-*/
-//console.log(encodeURIComponent(row))
-//console.log("瓦".charCodeAt(0).toString(16))
-//console.log("\uEFBF")
-//console.log("\xEF".charCodeAt(0))
-//console.log(row+'/'+row.codePointAt(0)+'/'+row.charCodeAt(0)+'/'+encodeURIComponent(row)+'/'+row.length)
 
 // AT: material_para
 var material_para = this.material_para[this.mtrs.materials.length-1] || this.material_para._default_ || {}
