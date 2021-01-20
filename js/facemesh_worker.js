@@ -1,36 +1,124 @@
-// (2020-12-05)
+// (2021-01-20)
 
+var param = new URLSearchParams(self.location.search.substring(1));
+
+var use_human_facemesh = param.get('use_human_facemesh');
+var use_faceLandmarksDetection = param.get('use_face_landmarks');
+var facemesh_version = (use_human_facemesh || use_faceLandmarksDetection) ? '' : '@0.0.3';
+
+var human;
+
+var use_SIMD;
+
+// https://github.com/GoogleChromeLabs/wasm-feature-detect
+importScripts('https://unpkg.com/wasm-feature-detect/dist/umd/index.js');
+
+wasmFeatureDetect.simd().then(simdSupported => {
+  use_SIMD = simdSupported;
+
+  if (use_human_facemesh) {
+importScripts('./human/dist/human.js');
+human = new Human.default();
+
+human.load({
+  backend: 'wasm',//(use_SIMD) ? 'wasm' : 'webgl',
+  wasmPath: './human/assets/', // path for wasm binaries
+
+  filter: {
+    enabled: false
+  },
+
+  gesture: {
+    enabled: false
+  },
+
+  face: {
+    enabled: true,
+
+    detector: {
+      modelPath: './human/models/blazeface-back.json',
+      rotation: use_faceLandmarksDetection,
+      maxFaces: 1,
+      skipFrames: 15
+    },
+
+    mesh: {
+      enabled: true,
+      modelPath: './human/models/facemesh.json',
+      returnRawData: true
+    },
+
+    iris: {
+      enabled: use_faceLandmarksDetection,
+      modelPath: './human/models/iris.json'
+    },
+
+    age: {
+      enabled: false
+    },
+
+    gender: {
+      enabled: false
+    },
+
+    emotion: {
+      enabled: true,
+      modelPath: './human/models/emotion-large.json' // can be 'mini', 'large'
+    }
+
+  },
+
+  body: {
+    enabled: false
+  },
+
+  hand: {
+    enabled: false
+  }
+});
+
+postMessage('(Use Human Facemesh/' + ((human.config.backend=='wasm') ? 'WASM'+((use_SIMD && '-SIMD')||'') : human.config.backend) + ')')
+postMessage('OK')
+  }
+  else {
 // https://blog.tensorflow.org/2020/03/face-and-hand-tracking-in-browser-with-mediapipe-and-tensorflowjs.html
 // https://blog.tensorflow.org/2020/03/introducing-webassembly-backend-for-tensorflow-js.html
 
 // temporary fix for issues when loading the latest TFJS WASM on certain platforms
-var tfjs_version = '';//'@2.4.0';//(self.location.protocol == "file:") ? '@2.1.0' : '';
+let tfjs_version = '@2.8.2';//(self.location.protocol == "file:") ? '@2.1.0' : '';
 
 importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs' + tfjs_version);
-importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm' + tfjs_version + '/dist/tf-backend-wasm.js');
 
-var use_SIMD;
+if (1) {
+  importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm' + tfjs_version + '/dist/tf-backend-wasm.js');
 
 // https://github.com/tensorflow/tfjs/tree/master/tfjs-backend-wasm
-if (tfjs_version == '@2.1.0') {
+  if (tfjs_version == '@2.1.0') {
+/*
 // https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tf-backend-wasm.js
 // https://github.com/GoogleChromeLabs/wasm-feature-detect
   use_SIMD = WebAssembly.validate(new Uint8Array([
       0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 96, 0, 0, 3,
       2, 1, 0, 10, 9, 1, 7, 0, 65, 0, 253, 15, 26, 11
   ])) || new URLSearchParams(self.location.search.substring(1)).get('simd');
-  tf.wasm.setWasmPath('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm' + tfjs_version + '/dist/tfjs-backend-wasm' + ((use_SIMD)?'-simd':'') + '.wasm');
+*/
+    tf.wasm.setWasmPath('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm' + tfjs_version + '/dist/tfjs-backend-wasm' + ((use_SIMD)?'-simd':'') + '.wasm');
+  }
+  else {
+    tf.wasm.setWasmPaths('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm' + tfjs_version + '/dist/');
+  }
+
+  tf.setBackend("wasm").then(function () {
+    console.log('Facemesh: TFJS WASM' + ((use_SIMD)?'-SIMD':'') + ' backend')
+    init()
+  }).catch(function (err) {
+    postMessage('Facemesh: TFJS WASM ERROR:' + err)
+  });
 }
 else {
-  tf.wasm.setWasmPaths('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm' + tfjs_version + '/dist/');
-}
-
-tf.setBackend("wasm").then(function () {
-  console.log('TFJS WASM' + ((use_SIMD)?'-SIMD':'') + ' backend')
+  console.log('Facemesh: TFJS WebGL backend')
   init()
-}).catch(function (err) {
-  postMessage('TFJS WASM ERROR:' + err)
-});
+}
 
 /*
 var tf = require('@tensorflow/tfjs-node')
@@ -39,10 +127,10 @@ tf.setBackend("tensorflow").then(function () {
   init()
 });
 */
+  }
+});
 
 var canvas, context, RAF_timerID;
-var facemesh_version = (new URLSearchParams(self.location.search.substring(1)).get('use_latest_facemesh')) ? '' : '@0.0.3';
-var use_faceLandmarksDetection = !facemesh_version;
 
 var model;
 var face_cover;
@@ -52,17 +140,19 @@ var eyes;
 var eyes_xy_last = [[0,0],[0,0]];
 var do_puploc;
 
-if (facemesh_version) {
+if (!use_faceLandmarksDetection) {
 // https://tehnokv.com/posts/puploc-with-trees/demo/
   importScripts("lploc.js");
 
   do_puploc = function(r, c, s, nperturbs, pixels, nrows, ncols, ldim) {return [-1.0, -1.0];};
-			const puplocurl = 'https://f002.backblazeb2.com/file/tehnokv-www/posts/puploc-with-trees/demo/puploc.bin';
+			const puplocurl = 'https://drone.nenadmarkus.com/data/blog-stuff/puploc.bin';
+//'https://f002.backblazeb2.com/file/tehnokv-www/posts/puploc-with-trees/demo/puploc.bin';
 			fetch(puplocurl).then(function(response) {
 				response.arrayBuffer().then(function(buffer) {
 					var bytes = new Int8Array(buffer);
 					do_puploc = lploc.unpack_localizer(bytes);
 					console.log('* puploc loaded');
+postMessage('(Use lploc.js');
 				})
 			});
 }
@@ -109,12 +199,12 @@ function rgba_to_grayscale(rgba, center, radius) {
 }
 
 var use_pose_worker;
-var pose_worker, pose_worker_initialized;
+var pose_worker, pose_worker_ready;
 
 async function init() {
   try {
     if (use_faceLandmarksDetection) {
-      importScripts('https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@0.0.1/dist/face-landmarks-detection.js');
+      importScripts('https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection/dist/face-landmarks-detection.js');
 
       model = await faceLandmarksDetection.load(faceLandmarksDetection.SupportedPackages.mediapipeFacemesh, {maxFaces:1});
 
@@ -158,7 +248,15 @@ _t = _t_now = performance.now()
 
   rgba = new Uint8ClampedArray(rgba);
 
-  const faces = (use_faceLandmarksDetection) ? await model.estimateFaces({input:new ImageData(rgba, cw,ch)}) : await model.estimateFaces(new ImageData(rgba, cw,ch));
+  let faces
+  if (use_human_facemesh) {
+    const result = await human.detect(new ImageData(rgba, cw,ch));
+    faces = result.face
+  }
+  else {
+    faces = (use_faceLandmarksDetection) ? await model.estimateFaces({input:new ImageData(rgba, cw,ch)}) : await model.estimateFaces(new ImageData(rgba, cw,ch));
+  }
+//console.log(faces[0])
 
 /*
   let _dis
@@ -177,12 +275,22 @@ _t_now = performance.now()
 _t_list[0] = _t_now-_t
 _t = _t_now
 
-  if (!faces.length || (faces[0].faceInViewConfidence < 0.7)) {
+  if (!faces.length || ((faces[0].faceInViewConfidence||faces[0].confidence) < 0.7)) {
     postMessage(JSON.stringify({ faces:[], _t:_t_list.reduce((a,c)=>a+c) }));
     return
   }
 
   let face = faces[0]
+  if (use_human_facemesh) {
+    face.faceInViewConfidence = face.confidence
+    face.scaledMesh = face.mesh
+    face.mesh = face.meshRaw
+    face.boundingBox = face.boxRaw
+  }
+  else if (facemesh_version == '@0.0.3') {
+    face.boundingBox = face.boundingBox[0]
+  }
+
 //if (!self._TEST_) {self._TEST_=true;console.log(face);}
   if ((gray_w != cw) || (gray_h != ch)) {
     gray_w = cw
@@ -352,16 +460,32 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
   faces[0].bb_ratio = bb.ratio
   faces[0].bb_center = [(face.boundingBox.topLeft[0]+(face.boundingBox.bottomRight[0]-face.boundingBox.topLeft[0])/2+sx)/w, (face.boundingBox.topLeft[1]+(face.boundingBox.bottomRight[1]-face.boundingBox.topLeft[1])/2+sy)/h]
 
-  if (use_pose_worker && pose_worker_initialized) {
-    let data = { rgba:rgba.buffer, w:cw, h:ch, options:{ use_handpose:options.use_handpose } };//, threshold:1 };
-    pose_worker.postMessage(data, [data.rgba]);
-  }
-
 _t_now = performance.now()
 _t_list[1] = _t_now-_t
 _t = _t_list.reduce((a,c)=>a+c)
 
-  postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:faces[0].faceInViewConfidence, scaledMesh:(canvas)?{454:sm[454],234:sm[234]}:sm, mesh:faces[0].mesh, eyes:eyes, bb_center:faces[0].bb_center }], _t:_t }));
+  let draw_camera// = true;
+  if (use_pose_worker && pose_worker_ready) {
+    let data = { rgba:rgba.buffer, w:cw, h:ch, options:{ use_handpose:options.use_handpose, _t:_t } };//, threshold:1 };
+    pose_worker.postMessage(data, [data.rgba]);
+    pose_worker_ready = false
+    draw_camera = false
+  }
+
+  postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:faces[0].faceInViewConfidence, scaledMesh:(canvas)?{454:sm[454],234:sm[234]}:sm, mesh:faces[0].mesh, eyes:eyes, bb_center:faces[0].bb_center, emotion:face.emotion }], _t:_t }));
+
+  if (draw_camera) {
+    if (!canvas_camera) {
+      canvas_camera = new OffscreenCanvas(cw,ch);
+    }
+    else {
+      if ((canvas_camera.width != cw) || (canvas_camera.height != ch)) {
+        canvas_camera.width  = cw
+        canvas_camera.height = ch
+      }
+    }
+    canvas_camera.getContext("2d").putImageData(new ImageData(rgba, cw,ch), 0,0);
+  }
 
   rgba = undefined;
 
@@ -372,16 +496,30 @@ _t = _t_list.reduce((a,c)=>a+c)
       cancelAnimationFrame(RAF_timerID)
     RAF_timerID = requestAnimationFrame(function () {
       RAF_timerID = null
-      draw_facemesh(faces, Math.round(w/2),Math.round(h/2))
+      draw_facemesh(faces, Math.round(w/2),Math.round(h/2));
       draw_pose()
     });
   }
 }
 
-function draw_facemesh(faces, w,h) {
+var flip_canvas;
+var canvas_camera;
+
+function draw_facemesh(faces, w,h, rgba) {
+  function distance(a,b) {
+return Math.sqrt(Math.pow(a[0]-b[0],2) + Math.pow(a[1]-b[1],2))
+  }
+
   if ((canvas.width != w) || (canvas.height != h)) {
     canvas.width  = w
     canvas.height = h
+  }
+
+  context.save()
+
+  if (flip_canvas) {
+    context.translate(canvas.width, 0)
+    context.scale(-1, 1)
   }
 
   context.clearRect(0,0,w,h)
@@ -389,6 +527,13 @@ function draw_facemesh(faces, w,h) {
   context.globalAlpha = 0.5
   context.fillStyle = 'black'
   context.fillRect(0,0,w,h)
+
+  const bb = faces[0].bb
+  if (canvas_camera) {
+    context.globalAlpha = 1
+    context.drawImage(canvas_camera, bb.x/2, bb.y/2, bb.w/2, bb.h/2)
+//    context.globalAlpha = 0.5
+  }
 
   context.fillStyle = '#32EEDB';
   context.strokeStyle = '#32EEDB';
@@ -402,21 +547,59 @@ TRIANGULATION[i * 3 + 2]
     drawPath(context, points, true);
   }
 
-  eyes.forEach(function (eye) {
-    var c = eye[0]/2
-    var r = eye[1]/2
-    context.beginPath();
-    context.arc(c, r, 1, 0, 2*Math.PI, false);
-    context.lineWidth = 3;
-    context.strokeStyle = 'red';
-    context.stroke();
-  });
+  if (canvas_camera) {
+        const ctx = context;
+
+const NUM_KEYPOINTS = 468;
+const NUM_IRIS_KEYPOINTS = 5;
+const RED = "#FF2C35";
+
+        ctx.strokeStyle = RED;
+        ctx.lineWidth = 1;
+
+        const leftCenter = keypoints[NUM_KEYPOINTS];
+        const leftDiameterY = distance(
+          keypoints[NUM_KEYPOINTS + 4],
+          keypoints[NUM_KEYPOINTS + 2]);
+        const leftDiameterX = distance(
+          keypoints[NUM_KEYPOINTS + 3],
+          keypoints[NUM_KEYPOINTS + 1]);
+
+        ctx.beginPath();
+        ctx.ellipse(leftCenter[0]/2, leftCenter[1]/2, leftDiameterX / 2/2, leftDiameterY / 2/2, 0, 0, 2 * Math.PI);
+        ctx.stroke();
+
+        if(keypoints.length > NUM_KEYPOINTS + NUM_IRIS_KEYPOINTS) {
+          const rightCenter = keypoints[NUM_KEYPOINTS + NUM_IRIS_KEYPOINTS];
+          const rightDiameterY = distance(
+            keypoints[NUM_KEYPOINTS + NUM_IRIS_KEYPOINTS + 2],
+            keypoints[NUM_KEYPOINTS + NUM_IRIS_KEYPOINTS + 4]);
+          const rightDiameterX = distance(
+            keypoints[NUM_KEYPOINTS + NUM_IRIS_KEYPOINTS + 3],
+            keypoints[NUM_KEYPOINTS + NUM_IRIS_KEYPOINTS + 1]);
+
+          ctx.beginPath();
+          ctx.ellipse(rightCenter[0]/2, rightCenter[1]/2, rightDiameterX / 2/2, rightDiameterY / 2/2, 0, 0, 2 * Math.PI);
+          ctx.stroke();
+        }
+  }
+  else {
+    eyes.forEach(function (eye) {
+      var c = eye[0]/2
+      var r = eye[1]/2
+      context.beginPath();
+      context.arc(c, r, 1, 0, 2*Math.PI, false);
+      context.lineWidth = 3;
+      context.strokeStyle = 'red';
+      context.stroke();
+    });
+  }
 
   context.globalAlpha = 1/3
   context.strokeStyle = 'white';
+  context.lineWidth = 3;
   const region = new Path2D();
 
-  const bb = faces[0].bb
   region.moveTo(bb.x/2, bb.y/2);
   region.lineTo(bb.x/2+bb.w/2, bb.y/2);
   region.lineTo(bb.x/2+bb.w/2, bb.y/2+bb.h/2);
@@ -424,6 +607,8 @@ TRIANGULATION[i * 3 + 2]
 
   region.closePath();
   context.stroke(region);
+
+  context.restore()
 
   context.globalAlpha = 0.5
 }
@@ -465,12 +650,20 @@ var pose_connected_pairs = [
 function draw_pose() {
   if (!posenet || (posenet.score < 0.1)) return;
 
+  context.save()
+
+  if (flip_canvas) {
+    context.translate(canvas.width, 0)
+    context.scale(-1, 1)
+  }
+
   var scale = pose_w/cw*2
 
   var part = {}
-  posenet.keypoints.forEach(function (p) {
+  posenet.keypoints.forEach(function (p, idx) {
     part[p.part] = p
 
+    if (idx > 12) p.score = 0;
     if (p.score <= 0) return;
     if (/nose|Eye|Ear/.test(p.part)) return;
 
@@ -497,6 +690,8 @@ function draw_pose() {
   });
 
   draw_hand();
+
+  context.restore()
 }
 
 // https://github.com/tensorflow/tfjs-models/blob/master/handpose/demo/index.js
@@ -516,24 +711,26 @@ function draw_hand() {
   context.strokeStyle = 'pink';
   context.fillStyle = 'pink';
 
-  const keypoints = handpose[0].landmarks;
+  handpose.forEach(function (hand) {
+    const keypoints = hand.landmarks;
 
-  keypoints.forEach(function (p) {
-    context.beginPath();
-    context.arc((p[0]-2)/scale, (p[1]-2)/scale, 3, 0, 2 * Math.PI);
-    context.fill();
-  });
+    keypoints.forEach(function (p) {
+      context.beginPath();
+      context.arc((p[0]-2)/scale, (p[1]-2)/scale, 3, 0, 2 * Math.PI);
+      context.fill();
+    });
 
-  Object.keys(fingerLookupIndices).forEach(function (finger) {
-    const points = fingerLookupIndices[finger].map(idx => keypoints[idx]);
+    Object.keys(fingerLookupIndices).forEach(function (finger) {
+      const points = fingerLookupIndices[finger].map(idx => keypoints[idx]);
 
-    const region = new Path2D();
-    region.moveTo(points[0][0]/scale, points[0][1]/scale);
-    for (let i = 1; i < points.length; i++) {
-      const point = points[i];
-      region.lineTo(point[0]/scale, point[1]/scale);
-    }
-    context.stroke(region);
+      const region = new Path2D();
+      region.moveTo(points[0][0]/scale, points[0][1]/scale);
+      for (let i = 1; i < points.length; i++) {
+        const point = points[i];
+        region.lineTo(point[0]/scale, point[1]/scale);
+      }
+      context.stroke(region);
+    });
   });
 }
 
@@ -542,7 +739,7 @@ function pose_worker_onmessage(e) {
 
   if (typeof data === "string") { 
     if (data == "OK") {
-      pose_worker_initialized = true
+      pose_worker_ready = true
     }
     else {
 //      DEBUG_show(data, 2)
@@ -550,6 +747,8 @@ function pose_worker_onmessage(e) {
     }
   }
   else {
+    pose_worker_ready = true
+
     postMessage(data);
 
     posenet = data.posenet
@@ -567,6 +766,7 @@ onmessage = function (e) {
 
   if (data.options) {
     use_pose_worker = data.options.use_pose_worker
+    flip_canvas = data.options.flip_canvas
 
     if (use_pose_worker && !pose_worker) {
       pose_worker = new Worker('pose_worker.js?use_mobilenet=1');
