@@ -28,7 +28,7 @@ var human;
 
 if (use_tfjs) {
 // https://blog.tensorflow.org/2020/03/face-and-hand-tracking-in-browser-with-mediapipe-and-tensorflowjs.html
-  let tfjs_version = '@2.8.2';
+  let tfjs_version = '@2.8.5';
   importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs' + tfjs_version);
 }
 

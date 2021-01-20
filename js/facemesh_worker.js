@@ -85,7 +85,7 @@ postMessage('OK')
 // https://blog.tensorflow.org/2020/03/introducing-webassembly-backend-for-tensorflow-js.html
 
 // temporary fix for issues when loading the latest TFJS WASM on certain platforms
-let tfjs_version = '@2.8.2';//(self.location.protocol == "file:") ? '@2.1.0' : '';
+let tfjs_version = '@2.8.5';//(self.location.protocol == "file:") ? '@2.1.0' : '';
 
 importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs' + tfjs_version);
 
