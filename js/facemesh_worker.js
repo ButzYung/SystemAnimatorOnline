@@ -288,7 +288,7 @@ _t = _t_now
     face.boundingBox = face.boxRaw
   }
   else if (facemesh_version == '@0.0.3') {
-    face.boundingBox = face.boundingBox[0]
+    face.boundingBox = { topLeft:face.boundingBox.topLeft[0], bottomRight:face.boundingBox.bottomRight[0]}
   }
 
 //if (!self._TEST_) {self._TEST_=true;console.log(face);}
