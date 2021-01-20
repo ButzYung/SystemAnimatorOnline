@@ -460,7 +460,7 @@
             var coordsScaled = rawCoords.map(function (coord) {
                 return [
                     scaleFactor[0] * (coord[0] - _this.meshWidth / 2),
-                    scaleFactor[1] * (coord[1] - _this.meshHeight / 2), coord[2]
+                    scaleFactor[1] * (coord[1] - _this.meshHeight / 2), coord[2] *(scaleFactor[0]+scaleFactor[1])/2 // AT: scaled Z
                 ];
             });
             var coordsRotationMatrix = buildRotationMatrix(angle, [0, 0]);
@@ -477,8 +477,7 @@
             return coordsRotated.map(function (coord) {
                 return [
                     coord[0] + originalBoxCenter[0], coord[1] + originalBoxCenter[1],
-// AT: scale z (*scaleFactor[0])
-                    coord[2] *scaleFactor[0]
+                    coord[2]
                 ];
             });
         };
