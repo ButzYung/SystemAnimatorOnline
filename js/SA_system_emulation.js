@@ -2814,6 +2814,8 @@ return net;
       var _handpose
       var snapshot
 
+      var url_search_params = new URLSearchParams(self.location.search.substring(1))
+
       var _info_extra = ""
 
       var double_flip_mode = true;
@@ -4441,7 +4443,7 @@ var eye_data_height_ref_pts = {L:[159,145], R:[386,374]};
     var TRIANGULATION
 
     var use_faceLandmarksDetection = !is_mobile
-    var use_human_facemesh = !is_mobile// true
+    var use_human_facemesh = url_search_params.get('use_human_facemesh') || !is_mobile// true
 
     function init() {
 _facemesh.initialized = true
@@ -4780,9 +4782,7 @@ if (use_faceLandmarksDetection) {
   });
 
   let eyebrow_factor = (blink.L[0]+blink.R[0])/2
-// eyebrow detection seems inaccurate with iris detetcion
-  if (!use_human_facemesh && !use_faceLandmarksDetection)
-    eyebrow_up = 0
+
   if (eyebrow_factor > 1)
     eyebrow_up += (eyebrow_factor-1)*2
   else
