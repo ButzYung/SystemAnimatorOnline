@@ -1,4 +1,4 @@
-// (2020-12-12)
+// (2021-01-20)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -3039,7 +3039,14 @@ MMDShader = { // MOD MeshPhongMaterial
 + '#endif\n'
 
 
-+ '#ifdef USE_COLOR\nvarying vec3 vColor;\n#endif\n#ifdef USE_MORPHTARGETS\n#ifndef USE_MORPHNORMALS\nuniform float morphTargetInfluences[ 8 ];\n#else\nuniform float morphTargetInfluences[ 4 ];\n#endif\n#endif\n#ifdef USE_SKINNING\n#ifdef BONE_TEXTURE\nuniform sampler2D boneTexture;mat4 getBoneMatrix( const in float i ) {float j = i * 4.0;float x = mod( j, N_BONE_PIXEL_X );float y = floor( j / N_BONE_PIXEL_X );const float dx = 1.0 / N_BONE_PIXEL_X;const float dy = 1.0 / N_BONE_PIXEL_Y;y = dy * ( y + 0.5 );vec4 v1 = texture2D( boneTexture, vec2( dx * ( x + 0.5 ), y ) );vec4 v2 = texture2D( boneTexture, vec2( dx * ( x + 1.5 ), y ) );vec4 v3 = texture2D( boneTexture, vec2( dx * ( x + 2.5 ), y ) );vec4 v4 = texture2D( boneTexture, vec2( dx * ( x + 3.5 ), y ) );mat4 bone = mat4( v1, v2, v3, v4 );return bone;}\n#else\nuniform mat4 boneGlobalMatrices[ MAX_BONES ];mat4 getBoneMatrix( const in float i ) {mat4 bone = boneGlobalMatrices[ int(i) ];return bone;}\n#endif\n#endif\n#ifdef USE_SHADOWMAP\n'
++ '#ifdef USE_COLOR\nvarying vec3 vColor;\n#endif\n'
+
+// AT: increase maxMorphTargets from 8 to 16, maxMorphNormals from 4 to 8
++ '#ifdef USE_MORPHTARGETS\n#ifndef USE_MORPHNORMALS\n'
++ 'uniform float morphTargetInfluences[ 8 ];\n#else\nuniform float morphTargetInfluences[ 4 ];\n'
++ '#endif\n#endif\n'
+
++ '#ifdef USE_SKINNING\n#ifdef BONE_TEXTURE\nuniform sampler2D boneTexture;mat4 getBoneMatrix( const in float i ) {float j = i * 4.0;float x = mod( j, N_BONE_PIXEL_X );float y = floor( j / N_BONE_PIXEL_X );const float dx = 1.0 / N_BONE_PIXEL_X;const float dy = 1.0 / N_BONE_PIXEL_Y;y = dy * ( y + 0.5 );vec4 v1 = texture2D( boneTexture, vec2( dx * ( x + 0.5 ), y ) );vec4 v2 = texture2D( boneTexture, vec2( dx * ( x + 1.5 ), y ) );vec4 v3 = texture2D( boneTexture, vec2( dx * ( x + 2.5 ), y ) );vec4 v4 = texture2D( boneTexture, vec2( dx * ( x + 3.5 ), y ) );mat4 bone = mat4( v1, v2, v3, v4 );return bone;}\n#else\nuniform mat4 boneGlobalMatrices[ MAX_BONES ];mat4 getBoneMatrix( const in float i ) {mat4 bone = boneGlobalMatrices[ int(i) ];return bone;}\n#endif\n#endif\n#ifdef USE_SHADOWMAP\n'
 
 // AT: shadowBias by light normal (object normal untransformed)
 + 'varying vec3 normal_untransformed;'
@@ -3050,14 +3057,30 @@ MMDShader = { // MOD MeshPhongMaterial
 //+ THREE.ShaderChunk[ "logdepthbuf_pars_vertex" ] + '\n'
 
 + 'void main() {\n'
-+ '#ifdef USE_SKINNING\nmat4 skinMatrix;\n#ifdef MMD\nskinMatrix  = skinWeight.x * getBoneMatrix( skinIndex.x );if ( skinWeight.y > 0.0 ) {skinMatrix += skinWeight.y * getBoneMatrix( skinIndex.y );if ( skinWeight.z > 0.0 ) {skinMatrix += skinWeight.z * getBoneMatrix( skinIndex.z );skinMatrix += skinWeight.w * getBoneMatrix( skinIndex.w );}}\n#else\nskinMatrix =skinWeight.x * getBoneMatrix( skinIndex.x ) +skinWeight.y * getBoneMatrix( skinIndex.y );\n#endif\n#endif\nvec3 objectNormal = normal;\n#ifdef USE_MORPHNORMALS\nobjectNormal += ( morphNormal0 - normal ) * morphTargetInfluences[ 0 ];objectNormal += ( morphNormal1 - normal ) * morphTargetInfluences[ 1 ];objectNormal += ( morphNormal2 - normal ) * morphTargetInfluences[ 2 ];objectNormal += ( morphNormal3 - normal ) * morphTargetInfluences[ 3 ];\n#endif\n#ifdef USE_SKINNING\nobjectNormal.xyz = ( skinMatrix * vec4( objectNormal, 0.0 ) ).xyz;\n#endif\n#ifdef FLIP_SIDED\nobjectNormal = -objectNormal;\n#endif\n'
++ '#ifdef USE_SKINNING\nmat4 skinMatrix;\n#ifdef MMD\nskinMatrix  = skinWeight.x * getBoneMatrix( skinIndex.x );if ( skinWeight.y > 0.0 ) {skinMatrix += skinWeight.y * getBoneMatrix( skinIndex.y );if ( skinWeight.z > 0.0 ) {skinMatrix += skinWeight.z * getBoneMatrix( skinIndex.z );skinMatrix += skinWeight.w * getBoneMatrix( skinIndex.w );}}\n#else\nskinMatrix =skinWeight.x * getBoneMatrix( skinIndex.x ) +skinWeight.y * getBoneMatrix( skinIndex.y );\n#endif\n#endif\nvec3 objectNormal = normal;\n'
+
+// AT: increase maxMorphTargets from 8 to 16, maxMorphNormals from 4 to 8
++ '#ifdef USE_MORPHNORMALS\n'
++ (function(){ let code=''; for (let i=0;i<4;i++) code+='objectNormal += ( morphNormal'+i+' - normal ) * morphTargetInfluences[ '+i+' ];\n'; return code; })()
+//+ 'objectNormal += ( morphNormal0 - normal ) * morphTargetInfluences[ 0 ];objectNormal += ( morphNormal1 - normal ) * morphTargetInfluences[ 1 ];objectNormal += ( morphNormal2 - normal ) * morphTargetInfluences[ 2 ];objectNormal += ( morphNormal3 - normal ) * morphTargetInfluences[ 3 ];\n'
++ '#endif\n'
+
++ '#ifdef USE_SKINNING\nobjectNormal.xyz = ( skinMatrix * vec4( objectNormal, 0.0 ) ).xyz;\n#endif\n#ifdef FLIP_SIDED\nobjectNormal = -objectNormal;\n#endif\n'
 
 // AT: shadowBias by light normal
 + '#ifdef USE_SHADOWMAP\n'
 + '  normal_untransformed = normalize(mat3( modelMatrix[ 0 ].xyz, modelMatrix[ 1 ].xyz, modelMatrix[ 2 ].xyz ) * objectNormal);\n'
 + '#endif\n'
 
-+ 'vNormal = normalize( normalMatrix * objectNormal );vec3 objectPosition = position;\n#ifdef USE_MORPHTARGETS\nobjectPosition += ( morphTarget0 - position ) * morphTargetInfluences[ 0 ];objectPosition += ( morphTarget1 - position ) * morphTargetInfluences[ 1 ];objectPosition += ( morphTarget2 - position ) * morphTargetInfluences[ 2 ];objectPosition += ( morphTarget3 - position ) * morphTargetInfluences[ 3 ];\n#ifndef USE_MORPHNORMALS\nobjectPosition += ( morphTarget4 - position ) * morphTargetInfluences[ 4 ];objectPosition += ( morphTarget5 - position ) * morphTargetInfluences[ 5 ];objectPosition += ( morphTarget6 - position ) * morphTargetInfluences[ 6 ];objectPosition += ( morphTarget7 - position ) * morphTargetInfluences[ 7 ];\n#endif\n#endif\n#ifdef USE_SKINNING\nobjectPosition.xyz = ( skinMatrix * vec4( objectPosition, 1.0 ) ).xyz;\n#endif\nvec4 mvPosition = modelViewMatrix * vec4( objectPosition, 1.0 );gl_Position = projectionMatrix * mvPosition;\n'
++ 'vNormal = normalize( normalMatrix * objectNormal );vec3 objectPosition = position;\n'
+
+// AT: increase maxMorphTargets from 8 to 16, maxMorphNormals from 4 to 8
++ '#ifdef USE_MORPHTARGETS\n'
++ (function(){ let code=''; for (let i=0;i<8;i++) code+='objectPosition += ( morphTarget'+i+' - position ) * morphTargetInfluences[ '+i+' ];\n'; return code; })()
+//+ 'objectPosition += ( morphTarget0 - position ) * morphTargetInfluences[ 0 ];objectPosition += ( morphTarget1 - position ) * morphTargetInfluences[ 1 ];objectPosition += ( morphTarget2 - position ) * morphTargetInfluences[ 2 ];objectPosition += ( morphTarget3 - position ) * morphTargetInfluences[ 3 ];\n#ifndef USE_MORPHNORMALS\nobjectPosition += ( morphTarget4 - position ) * morphTargetInfluences[ 4 ];objectPosition += ( morphTarget5 - position ) * morphTargetInfluences[ 5 ];objectPosition += ( morphTarget6 - position ) * morphTargetInfluences[ 6 ];objectPosition += ( morphTarget7 - position ) * morphTargetInfluences[ 7 ];\n'
++ '#endif\n'
+
++ '#ifdef USE_SKINNING\nobjectPosition.xyz = ( skinMatrix * vec4( objectPosition, 1.0 ) ).xyz;\n#endif\nvec4 mvPosition = modelViewMatrix * vec4( objectPosition, 1.0 );gl_Position = projectionMatrix * mvPosition;\n'
 
 + '#ifdef MMD\n'
 + 'if (mmdEdgeThick > 0.0) {\n'
