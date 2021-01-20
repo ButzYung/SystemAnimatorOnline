@@ -1185,11 +1185,12 @@ if (skin.time < 1) {
    ,"stand_simple": {
   center_view_enforced: true
 
+ ,trackball_camera_limit: { "min": { length:8 } }
+
  ,onstart: function () {
 let model = THREE.MMD.getModels()[0]
 let bones_by_name = model.mesh.bones_by_name
-let bones = model.pmx.bones
-let head = bones[bones_by_name["頭"]._index].origin
+let head = bones_by_name["頭"].pmxBone.origin
 
 this.center_view = [0, (head[1])*1.05-11.4, -22]
   }
@@ -1604,9 +1605,7 @@ if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle
 //     ,facemesh : 1280*720
      ,facemesh_bb_ratio: (is_mobile) ? 1 : 0.8
     }
-   ,display: {
-//      scale: 1
-    }
+   ,display: (is_mobile) ? {} : { scale:0.4, top:0, left:-1 }
   }
 
  ,light_position: [0,1,0]
