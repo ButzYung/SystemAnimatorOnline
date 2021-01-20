@@ -4441,7 +4441,7 @@ var eye_data_height_ref_pts = {L:[159,145], R:[386,374]};
     var TRIANGULATION
 
     var use_faceLandmarksDetection = !is_mobile
-    var use_human_facemesh = true
+    var use_human_facemesh = !is_mobile// true
 
     function init() {
 _facemesh.initialized = true
