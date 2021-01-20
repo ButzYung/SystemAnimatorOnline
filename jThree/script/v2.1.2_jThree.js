@@ -1,4 +1,4 @@
-// (2020-10-20)
+// (2021-01-20)
 
 /*!
  * jThree JavaScript Library v2.1.2
@@ -13310,7 +13310,7 @@ THREE.ShaderChunk = {
 	// MORPHING
 
 	morphtarget_pars_vertex: [
-
+// AT: increase maxMorphTargets from 8 to 16, maxMorphNormals from 4 to 8
 		"#ifdef USE_MORPHTARGETS",
 
 			"#ifndef USE_MORPHNORMALS",
@@ -13328,7 +13328,7 @@ THREE.ShaderChunk = {
 	].join("\n"),
 
 	morphtarget_vertex: [
-
+// AT: increase maxMorphTargets from 8 to 16, maxMorphNormals from 4 to 8
 		"#ifdef USE_MORPHTARGETS",
 
 			"vec3 morphed = vec3( 0.0 );",
@@ -13336,8 +13336,23 @@ THREE.ShaderChunk = {
 			"morphed += ( morphTarget1 - position ) * morphTargetInfluences[ 1 ];",
 			"morphed += ( morphTarget2 - position ) * morphTargetInfluences[ 2 ];",
 			"morphed += ( morphTarget3 - position ) * morphTargetInfluences[ 3 ];",
-
+/*
+"morphed += ( morphTarget4 - position ) * morphTargetInfluences[ 4 ];",
+"morphed += ( morphTarget5 - position ) * morphTargetInfluences[ 5 ];",
+"morphed += ( morphTarget6 - position ) * morphTargetInfluences[ 6 ];",
+"morphed += ( morphTarget7 - position ) * morphTargetInfluences[ 7 ];",
+*/
 			"#ifndef USE_MORPHNORMALS",
+/*
+"morphed += ( morphTarget8  - position ) * morphTargetInfluences[ 8 ];",
+"morphed += ( morphTarget9  - position ) * morphTargetInfluences[ 9 ];",
+"morphed += ( morphTarget10 - position ) * morphTargetInfluences[ 10 ];",
+"morphed += ( morphTarget11 - position ) * morphTargetInfluences[ 11 ];",
+"morphed += ( morphTarget12 - position ) * morphTargetInfluences[ 12 ];",
+"morphed += ( morphTarget13 - position ) * morphTargetInfluences[ 13 ];",
+"morphed += ( morphTarget14 - position ) * morphTargetInfluences[ 14 ];",
+"morphed += ( morphTarget15 - position ) * morphTargetInfluences[ 15 ];",
+*/
 
 			"morphed += ( morphTarget4 - position ) * morphTargetInfluences[ 4 ];",
 			"morphed += ( morphTarget5 - position ) * morphTargetInfluences[ 5 ];",
@@ -13386,7 +13401,7 @@ THREE.ShaderChunk = {
 	].join("\n"),
 
 	morphnormal_vertex: [
-
+// AT: increase maxMorphTargets from 8 to 16, maxMorphNormals from 4 to 8
 		"#ifdef USE_MORPHNORMALS",
 
 			"vec3 morphedNormal = vec3( 0.0 );",
@@ -13395,7 +13410,12 @@ THREE.ShaderChunk = {
 			"morphedNormal +=  ( morphNormal1 - normal ) * morphTargetInfluences[ 1 ];",
 			"morphedNormal +=  ( morphNormal2 - normal ) * morphTargetInfluences[ 2 ];",
 			"morphedNormal +=  ( morphNormal3 - normal ) * morphTargetInfluences[ 3 ];",
-
+/*
+"morphedNormal +=  ( morphNormal4 - normal ) * morphTargetInfluences[ 4 ];",
+"morphedNormal +=  ( morphNormal5 - normal ) * morphTargetInfluences[ 5 ];",
+"morphedNormal +=  ( morphNormal6 - normal ) * morphTargetInfluences[ 6 ];",
+"morphedNormal +=  ( morphNormal7 - normal ) * morphTargetInfluences[ 7 ];",
+*/
 			"morphedNormal += normal;",
 
 		"#endif"
@@ -15563,7 +15583,8 @@ if (parameters.canvas) parameters.canvas = document.getElementById(parameters.ca
 	this.shadowMapCascade = false;
 
 	// morphs
-
+// AT: increase maxMorphTargets from 8 to 16, maxMorphNormals from 4 to 8
+// https://github.com/mrdoob/three.js/issues/14441
 	this.maxMorphTargets = 8;
 	this.maxMorphNormals = 4;
 
@@ -17515,9 +17536,15 @@ if (_use_VAO) {
 
 		if ( dirtyMorphTargets ) {
 
+// AT: morphTargets_dependency
+material.morphTargets_dependency = {}
+
 			for ( vk = 0, vkl = morphTargets.length; vk < vkl; vk ++ ) {
 
 				offset_morphTarget = 0;
+
+// AT: morphTargets_dependency
+let is_morph_material = false;
 
 				for ( f = 0, fl = chunk_faces3.length; f < fl; f ++ ) {
 
@@ -17544,6 +17571,15 @@ if (!vka) { continue; }
 					vka[ offset_morphTarget + 6 ] = v3.x;
 					vka[ offset_morphTarget + 7 ] = v3.y;
 					vka[ offset_morphTarget + 8 ] = v3.z;
+
+// AT: morphTargets_dependency
+if (!is_morph_material) {
+  let _v1 = vertices[ face.a ];
+  let _v2 = vertices[ face.b ];
+  let _v3 = vertices[ face.c ];
+  if (v1.x!=_v1.x || v1.y!=_v1.y || v1.z!=_v1.z || v2.x!=_v2.x || v2.y!=_v2.y || v2.z!=_v2.z || v3.x!=_v3.x || v3.y!=_v3.y || v3.z!=_v3.z)
+    is_morph_material = true
+}
 
 					// morph normals
 
@@ -17664,6 +17700,10 @@ if (!vka) { continue; }
 					offset_morphTarget += 12;
 
 				}
+
+
+// AT: morphTargets_dependency
+if (is_morph_material) material.morphTargets_dependency[vk] = true
 
 				_gl.bindBuffer( _gl.ARRAY_BUFFER, geometryGroup.__webglMorphTargetsBuffers[ vk ] );
 				_gl.bufferData( _gl.ARRAY_BUFFER, morphTargetsArrays[ vk ], hint );
@@ -19599,6 +19639,14 @@ if (vao) {
 	};
 // AT: ,updateBuffers
 	function setupMorphTargets ( material, geometryGroup, object ,updateBuffers) {
+// AT: morphTargets_dependency
+function numericalSort(a, b) {
+  if (material.morphTargets_dependency) {
+    if ( material.morphTargets_dependency[a[1]] && !material.morphTargets_dependency[b[1]]) return -1;
+    if (!material.morphTargets_dependency[a[1]] &&  material.morphTargets_dependency[b[1]]) return  1;
+  }
+  return b[0] - a[0];
+}
 
 		// set base
 
@@ -19673,7 +19721,7 @@ if (updateBuffers) {
 			}
 
 			if ( activeInfluenceIndices.length > material.numSupportedMorphTargets ) {
-//DEBUG_show(activeInfluenceIndices.length+'/'+Date.now())
+
 				activeInfluenceIndices.sort( numericalSort );
 				activeInfluenceIndices.length = material.numSupportedMorphTargets;
 
@@ -22492,22 +22540,43 @@ parameters.instanced_drawing ? "#define INSTANCED_DRAWING " + parameters.instanc
 				"attribute vec3 color;",
 
 			"#endif",
-
+// AT: increase maxMorphTargets from 8 to 16, maxMorphNormals from 4 to 8
 			"#ifdef USE_MORPHTARGETS",
 
 				"attribute vec3 morphTarget0;",
 				"attribute vec3 morphTarget1;",
 				"attribute vec3 morphTarget2;",
 				"attribute vec3 morphTarget3;",
-
+/*
+"attribute vec3 morphTarget4;",
+"attribute vec3 morphTarget5;",
+"attribute vec3 morphTarget6;",
+"attribute vec3 morphTarget7;",
+*/
 				"#ifdef USE_MORPHNORMALS",
 
 					"attribute vec3 morphNormal0;",
 					"attribute vec3 morphNormal1;",
 					"attribute vec3 morphNormal2;",
 					"attribute vec3 morphNormal3;",
+/*
+"attribute vec3 morphNormal4;",
+"attribute vec3 morphNormal5;",
+"attribute vec3 morphNormal6;",
+"attribute vec3 morphNormal7;",
+*/
 
 				"#else",
+/*
+"attribute vec3 morphTarget8;",
+"attribute vec3 morphTarget9;",
+"attribute vec3 morphTarget10;",
+"attribute vec3 morphTarget11;",
+"attribute vec3 morphTarget12;",
+"attribute vec3 morphTarget13;",
+"attribute vec3 morphTarget14;",
+"attribute vec3 morphTarget15;",
+*/
 
 					"attribute vec3 morphTarget4;",
 					"attribute vec3 morphTarget5;",
