@@ -12523,9 +12523,6 @@ System._browser.on_animation_update.add(function () {
   MMD_SA_options.Dungeon.multiplayer.update_online_data()
 },0,1, -1);
 
-// temp (not needed for child_animation_host)
-if (!self.Blob) self.Blob = System.Bb;
-
 for (var i = 0, i_max = d_options.multiplayer.OPC_list.length; i <= i_max; i++)
   this.OPC_index[i] = i
 
