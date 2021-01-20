@@ -1,4 +1,4 @@
-// MMD for System Animator (2020-12-05)
+// MMD for System Animator (2021-01-20)
 
 var use_full_spectrum = true
 
@@ -5456,7 +5456,13 @@ MMD_SA_options.trackball_camera_limit.min.length = (bb.max.y - bb.min.y) + 2
       Object.defineProperty(MMD_SA_options.trackball_camera_limit.min, "length", (function () {
 var length = 25;
 return {
-  get: function () { return Math.max(10, length-10); }
+  get: function () {
+    var limit = Math.max(10, length-10)
+    var trackball_camera_limit = MMD_SA.MMD.motionManager.para_SA.trackball_camera_limit
+    if (trackball_camera_limit && trackball_camera_limit.min && trackball_camera_limit.min.length)
+      limit = Math.min(limit, trackball_camera_limit.min.length)
+    return limit
+  }
  ,set: function (v) { length = v; }
 };
       })());
@@ -5648,7 +5654,7 @@ this._mirror_motion_from_first_model = v
 
 // save headaches for morph target stuff once and for all
   if (!MMD_SA_options.morphTargets_length_fixed)
-    MMD_SA_options.morphTargets_length_fixed = 30
+    MMD_SA_options.morphTargets_length_fixed = 40
 
   if (MMD_SA_options.physics_maxSubSteps == null)
     MMD_SA_options.physics_maxSubSteps = (MMD_SA_options.model_para_obj_all.length < 3) ? 3 : 2
@@ -6082,7 +6088,11 @@ MMD_SA_options.model_para_obj_all.forEach(function (model_para_obj) {
 
 var morph_default = MMD_SA_options.model_para_obj.morph_default = MMD_SA_options.model_para_obj.morph_default || {};
 // "まばたきL", "まばたきR"
-var _morph = ["あ","∧","にやり","ω", "上","下","にこり", "まばたき","笑い","まばたきL","まばたきR"];
+var _morph = [
+  "あ","∧","にやり","ω",
+  "上","下","にこり","困る","怒り",
+  "まばたき","笑い","びっくり","まばたきL","まばたきR"
+];
 var facemesh_morph = MMD_SA_options.model_para_obj.facemesh_morph = MMD_SA_options.model_para_obj.facemesh_morph || {};
 _morph.forEach(function (m) {
   if (!facemesh_morph[m])
@@ -6496,7 +6506,7 @@ console.log("three.core.min.js")
 // ,"jThree/plugin/TypedArrayUtils.js"
 
 // ,"jThree/plugin/jThree.Stats.min.js"
-// ,"js/utf8.js"
+
 // ,"jThree/plugin/three_BufferGeometryUtils.js"
 // ,"jThree/plugin/three_ArrowHelper.js"
 
