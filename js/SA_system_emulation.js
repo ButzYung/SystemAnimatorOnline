@@ -1,4 +1,4 @@
-// System object emultaion (2021-01-20)
+// System object emultaion (2021-01-21)
 
 var use_SA_system_emulation = true
 var use_SA_browser_mode
@@ -3444,7 +3444,7 @@ rot.copy(q_m4).conjugate().multiply(rot_hand_adjust[sign_LR]);
 //rot.setFromEuler(MMD_SA._v3a.set(-z_rot*sign_LR*sign_flip, y_rot*sign_flip, -x_rot*sign_LR), "YZX").multiply(rot_hand_adjust[sign_LR]);
 
 //_info_extra += '\n\n' + data.handpose[0].handInViewConfidence + '\n\n'
-_facemesh.frames.add("skin", d+"手首", {after_IK:true, absolute:true, rot:rot, priority:-1, onFinish:process_hand });
+_facemesh.frames.add("skin", d+"手首", {after_IK:true, parent_based:true, rot:rot, onFinish:process_hand });
 
 let _d = (d=="左") ? "右" : "左";
 if (mirror_hand) {
@@ -3683,7 +3683,7 @@ function process_bones_core(mesh, name) {
     if (s[0].absolute) {
       bone.quaternion.set(0,0,0,1)
     }
-    if (s[0].after_IK) {
+    else if (s[0].parent_based) {
       let rot_parent = s[0].rot_parent;
       if (!rot_parent) {
         rot_parent = MMD_SA.get_bone_rotation_parent(mesh, name).inverse();
@@ -4575,9 +4575,9 @@ z_rot = -xyz.z;
   let rot = new THREE.Quaternion();
   rot.setFromEuler(MMD_SA._v3a.set(x_rot, y_rot*sign_flip, _z_rot*sign_flip),"YZX").slerp(MMD_SA.TEMP_q.set(0,0,0,1), 1-0.35)
 
-  let head = { absolute:true, rot:rot.clone() }
-  let neck = { absolute:true, rot:rot.clone() }
-  let chest = { rot:rot.clone().slerp(MMD_SA.TEMP_q.set(0,0,0,1), 1-0.3/0.35) }
+  let head =  { after_IK:true, rot:rot.clone() }
+  let neck =  { after_IK:true, rot:rot.clone() }
+  let chest = { after_IK:true, rot:rot.clone().slerp(MMD_SA.TEMP_q.set(0,0,0,1), 1-0.3/0.35) }
 
   _facemesh.frames.t_delta = data._t
 
