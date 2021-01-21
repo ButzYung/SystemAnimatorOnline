@@ -421,7 +421,6 @@ if (f >= 157) {
 return (System._browser.camera.facemesh.enabled) ? [
   { name:"首", weight_screen:0.5*ratio, weight_motion:1*(1-ratio) }
  ,{ name:"頭", weight_screen:0.5*ratio, weight_motion:1*(1-ratio) }
- ,{ name:"両目", weight_screen:0, weight_motion:1*(1-ratio) }
 ] : [
   { name:"首", weight_screen:0.4*ratio, weight_motion:1*(1-ratio) }
  ,{ name:"頭", weight_screen:0.4*ratio, weight_motion:1*(1-ratio) }

@@ -4796,7 +4796,8 @@ if (use_faceLandmarksDetection) {
     rot_ratio = 0.5
   let eye_x_rot = _eye_x_rot[0] * rot_ratio + _eye_x_rot[1] * (1-rot_ratio)
   let eye_y_rot = _eye_y_rot[0] * rot_ratio + _eye_y_rot[1] * (1-rot_ratio)
-  let two_eyes = { after_IK:true, absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(-(eye_x_rot-0.3)*15/180*Math.PI, eye_y_rot*sign_flip*20/180*Math.PI, 0),"YZX") }
+// after_IK does NOT work for eyes for some unknown reasons
+  let two_eyes = { absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(-(eye_x_rot-0.3)*15/180*Math.PI, eye_y_rot*sign_flip*20/180*Math.PI, 0),"YZX") }
   _facemesh.frames.add("skin", "両目", two_eyes)
 
   let LR_exists = (THREE.MMD.getModels()[0].pmx.morphs_index_by_name["まばたきL"] != null);
@@ -4916,7 +4917,7 @@ else {
   let eye_rot_confidence = 1.25 + Math.pow((blink.L[0]+blink.R[0])/2,2)*1.75
   eye_x_rot = Math.sign(eye_x_rot) * Math.pow(Math.abs(eye_x_rot), eye_rot_confidence)
   eye_y_rot = Math.sign(eye_y_rot) * Math.pow(Math.abs(eye_y_rot), eye_rot_confidence)
-  let two_eyes = { after_IK:true, absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(-eye_x_rot*15/180*Math.PI, eye_y_rot*sign_flip*20/180*Math.PI, 0),"YZX") }
+  let two_eyes = { absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(-eye_x_rot*15/180*Math.PI, eye_y_rot*sign_flip*20/180*Math.PI, 0),"YZX") }
   _facemesh.frames.add("skin", "両目", two_eyes)
 }
 
