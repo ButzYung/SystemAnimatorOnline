@@ -3672,10 +3672,10 @@ data.rgba = rgba = undefined
 data = undefined
       }
 
-      var frames = (function () {
+      var frames_object = (function () {
 function process_bones_core(mesh, name) {
   var bone = mesh.bones_by_name[name]
-  var s = _frames.skin[name]
+  var s = this.skin[name]
 
   s[0].t_delta += RAF_timestamp_delta
   let ratio = Math.max(Math.min(s[0].t_delta/Math.max(Math.min(s[0].t_delta_frame,200),1000/60),1),0)
@@ -3731,7 +3731,7 @@ function process_bones_core(mesh, name) {
 function process_bones(e) {
   var mesh = e.detail.model.mesh
 
-  var skin = _frames.skin
+  var skin = this.skin
   Object.keys(skin).forEach((name) => {
     let bone = mesh.bones_by_name[name]
     if (!bone)
@@ -3741,14 +3741,14 @@ function process_bones(e) {
     if (s[0].after_IK)
       return
 
-    process_bones_core(mesh, name)
+    process_bones_core.call(this, mesh, name)
   });
 }
 
 function process_bones_after_IK(e) {
   var mesh = e.detail.model.mesh
 
-  var skin = _frames.skin
+  var skin = this.skin
   var skin_sorted = Object.keys(skin).filter(n=>skin[n][0].after_IK).sort((a,b) => {
 let _a = skin[a][0].priority || 0
 let _b = skin[b][0].priority || 0
@@ -3760,7 +3760,7 @@ return _a-_b;
     if (!bone)
       return
 
-    process_bones_core(mesh, name)
+    process_bones_core.call(this, mesh, name)
   });
 }
 
@@ -3791,7 +3791,7 @@ function process_morphs(e) {
   });
 
   var facemesh_morph = MMD_SA_options.model_para_obj.facemesh_morph
-  var morph = _frames.morph
+  var morph = this.morph
 
   var morph_weight = {}
   var morph_weight_non_zero_count = 0
@@ -3854,60 +3854,73 @@ function process_morphs(e) {
   });
 }
 
-var _frames = {
-  add: function (type, name, obj) {
-obj.t_delta = 0
-obj.t_delta_frame = _frames.t_delta
+function add(type, name, obj) {
+  obj.t_delta = 0
+  obj.t_delta_frame = this.t_delta
 
-var blending_ratio = 0.5 + Math.max(Math.min((obj.t_delta_frame-50)/150, 1),0) * 0.5
+  var blending_ratio = 0.5 + Math.max(Math.min((obj.t_delta_frame-50)/150, 1),0) * 0.5
 
-var target = this[type][name]
-if (target) {
-  if (!obj.no_blending) {
-    if (obj.pos) {
-      obj.pos.lerp(target[0].pos, 1-blending_ratio)
+  var target = this[type][name]
+  if (target) {
+    if (!obj.no_blending) {
+      if (obj.pos) {
+        obj.pos.lerp(target[0].pos, 1-blending_ratio)
+      }
+      if (obj.rot) {
+        obj.rot.slerp(target[0].rot, 1-blending_ratio)
+      }
+      if (obj.weight != null) {
+        obj.weight = obj.weight * blending_ratio + target[0].weight * (1-blending_ratio)
+      }
     }
-    if (obj.rot) {
-      obj.rot.slerp(target[0].rot, 1-blending_ratio)
-    }
-    if (obj.weight != null) {
-      obj.weight = obj.weight * blending_ratio + target[0].weight * (1-blending_ratio)
-    }
+    this[type][name] = [obj, target[0]]
   }
-  this[type][name] = [obj, target[0]]
+  else {
+    this[type][name] = [obj, obj]
+  }
 }
-else {
-  this[type][name] = [obj, obj]
+
+function remove(type, name) {
+  delete this[type][name]
 }
-  }
 
- ,remove: function (type, name) {
-delete this[type][name]
-  }
+function reset() {
+  this.skin = {}
+  this.morph = {}
+}
 
- ,reset: function () {
-this.skin = {}
-this.morph = {}
-  }
+function add_events() {
+  window.addEventListener('SA_MMD_model'+this.model_num+'_process_morphs', this.process_morphs);
+  window.addEventListener('SA_MMD_model'+this.model_num+'_process_bones', this.process_bones);
+  window.addEventListener('SA_MMD_model'+this.model_num+'_process_bones_after_IK', this.process_bones_after_IK);
+}
 
- ,add_events: function () {
-window.addEventListener("SA_MMD_model0_process_morphs", process_morphs);
-window.addEventListener("SA_MMD_model0_process_bones", process_bones);
-window.addEventListener("SA_MMD_model0_process_bones_after_IK", process_bones_after_IK);
-  }
+function remove_events() {
+  window.removeEventListener('SA_MMD_model'+this.model_num+'_process_morphs', this.process_morphs);
+  window.removeEventListener('SA_MMD_model'+this.model_num+'_process_bones', this.process_bones);
+  window.removeEventListener('SA_MMD_model'+this.model_num+'_process_bones_after_IK', this.process_bones_after_IK);
+}
 
- ,remove_events: function () {
-window.removeEventListener("SA_MMD_model0_process_morphs", process_morphs);
-window.removeEventListener("SA_MMD_model0_process_bones", process_bones);
-window.removeEventListener("SA_MMD_model0_process_bones_after_IK", process_bones_after_IK);
-  }
+var f = function (model_num) {
+  this.model_num = model_num
+  this.skin  = {}
+  this.morph = {}
 
- ,skin:  {}
- ,morph: {}
+  this.process_bones = process_bones.bind(this)
+  this.process_bones_after_IK = process_bones_after_IK.bind(this)
+  this.process_morphs = process_morphs.bind(this)
 };
 
-return _frames;
+f.prototype.add = add;
+f.prototype.remove = remove;
+f.prototype.reset = reset;
+f.prototype.add_events = add_events;
+f.prototype.remove_events = remove_events;
+
+return f;
       })();
+
+      var frames = new frames_object(0);
 
 
       camera = {
