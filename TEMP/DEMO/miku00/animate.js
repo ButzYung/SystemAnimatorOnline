@@ -2145,13 +2145,14 @@ if (c_to_ball > c_to_camera) {
     let z_axis = MMD_SA._v3b.set(0,0,1)
     let q = MMD_SA.TEMP_q.setFromAxisAngle(MMD_SA.TEMP_v3.crossVectors(v_axis,z_axis).normalize(), v_axis.angleTo(z_axis)) 
 
-    let v_score = MMD_SA._trackball_camera.object.position.clone().sub(c_pos).applyQuaternion(q)
+    let v_path_camera = MMD_SA._v3a.copy(MMD_SA._trackball_camera.object.position).sub(c_pos)
+    let v_score = MMD_SA._v3b.copy(v_path_camera).applyQuaternion(q)
     let score = Math.round(100 - Math.min(Math.max(Math.sqrt(v_score.x*v_score.x + v_score.y*v_score.y)-1, 0), 5) * 20)
 //DEBUG_show(score)
 //score = 100
     this._ball_para.hit_score = score
 
-    let sprite_pos = v_path.normalize().multiplyScalar(c_to_camera-2).add(c_pos)
+    let sprite_pos = v_path.normalize().lerp(v_path_camera.normalize(), 0.75).multiplyScalar(c_to_camera-2).add(c_pos)
 
     let para = { scale:1, speed:1 }
     para.pos = sprite_pos.clone()
