@@ -3315,6 +3315,14 @@ if (!options.sound.some(function(s){return(s.name=="car_engine01")})) {
 // PC click reaction default START
 if (options.use_PC_click_reaction_default) {
 
+  if (!options.sound.some(function(s){return(s.name=="hit-1")})) {
+    options.sound.push({
+      url: System.Gadget.path + "/sound/SFX_pack01.zip#/162370__lewisisminted__punch-1.aac"
+     ,name: "hit-1"
+     ,channel: "SFX"
+     ,can_spawn: true
+    });
+  }
   if (!options.sound.some(function(s){return(s.name=="hit-3")})) {
     options.sound.push({
       url: System.Gadget.path + "/sound/SFX_pack01.zip#/104183__ekokubza123__punch.aac"
@@ -3692,51 +3700,48 @@ this.inventory.initialize()
 
 this.item_base = options.item_base || {}
 
-if (!this.item_base._empty_) {
-  this.item_base._empty_ = {
-    icon_path: System.Gadget.path + '/images/_dungeon/item_icon.zip#/empty.gif'
-   ,rarity: "inactive"
-   ,info_short: "Empty"
-  };
-}
-if (!this.item_base.backpack) {
-  this.item_base.backpack = {
-    icon_path: System.Gadget.path + '/images/_dungeon/item_icon.zip#/fantasy_icon/backpack_64x64.png'
-   ,info_short: "Backpack"
-   ,index_default: MMD_SA_options.Dungeon.inventory.max_base-1
-   ,is_base_inventory: true
-   ,stock_max: 1
-   ,sound: [
-      {
+this.item_base._empty_ = Object.assign({
+  icon_path: System.Gadget.path + '/images/_dungeon/item_icon.zip#/empty.gif'
+ ,rarity: "inactive"
+ ,info_short: "Empty"
+}, this.item_base._empty_||{});
+
+this.item_base._backpack_ = Object.assign({
+  icon_path: System.Gadget.path + '/images/_dungeon/item_icon.zip#/fantasy_icon/backpack_64x64.png'
+ ,info_short: "Backpack"
+ ,index_default: MMD_SA_options.Dungeon.inventory.max_base-1
+ ,is_base_inventory: true
+ ,stock_max: 1
+ ,sound: [
+    {
   url: System.Gadget.path + "/sound/SFX_pack01.zip#/RPG Sound Pack/interface/interface2.aac"
  ,name: "item_backpack"
  ,is_drag: true
-      }
-    ]
-   ,action: {
-  func: function () {
+    }
+  ]
+ ,action: {
+    func: function () {
 Ldungeon_inventory_backpack.style.visibility = (Ldungeon_inventory_backpack.style.visibility != "hidden") ? "hidden" : "inherit"
 if (MMD_SA_options.Dungeon.nipplejs_manager)
   Ljoystick.style.visibility = ((Ldungeon_inventory_backpack.style.visibility != "hidden") || options.joystick_disabled) ? "hidden" : "inherit"
-  }
- ,anytime: true
     }
-  };
-}
-if (!this.item_base.map) {
-  this.item_base.map = {
-    icon_path: System.Gadget.path + '/images/_dungeon/item_icon.zip#/fantasy_icon/map_64x64.png'
-   ,info_short: "Map"
-   ,index_default: MMD_SA_options.Dungeon.inventory.max_base-2
-   ,stock_max: 1
-   ,action: {
-  func: function () {
+   ,anytime: true
+  }
+}, this.item_base._backpack_||{});
+
+this.item_base._map_ = Object.assign({
+  icon_path: System.Gadget.path + '/images/_dungeon/item_icon.zip#/fantasy_icon/map_64x64.png'
+ ,info_short: "Map"
+ ,index_default: MMD_SA_options.Dungeon.inventory.max_base-2
+ ,stock_max: 1
+ ,action: {
+    func: function () {
 Ldungeon_map.style.visibility = (Ldungeon_map.style.visibility != "hidden") ? "hidden" : "inherit"
-  }
- ,anytime: true
     }
-  };
-}
+   ,anytime: true
+  }
+}, this.item_base._map_||{});
+
 if (!this.item_base.coin) {
   this.item_base.coin = {
     icon_path: System.Gadget.path + '/images/_dungeon/item_icon.zip#/fantasy_icon/coin_64x64.png'
@@ -10127,7 +10132,7 @@ this.object_base_list.forEach(function (obj, idx) {
 
  ,_states: {}
 
- ,get event_mode() { return (this._states.event_mode || this._states.dialogue_mode); }
+ ,get event_mode() { return (this._states.event_mode_locked || this._states.event_mode || this._states.dialogue_mode); }
  ,set event_mode(v) { this._states.event_mode = v; }
 
  ,get character_movement_disabled() { return (this._states.character_movement_disabled || this.event_mode || this.character_combat_locked || MMD_SA_options.Dungeon_options.character_movement_disabled); }

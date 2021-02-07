@@ -167,6 +167,8 @@ var MMD_SA_options = {
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/i-shaped_balance/i-shaped_balance_TDA_f0-50.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/leg_hold.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/stand_simple.vmd' }
+
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/baseball_throw/baseball_throw.vmd' }
   ]
 
 
@@ -439,7 +441,12 @@ return (System._browser.camera.facemesh.enabled) ? [
    ,"emote-mod_お辞儀1": {
   onstart: function () {
 this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
-MMD_SA.SpeechBubble.message(0, "Thank you. 2 meter is what we need.", 3*1000)
+if (MMD_SA_options.Dungeon_options.item_base.baseball._started && MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para) {
+  MMD_SA.SpeechBubble.message(0, "Your score is " + MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para.hit_score + "! Congratulations!", 3*1000)
+}
+else {
+  MMD_SA.SpeechBubble.message(0, "Thank you. 2 meter is what we need.", 3*1000)
+}
   }
 /*
  ,onended: function (loop_end) {
@@ -454,7 +461,7 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 var mm = MMD_SA.MMD.motionManager
 var model = THREE.MMD.getModels()[model_index]
 if (model.skin.time > mm._timeMax) {
-  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(2,4)) {
+  if ((MMD_SA_options.Dungeon_options.item_base.baseball._started) ? ((Date.now() > this._duration_end_) ? !MMD_SA_options.Dungeon_options.item_base.baseball.action._distance_check()||true : false) || (Date.now() > this._duration_end_) : (Date.now() > this._duration_end_) || (MMD_SA_options.Dungeon_options.item_base.social_distancing._started && !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(2,4))) {
     MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
     MMD_SA._force_motion_shuffle = true;
   }
@@ -475,7 +482,12 @@ if (model.skin.time > mm._timeMax) {
    ,"emote-mod_お辞儀2": {
   onstart: function () {
 this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
-MMD_SA.SpeechBubble.message(0, "Thank you. 2 meter is the distance we need.", 3*1000)
+if (MMD_SA_options.Dungeon_options.item_base.baseball._started && MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para) {
+  MMD_SA.SpeechBubble.message(0, "Your score is " + MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para.hit_score + "! Excellent!", 3*1000)
+}
+else {
+  MMD_SA.SpeechBubble.message(0, "Thank you. 2 meter is the distance we need.", 3*1000)
+}
   }
 /*
  ,onended: function (loop_end) {
@@ -490,7 +502,7 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 var mm = MMD_SA.MMD.motionManager
 var model = THREE.MMD.getModels()[model_index]
 if (model.skin.time > mm._timeMax) {
-  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(2,4)) {
+  if ((MMD_SA_options.Dungeon_options.item_base.baseball._started) ? ((Date.now() > this._duration_end_) ? !MMD_SA_options.Dungeon_options.item_base.baseball.action._distance_check()||true : false) || (Date.now() > this._duration_end_) : (Date.now() > this._duration_end_) || (MMD_SA_options.Dungeon_options.item_base.social_distancing._started && !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(2,4))) {
     MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
     MMD_SA._force_motion_shuffle = true;
   }
@@ -511,7 +523,12 @@ if (model.skin.time > mm._timeMax) {
    ,"emote-mod_肯定する1": {
   onstart: function () {
 this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
-MMD_SA.SpeechBubble.message(0, "You got it, 2 meter~!", 3*1000)
+if (MMD_SA_options.Dungeon_options.item_base.baseball._started && MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para) {
+  MMD_SA.SpeechBubble.message(0, "Your score is " + MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para.hit_score + "! You are great!", 3*1000)
+}
+else {
+  MMD_SA.SpeechBubble.message(0, "You got it, 2 meter~!", 3*1000)
+}
   }
 /*
  ,onended: function (loop_end) {
@@ -526,7 +543,7 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 var mm = MMD_SA.MMD.motionManager
 var model = THREE.MMD.getModels()[model_index]
 if (model.skin.time > mm._timeMax) {
-  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(2,4)) {
+  if ((MMD_SA_options.Dungeon_options.item_base.baseball._started) ? ((Date.now() > this._duration_end_) ? !MMD_SA_options.Dungeon_options.item_base.baseball.action._distance_check()||true : false) || (Date.now() > this._duration_end_) : (Date.now() > this._duration_end_) || (MMD_SA_options.Dungeon_options.item_base.social_distancing._started && !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(2,4))) {
     MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
     MMD_SA._force_motion_shuffle = true;
   }
@@ -547,7 +564,12 @@ if (model.skin.time > mm._timeMax) {
    ,"emote-mod_肯定する2": {
   onstart: function () {
 this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
-MMD_SA.SpeechBubble.message(0, "This is it, 2 meter~!", 3*1000)
+if (MMD_SA_options.Dungeon_options.item_base.baseball._started && MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para) {
+  MMD_SA.SpeechBubble.message(0, "Your score is " + MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para.hit_score + "! Cool!", 3*1000)
+}
+else {
+  MMD_SA.SpeechBubble.message(0, "This is it, 2 meter~!", 3*1000)
+}
   }
 /*
  ,onended: function (loop_end) {
@@ -562,7 +584,7 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 var mm = MMD_SA.MMD.motionManager
 var model = THREE.MMD.getModels()[model_index]
 if (model.skin.time > mm._timeMax) {
-  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(2,4)) {
+  if ((MMD_SA_options.Dungeon_options.item_base.baseball._started) ? ((Date.now() > this._duration_end_) ? !MMD_SA_options.Dungeon_options.item_base.baseball.action._distance_check()||true : false) || (Date.now() > this._duration_end_) : (Date.now() > this._duration_end_) || (MMD_SA_options.Dungeon_options.item_base.social_distancing._started && !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(2,4))) {
     MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
     MMD_SA._force_motion_shuffle = true;
   }
@@ -784,7 +806,17 @@ if (model.skin.time > mm._timeMax) {
    ,"emote-mod_がっかり1": {
   onstart: function () {
 this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
-MMD_SA.SpeechBubble.message(0, "That's a lot more than 2 meter...", 3*1000)
+if (MMD_SA_options.Dungeon_options.item_base.baseball._started) {
+  if (MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para) {
+    MMD_SA.SpeechBubble.message(0, "Your score is " + MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para.hit_score + ". Not bad.", 3*1000)
+  }
+  else {
+    MMD_SA.SpeechBubble.message(0, "It's too close to throw the ball...", 3*1000)
+  }
+}
+else {
+  MMD_SA.SpeechBubble.message(0, "That's a lot more than 2 meter...", 3*1000)
+}
   }
 /*
  ,onended: function (loop_end) {
@@ -799,7 +831,7 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 var mm = MMD_SA.MMD.motionManager
 var model = THREE.MMD.getModels()[model_index]
 if (model.skin.time > mm._timeMax) {
-  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8)) {
+  if ((MMD_SA_options.Dungeon_options.item_base.baseball._started) ? ((Date.now() > this._duration_end_) ? !MMD_SA_options.Dungeon_options.item_base.baseball.action._distance_check()||true : false) || (Date.now() > this._duration_end_) : (Date.now() > this._duration_end_) || (MMD_SA_options.Dungeon_options.item_base.social_distancing._started && !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8))) {
     MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
     MMD_SA._force_motion_shuffle = true;
   }
@@ -820,7 +852,17 @@ if (model.skin.time > mm._timeMax) {
    ,"emote-mod_がっかり2": {
   onstart: function () {
 this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
-MMD_SA.SpeechBubble.message(0, "No, not that far away...", 3*1000)
+if (MMD_SA_options.Dungeon_options.item_base.baseball._started) {
+  if (MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para) {
+    MMD_SA.SpeechBubble.message(0, "Your score is " + MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para.hit_score + ". It's ok.", 3*1000)
+  }
+  else {
+    MMD_SA.SpeechBubble.message(0, "I need more distance...", 3*1000)
+  }
+}
+else {
+  MMD_SA.SpeechBubble.message(0, "No, not that far away...", 3*1000)
+}
   }
 /*
  ,onended: function (loop_end) {
@@ -835,7 +877,7 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 var mm = MMD_SA.MMD.motionManager
 var model = THREE.MMD.getModels()[model_index]
 if (model.skin.time > mm._timeMax) {
-  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8)) {
+  if ((MMD_SA_options.Dungeon_options.item_base.baseball._started) ? ((Date.now() > this._duration_end_) ? !MMD_SA_options.Dungeon_options.item_base.baseball.action._distance_check()||true : false) || (Date.now() > this._duration_end_) : (Date.now() > this._duration_end_) || (MMD_SA_options.Dungeon_options.item_base.social_distancing._started && !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8))) {
     MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
     MMD_SA._force_motion_shuffle = true;
   }
@@ -856,7 +898,17 @@ if (model.skin.time > mm._timeMax) {
    ,"emote-mod_肩をすくめる1": {
   onstart: function () {
 this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
-MMD_SA.SpeechBubble.message(0, "What's the point to stand so far away...", 3*1000)
+if (MMD_SA_options.Dungeon_options.item_base.baseball._started) {
+  if (MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para) {
+    MMD_SA.SpeechBubble.message(0, "Your score is " + MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para.hit_score + ". Do better next time.", 3*1000)
+  }
+  else {
+    MMD_SA.SpeechBubble.message(0, "Isn't it too close...", 3*1000)
+  }
+}
+else {
+  MMD_SA.SpeechBubble.message(0, "What's the point to stand so far away...", 3*1000)
+}
   }
 /*
  ,onended: function (loop_end) {
@@ -871,7 +923,7 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 var mm = MMD_SA.MMD.motionManager
 var model = THREE.MMD.getModels()[model_index]
 if (model.skin.time > mm._timeMax) {
-  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8)) {
+  if ((MMD_SA_options.Dungeon_options.item_base.baseball._started) ? ((Date.now() > this._duration_end_) ? !MMD_SA_options.Dungeon_options.item_base.baseball.action._distance_check()||true : false) || (Date.now() > this._duration_end_) : (Date.now() > this._duration_end_) || (MMD_SA_options.Dungeon_options.item_base.social_distancing._started && !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8))) {
     MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
     MMD_SA._force_motion_shuffle = true;
   }
@@ -892,7 +944,17 @@ if (model.skin.time > mm._timeMax) {
    ,"emote-mod_肩をすくめる2": {
   onstart: function () {
 this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
-MMD_SA.SpeechBubble.message(0, "Come on, not that far away...", 3*1000)
+if (MMD_SA_options.Dungeon_options.item_base.baseball._started) {
+  if (MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para) {
+    MMD_SA.SpeechBubble.message(0, "Your score is " + MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para.hit_score + ". Still room for improvement.", 3*1000)
+  }
+  else {
+    MMD_SA.SpeechBubble.message(0, "5 meters apart at least, please...?", 3*1000)
+  }
+}
+else {
+  MMD_SA.SpeechBubble.message(0, "Come on, not that far away...", 3*1000)
+}
   }
 /*
  ,onended: function (loop_end) {
@@ -907,7 +969,7 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 var mm = MMD_SA.MMD.motionManager
 var model = THREE.MMD.getModels()[model_index]
 if (model.skin.time > mm._timeMax) {
-  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8)) {
+  if ((MMD_SA_options.Dungeon_options.item_base.baseball._started) ? ((Date.now() > this._duration_end_) ? !MMD_SA_options.Dungeon_options.item_base.baseball.action._distance_check()||true : false) || (Date.now() > this._duration_end_) : (Date.now() > this._duration_end_) || (MMD_SA_options.Dungeon_options.item_base.social_distancing._started && !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(6,8))) {
     MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
     MMD_SA._force_motion_shuffle = true;
   }
@@ -928,7 +990,12 @@ if (model.skin.time > mm._timeMax) {
    ,"emote-mod_すねる1": {
   onstart: function () {
 this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
-MMD_SA.SpeechBubble.message(0, "You don't like me, do you...", 3*1000)
+if (MMD_SA_options.Dungeon_options.item_base.baseball._started && MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para) {
+  MMD_SA.SpeechBubble.message(0, "Your score is " + MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para.hit_score + "... oh well...", 3*1000)
+}
+else {
+  MMD_SA.SpeechBubble.message(0, "You don't like me, do you...", 3*1000)
+}
   }
 /*
  ,onended: function (loop_end) {
@@ -943,7 +1010,7 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 var mm = MMD_SA.MMD.motionManager
 var model = THREE.MMD.getModels()[model_index]
 if (model.skin.time > mm._timeMax) {
-  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999)) {
+  if ((MMD_SA_options.Dungeon_options.item_base.baseball._started) ? ((Date.now() > this._duration_end_) ? !MMD_SA_options.Dungeon_options.item_base.baseball.action._distance_check()||true : false) || (Date.now() > this._duration_end_) : (Date.now() > this._duration_end_) || (MMD_SA_options.Dungeon_options.item_base.social_distancing._started && !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999))) {
     MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
     MMD_SA._force_motion_shuffle = true;
   }
@@ -964,7 +1031,12 @@ if (model.skin.time > mm._timeMax) {
    ,"emote-mod_すねる2": {
   onstart: function () {
 this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
-MMD_SA.SpeechBubble.message(0, "This is so boring...", 3*1000)
+if (MMD_SA_options.Dungeon_options.item_base.baseball._started && MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para) {
+  MMD_SA.SpeechBubble.message(0, "Your score is " + MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para.hit_score + "...", 3*1000)
+}
+else {
+  MMD_SA.SpeechBubble.message(0, "This is so boring...", 3*1000)
+}
   }
 /*
  ,onended: function (loop_end) {
@@ -979,7 +1051,7 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 var mm = MMD_SA.MMD.motionManager
 var model = THREE.MMD.getModels()[model_index]
 if (model.skin.time > mm._timeMax) {
-  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999)) {
+  if ((MMD_SA_options.Dungeon_options.item_base.baseball._started) ? ((Date.now() > this._duration_end_) ? !MMD_SA_options.Dungeon_options.item_base.baseball.action._distance_check()||true : false) || (Date.now() > this._duration_end_) : (Date.now() > this._duration_end_) || (MMD_SA_options.Dungeon_options.item_base.social_distancing._started && !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999))) {
     MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
     MMD_SA._force_motion_shuffle = true;
   }
@@ -1000,7 +1072,17 @@ if (model.skin.time > mm._timeMax) {
    ,"emote-mod_よろめく1": {
   onstart: function () {
 this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
-MMD_SA.SpeechBubble.message(0, "Am I a joke to you...", 3*1000)
+if (MMD_SA_options.Dungeon_options.item_base.baseball._started) {
+  if (MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para) {
+    MMD_SA.SpeechBubble.message(0, "Your score is " + MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para.hit_score + "... isn't it too bad...", 3*1000)
+  }
+  else {
+    MMD_SA.SpeechBubble.message(0, "You think I can throw a magical curveball...?", 3*1000)
+  }
+}
+else {
+  MMD_SA.SpeechBubble.message(0, "Am I a joke to you...", 3*1000)
+}
   }
 /*
  ,onended: function (loop_end) {
@@ -1015,7 +1097,7 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 var mm = MMD_SA.MMD.motionManager
 var model = THREE.MMD.getModels()[model_index]
 if (model.skin.time > mm._timeMax) {
-  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999)) {
+  if ((MMD_SA_options.Dungeon_options.item_base.baseball._started) ? ((Date.now() > this._duration_end_) ? !MMD_SA_options.Dungeon_options.item_base.baseball.action._distance_check()||true : false) || (Date.now() > this._duration_end_) : (Date.now() > this._duration_end_) || (MMD_SA_options.Dungeon_options.item_base.social_distancing._started && !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999))) {
     MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
     MMD_SA._force_motion_shuffle = true;
   }
@@ -1036,7 +1118,17 @@ if (model.skin.time > mm._timeMax) {
    ,"emote-mod_よろめく2": {
   onstart: function () {
 this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
-MMD_SA.SpeechBubble.message(0, "Oh my God... do you have to stand so far away...", 3*1000)
+if (MMD_SA_options.Dungeon_options.item_base.baseball._started) {
+  if (MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para) {
+    MMD_SA.SpeechBubble.message(0, "Your score is " + MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para.hit_score + "... oh no...", 3*1000)
+  }
+  else {
+    MMD_SA.SpeechBubble.message(0, "Can you stand in front of me, please...", 3*1000)
+  }
+}
+else {
+  MMD_SA.SpeechBubble.message(0, "Oh my God... do you have to stand so far away...", 3*1000)
+}
   }
 /*
  ,onended: function (loop_end) {
@@ -1051,7 +1143,7 @@ if (MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_di
 var mm = MMD_SA.MMD.motionManager
 var model = THREE.MMD.getModels()[model_index]
 if (model.skin.time > mm._timeMax) {
-  if ((Date.now() > this._duration_end_) || !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999)) {
+  if ((MMD_SA_options.Dungeon_options.item_base.baseball._started) ? ((Date.now() > this._duration_end_) ? !MMD_SA_options.Dungeon_options.item_base.baseball.action._distance_check()||true : false) || (Date.now() > this._duration_end_) : (Date.now() > this._duration_end_) || (MMD_SA_options.Dungeon_options.item_base.social_distancing._started && !MMD_SA_options.Dungeon_options.item_base.social_distancing.action._social_distance_check(8,999))) {
     MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
     MMD_SA._force_motion_shuffle = true;
   }
@@ -1097,6 +1189,49 @@ if (model.skin.time > 1) {
  ,{ name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.75, weight_motion:1 }
 ]
 */
+    }
+
+   ,"baseball_throw": {
+  onstart: function () {
+MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para = null
+MMD_SA.SpeechBubble.message(0, "Catch this~!", 1*1000)
+  }
+
+ ,onended: function (loop_end) {
+MMD_SA._no_fading=true; MMD_SA._ignore_physics_reset=true;
+if (!loop_end) return;
+
+var score = MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para.hit_score
+if (score > 75) {
+  MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["emote-mod_お辞儀1"], MMD_SA_options.motion_index_by_name["emote-mod_お辞儀2"], MMD_SA_options.motion_index_by_name["emote-mod_肯定する1"], MMD_SA_options.motion_index_by_name["emote-mod_肯定する2"]]
+}
+else if (score > 40) {
+  MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["emote-mod_がっかり1"], MMD_SA_options.motion_index_by_name["emote-mod_がっかり2"], MMD_SA_options.motion_index_by_name["emote-mod_肩をすくめる1"], MMD_SA_options.motion_index_by_name["emote-mod_肩をすくめる2"]]
+}
+else {
+  MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["emote-mod_すねる1"], MMD_SA_options.motion_index_by_name["emote-mod_すねる2"], MMD_SA_options.motion_index_by_name["emote-mod_よろめく1"], MMD_SA_options.motion_index_by_name["emote-mod_よろめく2"]]
+}
+
+MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice()
+MMD_SA._force_motion_shuffle = true
+  }
+
+// ,freeze_onended: true
+ ,onplaying: function (model_index) {
+var mm = MMD_SA.MMD.motionManager
+var model = THREE.MMD.getModels()[model_index]
+if (model.skin.time >= 140/30) {
+  MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_fly()
+}
+  }
+
+ ,auto_blink: true
+ ,adjust_center_view_disabled: true
+ ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].mesh.quaternion; }
+,look_at_screen_bone_list: [
+  { name:"上半身",  weight_screen:1/3, weight_motion:1 }
+ ,{ name:"上半身2", weight_screen:2/3, weight_motion:1 }
+]
     }
 
    ,"chair_sit01_armIK": {
@@ -1693,6 +1828,43 @@ window.addEventListener("GOML_ready", function () {
  ,no_collision: true
     }
 */
+   {
+  path: Settings.f_path + '/assets/assets.zip#/model/baseball/baseball_v01.x'
+// ,is_dummy: true
+// ,construction:{castShadow:true}
+ ,placement: {
+    grid_id_filter: function () {
+function condition(x_object, model_index) {
+  var skin0 = (model_index == 0) && THREE.MMD.getModels()[0].skin
+  if (skin0 && /baseball_throw/.test(MMD_SA.motion[skin0._motion_index].filename)) {
+    Object.assign(this, (skin0.time < 140/30) ? this._baseball_throw : this._null);
+  }
+  else {
+    x_object._obj_proxy.visible = false
+    return false
+  }
+
+  return true
+}
+
+return [
+  {
+    para:{
+      parent_bone: {
+  model_index: 0
+ ,condition: condition
+ ,_null: { name:"" }
+ ,_baseball_throw: { name:"右手首", position:{x:-0.5,y:-1,z:0} }
+      }
+    }
+  }
+];
+    }
+   ,scale: 10
+  }
+ ,no_collision: true
+    }
+
   ]
 
  ,item_base: {
@@ -1847,6 +2019,192 @@ else  {
   }
     }
 
+   ,"baseball" : (function () {
+      var baseball_started;
+
+      var v3a, v3b;
+      window.addEventListener("jThree_ready", function () {
+v3a = new THREE.Vector3()
+v3b = new THREE.Vector3()
+      });
+
+      var baseball = {
+  icon_path: Settings.f_path + '/assets/assets.zip#/icon/baseball_64x64.png'
+ ,info_short: "Baseball catcher"
+// ,is_base_inventory: true
+ ,stock_max: 1
+ ,stock_default: 1
+ ,action: {
+    func: function (item) {
+var model_mesh = THREE.MMD.getModels()[0].mesh
+if (!model_mesh.visible)
+  return true
+
+var d = MMD_SA_options.Dungeon
+if (d.event_mode && !baseball_started)
+  return true
+
+if (baseball_started) {
+  item.reset()
+  DEBUG_show("Baseball catcher:OFF", 2)
+
+  return false
+}
+//DEBUG_show(MMD_SA.MMD.motionManager.filename)
+
+if (!/standmix2_modified/.test(MMD_SA.MMD.motionManager.filename))
+  return true
+if (MMD_SA_options.Dungeon_options.item_base.social_distancing._started)
+  return
+
+baseball_started = true
+
+d._states.event_mode_locked = true
+
+DEBUG_show("Baseball catcher:ON", 2)
+
+this._ball_para = null
+this._distance_check()
+    }
+   ,anytime: true
+
+   ,_distance: function () {
+return v3a.copy(MMD_SA.camera_position).distanceTo(v3b.copy(THREE.MMD.getModels()[0].mesh.position))/10// / MMD_SA.WebXR.zoom_scale;
+    }
+
+   ,_distance_check: function () {
+this._ball_para = null
+
+var dis = this._distance()
+
+if (dis < 5) {
+  if (MMD_SA_options._motion_shuffle_list_default[0] == MMD_SA_options.motion_index_by_name["emote-mod_がっかり1"])
+    return true
+  MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["emote-mod_がっかり1"], MMD_SA_options.motion_index_by_name["emote-mod_がっかり2"], MMD_SA_options.motion_index_by_name["emote-mod_肩をすくめる1"], MMD_SA_options.motion_index_by_name["emote-mod_肩をすくめる2"]]
+}
+else {
+  let r = MMD_SA.face_camera(MMD_SA._head_pos, null, true)
+//DEBUG_show(r.x+'\n'+r.y)
+  if ((Math.abs(r.x) > Math.PI/3) || (Math.abs(r.y) > Math.PI/3)) {
+    if (MMD_SA_options._motion_shuffle_list_default[0] == MMD_SA_options.motion_index_by_name["emote-mod_すねる1"])
+      return true
+    MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["emote-mod_すねる1"], MMD_SA_options.motion_index_by_name["emote-mod_すねる2"], MMD_SA_options.motion_index_by_name["emote-mod_よろめく1"], MMD_SA_options.motion_index_by_name["emote-mod_よろめく2"]]
+  }
+  else {
+    MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["baseball_throw"]]
+  }
+}
+
+MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice()
+MMD_SA._force_motion_shuffle = true
+    }
+
+   ,_ball_fly: function () {
+var mesh = THREE.MMD.getModels()[0].mesh
+var obj = MMD_SA_options.Dungeon.object_base_list[0].object_list[0]._obj
+
+if (!this._ball_para) {
+  let pos_ini = obj.position.clone()
+  let pos_end = MMD_SA._trackball_camera.object.position.clone()
+
+  let dis = pos_ini.distanceTo(pos_end)
+  let f = Math.max(dis/100,1)
+  let velocity = pos_end.clone().sub(pos_ini).multiplyScalar(1/f)
+
+  let rot_ini = MMD_SA._v3a.set((Math.random()-0.5)*Math.PI/20/f, (Math.random()-0.5)*Math.PI/20/f, 0)
+  let rot_end = MMD_SA._v3b.set((Math.random()-0.5)*Math.PI/10/f, (Math.random()-0.5)*Math.PI/10/f, 0)
+//rot_ini.set(0,0,0);rot_end.set(0,0,0);
+
+  this._ball_para = {
+    pos_ini:pos_ini,
+    pos_end:pos_end,
+    velocity:velocity,
+    rot_self: rot_end.clone(),
+    rot_ini:new THREE.Quaternion().setFromEuler(rot_ini),
+    rot_end:new THREE.Quaternion().setFromEuler(rot_end.add(rot_ini)),
+
+    timestamp_ini:RAF_timestamp,
+    timestamp:RAF_timestamp,
+  };
+}
+
+var time_diff = (RAF_timestamp - this._ball_para.timestamp) / 1000
+this._ball_para.timestamp = RAF_timestamp
+
+var time = (RAF_timestamp - this._ball_para.timestamp_ini) / 1000
+
+var c_pos = this._ball_para.pos_ini
+var c_to_camera = c_pos.distanceTo(MMD_SA._trackball_camera.object.position)
+var c_to_ball = c_pos.distanceTo(obj.position)
+
+//DEBUG_show(c_to_ball+'\n'+c_to_camera)
+if (c_to_ball > c_to_camera) {
+  if (this._ball_para.hit_score == null) {
+    let v_path = MMD_SA._v3a_.copy(obj.position).sub(c_pos)
+    let v_axis = MMD_SA._v3a.copy(v_path).normalize()
+    let z_axis = MMD_SA._v3b.set(0,0,1)
+    let q = MMD_SA.TEMP_q.setFromAxisAngle(MMD_SA.TEMP_v3.crossVectors(v_axis,z_axis).normalize(), v_axis.angleTo(z_axis)) 
+
+    let v_score = MMD_SA._trackball_camera.object.position.clone().sub(c_pos).applyQuaternion(q)
+    let score = Math.round(100 - Math.min(Math.max(Math.sqrt(v_score.x*v_score.x + v_score.y*v_score.y)-1, 0), 5) * 20)
+//DEBUG_show(score)
+//score = 100
+    this._ball_para.hit_score = score
+
+    let sprite_pos = v_path.normalize().multiplyScalar(c_to_camera-2).add(c_pos)
+
+    let para = { scale:1, speed:1 }
+    para.pos = sprite_pos.clone()
+    para.name = "hit_yellow_01"
+    if (score < 33) {
+      para.scale *= 0.5
+      para.speed *= 2
+    }
+    else if (score < 66) {
+      para.scale *= 0.75
+      para.speed *= 1.5
+    }
+    else {
+      para.scale *= 1.5
+      para.speed *= 1
+    }
+    para.scale *= 0.1
+    MMD_SA_options.Dungeon.sprite.animate(para.name, para)
+    MMD_SA_options.Dungeon.sound.audio_object_by_name["hit-1"].play()
+  }
+}
+
+var v = MMD_SA.TEMP_v3.copy(this._ball_para.velocity).multiplyScalar(time_diff).applyQuaternion(MMD_SA.TEMP_q.copy(this._ball_para.rot_ini).slerp(this._ball_para.rot_end, Math.pow(Math.min(time, 1), 2)))
+obj.position.add(v)
+obj.quaternion.copy(MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.copy(this._ball_para.rot_self).multiplyScalar(time*50)))
+
+obj.matrixAutoUpdate = false
+obj.updateMatrix()
+
+//var r = MMD_SA.face_camera(MMD_SA._head_pos, null, true)
+    }
+
+  }
+ ,reset: function () {
+if (!baseball_started)
+  return
+baseball_started = false
+
+MMD_SA_options.Dungeon._states.event_mode_locked = false
+
+this.action._ball_para = null
+
+MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["standmix2_modified"]]
+MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice()
+MMD_SA._force_motion_shuffle = true
+  }
+
+ ,get _started() { return baseball_started; }
+      };
+
+      return baseball;
+    })()
+
    ,"body_pix" : {
   icon_path: Settings.f_path + '/assets/assets.zip#/icon/people_64x64.png'
  ,info_short: "BodyPix AI"
@@ -1887,32 +2245,6 @@ return System._browser.camera.snapshot.init();
   }
     }
 
-   ,"laughing_man" : {
-  icon_path: Settings.f_path + '/assets/assets.zip#/icon/laughing_man_64x64.png'
- ,info_short: "Laughing Man"
-// ,is_base_inventory: true
- ,stock_max: 1
- ,stock_default: 1
- ,action: {
-    func: function (item) {
-/*
-if (!MMD_SA.WebXR.user_camera.visible) {
-  DEBUG_show("(You need to activate selfie AR first.)", 3)
-  return true
-}
-*/
-if (MMD_SA.WebXR.user_camera.face_detection.enabled) {
-  MMD_SA.WebXR.user_camera.face_detection.enabled = false
-  DEBUG_show("Laughing Man:OFF", 2)
-}
-else {
-  MMD_SA.WebXR.user_camera.face_detection.enabled = true
-  DEBUG_show("Laughing Man:ON", 2)
-}
-    }
-   ,anytime: true
-  }
-    }
 
    ,"air_blower": (function () {
       function air_blower_frame() {
@@ -1991,8 +2323,6 @@ if (d.event_mode && !social_distancing_started)
 if (social_distancing_started) {
   if (MMD_SA.WebXR._circle_2m && MMD_SA.WebXR._circle_2m.visible) {
     d.run_event("circle_2m_hide")
-    d._states.dialogue_mode = true
-
     DEBUG_show("Social distancing:ON / Circle:OFF", 2)
   }
   else {
@@ -2009,11 +2339,14 @@ if (dis < 2)
   return true
 if (!/standmix2_modified/.test(MMD_SA.MMD.motionManager.filename))
   return true
+if (MMD_SA_options.Dungeon_options.item_base.baseball._started)
+  return true
 
 social_distancing_started = true
 
 d.run_event("circle_2m_show")
-d._states.dialogue_mode = true
+
+d._states.event_mode_locked = true
 
 DEBUG_show("Social distancing:ON / Circle:ON", 2)
 
@@ -2064,14 +2397,50 @@ social_distancing_started = false
 
 MMD_SA_options.Dungeon.run_event("circle_2m_hide")
 
+MMD_SA_options.Dungeon._states.event_mode_locked = false
+
 MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["standmix2_modified"]]
 MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice()
 MMD_SA._force_motion_shuffle = true
   }
+
+ ,get _started() { return social_distancing_started; }
       };
 
       return social_distancing;
     })()
+
+   ,"_map_": {
+  get index_default() { return MMD_SA_options.Dungeon.inventory.max_base * MMD_SA_options.Dungeon.inventory.max_row -1; }
+    }
+
+
+   ,"laughing_man" : {
+  icon_path: Settings.f_path + '/assets/assets.zip#/icon/laughing_man_64x64.png'
+ ,info_short: "Laughing Man"
+// ,is_base_inventory: true
+ ,stock_max: 1
+ ,stock_default: 0//1
+ ,action: {
+    func: function (item) {
+/*
+if (!MMD_SA.WebXR.user_camera.visible) {
+  DEBUG_show("(You need to activate selfie AR first.)", 3)
+  return true
+}
+*/
+if (MMD_SA.WebXR.user_camera.face_detection.enabled) {
+  MMD_SA.WebXR.user_camera.face_detection.enabled = false
+  DEBUG_show("Laughing Man:OFF", 2)
+}
+else {
+  MMD_SA.WebXR.user_camera.face_detection.enabled = true
+  DEBUG_show("Laughing Man:ON", 2)
+}
+    }
+   ,anytime: true
+  }
+    }
 
   }
 
@@ -2094,14 +2463,14 @@ MMD_SA._force_motion_shuffle = true
 // 1
      ,[
         {
-          func: function () { MMD_SA.WebXR.user_camera.video_flipped=false; MMD_SA.WebXR.user_camera.start((0&&webkit_electron_mode) ? toFileProtocol("C:\\Users\\user\\Documents\\_.mp4") : null); }
+          func: function () { MMD_SA.WebXR.user_camera.video_flipped=false; MMD_SA.WebXR.user_camera.start((0&&webkit_electron_mode) ? toFileProtocol("C:\\Users\\user\\Documents\\_.mkv") : null); }
          ,ended: true
         }
       ]
 // 2
      ,[
         {
-          func: function () { MMD_SA.WebXR.user_camera.video_flipped=true; MMD_SA.WebXR.user_camera.start((0&&webkit_electron_mode) ? toFileProtocol("C:\\Users\\user\\Documents\\_.mp4") : null); }
+          func: function () { MMD_SA.WebXR.user_camera.video_flipped=true; MMD_SA.WebXR.user_camera.start((0&&webkit_electron_mode) ? toFileProtocol("C:\\Users\\user\\Documents\\_.mkv") : null); }
          ,ended: true
         }
       ]
@@ -2186,7 +2555,7 @@ DEBUG_show("Facemesh/PoseNet/Handpose AI:ON", 4)
 // ,camera_y_default_non_negative: false
 
  ,object_list: [
-//    {object_index:0}
+    {object_index:0}
   ]
 
  ,events: {
