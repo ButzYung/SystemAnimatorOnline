@@ -2083,7 +2083,7 @@ if (dis < 5) {
   MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name["emote-mod_がっかり1"], MMD_SA_options.motion_index_by_name["emote-mod_がっかり2"], MMD_SA_options.motion_index_by_name["emote-mod_肩をすくめる1"], MMD_SA_options.motion_index_by_name["emote-mod_肩をすくめる2"]]
 }
 else {
-  let r = MMD_SA.face_camera(MMD_SA._head_pos, null, true)
+  let r = MMD_SA.face_camera(MMD_SA._head_pos, THREE.MMD.getModels()[0].mesh.quaternion.clone().conjugate(), true)
 //DEBUG_show(r.x+'\n'+r.y)
   if ((Math.abs(r.x) > Math.PI/3) || (Math.abs(r.y) > Math.PI/3)) {
     if (MMD_SA_options._motion_shuffle_list_default[0] == MMD_SA_options.motion_index_by_name["emote-mod_すねる1"])
@@ -2184,8 +2184,6 @@ obj.quaternion.copy(MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.copy(this._ball_pa
 
 obj.matrixAutoUpdate = false
 obj.updateMatrix()
-
-//var r = MMD_SA.face_camera(MMD_SA._head_pos, null, true)
     }
 
   }
