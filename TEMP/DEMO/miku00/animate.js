@@ -442,7 +442,7 @@ return (System._browser.camera.facemesh.enabled) ? [
   onstart: function () {
 this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
 if (MMD_SA_options.Dungeon_options.item_base.baseball._started && MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para) {
-  MMD_SA.SpeechBubble.message(0, "Your score is " + MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para.hit_score + "! Congratulations!", 3*1000)
+  MMD_SA.SpeechBubble.message(0, "Your score is " + MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para.hit_score + "!\nCongratulations!", 3*1000)
 }
 else {
   MMD_SA.SpeechBubble.message(0, "Thank you. 2 meter is what we need.", 3*1000)
@@ -483,7 +483,7 @@ if (model.skin.time > mm._timeMax) {
   onstart: function () {
 this._duration_end_ = Date.now() + (MMD_SA.MMD.motionManager._timeMax + Math.random()*3+0.5)*1000
 if (MMD_SA_options.Dungeon_options.item_base.baseball._started && MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para) {
-  MMD_SA.SpeechBubble.message(0, "Your score is " + MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para.hit_score + "! Excellent!", 3*1000)
+  MMD_SA.SpeechBubble.message(0, "Your score is " + MMD_SA_options.Dungeon_options.item_base.baseball.action._ball_para.hit_score + "!\nExcellent!", 3*1000)
 }
 else {
   MMD_SA.SpeechBubble.message(0, "Thank you. 2 meter is the distance we need.", 3*1000)
@@ -2144,7 +2144,7 @@ if (c_to_ball > c_to_camera) {
     let v_axis = MMD_SA._v3a.copy(v_path).normalize()
     let z_axis = MMD_SA._v3b.set(0,0,1)
     let q = MMD_SA.TEMP_q.setFromAxisAngle(MMD_SA.TEMP_v3.crossVectors(v_axis,z_axis).normalize(), v_axis.angleTo(z_axis)) 
-
+//DEBUG_show(v_path.clone().applyQuaternion(q).toArray().join('\n'))
     let v_path_camera = MMD_SA._v3a.copy(MMD_SA._trackball_camera.object.position).sub(c_pos)
     let v_score = MMD_SA._v3b.copy(v_path_camera).applyQuaternion(q)
     let score = Math.round(100 - Math.min(Math.max(Math.sqrt(v_score.x*v_score.x + v_score.y*v_score.y)-1, 0), 5) * 20)
@@ -2152,11 +2152,12 @@ if (c_to_ball > c_to_camera) {
 //score = 100
     this._ball_para.hit_score = score
 
-    let sprite_pos = v_path.normalize().lerp(v_path_camera.normalize(), 0.75).multiplyScalar(c_to_camera-2).add(c_pos)
+    let sprite_pos = v_path.normalize().lerp(v_path_camera.normalize(), 0.8).multiplyScalar(c_to_camera-2).add(c_pos)
 
     let para = { scale:1, speed:1 }
     para.pos = sprite_pos.clone()
     para.name = "hit_yellow_01"
+/*
     if (score < 33) {
       para.scale *= 0.5
       para.speed *= 2
@@ -2169,7 +2170,9 @@ if (c_to_ball > c_to_camera) {
       para.scale *= 1.5
       para.speed *= 1
     }
-    para.scale *= 0.1
+*/
+    para.scale *= 0.1;
+    para.scale *= 1.5;
     MMD_SA_options.Dungeon.sprite.animate(para.name, para)
     MMD_SA_options.Dungeon.sound.audio_object_by_name["hit-1"].play()
   }
