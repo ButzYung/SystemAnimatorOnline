@@ -2133,6 +2133,13 @@ this._ball_para.timestamp = RAF_timestamp
 
 var time = (RAF_timestamp - this._ball_para.timestamp_ini) / 1000
 
+var v = MMD_SA._v3b.copy(this._ball_para.velocity).multiplyScalar(time_diff).applyQuaternion(MMD_SA.TEMP_q.copy(this._ball_para.rot_ini).slerp(this._ball_para.rot_end, Math.pow(Math.min(time, 1), 2)))
+obj.position.add(v)
+obj.quaternion.copy(MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.copy(this._ball_para.rot_self).multiplyScalar(time*50)))
+
+obj.matrixAutoUpdate = false
+obj.updateMatrix()
+
 var c_pos = this._ball_para.pos_ini
 var c_to_camera = c_pos.distanceTo(MMD_SA._trackball_camera.object.position)
 var c_to_ball = c_pos.distanceTo(obj.position)
@@ -2140,7 +2147,14 @@ var c_to_ball = c_pos.distanceTo(obj.position)
 //DEBUG_show(c_to_ball+'\n'+c_to_camera)
 if (c_to_ball > c_to_camera) {
   if (this._ball_para.hit_score == null) {
-    let v_path = MMD_SA._v3a_.copy(obj.position).sub(c_pos)
+    let v_path = MMD_SA._v3a_.copy(this._ball_para.ball_pos_last).sub(c_pos)
+    let v_path_length = v_path.length()
+    if (v_path_length < c_to_camera) {
+      let v_scale = (c_to_camera-v_path_length)/v.length()
+      v_path.copy(this._ball_para.ball_pos_last).add(v.multiplyScalar(v_scale)).sub(c_pos)
+//DEBUG_show([c_to_camera,c_to_ball,v_path.length(),v_scale,Date.now()].join('\n'))
+    }
+
     let v_axis = MMD_SA._v3a.copy(v_path).normalize()
     let z_axis = MMD_SA._v3b.set(0,0,1)
     let q = MMD_SA.TEMP_q.setFromAxisAngle(MMD_SA.TEMP_v3.crossVectors(v_axis,z_axis).normalize(), v_axis.angleTo(z_axis)) 
@@ -2178,12 +2192,7 @@ if (c_to_ball > c_to_camera) {
   }
 }
 
-var v = MMD_SA.TEMP_v3.copy(this._ball_para.velocity).multiplyScalar(time_diff).applyQuaternion(MMD_SA.TEMP_q.copy(this._ball_para.rot_ini).slerp(this._ball_para.rot_end, Math.pow(Math.min(time, 1), 2)))
-obj.position.add(v)
-obj.quaternion.copy(MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.copy(this._ball_para.rot_self).multiplyScalar(time*50)))
-
-obj.matrixAutoUpdate = false
-obj.updateMatrix()
+this._ball_para.ball_pos_last = this._ball_para.ball_pos_last && this._ball_para.ball_pos_last.copy(obj.position) || obj.position.clone();
     }
 
   }
