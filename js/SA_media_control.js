@@ -159,9 +159,12 @@ function SL_MC_Place(scale) {
   var w = 150 * scale
   var h = 45 * scale
 
-  var mcs = C_media_control.style
-  setTimeout(function () { mcs.posLeft = Math.round((B_content_width - w) / 2); mcs.posTop  = (B_content_height - h) - 20 - ((B_content_height > screen.availHeight-45) ? B_content_height - (screen.availHeight-45) : 0); mcs=w=h=null; }, 0)
+  setTimeout(function () {
+C_media_control.style.posLeft = Math.round((((browser_native_mode) ? screen.availWidth : B_content_width) - w) / 2);
+C_media_control.style.posTop  = (((browser_native_mode) ? screen.availHeight: B_content_height) - h) - 20 - ((B_content_height > screen.availHeight-45) ? B_content_height - (screen.availHeight-45) : 0);
+  }, 0);
 
+  var mcs = C_media_control.style
   if (scale == 1) {
     mcs.msTransform = mcs.msTransformOrigin = "";
   }
