@@ -1,6 +1,6 @@
 /*
 
-_SA.js (2020-09-06)
+_SA.js (2021-05-22)
 
 System Animator
 (c) Butz Yung / Anime Theme. All rights reserved.
@@ -2212,21 +2212,21 @@ if (fullscreen) {
   oBody.pixelHeight = B_content_height
 
   if (use_SA_system_emulation) {
-    var ls = Lquick_menu.style
-    var qmb_list = document.getElementsByClassName("QuickMenu_button")
-    var qmb_count = 6
+    let ls = Lquick_menu.style
+    let qmb_list = document.getElementsByClassName("QuickMenu_button")
+    let qmb_count = 6
     if ((B_content_height > screen_h-10)/* || fullscreen*/) {
       ls.posTop = 20+4
       for (var i = 0; i < qmb_list.length; i++)
         qmb_list[i].className = "QuickMenu_button QuickMenu_button_TL"
     }
     else {
-      ls.posTop = B_content_height - (20+4)
+      ls.posTop = ((browser_native_mode) ? screen_h : B_content_height) - (20+4)
       for (var i = 0; i < qmb_list.length; i++)
         qmb_list[i].className = "QuickMenu_button"
     }
 
-    LbuttonTL.style.posLeft = Math.min(B_content_width, screen_w) - 24 - 12
+    LbuttonTL.style.posLeft = ((browser_native_mode) ? screen_w : Math.min(B_content_width, screen_w)) - 24 - 12
     LbuttonTL.style.posTop  = 12
     if (is_mobile && (is_SA_child_animation_host || self.MMD_SA)) {
       if (document.fullscreenElement) {
@@ -2249,8 +2249,8 @@ if (fullscreen) {
       }
     }
 
-    LbuttonLR.style.posLeft = Math.min(B_content_width, screen_w) - 24
-    LbuttonLR.style.posTop  = Math.min(B_content_height, screen.availHeight) - 24
+    LbuttonLR.style.posLeft = ((browser_native_mode) ? screen_w : Math.min(B_content_width, screen_w)) - 24
+    LbuttonLR.style.posTop  = ((browser_native_mode) ? screen_h : Math.min(B_content_height, screen.availHeight)) - 24
 
     if (!self.EQP_dragdrop_target) {
       Lquick_menu_gallery_button.style.display = "none"
@@ -2321,7 +2321,7 @@ if (fullscreen) {
     if (sy < 0)
       sy = 0
 
-    if ((sx != _sx) || (sy != _sy)) {
+    if (webkit_electron_mode && ((sx != _sx) || (sy != _sy))) {
       System._browser._s_left = System._browser._s_top = null
       if (System._browser._window_move_timerID) {
         clearTimeout(System._browser._window_move_timerID)
