@@ -1,4 +1,4 @@
-// Webkit-to-IE emulation (v3.2.1)
+// Webkit-to-IE emulation (2021-08-06)
 
 var webkit_mode = true
 
@@ -181,7 +181,7 @@ else if (webkit_electron_mode) {
   window.confirm = function (msg) {
     try { webkit_window.setAlwaysOnTop(false) } catch (err) {}
     var confirmed = !webkit_electron_dialog.showMessageBox(null, {type:"question", buttons:["OK", "Cancel"], defaultId:1, message:msg})
-    try { webkit_window.setAlwaysOnTop(top.returnBoolean("AutoItAlwaysOnTop")) } catch (err) {}
+    try { webkit_window.setAlwaysOnTop(SA_topmost_window.returnBoolean("AutoItAlwaysOnTop")) } catch (err) {}
     return confirmed
   }
 }
@@ -190,7 +190,7 @@ else {
   window.confirm = function (msg) {
     try { webkit_window.setAlwaysOnTop(false) } catch (err) {}
     var confirmed = _confirm(msg) 
-    try { webkit_window.setAlwaysOnTop(top.returnBoolean("AutoItAlwaysOnTop")) } catch (err) {}
+    try { webkit_window.setAlwaysOnTop(SA_topmost_window.returnBoolean("AutoItAlwaysOnTop")) } catch (err) {}
     return confirmed
   }
 }
@@ -207,30 +207,30 @@ catch (err) {
 
 if (WallpaperEngine_CEF_mode && (browser_native_mode && !webkit_window)) {
   Object.defineProperty(screen, "width", {
-  get: function () { return top.innerWidth }
+  get: function () { return SA_topmost_window.innerWidth }
   });
   Object.defineProperty(screen, "availWidth", {
-  get: function () { return top.innerWidth }
+  get: function () { return SA_topmost_window.innerWidth }
   });
   Object.defineProperty(screen, "height", {
-  get: function () { return top.innerHeight }
+  get: function () { return SA_topmost_window.innerHeight }
   });
   Object.defineProperty(screen, "availHeight", {
-  get: function () { return top.innerHeight }
+  get: function () { return SA_topmost_window.innerHeight }
   });
 }
 else if (is_SA_child_animation_host && is_SA_child_animation) {
   Object.defineProperty(screen, "width", {
-  get: function () { return top.document.body.style.pixelWidth }
+  get: function () { return SA_topmost_window.document.body.style.pixelWidth }
   });
   Object.defineProperty(screen, "availWidth", {
-  get: function () { return top.document.body.style.pixelWidth }
+  get: function () { return SA_topmost_window.document.body.style.pixelWidth }
   });
   Object.defineProperty(screen, "height", {
-  get: function () { return top.document.body.style.pixelHeight }
+  get: function () { return SA_topmost_window.document.body.style.pixelHeight }
   });
   Object.defineProperty(screen, "availHeight", {
-  get: function () { return top.document.body.style.pixelHeight }
+  get: function () { return SA_topmost_window.document.body.style.pixelHeight }
   });
 }
   }
