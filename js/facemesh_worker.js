@@ -1,4 +1,4 @@
-// (2021-01-20)
+// (2021-08-06)
 
 var param = new URLSearchParams(self.location.search.substring(1));
 
@@ -24,6 +24,9 @@ human.load({
   backend: 'wasm',//(use_SIMD) ? 'wasm' : 'webgl',
   wasmPath: './human/assets/', // path for wasm binaries
 
+//  videoOptimized: false,
+  cacheSensitivity: 999,
+
   filter: {
     enabled: false
   },
@@ -36,7 +39,7 @@ human.load({
     enabled: true,
 
     detector: {
-      modelPath: './human/models/blazeface-back.json',
+      modelPath: './human/models/blazeface.json',//'./human/models/blazeface-back.json',//
       rotation: use_faceLandmarksDetection,
       maxFaces: 1,
       skipFrames: 15
@@ -53,6 +56,10 @@ human.load({
       modelPath: './human/models/iris.json'
     },
 
+    description: {
+      enabled: false
+    },
+
     age: {
       enabled: false
     },
@@ -62,8 +69,8 @@ human.load({
     },
 
     emotion: {
-      enabled: true,
-      modelPath: './human/models/emotion-large.json' // can be 'mini', 'large'
+      enabled: use_faceLandmarksDetection,
+      modelPath: './human/models/emotion.json'//-large.json' // can be 'mini', 'large'
     }
 
   },
@@ -85,7 +92,7 @@ postMessage('OK')
 // https://blog.tensorflow.org/2020/03/introducing-webassembly-backend-for-tensorflow-js.html
 
 // temporary fix for issues when loading the latest TFJS WASM on certain platforms
-let tfjs_version = '@2.8.5';//(self.location.protocol == "file:") ? '@2.1.0' : '';
+let tfjs_version = '';//'@2.8.5';//'@3.3.0';//'@3.7.0';//
 
 importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs' + tfjs_version);
 
@@ -231,6 +238,8 @@ async function init() {
   catch (err) { postMessage('Facemesh ERROR:' + err) }
 }
 
+var fps = 0, fps_count = 0, fps_ms = 0;
+
 async function process_video_buffer(rgba, w,h, options) {
 //  if (!face_cover) return
 
@@ -286,6 +295,14 @@ _t = _t_now
     face.scaledMesh = face.mesh
     face.mesh = face.meshRaw
     face.boundingBox = face.boxRaw
+// human v1.1.9+
+    face.boundingBox = { topLeft:[face.boxRaw[0]*cw,face.boxRaw[1]*ch], bottomRight:[(face.boxRaw[0]+face.boxRaw[2])*cw,(face.boxRaw[1]+face.boxRaw[3])*ch] }
+    const size = Math.max(face.boxRaw[2]*cw, face.boxRaw[3]*ch) / 1.5;
+    face.mesh.forEach(coords=>{
+      coords[0] *= 256 * cw / size;
+      coords[1] *= 256 * ch / size;
+      coords[2] *= 256;
+    });
   }
   else if (facemesh_version == '@0.0.3') {
     face.boundingBox = { topLeft:face.boundingBox.topLeft[0], bottomRight:face.boundingBox.bottomRight[0]}
@@ -464,6 +481,12 @@ _t_now = performance.now()
 _t_list[1] = _t_now-_t
 _t = _t_list.reduce((a,c)=>a+c)
 
+  fps_ms += _t
+  if (++fps_count >= 20) {
+    fps = 1000 / (fps_ms/fps_count)
+    fps_count = fps_ms = 0
+  }
+
   let draw_camera// = true;
   if (use_pose_worker && pose_worker_ready) {
     let data = { rgba:rgba.buffer, w:cw, h:ch, options:{ use_handpose:options.use_handpose, _t:_t } };//, threshold:1 };
@@ -472,7 +495,7 @@ _t = _t_list.reduce((a,c)=>a+c)
     draw_camera = false
   }
 
-  postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:faces[0].faceInViewConfidence, scaledMesh:(canvas)?{454:sm[454],234:sm[234]}:sm, mesh:faces[0].mesh, eyes:eyes, bb_center:faces[0].bb_center, emotion:face.emotion }], _t:_t }));
+  postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:faces[0].faceScore||faces[0].faceInViewConfidence||0, scaledMesh:(canvas)?{454:sm[454],234:sm[234]}:sm, mesh:faces[0].mesh, eyes:eyes, bb_center:faces[0].bb_center, emotion:face.emotion, rotation:face.rotation }], _t:_t, fps:fps }));
 
   if (draw_camera) {
     if (!canvas_camera) {
@@ -547,7 +570,7 @@ TRIANGULATION[i * 3 + 2]
     drawPath(context, points, true);
   }
 
-  if (canvas_camera) {
+  if (canvas_camera && use_faceLandmarksDetection) {
         const ctx = context;
 
 const NUM_KEYPOINTS = 468;
@@ -712,7 +735,7 @@ function draw_hand() {
   context.fillStyle = 'pink';
 
   handpose.forEach(function (hand) {
-    const keypoints = hand.landmarks;
+    const keypoints = hand.landmarks||hand.keypoints;
 
     keypoints.forEach(function (p) {
       context.beginPath();
