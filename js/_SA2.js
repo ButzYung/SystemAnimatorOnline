@@ -1,4 +1,4 @@
-// (v10.7.0.0)
+// (2021-08-06)
 
 var IPC
 
@@ -28,7 +28,7 @@ else
 var id = this.active_window_id
 if (id == -1)
   return top
-return top.document.getElementById("Ichild_animation" + id).contentWindow
+return SA_topmost_window.document.getElementById("Ichild_animation" + id).contentWindow
     }
 
    ,get active_IPC() {
@@ -56,7 +56,7 @@ else {
     }
 
    ,ipcRenderer_capturePage: function (event, message) {
-  top.System._browser.capturePage_in_process = false
+  SA_topmost_window.System._browser.capturePage_in_process = false
 
   var para = message.split("|")
   switch (para[0]) {
@@ -64,7 +64,7 @@ else {
       break
 
     case "RESULT":
-      top.System._browser.capturePage_pixel = JSON.parse("[" + para[1] + "]")
+      SA_topmost_window.System._browser.capturePage_pixel = JSON.parse("[" + para[1] + "]")
 //      DEBUG_show(para[1])
       break
   }
@@ -341,13 +341,13 @@ SA_OnKeyDown({ keyCode:69 }, true)
       break
 
     case "PAUSE_RESUME":
-if (top.EV_sync_update.RAF_paused) {
+if (SA_topmost_window.EV_sync_update.RAF_paused) {
   if (System._gadget_resume())
-    top.DEBUG_show('Gadget RESUMED', 5)
+    SA_topmost_window.DEBUG_show('Gadget RESUMED', 5)
 }
 else {
   if (System._gadget_pause())
-    top.DEBUG_show('Gadget PAUSED', 5)
+    SA_topmost_window.DEBUG_show('Gadget PAUSED', 5)
 }
       break
 
@@ -368,7 +368,7 @@ return
       break
 
     case "CLOSE":
-top.System._browser.confirmClose(true)
+SA_topmost_window.System._browser.confirmClose(true)
 return
       break
 
