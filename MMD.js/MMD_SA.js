@@ -1,4 +1,4 @@
-// MMD for System Animator (2021-01-20)
+// MMD for System Animator (2021-08-06)
 
 var use_full_spectrum = true
 
@@ -33,15 +33,6 @@ MMD_SA.reset_gravity = function () {
 //DEBUG_show(MMD_SA._gravity_)
 
   MMD_SA._gravity_factor = 1
-
-/*
-    THREE.MMD.getModels().forEach(function (m) {
-if (!m.physi)
-  return
-m.mesh._reset_rigid_body_physics_ = MMD_SA_options.reset_rigid_body_physics_step*5
-//m.physi.reset()
-    });
-*/
 };
 
 c_host.ondblclick = function (e) {
@@ -409,15 +400,15 @@ DragDrop.onDrop_finish = function (item) {
 //DEBUG_show(toFileProtocol(src))
 //    if (!MMD_SA.jThree_ready) return;
 
-    var zip_file = top.DragDrop._path_to_obj[src.replace(/^(.+)[\/\\]/, "")]
+    var zip_file = SA_topmost_window.DragDrop._path_to_obj[src.replace(/^(.+)[\/\\]/, "")]
 
 new self.JSZip().loadAsync(zip_file)
 .then(function (zip) {
 // will be called, even if content is corrupted
 //console.log(999,src)
 
-  top.DragDrop._zip_by_url = top.DragDrop._zip_by_url || {}
-  top.DragDrop._zip_by_url[src] = zip
+  SA_topmost_window.DragDrop._zip_by_url = SA_topmost_window.DragDrop._zip_by_url || {}
+  SA_topmost_window.DragDrop._zip_by_url[src] = zip
 
   var files_added
   var music_list = zip.file(/[^\/\\]+.(mp3|wav|aac)$/i)
@@ -520,6 +511,9 @@ MMD_SA._init_my_model = function () {
 //console.log(MMD_SA_options._MME)
 //model_para_obj.skin_default = { "くちびる上_IK": { pos:{x:0, y:0.1, z:0} } }
 //model_para_obj.morph_default = { "あ2": { weight:1 } }
+
+// always use the default .character
+  model_para_obj.character = MMD_SA_options.model_para_obj_all[0].character
 
   MMD_SA_options.model_para_obj_all[0] = MMD_SA_options.model_para_obj_by_filename[model_filename] = model_para_obj
   model_para_obj._model_index = 0
@@ -1694,7 +1688,7 @@ if (this.use_jThree) {
   if (must_update) jThree.MMD.play(true)
   THREE.MMD.getModels().forEach(function (model) {
     model.seekMotion(time)
-    model.mesh._reset_rigid_body_physics_ = MMD_SA_options.reset_rigid_body_physics_step
+    model.resetPhysics()
   });
   if (must_update) jThree.MMD.pause()
 }
@@ -2858,7 +2852,7 @@ return r
 
  ,get_bone_position: (function () {
     var TEMP_m4;
-    window.addEventListener("MMDStarted", function () {
+    window.addEventListener("jThree_ready", function () {
       TEMP_m4 = new THREE.Matrix4();
     });
 
@@ -3083,6 +3077,9 @@ return mipmap_render_target_list
   }
 
  ,render: function (renderer) {
+
+window.dispatchEvent(new CustomEvent("SA_MMD_before_render"));
+
 //if (!MMD_SA.MMD_started) return true
 //var _t=performance.now()
 MMD_SA._mirror_rendering_ = true
@@ -3124,6 +3121,9 @@ for (var id in _visible) {
 }
 //DEBUG_show(JSON.stringify(renderer.info.render))
 //DEBUG_show(Math.round(performance.now()-_t)+'\n'+Date.now())
+
+window.dispatchEvent(new CustomEvent("SA_MMD_after_render"));
+
 return true
  }
 
@@ -4622,7 +4622,7 @@ catch (err) {
 //  DEBUG_show("(AR session failed 01)")
 
   try {
-// for Chrome 80
+// for Chrome 80+
     let options = {};
     if (AR_options.dom_overlay && (AR_options.dom_overlay.enabled !== false)) {
       options.optionalFeatures = ["dom-overlay","dom-overlay-for-handheld-ar"];
@@ -5289,6 +5289,1582 @@ if (navigator.xr) {
 };
 
 
+MMD_SA.Audio3D = (function () {
+    var use_THREE_Audio = true
+
+    if (MMD_SA_options.Dungeon_options) {
+// before object creation
+      window.addEventListener("SA_Dungeon_after_map_generation", function () { MMD_SA_options.Dungeon.sound.detach_positional_audio(); });
+
+      window.addEventListener("jThree_ready", function () {
+        MMD_SA_options.Dungeon_options.sound.forEach(function (sound) {
+          MMD_SA_options.Dungeon.sound.load(sound)
+        });
+      });
+    }
+
+    var listener
+    window.addEventListener("jThree_ready", function () {
+      listener = new THREE.AudioListener();
+      listener.setMasterVolume(0.5);
+    });
+    window.addEventListener("MMDStarted", function () { MMD_SA._trackball_camera.object.add(listener); });
+
+    var _audio_player = []
+    var _channel_locked = {}
+
+// THREE.Audio START
+    function THREE_Audio(positional) {
+this.audio = (positional) ? new THREE.PositionalAudio( listener ) : new THREE.Audio(listener);
+this.audio._player = this
+
+this.events = {}
+    }
+
+    THREE_Audio.prototype = {
+  constructor: THREE_Audio
+
+ ,get loop()  { return this.audio.getLoop(); }
+ ,set loop(v) { this.audio.setLoop(v);  }
+
+ ,get volume()  { return this.audio.getVolume(); }
+ ,set volume(v) { this.audio.setVolume(v);  }
+
+ ,get paused() { return !this.audio.isPlaying; }
+
+// ,get currentTime() { return this.audio.context.currentTime; }
+
+ ,get autoplay()  { return this.audio.autoplay; }
+ ,set autoplay(v) { this.audio.autoplay = v;  }
+
+ ,set src(v) {
+this.audio.isPlaying && this.audio.stop()
+this.audio.setBuffer( v )
+  }
+
+ ,play: function () {
+!this.audio.isPlaying && this.audio.play()
+  }
+
+ ,pause: function () {
+this.audio.isPlaying && this.audio.pause()
+  }
+
+ ,_dispatchEvent: function (event_type) {
+if (this.events[event_type]) {
+  var that = this
+  this.events[event_type].forEach(function (func) {
+    func.call(that)
+  });
+}
+  }
+
+ ,addEventListener: function (event_type, func) {
+if (!this.events[event_type])
+  this.events[event_type] = []
+this.events[event_type].push(func)
+  }
+    };
+// THREE.Audio END
+
+    function Audio_Player(positional) {
+var that = this
+
+// Audio player version
+this.timestamp = 0
+this.player = (use_THREE_Audio) ? new THREE_Audio(positional) : document.createElement("audio")
+
+this.positional = !!positional
+this.obj_parent = null
+this.obj_parent_attached = null
+
+this.player.addEventListener("playing", function (e) {
+  that.attach_obj_parent()
+
+  that.timestamp = Date.now()
+  that.occupied = true
+});
+
+this.player.addEventListener("ended", function (e) {
+  if (!this.loop)
+    that.occupied = false
+});
+
+_audio_player.push(this)
+console.log("Audio_Player count", _audio_player.length)
+    }
+
+    Audio_Player.prototype.detach_obj_parent = function () {
+if (!this.positional)
+  return
+if (!this.obj_parent_attached)
+  return
+
+this.obj_parent_attached.remove(this.player.audio)
+this.obj_parent_attached = null
+console.log("Audio_Player (positional) - obj_parent DETACHED")
+    };
+
+    Audio_Player.prototype.attach_obj_parent = function () {
+if (!this.positional)
+  return
+if (this.obj_parent_attached && (this.obj_parent_attached == this.obj_parent))
+  return
+
+this.detach_obj_parent()
+
+var p_audio = this.player.audio
+p_audio.setRefDistance( 20 )
+
+this.obj_parent_attached = this.obj_parent
+this.obj_parent_attached.add(p_audio)
+p_audio.updateMatrixWorld(true)
+console.log("Audio_Player (positional) - obj_parent ATTACHED")
+    };
+
+
+    function Audio_Object(para) {
+this.para = para
+
+this.object_url = null
+
+if (para.channel) {
+  if (para.channel === true)
+    para.channel = para.name
+}
+    }
+
+    Audio_Object.prototype = {
+  constructor:  Audio_Object
+
+ ,obj_parent_matched: function (obj_parent, ap) {
+return ((!obj_parent && !ap.positional) || (ap.positional && (!ap.obj_parent || (obj_parent == ap.obj_parent))));
+  }
+
+ ,get_player_obj: function (obj_parent, spawn_id) {
+var that = this
+var para = this.para
+
+return _audio_player.find(function (ap) {
+  return (/*ap.occupied && */((para.name == ap.name) || ((/^BGM$/.test(para.channel) || para.is_exclusive_channel) && (para.channel == ap.channel))) && (!para.can_spawn || !spawn_id || (spawn_id == ap.spawn_id)) && that.obj_parent_matched(obj_parent, ap));
+});
+  }
+
+ ,play: function (obj_parent, spawn_id) {
+if (!this.object_url)
+  return null
+
+var that = this
+var para = this.para
+
+if (para.can_spawn) {
+  if (typeof spawn_id == "boolean") {
+    spawn_id = THREE.Math.generateUUID()
+  }
+  else if (!spawn_id)
+    spawn_id = para.name
+}
+else {
+  spawn_id = null
+}
+
+var player_obj = this.get_player_obj(obj_parent, spawn_id)
+if (player_obj) {
+  if (para.name == player_obj.name) {
+    player_obj.obj_parent = obj_parent
+    if (!player_obj.occupied || player_obj.player.paused) {
+      player_obj.player.play()
+    }
+    return player_obj
+  }
+}
+else {
+  player_obj = _audio_player.find(function (ap) {
+    return (!ap.occupied && that.obj_parent_matched(obj_parent, ap));
+  });
+  if (!player_obj) {
+    player_obj = new Audio_Player(!!obj_parent)
+  }
+}
+
+player_obj.name = para.name
+player_obj.channel = para.channel
+player_obj.spawn_id = spawn_id
+player_obj.occupied = true
+player_obj.obj_parent = obj_parent
+
+// https://developers.google.com/web/updates/2018/11/web-audio-autoplay
+// to save headaches, System Animator game will always begin with a startup screen requesting user interaction (e.g. mouse click), which should ensure that autoplay is always usable.
+player_obj.player.autoplay = (!para.channel || !_channel_locked[para.channel])
+
+player_obj.player.loop = para.loop
+player_obj.player.volume = (para.volume || 0.1)
+
+// https://developers.google.com/web/updates/2017/06/play-request-was-interrupted
+try {
+  player_obj.player.src = this.object_url
+}
+catch (err) {
+// Uncaught (in promise) DOMException: The play() request was interrupted by a new load request.
+  console.error(err.message)
+}
+
+return player_obj
+  }
+    };
+
+    return {
+  audio_object_by_name: {}
+
+ ,load: function (para) {
+var url = para.url
+var name = para.name = para.name || url.replace(/^.+[\/\\]/, "").replace(/\.\w+$/, "")
+var ao = this.audio_object_by_name[name]
+// NOTE: For now, Audio_Object that requires positional support (at least the first player) should avoid using .autoplay
+if (ao) {
+  if (para.autoplay)
+    ao.play()
+  return
+}
+
+ao = this.audio_object_by_name[name] = new Audio_Object(para)
+
+System._browser.load_file(url, function (xhr) {
+  if (use_THREE_Audio) {
+// https://github.com/mrdoob/three.js/blob/dev/src/loaders/AudioLoader.js
+			// Create a copy of the buffer. The `decodeAudioData` method
+			// detaches the buffer when complete, preventing reuse.
+// NOTE: no need to reuse the source buffer at this moment
+THREE.AudioContext.getContext().decodeAudioData( xhr.response/*.slice( 0 )*/, function ( audioBuffer ) {
+  ao.object_url = audioBuffer;
+  if (para.autoplay)
+    ao.play()
+});
+  }
+  else {
+    ao.object_url = URL.createObjectURL(xhr.response)
+    if (para.autoplay)
+      ao.play()
+  }
+}, "arraybuffer");
+  }
+
+ ,pause_channel: function (channel, locked) {
+if (locked)
+  _channel_locked[channel] = true
+
+_audio_player.forEach(function (ap) {
+  if (ap.occupied && (ap.channel == channel))
+    ap.player.pause()
+});
+  }
+
+ ,resume_channel: function (channel) {
+_channel_locked[channel] = null
+
+_audio_player.forEach(function (ap) {
+  if (ap.occupied && (ap.channel == channel))
+    ap.player.play()
+});
+  }
+
+ ,detach_positional_audio: function (obj_parent) {
+_audio_player.forEach(function (ap) {
+  if (ap.positional && (!obj_parent || (obj_parent == ap.obj_parent_attached)))
+    ap.detach_obj_parent()
+});
+  }
+    };
+})();
+
+
+MMD_SA.Sprite = (function () {
+    var sprite_obj_list = []
+
+
+MMD_SA_options.use_sprite=true
+var _hit_box_offset;
+window.addEventListener("jThree_ready",() => {
+  _hit_box_offset = new THREE.Vector3()
+  MMD_SA_options.model_para_obj.SFX = [
+/*
+{
+
+      sprite:[
+  {bone_ref:"頭", sticky:true, name:"smoke_01", depth:3, scale:0.5},
+  {bone_ref:"上半身2", sticky:true, name:"smoke_01", depth:3},
+  {bone_ref:"上半身", sticky:true, name:"smoke_01", depth:3},
+  {bone_ref:"下半身", sticky:true, name:"smoke_01", depth:3},
+  {bone_ref:"左腕", sticky:true, name:"smoke_01", depth:3, scale:0.5},
+  {bone_ref:"左ひじ", sticky:true, name:"smoke_01", depth:3, scale:0.5},
+  {bone_ref:"左手首", sticky:true, name:"smoke_01", depth:3, scale:0.5},
+  {bone_ref:"右腕", sticky:true, name:"smoke_01", depth:3, scale:0.5},
+  {bone_ref:"右ひじ", sticky:true, name:"smoke_01", depth:3, scale:0.5},
+  {bone_ref:"右手首", sticky:true, name:"smoke_01", depth:3, scale:0.5},
+  {bone_ref:"左足", sticky:true, name:"smoke_01", depth:3, scale:0.5},
+  {bone_ref:"左ひざ", sticky:true, name:"smoke_01", depth:3, scale:0.5},
+  {bone_ref:"左足首", sticky:true, name:"smoke_01", depth:3, scale:0.5},
+  {bone_ref:"右足", sticky:true, name:"smoke_01", depth:3, scale:0.5},
+  {bone_ref:"右ひざ", sticky:true, name:"smoke_01", depth:3, scale:0.5},
+  {bone_ref:"右足首", sticky:true, name:"smoke_01", depth:3, scale:0.5},
+      ],
+
+}
+*/
+  ];
+});
+
+if (0&& MMD_SA_options.Dungeon_options) {
+  MMD_SA_options.Dungeon.motion["PC Power Up"] = {
+//456
+      path:'MMD.js\\motion\\motion_rpg_pack01.zip#\\misc\\this_is_power.vmd'
+     ,para: { adjust_center_view_disabled:true, onended: function () { MMD_SA._no_fading=true; }
+ ,onplaying: (function () {
+    var power_SFX = {
+      id: "this_is_power",
+//      frame_range:[0,999],
+      onloop: function (animator) {
+animator.numberOfTiles_extended = animator.numberOfTiles + 4 + random(12)
+animator.parent.sprite.rotation = (((Math.random() > 0.5) ? 0 : 180) + (Math.random()-0.5) * 60) * Math.PI/180
+//console.log(animator.sprite.material.map.sourceFile)
+      },
+      sprite:[
+  {bone_ref:"頭", sticky:true, name:"thunder_particle", depth:3, scale:0.5},
+  {bone_ref:"上半身2", sticky:true, name:"thunder_particle", depth:3},
+  {bone_ref:"上半身", sticky:true, name:"thunder_particle", depth:3},
+  {bone_ref:"下半身", sticky:true, name:"thunder_particle", depth:3},
+  {bone_ref:"左腕", sticky:true, name:"thunder_particle", depth:3, scale:0.5},
+  {bone_ref:"左ひじ", sticky:true, name:"thunder_particle", depth:3, scale:0.5},
+  {bone_ref:"左手首", sticky:true, name:"thunder_particle", depth:3, scale:0.5},
+  {bone_ref:"右腕", sticky:true, name:"thunder_particle", depth:3, scale:0.5},
+  {bone_ref:"右ひじ", sticky:true, name:"thunder_particle", depth:3, scale:0.5},
+  {bone_ref:"右手首", sticky:true, name:"thunder_particle", depth:3, scale:0.5},
+  {bone_ref:"左足", sticky:true, name:"thunder_particle", depth:3, scale:0.5},
+  {bone_ref:"左ひざ", sticky:true, name:"thunder_particle", depth:3, scale:0.5},
+  {bone_ref:"左足首", sticky:true, name:"thunder_particle", depth:3, scale:0.5},
+  {bone_ref:"右足", sticky:true, name:"thunder_particle", depth:3, scale:0.5},
+  {bone_ref:"右ひざ", sticky:true, name:"thunder_particle", depth:3, scale:0.5},
+  {bone_ref:"右足首", sticky:true, name:"thunder_particle", depth:3, scale:0.5},
+      ],
+
+      VFX:[
+  {name:"aura01", sticky:true, pos_target:{ mesh:"model" }},
+//  {name:"aura_ring01", sticky:true, pos_target:{ mesh:"model", offset:{x:0,y:8,z:0} }},
+      ],
+    };
+
+    var SFX_action = {
+  onloop: function (animator) {
+animator.parent.sprite.rotation = Math.random() * Math.PI*2
+  },
+  sprite: [{instance_per_frame:1, name:"explosion_sinestesia-01_03", depth:1}],
+    };
+
+    var this_is_power = {
+  action: function () {
+var model_para = MMD_SA_options.model_para_obj;
+model_para._SFX_one_time = model_para._SFX_one_time||[];
+model_para._SFX_one_time.push(power_SFX);
+
+var d = MMD_SA_options.Dungeon
+if (!d.character.combat_mode) return
+
+var para_SA = MMD_SA.MMD.motionManager.para_SA
+if (!para_SA.combat_para) return
+
+var model = THREE.MMD.getModels()[0]
+var f = model.skin.time*30
+
+var SFX;
+para_SA.combat_para.some((p) => {
+  if (!p.frame_range || !p.SFX || !p.SFX.bone_to_pos || (para_SA.SFX && para_SA.SFX.some(sfx => ((f >= sfx.frame_range[0]) && (f <= sfx.frame_range[1])))) || (f > p.frame_range[1]))
+    return
+
+  SFX = SFX_action;
+
+  var sprite = SFX.sprite[0]
+  sprite.bone_ref = p.SFX.bone_to_pos
+  var obj = d.character.combat_stats.weapon.obj
+  if (obj && (para_SA.attack_combo_para.combo_type.indexOf(obj.user_data.weapon.type) != -1)) {
+    sprite.pos_offset = _hit_box_offset.copy(obj.user_data.weapon.hit_box_offset)
+    sprite.pos_offset_rotated = true
+  }
+  else {
+    sprite.pos_offset = sprite.pos_offset_rotated = null
+  }
+
+  return true
+});
+
+if (SFX) {
+  model_para._SFX_one_time.push(SFX);
+}
+  },
+    };
+
+    return function (model_index) {
+var mm = MMD_SA.MMD.motionManager
+var model = THREE.MMD.getModels()[model_index]
+if (model.skin.time > 72/30) {
+  MMD_SA_options.Dungeon.character.states.this_is_power = this_is_power;
+}
+    };
+  })()
+
+       ,model_index_list: [0]
+//       ,mov_speed: [{ frame:0, speed:{x:0, y:0, z: 0.05*30} }]
+       ,adjustment_per_model: {
+  _default_ : {
+    morph_default: {
+    }
+  }
+        }
+//       ,motion_command_disabled: true
+       ,NPC_motion_command_disabled: true
+       ,super_armor: { level:99 }
+       ,combat_para: [
+  { frame_range:[72,80], hit_level:3, damage:1, bb_expand:{x:0.5*100, y:0, z:0.5*100} }
+        ]
+       ,motion_duration: 153/30
+
+       ,SFX: [
+  {frame_range:[0,10], camera_shake:{magnitude:0.2, duration:72/30*1000, graph:{reversed:true,decay_power:0.5}}},
+  {
+    frame_range:[72,82],
+    VFX:[
+  {
+    name:"aura_ring01", sticky:true, pos_target:{ mesh:"model", offset:{x:0,y:8,z:0} },
+    custom: {duration:500},
+  },
+    ],
+    camera_shake:{magnitude:0.5,duration:1000},
+  },
+        ]
+      }
+  };
+
+  if (MMD_SA_options.Dungeon_options.combat_mode_enabled) {
+    MMD_SA_options.Dungeon_options.attack_combo_list.push(
+      { keyCode:10369, combo_RE:"POWER", motion_id:"PC Power Up", combo_type:"item" }
+    );
+
+    MMD_SA_options.Dungeon.item_base.power_up = {
+      icon_path: System.Gadget.path + '/images/_dungeon/item_icon.zip#/misc_icon/superpower_64x64.png'
+     ,info_short: "????"
+     ,index_default: MMD_SA_options.Dungeon.inventory.max_base-3
+     ,stock_max: 1
+     ,action: {
+  func: function () {
+var d = MMD_SA_options.Dungeon
+if (!d.character.combat_mode || d.character_combat_locked)
+  return true
+//DEBUG_show(Date.now())
+var t = performance.now()
+var key_map = d.key_map[10369]
+key_map.down = t
+
+var motion_index = MMD_SA_options.motion_index_by_name[d.motion["PC Power Up"].name]
+MMD_SA_options.motion_shuffle_list_default = [motion_index]
+MMD_SA._force_motion_shuffle = true
+
+//var motion_para = MMD_SA.motion[motion_index].para_SA
+//console.log(motion_para)
+    },
+    no_sound: true,
+      }
+    };
+  }
+}
+
+
+// sprite animator START
+    if (!MMD_SA_options.sprite_sheet)
+      MMD_SA_options.sprite_sheet = []
+
+    if (MMD_SA_options.Dungeon_options || MMD_SA_options.use_sprite) {
+      MMD_SA_options.sprite_sheet.push(
+  { name:"explosion_purple_01", url:System.Gadget.path+'/images/sprite_sheet.zip#/explosions/explosion_03_strip13_v01-min.png', col:6, row:2, frame_count:12 },
+  { name:"blood_01", url:System.Gadget.path+'/images/sprite_sheet.zip#/blood/blood_hit_splash-min.png', col:4, row:4, frame_count:16, scale:20 },
+  { name:"hit_yellow_01", url:System.Gadget.path+'/images/sprite_sheet.zip#/hit/hit_yellow_v00-min.png', col:4, row:4, frame_count:16, scale:20 },
+  { name:"pointer_blue_01", url:System.Gadget.path+'/images/_dungeon/item_icon.zip#/misc_icon/arrow_down_blue_128x128.png', col:1, row:1, frame_count:1, scale:2 },
+
+  { name:"explosion_red_01", url:System.Gadget.path+'/images/sprite_sheet.zip#/explosions/explosion_01_strip13_v01-min.png', col:6, row:2, frame_count:12 },
+  { name:"_explosion_sinestesia-01_03", url:System.Gadget.path+'/images/sprite_sheet.zip#/explosions/explosion_sinestesia-01_03_v01-min.png', col:4, row:8, frame_count:32, scale:20, blending:"subtractive" },
+  { name:"explosion_sinestesia-01_03", url:System.Gadget.path+'/images/sprite_sheet.zip#/explosions/explosion_sinestesia-01_03_v01-min.png', col:4, row:8, frame_count:32, scale:20, blending:"subtractive",
+texture_variant: {
+  id: "BW",
+  pixel_transform: function (pixels) {
+    for (var i = 0, i_length = pixels.length; i < i_length; i += 4) {
+//color.r * 0.2126 + color.g * 0.7152 + color.b * 0.0722
+      let lightness = ~~(pixels[i]*0.2126 + pixels[i + 1]*0.7152 + pixels[i + 2]*0.0722);
+      pixels[i] = lightness;
+      pixels[i + 1] = lightness;
+      pixels[i + 2] = lightness;
+    }
+  },
+},
+  },
+
+
+  { name:"thunder_particle", url:System.Gadget.path+'/images/sprite_sheet.zip#/thunder/thunder_particle' + ((webkit_transparent_mode) ? '-transparent' : '') + '_v01-min.png', col:4, row:2, frame_count:8, scale:3, blending:(webkit_transparent_mode)?null:"additive" },
+
+//  { name:"smoke_01", url:'C:\\Users\\user\\Downloads\\firespritesheet\\fireSheet5x5.png', col:5, row:5, frame_count:25, scale:5, blending:(webkit_transparent_mode)?null:"additive" },
+      );
+    }
+
+    var sprite_sheet_by_name = {}
+    var ss_texture_by_filename = {}
+
+    MMD_SA_options.sprite_sheet.forEach(function (ss) {
+ss.filename = ss.url.replace(/^.+[\/\\]/, "").replace(/\.png$/i, "")
+if (!ss.name)
+  ss.name = ss.filename
+sprite_sheet_by_name[ss.name] = new SpriteSheet(ss)
+
+ss_texture_by_filename[ss.filename] = {
+  url: ss.url,
+  variant: {},
+};
+    });
+
+    if (!MMD_SA_options.GOML_head) MMD_SA_options.GOML_head = "";
+
+    for (let name in ss_texture_by_filename) {
+      MMD_SA_options.GOML_head +=
+  '<txr id="' + name + '_TXR" src="' + toFileProtocol(ss_texture_by_filename[name].url) + '" />\n';
+    }
+
+    function SpriteSheet(obj) {
+Object.assign(this, obj)
+
+if (!this.scale)
+  this.scale = 10
+
+if (!this.frame_interval)
+  this.frame_interval = 1000/30
+    }
+
+// inspired by:
+// https://stemkoski.github.io/Three.js/Texture-Animation.html
+
+    function SpriteAnimator(obj) {
+this.parent = obj
+    }
+
+    SpriteAnimator.prototype.reset = function (ss) {
+	
+// NOTE: r58 sets uv offset/scale from the sprite material, not the texture.
+var sprite = this.parent.sprite
+var texture = sprite.material
+
+var para = this.parent.para
+
+this.sprite_sheet = ss
+
+	// note: texture passed by reference, will be updated by the update function.
+		
+	this.tilesHorizontal = ss.col;
+	this.tilesVertical = ss.row;
+	// how many images does this spritesheet contain?
+	//  usually equals tilesHoriz * tilesVert, but not necessarily,
+	//  if there at blank tiles at the bottom of the spritesheet. 
+	this.numberOfTiles = ss.frame_count;
+
+this.numberOfTiles_extended = para.frame_count || ss.frame_count;
+
+/*
+	texture.wrapS = texture.wrapT = THREE.RepeatWrapping; 
+	texture.repeat.set( 1 / this.tilesHorizontal, 1 / this.tilesVertical );
+*/
+//	material.uvOffset.copy( this.uvOffset );
+//	material.uvScale.copy( this.uvScale );
+texture.uvScale.set( 1 / this.tilesHorizontal, 1 / this.tilesVertical );
+
+texture.uvOffset.x = texture.uvOffset.y = 0
+
+	// how long should each image be displayed?
+	this.tileDisplayDuration = ss.frame_interval;
+
+	// how long has the current image been displayed?
+	this.currentDisplayTime = 0;
+
+	// which image is currently being displayed?
+	this.currentTile = 0;
+
+sprite.rotation = 0
+
+this.started = false
+this.loop = !!para.loop
+
+sprite.visible = true
+    }
+
+    SpriteAnimator.prototype.update = function( milliSec ) {
+//DEBUG_show(milliSec)
+var sprite = this.parent.sprite
+var texture = sprite.material
+
+var para = this.parent.para
+
+if (!this.started && para.onloop) {
+  this.started = true
+  para.onloop(this)
+//console.log(sprite.material.map.sourceFile);DEBUG_show(Date.now());
+}
+
+		this.currentDisplayTime += milliSec;
+		while (this.currentDisplayTime > this.tileDisplayDuration)
+		{
+			this.currentDisplayTime -= this.tileDisplayDuration;
+			this.currentTile++;
+			if (this.currentTile == this.numberOfTiles_extended) {
+if (!this.loop) {
+  sprite.visible = false
+  break
+}
+
+				this.currentTile = 0;
+
+if (para.onloop) {
+  para.onloop(this)
+//DEBUG_show(Date.now())
+}
+			}
+
+var currentTile = Math.min(this.currentTile, this.numberOfTiles-1);
+
+			var currentColumn = currentTile % this.tilesHorizontal;
+//			texture.offset.x = currentColumn / this.tilesHorizontal;
+texture.uvOffset.x = currentColumn / this.tilesHorizontal;
+//			var currentRow = Math.floor( currentTile / this.tilesHorizontal );
+var currentRow = (this.tilesVertical-1) - Math.floor( currentTile / this.tilesHorizontal );
+//			texture.offset.y = currentRow / this.tilesVertical;
+//var currentRow = Math.ceil( currentTile / this.tilesHorizontal );
+texture.uvOffset.y = currentRow / this.tilesVertical;
+		}
+    };
+// sprite animator END
+
+    var TextureObject_HP_bar = function (index) {
+this.id = "HP_bar" + index;
+    };
+    TextureObject_HP_bar.prototype.init = function () {
+var canvas = this.canvas
+canvas.width  = 32
+canvas.height = 4
+this._obj.drawBorder(this, "black")
+//console.log(this)
+    };
+    TextureObject_HP_bar.prototype.drawBorder = function (that, color) {
+var canvas = that.canvas
+var context = canvas.getContext("2d")
+context.fillStyle = color
+context.fillRect(0,0, canvas.width,1)
+context.fillRect(0,3, canvas.width,1)
+context.fillRect(0,0, 1,canvas.height)
+context.fillRect(canvas.width-1,0, 1,canvas.height)
+    };
+    TextureObject_HP_bar.prototype.update = function (para) {
+if (!para)
+  para = {}
+
+var v = para.v
+if (v == null)
+  v = 1
+
+var return_value = false
+if (para.border_color_default != para.border_color) {
+  para.border_color_default = para.border_color
+  this._obj.drawBorder(this, para.border_color)
+  return_value = true
+}
+
+var v_max = this.canvas.width - 2
+v = Math.round(v * v_max)
+if (this.value == v)
+  return return_value
+this.value == v
+
+var canvas = this.canvas
+var context = canvas.getContext("2d")
+context.fillStyle = "#0F0"
+context.fillRect(1,1, v,2)
+if (v < v_max) {
+  context.fillStyle = "#0A809B"
+  context.fillRect(v+1,1, (v_max-v),2)
+}
+
+return true
+    };
+
+    var Texture_Object = (function () {
+var texture_obj_list = []
+
+function TextureObject(texture_obj) {
+  this._obj = texture_obj
+  Object.assign(this, texture_obj)
+
+  this.init = texture_obj.init
+  this._update = texture_obj.update
+  this.update = function (v) {
+    var result = this._update(v)
+    this.adjust_scale()
+    return result
+  }
+
+  this.canvas = document.createElement("canvas")
+  this.canvas.width = this.canvas.height = 1
+
+  this.texture = new THREE.Texture(this.canvas)
+  this.texture.needsUpdate = true
+}
+
+TextureObject.prototype.adjust_scale = function () {
+  var scale = this.obj_parent.para.scale || 1
+  var aspect = Math.min(this.canvas.width, this.canvas.height)
+  this.obj_parent.sprite.scale.set(scale*(this.canvas.width/aspect),scale*(this.canvas.height/aspect), 1);
+};
+
+return function (texture_obj) {
+  var obj = texture_obj_list.find(function (_obj) {
+    return (texture_obj.id == _obj.id);
+  });
+  if (obj) {
+    obj.value = null
+    return obj
+  }
+
+  var obj = new TextureObject(texture_obj)
+  texture_obj_list.push(obj)
+  console.log("sprite canvas count:" + texture_obj_list.length)
+  return obj
+};
+    })();
+
+    function create_sprite_obj(texture) {
+//  console.log(explosion_texture)
+var material = new THREE.SpriteMaterial({ map:texture });// , useScreenCoordinates:true /*,alignment:THREE.SpriteAlignment.topLeft*/  } );
+material.useScreenCoordinates = false;
+material.depthTest = false;//true;//
+material.sizeAttenuation = true;
+material.scaleByViewport = false;
+var sprite = new THREE.Sprite( material );
+//console.log(sprite)
+//console.log(MMD_SA.SpeechBubble._mesh)
+//sprite.renderDepth = 999999
+MMD_SA.scene.add( sprite );
+
+var obj_free = { sprite:sprite }
+sprite_obj_list.push(obj_free)
+console.log("sprite object count:" + sprite_obj_list.length)
+return obj_free
+    }
+
+    window.addEventListener("SA_Dungeon_after_map_generation", function () {
+sprite_obj_list.concat(VFX.obj_list).forEach(function (ss) {
+  ss.sprite.visible = false
+});
+    });
+
+// added after jThree_ready to make sure that they are added LAST
+    window.addEventListener("jThree_ready",() => {
+      window.addEventListener("SA_MMD_model_all_process_bones", (function () {
+function get_bone_list(_SFX) {
+  var bone_list = {}
+
+  _SFX.forEach((SFX, idx) => {
+    if (SFX.sprite||SFX.VFX) {
+      (SFX.sprite||[]).concat(SFX.VFX||[]).forEach((sprite, s_idx) => {
+        if (sprite.bone_ref) {
+          if (!bone_list[sprite.bone_ref])
+            bone_list[sprite.bone_ref] = {}
+          bone_list[sprite.bone_ref].pos = true
+          if (sprite.pos_offset_rotated)
+            bone_list[sprite.bone_ref].rot = true
+        }
+      });
+    }
+  });
+
+  return bone_list
+}
+
+var _data = {}
+
+var TEMP_m4 = new THREE.Matrix4();
+
+return function (e) {
+  THREE.MMD.getModels().forEach((model) => {
+var skin = model.skin
+if (!skin) return
+
+var model_para = MMD_SA_options.model_para_obj_all[model._model_index]
+var para_SA = MMD_SA.motion[skin._motion_index].para_SA
+var _SFX = para_SA.SFX || []
+if (!_SFX.length && !model_para.SFX && !model_para._SFX_one_time) return
+
+var mesh = model.mesh
+
+var f = skin.time*30
+
+var data = _data[mesh._model_index]
+if (!data)
+  data = _data[mesh._model_index] = { bone:{}, motion:{} }
+
+var motion_data = data.motion[skin._motion_index]
+if (!motion_data) {
+  motion_data = data.motion[skin._motion_index] = { SFX:{}, bone_list:get_bone_list(_SFX) }
+}
+
+var bone_list = Object.assign({}, motion_data.bone_list)
+
+if (model_para.SFX) {
+  Object.assign(bone_list, get_bone_list(model_para.SFX))
+  _SFX = _SFX.concat(model_para.SFX)
+}
+
+if (model_para._SFX_one_time) {
+  Object.assign(bone_list, get_bone_list(model_para._SFX_one_time))
+  _SFX = _SFX.concat(model_para._SFX_one_time)
+}
+
+var bone_data = {}
+Object.keys(bone_list).forEach((bone_name) => {
+  bone_data[bone_name] = {}
+});
+
+var mesh_m4 = TEMP_m4.makeRotationFromQuaternion(mesh.quaternion).setPosition(mesh.position)
+for (let bone_name in bone_list) {
+  let b = bone_list[bone_name]
+  if (b.pos) {
+    bone_data[bone_name].pos = MMD_SA.get_bone_position(mesh, bone_name, mesh)
+    if (mesh._bone_to_position_last)
+      bone_data[bone_name].pos.sub(mesh._bone_to_position_last.bone_pos_offset)
+    bone_data[bone_name].pos.applyMatrix4(mesh_m4)
+  }
+  if (b.rot)
+    bone_data[bone_name].rot = MMD_SA.get_bone_rotation(mesh, bone_name)
+}
+
+_SFX.forEach((SFX, idx) => {
+  if (SFX.frame_range) {
+    if ((f < SFX.frame_range[0]) || (f > SFX.frame_range[1]))
+      return
+  }
+
+  var SFX_id = SFX.id||idx
+  var motion_SFX = motion_data.SFX[SFX_id]
+  if (!motion_SFX)
+    motion_SFX = motion_data.SFX[SFX_id] = { sprite:[] }
+
+  if (SFX.camera_shake && (motion_SFX._loop_timestamp != skin._loop_timestamp)) {
+    MMD_SA.CameraShake.shake(SFX.camera_shake.id, SFX.camera_shake.magnitude, SFX.camera_shake.duration, SFX.camera_shake.graph);
+  }
+
+  if (SFX.sprite||SFX.VFX) {
+    (SFX.sprite||[]).concat(SFX.VFX||[]).forEach((sprite, s_idx) => {
+//      var is_sprite = SFX.sprite && (s_idx < SFX.sprite.length);
+
+      var md = motion_SFX.sprite[s_idx]
+      if (!md)
+        md = motion_SFX.sprite[s_idx] = {_f:f, _loop_timestamp:null}
+
+      var para = {
+  name:sprite.name,
+  speed:sprite.speed||1,
+  scale:sprite.scale||1,
+  loop: sprite.sticky && (sprite.loop !== false),
+
+  depth:sprite.depth,
+
+  pos_target:sprite.pos_target,
+
+  onloop: sprite.onloop || SFX.onloop,
+// not considering looping as motion end (i.e. _loop_timestamp==skin._loop_timestamp), for now at least
+  onmotionended: (sprite.sticky) ? { model_index:model._model_index, motion_index:skin._motion_index, _loop_timestamp:/*md._loop_timestamp||*/skin._loop_timestamp } : null,
+
+  custom: sprite.custom,
+      };
+
+      var sprite_list = []
+      if (sprite.instance_per_frame) {
+        let f_ini = md._f
+        let f_delta = f - f_ini
+        if (md._loop_timestamp != skin._loop_timestamp) {
+          f_ini = f
+          f_delta = 0
+        }
+        else if (SFX.frame_range && (md._f < SFX.frame_range[0])) {
+          f_ini = SFX.frame_range[0]
+        }
+
+        let f_step = 1/sprite.instance_per_frame
+        for (let i = 1; f_ini + (i+0.2)*f_step < f; i++) {
+          let para_clone = Object.assign({}, para)
+          para_clone.lerp = 1 - (f - f_ini+i*f_step) / f_delta
+          sprite_list.push(para_clone)
+//DEBUG_show(i,0,1)
+        }
+        sprite_list.push(para)
+      }
+      else {
+        if (md._loop_timestamp == skin._loop_timestamp) {
+          if (!sprite.sticky)
+            return
+        }
+
+        sprite_list.push(para)
+      }
+
+      sprite_list.forEach((para, instance) => {
+        if (sprite.sticky)
+          para.id = [mesh._model_index, skin._motion_index, SFX_id, s_idx, instance].join("_")//, skin._loop_timestamp].join("_")
+
+        if (sprite.bone_ref) {
+          let b = bone_data[sprite.bone_ref]
+          para.pos = (para.lerp) ? b.pos.clone().lerp(data.bone[sprite.bone_ref].pos, para.lerp) : b.pos
+
+          if (sprite.pos_offset)
+            para.pos.add((sprite.pos_offset_rotated) ? sprite.pos_offset.clone().applyQuaternion((para.lerp) ? b.rot.clone().slerp(data.bone[sprite.bone_ref].rot, para.lerp) : b.rot) : sprite.pos_offset)
+        }
+        else {
+          para.pos = sprite.pos||new THREE.Vector3()
+        }
+
+        if (para.pos_target) {
+          if (para.pos_target.mesh == "model")
+            para.pos_target.mesh = mesh
+        }
+
+        MMD_SA.Sprite.animate(para.name, para)
+      });
+
+      md._f = f
+      md._loop_timestamp = skin._loop_timestamp
+    });
+  }
+
+  motion_SFX._loop_timestamp = skin._loop_timestamp;
+});
+
+Object.assign(data.bone, bone_data);
+
+model_para._SFX_one_time = null;
+  });
+};
+      })());
+
+      window.addEventListener("SA_MMD_model_all_process_bones", function () {
+if (MMD_SA_options.Dungeon) {
+  sprite_obj_list.forEach(function (ss) {
+    if (ss.para.id && /^pointer_/.test(ss.para.id))
+      ss.sprite.visible = false
+  });
+
+  let list = MMD_SA_options.Dungeon.check_mouse_on_object()
+  if (list) {
+    list.forEach(obj_clickable => {
+      var obj = obj_clickable.obj
+      var id = "pointer_" + obj.id
+      MMD_SA.Sprite.animate("pointer_blue_01", {
+        id: id,
+        loop: 1,
+        pos: obj_clickable.pos,
+      });
+    });
+  }
+}
+
+/*
+MMD_SA_options.Dungeon.sprite.animate("pointer_blue_01", {
+  id: "PC",
+  loop: 1,
+  pos_target: {
+    mesh: THREE.MMD.getModels()[0].mesh,
+    offset: {x:0, y:20, z:0},
+  },
+});
+*/
+
+sprite_obj_list.concat(VFX.obj_list).forEach(function (ss, idx) {
+  var sprite = ss.sprite
+  if (!sprite.visible)
+    return
+
+  var para = ss.para
+
+  if (para.onmotionended) {
+    let skin = THREE.MMD.getModels()[para.onmotionended.model_index].skin
+    if ((skin._motion_index != para.onmotionended.motion_index) || (skin._loop_timestamp != para.onmotionended._loop_timestamp)) {
+//if (idx >= sprite_obj_list.length) DEBUG_show([RAF_timestamp].join(','))
+      sprite.visible = false
+      return
+    }
+  }
+
+  var pos_target = para.pos_target
+  if (pos_target) {
+    if (pos_target.mesh) {
+      if (!pos_target.mesh.visible) {
+        sprite.visible = false
+        return
+      }
+      sprite.position.copy(pos_target.mesh.position)
+      if (pos_target.offset)
+        sprite.position.add(pos_target.offset)
+//if (idx >= sprite_obj_list.length) sprite.quaternion.copy(pos_target.mesh.quaternion)
+//DEBUG_show(VFX.obj_list.map((o)=>o.sprite.visible).join(',')+'/'+RAF_timestamp)
+    }
+    para._pos.copy(sprite.position)
+  }
+
+  if (para.depth > 0) {
+    sprite.position.copy(para._pos).add(MMD_SA.TEMP_v3.copy(MMD_SA._trackball_camera.object.position).sub(para._pos).normalize().multiplyScalar(para.depth))
+  }
+
+  if (ss.animator) {
+    ss.animator.update(RAF_timestamp_delta)
+  }
+  else {
+    if (ss.texture_obj.update(para.get_value && para.get_value()))
+      sprite.material.map.needsUpdate = true
+  }
+});
+      });
+    });
+
+
+// VFX START
+  var VFX = (function () {
+    var obj_list = {};
+
+    return {
+      FX: (function () {
+        function FX(fx, mesh, para) {
+this.FX = fx
+this.sprite = mesh
+this.para = para
+
+this.animator = new Animator(this)
+        }
+
+        function Animator(obj) {
+this.parent = obj
+        }
+
+        Animator.prototype.reset = function () {
+function reset_material(obj) {
+  if (obj.children) {
+    obj.children.forEach((c) => {
+      reset_material(c)
+    });
+  }
+  if (obj.material) {
+    obj.material.opacity = 1
+  }
+}
+
+this.animation_data = { time:0 }
+
+reset_material(this.parent.sprite)
+        };
+
+        Animator.prototype.update = function (ms) {
+this.parent.FX.animate(this.parent, ms, this.animation_data)
+        };
+
+        return function (obj_name, init, _init_3D, _create, animate) {
+this.obj_name = obj_name
+
+if (!obj_list[obj_name])
+  obj_list[obj_name] = []
+
+this.obj_list = obj_list[obj_name]
+
+this.init = init;
+
+this.init_3D = (function () {
+  var initialized = false;
+  return function () {
+    if (initialized) return
+    initialized = true
+
+    _init_3D.call(this)
+  };
+})();
+
+this.create = function (para) {
+  this.init_3D()
+
+  var mesh = _create.call(this, para)
+  mesh.useQuaternion = true
+  MMD_SA.scene.add(mesh)
+
+  var obj = new FX(this, mesh, para);
+  this.obj_list.push(obj)
+//DEBUG_show(this.obj_list.length,0,1)
+  return obj
+};
+
+this.animate = animate;
+        };
+      })(),
+
+      init: function () {
+if (!MMD_SA_options.GOML_head)
+  MMD_SA_options.GOML_head = ""
+
+var txr_preload_list = {}
+
+for (let name in this.list) {
+  let fx = this.list[name]
+  fx.init()
+
+  if (fx.txr_preload_list)
+    Object.assign(txr_preload_list, fx.txr_preload_list)
+}
+
+for (let name in txr_preload_list) {
+  let ss = txr_preload_list[name]
+
+  MMD_SA_options.GOML_head +=
+    '<txr id="' + name + '" src="' + (toFileProtocol(ss.url)) + '" />\n';
+}
+      },
+
+      animate: function (name, para) {
+var fx = VFX.list[name]
+var obj_list = fx.obj_list
+
+var obj_free = (para.id && obj_list.find(obj => (obj.para.id == para.id))) || obj_list.find(obj => !obj.sprite.visible);
+
+var obj_needs_reset
+if (!obj_free) {
+  obj_free = fx.create(para)
+  obj_needs_reset = true
+}
+else {
+  obj_needs_reset = !obj_free.sprite.visible
+}
+
+obj_free.para = para
+
+obj_free.sprite.visible = true
+
+if (para.pos)
+  obj_free.sprite.position.copy(para.pos)
+para._pos = (para._pos || new THREE.Vector3()).copy(obj_free.sprite.position)
+
+if (obj_needs_reset) {
+  obj_free.animator.reset()
+}
+
+return obj_free;
+      },
+
+      get obj_list() {
+var _obj_list = []
+for (let name in obj_list) {
+  _obj_list = _obj_list.concat(obj_list[name])
+}
+
+return _obj_list
+      },
+    };
+  })();
+
+  VFX.list = (function () {
+    return {
+      "aura01": new VFX.FX(
+        "aura01",
+// init
+        function () {
+this.txr_preload_list = {
+  "aura01_TXR": { url:System.Gadget.path + '/images/sprite_sheet.zip#/texture/shockwave' + ((webkit_transparent_mode) ? '-transparent' : '') + '_min.png' },
+};
+        },
+// init_3D
+        function () {
+// THREE.CylinderGeometry = function ( radiusTop, radiusBottom, height, radiusSegments, heightSegments, openEnded )
+this.geo = new THREE.CylinderGeometry( 15, 10, 5, 8*2, 1, true );
+this.geo.applyMatrix(new THREE.Matrix4().setPosition(new THREE.Vector3().set(0, 2.5, 0)));
+/*
+this.geo.faceVertexUvs[ 0 ].forEach((v) => {
+  v.forEach((uv) => {
+    uv.x *= 80
+  });
+});
+*/
+this.tex = jThree("#aura01_TXR").three(0)
+this.tex_repeat_x = 4
+        },
+// create
+        function () {
+var tex = this.tex.clone()
+tex.repeat.x = this.tex_repeat_x
+tex.wrapS = THREE.RepeatWrapping;
+//tex.wrapT =
+tex.needsUpdate = true
+
+var mesh = new THREE.Mesh(this.geo, new THREE.MeshBasicMaterial({
+  map:tex,
+  blending: (webkit_transparent_mode) ? THREE.NormalBlending : THREE.AdditiveBlending,
+//  side:/*THREE.BackSide*/THREE.DoubleSide,
+  transparent:true,
+}));
+mesh.useQuaternion = true
+//console.log(mesh)
+//return mesh
+
+mesh.material.side = THREE.BackSide
+var mesh2 = new THREE.Mesh(this.geo, new THREE.MeshBasicMaterial({
+  map:tex,
+  blending: (webkit_transparent_mode) ? THREE.NormalBlending : THREE.AdditiveBlending,
+//  side:/*THREE.BackSide*/THREE.DoubleSide,
+  transparent:true,
+}));
+mesh2.useQuaternion = true
+mesh2.scale.set(1.001,1,1.001);
+
+Object.defineProperty(mesh, "visible", (function () {
+  var visible = mesh.visible;
+  return {
+    get: function () {
+      return visible && this.parent.visible;
+    },
+    set: function (v) { visible = v; },
+  };
+})());
+
+Object.defineProperty(mesh2, "visible", (function () {
+  var visible = mesh2.visible;
+  return {
+    get: function () {
+      return visible && this.parent.visible;
+    },
+    set: function (v) { visible = v; },
+  };
+})());
+
+var obj = new THREE.Object3D();
+obj.useQuaternion = true
+obj.add(mesh);
+obj.add(mesh2);
+return obj;
+        },
+// animate
+        function (obj, ms, data) {
+//DEBUG_show(ms)
+
+if (!data.mod) {
+  data.mod = 1
+  data.uv_y = 0.5
+  data.uv_y_limit = 1
+}
+
+data.time += ms
+
+data.uv_y += ms/1000 *2 * data.mod
+var condition = (data.mod > 0) ? (data.uv_y >= data.uv_y_limit) : (data.uv_y <= data.uv_y_limit);
+if (condition) {
+  data.uv_y = data.uv_y_limit
+  data.mod = -data.mod
+  data.uv_y_limit = (data.mod > 0) ? 1 - Math.random()*0.1 : 0.4 + Math.random()*0.1;
+}
+
+var tex = obj.sprite.children[0].material.map
+tex.repeat.set(this.tex_repeat_x, 1/data.uv_y)
+//tex.offset.set(0,(1-data.uv_y))
+
+obj.sprite.quaternion.setFromEuler(MMD_SA.TEMP_v3.set(0, (data.time/1000*0.5)%1, 0).multiplyScalar(Math.PI*2))
+        },
+      ),
+
+      "aura_ring01": new VFX.FX(
+        "aura_ring01",
+// init
+        function () {
+this.txr_preload_list = {
+  "aura01_TXR": { url:System.Gadget.path + '/images/sprite_sheet.zip#/texture/shockwave' + ((webkit_transparent_mode) ? '-transparent' : '') + '_min.png' },
+};
+        },
+// init_3D
+        function () {
+// THREE.RingGeometry = function ( innerRadius, outerRadius, thetaSegments, phiSegments, thetaStart, thetaLength )
+this.geo = new THREE.RingGeometry( 5, 10, 8*2, 1 );
+this.geo.applyMatrix(new THREE.Matrix4().makeRotationFromEuler(new THREE.Vector3().set(-Math.PI/2, 0, 0)));
+
+this.tex = jThree("#aura01_TXR").three(0)
+this.tex_repeat_x = 8
+        },
+// create
+        function () {
+var tex = this.tex.clone()
+tex.repeat.x = this.tex_repeat_x
+tex.wrapS = THREE.RepeatWrapping;
+//tex.wrapT = 
+tex.needsUpdate = true
+
+var mesh = new THREE.Mesh(this.geo, new THREE.MeshBasicMaterial({
+  map:tex,
+  blending: (webkit_transparent_mode) ? THREE.NormalBlending : THREE.AdditiveBlending,
+//  side:THREE.BackSide,//THREE.DoubleSide,
+  transparent:true,
+}));
+mesh.useQuaternion = true
+//console.log(mesh)
+return mesh
+        },
+// animate
+        function (obj, ms, data) {
+//DEBUG_show(ms)
+
+if (!data.duration) {
+  let p = obj.para.custom || {}
+  data.duration = p.duration || 1000*10
+  data.scale_min = p.scale_min || 1
+  data.scale_max = p.scale_max || 30
+//DEBUG_show(data.duration,0,1)
+}
+
+data.time += ms
+//return
+
+var t = (data.duration - data.time) / data.duration
+if (t <= 0) {
+  obj.sprite.visible = false
+  return
+}
+
+var scale = data.scale_min + (1-t)*(data.scale_max-data.scale_min)
+obj.sprite.scale.set(scale,scale,scale)
+
+var opacity = 0.25 + Math.pow(t, 0.5)*0.75
+var material = obj.sprite.material
+material.opacity = opacity
+
+var tex = material.map
+tex.repeat.set(this.tex_repeat_x, 1)
+//tex.offset.set(0,(1-data.uv_y))
+        },
+      ),
+    };
+  })();
+
+  VFX.init();
+// VFX END
+
+
+    return {
+  animate: function (name, para) {
+var ss = sprite_sheet_by_name[name]
+if (!ss) {
+  VFX.animate(name, para)
+  return
+}
+
+var texture = jThree("#" + ss.filename + "_TXR").three(0)
+if (ss.texture_variant) {
+  let variant = ss_texture_by_filename[ss.filename].variant
+  if (variant[ss.texture_variant.id]) {
+    texture = variant[ss.texture_variant.id]
+  }
+  else {
+    let tex = texture.clone()
+
+    let canvas = document.createElement("canvas")
+    canvas.width  = tex.image.width
+    canvas.height = tex.image.height
+    let ctx = canvas.getContext("2d")
+    ctx.drawImage(tex.image,0,0)
+    let imgData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+    let pixels = imgData.data;
+    ss.texture_variant.pixel_transform(pixels)
+    ctx.putImageData(imgData, 0, 0);
+
+    tex.image = canvas
+    tex.needsUpdate = true
+    texture = variant[ss.texture_variant.id] = tex
+//console.log(texture, tex)
+  }
+/*
+texture_variant: {
+  id: "BW",
+  pixel_transform: function (pixels) {
+*/
+}
+
+var obj_free = (para.id && sprite_obj_list.find(obj => (obj.para.id == para.id))) || sprite_obj_list.find(obj => !obj.sprite.visible);
+
+var obj_needs_reset
+if (!obj_free) {
+  obj_free = create_sprite_obj(texture)
+  obj_needs_reset = true
+}
+else {
+  obj_needs_reset = !obj_free.sprite.visible
+}
+
+obj_free.para = para
+// clear it, just in case it was a HP bar or something that didn't animate
+obj_free.texture_obj = null
+
+obj_free.sprite.material.blending = (ss.blending) ? THREE[ss.blending.charAt(0).toUpperCase() + ss.blending.substring(1).toLowerCase() + 'Blending'] : THREE.NormalBlending
+obj_free.sprite.material.depthTest = (para.depth != null)
+obj_free.sprite.material.map = texture
+
+if (para.pos)
+  obj_free.sprite.position.copy(para.pos)
+para._pos = (para._pos || new THREE.Vector3()).copy(obj_free.sprite.position)
+
+var scale = ss.scale * (para.scale || 1)
+obj_free.sprite.scale.set(scale,scale, 1);
+
+if (obj_needs_reset) {
+  if (!obj_free.animator)
+    obj_free.animator = new SpriteAnimator(obj_free)
+  obj_free.animator.reset(ss)
+}
+obj_free.animator.tileDisplayDuration = para.frame_interval || (ss.frame_interval / (para.speed || 1))
+
+return obj_free
+  }
+
+ ,display: function (texture_obj, para) {
+texture_obj = Texture_Object(texture_obj)
+var texture = texture_obj.texture
+
+var obj_free = sprite_obj_list.find(function (obj) {
+  return !obj.sprite.visible;
+});
+
+if (!obj_free) {
+  obj_free = create_sprite_obj(texture)
+}
+
+obj_free.para = para
+obj_free.animator = null
+
+obj_free.texture_obj = texture_obj
+texture_obj.obj_parent = obj_free
+texture_obj.init()
+texture_obj.update()
+
+obj_free.sprite.material.blending = (para.blending) ? THREE[ss.blending.charAt(0).toUpperCase() + ss.blending.substring(1).toLowerCase() + 'Blending'] : THREE.NormalBlending
+obj_free.sprite.material.depthTest = false
+obj_free.sprite.material.map = texture
+obj_free.sprite.material.uvScale.set(1,1)
+obj_free.sprite.material.uvOffset.set(0,0)
+
+if (para.pos)
+  obj_free.sprite.position.copy(para.pos)
+para._pos = obj_free.sprite.position.clone()
+
+obj_free.sprite.rotation = 0
+
+obj_free.sprite.visible = true
+  }
+
+ ,get_obj_by_id: function (id) {
+return sprite_obj_list.find(function (obj) { return obj.texture_obj && (obj.texture_obj.id == id); });
+  }
+
+ ,TextureObject_HP_bar:TextureObject_HP_bar
+    };
+  })();
+
+
+MMD_SA.CameraShake = (function () {
+
+  var CS_offset_pos;
+  window.addEventListener("jThree_ready", (e) => {
+    CS_offset_pos = new THREE.Vector3()
+  });
+
+  var CS_offset_angle = 0
+  var CS_frame_interval = 1000/30
+  var CS_frame_time = CS_frame_interval
+
+  var CS = function (id, magnitude, duration, graph={}) {
+    this.id = id
+    this.magnitude = magnitude
+    this.duration = duration
+
+    graph.decay_power = graph.decay_power||2
+    this.graph = graph
+
+    this.time = 0
+  };
+
+  var CS_list = []
+
+  window.addEventListener("MMDStarted", (e) => {
+//MMD_SA.CameraShake.shake("", 0.1, 3*1000, 0)
+
+    window.addEventListener("SA_MMD_before_render", (e) => {
+var CS_magnitude = 0
+CS_list = CS_list.filter((cs) => {
+  if (cs.started) {
+    cs.time += RAF_timestamp_delta
+    if (cs.time > cs.duration)
+      return false
+  }
+  cs.started = true
+
+  var magnitude = cs.magnitude
+  if (cs.graph.func) {
+    magnitude *= cs.graph.func(cs)
+  }
+  else {
+    let t = (cs.duration - cs.time) / cs.duration
+    if (cs.graph.reversed)
+      t = 1-t
+    magnitude *= Math.pow(t, cs.graph.decay_power)
+  }
+  if (CS_magnitude < magnitude)
+    CS_magnitude = magnitude
+
+  return true
+});
+
+if (CS_magnitude) {
+  CS_frame_time += RAF_timestamp_delta
+  if (CS_frame_time > CS_frame_interval) {
+    CS_frame_time = CS_frame_time % CS_frame_interval
+    CS_offset_angle = (CS_offset_angle + Math.PI/2 + Math.random() * Math.PI) % (Math.PI*2)
+    CS_offset_pos.set(Math.cos(CS_offset_angle), Math.sin(CS_offset_angle), 0).multiplyScalar(CS_magnitude).applyQuaternion(MMD_SA._trackball_camera.object.quaternion)
+  }
+  MMD_SA._trackball_camera.object.position.add(CS_offset_pos)
+}
+else {
+  CS_offset_pos.set(0,0,0)
+  CS_offset_angle = 0
+  CS_frame_time = CS_frame_interval
+}
+    });
+
+    window.addEventListener("SA_MMD_after_render", (e) => {
+MMD_SA._trackball_camera.object.position.sub(CS_offset_pos);
+    });
+  });
+
+  return {
+    shake: function (id, magnitude, duration, graph) {
+var cs = new CS(id, magnitude, duration, graph)
+
+if (cs.id) {
+  let index = CS_list.findIndex((_cs)=>(cs.id==_cs.id))
+  if (index != -1)
+    CS_list[index] = cs
+}
+else
+  CS_list.push(cs)
+    },
+  };
+
+})();
+
+
 (function () {
 // defaults START
   use_full_fps_registered = true
@@ -5300,6 +6876,7 @@ if (navigator.xr) {
     MMD_SA_options = {}
 
   MMD_SA_options.custom_default && MMD_SA_options.custom_default()
+  window.dispatchEvent(new CustomEvent("SA_MMD_init"))
 
 // save some headaches
   if (is_mobile && !is_SA_child_animation) {
@@ -5307,7 +6884,7 @@ if (navigator.xr) {
     Settings.CSSTransformFullscreen = true
   }
 //  if (is_mobile) MMD_SA_options.texture_resolution_limit = MMD_SA_options.texture_resolution_limit_mobile || 1024;
-//MMD_SA_options.texture_resolution_limit=256
+MMD_SA_options.texture_resolution_limit=2048
 
 
 // model selection START
@@ -5619,7 +7196,7 @@ return this.model_para_obj.MME || this._MME
   MMD_SA_options.model_para_obj_by_filename = {}
   var model_count = MMD_SA_options.model_para_obj_all.length
   MMD_SA_options.model_para_obj_all.forEach(function (obj, idx) {
-    obj._model_index = idx
+    obj._model_index = obj._model_index_default = idx
     MMD_SA_options.model_para_obj_by_filename[obj._filename_raw] = obj
 
     if (obj.is_object) {
@@ -5985,7 +7562,7 @@ this._look_at_screen_parent_rotation = v;
   MMD_SA_options.look_at_screen_by_model = function (model) {
 var music_mode = MMD_SA.music_mode && (this.look_at_screen_music_mode != true)
 
-var mm = (model && (model._model_index > 0)) ? MMD_SA.motion[THREE.MMD.getModels()[model._model_index].skin._motion_index] : MMD_SA.MMD.motionManager
+var mm = (model && (model._model_index > 0)) ? MMD_SA.motion[model.skin._motion_index] : MMD_SA.MMD.motionManager
 var para_SA = mm.para_SA
 
 // cache the return value for better performance in case of getter functions
@@ -6260,13 +7837,8 @@ MMD_SA.GOML_head +=
      THREE.MMD.getModels().forEach(function (m) {
 if (!m.physi) return;
 
-let delay_ini = MMD_SA_options.reset_rigid_body_physics_step + ((MMD_SA_options.Dungeon) ? 90 : 30);
-m.mesh._reset_rigid_body_physics_ = delay_ini;
-/*
-System._browser.on_animation_update.add(function () {
-  m.mesh._reset_rigid_body_physics_ = MMD_SA_options.reset_rigid_body_physics_step;
-}, delay_ini+30, 0);
-*/
+m.resetPhysics(30)
+
 //m.physi.reset();
     });
   });
@@ -6471,8 +8043,6 @@ self.Module = { TOTAL_MEMORY:52428800*2 };
 //      js.push('MMD_SA._ammo_async_loaded_=true; console.log("Ammo.js loaded");')
     }
   }
-
-  MMD_SA._readVector_scale = (MMD_SA_options.WebXR) ? (MMD_SA_options.WebXR.model_scale || 0.9) : 1;
 
   var js_min_mode = self._js_min_mode_ || (/*!MMD_SA_options.WebXR && */browser_native_mode && !webkit_window && !localhost_mode);
 
