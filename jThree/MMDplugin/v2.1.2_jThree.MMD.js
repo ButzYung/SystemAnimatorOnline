@@ -1,4 +1,4 @@
-// (2021-01-21)
+// (2021-08-06)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -515,6 +515,8 @@ para_SA.motion_blending = {
     }
 //DEBUG_show(motion.path.replace(/^.+[\/\\]/, "")+"/"+mmd.motionManager.filename+'/'+(MMD_SA_options.motion[model.skin._motion_index].path.replace(/^.+[\/\\]/, ""))+'/'+parseInt(mm.lastFrame_/30)+'/'+Date.now())
 
+    model.skin._loop_timestamp = RAF_timestamp
+
     if (!blending_options) {
       model.skin_MMD_SA_extra[0] = model.morph_MMD_SA_extra[0] = MMD_SA.Animation_dummy
     }
@@ -613,6 +615,8 @@ para_SA.motion_blending = {
       var ignore_physics_reset = _model.skin.time && ((mm.para_SA.loopback_physics_reset == false) || ((lastFrame == mm.lastFrame) && !(model_para._firstFrame_||mm.firstFrame_) && !mm.para_SA.loopback_fading))
       _model.resetMotion(ignore_physics_reset || MMD_SA._ignore_physics_reset)
     }
+
+    _model.skin._loop_timestamp = RAF_timestamp
 
     mm.para_SA.onstart && mm.para_SA.onstart(motion_changed);
 
@@ -1656,7 +1660,9 @@ if (self.MMD_SA) {
 //console.log(decodeURIComponent(this.url_raw.replace(/^.+[\/\\]/, "")))
   var filename_raw = decodeURIComponent(this.url_raw.replace(/^.+[\/\\]/, ""))
   model_para_obj = MMD_SA_options.model_para_obj_by_filename[filename_raw]
-  this._model_index = model_para_obj._model_index
+  this._model_index = this._model_index_default = model_para_obj._model_index
+
+  MMD_SA._readVector_scale = (model_para_obj.model_scale||1) * ((MMD_SA_options.WebXR) ? (MMD_SA_options.WebXR.model_scale || 0.9) : 1);
 
   if (/\#clone(\d+)\.pmx$/.test(filename_raw)) {
     cloned = true
@@ -2486,7 +2492,7 @@ if (scale) v=v.map(f=>f*MMD_SA._readVector_scale);
 BoneKey = function( bin ) {
 	this.name = bin.readCString(15);
 	this.time = f2t( bin.readUint32() );
-	this.pos = convV( bin.readVector(3,true) );
+	this.pos = convV( bin.readVector(3) );
 	this.rot = convR( bin.readVector(4) );
 	this.interp = bin.readBytes(64).subarray(0,16); // 必要なのは最初の１６個。
 };
@@ -2653,14 +2659,15 @@ if (sd) {
 		var keys, last;
 		// 一連のキーをターゲット（名前）毎に振り分ける。
 		keys = [];
-// AT: multi-model
+// AT: multi-model, model_scale
 var multi_model = (MMD_SA_options.model_para_obj_all.length > 1)
+var model_scale = (model_para_obj.model_scale||1) * ((MMD_SA_options.WebXR) ? (MMD_SA_options.WebXR.model_scale || 0.9) : 1);
 		boneKeys.forEach( function( w ) {
 			if ( v.name === w.name ) {
-if (multi_model && sd) {
+if ((multi_model && sd) || (model_scale != 1)) {
   w = Object.assign({}, w)
   w.rot = w.rot.slice()
-  w.pos = w.pos.slice()
+  w.pos = w.pos.map(p => p * model_scale)
 }
 				last = w;
 				keys.push( w );
@@ -3265,10 +3272,13 @@ MMDShader = { // MOD MeshPhongMaterial
 // AT: shadowPara
 + 'vec3 SP;'
 
-+ 'for( int i = 0; i < MAX_SHADOWS; i ++ ) {'
+// AT: unroll_loop
++ '\n#pragma unroll_loop\n'
+
++ 'for( int i = 0; i < MAX_SHADOWS; i ++ ) {//LOOP_START\n'
 
 // AT: shadowPara
-+ 'vec3 SP = shadowPara[i];'
++ 'SP = shadowPara[i];'
 
 + 'vec3 shadowCoord = vShadowCoord[ i ].xyz / vShadowCoord[ i ].w;bvec4 inFrustumVec = bvec4 ( shadowCoord.x >= 0.0, shadowCoord.x <= 1.0, shadowCoord.y >= 0.0, shadowCoord.y <= 1.0 );bool inFrustum = all( inFrustumVec );\n#ifdef SHADOWMAP_CASCADE\ninFrustumCount += int( inFrustum );bvec3 frustumTestVec = bvec3( inFrustum, inFrustumCount == 1, shadowCoord.z <= 1.0 );\n#else\nbvec2 frustumTestVec = bvec2( inFrustum, shadowCoord.z <= 1.0 );\n#endif\nbool frustumTest = all( frustumTestVec );if ( frustumTest ) {'
 
@@ -3287,7 +3297,7 @@ MMDShader = { // MOD MeshPhongMaterial
 + '#elif defined( SHADOWMAP_TYPE_PCF_SOFT )\nfloat shadow = 0.0;float xPixelOffset = 1.0 / shadowMapSize[ i ].x;float yPixelOffset = 1.0 / shadowMapSize[ i ].y;float dx0 = -1.0 * xPixelOffset;float dy0 = -1.0 * yPixelOffset;float dx1 = 1.0 * xPixelOffset;float dy1 = 1.0 * yPixelOffset;mat3 shadowKernel;mat3 depthKernel;depthKernel[0][0] = unpackDepth( texture2D( shadowMap[ i ], shadowCoord.xy + vec2( dx0, dy0 ) ) );depthKernel[0][1] = unpackDepth( texture2D( shadowMap[ i ], shadowCoord.xy + vec2( dx0, 0.0 ) ) );depthKernel[0][2] = unpackDepth( texture2D( shadowMap[ i ], shadowCoord.xy + vec2( dx0, dy1 ) ) );depthKernel[1][0] = unpackDepth( texture2D( shadowMap[ i ], shadowCoord.xy + vec2( 0.0, dy0 ) ) );depthKernel[1][1] = unpackDepth( texture2D( shadowMap[ i ], shadowCoord.xy ) );depthKernel[1][2] = unpackDepth( texture2D( shadowMap[ i ], shadowCoord.xy + vec2( 0.0, dy1 ) ) );depthKernel[2][0] = unpackDepth( texture2D( shadowMap[ i ], shadowCoord.xy + vec2( dx1, dy0 ) ) );depthKernel[2][1] = unpackDepth( texture2D( shadowMap[ i ], shadowCoord.xy + vec2( dx1, 0.0 ) ) );depthKernel[2][2] = unpackDepth( texture2D( shadowMap[ i ], shadowCoord.xy + vec2( dx1, dy1 ) ) );vec3 shadowZ = vec3( shadowCoord.z );shadowKernel[0] = vec3(lessThan(depthKernel[0], shadowZ ));shadowKernel[0] *= vec3(0.25);shadowKernel[1] = vec3(lessThan(depthKernel[1], shadowZ ));shadowKernel[1] *= vec3(0.25);shadowKernel[2] = vec3(lessThan(depthKernel[2], shadowZ ));shadowKernel[2] *= vec3(0.25);vec2 fractionalCoord = 1.0 - fract( shadowCoord.xy * shadowMapSize[i].xy );shadowKernel[0] = mix( shadowKernel[1], shadowKernel[0], fractionalCoord.x );shadowKernel[1] = mix( shadowKernel[2], shadowKernel[1], fractionalCoord.x );vec4 shadowValues;shadowValues.x = mix( shadowKernel[0][1], shadowKernel[0][0], fractionalCoord.y );shadowValues.y = mix( shadowKernel[0][2], shadowKernel[0][1], fractionalCoord.y );shadowValues.z = mix( shadowKernel[1][1], shadowKernel[1][0], fractionalCoord.y );shadowValues.w = mix( shadowKernel[1][2], shadowKernel[1][1], fractionalCoord.y );shadow = dot( shadowValues, vec4( 1.0 ) );shadowColor = shadowColor * vec3( ( 1.0 - darkness * shadow ) );\n'
 + '#else\nvec4 rgbaDepth = texture2D( shadowMap[ i ], shadowCoord.xy );float fDepth = unpackDepth( rgbaDepth );if ( fDepth < shadowCoord.z )shadowColor = shadowColor * vec3( 1.0 - darkness );\n#endif\n'
 
-+ '}\n#ifdef SHADOWMAP_DEBUG\n#ifdef SHADOWMAP_CASCADE\nif ( inFrustum && inFrustumCount == 1 ) gl_FragColor.xyz *= frustumColors[ i ];\n#else\nif ( inFrustum ) gl_FragColor.xyz *= frustumColors[ i ];\n#endif\n#endif\n}\n#ifdef GAMMA_OUTPUT\nshadowColor *= shadowColor;\n#endif\n'
++ '}//LOOP_END\n#ifdef SHADOWMAP_DEBUG\n#ifdef SHADOWMAP_CASCADE\nif ( inFrustum && inFrustumCount == 1 ) gl_FragColor.xyz *= frustumColors[ i ];\n#else\nif ( inFrustum ) gl_FragColor.xyz *= frustumColors[ i ];\n#endif\n#endif\n}\n#ifdef GAMMA_OUTPUT\nshadowColor *= shadowColor;\n#endif\n'
 
 //+ 'gl_FragColor.xyz = gl_FragColor.xyz * shadowColor;\n'
 // not Serious Shader (#ifndef)
@@ -4119,7 +4129,8 @@ if (rigid_default.type != null) {
     v.type = 0
     v.size = [0,0,0]
   }
-  v.type = rigid_default.type
+  else
+    v.type = rigid_default.type
 }
 //if (v.type == 2) v.type = 1
 var _RE = self.MMD_SA && model_para_obj.rigid_filter
@@ -4436,7 +4447,7 @@ if (self.MMD_SA) {
 //mesh._reset_rigid_body_physics_=0
   if (mesh._reset_rigid_body_physics_ > 0) {
     ignore_physics = true
-    mesh._reset_rigid_body_physics_--
+    mesh._reset_rigid_body_physics_ = Math.max(mesh._reset_rigid_body_physics_ - Math.min(RAF_timestamp_delta/1000*30, 1), 0)
   }
 //ignore_physics = false
 //if (ignore_physics) DEBUG_show(9,0,1)
@@ -5854,7 +5865,7 @@ mesh.MMDrigids = that.pmx.rigids
 // AT: model index, simple MorphMaterial support, castShadow, etc
 var model_para
 if (self.MMD_SA) {
-  mesh._model_index = that.pmx._model_index
+  mesh._model_index = mesh._model_index_default = that.pmx._model_index
   mesh._material_morph = {};
   model_para = self.MMD_SA && MMD_SA_options.model_para_obj_all[mesh._model_index]
 //  mesh.castShadow = !!MMD_SA_options.use_shadowMap
@@ -6203,11 +6214,12 @@ if (!skin.time || skin._MMD_SA_disabled) {
 //DEBUG_show(this._model_index+"/"+ignore_physics_reset,0,1)
 if (ignore_physics_reset) return;
 if (self.MMD_SA) {
+  let para_SA = ((this._model_index > 0) ? MMD_SA.motion[this.skin._motion_index] : MMD_SA.MMD.motionManager).para_SA
 // a trick to reset rigid body physics on motion seek/change
-  this.mesh._reset_rigid_body_physics_ = Math.max(this.mesh._reset_rigid_body_physics_||0, MMD_SA_options.reset_rigid_body_physics_step);
+  this.resetPhysics()
 // custom gravity
   if (this._model_index == 0) {
-    var gravity = MMD_SA.MMD.motionManager.para_SA.gravity || [0,-1,0]
+    let gravity = para_SA.gravity || [0,-1,0]
     if ((gravity[0] != MMD_SA.gravity[0]) || (gravity[1] != MMD_SA.gravity[1]) || (gravity[2] != MMD_SA.gravity[2])) {
       THREE.MMD.setGravity( gravity[0]*9.8*10, gravity[1]*9.8*10, gravity[2]*9.8*10 )
       MMD_SA.gravity = gravity
@@ -6217,6 +6229,22 @@ if (self.MMD_SA) {
 }
 		this.physi.reset();
 	}
+};
+
+// AT: reset physics (practically reset rigid body physics) for a certain number of frames
+Model.prototype.resetPhysics = function (f) {
+  if (!self.MMD_SA) return;
+
+  if (f === 0) {
+    this.mesh._reset_rigid_body_physics_ = 0
+    return
+  }
+
+  if (f == null) {
+    let para_SA = ((this._model_index > 0) ? MMD_SA.motion[this.skin._motion_index] : MMD_SA.MMD.motionManager).para_SA
+    f = para_SA.reset_rigid_body_physics_step||MMD_SA_options.reset_rigid_body_physics_step
+  }
+  this.mesh._reset_rigid_body_physics_ = Math.max(this.mesh._reset_rigid_body_physics_||0, f);
 };
 
 // AT: check model visibility
@@ -6265,10 +6293,11 @@ if (self.MMD_SA) {
 // This allows disabling meter motion/look_at_mouse/custom look_at_screen_ratio when certain extra motion is running.
   meter_motion_disabled = self.MMD_SA && MMD_SA.meter_motion_disabled
   model_para = MMD_SA_options.model_para_obj_all[this._model_index]
-  para_SA = (MMD_SA.motion[(this.skin||this.morph||{})._motion_index] || MMD_SA.MMD.motionManager).para_SA
+  para_SA = MMD_SA.motion[(this.skin||this.morph||{})._motion_index]
+  para_SA = (para_SA && para_SA.para_SA) || {}
   mesh._bone_morph = {}
 // playbackRate
-  var playbackRate = ((para_SA.playbackRate_by_model_index && para_SA.playbackRate_by_model_index[this._model_index]) || 1) * (model_para._playbackRate || 1)
+  let playbackRate = ((para_SA.playbackRate_by_model_index && para_SA.playbackRate_by_model_index[this._model_index]) || 1) * (model_para._playbackRate || 1)
 // for Dungeon multiplayer
   if (this._model_index == 0)
     model_para._playbackRate_OPC_ = MMD_SA._playbackRate * playbackRate
@@ -6457,7 +6486,7 @@ if (self.MMD_SA) {
     window.dispatchEvent(new CustomEvent("SA_MMD_model" + this._model_index + "_process_bones", { detail:{ model:this, skin:this.skin } }));
   }
   if (this._model_index > 0) {
-    var pos_delta = MMD_SA.bone_to_position.call(this, para_SA)
+    let pos_delta = MMD_SA.bone_to_position.call(this, para_SA)
     if (pos_delta)
       mesh.position.add(mesh._bone_to_position_last.pos_delta_rotated)
   }
