@@ -4870,6 +4870,8 @@ if (1) {
   document.getElementById("LdesktopBG_host").style.visibility = "hidden"
   document.getElementById("Lquick_menu").style.display = "none"
 
+  Ldebug.style.posLeft = Ldebug.style.posTop = 10
+
   c_host.addEventListener("dblclick", DOM_event_dblclick)
 // push the .onclick AFTER the AR event handler
   if (c_host.ondblclick) {
@@ -4964,6 +4966,8 @@ if (1) {
   document.getElementById("SL").style.visibility = "visible"
   document.getElementById("LdesktopBG_host").style.visibility = "visible"
   document.getElementById("Lquick_menu").style.display = "block"
+
+  Ldebug.style.posLeft = Ldebug.style.posTop = 0
 
   c_host.removeEventListener("dblclick", DOM_event_dblclick)
 }
@@ -5498,7 +5502,7 @@ player_obj.obj_parent = obj_parent
 player_obj.player.autoplay = (!para.channel || !_channel_locked[para.channel])
 
 player_obj.player.loop = para.loop
-player_obj.player.volume = (para.volume || 0.1)
+player_obj.player.volume = (para.volume || 1)
 
 // https://developers.google.com/web/updates/2017/06/play-request-was-interrupted
 try {
