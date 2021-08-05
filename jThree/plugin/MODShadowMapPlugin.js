@@ -2,6 +2,7 @@
  * @author alteredq / http://alteredqualia.com/
  */
 // MOD by katwat
+// AT: (2021-08-06)
 THREE.ShadowMapPlugin = function () {
 
 	var _gl,
@@ -36,8 +37,9 @@ this._switch_material = (function () {
   var depth_material_by_index = {};
   var index;
   return function (object, useMorphing) {
+// use ._model_index_default instead of _model_index_default to avoid PC swap issues
 // using -1 for non-MMD-model objects for now (unlikely used anyways), as Object3D.id can change on map restart, and it doesn't work well for clones
-    index = (object._model_index != null) ? object._model_index : -1;
+    index = (object._model_index_default != null) ? object._model_index_default : -1;
 
     var m = depth_material_by_index[index]
     if (!m)
