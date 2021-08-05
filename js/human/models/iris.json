@@ -1,14 +1,20 @@
 {
   "format": "graph-model",
-  "generatedBy": "2.4.0",
-  "convertedBy": "TensorFlow.js Converter v1.7.0",
+  "generatedBy": "https://github.com/google/mediapipe",
+  "convertedBy": "https://github.com/vladmandic",
   "userDefinedMetadata":
   {
-      "signature":
+    "signature":
+    {
+      "inputs":
       {
-          "inputs": {"input_1:0":{"name":"input_1:0","dtype":"DT_FLOAT","tensorShape":{"dim":[{"size":"-1"},{"size":"64"},{"size":"64"},{"size":"3"}]}}},
-          "outputs": {"Identity:0":{"name":"Identity:0","dtype":"DT_FLOAT","tensorShape":{"dim":[{"size":"-1"},{"size":"1"},{"size":"1"},{"size":"228"}]}}}
+        "input_1:0":{"name":"input_1:0","dtype":"DT_FLOAT","tensorShape":{"dim":[{"size":"-1"},{"size":"64"},{"size":"64"},{"size":"3"}]}}
+      },
+      "outputs":
+      {
+        "Identity:0":{"name":"Identity:0","dtype":"DT_FLOAT","tensorShape":{"dim":[{"size":"-1"},{"size":"1"},{"size":"1"},{"size":"228"}]}}
       }
+    }
   },
   "modelTopology":
   {
