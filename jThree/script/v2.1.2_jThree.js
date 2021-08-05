@@ -1,4 +1,4 @@
-// (2021-01-20)
+// (2021-08-06)
 
 /*!
  * jThree JavaScript Library v2.1.2
@@ -20195,7 +20195,7 @@ _i_ = i;
 					setPolygonOffset( material.polygonOffset, material.polygonOffsetFactor, material.polygonOffsetUnits );
 
 				}
-
+//if (object.matrixWorld && object.matrixWorld.determinant() < 0) DEBUG_show(Date.now())
 				_this.setMaterialFaces( material );
 
 				if ( buffer instanceof THREE.BufferGeometry ) {
@@ -22273,7 +22273,9 @@ if (uniforms.modelViewMatrix)
 			} else {
 
 				_gl.enable( _gl.BLEND );
-				_gl.blendEquationSeparate( _gl.FUNC_ADD, _gl.FUNC_ADD );
+// AT: backported
+_gl.blendEquation( _gl.FUNC_ADD );
+//				_gl.blendEquationSeparate( _gl.FUNC_ADD, _gl.FUNC_ADD );
 				_gl.blendFuncSeparate( _gl.SRC_ALPHA, _gl.ONE_MINUS_SRC_ALPHA, _gl.ONE, _gl.ONE_MINUS_SRC_ALPHA );
 
 			}
@@ -30496,7 +30498,7 @@ THREE.RingGeometry = function ( innerRadius, outerRadius, thetaSegments, phiSegm
 	thetaLength = thetaLength !== undefined ? thetaLength : Math.PI * 2;
 
 	thetaSegments = thetaSegments !== undefined ? Math.max( 3, thetaSegments ) : 8;
-	phiSegments = phiSegments !== undefined ? Math.max( 3, phiSegments ) : 8;
+	phiSegments = phiSegments !== undefined ? Math.max( 1, phiSegments ) : 8;
 
 	var i, o, uvs = [], radius = innerRadius, radiusStep = ( ( outerRadius - innerRadius ) / phiSegments );
 
@@ -30511,7 +30513,9 @@ THREE.RingGeometry = function ( innerRadius, outerRadius, thetaSegments, phiSegm
 			vertex.y = radius * Math.sin( segment );
 
 			this.vertices.push( vertex );
-			uvs.push( new THREE.Vector2( ( vertex.x / radius + 1 ) / 2, - ( vertex.y / radius + 1 ) / 2 + 1 ) );
+// AT: customized
+uvs.push(new THREE.Vector2(o/thetaSegments, 1-i/phiSegments));
+//			uvs.push( new THREE.Vector2( ( vertex.x / radius + 1 ) / 2, - ( vertex.y / radius + 1 ) / 2 + 1 ) );
 		}
 
 		radius += radiusStep;
@@ -30520,6 +30524,31 @@ THREE.RingGeometry = function ( innerRadius, outerRadius, thetaSegments, phiSegm
 
 	var n = new THREE.Vector3( 0, 0, 1 );
 
+// AT: backported
+
+			for (let j = 0; j < phiSegments; j++) {
+				const thetaSegmentLevel = j * (thetaSegments + 1);
+
+				for (let i = 0; i < thetaSegments; i++) {
+					const segment = i + thetaSegmentLevel;
+					const a = segment;
+					const b = segment + thetaSegments + 1;
+					const c = segment + thetaSegments + 2;
+					const d = segment + 1; // faces
+
+//					indices.push(a, b, d);
+//					indices.push(b, c, d);
+
+			this.faces.push( new THREE.Face3( a, b, d, [ n, n, n ] ) );
+			this.faceVertexUvs[ 0 ].push( [ uvs[ a ], uvs[ b ], uvs[ d ] ]);
+
+			this.faces.push( new THREE.Face3( b, c, d, [ n, n, n ] ) );
+			this.faceVertexUvs[ 0 ].push( [ uvs[ b ], uvs[ c ], uvs[ d ] ]);
+
+				}
+			} // build geometry
+
+/*
 	for ( i = 0; i < phiSegments; i ++ ) { // concentric circles inside ring
 
 		var thetaSegment = i * thetaSegments;
@@ -30544,7 +30573,7 @@ THREE.RingGeometry = function ( innerRadius, outerRadius, thetaSegments, phiSegm
 
 		}
 	}
-
+*/
 	this.computeCentroids();
 	this.computeFaceNormals();
 
