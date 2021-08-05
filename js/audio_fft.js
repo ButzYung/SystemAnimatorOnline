@@ -1,4 +1,4 @@
-// Audio FFT (v2.2.2)
+// Audio FFT (2021-08-06)
 
 var AudioFFT = {
 /*
@@ -21,7 +21,7 @@ if (this.initialized)
   return
 this.initialized = true
 
-if (this.use_live_input && (!WallpaperEngine_CEF_mode || !top.wallpaperRegisterAudioListener))
+if (this.use_live_input && (!WallpaperEngine_CEF_mode || !SA_topmost_window.wallpaperRegisterAudioListener))
   this.init_live()
 
 DEBUG_show("Use audio FFT" + ((this.use_live_input) ? " (LIVE)" : ""), 2)
@@ -55,7 +55,7 @@ this.bd = new BeatDetektor();
 this.kick_det = new BeatDetektor.modules.vis.BassKick();
 this.vu = new BeatDetektor.modules.vis.VU();
 
-if (WallpaperEngine_CEF_mode && top.wallpaperRegisterAudioListener) {
+if (WallpaperEngine_CEF_mode && SA_topmost_window.wallpaperRegisterAudioListener) {
   this.restartCaptureAudioWE = (function () {
 var updated = false
 
@@ -78,7 +78,7 @@ var pinkNoise = [
 var capture_audio = function () {
   updated = true
 
-  top.wallpaperRegisterAudioListener(function(data) {
+  SA_topmost_window.wallpaperRegisterAudioListener(function(data) {
 /* data is an array with 128 floats */
 //DEBUG_show(data)
     updated = true
@@ -278,7 +278,7 @@ if (w_MMD) {
   }
 }
 
-if (WallpaperEngine_CEF_mode && top.wallpaperRegisterAudioListener) {
+if (WallpaperEngine_CEF_mode && SA_topmost_window.wallpaperRegisterAudioListener) {
   var data = this.WE_audio_data
   if (!data)
     return
