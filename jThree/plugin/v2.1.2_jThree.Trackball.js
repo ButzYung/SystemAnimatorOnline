@@ -29,6 +29,7 @@
  *
  * Date: 2015-02-25
  */
+// AT: (2021-08-06)
 
 THREE.TrackballControls = function ( object, domElement ) {
 
@@ -400,6 +401,7 @@ if (self.MMD_SA) {
 var pos0 = new THREE.Vector3()
 var pos_v3 = new THREE.Vector3()
 var pos_v3a = new THREE.Vector3()
+var _q = new THREE.Quaternion()
 
 var para = {
   filter: function (obj) {
@@ -445,10 +447,13 @@ this.target.set(model_pos.x+center_view_lookAt[0], model_pos.y+10+center_view_lo
 
 // zoom_scale is finalized on zoom_lvl==1, if camera is not blocked (i.e. s==10) or blocked beyond zoom_min (in this case, rot_delta_accumulated is not reset).
 // in all other cases, zoom_scale is finalized on the last zoom_lvl (==zoom_lvl_max)
+  var q_delta_accumulated
+  if (rot_delta_accumulated.x || rot_delta_accumulated.y || rot_delta_accumulated.z)
+    q_delta_accumulated = _q.setFromEuler(rot_delta_accumulated)
   for (var s = 10; s >= zoom_min; s--) {
     pos_v3a.copy(pos_v3.copy(this.object.position).sub(this.target).multiplyScalar(1/zoom_scale * (zoom_ini + s/zoom_factor)))
-    if (rot_delta_accumulated.x || rot_delta_accumulated.y || rot_delta_accumulated.z)
-      pos_v3.applyEuler(rot_delta_accumulated)
+    if (q_delta_accumulated)
+      pos_v3.applyQuaternion(q_delta_accumulated)
 
     var result = { return_value:null }
     window.dispatchEvent(new CustomEvent("SA_camera_adjust", { detail:{ rot_delta:rot_delta_accumulated, pos_v3:pos_v3, result:result } }));
