@@ -1,4 +1,4 @@
-// (2020-06-26)
+// (2021-08-06)
 
 MMD_SA.fn = {
 /*
@@ -564,7 +564,10 @@ _v3b.multiplyScalar(MMD_SA_options.matrixWorld_physics_scale)
 this.pos.add(_v3b)
 this.pos_world.copy(_v3a)
 //if (this.mesh._model_index==0) DEBUG_show(this.pos_world.toArray().join("\n")+"\n"+this.pos.toArray().join("\n"))
-this.m4.setPosition(this.pos)
+
+// a trick to prevent physics of different models from affecting each other
+_v3b.y += this.mesh._model_index * 25
+this.m4.setPosition(_v3b)
     }
 
     var _v3a = new THREE.Vector3()
@@ -1847,6 +1850,7 @@ MMD_SA.bone_to_position = (function () {
     this.by_bone_name = []
     this.pos_delta = new THREE.Vector3()
     this.pos_delta_rotated = new THREE.Vector3()
+    this.bone_pos_offset = new THREE.Vector3()
   }
 
   BP.prototype.init = function (mesh, bone_name, path, motion_time) {
@@ -1875,12 +1879,16 @@ MMD_SA.bone_to_position = (function () {
     if (mesh._bone_to_position_last) {
       mesh._bone_to_position_last.pos_delta.set(0,0,0)
       mesh._bone_to_position_last.pos_delta_rotated.set(0,0,0)
+      mesh._bone_to_position_last.bone_pos_offset.set(0,0,0)
     }
     else
       mesh._bone_to_position_last = new BP()
 
     if (!para_SA.bone_to_position)
       return null
+
+    var motion_para = (para_SA.adjustment_per_model && (para_SA.adjustment_per_model[MMD_SA_options.model_para_obj_all[this._model_index]._filename_cleaned] || para_SA.adjustment_per_model._default_)) || {};
+//    var rot_add_parent = motion_para.skin_default && motion_para.skin_default["全ての親"]; rot_add_parent = rot_add_parent.rot_add || rot_add_parent.rot;
 
     para_SA.bone_to_position.forEach(function (bp) {
       var bone_name  = bp.name
@@ -1903,19 +1911,16 @@ MMD_SA.bone_to_position = (function () {
 
       var rot_add
       var use_bone_rotated_translation
-      if (para_SA.adjustment_per_model) {
-        var motion_para = para_SA.adjustment_per_model[MMD_SA_options.model_para_obj_all[that._model_index]._filename_cleaned] || para_SA.adjustment_per_model._default_
-        if (motion_para.skin_default) {
-          var motion_adjust = motion_para.skin_default[bone_name] || {}
+      if (motion_para.skin_default) {
+        let motion_adjust = motion_para.skin_default[bone_name] || {}
+        rot_add = motion_adjust.rot_add || motion_adjust.rot
+        if (!rot_add && !para_SA.bone_to_position.some(function (_bp) { return (_bp.name == "全ての親"); })) {
+          motion_adjust = motion_para.skin_default["全ての親"] || {}
           rot_add = motion_adjust.rot_add || motion_adjust.rot
-          if (!rot_add && !para_SA.bone_to_position.some(function (_bp) { return (_bp.name == "全ての親"); })) {
-            motion_adjust = motion_para.skin_default["全ての親"] || {}
-            rot_add = motion_adjust.rot_add || motion_adjust.rot
-            use_bone_rotated_translation = !!rot_add
-          }
-          if (rot_add) {
-            bone_pos_adjusted.applyEuler(_v3a.copy(rot_add).multiplyScalar(Math.PI/180))
-          }
+          use_bone_rotated_translation = !!rot_add
+        }
+        if (rot_add) {
+          bone_pos_adjusted.applyEuler(_v3a.copy(rot_add).multiplyScalar(Math.PI/180))
         }
       }
 
@@ -1930,11 +1935,14 @@ MMD_SA.bone_to_position = (function () {
 
       if (bone_name == "全ての親") {
         bone.position.sub(bone_pos)
+        mesh._bone_to_position_last.bone_pos_offset.add(bone_pos)
       }
       else {
-        mesh.bones_by_name["全ての親"].position.sub((use_bone_rotated_translation) ? bone_pos.applyEuler(_v3a.copy(rot_add).multiplyScalar(Math.PI/180)) : bone_pos)
+        let pos_offset = (use_bone_rotated_translation) ? bone_pos.applyEuler(_v3a.copy(rot_add).multiplyScalar(Math.PI/180)) : bone_pos
+        mesh.bones_by_name["全ての親"].position.sub(pos_offset)
+        mesh._bone_to_position_last.bone_pos_offset.add(pos_offset)
       }
-//DEBUG_show(bone_pos.toArray()+'/'+Date.now())
+
       mesh._bone_to_position_last.pos_delta.add(pos_delta)
     });
 
