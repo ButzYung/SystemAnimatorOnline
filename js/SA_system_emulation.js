@@ -1,4 +1,4 @@
-// System object emultaion (2021-01-21)
+// System object emultaion (2021-08-06)
 
 var use_SA_system_emulation = true
 var use_SA_browser_mode
@@ -12,8 +12,11 @@ var HTA_use_GPU_acceleration
 var oShell
 var Shell_OBJ, FSO_OBJ
 
-var is_SA_child_animation = (parent && (parent != self) && !parent.is_chrome_window)
-var SA_top_window = (xul_mode && !is_SA_child_animation) ? parent : self
+var is_SA_child_animation = parent && (parent != self) && !parent.is_chrome_window && parent.SA_child_animation_max;
+var SA_topmost_window = (is_SA_child_animation) ? parent : self;
+// obsolete, mainly for XUL mode only
+var SA_top_window = (xul_mode && !is_SA_child_animation) ? parent : self;
+
 var absolute_screen_mode
 
 // for all gadgets
@@ -51,7 +54,7 @@ return function (x,y, force_update) {
   })();
 }
 else {
-  SA_top_window.getScreenBounds = function (x,y, force_update) { return top.getScreenBounds(x,y, force_update) }
+  SA_top_window.getScreenBounds = function (x,y, force_update) { return SA_topmost_window.getScreenBounds(x,y, force_update) }
 }
 
 if (webkit_electron_mode) {
@@ -81,16 +84,27 @@ return function (force_update) {
     })();
   }
   else {
-    SA_top_window.getPos = function (force_update) { return top.getPos(force_update) }
-    SA_top_window.getCursorPos = function (force_update) { return top.getCursorPos(force_update) }
+    SA_top_window.getPos = function (force_update) { return SA_topmost_window.getPos(force_update) }
+    SA_top_window.getCursorPos = function (force_update) { return SA_topmost_window.getCursorPos(force_update) }
   }
 }
 
-SA_top_window.resizeToAbsolute = function (w, h) {
-//console.log("resizeToAbsolute("+w+","+h+"):"+Date.now())
-  this.resizeTo(w, h)
-  if (absolute_screen_mode && !System._browser._window_move_timerID) {
-    System._browser._window_move_timerID = setInterval(
+SA_top_window.resizeToAbsolute = (function () {
+  var resized;
+
+  return function (w, h) {
+// fix a strange bug when initializing a fullscreen window
+    if (!resized && Settings.CSSTransformFullscreen && (w == screen.availWidth) && (h == screen.availHeight)) {
+      this.resizeTo(w-1, h-1)
+      setTimeout(()=>{SA_top_window.resizeTo(w, h)},1000)
+    }
+    else {
+      this.resizeTo(w, h)
+    }
+    resized = true
+
+    if (absolute_screen_mode && !System._browser._window_move_timerID) {
+      System._browser._window_move_timerID = setInterval(
 (function () {
   var x = SA_top_window.screenLeftAbsolute
   var y = SA_top_window.screenTopAbsolute
@@ -110,9 +124,10 @@ if (++loop > 10) {
 }
   };
 })(),
-    100);
-  }
-}
+      100);
+    }
+  };
+})();
 
 SA_top_window.moveToAbsolute = function (x, y, restricted) {
 //console.log("moveToAbsolute("+x+","+y+"):"+Date.now())
@@ -128,8 +143,10 @@ SA_top_window.moveToAbsolute = function (x, y, restricted) {
 SA_top_window.moveByAbsolute = function (x, y) {
 //console.log("moveByAbsolute("+x+","+y+"):"+Date.now())
   if (absolute_screen_mode) {
-    var pos = SA_top_window.getPos(true)
-    webkit_window.setPosition(~~(pos[0]+x), ~~(pos[1]+y))
+    let pos = SA_top_window.getPos(true)
+    x += ~~pos[0]
+    y += ~~pos[1]
+    webkit_window.setPosition(x,y)
   }
   else {
     this.moveBy(x,y)
@@ -1566,7 +1583,7 @@ if (use_SA_browser_mode) {
   else {
 // IMPORTANT: stick to webkit_electron_mode only, as this (mainly window.resize() for mobile) is probably not needed for browsers, and it causes issues in Chrome fullscreen mode and WebXR AR mode
 if (webkit_electron_mode) {
-    if (webkit_electron_mode && top.System._browser.capturePage_in_process) {
+    if (webkit_electron_mode && SA_topmost_window.System._browser.capturePage_in_process) {
       this.resize_timerID = setTimeout("System._browser.resize()", 50)
       return
     }
@@ -1595,7 +1612,7 @@ if (webkit_electron_mode) {
 
    ,onmouseover_custom: null
    ,onmouseover: function (event) {
-if (webkit_electron_mode && (top.returnBoolean("IgnoreMouseEvents") || top.returnBoolean("AutoItStayOnDesktop")) && !top.webkit_IgnoreMouseEvents_disabled)
+if (webkit_electron_mode && (SA_topmost_window.returnBoolean("IgnoreMouseEvents") || SA_topmost_window.returnBoolean("AutoItStayOnDesktop")) && !SA_topmost_window.webkit_IgnoreMouseEvents_disabled)
   return
 
 if (this.onmouseover_custom && this.onmouseover_custom(event))
@@ -1821,7 +1838,7 @@ if (!WallpaperEngine_mode && (!self.Lquick_menu || !Lquick_menu._activated))
    ,confirmClose: function (enforced) {
 if (browser_native_mode) {
   if (confirm("This will reload System Animator.")) {
-    top.location.reload()
+    SA_topmost_window.location.reload()
   }  
   return
 }
@@ -2281,11 +2298,11 @@ this._tray_last_updated = RAF_timestamp
 if (!para) {
   para = {
     active_window_id: IPC.active_window_id
-   ,click_thru: top.returnBoolean("IgnoreMouseEvents")
-   ,click_thru_partial: top.returnBoolean("IgnoreMouseEventsPartial")
-   ,always_on_top: top.returnBoolean("AutoItAlwaysOnTop")
-   ,stay_on_desktop: top.returnBoolean("AutoItStayOnDesktop")
-   ,auto_pause: top.returnBoolean("AutoItAutoPause")
+   ,click_thru: SA_topmost_window.returnBoolean("IgnoreMouseEvents")
+   ,click_thru_partial: SA_topmost_window.returnBoolean("IgnoreMouseEventsPartial")
+   ,always_on_top: SA_topmost_window.returnBoolean("AutoItAlwaysOnTop")
+   ,stay_on_desktop: SA_topmost_window.returnBoolean("AutoItStayOnDesktop")
+   ,auto_pause: SA_topmost_window.returnBoolean("AutoItAutoPause")
    ,opacity: ((is_SA_child_animation) ? parent.SA_child_animation[SA_child_animation_id].opacity : parseFloat(System.Gadget.Settings.readString("Opacity") || 1))
    ,opacity_on_hover: parseFloat(System.Gadget.Settings.readString("OpacityOnHover") || 1)
    ,size: (Settings.CSSTransformFullscreen) ? -1 : Settings.CSSTransformScale
@@ -2297,7 +2314,7 @@ if (!para) {
 
   var w_list = [true]
   for (var i = 0; i < SA_child_animation_max; i++)
-    w_list.push(!!top.SA_child_animation[i])
+    w_list.push(!!SA_topmost_window.SA_child_animation[i])
   para.active_window = w_list
 
   para.lock_child_dragging = returnBoolean("ChildDragDisabled")
@@ -2988,6 +3005,9 @@ q_m4 = new THREE.Quaternion()
       var use_human// = true
       var use_mixed_human = !is_mobile;
       var use_tfjs_posenet;
+      var use_movenet = true
+      var use_blazepose// = true
+      var use_blazepose_upper// = true
 
       var posenet_part_name = [
   "nose"
@@ -3007,6 +3027,14 @@ q_m4 = new THREE.Quaternion()
 , "rightKnee"
 , "leftAnkle"
 , "rightAnkle"
+      ];
+
+      var blazepose_translated = [
+0, 2,5, 7,8, 11,12,13,14,15,16, 23,24,25,26,27,28
+      ];
+
+      var blazepose_upper_translated = [
+0, 2,5, 7,8, 11,12,13,14,15,16, 23,24,25,26,27,28
       ];
 
       var posenet_part_dummy = []
@@ -3140,6 +3168,14 @@ if (use_human) {
   use_human = true
   use_mixed_human = false
   use_tfjs_posenet = false
+
+  if (use_blazepose) {
+    para.push('use_blazepose=1')
+    if (use_blazepose_upper) {
+      para.push('use_blazepose_upper=1')
+      blazepose_translated = blazepose_upper_translated
+    }
+  }
 }
 else if (use_mixed_human) {
   para.push('use_mixed_human=1')
@@ -3147,11 +3183,17 @@ else if (use_mixed_human) {
   use_human = true
   use_mixed_human = true
   use_tfjs_posenet = true
+  use_blazepose = false
 }
 else {
   use_human = false
   use_mixed_human = false
   use_tfjs_posenet = true
+  use_blazepose = false
+}
+
+if (use_movenet) {
+  para.push('use_movenet=1')
 }
 
 pose_worker = new Worker('js/pose_worker.js' + ((para.length) ? '?'+para.join('&') : ''))//, ((0&&use_human) ? { type:'module'} : null));
@@ -3218,7 +3260,7 @@ if (_bone) {
   else {
     _info_extra = '';
 
-    _facemesh.frames.t_delta = data._t
+    _facemesh.frames.t_delta = (data.fps && (1000/data.fps)) || data._t
 
     let arms = [];
     let hands = [];
@@ -3229,10 +3271,22 @@ let bones_by_name = model.mesh.bones_by_name
 
 let pose;
 if (_poseNet.enabled) {
-  if (data.posenet && (data.posenet.score > 0.3)) {
+  if (data.posenet && (use_blazepose || (data.posenet.score > 0.3))) {
     pose = data.posenet
 
-    const score_threshold = (use_tfjs_posenet) ? 0.5 : 0.1;
+    if (use_blazepose) {
+console.log(pose.keypoints.slice())
+      let _keypoints = []
+      blazepose_translated.forEach((i,idx)=>{
+        let kp = pose.keypoints[i]
+        kp.part = posenet_part_name[idx]
+        _keypoints.push(kp)
+      });
+      pose.keypoints = _keypoints
+console.log(pose.keypoints.slice())
+    }
+
+    const score_threshold = (use_movenet) ? 0.3 : ((use_tfjs_posenet) ? 0.5 : 0.1);
     pose.keypoints.forEach(p=>{p.score-=score_threshold});
 
     if (!use_tfjs_posenet) {
@@ -3301,7 +3355,7 @@ if ((hand.score > 0) && (dir != hand_dir_discarded)) {
   if (elbow.score > 0) {
     let arm_upper_length = Math.min(Math.sqrt(Math.pow(hand.position.x-elbow.position.x,2)+Math.pow(hand.position.y-elbow.position.y,2))/shoulder_width, 1)
     let arm_lower_length = Math.min(Math.sqrt(Math.pow(arm.position.x -elbow.position.x,2)+Math.pow(arm.position.y -elbow.position.y,2))/shoulder_width, 1)
-    z_posenet = (0.1 + (Math.sin(Math.acos(arm_upper_length)) + Math.sin(Math.acos(arm_lower_length)))/2 * 0.9) * MMD_SA_options.model_para_obj.left_arm_length
+    z_posenet = (0.25 + (Math.sin(Math.acos(arm_upper_length)) + Math.sin(Math.acos(arm_lower_length)))/2 * 0.75) * MMD_SA_options.model_para_obj.left_arm_length
   }
 }
 else {
@@ -3382,31 +3436,6 @@ _info_extra += '\n' + ('('+d+'手)') + '\n'
 let LR = (hand.dir == 1) ? [hand_data.indexFinger[0], hand_data.ringFinger[0]] : [hand_data.ringFinger[0], hand_data.indexFinger[0]]
 
 let x_rot, y_rot, z_rot;
-/*
-let axis_rotated, axis, axis_angle, axis_rot, axis_rot_v3;
-
-// x axis
-axis_rotated = MMD_SA._v3a.fromArray(LR[0]).sub(MMD_SA._v3b.fromArray(LR[1])).normalize();
-axis = MMD_SA.TEMP_v3.set(1,0,0);
-axis_angle = axis.angleTo(axis_rotated);
-axis_rot = MMD_SA.TEMP_q.setFromAxisAngle(MMD_SA._v3b.crossVectors(axis, axis_rotated).normalize(), axis_angle);
-axis_rot_v3 = MMD_SA.TEMP_v3.setEulerFromQuaternion(axis_rot, "YZX");
-y_rot = axis_rot_v3.y;
-z_rot = axis_rot_v3.z;
-//if (Math.PI/2-Math.abs(z_rot) < 15*Math.PI/180) y_rot=0;
-
-// y axis
-axis_rotated = MMD_SA._v3a.fromArray(hand_data.palmBase[0]).sub(MMD_SA._v3b.fromArray(hand_data.middleFinger[0])).normalize();
-// cancel y rotation
-axis_rotated.applyEuler(MMD_SA.TEMP_v3.set(0,-y_rot,0))
-axis = MMD_SA.TEMP_v3.set(0,1,0);
-axis_angle = axis.angleTo(axis_rotated);
-axis_rot = MMD_SA.TEMP_q.setFromAxisAngle(MMD_SA._v3b.crossVectors(axis, axis_rotated).normalize(), axis_angle);
-axis_rot_v3 = MMD_SA.TEMP_v3.setEulerFromQuaternion(axis_rot, "YZX");
-x_rot = axis_rot_v3.x;
-//z_rot = axis_rot_v3.z;
-//x_rot=y_rot=z_rot=0
-*/
 
 let y_axis = MMD_SA._v3a_.fromArray(hand_data.palmBase[0]).sub(MMD_SA._v3b.fromArray(hand_data.middleFinger[0])).normalize();
 y_axis.x = y_axis.x * sign_flip;
@@ -3636,7 +3665,7 @@ arms.forEach(function (arm) {
 //_facemesh.frames.add("skin", "左腕ＩＫ", {absolute:true, pos:new THREE.Vector3(10,0,0)})
 //_facemesh.frames.add("skin", "右腕ＩＫ", {absolute:true, pos:new THREE.Vector3(0,0,0)})
 
-    _info_extra += ((_info_extra)?'/':'\n') + data._t;
+    _info_extra += ((_info_extra)?'/':'\n') + 'P-FPS:'+(data.fps||0);// + '/' + data._t;
 
     if (use_pose_worker && pose) {
       let _data = { posenet:pose, w:camera.video_canvas.width, h:camera.video_canvas.height }
@@ -4456,7 +4485,7 @@ var eye_data_height_ref_pts = {L:[159,145], R:[386,374]};
     var TRIANGULATION
 
     var use_faceLandmarksDetection = !is_mobile
-    var use_human_facemesh = url_search_params.get('use_human_facemesh') || !is_mobile// true
+    var use_human_facemesh = url_search_params.get('use_human_facemesh') || !is_mobile
 
     function init() {
 _facemesh.initialized = true
@@ -4525,46 +4554,34 @@ if (data.faces.length) {
 // LR:234,454
 // TB:10,152
 
-  let x_rot, y_rot, z_rot;
-/*
-  let axis_rotated, axis, axis_angle, axis_rot, axis_rot_v3;
+let x_rot, y_rot, z_rot;
 
-// x axis
-  axis_rotated = MMD_SA._v3a.fromArray(face.mesh[454]).sub(MMD_SA._v3b.fromArray(face.mesh[234])).normalize();
-  axis = MMD_SA.TEMP_v3.set(1,0,0);
-  axis_angle = axis.angleTo(axis_rotated);
-  axis_rot = MMD_SA.TEMP_q.setFromAxisAngle(MMD_SA._v3b.crossVectors(axis, axis_rotated).normalize(), axis_angle);
-  axis_rot_v3 = MMD_SA.TEMP_v3.setEulerFromQuaternion(axis_rot, "YZX");
-  y_rot = axis_rot_v3.y;
-  z_rot = axis_rot_v3.z;
+if (face.rotation) {
+  const rm = face.rotation.matrix
+  rot_m4.set(
+    rm[0], rm[1], rm[2], 0,
+    rm[3], rm[4], rm[5], 0,
+    rm[6], rm[7], rm[8], 0,
+    0,0,0,1
+  );
+}
+else {
+  let y_axis = MMD_SA._v3a_.fromArray(face.mesh[152]).sub(MMD_SA._v3b.fromArray(face.mesh[10])).normalize();
+  //y_axis.x = -y_axis.x;
+  let x_axis = MMD_SA._v3b_.fromArray(face.mesh[454]).sub(MMD_SA._v3b.fromArray(face.mesh[234])).normalize();
+  //x_axis.x = -x_axis.x;
+  let z_axis = MMD_SA.TEMP_v3.crossVectors(x_axis, y_axis).normalize();
+  // adjust x_axis to make sure that all axis are perpendicular to each other
+  x_axis.crossVectors(y_axis, z_axis);
 
-// y axis
-  axis_rotated = MMD_SA._v3a.fromArray(face.mesh[152]).sub(MMD_SA._v3b.fromArray(face.mesh[10])).normalize();
-// cancel y rotation
-  axis_rotated.applyEuler(MMD_SA.TEMP_v3.set(0,-y_rot,0))
-  axis = MMD_SA.TEMP_v3.set(0,1,0);
-  axis_angle = axis.angleTo(axis_rotated);
-  axis_rot = MMD_SA.TEMP_q.setFromAxisAngle(MMD_SA._v3b.crossVectors(axis, axis_rotated).normalize(), axis_angle);
-  axis_rot_v3 = MMD_SA.TEMP_v3.setEulerFromQuaternion(axis_rot, "YZX");
-  x_rot = axis_rot_v3.x;
-//  z_rot = axis_rot_v3.z;
-*/
-
-let y_axis = MMD_SA._v3a_.fromArray(face.mesh[152]).sub(MMD_SA._v3b.fromArray(face.mesh[10])).normalize();
-//y_axis.x = -y_axis.x;
-let x_axis = MMD_SA._v3b_.fromArray(face.mesh[454]).sub(MMD_SA._v3b.fromArray(face.mesh[234])).normalize();
-//x_axis.x = -x_axis.x;
-let z_axis = MMD_SA.TEMP_v3.crossVectors(x_axis, y_axis).normalize();
-// adjust x_axis to make sure that all axis are perpendicular to each other
-x_axis.crossVectors(y_axis, z_axis);
-
-// http://renderdan.blogspot.com/2006/05/rotation-matrix-from-axis-vectors.html
-rot_m4.set(
-  x_axis.x, x_axis.y, x_axis.z, 0,
-  y_axis.x, y_axis.y, y_axis.z, 0,
-  z_axis.x, z_axis.y, z_axis.z, 0,
-  0,0,0,1
-);
+  // http://renderdan.blogspot.com/2006/05/rotation-matrix-from-axis-vectors.html
+  rot_m4.set(
+    x_axis.x, x_axis.y, x_axis.z, 0,
+    y_axis.x, y_axis.y, y_axis.z, 0,
+    z_axis.x, z_axis.y, z_axis.z, 0,
+    0,0,0,1
+  );
+}
 
 q_m4.setFromRotationMatrix(rot_m4);
 let xyz = MMD_SA.TEMP_v3.setEulerFromQuaternion(q_m4, "YZX");
@@ -4578,7 +4595,8 @@ z_rot = -xyz.z;
   _facemesh.face_width = _dis
 
   let _z_rot
-  if (use_faceLandmarksDetection || use_human_facemesh) {
+// not needed anymore for human v1.1.9+
+  if (use_faceLandmarksDetection && !use_human_facemesh) {
     _z_rot = Math.asin(_y_diff / _dis)
   }
   else {
@@ -4592,7 +4610,7 @@ z_rot = -xyz.z;
   let neck =  { after_IK:true, rot:rot.clone() }
   let chest = { after_IK:true, rot:rot.clone().slerp(MMD_SA.TEMP_q.set(0,0,0,1), 1-0.3/0.35) }
 
-  _facemesh.frames.t_delta = data._t
+  _facemesh.frames.t_delta = (data.fps && (1000/data.fps)) || data._t
 
   _facemesh.frames.add("skin", "頭", head)
   _facemesh.frames.add("skin", "首", neck)
@@ -4602,6 +4620,7 @@ z_rot = -xyz.z;
 // lips outer:0,17
 // lips LR:61,291
 // .faceInViewConfidence
+
   if (!calibration_timestamp)
     calibration_timestamp = Date.now()
   let calibration_percent = 0
@@ -4681,7 +4700,8 @@ z_rot = -xyz.z;
   let angry = 0
   let fear = 0
   let surprise = 0
-  if (face.emotion) {
+// face.emotion can be an "Object" even when emotion is not used
+  if (Array.isArray(face.emotion)) {
     face.emotion.forEach(e => {
       switch (e.emotion) {
         case "happy":
@@ -4948,7 +4968,7 @@ if (_info_extra) info += _info_extra;
 //info = [(m_up)*180/Math.PI,(m_down)*180/Math.PI,mouth_up].join('\n')
 //info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, lips_inner_height,lips_width_average+'/'+lips_width].join('\n')
 }
-DEBUG_show(((info && (info+'\n'+'FPS:'+EV_sync_update.fps_last+'\n'))||'')+data._t)
+DEBUG_show(((info && (info+'\n'+'FPS:'+EV_sync_update.fps_last+'\n'))||'')+'F-FPS:'+(data.fps||0) )//+'/'+data._t)
 self._faces_=data.faces
     _facemesh.busy = false
 
@@ -5554,40 +5574,40 @@ return cache
  ,_media_objs_paused_: []
 
  ,_gadget_resume: function (is_auto) {
-if (is_auto && !top.EV_sync_update.RAF_auto_paused)
+if (is_auto && !SA_topmost_window.EV_sync_update.RAF_auto_paused)
   return false
 
-if (!top.EV_sync_update.RAF_paused)
+if (!SA_topmost_window.EV_sync_update.RAF_paused)
   return false
-top.EV_sync_update.RAF_paused = false
+SA_topmost_window.EV_sync_update.RAF_paused = false
 
-top.EV_sync_update.RAF_auto_paused = false
+SA_topmost_window.EV_sync_update.RAF_auto_paused = false
 
-top.System._media_objs_paused_.forEach(function (v) {
+SA_topmost_window.System._media_objs_paused_.forEach(function (v) {
   if (v.SL_MC_Play)
     v.SL_MC_Play()
   else if (v.paused)
     v.play()
 });
 
-top.System._media_objs_paused_ = []
+SA_topmost_window.System._media_objs_paused_ = []
 System._browser.update_tray()
 return true
   }
 
  ,_gadget_pause: function (is_auto) {
-if (top.EV_sync_update.RAF_paused)
+if (SA_topmost_window.EV_sync_update.RAF_paused)
   return false
-top.EV_sync_update.RAF_paused = true
+SA_topmost_window.EV_sync_update.RAF_paused = true
 
-top.EV_sync_update.RAF_auto_paused = is_auto
+SA_topmost_window.EV_sync_update.RAF_auto_paused = is_auto
 
-var _media_objs_paused_ = top.System._media_objs_paused_
+var _media_objs_paused_ = SA_topmost_window.System._media_objs_paused_
 
 var wins = [top]
 for (var i = 0; i < SA_child_animation_max; i++) {
-  if (top.SA_child_animation[i])
-    wins.push(top.document.getElementById("Ichild_animation" + i).contentWindow)
+  if (SA_topmost_window.SA_child_animation[i])
+    wins.push(SA_topmost_window.document.getElementById("Ichild_animation" + i).contentWindow)
 }
 
 var seq_count = 0
