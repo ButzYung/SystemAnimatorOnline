@@ -1,4 +1,4 @@
-// (2020-12-05)
+// (2021-08-06)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -210,6 +210,8 @@ else {
 }
     }
 
+   ,states: {}
+
    ,pos_update: function () {
 var that = this
 var d = MMD_SA_options.Dungeon
@@ -307,11 +309,11 @@ else {
   MMD_SA.TEMP_v3.applyEuler(this.rot)
 }
 
-
 MMD_SA.TEMP_v3.add(pos)
 var blocked = d.check_grid_blocking(MMD_SA.TEMP_v3, d.grid_blocking_camera_offset)
 
 MMD_SA_options.camera_position = pos.toArray()
+
 MMD_SA.TEMP_v3.sub(pos)
 MMD_SA_options.camera_position[0] += MMD_SA.TEMP_v3.x
 MMD_SA_options.camera_position[1] += MMD_SA.TEMP_v3.y
@@ -454,22 +456,98 @@ model_mesh.geometry.boundingBox.expandByVector(new THREE.Vector3(size.x*(bb_scal
     }
 
    ,swap_character: function (character) {
-var is_NPC = (character.object_index != null)
+if (character) {
+  let is_NPC = (character.object_index != null)
 
-THREE.MMD.swapModels(0, character.character_index, function () {
-  if (!is_NPC)
-    return
+  if (character.character_index != 0) {
+    THREE.MMD.swapModels(0, character.character_index, function () {
+      if (!is_NPC)
+        return
 
 // hide the old mesh
-  character._obj_proxy.visible = false
+      character._obj_proxy.visible = false
 // show the new mesh
-  character._obj_proxy.visible = true
-});
+      character._obj_proxy.visible = true
+    });
+  }
+}
 
-this.icon.getContext("2d").drawImage(MMD_SA_options.model_para_obj._icon_canvas, 0,0)
+var para_SA = MMD_SA_options.model_para_obj
+
+if (para_SA.is_PC_candidate) {
+  if (!para_SA.character.combat_stats)
+    para_SA.character.combat_stats = new CombatStats(para_SA.character.combat_stats_base)
+  this.combat_stats_base = para_SA.character.combat_stats_base
+  this.combat_stats = para_SA.character.combat_stats
+
+  this.states = {}
+
+  this.assign_combat_keys()
+}
+
+if (para_SA._icon_canvas)
+  this.icon.getContext("2d").drawImage(para_SA._icon_canvas, 0,0)
 MMD_SA_options.Dungeon.update_status_bar(true)
 
 this.update_boundingBox()
+    }
+
+   ,assign_combat_keys: function () {
+if (!MMD_SA_options.Dungeon_options.combat_mode_enabled) return
+
+var d = MMD_SA_options.Dungeon
+
+var key_map_new = {}
+Object.keys(d.key_map).filter((k)=>k<10000).forEach((k)=>{key_map_new[k]=d.key_map[k]});
+d.key_map = key_map_new
+
+MMD_SA_options.Dungeon_options.attack_combo_list.forEach(function (combo) {
+  combo._RE = new RegExp("(^|\\,)" + combo.combo_RE.replace(/\,/g, "\\,") + "(\\,|$)")
+  combo._RE_simple = new RegExp("(^|\\,)" + ((/^(123|456|789)$/.test(combo.combo_RE)) ? combo.combo_RE.replace(/123/, "3\\,3").replace(/456/, "6\\,6").replace(/789/, "9\\,9") : combo.combo_RE.replace(/\,/g, "\\,").replace(/[123]+/g, "[123]").replace(/[456]+/g, "[456]").replace(/[789]+/g, "[789]")) + "(\\,|$)")
+  d.key_map[combo.keyCode] = { order:combo.keyCode, id:"combo-"+combo.keyCode, type_combat:true, keyCode:combo.keyCode
+   ,motion_id: combo.motion_id
+  };
+});
+
+Object.keys(d.key_map).map((key)=>d.key_map[key]).concat(d.key_map_combat||[]).concat(d.key_map_parry||[]).forEach((function () {
+  var p_to_sync = ["combat_para", "mov_speed", "keyCode", "motion_duration"];
+  var modes = ["", "TPS_mode"]
+
+  return function (key_map) {
+    modes.forEach(function (mode) {
+var km = (mode) ? key_map[mode] : key_map;
+if (!km)
+  return
+
+km.motion_filename = km.motion_id && d.motion_filename_by_id[km.motion_id]
+
+var para = km.motion_id && d.motion[km.motion_id].para
+if (para) {
+  para.motion_id = km.motion_id
+
+  if (para.motion_duration_by_combo) {
+    para.motion_duration_by_combo.forEach(function (combo) {
+      if (combo.combo_RE) {
+        combo._RE = new RegExp("^" + combo.combo_RE.replace(/\,/g, "\\,") + "(\\,|$)")
+        combo._RE_simple = new RegExp("^" + combo.combo_RE.replace(/\,/g, "\\,").replace(/\d+/g, "\\d") + "(\\,|$)")
+      }
+    });
+  }
+
+  p_to_sync.forEach(function (p) {
+    km[p] = para[p] = km[p] || para[p] || key_map[p];
+  });
+
+  if (km.motion_duration) {
+    para.duration = 10
+    para.duration_NPC = km.motion_duration
+  }
+}
+    });
+  };
+})());
+
+d.key_map_reset()
     }
 
    ,reset: function () {
@@ -492,6 +570,8 @@ this.combat_mode = false
 this.hp_add(this.hp_max)
 this.combat_stats_base = this.combat_stats_base || {}
 this.combat_stats = new CombatStats(this.combat_stats_base)
+
+this.states = {}
 
 var model_mesh = THREE.MMD.getModels()[0].mesh
 model_mesh.position.set(0,0,0)
@@ -2103,8 +2183,9 @@ if (area_id)
 
 options = MMD_SA_options.Dungeon_options.options_by_area_id[this.area_id]
 
-if (!options._random_seed)
+if (!options._random_seed) {
   options._random_seed = this.generate_seed()
+}
 MT = new MersenneTwister(options._random_seed)
 
 if (options.event_listener) {
@@ -2315,10 +2396,9 @@ if (point_light) {
 
 this._event_active = {}
 this.event_flag = {}
-this.events = (options.events && Object.clone(options.events)) || {}
-if (options_base.events_default)
-  Object.assign(MMD_SA_options.Dungeon.events_default, options_base.events_default)
-Object.assign(this.events, MMD_SA_options.Dungeon.events_default)
+// not cloning events for now, saving some headaches for getters/setters
+this.events = options.events||{}//(options.events && Object.clone(options.events)) || {}
+Object.assign(this.events, MMD_SA_options.Dungeon.events_default, options_base.events_default||{})
 
 if (options.object_list && !options._object_list_initialized) {
   options._object_list_initialized = true
@@ -2428,11 +2508,40 @@ this.object_base_list.forEach(function (obj, idx) {
 var d = this
 
 var _object_list = this.object_list.map(function (obj) { return [obj] });
+
 if (MMD_SA_options.Dungeon_options.multiplayer) {
   for (var i = 0, i_max = MMD_SA_options.Dungeon_options.multiplayer.OPC_list.length; i < i_max; i++) {
     _object_list.push([{ object_id:"OPC-"+i }]);
   }
 }
+
+var _object_list_child = []
+d.object_base_list.forEach(function (obj_base, obj_index) {
+  if (obj_base.parent_object_list && !_object_list.some((obj)=>(obj_index==obj[0].object_index)||(obj_base.id && obj_base.id==obj[0].object_id))) {
+    obj_base.parent_object_list.some(function (p) {
+      if (p != "PC") {
+        let p_index, p_id;
+        if (typeof p == 'string') {
+          p_id = p
+          p_index = d.object_base_index_by_id[p_id]
+        }
+        else {
+          p_index = p
+          let p_obj = d.object_base_list[p_index]
+          p_id = p_obj.id
+        }
+        if (!_object_list.some((obj)=>(p_index==obj[0].object_index)||(p_id && p_id==obj[0].object_id)))
+          return false
+      }
+
+      _object_list_child.push([{object_index:obj_index}])
+      return true
+    });
+  }
+});
+_object_list = _object_list.concat(_object_list_child)
+//console.log(_object_list.slice())
+
 _object_list.forEach(function (obj_list, i) {
   var obj = obj_list[0]
   var obj_index = obj.object_index = (obj.object_id) ? d.object_base_index_by_id[obj.object_id] : obj.object_index
@@ -2725,6 +2834,8 @@ return !occupied
   }
 });
 
+this.object_list_click = this.object_list.filter(obj => obj.onclick);
+
 //console.log(this.accessory_list)
 
 for (var index in options._saved.object_by_index) {
@@ -2792,6 +2903,7 @@ if (!pos) {
 var c = this.character
 Object.assign(c, options.character||options_base.character||{})
 c.reset()
+c.swap_character()
 
 c.pos.copy(pos)
 if (!rot && (MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR)) {
@@ -2829,9 +2941,15 @@ this.update_dungeon_blocks()
 MMD_SA.reset_camera()
 //MMD_SA._trackball_camera.SA_adjust()
 
+
+// avoid some issues by running this after a few frame skips
+var frame_to_skip = 2
 if (MMD_SA_options.model_para_obj._icon_canvas) {
+/*
+// drawn in c.swap_character() already
   MMD_SA_options.Dungeon.character.icon.getContext("2d").drawImage(MMD_SA_options.model_para_obj._icon_canvas, 0,0)
   MMD_SA_options.Dungeon.update_status_bar(true)
+*/
 }
 else {
   SL_Host.style.visibility = "hidden"
@@ -2843,8 +2961,7 @@ else {
   let _look_at_mouse  = MMD_SA_options._look_at_mouse
 
   MMD_SA_options.look_at_screen = MMD_SA_options.look_at_mouse = false
-// avoid some issues by running this after a few frame skips
-  let frame_to_skip = 2
+
   System._browser.on_animation_update.add(function () {
 jThree("#MMD_AmbLight").three(0).color = new THREE.Color("#FFF")
 
@@ -2963,14 +3080,18 @@ System._browser.on_animation_update.add(function () { SL_Host.style.visibility =
 }
 
 MMD_SA_options.Dungeon.event_mode = true
-setTimeout(function () {
+System._browser.on_animation_update.add(function () {
   if (!MMD_SA_options.Dungeon.started)
     window.dispatchEvent(new CustomEvent("SA_Dungeon_onstart"));
   MMD_SA_options.Dungeon.started = true
 
+  THREE.MMD.getModels().forEach((model) => {
+    model.resetPhysics(60)
+  });
+
   MMD_SA_options.Dungeon.event_mode = false
   MMD_SA_options.Dungeon.run_event("onstart")
-}, 1000);
+}, frame_to_skip+3, 0);
     };
   })()
 
@@ -3069,7 +3190,17 @@ window.addEventListener("jThree_ready", function () {
   var c = MMD_SA_options.Dungeon.character.icon = document.createElement("canvas")
   c.width = c.height = 64
 
-  MMD_SA_options.model_para_obj_all.forEach(function (para_SA) {
+  MMD_SA_options.model_para_obj_all.forEach(function (para_SA, idx) {
+    if (para_SA.is_PC_candidate || (idx == 0)) {
+      para_SA.is_PC_candidate = true
+      if (!para_SA.character)
+        para_SA.character = {}
+      if (!para_SA.character.combat_stats_base)
+        para_SA.character.combat_stats_base = (idx == 0) ? MMD_SA_options.Dungeon.character.combat_stats_base||{} : {}
+      if (!para_SA.character.combat_stats_base.attack_combo_list)
+        para_SA.character.combat_stats_base.attack_combo_list = MMD_SA_options.Dungeon_options._attack_combo_list
+    }
+
     if (!para_SA.icon_path)
       return
 //System.Gadget.path + '\\icon_teto_512x512.png'
@@ -3088,6 +3219,8 @@ window.addEventListener("jThree_ready", function () {
       icon.src = URL.createObjectURL(xhr.response)
     });
   });
+
+  MMD_SA_options.Dungeon.character.combat_stats_base = MMD_SA_options.model_para_obj.character.combat_stats_base
 });
 
 window.addEventListener("SA_Dungeon_onstart", function () {
@@ -3899,13 +4032,17 @@ c.hp_add(c.hp_max/2)
   MMD_SA_options.Dungeon.blob_url.set(url)
 });
 
-for (var id in this.item_base) {
-  var item = this.item_base[id]
-  if (!item.rarity)
-    item.rarity = "normal"
-  item.icon = new Image()
-  System._browser.load_file(item.icon_path, item.icon)
-}
+// arrow function use parent's this
+// https://betterprogramming.pub/difference-between-regular-functions-and-arrow-functions-f65639aba256
+window.addEventListener("jThree_ready", () => {
+  for (var id in this.item_base) {
+    let item = this.item_base[id]
+    if (!item.rarity)
+      item.rarity = "normal"
+    item.icon = new Image()
+    System._browser.load_file(item.icon_path, item.icon)
+  }
+});
 // dungeon general options default END
 
 if (!MMD_SA_options.trackball_camera_limit)
@@ -4534,7 +4671,8 @@ else {
 var subject_bs, object_bs
 var s, d, c, p, a, i, intersection, normal
 var moved_final, _moved_final, moved_before_bb_check
-var _v3, _v3a, _v3b, _v3c
+var _v3, _v3a, _v3b, _v3c, _v3d, _v3e
+var _q, _q2
 
 subject_bs = new THREE.Sphere()
 object_bs  = new THREE.Sphere()
@@ -4555,7 +4693,8 @@ _v3b = new THREE.Vector3()
 _v3c = new THREE.Vector3()
 _v3d = new THREE.Vector3()
 _v3e = new THREE.Vector3()
-_q = new THREE.Quaternion()
+_q  = new THREE.Quaternion()
+_q2 = new THREE.Quaternion()
 
 var subject_bb, object_bb, ray, ray_normal, subject_bb_moved
 var _m4, _bb, _c, _d, intersection2, s_bb, s_bb_moved
@@ -4577,9 +4716,21 @@ var bb_translate_offset = new THREE.Vector3()
 
 var local_mesh_sorting_range_buffer = 8
 
-return function (_subject, mov_delta, skip_ground_obj_check, para) {
-  if (!para)
-    para = {}
+return function (_subject, mov_delta, skip_ground_obj_check, para={}) {
+  function center_rotate(q, inversed, restored) {
+    var identity = (para.collision_centered) ? !inversed : inversed;
+    identity = (restored) ? !identity : identity;
+    if (identity) {
+      return _q.set(0,0,0,1)
+    }
+
+    _q.copy(q)
+    if (inversed)
+      _q.conjugate()
+
+    return _q
+  }
+
   para._subject = _subject
 
   var use_bb_translate_offset
@@ -4603,7 +4754,7 @@ return function (_subject, mov_delta, skip_ground_obj_check, para) {
   subject_bs.radius *= Math.max(subject.scale.x, subject.scale.y, subject.scale.z)
   var bb_translate
   if (para.bb_translate) {
-    bb_translate = _v3a.set(subject_bs.radius,subject_bs.radius,subject_bs.radius).multiply(para.bb_translate).applyQuaternion(subject.quaternion)
+    bb_translate = _v3a.set(subject_bs.radius,subject_bs.radius,subject_bs.radius).multiply(para.bb_translate).applyQuaternion(center_rotate(subject.quaternion))
     bb_translate.add(subject.position)
   }
   else {
@@ -4630,7 +4781,7 @@ return function (_subject, mov_delta, skip_ground_obj_check, para) {
   var collision_by_mesh_checked = false
   var collision_by_mesh_failed = false
   var obj_hit, ground_obj
-  moved_final.copy(mov_delta)
+  moved_final.copy(mov_delta).applyQuaternion(center_rotate(subject.quaternion, true))
 
   subject_bb.copy(subject.geometry.boundingBox)
 /*
@@ -4643,7 +4794,7 @@ return function (_subject, mov_delta, skip_ground_obj_check, para) {
 
   subject_bb.size(_v3)
   if (para.bb_translate) {
-    bb_translate = _v3a.copy(_v3).multiply(para.bb_translate).applyQuaternion(subject.quaternion)
+    bb_translate = _v3a.copy(_v3).multiply(para.bb_translate).applyQuaternion(center_rotate(subject.quaternion))
     bb_translate.add(subject.position)
   }
   else
@@ -4656,12 +4807,12 @@ return function (_subject, mov_delta, skip_ground_obj_check, para) {
   if (use_bb_translate_offset) {
     if (para.bb_expand)
       bb_translate_offset.multiply(_v3a.copy(para.bb_expand).addScalar(1))
-    bb_translate_offset.multiply(_v3).applyQuaternion(subject.quaternion)
+    bb_translate_offset.multiply(_v3).applyQuaternion(center_rotate(subject.quaternion))
 //DEBUG_show(bb_translate_offset.toArray()+'n'+Date.now())
   }
 
 // updating from .quaternion/.position instead of .matrixWorld should be more updated
-  subject_bb.applyMatrix4(_m4.makeRotationFromQuaternion(subject.quaternion))//subject.matrixWorld)//
+  subject_bb.applyMatrix4(_m4.makeRotationFromQuaternion(center_rotate(subject.quaternion)))//subject.matrixWorld)//
   subject_bb.translate(bb_translate)
 //  var b_center = subject.bones_by_name["センター"]
 //  subject_bb.translate(_v3.copy(subject.position).add(b_center.position).sub(_v3a.fromArray(b_center.pmxBone.origin)))
@@ -4809,24 +4960,30 @@ if (obj.collision_by_mesh_sort_range && !para.collision_by_mesh_disabled && !tha
 
 if (obj._mesh.geometry.boundingBox) {
 
-  var move_blocked
+  let move_blocked
   moved_before_bb_check.copy(moved_final)
 
-  var hit_moved_once
-  var collision_by_mesh = !para.collision_by_mesh_disabled && obj.collision_by_mesh
+  let hit_moved_once
+  let collision_by_mesh = !para.collision_by_mesh_disabled && obj.collision_by_mesh
 
 var skip_bb_index_list = []
 obj._mesh.geometry.boundingBox_list.some(function (bb, bb_idx) {
   if (skip_bb_index_list.indexOf(bb_idx) != -1)
     return
 
-  if (para.filter_obj && !para.filter_obj(obj, bb)) {
+  if (para.filter_obj && !para.filter_obj(obj, bb, true)) {
     return
   }
 
   var _skip_ground_obj_check = skip_ground_obj_check || obj.skip_ground_obj_check
 
-  object_bb.copy(bb).applyMatrix4(cache.matrixWorld)
+  if (!para.collision_centered) {
+    object_bb.copy(bb).applyMatrix4(cache.matrixWorld)
+  }
+  else {
+    _q.copy(center_rotate(subject.quaternion, true))
+    object_bb.copy(bb).applyMatrix4(_m4.makeRotationFromQuaternion(_q2.copy(cache.quaternion).multiply(_q))).translate(_v3a.copy(subject.position).add(_v3.copy(cache.position).sub(subject.position).applyQuaternion(_q)))
+  }
   object_bb.center(_c)
 
   var hit_moved = subject_bb_moved.isIntersectionBox(object_bb)
@@ -4837,7 +4994,7 @@ obj._mesh.geometry.boundingBox_list.some(function (bb, bb_idx) {
       hit_moved = false
     }
     else if (_subject.mass && !null_move && obj.mass) {
-      var feedback = 1 - obj.mass / (obj.mass + _subject.mass)
+      let feedback = 1 - obj.mass / (obj.mass + _subject.mass)
 //feedback = 0.1
 //if (subject._model_index > 0) DEBUG_show(feedback+'/'+Date.now())
 /*
@@ -4848,7 +5005,7 @@ obj._mesh.geometry.boundingBox_list.some(function (bb, bb_idx) {
       _v3a.copy(moved_final).multiply(_v3b.set(feedback,1,feedback))
       object_bb.translate(_v3a)
       _c.add(_v3a)
-      cache.position.add(_v3a.setY(0))
+      cache.position.add(_v3a.setY(0).applyQuaternion(center_rotate(subject.quaternion, false, true)))
 
       hit_moved = subject_bb_moved.isIntersectionBox(object_bb)
     }
@@ -4983,6 +5140,10 @@ return true
 // blocked, for simplicity
       _moved_final.set(0,0,0)
     }
+  }
+
+  if (para.filter_obj && !para.filter_obj(obj, bb)) {
+    return
   }
 
   collision = true
@@ -5398,7 +5559,7 @@ moved_final.copy(intersection.sub(s))
     this.character.ground_normal = null
 
 //if (collision && obj_hit) console.log(mov_delta.toArray()+'\n'+moved_final.toArray())
-  return ((collision) ? { moved_final:moved_final, obj_hit:!!obj_hit, ground_obj:ground_obj, collision_by_mesh_checked:collision_by_mesh_checked, collision_by_mesh_failed:collision_by_mesh_failed } : { collision_by_mesh_checked:collision_by_mesh_checked, collision_by_mesh_failed:collision_by_mesh_failed });
+  return ((collision) ? { moved_final:moved_final.applyQuaternion(center_rotate(subject.quaternion, false, true)), obj_hit:!!obj_hit, ground_obj:ground_obj, collision_by_mesh_checked:collision_by_mesh_checked, collision_by_mesh_failed:collision_by_mesh_failed } : { collision_by_mesh_checked:collision_by_mesh_checked, collision_by_mesh_failed:collision_by_mesh_failed });
 };
   })();
 
@@ -5507,26 +5668,37 @@ var _v3  = new THREE.Vector3()
 var _v3a = new THREE.Vector3()
 
 return function (e, obj_list) {
+  var list_all_clickable;
+  if (!e) {
+    list_all_clickable = true
+    e = { button:0 }
+  }
+
   if (e.button !== 0) return;
 
   var that = this
 
   var camera = MMD_SA._trackball_camera.object
 
+  if (list_all_clickable) {
+    vectorMouse.set(0, 0, 0.5);
+  }
+  else {
 // https://github.com/mrdoob/three.js/issues/5587
-  vectorMouse.set(
+    vectorMouse.set(
    (e.clientX/B_content_width)  * 2 - 1
  ,-(e.clientY/B_content_height) * 2 + 1
  ,0.5
-  );
-  vectorMouse.unproject(camera).sub(camera.position).normalize();
+    );
+    vectorMouse.unproject(camera).sub(camera.position).normalize();
 //DEBUG_show(vectorMouse.toArray())
+  }
 
   var obj_sorted = []
   var click_range_default = this.grid_size * this.view_radius * 0.5
 
   if (!obj_list)
-    obj_list = this.object_list
+    obj_list = this.object_list_click
 
   var is_dblclick = (e.type == "dblclick")
 
@@ -5542,7 +5714,7 @@ if (!cache.visible)
 
 var click_range = []
 obj.onclick.forEach(function (click) {
-  click_range.push((is_dblclick != !!click.is_dblclick) ? 0 : (click.click_range || click_range_default) + ((click.boundingSphere_included) ? obj._mesh.geometry.boundingSphere.radius*Math.max(cache.scale.x,cache.scale.y,cache.scale.z) : 0))
+  click_range.push((!list_all_clickable && (is_dblclick != !!click.is_dblclick)) ? 0 : (click.click_range || click_range_default) + ((click.boundingSphere_included) ? obj._mesh.geometry.boundingSphere.radius*Math.max(cache.scale.x,cache.scale.y,cache.scale.z) : 0))
 });
 
 obj._click_index = -1
@@ -5566,7 +5738,9 @@ obj._dis_from_PC = dis
     return
   }
 
-  obj_sorted.sort(function (a,b) { return (a._sort_weight || b._sort_weight) ? (b._sort_weight||0)-(a._sort_weight||0): a._dis_from_PC - b._dis_from_PC; });
+  if (!list_all_clickable) {
+    obj_sorted.sort(function (a,b) { return (a._sort_weight || b._sort_weight) ? (b._sort_weight||0)-(a._sort_weight||0): a._dis_from_PC - b._dis_from_PC; });
+  }
 
 // https://gamedev.stackexchange.com/questions/96459/fast-ray-sphere-collision-code
 // s: the start point of the ray
@@ -5576,17 +5750,16 @@ obj._dis_from_PC = dis
 //console.log(camera)
 //console.log([s.toArray(), vectorMouse.toArray(), camera.up.toArray()].join("\n"))
 
-  var obj_clicked
-  var bb_index_clicked = -1
+  var obj_clicked_list = []
 
   for (var k = 0, k_max = obj_sorted.length; k < k_max; k++) {
-var obj = obj_sorted[k]
-var cache = obj._obj
+let obj = obj_sorted[k]
+let cache = obj._obj
 
 intersection.set(0,0,0)
 if (obj._mesh.geometry.boundingBox) {
-  var bb_list = obj._mesh.geometry.boundingBox_list || [obj._mesh.geometry.boundingBox]
-  var click = obj.onclick[obj._click_index]
+  let bb_list = obj._mesh.geometry.boundingBox_list || [obj._mesh.geometry.boundingBox]
+  let click = obj.onclick[obj._click_index]
   bb_list.some(function (b3, bb_idx) {
     if (bb_idx) {
       if (!click.func && !click.event_id && (!click.events || !click.events[bb_idx]))
@@ -5596,31 +5769,44 @@ if (obj._mesh.geometry.boundingBox) {
     bb.copy(b3)
     bb.applyMatrix4(cache.matrixWorld)
     if (obj._mesh.bones) {
-      var _mesh = obj._mesh._mesh_parent || obj._mesh
-      var b_center = _mesh.bones_by_name["センター"]
+      let _mesh = obj._mesh._mesh_parent || obj._mesh
+      let b_center = _mesh.bones_by_name["センター"]
       if (b_center.pmxBone)
         bb.translate(_v3.copy(b_center.position).sub(_v3a.fromArray(b_center.pmxBone.origin)))
     }
 //console.log(bb)
-    var e = click.events && click.events[bb_idx]
+    let e = click.events && click.events[bb_idx]
     if (e) {
       if ((e.is_dblclick != null) && (is_dblclick != e.is_dblclick))
         return
-      var click_range = e.click_range
+      let click_range = e.click_range
       if (click_range && (bb.center(_v3).distanceToSquared(PC_pos) > click_range*click_range))
         return
     }
 
     ray.set(s,d)
-    if (ray.intersectBox(bb, intersection)) {
-      obj_clicked = obj
+    if (list_all_clickable || ray.intersectBox(bb, intersection)) {
+      let _obj = {}
+      _obj.obj = obj
       if (bb_list.length > 1)
-        bb_index_clicked = bb_idx
-      return true
+        _obj.bb_index = bb_idx
+      obj_clicked_list.push(_obj)
+
+      if (list_all_clickable) {
+         bb.center(_v3)
+         _v3.y = bb.min.y + Math.min(bb.max.y+3, 25)
+        _obj.pos = _v3.clone()
+      }
+      else
+        return true
     }
   });
-  if (obj_clicked)
+
+  if (!list_all_clickable && obj_clicked_list.length)
     break
+}
+else if (list_all_clickable) {
+  obj_clicked_list.push({obj:obj})
 }
 else {
   bs.copy(obj._mesh.geometry.boundingSphere)
@@ -5631,7 +5817,7 @@ else {
 // c: the center point of the sphere
   c.copy(bs.center)
 // r: its radius
-  var r = bs.radius
+  let r = bs.radius
 
 // Calculate ray start's offset from the sphere center
 //float3 p = s - c;
@@ -5639,8 +5825,8 @@ else {
 
 //float rSquared = r * r;
 //float p_d = dot(p, d);
-  var rSquared = r * r;
-  var p_d = p.dot(d);
+  let rSquared = r * r;
+  let p_d = p.dot(d);
 
 // The sphere is behind or surrounding the start point.
 //if(p_d > 0 || dot(p, p) < rSquared)
@@ -5654,7 +5840,7 @@ else {
   a.copy(p).sub(_v3.copy(d).multiplyScalar(p_d));
 
 //float aSquared = dot(a, a);
-  var aSquared = a.dot(a);
+  let aSquared = a.dot(a);
 
 // Closest approach is outside the sphere.
 //if(aSquared > rSquared)
@@ -5662,7 +5848,7 @@ else {
   if (aSquared > rSquared)
     continue
 
-  obj_clicked = obj
+  obj_clicked_list.push({obj:obj})
   break
 
 // Calculate distance from plane where ray enters/exits the sphere.    
@@ -5686,13 +5872,20 @@ else {
 }
   }
 
+  if (list_all_clickable) {
+    return obj_clicked_list
+  }
+
+  if (!obj_clicked_list.length)
+    return
+
+  var obj_clicked = obj_clicked_list[0].obj
+  var bb_index_clicked = obj_clicked_list[0].bb_index
+
 //  if (obj_clicked)
 //    DEBUG_show(obj_clicked.object_index)
 //  else
 //    DEBUG_show("(nothing clicked)")
-
-  if (!obj_clicked)
-    return
 
   var click = obj_clicked.onclick[obj_clicked._click_index]
   if (click.func) {
@@ -5731,14 +5924,14 @@ var e_func = function (e) {
 
   var obj_list
   if ((is_dblclick == obj_character.onclick[0].is_dblclick) && !MMD_SA.MMD.motionManager.para_SA.click_disabled) {
-    obj_list = d.object_list.slice()
+    obj_list = d.object_list_click.slice()
 
     var c_mesh = THREE.MMD.getModels()[0].mesh
     obj_character._obj = obj_character._mesh = c_mesh
     obj_list.push(obj_character)
   }
   else {
-    obj_list = d.object_list
+    obj_list = d.object_list_click
   }
 
   var clicked = d.check_mouse_on_object(e, obj_list)
@@ -5924,7 +6117,8 @@ key_map.down = 0
 
   window.addEventListener("SA_keydown", function (e) {
 var k = e.detail.keyCode
-var t = performance.now()
+// use RAF_timestamp instead, making it easier to track if a key is pressed in the same frame
+var t = RAF_timestamp//performance.now()
 // Raw key press data. Avoid altering it besides keyboard events.
 if (!d._key_pressed[k]) d._key_pressed[k] = t
 
@@ -6014,14 +6208,21 @@ function reset_key_map(id_list) {
 */
 // key events END
 
-var _v3a_cp = new THREE.Vector3()
+var combat_para_default = (function () {
+  var _v3a_cp = new THREE.Vector3()
+  var _v3a = new THREE.Vector3()
 
-var combat_para_default = {
+  return {
   collision_by_mesh_disabled: true
 
- ,filter_obj: function (obj, bb) {
+ ,collision_centered: true
+
+ ,filter_obj: function (obj, bb, simple_mode) {
     if (!obj.mass || !obj.hp)
       return false
+
+    if (simple_mode)
+      return true
 
     var attacker_index = this.combat_para.attacker.obj._index
     var attacker_combat_stats = this.combat_para.attacker.obj.combat_stats
@@ -6042,28 +6243,28 @@ var combat_para_default = {
       _hit = { combat_para:this.combat_para, timestamp:t }
 
       if (obj.character_index != null) {
-        var vfx
+        let vfx
 
-        var combat_para = this.combat_para.para[this.combat_para.index]
-        var hit_level = combat_para.hit_level || 1
-        var model = THREE.MMD.getModels()[obj.character_index]
-        var model_para = MMD_SA_options.model_para_obj_all[obj.character_index]
-        var motion_para = MMD_SA.motion[model.skin._motion_index].para_SA
+        let combat_para = this.combat_para.para[this.combat_para.index]
+        let hit_level = combat_para.hit_level || 1
+        let model = THREE.MMD.getModels()[obj.character_index]
+        let model_para = MMD_SA_options.model_para_obj_all[obj.character_index]
+        let motion_para = MMD_SA.motion[model.skin._motion_index].para_SA
 
-        var motion_prefix = (obj.character_index == 0) ? "PC " : "NPC-" + obj.character_index + " "
+        let motion_prefix = (obj.character_index == 0) ? "PC " : "NPC-" + obj.character_index + " "
 
-        var super_armor_level = (motion_para.super_armor && motion_para.super_armor.level) || 0
+        let super_armor_level = (motion_para.super_armor && motion_para.super_armor.level) || 0
 
-        var hit_motion, parried_level
+        let hit_motion, parried_level
         if (motion_para.combat_para) {
           if (d._combat_para.some(function(p){return(p.attacker.obj==obj);})) {
 //DEBUG_show("Double HIT!",0,1)
 //            hit_motion = "PC combat parry broken"
           }
           else {
-            var frame_before_end = (combat_para.frame_range[1]-1) - this.combat_para.frame
+            let frame_before_end = (combat_para.frame_range[1]-1) - this.combat_para.frame
             if (frame_before_end > 0) {
-              var motion_frame = model.skin.time * 30 + Math.min(frame_before_end, 3)
+              let motion_frame = model.skin.time * 30 + Math.min(frame_before_end, 3)
               if (motion_para.combat_para.some(function(hit){return((motion_frame >= hit.frame_range[0]) && (motion_frame <= hit.frame_range[1]));})) {
 //DEBUG_show("Double HITING!(" + (attacker_index+"vs"+obj._index) + ")",0,1)
                 return false
@@ -6074,12 +6275,12 @@ var combat_para_default = {
 
         hit_obj._combat_hit[attacker_index] = _hit
 
-        var super_armor_hit = (super_armor_level >= hit_level)
+        let super_armor_hit = (super_armor_level >= hit_level)
 
 if (!super_armor_hit) {
         hit_motion = hit_motion || combat_para.hit_motion
         parried_level = motion_para.parry_level
-        var NPC_parried_level = (obj.character_index != 0) && (obj.combat && obj.combat.parry_check(obj, this.combat_para))
+        let NPC_parried_level = (obj.character_index != 0) && (obj.combat && obj.combat.parry_check(obj, this.combat_para))
         if (!parried_level) {
           if (obj.character_index == 0) {
             parried_level = motion_para.PC_parry_level
@@ -6105,7 +6306,7 @@ if (!super_armor_hit) {
         if (!parried_level) {
 // damage
           if (d._states.combat) {
-var damage = combat_para.damage
+let damage = combat_para.damage
 if (damage == null) {
   damage = (d._states.combat.enemy_list.length) ? Math.min(hit_level * 5, 20) * Math.min(1 + this.combat_para.index*0.2, 2) : 0
 }
@@ -6120,19 +6321,31 @@ if ((damage > 0) || (!super_armor_hit && (damage == 0)))
           }
         }
 
-        if (vfx && combat_para.SFX) {
-var para = { scale:1, speed:1 }
+        if (combat_para.SFX) {
+          if (vfx) {
+let para = { scale:1, speed:1, depth:1 }
 if (combat_para.SFX.bone_to_pos) {
-  var bone_to_pos = MMD_SA.get_bone_position(this.combat_para.attacker.obj._mesh, combat_para.SFX.bone_to_pos)
+  let bone_to_pos = MMD_SA.get_bone_position(this.combat_para.attacker.obj._mesh, combat_para.SFX.bone_to_pos)
 //console.log(bone_to_pos)
-  _v3a_cp.copy(bone_to_pos).sub(bone_to_pos.sub(obj._obj.position).multiplyScalar(0.5).setY(0))
+  _v3a_cp.copy(bone_to_pos)
+  _v3a.copy(bone_to_pos).sub(obj._obj.position).setY(0)
+  let radius = _v3a.length()
+  _v3a_cp.sub(_v3a.normalize().multiplyScalar(Math.max(radius/2, radius-obj._obj.geometry.boundingSphere.radius)))
+
   para.pos = _v3a_cp.clone()
   if (combat_para.SFX.pos_offset)
     para.pos.add(combat_para.SFX.pos_offset)
 }
 
+let SFX_para = {}
+
 if (combat_para.SFX.visual && combat_para.SFX.visual[vfx]) {
-  Object.assign(para, combat_para.SFX.visual[vfx])
+  if (combat_para.SFX.visual[vfx].sprite) {
+    SFX_para.sprite = []
+    combat_para.SFX.visual[vfx].sprite.forEach((s) => {
+      SFX_para.sprite.push(Object.assign({}, para, s))
+    });
+  }
 }
 else {
   if (obj.combat_stats.hurt_vfx) {
@@ -6161,23 +6374,28 @@ else {
     para.scale *= 1.5
     para.speed *= 1
   }
+
+  SFX_para.sprite = [para];
 }
 
-d.sprite.animate(para.name, para)
+model_para._SFX_one_time = model_para._SFX_one_time||[];
+model_para._SFX_one_time.push(SFX_para);
+//d.sprite.animate(para.name, para)
 //console.log(_v3a_cp.clone())
 
 if (combat_para.SFX.sound) {
-  var sound = combat_para.SFX.sound[vfx]
+  let sound = combat_para.SFX.sound[vfx]
   if (!sound)
     sound = { name:"hit-1" }
-  var ao = d.sound.audio_object_by_name[sound.name]
-  var mesh = this.combat_para.attacker.obj._mesh
-  var spawn_id = sound.name + RAF_timestamp
-  var po = ao.get_player_obj(mesh, spawn_id)
+  let ao = d.sound.audio_object_by_name[sound.name]
+  let mesh = this.combat_para.attacker.obj._mesh
+  let spawn_id = sound.name + RAF_timestamp
+  let po = ao.get_player_obj(mesh, spawn_id)
   if (!po) {
     ao.play(mesh, spawn_id)
   }
 }
+          }
         }
 
         if (super_armor_hit && !hit_motion)
@@ -6212,7 +6430,8 @@ default:
 // ,_bb_translate: {x:0, y:0, z:0.5}
  ,_bb_expand: {x:(1+0.5)/_bb_xz_factor_-1, y:0, z:(1+0.5)/_bb_xz_factor_-1}
  ,_bb_translate: {x:0, y:0, z:0.5/_bb_xz_factor_}
-};
+  };
+})();
 
 if (MMD_SA_options.Dungeon_options.combat_para_default) {
   Object.assign(combat_para_default, MMD_SA_options.Dungeon_options.combat_para_default)
@@ -6221,18 +6440,29 @@ if (MMD_SA_options.Dungeon_options.combat_para_default) {
 d.combat_para_process = function (attacker, combat_para_parent, frame) {
   combat_para_parent.combat_para.some(function (hit, idx) {
 if ((frame >= hit.frame_range[0]) && (frame <= hit.frame_range[1])) {
-  var sound_name = hit.sound_name || ("hit-" + ((hit.hit_level && Math.min(hit.hit_level,3))||1))
-  var ao = d.sound.audio_object_by_name[sound_name]
+  let hit_level = ((hit.hit_level && Math.min(hit.hit_level,3))||1)
+  let sound_name = hit.sound_name || ("hit-" + hit_level)
+  let ao = d.sound.audio_object_by_name[sound_name]
   if (!ao) {
     sound_name = "hit-1"
     ao = d.sound.audio_object_by_name[sound_name]
   }
-  var mesh = attacker.obj._obj
-  var spawn_id = sound_name+idx
-  var po = ao.get_player_obj(mesh, spawn_id)
+  let mesh = attacker.obj._obj
+  let spawn_id = sound_name+idx
+  let po = ao.get_player_obj(mesh, spawn_id)
   if (!po || (Date.now() > po.timestamp+500)) {
     ao.play(mesh, spawn_id)
   }
+
+  if (mesh._model_index == 0) {
+    if ((hit_level > 1) && (frame > hit.frame_range[0] + Math.min(~~(hit.frame_range[1]-hit.frame_range[0])/2, 3))) {
+      let model_para = MMD_SA_options.model_para_obj;
+      model_para._SFX_one_time = model_para._SFX_one_time||[];
+      model_para._SFX_one_time.push({ id:'cs'+idx, camera_shake:{magnitude:hit_level*0.2,duration:250} });
+//DEBUG_show('cs'+idx,0,1)
+    }
+  }
+
   d._combat_para.push({ attacker:attacker, para:combat_para_parent.combat_para, motion_id:combat_para_parent.motion_id, index:idx, frame:frame })
   return true
 }
@@ -6241,6 +6471,7 @@ if ((frame >= hit.frame_range[0]) && (frame <= hit.frame_range[1])) {
 
 var time_last, time_diff, gravity_obj
 var time_falling
+/*
 // a "hack" to make target-locking camera works
 var rot_camera = {
   ini_count: 0
@@ -6249,12 +6480,12 @@ var rot_camera = {
  ,v3: new THREE.Vector3()
 }
 d._rot_camera = rot_camera
-
+*/
 window.addEventListener("SA_Dungeon_onrestart", function () {
   time_last = 0
   gravity_obj = { y:0, mov_y_last:0, time:1/30 }
 
-  rot_camera.ini_count = 0
+//  rot_camera.ini_count = 0
 
   time_falling = -10
 });
@@ -6615,7 +6846,7 @@ key_para.pressed = _k.pressed
   var reset_motion = !mov// || (!mov.x && !mov.y && !mov.z)
 //if (reset_motion) DEBUG_show(Date.now())
 
-  var use_rot_camera
+//  var use_rot_camera
   c.camera_TPS_mode = TPS_mode//TPS_mode_in_action
 //if (TPS_mode) DEBUG_show(Date.now())
   if (TPS_mode_in_action) {
@@ -6638,12 +6869,15 @@ if (TPS_character_rotated) {
 }
 rot.copy(_v3a.set(0,cy,0))
 
+/*
 if (++rot_camera.ini_count <= rot_camera.ini_count_max+1) {
   rot_camera.v3.set(0,0,0)
   MMD_SA.reset_camera()
-//DEBUG_show(Date.now())
 }
 use_rot_camera = true
+*/
+// always reset when not using rot_camera
+MMD_SA.reset_camera()
     }
     else if (TPS_camera_ry) {
       _v3a.set(0,TPS_camera_ry,0)
@@ -6655,8 +6889,7 @@ use_rot_camera = true
     model.mesh.quaternion.setFromEuler(rot_self)
   }
 //if (rot) DEBUG_show(rot.y*180/Math.PI+'\n'+c.rot.y*180/Math.PI+'\n'+TPS_mode_in_action+'\n'+(d.key_map_list.map(function(k){return((k.down)?k.id:0)}))+'\n'+para_SA._path+'\n'+Date.now())
-  if (!use_rot_camera && (mov || rot))
-    rot_camera.ini_count = 0
+//  if (!use_rot_camera && (mov || rot)) rot_camera.ini_count = 0;
 
   if (mov)
     mov.multiplyScalar((c.mount_para && c.mount_para.speed_scale) || c.speed_scale)
@@ -6813,7 +7046,7 @@ MMD_SA._force_motion_shuffle = true
     var attacker = para.attacker
     if (attacker != PC) {
       combat_para_default.object_list = [c]
-      var mesh = attacker.obj._obj
+      let mesh = attacker.obj._obj
 // reset the position that has been modified in jThree.MMD.js
       if (mesh._bone_to_position_last) {
         mesh.position.sub(mesh._bone_to_position_last.pos_delta_rotated)
@@ -6826,7 +7059,7 @@ MMD_SA._force_motion_shuffle = true
 // ,_bb_expand: {x:0.5, y:0, z:0.5}
 // ,_bb_translate: {x:0, y:0, z:0.5}
     var para_hit = para.para[para.index]
-    combat_para_default.bb_expand    = para_hit.bb_expand    || combat_para_default._bb_expand
+    combat_para_default.bb_expand    = para_hit.bb_expand    || combat_para_default._bb_expand//{x:0,y:0,z:99}//
     combat_para_default.bb_translate = para_hit.bb_translate || combat_para_default._bb_translate
 
     d.check_collision(attacker, ((attacker != PC)?(d._mov[attacker.obj._index]||new THREE.Vector3()):_v3a), true, combat_para_default);
@@ -7044,11 +7277,14 @@ MMD_SA._force_motion_shuffle = true
       _mov_camera.y += camera_y_offset
       _mov_camera = [_mov_camera, mov]
     }
-    let _rot_camera = ((TPS_mode_in_action && !TPS_camera_lookAt) ? null : (rot_camera.enabled && rot && rot_camera.v3.negate().add(rot))||rot)
+    let _rot_camera = (TPS_mode_in_action && !TPS_camera_lookAt) ? null : rot;//(rot_camera.enabled && rot && rot_camera.v3.negate().add(rot))||rot;
     MMD_SA._trackball_camera.SA_adjust(_mov_camera, _rot_camera)
+/*
     if (rot_camera.enabled && rot) {
+//DEBUG_show(_rot_camera.clone().multiplyScalar(180/Math.PI).toArray().concat(Date.now()).join('\n'))
       rot_camera.v3.copy(rot)
     }
+*/
     update_dungeon_blocks = true
   }
   else {
@@ -7087,6 +7323,7 @@ para.onidle && para.onidle()
     MMD_SA.reset_camera()
   }
 
+
   var cp_events = []
   d.check_points.forEach(function (cp) {
     var pos
@@ -7115,10 +7352,13 @@ para.onidle && para.onidle()
       }
       else {
         if (r.onexit && r.onexit.condition && !r.onexit.condition()) {
+//return
           _v3b.copy(r.onexit._pos_last).sub(c.pos)
           c.pos.copy(r.onexit._pos_last)
+
           c.pos_update()
           MMD_SA._trackball_camera.SA_adjust(_v3b)
+
 //          MMD_SA.reset_camera()
           return
         }
@@ -7659,6 +7899,7 @@ return function (pos) {
   d.restart()
 });
 
+
 window.addEventListener("SA_MMD_toggle_shadowMap", function (e) {
   var enabled = !!MMD_SA_options.use_shadowMap
 
@@ -7887,9 +8128,14 @@ return [
 ];
   })()
  ,SFX: [
-    { frame:6,  sound:{} }
-//   ,{ frame:34, sound:{} }
+    { frame:6+1, sound:{} },
+    {
+      frame:34,
+      condition: (model) => ((model.mesh._model_index != 0) || (model.mesh.position.y < MMD_SA_options.Dungeon.character.ground_y+5)),
+      sound:{},
+    },
   ]
+ ,range:[{time:[6,0]}]
  ,playbackRate_by_model_index: {}
  ,bb_translate: { limit:{ max:{x:0, y:0, z:0.75} } }
     }
@@ -7926,7 +8172,14 @@ return [
  ,{ frame:0,   speed:{x:0, y:0,       z: 0}}
 ];
   })()
- ,SFX: [ { frame:23, sound:{} } ]
+ ,SFX: [
+    { frame:23, sound:{} },
+    {
+      frame:128,
+      condition: (model) => ((model.mesh._model_index != 0) || (model.mesh.position.y < MMD_SA_options.Dungeon.character.ground_y+5)),
+      sound:{},
+    },
+  ]
     }
   };
 }
@@ -8187,6 +8440,16 @@ return (x_object.user_data.weapon && (x_object.user_data.weapon.type == "2-hande
   return MMD_SA_options.Dungeon.accessory_list.some(_two_handed_weapon_equipped);
 }
 
+function one_handed_weapon_equipped(model_index) {
+  function _one_handed_weapon_equipped(x_object) {
+if (!basic_check(model_index, x_object))
+  return false
+return (x_object.user_data.weapon && (x_object.user_data.weapon.type == "1-handed"))
+  }
+
+  return MMD_SA_options.Dungeon.accessory_list.some(_one_handed_weapon_equipped);
+}
+
 function twin_weapon_equipped(model_index) {
   function _twin_weapon_equipped(x_object) {
 if (!basic_check(model_index, x_object))
@@ -8198,7 +8461,9 @@ return (x_object.user_data.weapon && (x_object.user_data.weapon.type == "twin"))
 }
 
 // /^(\u5DE6|\u53F3)(\u80A9|\u8155|\u3072\u3058|\u624B\u9996|\u624B\u6369|.\u6307.)/
-var RE_skin_jThree = new RegExp("^(" + toRegExp(["左","右"],"|") + ")(" + toRegExp(["肩","腕","ひじ","手首","手捩"],"|") + "|." + toRegExp("指") + ".)");
+var RE_skin_jThree = new RegExp("^(" + toRegExp(["左","右"],"|") + ")(" + toRegExp(["肩","腕","ひじ","手首","手捩","ダミー"],"|") + "|." + toRegExp("指") + ".)");
+var RE_skin_jThree_one_handed_guard = new RegExp(toRegExp(["上半身","両目"],"|"));
+var RE_skin_jThree_hand_R = new RegExp("^" + toRegExp("右") + "(" + toRegExp("ダミー") + "|." + toRegExp("指") + ".)");
 
 //var RE_arms = new RegExp(toRegExp(["待機","構え歩","怯み"],"|") + "|jump|^run");
 var RE_arms  = /^(PC movement forward|PC.+jump|PC combat default|PC combat movement|PC combat hit small|PC combat hit medium)/
@@ -8242,6 +8507,35 @@ return RE_parry.test(motion_id) && two_handed_weapon_equipped(objs._model_index)
       condition: function (is_bone_action, objs) {
 var skin = THREE.MMD.getModels()[objs._model_index].skin
 var motion_id = MMD_SA_options.Dungeon.motion_id_by_filename[MMD_SA.motion[skin._motion_index].filename] || ""
+return RE_arms.test(motion_id) && one_handed_weapon_equipped(objs._model_index);
+      }
+
+     ,onFinish: function () {}
+   }
+
+// bone_group is possibly useful only if .copy_first_bone_frame is used
+//bone_group:["腕","指"]
+   ,motion: {path:'MMD.js/motion/motion_rpg_pack01.zip#/粗製のモーション５/1-handed_weapon_arms.vmd', match:{skin_jThree:RE_skin_jThree, morph_jThree:false}, para_SA:{model_index_list:MMD_SA_options.Dungeon.battle_model_index_list}}
+  }
+ ,{
+    action: {
+      condition: function (is_bone_action, objs) {
+var skin = THREE.MMD.getModels()[objs._model_index].skin
+var motion_id = MMD_SA_options.Dungeon.motion_id_by_filename[MMD_SA.motion[skin._motion_index].filename] || ""
+return RE_parry.test(motion_id) && one_handed_weapon_equipped(objs._model_index);
+      }
+
+     ,onFinish: function () {}
+   }
+
+   ,motion: {path:'MMD.js/motion/motion_rpg_pack01.zip#/粗製のモーション５/1-handed_weapon_guard.vmd', match:{skin_jThree:{ test: function(name) { return (RE_skin_jThree_one_handed_guard.test(name) || RE_skin_jThree.test(name)); } }, morph_jThree:false}, para_SA:{model_index_list:MMD_SA_options.Dungeon.battle_model_index_list}}
+  }
+
+ ,{
+    action: {
+      condition: function (is_bone_action, objs) {
+var skin = THREE.MMD.getModels()[objs._model_index].skin
+var motion_id = MMD_SA_options.Dungeon.motion_id_by_filename[MMD_SA.motion[skin._motion_index].filename] || ""
 return MMD_SA_options.Dungeon.character.combat_mode && RE_arms.test(motion_id) && twin_weapon_equipped(objs._model_index);
       }
      ,onFinish: function () {}
@@ -8258,6 +8552,18 @@ return RE_parry.test(motion_id) && twin_weapon_equipped(objs._model_index);
      ,onFinish: function () {}
    }
    ,motion: {path:'MMD.js/motion/motion_rpg_pack01.zip#/粗製のモーション４/twin_weapon_guard.vmd', match:{skin_jThree:{ test: function(name) { return ((name=='上半身') || RE_skin_jThree.test(name)); } }, morph_jThree:false}, para_SA:{model_index_list:MMD_SA_options.Dungeon.battle_model_index_list}}
+  }
+
+ ,{
+    action: {
+      condition: function (is_bone_action, objs) {
+return one_handed_weapon_equipped(objs._model_index);
+      }
+
+     ,onFinish: function () {}
+   }
+
+   ,motion: {path:'MMD.js/motion/motion_rpg_pack01.zip#/粗製のモーション５/hand_R_weapon_hold.vmd', match:{skin_jThree:RE_skin_jThree_hand_R, morph_jThree:false}, para_SA:{model_index_list:MMD_SA_options.Dungeon.battle_model_index_list}}
   }
 );
   })();
@@ -8688,8 +8994,8 @@ MMD_SA_options.Dungeon.character.combat_mode = false
        ,NPC_motion_command_disabled: true
        ,combat_para: [
   { frame_range:[ 5,10], hit_level:2, SFX:{ bone_to_pos:"左足首" } }
- ,{ frame_range:[18,21], hit_level:1, SFX:{ bone_to_pos:"右足首" } }
- ,{ frame_range:[23,28], hit_level:3, SFX:{ bone_to_pos:"左足首" } }
+ ,{ frame_range:[18,21], hit_level:1, SFX:{ bone_to_pos:"右ひざ" } }
+ ,{ frame_range:[23,28], hit_level:3, SFX:{ bone_to_pos:"左ひざ" } }
         ]
        ,motion_duration: 44/30
        ,motion_duration_by_combo: [
@@ -8882,9 +9188,11 @@ MMD_SA_options.Dungeon.character.combat_mode = false
        ,NPC_motion_command_disabled: true
        ,super_armor: { level:2, damage_scale:0.5 }
        ,combat_para: [
-  { frame_range:[41,50], hit_level:5, SFX:{ bone_to_pos:"左足首", pos_offset:{x:0, y:10, z:0}, visual:{ hit:{ name:"explosion_purple_01", scale:2 } } }, bb_expand:{x:0.5*2, y:0, z:0.5*2} }
+  { frame_range:[41,50], hit_level:5, SFX:{ bone_to_pos:"左足首", pos_offset:{x:0, y:10, z:0}, visual:{ hit:{ sprite:[{name:"explosion_red_01", scale:2}] } } }, bb_expand:{x:0.5*3, y:0, z:0.5*3} }
         ]
        ,motion_duration: 95/30
+
+,SFX: [{frame_range:[41,999], sprite:[{bone_ref:"左足首",name:"explosion_sinestesia-01_03",scale:3,depth:5}]/*, camera_shake:{magnitude:0.2,duration:500}*/}]
       }
     };
     NPC_motion_list.push("PC combat attack 11");
@@ -9292,6 +9600,87 @@ MMD_SA_options.Dungeon.character.combat_mode = false
     };
     NPC_motion_list.push("PC combat attack twin weapon 08");
   }
+
+  if (!this.motion["PC combat attack 1-handed weapon 01"]) {
+    this.motion["PC combat attack 1-handed weapon 01"] = {
+// 1,2
+      path:'MMD.js\\motion\\motion_rpg_pack01.zip#\\粗製のモーション５\\astorias\\astora-astorias-attack3_v01.vmd'
+     ,para: { adjust_center_view_disabled:true, onended: function () { MMD_SA._no_fading=true; }
+       ,model_index_list: [0]
+       ,bone_to_position: [{ name:"全ての親", scale:{x:1,y:0,z:1} }]
+//       ,motion_command_disabled: true
+       ,NPC_motion_command_disabled: true
+       ,super_armor: { level:1, damage_scale:0.5 }
+       ,combat_para: [
+  { frame_range:[13,16], hit_level:1, SFX:{ bone_to_pos:"右手首", sound:{hit:{ name:"hit_slash"}} }, bb_expand:{x:0.5*2, y:0, z:0.5*2}, bb_translate:{x:0, y:0, z:0.5*2}, sound_name:"swing" }
+ ,{ frame_range:[36,39], hit_level:2, SFX:{ bone_to_pos:"右手首", sound:{hit:{ name:"hit_slash"}} }, bb_expand:{x:0.5*2, y:0, z:0.5*2}, bb_translate:{x:0, y:0, z:0.5*2}, sound_name:"swing" }
+ ,{ frame_range:[72,75], hit_level:3, SFX:{ bone_to_pos:"右手首", sound:{hit:{ name:"hit_slash"}} }, bb_expand:{x:0.5*2, y:0, z:0.5*2}, bb_translate:{x:0, y:0, z:0.5*2}, sound_name:"swing" }
+        ]
+       ,motion_duration: 118/30
+       ,motion_duration_by_combo: [
+  { combo_RE: "2,3", motion_duration:(90+28*0)/30 }
+ ,{ combo_RE: "2",   motion_duration:58/30 }
+ ,{ motion_duration: 24/30 }
+        ]
+       ,playbackRate_by_model_index: {"0":1.5}
+      }
+    };
+    NPC_motion_list.push("PC combat attack 1-handed weapon 01");
+  }
+  if (!this.motion["PC combat attack 1-handed weapon 02"]) {
+    this.motion["PC combat attack 1-handed weapon 02"] = {
+// 12,12
+      path:'MMD.js\\motion\\motion_rpg_pack01.zip#\\粗製のモーション５\\astorias\\astora-astorias-attack9-10_v01.vmd'
+     ,para: { adjust_center_view_disabled:true, onended: function () { MMD_SA._no_fading=true; }
+       ,model_index_list: [0]
+       ,bone_to_position: [{ name:"全ての親", scale:{x:1,y:0,z:1} }]
+//       ,motion_command_disabled: true
+       ,NPC_motion_command_disabled: true
+//       ,super_armor: { level:1, damage_scale:0.5 }
+       ,combat_para: [
+  { frame_range:[22,28], hit_level:2, SFX:{ bone_to_pos:"右手首", sound:{hit:{ name:"hit_slash"}} }, bb_expand:{x:0.5*3, y:0, z:0.5*3}, sound_name:"swing" },
+  { frame_range:[32,38], hit_level:2, SFX:{ bone_to_pos:"右手首", sound:{hit:{ name:"hit_slash"}} }, bb_expand:{x:0.5*3, y:0, z:0.5*3}, sound_name:"swing" },
+  { frame_range:[66,82], hit_level:1, SFX:{ bone_to_pos:"右手首", sound:{hit:{ name:"hit_slash"}} }, bb_expand:{x:0.5*1, y:0, z:0.5*1} },
+  { frame_range:[87,90], hit_level:3, SFX:{ bone_to_pos:"右手首", sound:{hit:{ name:"hit_slash"}} }, bb_expand:{x:0.5*2, y:0, z:0.5*2}, bb_translate:{x:0, y:0, z:0.5*3}, sound_name:"swing" },
+        ]
+       ,range:[{time:[8,0]}]
+       ,motion_duration: 128/30
+       ,motion_duration_by_combo: [
+  { combo_RE: "2,13", motion_duration:128/30 },
+  { combo_RE: "2",  motion_duration:58/30 },
+  { motion_duration: 32/30 },
+        ]
+       ,playbackRate_by_model_index: {"0":1.25}
+      }
+    };
+    NPC_motion_list.push("PC combat attack 1-handed weapon 02");
+  }
+/*
+  if (!this.motion["PC combat attack 1-handed weapon 03"]) {
+    this.motion["PC combat attack 1-handed weapon 03"] = {
+// 12,2
+      path:'MMD.js\\motion\\motion_rpg_pack01.zip#\\粗製のモーション５\\astorias\\astora-astorias-attack8-10_v01.vmd'
+     ,para: { adjust_center_view_disabled:true, onended: function () { MMD_SA._no_fading=true; }
+       ,model_index_list: [0]
+       ,bone_to_position: [{ name:"全ての親", scale:{x:1,y:0,z:1} }]
+//       ,motion_command_disabled: true
+       ,NPC_motion_command_disabled: true
+//       ,super_armor: { level:1, damage_scale:0.5 }
+       ,combat_para: [
+  { frame_range:[13,16], hit_level:2, SFX:{ bone_to_pos:"右手首", sound:{hit:{ name:"hit_slash"}} }, bb_expand:{x:0.5*2, y:0, z:0.5*2}, bb_translate:{x:0, y:0, z:0.5*2}, sound_name:"swing" }
+ ,{ frame_range:[75,78], hit_level:3, SFX:{ bone_to_pos:"右手首", sound:{hit:{ name:"hit_slash"}} }, bb_expand:{x:0.5*2, y:0, z:0.5*2}, bb_translate:{x:0, y:0, z:0.5*3}, sound_name:"swing" }
+        ]
+       ,motion_duration: 117/30
+       ,motion_duration_by_combo: [
+  { combo_RE: "23", motion_duration:(101+16*0)/30 }
+ ,{ motion_duration: 42/30 }
+        ]
+//       ,playbackRate_by_model_index: {"0":1.5}
+      }
+    };
+    NPC_motion_list.push("PC combat attack 1-handed weapon 03");
+  }
+*/
 }
 /*
 if (!this.motion["DUMMY"]) {
@@ -9316,12 +9705,14 @@ return false
 this.motion_filename_by_id = {}
 this.motion_id_by_filename = {}
 
-for (var name in this.motion) {
-  let motion = this.motion[name]
+window.addEventListener("SA_MMD_init", function (e) {
+
+for (var name in that.motion) {
+  let motion = that.motion[name]
   motion.name = decodeURIComponent(((motion.path)?motion:MMD_SA_options.motion[motion.index]).path.replace(/^.+[\/\\]/, "").replace(/\.vmd$/i, ""))
 
-  this.motion_filename_by_id[name] = motion.name
-  this.motion_id_by_filename[motion.name] = name
+  that.motion_filename_by_id[name] = motion.name
+  that.motion_id_by_filename[motion.name] = name
 
   if (motion.index != null) {
     if (motion.path) {
@@ -9343,9 +9734,12 @@ for (var name in this.motion) {
     if (para.combat_para) {
       if (para.look_at_screen == null)
         para.look_at_screen = false
-// NPC-only combat motion (define .duration to prevent looping)
-      if (para.duration_NPC && !para.duration && !para.motion_duration)
-        para.duration = para.duration_NPC + 10
+
+// define combat motion.duration to prevent looping
+      if (para.motion_duration && !para.duration) {
+        para.duration = Math.max(10,para.motion_duration) + (para.duration_NPC||0)
+      }
+
       let xz = ["x","z"]
       para.combat_para.forEach(function (p) {
         if (p.bb_expand) {
@@ -9380,7 +9774,7 @@ for (var name in this.motion) {
   }
 }
 if (MMD_SA_options.model_path_extra) {
-  var motion_PC_default = this.motion["PC default"]
+  let motion_PC_default = that.motion["PC default"]
 
   MMD_SA_options.model_path_extra.forEach(function (path, idx) {
     var model_filename = path.replace(/^.+[\/\\]/, "")
@@ -9449,6 +9843,8 @@ window.addEventListener("MMDStarted", function (e) {
   d._motion_shuffle_list_default = MMD_SA_options.motion_shuffle_list_default.slice()
   d._motion_shuffle_list_default_combat = (d.motion["PC combat default"]) ? [MMD_SA_options.motion_index_by_name[d.motion["PC combat default"].name || "PC combat default"]] : null
   d._motion_shuffle_list_default_parry  = (d.motion["PC combat parry"])   ? [MMD_SA_options.motion_index_by_name[d.motion["PC combat parry"].name   || "PC combat parry"]]   : null
+});
+
 });
 
 this.key_map = options.key_map || {};
@@ -9539,19 +9935,31 @@ var c = d.character
 
 var camera_position_preset = []
 
-window.addEventListener("MMDStarted", function () {
+window.addEventListener("jThree_ready", function () {
   d.key_map[38].camera_position_preset_index = 0
 
   camera_position_preset.push(c.camera_position_base_default.slice())
   var v3 = new THREE.Vector3(0,30,-60)
-  for (var a = 0; a < 360; a += 90) {
-    camera_position_preset.push(v3.clone().applyEuler(new THREE.Vector3(0,a*Math.PI/180,0)).toArray())
+  for (var a = 0; a < 1; a++) {
+    camera_position_preset.push(v3.clone().applyEuler(new THREE.Vector3(0,a*90*Math.PI/180,0)).toArray())
   }
+
   var v3 = new THREE.Vector3(0,45,-120)
-  for (var a = 0; a < 360; a += 90) {
-    camera_position_preset.push(v3.clone().applyEuler(new THREE.Vector3(0,a*Math.PI/180,0)).toArray())
+  for (var a = 0; a < 1; a++) {
+    camera_position_preset.push(v3.clone().applyEuler(new THREE.Vector3(0,a*90*Math.PI/180,0)).toArray())
   }
+
   c.camera_rotation_from_preset = new THREE.Vector3()
+});
+
+window.addEventListener("SA_Dungeon_onrestart", function () {
+  if (c.mount_para)
+    return
+
+  camera_position_preset[0] = c.camera_position_base_default.slice()
+
+  c.camera_position_base_default = camera_position_preset[d.key_map[38].camera_position_preset_index]
+  c.camera_position_base = c.camera_position_base_default.slice()
 });
 
 return function () {
@@ -9571,9 +9979,7 @@ return function () {
   c.camera_TPS_rot.set(0,0,0)
   c.camera_update()
 
-  if (c.TPS_camera_lookAt_) {
-    d._rot_camera.v3.set(0,0,0)
-  }
+//  if (c.TPS_camera_lookAt_) d._rot_camera.v3.set(0,0,0);
 
   MMD_SA.reset_camera()
 
@@ -9640,8 +10046,8 @@ while (true) {
   break
 }
 
-c.rot.y = Math.PI/2 - Math.atan2((enemy._obj.position.z-c.pos.z), (enemy._obj.position.x-c.pos.x))
-THREE.MMD.getModels()[0].mesh.quaternion.setFromEuler(c.rot)
+//c.rot.y = Math.PI/2 - Math.atan2((enemy._obj.position.z-c.pos.z), (enemy._obj.position.x-c.pos.x))
+//THREE.MMD.getModels()[0].mesh.quaternion.setFromEuler(c.rot)
   }
 
   if (!that.key_map[37]) {
@@ -9797,7 +10203,7 @@ if (options.combat_mode_enabled) {
  ,{ keyCode:20045, combo_RE:"4,5", motion_id:"PC combat attack 18", plus_down:true }
  ,{ keyCode:15656, combo_RE:"56,56", motion_id:"PC combat attack 19", combo_type:"kick" }
 
- ,{ keyCode:30055, combo_RE:"5,5", motion_id:"PC combat attack 2-handed weapon 01", combo_type:"2-handed" }
+ ,{ keyCode:50000, combo_RE:"5,5", motion_id:"PC combat attack 2-handed weapon 01", combo_type:"2-handed" }
 
  ,{ keyCode:10022, combo_RE:"2,2", motion_id:"PC combat attack twin weapon 01", combo_type:"twin" }
  ,{ keyCode:10021, combo_RE:"2,1", motion_id:"PC combat attack twin weapon 02", combo_type:"twin" }
@@ -9807,14 +10213,30 @@ if (options.combat_mode_enabled) {
  ,{ keyCode:22323, combo_RE:"23,23", motion_id:"PC combat attack twin weapon 06", plus_down:true, combo_type:"twin" }
  ,{ keyCode:10012, combo_RE:"1,2", motion_id:"PC combat attack twin weapon 07", combo_type:"twin" }
  ,{ keyCode:10123, combo_RE:"123", motion_id:"PC combat attack twin weapon 08", combo_type:"twin" }
+
+ ,{ keyCode:30012, combo_RE:"1,2", motion_id:"PC combat attack 1-handed weapon 01", combo_type:"1-handed slash" }
+ ,{ keyCode:31212, combo_RE:"12,12", motion_id:"PC combat attack 1-handed weapon 02", combo_type:"1-handed slash" }
+// ,{ keyCode:30212, combo_RE:"2,12", motion_id:"PC combat attack 1-handed weapon 03", combo_type:"1-handed slash" }
       ];
     }
-    MMD_SA_options.Dungeon_options.attack_combo_list.forEach(function (combo) {
-      combo._RE = new RegExp("(^|\\,)" + combo.combo_RE.replace(/\,/g, "\\,") + "(\\,|$)")
-      combo._RE_simple = new RegExp("(^|\\,)" + ((/^(123|456|789)$/.test(combo.combo_RE)) ? combo.combo_RE.replace(/123/, "3\\,3").replace(/456/, "6\\,6").replace(/789/, "9\\,9") : combo.combo_RE.replace(/\,/g, "\\,").replace(/[123]+/g, "[123]").replace(/[456]+/g, "[456]").replace(/[789]+/g, "[789]")) + "(\\,|$)")
-      d.key_map[combo.keyCode] = { order:combo.keyCode, id:"combo-"+combo.keyCode, type_combat:true, keyCode:combo.keyCode
-       ,motion_id: combo.motion_id
-      };
+
+    MMD_SA_options.Dungeon_options._attack_combo_list = MMD_SA_options.Dungeon_options.attack_combo_list
+    Object.defineProperty(MMD_SA_options.Dungeon_options, "attack_combo_list", {
+      get: function () {
+        return (MMD_SA_options.Dungeon.character.combat_stats_base && MMD_SA_options.Dungeon.character.combat_stats_base.attack_combo_list) || MMD_SA_options.Dungeon_options._attack_combo_list;
+      }
+    });
+
+    window.addEventListener("jThree_ready", ()=>{
+      MMD_SA_options.Dungeon_options._attack_combo_list.forEach((c)=>{
+        c.combo_type = c.combo_type || "bare-handed"
+        d.motion[c.motion_id].para.attack_combo_para = c
+      });
+    });
+
+// initialize to assign .duration for all necessary combat motions (BEFORE .generateSkinAnimation()) to prevent looping
+    window.addEventListener("SA_MMD_init", ()=>{
+      MMD_SA_options.Dungeon.character.assign_combat_keys()
     });
 
     var combo_onfirstpress = function (e) {
@@ -9858,7 +10280,7 @@ if (MMD_SA._force_motion_shuffle) {
 
 if (!para_SA.motion_duration_by_combo) {
   let combos = MMD_SA_options.Dungeon_options.attack_combo_list.filter(function (combo) {
-    if ((combo.combo_type != "free") && !c.combat_stats.weapon.combo_type_RE.test(combo.combo_type||"bare-handed"))
+    if ((combo.combo_type != "free") && !c.combat_stats.weapon.combo_type_RE.test(combo.combo_type))
       return false
 
     let _RE = (MMD_SA_options.Dungeon_options.simple_combat_input_mode_enabled) ? combo._RE_simple : combo._RE
@@ -10004,44 +10426,6 @@ return { TPS_mode:TPS_mode }
   });
 }
 
-Object.keys(this.key_map).map(function (key) { return that.key_map[key]; }).concat(this.key_map_combat||[]).concat(this.key_map_parry||[]).forEach((function () {
-  var p_to_sync = ["combat_para", "mov_speed", "keyCode", "motion_duration"];
-  var modes = ["", "TPS_mode"]
-
-  return function (key_map) {
-    modes.forEach(function (mode) {
-var km = (mode) ? key_map[mode] : key_map;
-if (!km)
-  return
-
-km.motion_filename = km.motion_id && that.motion_filename_by_id[km.motion_id]
-
-var para = km.motion_id && that.motion[km.motion_id].para
-if (para) {
-  para.motion_id = km.motion_id
-
-  if (para.motion_duration_by_combo) {
-    para.motion_duration_by_combo.forEach(function (combo) {
-      if (combo.combo_RE) {
-        combo._RE = new RegExp("^" + combo.combo_RE.replace(/\,/g, "\\,") + "(\\,|$)")
-        combo._RE_simple = new RegExp("^" + combo.combo_RE.replace(/\,/g, "\\,").replace(/\d+/g, "\\d") + "(\\,|$)")
-      }
-    });
-  }
-
-  p_to_sync.forEach(function (p) {
-    km[p] = para[p] = km[p] || para[p] || key_map[p];
-  });
-
-  if (km.motion_duration) {
-    para.duration = 10
-    para.duration_NPC = km.motion_duration
-  }
-}
-    });
-  };
-})());
-
 this.key_map_swap = function (key_map) {
   if (!Array.isArray(key_map)) {
     key_map = Object.keys(key_map).map(function (name) { return key_map[name]; });
@@ -10092,8 +10476,14 @@ this.object_base_list.forEach(function (obj, idx) {
   if (obj.id)
     MMD_SA_options.Dungeon.object_base_index_by_id[obj.id] = idx
 
-  if (obj.character_index)
+  if (obj.character_index) {
+    if (obj.model_scale) {
+      window.addEventListener("jThree_ready", function () {
+        MMD_SA_options.model_para_obj_all[obj.character_index].model_scale = obj.model_scale
+      });
+    }
     return
+  }
 
   var c = obj.construction
   if (c && !obj.path) {
@@ -10180,6 +10570,13 @@ if (s.auto_damage && !s.dialogue_mode) {
   s.auto_damage.t = t
   this.character.hp_add(damage, check_hp)
   return (this.character.hp == 0)
+}
+
+for (let name in this.character.states) {
+  let state = this.character.states[name]
+  if (state.action) {
+    state.action()
+  }
 }
     };
   })()
@@ -11336,7 +11733,8 @@ else {
     }
     else {
       var model_para = MMD_SA_options.model_para_obj_all[index]
-      model_para._motion_name_next = (motion.name && ((this.motion[motion.name] && this.motion[motion.name].name) || motion.name)) || model_para.motion_name_default
+      if (model_para)
+        model_para._motion_name_next = (motion.name && ((this.motion[motion.name] && this.motion[motion.name].name) || motion.name)) || model_para.motion_name_default
 //DEBUG_show(index+":"+motion.name+"/"+model_para._motion_name_next,0,1)
     }
   }
@@ -11575,6 +11973,9 @@ para_SA.SFX.some(function (obj) {
   if (!((obj.frame > frame0) && (obj.frame <= frame1)))
     return false
 
+  if (obj.condition && !obj.condition(model, para_SA, animation, dt))
+    return false
+
   var model_para = MMD_SA_options.model_para_obj_all[model._model_index]
 
   var sound = obj.sound
@@ -11596,614 +11997,9 @@ para_SA.SFX.some(function (obj) {
   })()
 
 
- ,sound: (function () {
-    var use_THREE_Audio = true
+ ,get sound() { return MMD_SA.Audio3D; }
 
-// before object creation
-    window.addEventListener("SA_Dungeon_after_map_generation", function () { MMD_SA_options.Dungeon.sound.detach_positional_audio(); });
-
-    var listener
-    window.addEventListener("jThree_ready", function () {
-      MMD_SA_options.Dungeon_options.sound.forEach(function (sound) {
-        MMD_SA_options.Dungeon.sound.load(sound)
-      });
-    });
-    window.addEventListener("jThree_ready", function () {
-      listener = new THREE.AudioListener();
-      listener.setMasterVolume(0.5);
-    });
-    window.addEventListener("MMDStarted", function () { MMD_SA._trackball_camera.object.add(listener); });
-
-    var _audio_player = []
-    var _channel_locked = {}
-
-// THREE.Audio START
-    function THREE_Audio(positional) {
-this.audio = (positional) ? new THREE.PositionalAudio( listener ) : new THREE.Audio(listener);
-this.audio._player = this
-
-this.events = {}
-    }
-
-    THREE_Audio.prototype = {
-  constructor: THREE_Audio
-
- ,get loop()  { return this.audio.getLoop(); }
- ,set loop(v) { this.audio.setLoop(v);  }
-
- ,get volume()  { return this.audio.getVolume(); }
- ,set volume(v) { this.audio.setVolume(v);  }
-
- ,get paused() { return !this.audio.isPlaying; }
-
-// ,get currentTime() { return this.audio.context.currentTime; }
-
- ,get autoplay()  { return this.audio.autoplay; }
- ,set autoplay(v) { this.audio.autoplay = v;  }
-
- ,set src(v) {
-this.audio.isPlaying && this.audio.stop()
-this.audio.setBuffer( v )
-  }
-
- ,play: function () {
-!this.audio.isPlaying && this.audio.play()
-  }
-
- ,pause: function () {
-this.audio.isPlaying && this.audio.pause()
-  }
-
- ,_dispatchEvent: function (event_type) {
-if (this.events[event_type]) {
-  var that = this
-  this.events[event_type].forEach(function (func) {
-    func.call(that)
-  });
-}
-  }
-
- ,addEventListener: function (event_type, func) {
-if (!this.events[event_type])
-  this.events[event_type] = []
-this.events[event_type].push(func)
-  }
-    };
-// THREE.Audio END
-
-    function Audio_Player(positional) {
-var that = this
-
-// Audio player version
-this.timestamp = 0
-this.player = (use_THREE_Audio) ? new THREE_Audio(positional) : document.createElement("audio")
-
-this.positional = !!positional
-this.obj_parent = null
-this.obj_parent_attached = null
-
-this.player.addEventListener("playing", function (e) {
-  that.attach_obj_parent()
-
-  that.timestamp = Date.now()
-  that.occupied = true
-});
-
-this.player.addEventListener("ended", function (e) {
-  if (!this.loop)
-    that.occupied = false
-});
-
-_audio_player.push(this)
-console.log("Audio_Player count", _audio_player.length)
-    }
-
-    Audio_Player.prototype.detach_obj_parent = function () {
-if (!this.positional)
-  return
-if (!this.obj_parent_attached)
-  return
-
-this.obj_parent_attached.remove(this.player.audio)
-this.obj_parent_attached = null
-console.log("Audio_Player (positional) - obj_parent DETACHED")
-    };
-
-    Audio_Player.prototype.attach_obj_parent = function () {
-if (!this.positional)
-  return
-if (this.obj_parent_attached && (this.obj_parent_attached == this.obj_parent))
-  return
-
-this.detach_obj_parent()
-
-var p_audio = this.player.audio
-p_audio.setRefDistance( 20 )
-
-this.obj_parent_attached = this.obj_parent
-this.obj_parent_attached.add(p_audio)
-p_audio.updateMatrixWorld(true)
-console.log("Audio_Player (positional) - obj_parent ATTACHED")
-    };
-
-
-    function Audio_Object(para) {
-this.para = para
-
-this.object_url = null
-
-if (para.channel) {
-  if (para.channel === true)
-    para.channel = para.name
-}
-    }
-
-    Audio_Object.prototype = {
-  constructor:  Audio_Object
-
- ,obj_parent_matched: function (obj_parent, ap) {
-return ((!obj_parent && !ap.positional) || (ap.positional && (!ap.obj_parent || (obj_parent == ap.obj_parent))));
-  }
-
- ,get_player_obj: function (obj_parent, spawn_id) {
-var that = this
-var para = this.para
-
-return _audio_player.find(function (ap) {
-  return (/*ap.occupied && */((para.name == ap.name) || ((/^BGM$/.test(para.channel) || para.is_exclusive_channel) && (para.channel == ap.channel))) && (!para.can_spawn || !spawn_id || (spawn_id == ap.spawn_id)) && that.obj_parent_matched(obj_parent, ap));
-});
-  }
-
- ,play: function (obj_parent, spawn_id) {
-if (!this.object_url)
-  return null
-
-var that = this
-var para = this.para
-
-if (para.can_spawn) {
-  if (typeof spawn_id == "boolean") {
-    spawn_id = THREE.Math.generateUUID()
-  }
-  else if (!spawn_id)
-    spawn_id = para.name
-}
-else {
-  spawn_id = null
-}
-
-var player_obj = this.get_player_obj(obj_parent, spawn_id)
-if (player_obj) {
-  if (para.name == player_obj.name) {
-    player_obj.obj_parent = obj_parent
-    if (!player_obj.occupied || player_obj.player.paused) {
-      player_obj.player.play()
-    }
-    return player_obj
-  }
-}
-else {
-  player_obj = _audio_player.find(function (ap) {
-    return (!ap.occupied && that.obj_parent_matched(obj_parent, ap));
-  });
-  if (!player_obj) {
-    player_obj = new Audio_Player(!!obj_parent)
-  }
-}
-
-player_obj.name = para.name
-player_obj.channel = para.channel
-player_obj.spawn_id = spawn_id
-player_obj.occupied = true
-player_obj.obj_parent = obj_parent
-
-// https://developers.google.com/web/updates/2018/11/web-audio-autoplay
-// to save headaches, System Animator game will always begin with a startup screen requesting user interaction (e.g. mouse click), which should ensure that autoplay is always usable.
-player_obj.player.autoplay = (!para.channel || !_channel_locked[para.channel])
-
-player_obj.player.loop = para.loop
-player_obj.player.volume = (para.volume || 1)
-
-// https://developers.google.com/web/updates/2017/06/play-request-was-interrupted
-try {
-  player_obj.player.src = this.object_url
-}
-catch (err) {
-// Uncaught (in promise) DOMException: The play() request was interrupted by a new load request.
-  console.error(err.message)
-}
-
-return player_obj
-  }
-    };
-
-    return {
-  audio_object_by_name: {}
-
- ,load: function (para) {
-var url = para.url
-var name = para.name = para.name || url.replace(/^.+[\/\\]/, "").replace(/\.\w+$/, "")
-var ao = this.audio_object_by_name[name]
-// NOTE: For now, Audio_Object that requires positional support (at least the first player) should avoid using .autoplay
-if (ao) {
-  if (para.autoplay)
-    ao.play()
-  return
-}
-
-ao = this.audio_object_by_name[name] = new Audio_Object(para)
-
-System._browser.load_file(url, function (xhr) {
-  if (use_THREE_Audio) {
-// https://github.com/mrdoob/three.js/blob/dev/src/loaders/AudioLoader.js
-			// Create a copy of the buffer. The `decodeAudioData` method
-			// detaches the buffer when complete, preventing reuse.
-// NOTE: no need to reuse the source buffer at this moment
-THREE.AudioContext.getContext().decodeAudioData( xhr.response/*.slice( 0 )*/, function ( audioBuffer ) {
-  ao.object_url = audioBuffer;
-  if (para.autoplay)
-    ao.play()
-});
-  }
-  else {
-    ao.object_url = URL.createObjectURL(xhr.response)
-    if (para.autoplay)
-      ao.play()
-  }
-}, "arraybuffer");
-  }
-
- ,pause_channel: function (channel, locked) {
-if (locked)
-  _channel_locked[channel] = true
-
-_audio_player.forEach(function (ap) {
-  if (ap.occupied && (ap.channel == channel))
-    ap.player.pause()
-});
-  }
-
- ,resume_channel: function (channel) {
-_channel_locked[channel] = null
-
-_audio_player.forEach(function (ap) {
-  if (ap.occupied && (ap.channel == channel))
-    ap.player.play()
-});
-  }
-
- ,detach_positional_audio: function (obj_parent) {
-_audio_player.forEach(function (ap) {
-  if (ap.positional && (!obj_parent || (obj_parent == ap.obj_parent_attached)))
-    ap.detach_obj_parent()
-});
-  }
-    };
-  })()
-
-
- ,sprite: (function () {
-    var sprite_obj_list = []
-
-// sprite animator START
-    var options = MMD_SA_options.Dungeon_options
-    if (!options.sprite_sheet)
-      options.sprite_sheet = []
-    options.sprite_sheet.push(
-  { name:"explosion_purple_01", url:System.Gadget.path+'/images/sprite_sheet.zip#/explosions/explosion_03_strip13_v01-min.png', col:6, row:2, frame_count:12 }
- ,{ name:"blood_01", url:System.Gadget.path+'/images/sprite_sheet.zip#/blood/blood_hit_splash-min.png', col:4, row:4, frame_count:16, scale:20 }
- ,{ name:"hit_yellow_01", url:System.Gadget.path+'/images/sprite_sheet.zip#/hit/hit_yellow_v00-min.png', col:4, row:4, frame_count:16, scale:20 }
-    );
-
-    var sprite_sheet_by_name = {}
-    if (!MMD_SA_options.GOML_head)
-      MMD_SA_options.GOML_head = ""
-    options.sprite_sheet.forEach(function (ss) {
-if (!ss.name)
-  ss.name = ss.url.replace(/^.+[\/\\]/, "").replace(/\.png$/i, "")
-sprite_sheet_by_name[ss.name] = new SpriteSheet(ss)
-
-MMD_SA_options.GOML_head +=
-  '<txr id="' + ss.name + '_TXR" src="' + (toFileProtocol(ss.url)) + '" />\n';
-    });
-
-    function SpriteSheet(obj) {
-Object.assign(this, obj)
-
-if (!this.scale)
-  this.scale = 10
-
-if (!this.frame_interval)
-  this.frame_interval = 1000/30
-    }
-
-// inspired by:
-// https://stemkoski.github.io/Three.js/Texture-Animation.html
-
-    function SpriteAnimator() {}
-
-    SpriteAnimator.prototype.reset = function (sprite, ss, loop) {
-	
-// NOTE: r58 sets uv offset/scale from the sprite material, not the texture.
-this.sprite = sprite
-var texture = sprite.material
-
-this.sprite_sheet = ss
-
-	// note: texture passed by reference, will be updated by the update function.
-		
-	this.tilesHorizontal = ss.col;
-	this.tilesVertical = ss.row;
-	// how many images does this spritesheet contain?
-	//  usually equals tilesHoriz * tilesVert, but not necessarily,
-	//  if there at blank tiles at the bottom of the spritesheet. 
-	this.numberOfTiles = ss.frame_count;
-/*
-	texture.wrapS = texture.wrapT = THREE.RepeatWrapping; 
-	texture.repeat.set( 1 / this.tilesHorizontal, 1 / this.tilesVertical );
-*/
-//	material.uvOffset.copy( this.uvOffset );
-//	material.uvScale.copy( this.uvScale );
-texture.uvScale.set( 1 / this.tilesHorizontal, 1 / this.tilesVertical );
-
-	// how long should each image be displayed?
-	this.tileDisplayDuration = ss.frame_interval;
-
-	// how long has the current image been displayed?
-	this.currentDisplayTime = 0;
-
-	// which image is currently being displayed?
-	this.currentTile = 0;
-
-this.loop = !!loop
-
-  this.sprite.visible = true
-  this._time_last = 0
-    }
-
-    SpriteAnimator.prototype.update = function( milliSec ) {
-//DEBUG_show(milliSec)
-var texture = this.sprite.material
-		this.currentDisplayTime += milliSec;
-		while (this.currentDisplayTime > this.tileDisplayDuration)
-		{
-			this.currentDisplayTime -= this.tileDisplayDuration;
-			this.currentTile++;
-			if (this.currentTile == this.numberOfTiles) {
-if (!this.loop) {
-  this.sprite.visible = false
-  break
-}
-				this.currentTile = 0;
-			}
-			var currentColumn = this.currentTile % this.tilesHorizontal;
-//			texture.offset.x = currentColumn / this.tilesHorizontal;
-texture.uvOffset.x = currentColumn / this.tilesHorizontal;
-//			var currentRow = Math.floor( this.currentTile / this.tilesHorizontal );
-var currentRow = (this.tilesVertical-1) - Math.floor( this.currentTile / this.tilesHorizontal );
-//			texture.offset.y = currentRow / this.tilesVertical;
-//var currentRow = Math.ceil( this.currentTile / this.tilesHorizontal );
-texture.uvOffset.y = currentRow / this.tilesVertical;
-		}
-    };
-// sprite animator END
-
-    var TextureObject_HP_bar = function (index) {
-this.id = "HP_bar" + index;
-    };
-    TextureObject_HP_bar.prototype.init = function () {
-var canvas = this.canvas
-canvas.width  = 32
-canvas.height = 4
-this._obj.drawBorder(this, "black")
-//console.log(this)
-    };
-    TextureObject_HP_bar.prototype.drawBorder = function (that, color) {
-var canvas = that.canvas
-var context = canvas.getContext("2d")
-context.fillStyle = color
-context.fillRect(0,0, canvas.width,1)
-context.fillRect(0,3, canvas.width,1)
-context.fillRect(0,0, 1,canvas.height)
-context.fillRect(canvas.width-1,0, 1,canvas.height)
-    };
-    TextureObject_HP_bar.prototype.update = function (para) {
-if (!para)
-  para = {}
-
-var v = para.v
-if (v == null)
-  v = 1
-
-var return_value = false
-if (para.border_color_default != para.border_color) {
-  para.border_color_default = para.border_color
-  this._obj.drawBorder(this, para.border_color)
-  return_value = true
-}
-
-var v_max = this.canvas.width - 2
-v = Math.round(v * v_max)
-if (this.value == v)
-  return return_value
-this.value == v
-
-var canvas = this.canvas
-var context = canvas.getContext("2d")
-context.fillStyle = "#0F0"
-context.fillRect(1,1, v,2)
-if (v < v_max) {
-  context.fillStyle = "#0A809B"
-  context.fillRect(v+1,1, (v_max-v),2)
-}
-
-return true
-    };
-
-    var Texture_Object = (function () {
-var texture_obj_list = []
-
-function TextureObject(texture_obj) {
-  this._obj = texture_obj
-  Object.assign(this, texture_obj)
-
-  this.init = texture_obj.init
-  this._update = texture_obj.update
-  this.update = function (v) {
-    var result = this._update(v)
-    this.adjust_scale()
-    return result
-  }
-
-  this.canvas = document.createElement("canvas")
-  this.canvas.width = this.canvas.height = 1
-
-  this.texture = new THREE.Texture(this.canvas)
-  this.texture.needsUpdate = true
-}
-
-TextureObject.prototype.adjust_scale = function () {
-  var scale = this.obj_parent.para.scale || 1
-  var aspect = Math.min(this.canvas.width, this.canvas.height)
-  this.obj_parent.sprite.scale.set(scale*(this.canvas.width/aspect),scale*(this.canvas.height/aspect), 1);
-};
-
-return function (texture_obj) {
-  var obj = texture_obj_list.find(function (_obj) {
-    return (texture_obj.id == _obj.id);
-  });
-  if (obj) {
-    obj.value = null
-    return obj
-  }
-
-  var obj = new TextureObject(texture_obj)
-  texture_obj_list.push(obj)
-  console.log("sprite canvas count:" + texture_obj_list.length)
-  return obj
-};
-    })();
-
-    function create_sprite_obj(texture) {
-//  console.log(explosion_texture)
-var material = new THREE.SpriteMaterial({ map:texture });// , useScreenCoordinates:true /*,alignment:THREE.SpriteAlignment.topLeft*/  } );
-material.useScreenCoordinates = false;
-material.depthTest = false;//true;//
-material.sizeAttenuation = true;
-material.scaleByViewport = false;
-var sprite = new THREE.Sprite( material );
-//console.log(sprite)
-//console.log(MMD_SA.SpeechBubble._mesh)
-//sprite.renderDepth = 999999
-MMD_SA.scene.add( sprite );
-
-var obj_free = { sprite:sprite }
-sprite_obj_list.push(obj_free)
-console.log("sprite object count:" + sprite_obj_list.length)
-return obj_free
-    }
-
-    window.addEventListener("SA_Dungeon_after_map_generation", function () {
-sprite_obj_list.forEach(function (ss) {
-  ss.sprite.visible = false
-});
-    });
-
-    window.addEventListener("SA_MMD_model_all_process_bones", function () {
-var t = performance.now()
-
-sprite_obj_list.forEach(function (ss) {
-  if (!ss.sprite.visible)
-    return
-
-  if (ss.animator) {
-    var interval = (!ss.animator._time_last) ? 0 : t - ss.animator._time_last
-    ss.animator.update(interval)
-    ss.animator._time_last = t
-  }
-  else {
-    if (ss.texture_obj.update(ss.para.get_value && ss.para.get_value()))
-      ss.sprite.material.map.needsUpdate = true
-  }
-
-  var pos_target = ss.para.pos_target
-  if (pos_target) {
-    if (pos_target.mesh) {
-      if (!pos_target.mesh.visible) {
-        ss.sprite.visible = false
-        return
-      }
-      ss.sprite.position.copy(pos_target.mesh.position).add(pos_target.offset)
-//DEBUG_show(ss.sprite.position.toArray())
-    }
-  }
-});
-    });
-
-    return {
-  animate: function (name, para) {
-var ss = sprite_sheet_by_name[name]
-
-var texture = jThree("#" + name + "_TXR").three(0)
-
-var obj_free = sprite_obj_list.find(function (obj) {
-  return !obj.sprite.visible;
-});
-
-if (!obj_free) {
-  obj_free = create_sprite_obj(texture)
-}
-
-obj_free.para = para
-obj_free.texture_obj = null
-
-obj_free.sprite.material.map = texture
-if (para.pos)
-  obj_free.sprite.position.copy(para.pos)
-var scale = ss.scale * (para.scale || 1)
-obj_free.sprite.scale.set(scale,scale, 1);
-
-if (!obj_free.animator)
-  obj_free.animator = new SpriteAnimator()
-obj_free.animator.reset(obj_free.sprite, ss, para.loop)
-obj_free.animator.tileDisplayDuration = para.frame_interval || (ss.frame_interval / (para.speed || 1))
-  }
-
- ,display: function (texture_obj, para) {
-texture_obj = Texture_Object(texture_obj)
-var texture = texture_obj.texture
-
-var obj_free = sprite_obj_list.find(function (obj) {
-  return !obj.sprite.visible;
-});
-
-if (!obj_free) {
-  obj_free = create_sprite_obj(texture)
-}
-
-obj_free.para = para
-obj_free.animator = null
-
-obj_free.texture_obj = texture_obj
-texture_obj.obj_parent = obj_free
-texture_obj.init()
-texture_obj.update()
-
-obj_free.sprite.material.map = texture
-obj_free.sprite.material.uvScale.set(1,1)
-obj_free.sprite.material.uvOffset.set(0,0)
-if (para.pos)
-  obj_free.sprite.position.copy(para.pos)
-obj_free.sprite.visible = true
-  }
-
- ,get_obj_by_id: function (id) {
-return sprite_obj_list.find(function (obj) { return obj.texture_obj && (obj.texture_obj.id == id); });
-  }
-
- ,TextureObject_HP_bar:TextureObject_HP_bar
-    };
-  })()
+ ,get sprite() { return MMD_SA.Sprite; }
 
 
  ,multiplayer: (function () {
@@ -12903,7 +12699,7 @@ if (!str_list) {
   str_list = [d_options.game_id, d_options.game_version, d_options.chapter_id, this.area_id]
 }
 
-var _this = str_list.join("|") + "|" + this.seed_base
+var _this = str_list.join("|") + "|" + this.seed_base + "|" + Math.random()
 //https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
 var hash = 0, i, chr;
 if (_this.length === 0) return hash;
@@ -12959,7 +12755,7 @@ var seed = random(seed_max)
 
 var dis = attacker._obj.position.distanceTo(d.character.pos)
 
-if ((seed_max > 2) && (seed == seed_max-1) && (dis < 48)) {
+if (0&& (seed_max > 2) && (seed == seed_max-1) && (dis < 48)) {
   action_obj.motion_id = combat_action[random(combat_action.length)]//"PC combat attack 12"//
 }
 else if ((seed % 2 == 0) && (dis < 64)) {
@@ -12996,9 +12792,7 @@ return Math.floor(Math.random() * (((d._parry_level_ != null) ? d._parry_level_ 
 };
 
 var obj = {
-  object_index: object_index
-
- ,placement: {
+  placement: {
     can_overlap: true
    ,hidden: true
   }
@@ -13010,6 +12804,11 @@ var obj = {
  ,combat: combat
  ,animate: "combat_default"
 };
+
+if (typeof object_index == 'number')
+  obj.object_index = object_index
+else
+  obj.object_id = object_index
 
 if (para.p_to_assign) {
   obj = Object.assign(obj, para.p_to_assign)
@@ -13273,7 +13072,7 @@ para.enemy_list.forEach(function (enemy, idx) {
    ,zone_of_movement: zone_of_movement
   };
 
-  var obj_id = "object" + enemy.index + "_0";
+  var obj_id = (enemy.index != null) ? "object" + enemy.index + "_0" : d.object_id_translated[enemy.id];
   objs_enter[obj_id] = obj;
 
   objs_exit[obj_id] = { placement:{hidden:true} };
