@@ -1,6 +1,6 @@
 /*
 
-_SA.js (2021-05-22)
+_SA.js (2021-08-06)
 
 System Animator
 (c) Butz Yung / Anime Theme. All rights reserved.
@@ -870,7 +870,7 @@ function SA_DragDropEMU(file) {
 //console.log(item)
   if (/*WallpaperEngine_CEF_mode && */is_file) {// && DragDrop._obj_url_RE && DragDrop._obj_url_RE.test(file.name)) {
 console.log("File input:", file)
-    var dd = top.DragDrop
+    var dd = SA_topmost_window.DragDrop
     if (!dd._path_to_obj) {
       dd._path_to_obj = {}
       dd._obj_url = {}
@@ -878,7 +878,7 @@ console.log("File input:", file)
     dd._path_to_obj[file.name.replace(/^(.+)[\/\\]/, "")] = file
 /*
     if (/(\.zip)$/i.test(file.name)) {
-      let obj_url_zip = dd._obj_url[file.name] = top.URL.createObjectURL(file)
+      let obj_url_zip = dd._obj_url[file.name] = SA_topmost_window.URL.createObjectURL(file)
       dd._path_to_obj[obj_url_zip+RegExp.$1] = file
     }
 */
@@ -2925,18 +2925,18 @@ if (func)
     EV_sync_update.RAF_func = [];
 
 // Electron cursor/window data START
-var _b, _b_top, _cursor, _window, _window_top, opacity_on_hover, IgnoreMouseEventsPartial, capture_pixel, use_screen_data
+var _b, _top_b, _cursor, _window, _window_top, opacity_on_hover, IgnoreMouseEventsPartial, capture_pixel, use_screen_data
 if (webkit_electron_mode) {
   _b = System._browser
-  _b_top = top.System._browser
-  if (!top.returnBoolean("AutoItStayOnDesktop")) {
+  _top_b = SA_topmost_window.System._browser
+  if (!SA_topmost_window.returnBoolean("AutoItStayOnDesktop")) {
     opacity_on_hover = System.Gadget.Settings.readString("OpacityOnHover")
-    IgnoreMouseEventsPartial = top.returnBoolean("IgnoreMouseEventsPartial")
+    IgnoreMouseEventsPartial = SA_topmost_window.returnBoolean("IgnoreMouseEventsPartial")
   }
   capture_pixel = opacity_on_hover || IgnoreMouseEventsPartial
   use_screen_data = opacity_on_hover || self.MMD_SA
-  _cursor = _b._electron_cursor_pos = _b_top._electron_cursor_pos = (use_screen_data) ? ((is_SA_child_animation && _b_top._electron_cursor_pos) || SA_top_window.getCursorPos()) : null
-  _window = _b._electron_window_pos = _b_top._electron_window_pos = (use_screen_data) ? ((is_SA_child_animation && _b_top._electron_window_pos) || SA_top_window.getPos()) : null
+  _cursor = _b._electron_cursor_pos = _top_b._electron_cursor_pos = (use_screen_data) ? ((is_SA_child_animation && _top_b._electron_cursor_pos) || SA_top_window.getCursorPos()) : null
+  _window = _b._electron_window_pos = _top_b._electron_window_pos = (use_screen_data) ? ((is_SA_child_animation && _top_b._electron_window_pos) || SA_top_window.getPos()) : null
 }
 
 if (use_screen_data) {
@@ -2949,11 +2949,11 @@ if (use_screen_data) {
 
   var _x = _cursor.x - _window[0]
   var _y = _cursor.y - _window[1]
-  var mk = _b_top._wallpaper_mousekey
+  var mk = _top_b._wallpaper_mousekey
   var mouse_over_old = !!_b._electron_mouse_over
   var mouse_over_new = ((_x >= 0) && (_x < B_content_width) && (_y >= 0) && (_y < B_content_height))
   if (mouse_over_new) {
-    if (_b_top.capturePage_pixel && (_b_top.capturePage_pixel[3] == 0))
+    if (_top_b.capturePage_pixel && (_top_b.capturePage_pixel[3] == 0))
       mouse_over_new = false
 /*
 capturePage may crash the gadegt if:
@@ -2961,15 +2961,15 @@ capturePage may crash the gadegt if:
 - the window is in the process of being resized
 NOTE: For performance reason, capturePage is used only when "opacity on hover" is enabled.
 */
-    if (capture_pixel && (!self.MMD_SA || MMD_SA.MMD_started) && !_b_top.capturePage_in_process && !_b_top.resize_timerID) {
-      if (!_b_top.resize_cooling_timestamp || (performance.now() > _b_top.resize_cooling_timestamp + 500)) {
-        _b_top.capturePage_in_process = true
-        _b_top.resize_cooling_timestamp = 0
+    if (capture_pixel && (!self.MMD_SA || MMD_SA.MMD_started) && !_top_b.capturePage_in_process && !_top_b.resize_timerID) {
+      if (!_top_b.resize_cooling_timestamp || (performance.now() > _top_b.resize_cooling_timestamp + 500)) {
+        _top_b.capturePage_in_process = true
+        _top_b.resize_cooling_timestamp = 0
         webkit_electron_remote.getGlobal("capturePage")(_cursor.x - _window_top[0], _cursor.y - _window_top[1])
       }
     }
 
-    if (!capture_pixel && (self.MMD_SA && MMD_SA.MMD_started) && !WallpaperEngine_mode && top.returnBoolean("AutoItStayOnDesktop")) {
+    if (!capture_pixel && (self.MMD_SA && MMD_SA.MMD_started) && !WallpaperEngine_mode && SA_topmost_window.returnBoolean("AutoItStayOnDesktop")) {
       var evt
       if (!_b._wallpaper_mousedown || (mk && (_b._wallpaper_mousedown != mk))) {
 if (mk==1 || mk==2 || mk==4) _b._wallpaper_outside_clicked = false
@@ -3045,13 +3045,13 @@ DEBUG_show("(camera reset)", 2)
   }
   _b._electron_mouse_over = mouse_over_new
 
-  if (IgnoreMouseEventsPartial && mouse_over_new && (_b_top.mouseout_timerID || _b_top._onmouseout_waiting_custom0_timerID)) {
+  if (IgnoreMouseEventsPartial && mouse_over_new && (_top_b.mouseout_timerID || _top_b._onmouseout_waiting_custom0_timerID)) {
 var evt = new MouseEvent("mouseover", {
   bubbles: true,
   cancelable: true,
   view: top
 });
-top.document.body.dispatchEvent(evt)
+SA_topmost_window.document.body.dispatchEvent(evt)
   }
 
   if (mouse_over_old != mouse_over_new) {
@@ -3086,7 +3086,7 @@ top.document.body.dispatchEvent(evt)
       SVG_Clock.update()
 
 EV_sync_update.fps_count_func()
-if (EV_sync_update.fps_last && ((is_SA_child_animation_host) ? is_SA_child_animation : !is_SA_child_animation)) { if (parent.EV_sync_update.fps_log) {console.log('FPS:' + EV_sync_update.fps_last); EV_sync_update.fps_last=0;} }
+if (EV_sync_update.fps_last && ((is_SA_child_animation_host) ? is_SA_child_animation : !is_SA_child_animation)) { if (SA_topmost_window.EV_sync_update.fps_log) {console.log('FPS:' + EV_sync_update.fps_last); EV_sync_update.fps_last=0;} }
   }
 
   // 3D billboard START
@@ -4288,8 +4288,8 @@ function SettingsClosed(event) {
   var ok = (event.closeAction == event.Action.commit)
 
   if (webkit_electron_mode && (!ok || is_SA_child_animation)) {
-    if (top.webkit_IgnoreMouseEvents_disabled) {
-      top.SA_OnKeyDown({ keyCode:73 }, true)
+    if (SA_topmost_window.webkit_IgnoreMouseEvents_disabled) {
+      SA_topmost_window.SA_OnKeyDown({ keyCode:73 }, true)
     }
   }
 
