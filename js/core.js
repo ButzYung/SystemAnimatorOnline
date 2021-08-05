@@ -1,4 +1,4 @@
-// System Animator core basics (v10.7.0.0)
+// System Animator core basics (2021-08-06)
 
 var use_SA_browser_mode
 
@@ -9,6 +9,8 @@ var is_SA_child_animation
 var SA_child_animation_max = 10
 var SA_child_animation = []
 var SA_child_animation_id
+
+var SA_topmost_window = top
 
 
 //System.Gadget.Settings
@@ -175,7 +177,7 @@ function toFileProtocol(url) {
   }
 
 //  if (WallpaperEngine_CEF_mode) {
-    var dd = top.DragDrop
+    var dd = SA_topmost_window.DragDrop
     if (dd && dd._path_to_obj) {
       let obj_url = dd._obj_url[url]
       if (!obj_url) {
@@ -189,11 +191,11 @@ Other file types (including zip file by its own) will return in blob url.
         if (file) {
           let obj_url_zip
           if (url_zip != url) {
-            obj_url_zip = dd._obj_url[url_zip] = dd._obj_url[url_zip] || top.URL.createObjectURL(file)
+            obj_url_zip = dd._obj_url[url_zip] = dd._obj_url[url_zip] || SA_topmost_window.URL.createObjectURL(file)
             obj_url = dd._obj_url[url] = obj_url_zip + RegExp.$2+RegExp.$3
           }
           else
-            obj_url = obj_url_zip = dd._obj_url[url] = dd._obj_url[url] || top.URL.createObjectURL(file)
+            obj_url = obj_url_zip = dd._obj_url[url] = dd._obj_url[url] || SA_topmost_window.URL.createObjectURL(file)
         }
       }
       if (obj_url)
@@ -539,9 +541,9 @@ Settings_default._custom_.Display = "-1"
     WallpaperEngine_mode = !browser_native_mode
 // TEST mode for Electron
 if (("process" in window) && process.versions['electron']) {
-  webkit_electron_remote = top.require('electron').remote
+  webkit_electron_remote = SA_topmost_window.require('electron').remote
   webkit_window = webkit_electron_remote.getCurrentWindow()
-  webkit_electron_screen = top.require('electron').screen
+  webkit_electron_screen = SA_topmost_window.require('electron').screen
 }
 else {
   WallpaperEngine_CEF_native_mode = !browser_native_mode
@@ -605,8 +607,8 @@ if (!browser_native_mode) {
     else {
       webkit_electron_mode = true
       webkit_version = process.versions['electron']
-      webkit_electron_remote = top.require('electron').remote
-      webkit_electron_screen = top.require('electron').screen
+      webkit_electron_remote = SA_topmost_window.require('electron').remote
+      webkit_electron_screen = SA_topmost_window.require('electron').screen
       webkit_electron_dialog = {
   showOpenDialog: function (browserWindow, options, callback) {
 if (webkit_version_milestone["6.0.0"]) {
@@ -636,9 +638,9 @@ return webkit_electron_remote.dialog.showMessageBox(browserWindow, options)
     webkit_nwjs_mode = parent.webkit_nwjs_mode || (self.dialogArguments && self.dialogArguments.webkit_nwjs_mode)
     webkit_electron_mode = !webkit_nwjs_mode
     if (webkit_electron_mode) {
-      webkit_electron_remote = top.webkit_electron_remote
-      webkit_electron_screen = top.webkit_electron_screen
-      webkit_electron_dialog = top.webkit_electron_dialog
+      webkit_electron_remote = SA_topmost_window.webkit_electron_remote
+      webkit_electron_screen = SA_topmost_window.webkit_electron_screen
+      webkit_electron_dialog = SA_topmost_window.webkit_electron_dialog
     }
   }
   webkit_dir = webkit_path.replace(/[\/\\][^\/\\]+$/, "")
