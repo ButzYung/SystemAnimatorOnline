@@ -1,12 +1,14 @@
-// System object emultaion - extension (v3.1.1)
+// System object emultaion - extension (2021-08-06)
 
 var xul_mode
 
 var oShell
 var Shell_OBJ, FSO_OBJ
 
-var is_SA_child_animation = (parent && (parent != self) && !parent.is_chrome_window)
-var SA_top_window = (xul_mode && !is_SA_child_animation) ? parent : self
+var is_SA_child_animation = parent && (parent != self) && !parent.is_chrome_window && parent.SA_child_animation_max;
+var SA_topmost_window = (is_SA_child_animation) ? parent : self;
+// obsolete, mainly for XUL mode only
+var SA_top_window = (xul_mode && !is_SA_child_animation) ? parent : self;
 
 var SystemEXT = {
   _default: {
