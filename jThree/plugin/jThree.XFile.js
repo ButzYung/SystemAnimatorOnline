@@ -1,4 +1,4 @@
-// (2021-01-20)
+// (2021-08-06)
 
 /*!
  * jThree.XFile.js JavaScript Library v1.1
@@ -347,7 +347,8 @@ shift_jis_decoder: new TextDecoder('shift-jis'),
 
 	TextureFilename: function( row ) {
 //console.log(this.txrPath + ',' + row)
-		row = row.split( '"' )[ 1 ].split( "\\" ).join( "/" ).split( "*" )[ 0 ];
+// AT: .x model may have texture filenames with repeated blackslashes. Use .split(/\\+/) instead of .split( "\\" ).
+		row = row.split( '"' )[ 1 ].split(/\\+/).join( "/" ).split( "*" )[ 0 ];
 
 // AT: material_para
 var material_para = this.material_para[this.mtrs.materials.length-1] || this.material_para._default_ || {}
