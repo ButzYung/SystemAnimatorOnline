@@ -5623,6 +5623,9 @@ if (0&& MMD_SA_options.Dungeon_options) {
 //456
       path:'MMD.js\\motion\\motion_rpg_pack01.zip#\\misc\\this_is_power.vmd'
      ,para: { adjust_center_view_disabled:true, onended: function () { MMD_SA._no_fading=true; }
+ ,onstart: function () {
+MMD_SA_options.Dungeon.sound.audio_object_by_name["gura_reflect_op"].play()//THREE.MMD.getModels()[0].mesh)
+  }
  ,onplaying: (function () {
     var power_SFX = {
       id: "this_is_power",
@@ -5703,6 +5706,13 @@ para_SA.combat_para.some((p) => {
 if (SFX) {
   model_para._SFX_one_time.push(SFX);
 }
+
+var morph_name = "Bad Gura"
+var _m_idx = model.pmx.morphs_index_by_name[morph_name]
+if (_m_idx != null) {
+  let _m = model.pmx.morphs[_m_idx]
+  MMD_SA._custom_morph.push({ key:{ weight:1, morph_type:_m.type, morph_index:_m_idx, override_weight:true }, idx:model.morph.target_index_by_name[morph_name] });
+}
   },
     };
 
@@ -5777,6 +5787,12 @@ MMD_SA._force_motion_shuffle = true
     no_sound: true,
       }
     };
+
+    MMD_SA_options.Dungeon_options.sound.push({
+      url: 'D:\\My Files\\Videos\\TEMP\\wav\\REFLECT - OP_v01.wav'
+     ,name: "gura_reflect_op"
+     ,channel: "SFX"
+    });
   }
 }
 
@@ -8202,7 +8218,8 @@ if (MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR) {
   document.write('<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></scr'+'ipt>');
 
   console.log("Use BodyPix");
-  document.write('<script async src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.0"></scr'+'ipt>');
+//  document.write('<script async src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.0"></scr'+'ipt>');
+  document.write('<script async src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix"></scr'+'ipt>');
 
 /*
   console.log("Use PoseNet");
