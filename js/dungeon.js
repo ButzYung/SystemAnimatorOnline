@@ -6348,6 +6348,8 @@ if (combat_para.SFX.visual && combat_para.SFX.visual[vfx]) {
   }
 }
 else {
+  para.depth = null
+
   if (obj.combat_stats.hurt_vfx) {
     Object.assign(para, obj.combat_stats.hurt_vfx)
   }
