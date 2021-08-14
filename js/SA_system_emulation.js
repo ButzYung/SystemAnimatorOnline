@@ -4151,12 +4151,16 @@ if (!this.mask) {
   face_detection.load_face_cover()
 }
 
-net = await bodyPix.load(options || {
+net = await bodyPix.load(options || (1||is_mobile) ? {
   architecture: 'MobileNetV1',
 //internalResolution:"low",
   outputStride: 16,
   multiplier: 0.5,
   quantBytes: 2//1//
+} : {
+  architecture: 'ResNet50',
+  outputStride: 32,
+  quantBytes: 2
 });
 
 console.log("bodyPix loaded");
@@ -4174,7 +4178,7 @@ return await net.segmentPerson(image, options || {
 
  ,toMask: async function (image, options_seg, options) {
 const seg = await this.segmentPerson(image, options_seg);
-if (!this._TEST) { this._TEST=true; console.log(seg); }
+//if (!this._TEST) { this._TEST=true; console.log(seg); }
 
 this.allPoses = seg.allPoses;
 
@@ -4207,24 +4211,24 @@ if ((this.mask.width != mask.width) || (this.mask.height != mask.height)) {
 }
 this.mask.getContext("2d").putImageData(mask, 0,0);
 
-if ((camera.video_canvas_bodyPix.width != mask.width) || (camera.video_canvas_bodyPix.height != mask.height)) {
-  camera.video_canvas_bodyPix.width  = mask.width
-  camera.video_canvas_bodyPix.height = mask.height
-  camera.video_canvas_bodyPix.style.width  = window.innerWidth  + "px"
-  camera.video_canvas_bodyPix.style.height = window.innerHeight + "px"
+if ((camera.video_canvas_bodyPix.width != image.width) || (camera.video_canvas_bodyPix.height != image.height)) {
+  camera.video_canvas_bodyPix.width  = image.width
+  camera.video_canvas_bodyPix.height = image.height
+  camera.video_canvas_bodyPix.style.pixelWidth  = window.innerWidth
+  camera.video_canvas_bodyPix.style.pixelHeight = window.innerHeight
 }
-
+//DEBUG_show(image.width+'x'+image.height+'/'+mask.width+'x'+mask.height+'/'+window.innerWidth+'x'+window.innerHeight)
 let context = camera.video_canvas_bodyPix.getContext("2d")
 context.globalCompositeOperation = "copy"
 context.filter = "blur(" + Math.ceil(3/window.devicePixelRatio) + "px)"
-context.drawImage(this.mask, 0,0)
+context.drawImage(this.mask, 0,0,image.width,image.height)
 
 context.globalCompositeOperation = "source-out"
 context.filter = "none"
 context.save()
-context.translate(mask.width, 0)
+context.translate(image.width, 0)
 context.scale(-1, 1)
-context.drawImage(SL, 0,0)//,Math.min(mask.width,SL.width),Math.min(mask.height,SL.height), 0,0,mask.width,mask.height)
+context.drawImage(SL, 0,0,image.width,image.height)//,Math.min(mask.width,SL.width),Math.min(mask.height,SL.height), 0,0,mask.width,mask.height)
 context.restore()
 
 context.globalCompositeOperation = "destination-over"
