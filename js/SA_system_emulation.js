@@ -4002,8 +4002,7 @@ else {
   navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
     camera.init_stream(stream)
 
-    if (AR_options && AR_options.dom_overlay)
-      AR_options.dom_overlay.use_dummy_webgl = true
+//    if (AR_options && AR_options.dom_overlay) AR_options.dom_overlay.use_dummy_webgl = true
 
     DEBUG_show("(User camera:ON)", 2)
   }).catch(function (err) {
