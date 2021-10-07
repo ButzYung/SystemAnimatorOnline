@@ -2587,6 +2587,7 @@ var use_RAF = !!window.requestAnimationFrame
 var RAF_timerID = null
 var RAF_timestamp = 0
 var RAF_timestamp_delta = 0
+var RAF_timestamp_delta_accumulated = 0
 var RAF_frame_time_delayed = 0
 var RAF_frame_drop = 0
 
@@ -2604,13 +2605,16 @@ var Animate_RAF = function (timestamp) {
   }
 
   if (RAF_timestamp) {
-    RAF_timestamp_delta = timestamp - RAF_timestamp
+    RAF_timestamp_delta = timestamp - RAF_timestamp + RAF_timestamp_delta_accumulated
 
     let ms_per_frame = 1000 / (EV_sync_update.count_to_10fps_ * 10)
     let time_diff = RAF_timestamp_delta - ms_per_frame
     RAF_frame_time_delayed += time_diff
+
     if (RAF_frame_time_delayed < -ms_per_frame) {
-      RAF_frame_time_delayed += time_diff
+// funny that -= or += makes no big difference as fps control (-= seems more logical though)
+      RAF_frame_time_delayed -= time_diff
+//DEBUG_show(~~RAF_frame_time_delayed+'/'+ ~~time_diff,0,1)
 //console.log(++RAF_frame_drop)
       return
     }
@@ -2916,7 +2920,7 @@ if (func)
   }
   // END
 
-  var animation_update = ((use_full_fps && use_full_fps_registered) || (EV_sync_update.no_animation_count >= count_to_10fps-1))
+  var animation_update = (!EV_sync_update.fps_control || EV_sync_update.fps_control()) && ((use_full_fps && use_full_fps_registered) || (EV_sync_update.no_animation_count >= count_to_10fps-1))
   if (animation_update) {
     EV_sync_update.last_frame_updated = true
     EV_sync_update.count_frame++
@@ -3613,12 +3617,12 @@ if (EV_usage_sub) {
 
     var beat
     beat = ((Settings.BDBassKick == 2) && !BD_obj.bass_kicked) ? 0 : ((Settings.BDBassKick) ? ((BD_obj.bass_kicked) ? Math.pow(vu_beat, 0.5) : vu_beat*0.75) : vu_beat)
-    if (beat < 0.1)
+    if (beat < 0.2)
       beat = 0
     BD_obj.beat = beat
 //EV_sync_update.fps_count_func()
     for (var m = 1; m <= 2; m++) {
-      var mod = (use_full_fps) ? 1/(m*(EV_sync_update.count_to_10fps_/2)) : 1/m;
+      var mod = (use_full_fps) ? ((RAF_animation_frame_unlimited)?1:2)/(m*EV_sync_update.count_to_10fps_) : 1/m;
       mod *= (Settings.BDDecay == 2) ? 1 : ((Settings.BDDecay == 1) ? 0.5 : 0.25);
       var beat_last = EV_sync_update["_beat_last"+m];
       BD_obj["beat"+m] = EV_sync_update["_beat_last"+m] = (beat < beat_last - mod) ? beat_last - mod : beat;
