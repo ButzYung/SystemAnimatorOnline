@@ -168,6 +168,28 @@ getUserMedia({'video': true},
 
     }
   }
+  else if (use_MatrixRain) {
+    this.matrix_rain = new MatrixRain(1024,1024)
+    this.matrix_rain.matrixCreate()
+
+    this.matrix_rain._SA_draw = function(skip_matrix) {
+if (!this._SA_active)
+  return
+
+if (use_full_fps && !skip_matrix)
+  skip_matrix = !EV_sync_update.frame_changed("matrixDraw")
+
+this.matrixDraw(skip_matrix)
+    };
+
+    window.addEventListener("MMDStarted", function () {
+      System._browser.on_animation_update.add(function () {
+MMD_SA.matrix_rain._SA_draw()
+      },0,0, -1);
+    });
+
+    DEBUG_show("Use Matrix rain", 2)
+  }
 }
 
 SL_Host_Parent.style.width  = MMD_SA_options.width  + "px"
@@ -290,7 +312,6 @@ Lbody_host.onmouseout = m.onmouseout = function () {
 
   if (MMD_SA_options.use_JSARToolKit && use_MatrixRain) {
     this.matrix_rain = new MatrixRain(MMD_SA_options.width, MMD_SA_options.height)
-    this.matrix_rain.full_color = returnBoolean("MatrixRainColor")
     this.matrix_rain.matrixCreate()
 
     this.matrix_rain._SA_draw = function(skip_matrix) {
@@ -615,11 +636,6 @@ mmd.setFrameNumber(-1)
     Audio_BPM.play_list.drop_folder(item)
   }
   else if (item.isFileSystem && /([^\/\\]+)\.(mp3|wav|aac)$/i.test(src)) {
-    if (!THREE.MMD.motionPlaying) {
-      DEBUG_show("(motion paused)", 2)
-      return
-    }
-
     if (MMD_SA_options.MMD_disabled) {
 //      DEBUG_show("(music playback disabled)", 2)
 if (!SL._media_player) {
@@ -657,6 +673,11 @@ else
       SL_MC_video_obj._started = false
       SL_MC_video_obj.src = toFileProtocol(src)
       return  
+    }
+
+    if (!THREE.MMD.motionPlaying) {
+      DEBUG_show("(motion paused)", 2)
+      return
     }
 
     var filename = RegExp.$1
@@ -836,7 +857,7 @@ for (var i = 0; i < 5; i++)
 for (var i = 0; i < 5; i++)
   MMD_SA_options.motion.push({path:'MMD.js/motion/motion_basic_pack01.zip#/_number_meter_' + (i+1) + '.vmd', jThree_para:{}, match:{skin_jThree:/^(\u53F3)(\u80A9|\u8155|\u3072\u3058|\u624B\u9996|\u624B\u6369|.\u6307.)/}})
 
-var use_startup_screen = (/AT_SystemAnimator_v0001\.gadget/.test(System.Gadget.path) && !returnBoolean("AutoItStayOnDesktop")) || ((MMD_SA_options.Dungeon || (browser_native_mode && !webkit_window)) ? (MMD_SA_options.startup_screen !== false) : !!MMD_SA_options.startup_screen);
+var use_startup_screen = !!MMD_SA_options.startup_screen || (!MMD_SA_options.MMD_disabled && ((/AT_SystemAnimator_v0001\.gadget/.test(System.Gadget.path) && !returnBoolean("AutoItStayOnDesktop")) || ((MMD_SA_options.Dungeon || (browser_native_mode && !webkit_window)) && (MMD_SA_options.startup_screen !== false))));
 if (use_startup_screen) {
   if (!MMD_SA_options.startup_screen)
     MMD_SA_options.startup_screen = {}
@@ -4000,7 +4021,7 @@ if (linux_mode)
  ,VMDSpectrum_EV_usage_PROCESS: function (obj, u, decay_factor) {
 u /= 100
 if (use_full_fps)
-  decay_factor *= 2 / EV_sync_update.count_to_10fps_
+  decay_factor *= ((RAF_animation_frame_unlimited)?1:2)/EV_sync_update.count_to_10fps_
 
 // decay control
 if (Settings.ReverseAnimation) {
@@ -5177,7 +5198,7 @@ window.dispatchEvent(new CustomEvent("SA_AR_onARFrame"));
 
 if (1||!this.use_dummy_webgl) {
 // a trick to ensure that no frame is skipped
-  RAF_timestamp = null
+  RAF_frame_time_delayed = 999
   Animate_RAF(time)
 }
 else {
@@ -5618,7 +5639,7 @@ window.addEventListener("jThree_ready",() => {
   ];
 });
 
-if (0&& MMD_SA_options.Dungeon_options) {
+if (webkit_electron_mode&& MMD_SA_options.Dungeon_options) {
   MMD_SA_options.Dungeon.motion["PC Power Up"] = {
 //456
       path:'MMD.js\\motion\\motion_rpg_pack01.zip#\\misc\\this_is_power.vmd'
@@ -7258,7 +7279,7 @@ this._mirror_motion_from_first_model = v
 
   MMD_SA_options.MME._EV_usage_PROCESS = function (u, decay_factor) {
 if (use_full_fps)
-  decay_factor *= 2 / EV_sync_update.count_to_10fps_
+  decay_factor *= ((RAF_animation_frame_unlimited)?1:2)/EV_sync_update.count_to_10fps_
 
 // decay control
 if (Settings.ReverseAnimation) {
@@ -8200,8 +8221,8 @@ Array.prototype.shuffle = function () {
 })();
 
 
-// Matrix rain (AR webcam only for now)
-if (MMD_SA_options.use_JSARToolKit && (returnBoolean("UseMatrixRain") || use_MatrixRain)) {
+// Matrix rain
+if (returnBoolean("UseMatrixRain") || use_MatrixRain) {
   use_MatrixRain = true
   document.write('<script language="JavaScript" src="js/canvas_matrix_rain.js"></scr'+'ipt>');
 }
