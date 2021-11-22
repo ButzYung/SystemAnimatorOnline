@@ -1,4 +1,5 @@
-// HTML5 - Canvas (v3.1.1)
+// HTML5 - Canvas
+// (2021-11-23)
 
 var use_HTML5
 
@@ -1140,11 +1141,11 @@ DEBUG_show('Use HTML5 Canvas' + ((SL_info.length) ? '(' + SL_info.join('/') + ')
   ds.posTop = 0
   SL_Host.appendChild(d)
 
+  if (!WebGL_2D_options)
+    WebGL_2D_options = {}
+
   if (Settings.UseCanvasPPE) {
     use_WebGL_2D = true
-    if (!WebGL_2D_options)
-      WebGL_2D_options = {}
-
     WebGL_2D_options.use_Shadertoy = true
     if (Settings.UseCanvasNotebookDrawings) {
       WebGL_2D_options.use_NotebookDrawings = true
@@ -1165,7 +1166,15 @@ DEBUG_show('Use HTML5 Canvas' + ((SL_info.length) ? '(' + SL_info.join('/') + ')
       WebGL_2D_options.SampNum_max = 16
     }
 
-    Canvas_BDDraw_disabled = true
+//    Canvas_BDDraw_disabled = true
+  }
+
+  if (returnBoolean("UseJustSnow")) {
+    use_WebGL_2D = true
+    WebGL_2D_options.use_Shadertoy = true
+
+    WebGL_2D_options.use_JustSnow = true
+    WebGL_2D_options.use_JustSnowSlow = returnBoolean("UseJustSnowSlow")
   }
 
   var use_zoomblur = (w3c_mode && self.use_EQP_core && !Canvas_BDDraw_disabled)

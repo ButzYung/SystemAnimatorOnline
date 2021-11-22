@@ -1,4 +1,5 @@
-// WebGL 2D version 1.5.1
+// WebGL 2D version
+// (2021-11-23)
 
 var use_WebGL, use_WebGL_2D
 
@@ -124,7 +125,7 @@ WebGL_2D._WebGL_2D.prototype.init = function (para) {
   if (this.use_Shadertoy || this.options.use_Shadertoy) {
     this.use_Shadertoy = true
 
-    this.use_MatrixRain = use_MatrixRain
+    this.use_MatrixRain = use_MatrixRain && Settings.UseCanvasPPE
     this.use_contrast_and_brightness = Settings.UseCanvasPPEContrast || Settings.UseCanvasPPEBrightness
 
 // need highp to use uniforms of the same name across vertex and fragment shaders
@@ -731,6 +732,70 @@ WebGL_2D._WebGL_2D.prototype.init = function (para) {
       ].join("\n");
 
     }
+    else if (this.use_JustSnow || this.options.use_JustSnow) {
+      DEBUG_show("Use WebGL 2D - Just Snow", 2)
+      this.use_JustSnow = true
+
+      this.use_beat_fs = true
+
+      this.fshader_2d_func += [
+"// Copyright (c) 2013 Andrew Baldwin (twitter: baldand, www: http://thndl.com)",
+"// License = Attribution-NonCommercial-ShareAlike (http://creativecommons.org/licenses/by-nc-sa/3.0/deed.en_US)",
+"",
+"// Just snow",
+"// Simple (but not cheap) snow made from multiple parallax layers with randomly positioned ",
+"// flakes and directions. Also includes a DoF effect. Pan around with mouse.",
+"",
+"#define LIGHT_SNOW // Comment this out for a blizzard",
+"",
+"#ifdef LIGHT_SNOW",
+
+//50
+"	#define LAYERS 10",
+
+//.5
+"	#define DEPTH 1.",
+
+//"	#define WIDTH .3",
+"	#define SPEED -.6",
+"#else // BLIZZARD",
+"	#define LAYERS 200",
+"	#define DEPTH .1",
+"	#define WIDTH .8",
+"	#define SPEED 1.5",
+"#endif",
+"",
+"void mainImage( out vec4 fragColor, in vec2 fragCoord )",
+"{",
+"float WIDTH = beat_fs+0.3;",
+"	const mat3 p = mat3(13.323122,23.5112,21.71123,21.1212,28.7312,11.9312,21.8112,14.7212,61.3934);",
+"	vec2 uv = 0.0/iResolution.xy + vec2(1.,iResolution.y/iResolution.x)*fragCoord.xy / iResolution.xy;",
+"	vec3 acc = vec3(0.0);",
+"	float dof = 5.*sin(iGlobalTime*.1);",
+"	for (int i=0;i<LAYERS;i++) {",
+"		float fi = float(i);",
+"		vec2 q = uv*(1.+fi*DEPTH);",
+"		q += vec2(q.y*(WIDTH*mod(fi*7.238917,1.)-WIDTH*.5),SPEED*iGlobalTime/(1.+fi*DEPTH*.03));",
+"		vec3 n = vec3(floor(q),31.189+fi);",
+"		vec3 m = floor(n)*.00001 + fract(n);",
+"		vec3 mp = (31415.9+m)/fract(p*m);",
+"		vec3 r = fract(mp);",
+"		vec2 s = abs(mod(q,1.)-.5+.9*r.xy-.45);",
+"		s += .01*abs(2.*fract(10.*q.yx)-1.); ",
+"		float d = .6*max(s.x-s.y,s.x+s.y)+max(s.x,s.y)-.01;",
+"		float edge = .005+.05*min(.5*abs(fi-5.-dof),1.);",
+"		acc += vec3(smoothstep(edge,-edge,d)*(r.x/(1.+.02*fi*DEPTH)));",
+"	}",
+//"	fragColor = vec4(vec3(acc),1.0);",
+
+"vec4 src = texture2D(iChannel0, fragCoord.xy/iResolution.xy);",
+"fragColor = vec4(mix(src.rgb, vec3(1.0), acc.r), src.a + (1.0-src.a)*acc.r);",
+
+"}",
+"",
+      ].join("\n");
+
+    }
     else {
       this.fshader_2d_func += [
 'uniform sampler2D iChannel1;',
@@ -795,21 +860,23 @@ WebGL_2D._WebGL_2D.prototype.init = function (para) {
 
   if (this.use_zoomblur) {
     DEBUG_show("Use WebGL 2D - ZoomBlur", 2)
+    console.log("Use WebGL 2D - ZoomBlur")
+
+    this.use_beat_fs = true
 
     this.fshader_2d_var +=
-  'uniform float arg_fs;\n'
-+ 'uniform vec2 size_fs;\n'
+  'uniform vec2 size_fs;\n'
 + 'uniform float zoomblur_center_x;\n'
 + 'uniform float zoomblur_center_y;\n'
 
     this.fshader_2d_main +=
   '  vec4 color = gl_FragColor;\n'
-+ '  if (arg_fs > 0.0) {\n'
++ '  if (beat_fs > 0.0) {\n'
 //+ '    vec2 v = (0.5 - v_texCoord) * size_fs;\n'
 + '    vec2 v = (vec2(zoomblur_center_x, zoomblur_center_y) - v_texCoord) * size_fs;\n'
 + '    float d = length(v);\n'
 + '    if (d > 0.0) {\n'
-+ '      float amount = arg_fs * 0.5;\n'
++ '      float amount = beat_fs * 0.25;\n'
 + '      v /= size_fs;\n'
 + '      int n = 0;\n'
 + '      int n1 = int(min(amount*d+1.0, 40.0));\n'
@@ -822,12 +889,7 @@ WebGL_2D._WebGL_2D.prototype.init = function (para) {
 + '      color /= float(n+1);\n'
 + '    }\n'
 + '  }\n'
-+ '  gl_FragColor = color;\n'//mix(gl_FragColor, color, 0.75);\n'
-  }
-
-  if (this.use_time_fs) {
-    this.fshader_2d_var +=
-  'uniform float time;\n'
++ '  gl_FragColor = mix(gl_FragColor, color, pow(beat_fs*0.5,0.5)*0.8);\n'//color;\n'//
   }
 
   if (this.use_MatrixRain) {
@@ -837,7 +899,22 @@ WebGL_2D._WebGL_2D.prototype.init = function (para) {
     this.fshader_2d_main +=
   'vec4 matrix_mask = texture2D(matrix_canvas, v_texCoord);\n'
 //+ 'gl_FragColor.rgb = matrix_mask.rgb;\n'
-+ 'gl_FragColor.rgb = mix(vec3(0.0), ((matrix_mask.r > 0.0) ? gl_FragColor.rgb : vec3(0.0, 0.3* gl_FragColor.r + 0.59 * gl_FragColor.g + 0.11 * gl_FragColor.b, 0.0)), matrix_mask.g);\n'
++ ((returnBoolean("MatrixRainColor")) ?
+  'gl_FragColor.rgb *= matrix_mask.g;\n'
+  :
+  'float _gray = 0.3 * gl_FragColor.r + 0.59 * gl_FragColor.g + 0.11 * gl_FragColor.b;\n'
++ 'gl_FragColor.rgb = vec3(_gray) * matrix_mask.rgb;\n'
+);
+  }
+
+  if (this.use_time_fs) {
+    this.fshader_2d_var +=
+  'uniform float time;\n'
+  }
+
+  if (this.use_beat_fs) {
+    this.fshader_2d_var +=
+  'uniform float beat_fs;\n'
   }
 
   this.fshader_2d =
@@ -905,14 +982,17 @@ if (this.use_Shadertoy) {
 if (this.use_MatrixRain) {
   this.matrix_canvas = gl.getUniformLocation(this.program_2d, "matrix_canvas");
 }
+if (this.use_zoomblur) {
+  this.size_fs = gl.getUniformLocation(this.program_2d, "size_fs");
+  this.zoomblur_center_x = gl.getUniformLocation(this.program_2d, "zoomblur_center_x");
+  this.zoomblur_center_y = gl.getUniformLocation(this.program_2d, "zoomblur_center_y");
+}
+
 if (this.use_time_fs) {
   this.time_fs = gl.getUniformLocation(this.program_2d, "time");
 }
-if (this.use_zoomblur) {
-  this.size_fs = gl.getUniformLocation(this.program_2d, "size_fs");
-  this.arg_fs  = gl.getUniformLocation(this.program_2d, "arg_fs");
-  this.zoomblur_center_x = gl.getUniformLocation(this.program_2d, "zoomblur_center_x");
-  this.zoomblur_center_y = gl.getUniformLocation(this.program_2d, "zoomblur_center_y");
+if (this.use_beat_fs) {
+  this.beat_fs  = gl.getUniformLocation(this.program_2d, "beat_fs");
 }
 
 //gl.disable(gl.DEPTH_TEST);
@@ -1081,24 +1161,8 @@ gl.uniform1i(that['iChannel' + ii], ii)
     if (this.iFrame)
       gl.uniform1i(this.iFrame, EV_sync_update.count_frame);
   }
-  if (this.use_time_fs) {
-    gl.uniform1f(this.time_fs, performance.now()/1000);
-  }
   if (this.use_zoomblur) {
     gl.uniform2f(this.size_fs, w, h);
-    var beat = (EV_usage_sub && EV_usage_sub.BD) ? EV_usage_sub.BD.beat2 : 0
-
-    var beat_scale
-    if (Settings.BDScale == 0)
-      beat_scale = 2
-    else if (Settings.BDScale == 1)
-      beat_scale = 1
-    else
-      beat_scale = 0.5
-    if (beat)
-      beat = Math.pow(beat, beat_scale)
-
-    gl.uniform1f(this.arg_fs, beat*0.5);
     gl.uniform1f(this.zoomblur_center_x, 0.5+(WebGL_2D_options.zoomblur_center_x||(use_EQP_fireworks && CanvasEffect_options.start_x)||0)/2);
     gl.uniform1f(this.zoomblur_center_y, 0.5+(WebGL_2D_options.zoomblur_center_y||(use_EQP_fireworks && CanvasEffect_options.start_y)||0)/2);
   }
@@ -1131,6 +1195,25 @@ gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, (WebGL_2D._m
 gl.uniform1i(this.matrix_canvas, texture_count)
 
 texture_count++
+  }
+
+  if (this.use_time_fs) {
+    gl.uniform1f(this.time_fs, performance.now()/1000);
+  }
+  if (this.use_beat_fs) {
+    let beat = (EV_usage_sub && EV_usage_sub.BD) ? EV_usage_sub.BD.beat2 : 0
+    if (beat) {
+      let beat_scale
+      if (Settings.BDScale == 0)
+        beat_scale = 2
+      else if (Settings.BDScale == 1)
+        beat_scale = 1
+      else
+        beat_scale = 0.5
+      beat = Math.pow(beat, beat_scale)
+    }
+
+    gl.uniform1f(this.beat_fs, beat);
   }
 
   // Create a buffer for the position of the rectangle corners.
