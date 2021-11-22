@@ -1,6 +1,7 @@
-// SVG Clock (v1.2.0)
+// SVG Clock
+// (2021-11-23)
 
-var SVG_Clock_scale, SVG_Clock_x_center, SVG_Clock_y_center, SVG_Clock_x_center_absolute, SVG_Clock_y_center_absolute, SVG_Clock_opacity_mod
+var SVG_Clock_scale, SVG_Clock_x_center, SVG_Clock_y_center, SVG_Clock_x_center_absolute, SVG_Clock_y_center_absolute, SVG_Clock_opacity_mod, SVG_Clock_custom_hands
 
 var SVG_Clock = {
   second_last: -1
@@ -78,12 +79,14 @@ for (var i = 0; i < 4; i++) {
     html += '<polygon points="58,1 62,1 60,6" transform="rotate(' + (i*90+(k+1)*30) + ', 60,60)" style="fill:rgba(255,255,255,' + (0.5 * opacity_mod) + '); stroke:rgba(85,85,85,' + (0.75 * opacity_mod) + '); stroke-width:0.5"/>\n'
 }
 
-html +=
+html += SVG_Clock_custom_hands ||
   '<polygon id="Vclock_s" points="60,2  58,64 62,64" style="fill:rgba(255,128,128,' + (0.5 * opacity_mod) + '); stroke:rgba(0,0,0,' + (0.75 * opacity_mod) + '); stroke-width:0.5"/>\n'
 + '<polygon id="Vclock_m" points="60,8  56,66 64,66" style="fill:rgba(128,255,128,' + (0.5 * opacity_mod) + '); stroke:rgba(0,0,0,' + (0.75 * opacity_mod) + '); stroke-width:0.5"/>\n'
 + '<polygon id="Vclock_h" points="60,20 54,68 66,68" style="fill:rgba(128,128,255,' + (0.5 * opacity_mod) + '); stroke:rgba(0,0,0,' + (0.75 * opacity_mod) + '); stroke-width:0.5"/>\n'
 
-+ '<circle cx="60" cy="60" r="2" style="fill:rgba(255,255,255,' + (0.5 * opacity_mod) + '); stroke:rgba(0,0,0,' + (0.75 * opacity_mod) + '); stroke-width:0.5"/>\n'
++ '<circle cx="60" cy="60" r="2" style="fill:rgba(255,255,255,' + (0.5 * opacity_mod) + '); stroke:rgba(0,0,0,' + (0.75 * opacity_mod) + '); stroke-width:0.5"/>\n';
+
+html += ''
 /*
 + '<g id="Vclock_heart" transform="translate(' + (60-760/40) + ',' + (60-650/40) + ') scale(' + (1/20) + ')" style="opacity:' + (0.5 * opacity_mod) + '">\n'
 + '<use xlink:href="#Heart" x="8.57145" y="9.43185" \n'
