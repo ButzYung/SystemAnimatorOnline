@@ -353,7 +353,8 @@ if (use_mediapipe_facemesh) {
     return
   }
 
-  process_facemesh(faces, w,h, bb);
+  faces = process_facemesh(faces, w,h, bb);
+//console.log(faces)
 
   let face = faces[0]
   let sm = face.scaledMesh;

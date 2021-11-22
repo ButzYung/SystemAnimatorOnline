@@ -4797,6 +4797,9 @@ else {
         stream = await navigator.mediaDevices.getUserMedia(constraints);
       }
     }
+    else {
+      if (MMD_SA_options.Dungeon) MMD_SA_options.Dungeon.run_event(null,0,2);
+    }
 
     camera.init_stream(stream)
 
@@ -5325,6 +5328,10 @@ var params = []
 if (System._browser.use_WASM_SIMD) {
   params.push('simd=1')
 }
+if (use_mediapipe_facemesh) {
+  use_faceLandmarksDetection = true
+  params.push('use_mediapipe_facemesh=1')
+}
 if (use_faceLandmarksDetection) {
   use_faceLandmarksDetection = true
   _facemesh.blink_detection = true
@@ -5332,9 +5339,6 @@ if (use_faceLandmarksDetection) {
 }
 if (use_human_facemesh) {
   params.push('use_human_facemesh=1')
-}
-else if (use_mediapipe_facemesh) {
-  params.push('use_mediapipe_facemesh=1')
 }
 
 fm_worker = new Worker('js/facemesh_worker.js' + ((params.length)?'?'+params.join('&'):''));
