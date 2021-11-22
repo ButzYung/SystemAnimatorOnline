@@ -358,6 +358,9 @@ System.Gadget.onSettingsClosing = SettingsClosing;
   MatrixRainColor.checked = returnBoolean("MatrixRainColor")
   MatrixRainPlayOnIdle.checked = returnBoolean("MatrixRainPlayOnIdle")
   MatrixRainMusical.checked = returnBoolean("MatrixRainMusical")
+  UseJustSnow.checked = returnBoolean("UseJustSnow")
+  UseJustSnow.onclick()
+  UseJustSnowSlow.checked = returnBoolean("UseJustSnowSlow")
 
   UseCanvasRipple.checked = returnBoolean("UseCanvasRipple")
   UseCanvasFireworks.checked = returnBoolean("UseCanvasFireworks")
@@ -718,6 +721,8 @@ if (use_SA_system_emulation && (!v || /^demo/.test(v))) {
   System.Gadget.Settings.writeString("MatrixRainColor", returnYesNo("MatrixRainColor", MatrixRainColor.checked))
   System.Gadget.Settings.writeString("MatrixRainPlayOnIdle", returnYesNo("MatrixRainPlayOnIdle", MatrixRainPlayOnIdle.checked))
   System.Gadget.Settings.writeString("MatrixRainMusical", returnYesNo("MatrixRainMusical", MatrixRainMusical.checked))
+  System.Gadget.Settings.writeString("UseJustSnow", returnYesNo("UseJustSnow", UseJustSnow.checked))
+  System.Gadget.Settings.writeString("UseJustSnowSlow", returnYesNo("UseJustSnowSlow", UseJustSnowSlow.checked))
 
   System.Gadget.Settings.writeString("UseCanvasRipple", returnYesNo("UseCanvasRipple", UseCanvasRipple.checked))
   System.Gadget.Settings.writeString("UseCanvasFireworks", returnYesNo("UseCanvasFireworks", UseCanvasFireworks.checked))
@@ -2145,7 +2150,21 @@ Number of meters for CPU monitor <a href="#" onclick="return false" title="This 
 	<label id="L_MatrixRainMusical_TEXT" for="MatrixRainMusical">Musical <a href="#" onclick="return false" title="Enable this option to allow the Matrix rain to react to music.">(?)</a></label>
 </div>
 
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+	<input name="UseJustSnow" type="checkbox" id="UseJustSnow" onclick="toggleElement(L_UseJustSnowSlow, this.checked); if (this.checked) { UseWebGLForCanvas2D.checked=true; }" />
+	<label id="L_UseJustSnow_TEXT" for="UseJustSnow">Use snow <a href="#" onclick="return false" title="Enable the snow effect on any animation running in HTML5 Canvas mode.">(?)</a></label>
+<span id="L_UseJustSnowSlow">
+	<input name="UseJustSnowSlow" type="checkbox" id="UseJustSnowSlow" value="checkbox" />
+	<label id="L_UseJustSnowSlow_TEXT" for="UseJustSnowSlow">Slow mode <a href="#" onclick="return false" title="Enable this option for slower snow falling.">(?)</a></label>
+</span>
+
 <hr size=1 noshade style="position:relative; left:-10px; width:90%" />
+
 			</td>
 		</tr>
 
@@ -2156,7 +2175,7 @@ Number of meters for CPU monitor <a href="#" onclick="return false" title="This 
 	<input name="UseCanvasRipple" type="checkbox" id="UseCanvasRipple" value="checkbox" onclick="if (this.checked) UseCanvasFireworks.checked=false" />
 	<label id="L_UseCanvasRipple_TEXT" for="UseCanvasRipple">Ripple effect</label>
 	<input name="UseCanvasFireworks" type="checkbox" id="UseCanvasFireworks" value="checkbox" onclick="if (this.checked) UseCanvasRipple.checked=false" />
-	<label id="L_UseCanvasFireworks_TEXT" for="UseCanvasFireworks">Fireworks effect <a href="#" onclick="return false" title="Enable either the ripple or fireworks effect. This option works with most animations.">(?)</a></label>
+	<label id="L_UseCanvasFireworks_TEXT" for="UseCanvasFireworks">Fireworks effect <a href="#" onclick="return false" title="Enable either the ripple or fireworks effect. This option works best with sound-monitoring animations.">(?)</a></label>
 </span>
 			</td>
 		</tr>
