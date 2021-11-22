@@ -911,7 +911,7 @@ for (var i = 0, i_max = p.length; i < i_max; i++) {
     p_obj.mirrorTextureIndex = null
   }
 
-  var mtl_param_common = /*'wireframe:true;'+*/((p_obj.opacity == null)?'transparent:false;':'') + ((p_obj.renderDepth != null)?'renderDepth:'+p_obj.renderDepth+';':'') + ((p_obj.side)?'side:'+p_obj.side+';':'') + ((p_obj.map)?'map:#DungeonPlane'+p_obj.map_id+'TXR;':'') + ((p_obj.normalMap)?'normalMap:#DungeonPlane'+p_obj.normalMap_id+'TXR_N;':'') + ((p_obj.ambient)?'ambient:'+p_obj.ambient+';':'') + ((p_obj.specularMap)?'specularMap:#DungeonPlane'+p_obj.specularMap_id+'TXR_S;specular:#FFFFFF;':((p_obj.specular)?'specular:'+p_obj.specular+';':'')) + ((p_obj.emissive)?'emissive:'+p_obj.emissive+';':'') + ((p_obj.mirrorTextureIndex!=null)?'mirrorTextureIndex:'+(p_obj.mirrorTextureIndex)+';':'') + ((p_obj.waveBaseSpeed!=null)?'waveBaseSpeed:'+(p_obj.waveBaseSpeed)+';':'')
+  var mtl_param_common = /*'wireframe:true;'+*/((p_obj.opacity == null)?'transparent:false;':'') + ((p_obj.renderDepth != null)?'renderDepth:'+p_obj.renderDepth+';':'') + ((p_obj.side)?'side:'+p_obj.side+';':'') + ((p_obj.map)?'map:#DungeonPlane'+p_obj.map_id+'TXR;':'') + ((p_obj.normalMap)?'normalMap:#DungeonPlane'+p_obj.normalMap_id+'TXR_N;':'') + ((p_obj.ambient)?'ambient:'+p_obj.ambient+';':'') + ((p_obj.specularMap)?'specularMap:#DungeonPlane'+p_obj.specularMap_id+'TXR_S;specular:#FFFFFF;':((p_obj.specular)?'specular:'+p_obj.specular+';':'')) + ((p_obj.emissive)?'emissive:'+p_obj.emissive+';':'') + ((p_obj.mirrorTextureIndex!=null)?'mirrorTextureIndex:'+(p_obj.mirrorTextureIndex)+';':'') + ((p_obj.waveBaseSpeed!=null)?'waveBaseSpeed:'+(p_obj.waveBaseSpeed)+';':'') + ((typeof p_obj.uniTexture=='object')?'uniTexture:{'+encodeURIComponent(JSON.stringify(p_obj.uniTexture).replace(/^\{/,'').replace(/\}$/,''))+'};':'');
 
   if (p_obj.displacementMap || p_obj.random_terrain) {
     var d_map_id, d_map_draw
@@ -2414,8 +2414,14 @@ if (fog) {
     MMD_SA.scene.fog.near = fog.near || this.grid_size * this.view_radius * (MMD_SA.scene.fog.near_ratio||0.5)
     MMD_SA.scene.fog.far  = fog.far  || this.grid_size * this.view_radius * (MMD_SA.scene.fog.far_ratio ||0.9)
   }
+
   MMD_SA.scene.fog.color = new THREE.Color(fog.color||"#000")
+  if (use_MatrixRain && !MMD_SA.matrix_rain.full_color) {
+    let gray = 0.3 * MMD_SA.scene.fog.color.r + 0.59 * MMD_SA.scene.fog.color.g + 0.11 * MMD_SA.scene.fog.color.b;
+    MMD_SA.scene.fog.color.setRGB(0, gray, 0);
+  }
 console.log("Fog:"+ ((MMD_SA.scene.fog instanceof THREE.Fog) ? MMD_SA.scene.fog.near+'/'+MMD_SA.scene.fog.far: 'EXP2') +'/'+MMD_SA.scene.fog.color.getHexString())
+
   this.object_base_list.forEach(function (obj) {
     if (obj.is_dummy) return
 
@@ -2425,7 +2431,7 @@ console.log("Fog:"+ ((MMD_SA.scene.fog instanceof THREE.Fog) ? MMD_SA.scene.fog.
 }
 
 if (options_base.skydome) {
-  var dome_obj = MMD_SA_options.mesh_obj_by_id["DomeMESH"]
+  let dome_obj = MMD_SA_options.mesh_obj_by_id["DomeMESH"]
   if (options.skydome) {
     dome_obj._obj.visible = true
     dome_obj.scale = MMD_SA._trackball_camera.object.far*0.5/(64*4)//(this.grid_size * (this.view_radius * 4)) / (64*4)
@@ -2433,6 +2439,10 @@ if (options_base.skydome) {
       options.skydome.texture_setup = options_base.skydome.texture_setup
     options.skydome.texture_setup()
     this.ceil_material_index_default = options.ceil_material_index_default = -1
+    if (use_MatrixRain) {
+      dome_obj._obj._uniTexture_fadeout = 0.5 + ((options.skydome.fog && options.skydome.fog.height)||0.025);
+      dome_obj._obj._uniTexture_scale = 10
+    }
   }
   else {
     dome_obj._obj.visible = false
@@ -3366,6 +3376,9 @@ if (MMD_SA_options.ground_shadow_only == null)
 
 if (!MMD_SA_options.camera_param)
   MMD_SA_options.camera_param = "far:" + (128*16*8) + ";"
+
+if (MMD_SA_options.meter_motion_disabled == null)
+  MMD_SA_options.meter_motion_disabled = true
 // defaults for MMD_SA_options END
 
 
@@ -5767,13 +5780,13 @@ if (obj._mesh.geometry.boundingBox) {
     }
 //if (obj._click_index==0) DEBUG_show(bb_idx,0,1)
     bb.copy(b3)
-    bb.applyMatrix4(cache.matrixWorld)
     if (obj._mesh.bones) {
       let _mesh = obj._mesh._mesh_parent || obj._mesh
       let b_center = _mesh.bones_by_name["センター"]
       if (b_center.pmxBone)
         bb.translate(_v3.copy(b_center.position).sub(_v3a.fromArray(b_center.pmxBone.origin)))
     }
+    bb.applyMatrix4(cache.matrixWorld)
 //console.log(bb)
     let e = click.events && click.events[bb_idx]
     if (e) {
@@ -7779,7 +7792,7 @@ Object.defineProperty(obj.cache.list, "0", {
       obj.LOD_far.boundingBox = geo.boundingBox
       obj.LOD_far.center = geo.boundingBox.center()
       obj.LOD_far.size = geo.boundingBox.size()
-      var mesh_far = new THREE.Mesh(new THREE.CubeGeometry(obj.LOD_far.size.x, obj.LOD_far.size.y, obj.LOD_far.size.z), new THREE.MeshBasicMaterial( { color:(MMD_SA_options.fog && MMD_SA_options.fog.color)||"#000000" } ))
+      let mesh_far = new THREE.Mesh(new THREE.CubeGeometry(obj.LOD_far.size.x, obj.LOD_far.size.y, obj.LOD_far.size.z), new THREE.MeshBasicMaterial( { color:'#'+MMD_SA.scene.fog.color.getHexString() } ));
       mesh_far.visible = false
       MMD_SA.scene.add(mesh_far)
 
@@ -11035,7 +11048,7 @@ DEBUG_show("Framebuffer Scale:x0.25", 3)
 
     function fps() {
 timerID = requestAnimationFrame(fps)
-if (EV_sync_update.fps_last) {
+if (EV_sync_update.fps_last && !System._browser.camera.facemesh.enabled) {
   DEBUG_show(EV_sync_update.fps_last)
   EV_sync_update.fps_last = 0
 }
@@ -11888,6 +11901,8 @@ if (e.next_step) {
 }
 
 if (e.ended) {
+  if ((typeof e.ended == 'string') && (e.ended != this._event_active.id)) return;
+
   if (MMD_SA.SpeechBubble.visible && !MMD_SA.SpeechBubble.msg_timerID)
     MMD_SA.SpeechBubble.hide()
 
@@ -11911,6 +11926,10 @@ if (!event_id)
 else if (Array.isArray(event_id)) {
   this.events["_ONETIME_"] = event_id
   event_id = "_ONETIME_"
+  if (branch_index == null)
+    branch_index = 0
+  if (event_index == null)
+    event_index = 0
 }
 else if (event_id instanceof Object) {
   event_main.call(this, event_id)
@@ -13093,7 +13112,7 @@ if (e.onplayerdefeated) {
 if (e.onenemyalldefeated) {
   onenemyalldefeated = function (onenemyalldefeated_default) {
     var events = e.onenemyalldefeated.slice().concat([{func:onenemyalldefeated_default, ended:true}])
-    d.run_event([events], 0)
+    d.run_event([events])
     return true
   }
 }
