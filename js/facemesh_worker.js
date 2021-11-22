@@ -1,28 +1,35 @@
-// (2021-08-06)
+// (2021-11-23)
 
 var param = new URLSearchParams(self.location.search.substring(1));
 
-var use_human_facemesh = param.get('use_human_facemesh');
 var use_faceLandmarksDetection = param.get('use_face_landmarks');
-var facemesh_version = (use_human_facemesh || use_faceLandmarksDetection) ? '' : '@0.0.3';
+var use_human_facemesh = param.get('use_human_facemesh');
+var use_mediapipe_facemesh = param.get('use_mediapipe_facemesh');
+var facemesh_version = (use_faceLandmarksDetection || use_human_facemesh || use_mediapipe_facemesh) ? '' : '@0.0.3';
 
 var human;
 
 var use_SIMD;
 
+if (use_mediapipe_facemesh) {
+  init()
+}
+else {
 // https://github.com/GoogleChromeLabs/wasm-feature-detect
-importScripts('https://unpkg.com/wasm-feature-detect/dist/umd/index.js');
+  importScripts('https://unpkg.com/wasm-feature-detect/dist/umd/index.js');
 
-wasmFeatureDetect.simd().then(simdSupported => {
-  use_SIMD = simdSupported;
+  wasmFeatureDetect.simd().then(simdSupported => {
+    use_SIMD = simdSupported;
 
-  if (use_human_facemesh) {
+    if (use_human_facemesh) {
+process=undefined
+
 importScripts('./human/dist/human.js');
 human = new Human.default();
 
 human.load({
   backend: 'wasm',//(use_SIMD) ? 'wasm' : 'webgl',
-  wasmPath: './human/assets/', // path for wasm binaries
+//  wasmPath: './human/assets/', // path for wasm binaries
 
 //  videoOptimized: false,
   cacheSensitivity: 999,
@@ -41,8 +48,10 @@ human.load({
     detector: {
       modelPath: './human/models/blazeface.json',//'./human/models/blazeface-back.json',//
       rotation: use_faceLandmarksDetection,
-      maxFaces: 1,
-      skipFrames: 15
+//      maxFaces: 1,
+      maxDetected: 1,
+      skipFrames: 15,
+//cropFactor:1.6,
     },
 
     mesh: {
@@ -87,7 +96,7 @@ human.load({
 postMessage('(Use Human Facemesh/' + ((human.config.backend=='wasm') ? 'WASM'+((use_SIMD && '-SIMD')||'') : human.config.backend) + ')')
 postMessage('OK')
   }
-  else {
+    else {
 // https://blog.tensorflow.org/2020/03/face-and-hand-tracking-in-browser-with-mediapipe-and-tensorflowjs.html
 // https://blog.tensorflow.org/2020/03/introducing-webassembly-backend-for-tensorflow-js.html
 
@@ -134,8 +143,9 @@ tf.setBackend("tensorflow").then(function () {
   init()
 });
 */
-  }
-});
+    }
+  });
+}
 
 var canvas, context, RAF_timerID;
 
@@ -210,7 +220,40 @@ var pose_worker, pose_worker_ready;
 
 async function init() {
   try {
-    if (use_faceLandmarksDetection) {
+    if (use_mediapipe_facemesh) {
+      importScripts('@mediapipe/face_mesh/face_mesh.js');
+
+      await (async function () {
+        var face = new FaceMesh({locateFile: (file) => {
+return '@mediapipe/face_mesh/' + file;
+        }});
+
+        face.setOptions({
+  maxNumFaces: 1,
+  refineLandmarks: true,
+  minDetectionConfidence: 0.5,
+  minTrackingConfidence: 0.5
+        });
+
+        var facemesh_results;
+        face.onResults((results)=>{
+facemesh_results = results;
+        });
+
+        await face.initialize();
+
+        model = {
+estimateFaces: async function (obj, config) {
+  await face.send({image:obj.input});
+  return facemesh_results;
+}
+        };
+      })();
+
+      console.log('(Mediapipe facemesh initialized)')
+      postMessage('(Mediapipe facemesh initialized)')
+    }
+    else if (use_faceLandmarksDetection) {
       importScripts('https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection/dist/face-landmarks-detection.js');
 
       model = await faceLandmarksDetection.load(faceLandmarksDetection.SupportedPackages.mediapipeFacemesh, {maxFaces:1});
@@ -239,7 +282,16 @@ async function init() {
 }
 
 var fps = 0, fps_count = 0, fps_ms = 0;
-
+/*
+var _canvas_for_imagedata = new OffscreenCanvas(1,1)
+function createImageData(uint8, w,h) {
+return new ImageData(uint8,w,h)
+  _canvas_for_imagedata.width  = w
+  _canvas_for_imagedata.height = h
+//  _canvas_for_imagedata.getContext('2d').putImageData(new ImageData(uint8,w,h), w,h)
+  return _canvas_for_imagedata;
+}
+*/
 async function process_video_buffer(rgba, w,h, options) {
 //  if (!face_cover) return
 
@@ -253,12 +305,17 @@ _t = _t_now = performance.now()
   let cw = bb.w
   let ch = bb.h
 
-  eyes = []
-
   rgba = new Uint8ClampedArray(rgba);
-
+/*
+createImageData(rgba, cw,ch);
+postMessage(JSON.stringify({ faces:[], _t:0 }));
+return
+*/
   let faces
-  if (use_human_facemesh) {
+  if (use_mediapipe_facemesh) {
+    faces = await model.estimateFaces({input:new ImageData(rgba, cw,ch)});
+  }
+  else if (use_human_facemesh) {
     const result = await human.detect(new ImageData(rgba, cw,ch));
     faces = result.face
   }
@@ -284,43 +341,120 @@ _t_now = performance.now()
 _t_list[0] = _t_now-_t
 _t = _t_now
 
-  if (!faces.length || ((faces[0].faceInViewConfidence||faces[0].confidence) < 0.7)) {
+if (use_mediapipe_facemesh) {
+//console.log(_t_list.reduce((a,c)=>a+c))
+//    postMessage(JSON.stringify({ faces:[], _t:_t_list.reduce((a,c)=>a+c) }));
+//    return
+}
+
+  if ((use_mediapipe_facemesh) ? (!faces.multiFaceLandmarks||!faces.multiFaceLandmarks.length) : (!faces.length || ((faces[0].faceInViewConfidence||faces[0].confidence) < 0.7))) {
     postMessage(JSON.stringify({ faces:[], _t:_t_list.reduce((a,c)=>a+c) }));
+    draw([], w,h, options)
     return
   }
 
+  process_facemesh(faces, w,h, bb);
+
   let face = faces[0]
-  if (use_human_facemesh) {
-    face.faceInViewConfidence = face.confidence
-    face.scaledMesh = face.mesh
-    face.mesh = face.meshRaw
-    face.boundingBox = face.boxRaw
-// human v1.1.9+
-    face.boundingBox = { topLeft:[face.boxRaw[0]*cw,face.boxRaw[1]*ch], bottomRight:[(face.boxRaw[0]+face.boxRaw[2])*cw,(face.boxRaw[1]+face.boxRaw[3])*ch] }
-    const size = Math.max(face.boxRaw[2]*cw, face.boxRaw[3]*ch) / 1.5;
+  let sm = face.scaledMesh;
+
+_t_now = performance.now()
+_t_list[1] = _t_now-_t
+_t = _t_list.reduce((a,c)=>a+c)
+
+  fps_ms += _t
+  if (++fps_count >= 20) {
+    fps = 1000 / (fps_ms/fps_count)
+    fps_count = fps_ms = 0
+  }
+
+  let draw_camera// = true;
+  if (use_pose_worker && pose_worker_ready) {
+    let data = { rgba:rgba.buffer, w:cw, h:ch, options:{ use_handpose:options.use_handpose, _t:_t } };//, threshold:1 };
+    pose_worker.postMessage(data, [data.rgba]);
+    pose_worker_ready = false
+    draw_camera = false
+  }
+
+  postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:face.faceScore||face.faceInViewConfidence||0, scaledMesh:(canvas)?{454:sm[454],234:sm[234]}:sm, mesh:face.mesh, eyes:eyes, bb_center:face.bb_center, emotion:face.emotion, rotation:face.rotation }], _t:_t, fps:fps }));
+
+  if (draw_camera) {
+    if (!canvas_camera) {
+      canvas_camera = new OffscreenCanvas(cw,ch);
+    }
+    else {
+      if ((canvas_camera.width != cw) || (canvas_camera.height != ch)) {
+        canvas_camera.width  = cw
+        canvas_camera.height = ch
+      }
+    }
+    canvas_camera.getContext("2d").putImageData(new ImageData(rgba, cw,ch), 0,0);
+  }
+
+  rgba = undefined;
+
+  draw(faces, w,h, options)
+}
+
+function process_facemesh(faces, w,h, bb) {
+  let sx = bb.x
+  let sy = bb.y
+  let cw = bb.w
+  let ch = bb.h
+
+  eyes = []
+
+  let face;
+  if (use_mediapipe_facemesh) {
+    face = {}
+    face.faceInViewConfidence = 1
+    let min_x=9999, min_y=9999, max_x=-9999, max_y=-9999;
+    let mesh=[], scaledMesh=[];
+    faces.multiFaceLandmarks[0].forEach((f)=>{
+      var x = f.x * cw
+      var y = f.y * ch
+      var z = f.z * cw
+
+      min_x = Math.min(min_x, x)
+      min_y = Math.min(min_y, y)
+      max_x = Math.max(max_x, x)
+      max_y = Math.max(max_y, y)
+
+      mesh.push([f.x, f.y, f.z])
+      scaledMesh.push([x, y, z])
+    });
+    face.boundingBox = { topLeft:[min_x,min_y], bottomRight:[max_x,max_y] }
+    face.scaledMesh = scaledMesh
+    face.mesh = mesh
+    const size = Math.max(max_x-min_x, max_y-min_y);
     face.mesh.forEach(coords=>{
       coords[0] *= 256 * cw / size;
       coords[1] *= 256 * ch / size;
-      coords[2] *= 256;
+      coords[2] *= 256 * cw / size;
     });
+    faces = [face]
+//console.log(face)
   }
-  else if (facemesh_version == '@0.0.3') {
-    face.boundingBox = { topLeft:face.boundingBox.topLeft[0], bottomRight:face.boundingBox.bottomRight[0]}
+  else {
+    face = faces[0]
+    if (use_human_facemesh) {
+      face.faceInViewConfidence = face.confidence
+      face.scaledMesh = face.mesh
+      face.mesh = face.meshRaw
+      face.boundingBox = face.boxRaw
+// human v1.1.9+
+      face.boundingBox = { topLeft:[face.boxRaw[0]*cw,face.boxRaw[1]*ch], bottomRight:[(face.boxRaw[0]+face.boxRaw[2])*cw,(face.boxRaw[1]+face.boxRaw[3])*ch] }
+      const size = Math.max(face.boxRaw[2]*cw, face.boxRaw[3]*ch) / 1.5;
+      face.mesh.forEach(coords=>{
+        coords[0] *= 256 * cw / size;
+        coords[1] *= 256 * ch / size;
+        coords[2] *= 256;
+      });
+    }
+    else if (facemesh_version == '@0.0.3') {
+      face.boundingBox = { topLeft:face.boundingBox.topLeft[0], bottomRight:face.boundingBox.bottomRight[0]}
+    }
   }
-
-//if (!self._TEST_) {self._TEST_=true;console.log(face);}
-  if ((gray_w != cw) || (gray_h != ch)) {
-    gray_w = cw
-    gray_h = ch
-    gray = new Uint8Array(cw*ch);
-  }
-
-  const image = {
-    "pixels": gray,
-    "nrows": ch,
-    "ncols": cw,
-    "ldim": cw
-  };
 
 //  let bb = face.boundingBox;
 //  let face_radius = Math.min(bb.bottomRight[0][0]-bb.topLeft[0][0], bb.bottomRight[0][1]-bb.topLeft[0][1])/2;
@@ -328,7 +462,6 @@ _t = _t_now
   let sm = face.scaledMesh;
 
   let eye_bb, eye_center, eye_w, eye_h, eye_radius;
-  let r,c,s;
 
 // face LR:234,454
 // right eye
@@ -371,11 +504,25 @@ if (use_faceLandmarksDetection) {
     yx = (LR == "L") ? [sm[473][1], sm[473][0]] : [sm[468][1], sm[468][0]];
 }
 else {
-    r = eye_center[1];
-    c = eye_center[0];
-    s = eye_radius*2;
-    rgba_to_grayscale(rgba, eye_center, eye_radius)
-    yx = do_puploc(r, c, s, 63, image);
+  if ((gray_w != cw) || (gray_h != ch)) {
+    gray_w = cw
+    gray_h = ch
+    gray = new Uint8Array(cw*ch);
+  }
+
+  const image = {
+    "pixels": gray,
+    "nrows": ch,
+    "ncols": cw,
+    "ldim": cw
+  };
+
+  let r,c,s;
+  r = eye_center[1];
+  c = eye_center[0];
+  s = eye_radius*2;
+  rgba_to_grayscale(rgba, eye_center, eye_radius)
+  yx = do_puploc(r, c, s, 63, image);
 }
 
     if ((yx[0] >=0) && (yx[1] >= 0)) {
@@ -388,58 +535,6 @@ else {
       let eye_y = eyes_xy_last[i][1] = Math.max(Math.min(Math.sin(eye_z_rot)*dis*Math.max(1.5-Math.abs(z_rot)/(Math.PI/4)*0.5,1), 1), -1) * confidence + eyes_xy_last[i][1] * (1-confidence)
 
       eyes[i] = [yx[1]+sx,yx[0]+sy, eye_x,eye_y, [LR]]
-
-      let eye_pixel_count = [0,0,0,0]
-      if (!use_faceLandmarksDetection && options.blink_detection) {
-let r_min = ~~eye_bb[0][1]
-let c_min = ~~eye_bb[0][0]
-let r_max = ~~eye_bb[1][1]
-let c_max = ~~eye_bb[1][0]
-let R,G,B,S,S_threshold
-let S_total = 0
-for (let rr = r_min; rr <= r_max; rr++) {
-  for (let cc = c_min; cc <= c_max; cc++) {
-//    if (gray[rr*gray_w + cc] < 80) { eye_pixel_count++ }
-
-const idx = rr*4*gray_w+4*cc
-R = rgba[idx+0]
-//let G = rgba[idx+1]
-B = rgba[idx+2]
-S = (R-B)/R
-
-//if (R > 16) S_total += S;
-
-//let maxColor = Math.max(R,G,B); let minColor = Math.min(R,G,B); S = (maxColor != 0) ? (maxColor - minColor) / maxColor : 0;
-if (R > 16) {
-  for (let i = 0; i < 4; i++) {
-    S_threshold = 0.15 + i*0.05
-    eye_pixel_count[i] += (S < S_threshold) ? 1 : Math.max(Math.min(((S_threshold+S_threshold)-S)/S_threshold, 1),0);
-  }
-}
-else {
-  eye_pixel_count[i] += 1
-}
-
-  }
-}
-/*
-// forehead:9,8
-// cheek:105,125
-let S_list = [];
-[9,8,105,125].forEach(function (c) {
-  let idx = ~~sm[c][1]*4*gray_w + 4*~~sm[c][0]
-  let R = rgba[idx+0]
-  let B = rgba[idx+2]
-  let S = (R-B)/R
-  S_list.push(S)
-});
-S_list.sort((a,b)=>a-b)
-let S_skin_average = (S_list[1]+S_list[2])/2
-eyes[i][7] = ~~(S_total/(eye_w*eye_h)*100) + '/' + ~~(S_skin_average*100)
-*/
-      }
-      eyes[i][5] = eye_pixel_count.map((count)=>count/(eye_w*eye_h));
-
     }
   }
 
@@ -475,46 +570,14 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
 
   faces[0].bb = bb
   faces[0].bb_ratio = bb.ratio
+//  faces[0].bb_ratio = Math.max((face.boundingBox.bottomRight[0]-face.boundingBox.topLeft[0])/w, (face.boundingBox.bottomRight[1]-face.boundingBox.topLeft[1])/h)
   faces[0].bb_center = [(face.boundingBox.topLeft[0]+(face.boundingBox.bottomRight[0]-face.boundingBox.topLeft[0])/2+sx)/w, (face.boundingBox.topLeft[1]+(face.boundingBox.bottomRight[1]-face.boundingBox.topLeft[1])/2+sy)/h]
 
-_t_now = performance.now()
-_t_list[1] = _t_now-_t
-_t = _t_list.reduce((a,c)=>a+c)
+  return faces
+}
 
-  fps_ms += _t
-  if (++fps_count >= 20) {
-    fps = 1000 / (fps_ms/fps_count)
-    fps_count = fps_ms = 0
-  }
-
-  let draw_camera// = true;
-  if (use_pose_worker && pose_worker_ready) {
-    let data = { rgba:rgba.buffer, w:cw, h:ch, options:{ use_handpose:options.use_handpose, _t:_t } };//, threshold:1 };
-    pose_worker.postMessage(data, [data.rgba]);
-    pose_worker_ready = false
-    draw_camera = false
-  }
-
-  postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:faces[0].faceScore||faces[0].faceInViewConfidence||0, scaledMesh:(canvas)?{454:sm[454],234:sm[234]}:sm, mesh:faces[0].mesh, eyes:eyes, bb_center:faces[0].bb_center, emotion:face.emotion, rotation:face.rotation }], _t:_t, fps:fps }));
-
-  if (draw_camera) {
-    if (!canvas_camera) {
-      canvas_camera = new OffscreenCanvas(cw,ch);
-    }
-    else {
-      if ((canvas_camera.width != cw) || (canvas_camera.height != ch)) {
-        canvas_camera.width  = cw
-        canvas_camera.height = ch
-      }
-    }
-    canvas_camera.getContext("2d").putImageData(new ImageData(rgba, cw,ch), 0,0);
-  }
-
-  rgba = undefined;
-
-//return
-
-  if (canvas && TRIANGULATION && options.draw_canvas && faces.length) {
+function draw(faces, w,h, options) {
+  if (canvas && (options.draw_pose || (TRIANGULATION && options.draw_canvas))) {
     if (RAF_timerID)
       cancelAnimationFrame(RAF_timerID)
     RAF_timerID = requestAnimationFrame(function () {
@@ -528,6 +591,8 @@ _t = _t_list.reduce((a,c)=>a+c)
 var flip_canvas;
 var canvas_camera;
 
+var facemesh_drawn;
+
 function draw_facemesh(faces, w,h, rgba) {
   function distance(a,b) {
 return Math.sqrt(Math.pow(a[0]-b[0],2) + Math.pow(a[1]-b[1],2))
@@ -538,6 +603,8 @@ return Math.sqrt(Math.pow(a[0]-b[0],2) + Math.pow(a[1]-b[1],2))
     canvas.height = h
   }
 
+  context.globalAlpha = 0.5
+
   context.save()
 
   if (flip_canvas) {
@@ -547,9 +614,16 @@ return Math.sqrt(Math.pow(a[0]-b[0],2) + Math.pow(a[1]-b[1],2))
 
   context.clearRect(0,0,w,h)
 
-  context.globalAlpha = 0.5
   context.fillStyle = 'black'
   context.fillRect(0,0,w,h)
+
+  if (!faces.length) {
+    facemesh_drawn = false
+    context.restore()
+    return
+  }
+
+  facemesh_drawn = true
 
   const bb = faces[0].bb
   if (canvas_camera) {
@@ -632,8 +706,6 @@ const RED = "#FF2C35";
   context.stroke(region);
 
   context.restore()
-
-  context.globalAlpha = 0.5
 }
 
 // https://github.com/tensorflow/tfjs-models/tree/master/facemesh/demo
@@ -658,6 +730,7 @@ function drawPath(ctx, points, closePath) {
 
 var posenet, pose_w, pose_h;
 var handpose;
+var handpose_last, handpose_last_timestamp=0;
 var cw, ch;
 
 //https://github.com/tensorflow/tfjs-models/blob/master/posenet/src/keypoints.ts
@@ -686,9 +759,9 @@ function draw_pose() {
   posenet.keypoints.forEach(function (p, idx) {
     part[p.part] = p
 
-    if (idx > 12) p.score = 0;
+//    if (idx > 12) p.score = 0;
     if (p.score <= 0) return;
-    if (/nose|Eye|Ear/.test(p.part)) return;
+    if (/nose|Eye|Ear/.test(p.part) && facemesh_drawn) return;
 
     const {y, x} = p.position;
 
@@ -720,9 +793,9 @@ function draw_pose() {
 // https://github.com/tensorflow/tfjs-models/blob/master/handpose/demo/index.js
 var fingerLookupIndices = {
       thumb: [0, 1, 2, 3, 4],
-      indexFinger: [0, 5, 6, 7, 8],
-      middleFinger: [0, 9, 10, 11, 12],
-      ringFinger: [0, 13, 14, 15, 16],
+      index: [0, 5, 6, 7, 8],
+      middle: [0, 9, 10, 11, 12],
+      ring: [0, 13, 14, 15, 16],
       pinky: [0, 17, 18, 19, 20]
 };
 
@@ -735,7 +808,7 @@ function draw_hand() {
   context.fillStyle = 'pink';
 
   handpose.forEach(function (hand) {
-    const keypoints = hand.landmarks||hand.keypoints;
+    const keypoints = hand.keypoints;//hand.landmarks||hand.keypoints;//
 
     keypoints.forEach(function (p) {
       context.beginPath();
@@ -816,6 +889,28 @@ onmessage = function (e) {
     handpose = data.handpose
     data.posenet = undefined
     data.handpose = undefined
+
+    flip_canvas = data.flip_canvas
+
+    if (handpose) {
+      handpose_last = handpose
+      handpose_last_timestamp = t
+    }
+    else {
+      handpose = handpose_last
+      if (t - handpose_last_timestamp > 500)
+        handpose_last = undefined
+     }
+
+     if (data.draw_pose) {
+       cw = data.w
+       ch = data.h
+       if (data.facemesh) {
+         eyes = data.facemesh[0].eyes
+         data.facemesh[0].bb = {x:0, y:0, w:cw, h:ch}
+       }
+       draw(data.facemesh||[], data.w,data.h, {draw_pose:true})
+     }
   }
 
   data = undefined
