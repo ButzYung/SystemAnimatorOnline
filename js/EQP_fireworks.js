@@ -2,7 +2,8 @@
 Heavily inspired by Seb Lee-Delisle' talk @fullfrontal 2010
 Ref - http://bit.ly/fgUay5
 
-modified by Butz Yung for System Animator (mod v1.3.0)
+modified by Butz Yung for System Animator
+// (2021-11-23)
 ========================================================*/
 
 var use_EQP_fireworks
@@ -42,7 +43,7 @@ return ((Math.random() * this.vector_y_seed) + this.vector_y_mod + y_mod) * y_sc
  ,scale_mod: 1
  ,opacity_mod: 1
 
- ,new_particles_per_update: 3
+ ,new_particles_per_update: (RAF_animation_frame_unlimited) ? 2 : 3
  ,particle_is_invalid: function (particle, HALF_WIDTH,HALF_HEIGHT) {
 return (Math.abs(particle.pos.x) > HALF_WIDTH) || (Math.abs(particle.pos.y) > HALF_HEIGHT)
   }
@@ -231,7 +232,7 @@ if (EQP_Fireworks.rotate_ini)
   EQP_Fireworks.rotate_ini(this)
 
 this.reset = function() {
-var mod = (use_full_fps) ? 2/EV_sync_update.count_to_10fps_ : 1
+var mod = (use_full_fps) ? ((RAF_animation_frame_unlimited)?1:2)/EV_sync_update.count_to_10fps_ : 1
 
 var x = EQP_Fireworks.start_x * HALF_WIDTH
 var y = EQP_Fireworks.start_y * HALF_HEIGHT
@@ -247,7 +248,7 @@ this.u_last = 0
 this.reset();
 this.update = function(skip_gravity) {
   if (this.enabled) {
-    var mod = (use_full_fps) ? 2/EV_sync_update.count_to_10fps_ : 1
+    var mod = (use_full_fps) ? ((RAF_animation_frame_unlimited)?1:2)/EV_sync_update.count_to_10fps_ : 1
 
     this.pos.plusEq(this.vel);
     this.vel.multiplyEq(drag);
@@ -337,7 +338,7 @@ EQP_Fireworks.setup_icon()
 var c, _c
 
 function draw3Din2D(particle) {
-var mod = (use_full_fps) ? 2/EV_sync_update.count_to_10fps_ : 1
+var mod = (use_full_fps) ? ((RAF_animation_frame_unlimited)?1:2)/EV_sync_update.count_to_10fps_ : 1
 
 x3d = particle.pos.x;
 y3d = particle.pos.y;
@@ -450,7 +451,7 @@ if (!canvas)
 c = canvas.getContext('2d');
 c.globalCompositeOperation = 'source-over'
 
-var mod = (use_full_fps) ? 2/EV_sync_update.count_to_10fps_ : 1
+var mod = (use_full_fps) ? ((RAF_animation_frame_unlimited)?1:2)/EV_sync_update.count_to_10fps_ : 1
 
 var cb = EQP_Fireworks.canvas_buffer
 if (cb) {
