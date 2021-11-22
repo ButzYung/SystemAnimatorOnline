@@ -1,4 +1,5 @@
-// CANVAS Matrix Rain Effect v1.6.0
+// CANVAS Matrix Rain Effect
+// (2021-11-23)
 
 function random(num) {
   return Math.floor(Math.random() * num)
@@ -9,8 +10,7 @@ function MatrixRain(width,height, para) {
   this.height = height
 
   if (para) {
-    for (var p in para)
-      this[p] = para[p]
+    Object.assign(this, para)
   }
 
   this.grid_size_fixed = this.grid_size
@@ -26,6 +26,16 @@ function MatrixRain(width,height, para) {
     this.play_on_idle = returnBoolean("MatrixRainPlayOnIdle")
   if (this.use_AudioFFT == null)
     this.use_AudioFFT = returnBoolean("MatrixRainMusical")
+  if (this.bg_opacity == null)
+    this.bg_opacity = (self.MMD_SA) ? 0.125 : 0.25
+  if (this.fadeout_opacity == null)
+    this.fadeout_opacity = (self.MMD_SA) ? 1/3 : 0.4
+  if (this.tail_ini == null)
+    this.tail_ini = (self.MMD_SA) ? 0.5 : 0.25
+  if (this.tail_end == null)
+    this.tail_end = (self.MMD_SA) ? 0.25 : 0.25
+  if (this.transparent_bg == null)
+    this.transparent_bg = (self.MMD_SA) ? false : this.full_color
 
   this.rain_canvas = []
   this.rain = []
@@ -37,7 +47,7 @@ function MatrixRain(width,height, para) {
   this.canvas_mask = document.createElement("canvas")
 
 // use WebGL 2D for processing green matrix rain
-  if (use_WebGL_2D || (use_WebGL && !this.full_color)) {
+  if (use_WebGL_2D || (use_WebGL && !this.full_color && self.WebGL_2D)) {
     DEBUG_show("Use WebGL 2D - Matrix Rain", 2)
     WebGL_2D.createObject(this.canvas_mask, {})
     this.canvas_mask._WebGL_2D.fshader_2d_main +=
@@ -54,7 +64,8 @@ function MatrixRain(width,height, para) {
   this._SA_idle_count = this._SA_idle_count_max = 30
 }
 
-MatrixRain.prototype.char_list = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+MatrixRain.prototype.char_list = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' + 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲ';
+MatrixRain.prototype.char_list_ini = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲ';
 
 MatrixRain.prototype.matrixCreate = function (w,h) {
   if (!w)
@@ -68,14 +79,14 @@ MatrixRain.prototype.matrixCreate = function (w,h) {
   canvas.width  = w
   canvas.height = h
 
-  if (this.full_color) {
+  if (this.transparent_bg) {
     this.canvas_matrix_copy = document.createElement("canvas")
     this.canvas_matrix_copy.width  = w
     this.canvas_matrix_copy.height = h
   }
   else {
     var context = canvas.getContext("2d")
-    context.fillStyle = "#004000"
+    context.fillStyle = 'rgb(0,' + Math.round(255*this.bg_opacity) + ',0)'
     context.fillRect(0,0,w,h)
   }
 
@@ -87,6 +98,7 @@ MatrixRain.prototype.matrixCreate = function (w,h) {
   var mw = this.matrix_width  = Math.ceil(w/grid_size)
   var mh = this.matrix_height = Math.ceil(h/grid_size)
   var char_list = this.char_list
+  var char_list_ini = this.char_list_ini
   var word_list = this.word_list
 
   if (this.use_AudioFFT) {
@@ -122,21 +134,26 @@ return null
   var word = []
   var word_index = []
 
+  var y_tail_ini = ~~(mh*this.tail_ini)
+  var y_tail_end = ~~(mh*this.tail_end)
+
   for (var x = 0; x < mw; x++) {
-    var c = document.createElement("canvas")
+    let c = document.createElement("canvas")
     c.width  = grid_size
     c.height = mh * grid_size
 
-    var context = c.getContext("2d")
+    let context = c.getContext("2d")
     context.font = this.font
 
-    var y_tail = ~~(mh/5)
     for (var y = mh-1; y > 0; y--) {
-      context.strokeStyle = (y == mh-1) ? "#FFFFFF" : "#00FF00"
-      context.globalAlpha = (y >= y_tail) ? 1 : y / y_tail
+      let a = (y >= y_tail_ini) ? 1 : 1 - (y_tail_ini-y) / y_tail_end
+      if (a < 0) continue
 
-      var py = (y+0.8) * grid_size
-      var txt
+      context.globalAlpha = a
+      context.strokeStyle = (y == mh-1) ? "#FFFFFF" : "#00FF00"
+
+      let py = (y+0.8) * grid_size
+      let txt
       if (word_list) {
         if (!word[x] || (word_index[x] < 0)) {
           word[x] = word_list[random(word_list.length)]
@@ -145,12 +162,19 @@ return null
         txt = word[x].charAt(word_index[x]--)
       }
       else
-        txt = char_list.charAt(random(char_list.length))
+        txt = ((y==mh-1)?char_list_ini:char_list).charAt(random(char_list.length))
    
       context.strokeText(txt, 0,py)
     }
 
     this.rain_canvas[x] = c
+  }
+
+  if (self.MMD_SA) {
+    let tex = this.matrix_texture = new THREE.Texture(this.canvas_matrix)
+    tex.needsUpdate = true
+//    tex.repeat.x = 10
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   }
 
   this.matrixReset()
@@ -166,13 +190,28 @@ MatrixRain.prototype.matrixReset = function () {
   var mw = this.matrix_width
   var mh = this.matrix_height
   for (var x = 0; x < mw; x++) {
-    var y1 = -(random(mh/5)+1)//random(mh) + mh - 1
-    var y2 = y1 - mh - (random(mh/5)+1)
+    let y1 = -(random(mh/5)+1)//random(mh) + mh - 1
+    let y2 = y1 - mh - (random(mh/5)+1)
     this.rain[x] = [y1, y2]
     this.rain_head[x] = y1
 
-    var speed = random(3)
-    this.rain_speed[x] = speed+1//(speed) ? speed : 0.5
+    let speed// = random(3)+1
+    switch (random(4)) {
+case 0:
+  speed = 3
+  break
+case 1:
+  speed = 2
+  break
+case 2:
+  speed = 1
+  break
+case 3:
+  speed = 0.5
+  break
+    }
+
+    this.rain_speed[x] = speed
   }
 }
 
@@ -185,7 +224,7 @@ MatrixRain.prototype.matrixDraw = function (skip) {
   context.globalCompositeOperation = 'copy'
 
   if (skip && !this.matrixDraw_no_skip) {
-    if (this.full_color) {
+    if (this.transparent_bg) {
       context.globalAlpha = 1
       context.drawImage(this.canvas_matrix_copy, 0,0)
     }
@@ -194,21 +233,21 @@ MatrixRain.prototype.matrixDraw = function (skip) {
 
 // draw from the previous frame to create a fading effect
   if (!this.matrixDraw_no_skip) {
-    context.globalAlpha = 0.5
+    context.globalAlpha = this.fadeout_opacity
     context.drawImage(canvas, 0,0)
   }
   else
     context.clearRect(0,0,w,h)
 
   context.globalAlpha = 1
-  if (!this.full_color) {
+  if (!this.transparent_bg) {
     context.globalCompositeOperation = 'destination-over'
-    context.fillStyle = "#004000"
+    context.fillStyle = 'rgb(0,' + Math.round(255*this.bg_opacity) + ',0)'
     context.fillRect(0,0,w,h)
   }
 
 /*
-  if (this.full_color) {
+  if (this.transparent_bg) {
     context.clearRect(0,0,w,h)
   }
   else {
@@ -247,6 +286,7 @@ MatrixRain.prototype.matrixDraw = function (skip) {
     }
   }
 
+  var decay_factor = (RAF_animation_frame_unlimited) ? 1 : 2;
   for (var x = 0; x < mw_fit; x++) {
     var rain = this.rain[x]
     var speed = (speed_update) ? this.rain_speed[x] : 0
@@ -263,8 +303,9 @@ MatrixRain.prototype.matrixDraw = function (skip) {
       var v_last = _fft_last[fft_index] || 0
       if (v > 100)
         v = 100
-      if (v < v_last - 3)
-        v = v_last - 3
+
+      if (v < v_last - decay_factor)
+        v = v_last - decay_factor
       _fft_last[fft_index] = v
 
       v = v/100
@@ -330,11 +371,15 @@ MatrixRain.prototype.matrixDraw = function (skip) {
 
   context.globalAlpha = 1
 
-  if (this.full_color && !this.matrixDraw_no_skip) {
+  if (this.transparent_bg && !this.matrixDraw_no_skip) {
     context = this.canvas_matrix_copy.getContext("2d")
     context.globalCompositeOperation = 'copy'
     context.globalAlpha = 1
     context.drawImage(canvas, 0,0)
+  }
+
+  if (this.matrix_texture) {
+    this.matrix_texture.needsUpdate = true
   }
 
   if (this.matrix_leaving) {
@@ -460,7 +505,7 @@ context.drawImage(obj, 0,0,w,h)
 */
 
     context.globalCompositeOperation = 'source-atop'
-    context.fillStyle = "rgba(0,0,0, 0.75)"
+    context.fillStyle = 'rgba(0,0,0,' + (1-this.bg_opacity) + ')'
     context.fillRect(0,0,w,h)
 
     context.globalCompositeOperation = 'source-over'
