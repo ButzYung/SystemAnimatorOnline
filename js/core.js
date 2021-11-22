@@ -1,4 +1,5 @@
-// System Animator core basics (2021-08-06)
+// System Animator core basics
+// (2021-11-23)
 
 var use_SA_browser_mode
 
@@ -30,7 +31,7 @@ var Setting_name_list_boolean = [
   "ReverseAnimation", "UseFilters", "UseMarkers", "UseImgCache", "UseFullFrameRate", "Use30FPS", "Use60FPS", "IgnoreMouseEvents", "IgnoreMouseEventsPartial",
   "HTALoadSpectrumAnalyser", "WallpaperAsBG", "DisableWallpaperMask", "XULTransparentBG", "DisableTransparency", "MoveWithinPrimaryScreen", "ChildDragDisabled",
   "CSSTransformFullscreen", "CSSTransformFlipH", "CSSTransformFlipV", "CSSTransformToChildAnimation", "CSSTransform3DBillboard", "CSSTransform3DDisabledForContent", "UseWebcamHeadtracking",
-  "UseHTML5Canvas", "UseWebGLForCanvas2D", "UseMatrixRain", "MatrixRainColor", "MatrixRainPlayOnIdle", "MatrixRainMusical",
+  "UseHTML5Canvas", "UseWebGLForCanvas2D", "UseMatrixRain", "MatrixRainColor", "MatrixRainPlayOnIdle", "MatrixRainMusical", "UseJustSnow", "UseJustSnowSlow",
   "UseCanvasRipple", "UseCanvasFireworks",
   "UseCanvasNotebookDrawings", "UseCanvasWatercolor", "UseCanvasVanGogh",
   "UseSVGClock", "UseAudioFFT", "UseAudioFFTLiveInput",
@@ -108,6 +109,8 @@ var Settings_default = {
   ,MatrixRainColor: true
   ,MatrixRainPlayOnIdle: false
   ,MatrixRainMusical: false
+  ,UseJustSnow: false
+  ,UseJustSnowSlow: false
 
   ,UseCanvasRipple: false
   ,UseCanvasFireworks: false
@@ -541,7 +544,7 @@ Settings_default._custom_.Display = "-1"
     WallpaperEngine_mode = !browser_native_mode
 // TEST mode for Electron
 if (("process" in window) && process.versions['electron']) {
-  webkit_electron_remote = SA_topmost_window.require('electron').remote
+  webkit_electron_remote = SA_topmost_window.require('electron').remote || SA_topmost_window.require('@electron/remote');
   webkit_window = webkit_electron_remote.getCurrentWindow()
   webkit_electron_screen = SA_topmost_window.require('electron').screen
 }
@@ -607,7 +610,7 @@ if (!browser_native_mode) {
     else {
       webkit_electron_mode = true
       webkit_version = process.versions['electron']
-      webkit_electron_remote = SA_topmost_window.require('electron').remote
+      webkit_electron_remote = SA_topmost_window.require('electron').remote || SA_topmost_window.require('@electron/remote');
       webkit_electron_screen = SA_topmost_window.require('electron').screen
       webkit_electron_dialog = {
   showOpenDialog: function (browserWindow, options, callback) {
