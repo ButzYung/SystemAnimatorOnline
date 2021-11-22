@@ -1323,6 +1323,8 @@ if (skin.time < 1) {
    ,"stand_simple": {
   center_view_enforced: true
 
+ ,_cover_undies: false
+
  ,trackball_camera_limit: { "min": { length:8 } }
 
  ,onstart: function () {
@@ -1330,10 +1332,13 @@ let model = THREE.MMD.getModels()[0]
 let bones_by_name = model.mesh.bones_by_name
 let head = bones_by_name["頭"].pmxBone.origin
 
-this.center_view = [0, (head[1])*1.05-11.4, -22]
+this.center_view = (this.center_view_enforced) ? [0, (head[1])*1.05-11.4, -22] : [0,0,0]
   }
 
  ,object_click_disabled: true
+
+ ,IK_disabled: { test:(name)=>false, _IK_name_list:[] }
+//(name.indexOf('腕ＩＫ') != -1) && System._browser.camera.poseNet.IK_disabled
 
 // ,get look_at_screen() { return !System._browser.camera.facemesh.enabled; }
     }
@@ -1739,11 +1744,22 @@ if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle
 
  ,user_camera: {
     pixel_limit: {
-      _default_: 1920*1080
-//     ,facemesh : 1280*720
-     ,facemesh_bb_ratio: (is_mobile) ? 1 : 0.8
+      _default_: 1920*1080,//1280*720,//
+      facemesh : 1280*720,
+      facemesh_bb_ratio: (is_mobile) ? 1 : 0.8,
+    },
+    display: (is_mobile) ? {} : { scale:0.4, top:0, left:-1 },
+    preference: {
+      label: /OBS/
+    },
+    ML_models: {
+      pose: {
+        events: {
+          enabled:  ()=>{ MMD_SA.WebXR.ground_plane.visible=false; },
+          disabled: ()=>{ MMD_SA.WebXR.ground_plane.visible=true;  },
+        }
+      }
     }
-   ,display: (is_mobile) ? {} : { scale:0.4, top:0, left:-1 }
   }
 
  ,light_position: [0,1,0]
@@ -1933,18 +1949,31 @@ if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle
     window.addEventListener("SA_MMD_model0_process_morphs", morph_event)
   }
 
-  let motion_list = ["standmix2_modified","stand_simple","i-shaped_balance_TDA_f0-50", ((1||MMD_SA_options.WebXR.AR._adult_mode)?"leg_hold":null), "gal_model_motion_with_legs-2_loop_v01","chair_sit01_armIK"].filter(m=>m!=null);
+  let motion_list = ["standmix2_modified","stand_simple", "i-shaped_balance_TDA_f0-50", ((1||MMD_SA_options.WebXR.AR._adult_mode)?"leg_hold":null), "gal_model_motion_with_legs-2_loop_v01","chair_sit01_armIK"].filter(m=>m!=null);
   let motion_index = motion_list.findIndex((m)=>(MMD_SA_options.motion_shuffle_list_default[0]==MMD_SA_options.motion_index_by_name[m]));
   if (++motion_index >= motion_list.length) {
     motion_index = 0
     if (++morph_form_index == morph_form.length) morph_form_index = 0;
   }
+
+// special case for stand_simple
+  let mp_stand_simple = MMD_SA_options.motion_para["stand_simple"]
+  if (motion_index == 1) {
+    mp_stand_simple.center_view_enforced = true
+  }
+  else if ((motion_index == 2) && mp_stand_simple.center_view_enforced) {
+    mp_stand_simple.center_view_enforced = false
+    motion_index--
+  }
+
   MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name[motion_list[motion_index]]]
 
   MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice()
   MMD_SA._force_motion_shuffle = true
 
   MMD_SA_options.Dungeon_options.item_base["social_distancing"].reset()
+
+  if (System._browser.camera.initialized) System._browser.on_animation_update.add(()=>{System._browser.camera._camera_reset = MMD_SA._trackball_camera.object.clone()},1,1)
 }
 else {
   return true
@@ -2003,7 +2032,7 @@ if (!MMD_SA.WebXR.user_camera.visible) {
   return true
 }
 */
-if (!MMD_SA.WebXR.user_camera.facemesh.enabled) {
+if (!MMD_SA.WebXR.user_camera.ML_enabled) {
   if (MMD_SA_options.Dungeon.inventory.action_disabled)
     return true
   MMD_SA_options.Dungeon.run_event("_FACEMESH_",0)
@@ -2012,7 +2041,7 @@ else  {
   MMD_SA.WebXR.user_camera.facemesh.enabled = false
   MMD_SA.WebXR.user_camera.poseNet.enabled = false
   MMD_SA.WebXR.user_camera.handpose.enabled = false
-  DEBUG_show("Facemesh AI:OFF", 2)
+  DEBUG_show("Camera ML Mode:OFF", 2)
 }
     }
    ,anytime: true
@@ -2474,15 +2503,21 @@ else {
 // 1
      ,[
         {
-          func: function () { MMD_SA.WebXR.user_camera.video_flipped=false; MMD_SA.WebXR.user_camera.start((0&&webkit_electron_mode) ? toFileProtocol("C:\\Users\\user\\Documents\\_.mkv") : null); }
-         ,ended: true
+          func: function () {
+MMD_SA.WebXR.user_camera.video_flipped=false;
+MMD_SA.WebXR.user_camera.start((0&&webkit_electron_mode) ? toFileProtocol("C:\\Users\\user\\Documents\\_.png") : null);
+          }
+         ,ended: "_SELFIE_"
         }
       ]
 // 2
      ,[
         {
-          func: function () { MMD_SA.WebXR.user_camera.video_flipped=true; MMD_SA.WebXR.user_camera.start((0&&webkit_electron_mode) ? toFileProtocol("C:\\Users\\user\\Documents\\_.mkv") : null); }
-         ,ended: true
+          func: function () {
+MMD_SA.WebXR.user_camera.video_flipped=true;
+MMD_SA.WebXR.user_camera.start((0&&webkit_electron_mode) ? toFileProtocol("C:\\Users\\user\\Documents\\_.png") : null);
+          }
+         ,ended: "_SELFIE_"
         }
       ]
     ]
@@ -2492,17 +2527,20 @@ else {
       [
         {
           message: {
-  content: "Enable face and body tracking?\n1. Face only\n2. Face + body\n3. Face + body + hands\n4. Cancel"
+  content: "Enable face and body tracking?\n1. Face only\n2. Body only\n3. Body + Hands\n4. Face + Body\n5. Face + Body + Hands\n6. Cancel"
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:1 }
    ,{ key:2, branch_index:2 }
    ,{ key:3, branch_index:3 }
-   ,{ key:4 }
+   ,{ key:4, branch_index:4 }
+   ,{ key:5, branch_index:5 }
+   ,{ key:6 }
   ]
           }
         }
       ]
+// NOTE: Models that need to be used should be enabled first before disabling other models.
 // 1
      ,[
         {
@@ -2519,6 +2557,30 @@ DEBUG_show("Facemesh AI:ON", 2)
      ,[
         {
           func: function () {
+MMD_SA.WebXR.user_camera.poseNet.enabled = true
+MMD_SA.WebXR.user_camera.handpose.enabled = false
+MMD_SA.WebXR.user_camera.facemesh.enabled = false
+DEBUG_show("PoseNet AI:ON", 3)
+          }
+         ,ended: true
+        }
+      ]
+// 3
+     ,[
+        {
+          func: function () {
+MMD_SA.WebXR.user_camera.poseNet.enabled = true
+MMD_SA.WebXR.user_camera.handpose.enabled = true
+MMD_SA.WebXR.user_camera.facemesh.enabled = false
+DEBUG_show("PoseNet/Handpose AI:ON", 3)
+          }
+         ,ended: true
+        }
+      ]
+// 4
+     ,[
+        {
+          func: function () {
 MMD_SA.WebXR.user_camera.facemesh.enabled = true
 MMD_SA.WebXR.user_camera.poseNet.enabled = true
 MMD_SA.WebXR.user_camera.handpose.enabled = false
@@ -2527,7 +2589,7 @@ DEBUG_show("Facemesh/PoseNet AI:ON", 3)
          ,ended: true
         }
       ]
-// 3
+// 5
      ,[
         {
           func: function () {
@@ -2854,6 +2916,24 @@ window.addEventListener("SA_AR_onARFrame", (function () {
 
 //console.log(ground,material)
   });
+
+  EV_sync_update.fps_control = (function () {
+    var update_frame = false
+    return function () {
+      var camera = System._browser.camera
+      if (self.PoseAT || MMD_SA.WebXR.session || !camera.initialized || (!camera.facemesh._can_skip_RAF && !camera.poseNet.enabled) || camera._needs_RAF) {
+        camera._needs_RAF = false
+        update_frame = true
+      }
+      else {
+        update_frame = !update_frame
+      }
+
+      RAF_timestamp_delta_accumulated = (update_frame) ? 0 : RAF_timestamp_delta_accumulated + RAF_timestamp_delta;
+
+      return update_frame
+    };
+  })();
 
 })();
 
