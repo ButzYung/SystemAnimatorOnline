@@ -5312,7 +5312,7 @@ var eye_data_height_ref_pts = {L:[159,145], R:[386,374]};
     var use_faceLandmarksDetection = !is_mobile
 // NOTE: Not using human for now, as there is a memory leak in Chromium v93+ affecting human regardless of whether it is webgl or wasm backend, webworker or not.
     var use_human_facemesh// = url_search_params.get('use_human_facemesh') || !is_mobile
-    var use_mediapipe_facemesh = url_search_params.get('use_mediapipe_facemesh')
+    var use_mediapipe_facemesh = is_mobile || url_search_params.get('use_mediapipe_facemesh')
 
     function init() {
 if (_facemesh.initialized)
