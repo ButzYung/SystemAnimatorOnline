@@ -1,0 +1,66 @@
+{
+  "_from": "@mediapipe/pose",
+  "_id": "@mediapipe/pose@0.5.1635988162",
+  "_inBundle": false,
+  "_integrity": "sha512-t0dpl+iG/MTPtPPxEYHyVWo+X7G+qgYUYaB4y9pxavQRNzuQQeHeSmUnT+A8qOKnuB0ccxgyrrFmGUaaL0F3wQ==",
+  "_location": "/@mediapipe/pose",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "@mediapipe/pose",
+    "name": "@mediapipe/pose",
+    "escapedName": "@mediapipe%2fpose",
+    "scope": "@mediapipe",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/@mediapipe/pose/-/pose-0.5.1635988162.tgz",
+  "_shasum": "905e626cb07bce86c692d8ec057f04558ddd26fe",
+  "_spec": "@mediapipe/pose",
+  "_where": "F:\\Git Projects\\mediapipe\\pose",
+  "author": {
+    "name": "mhays@google.com"
+  },
+  "browser": {
+    "node-fetch": false,
+    "util": false,
+    "crypto": false
+  },
+  "bundleDependencies": false,
+  "dependencies": {},
+  "deprecated": false,
+  "description": "Mediapipe Pose Solution",
+  "devDependencies": {},
+  "homepage": "https://google.github.io/mediapipe/solutions/pose",
+  "jsdelivr": "pose.js",
+  "keywords": [
+    "AR",
+    "ML",
+    "Augmented"
+  ],
+  "license": "Apache-2.0",
+  "main": "pose.js",
+  "module": "pose.js",
+  "name": "@mediapipe/pose",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "sideEffects": [
+    "pose_solution_packed_assets.data",
+    "pose_solution_packed_assets_loader.js",
+    "pose_solution_simd_wasm_bin.js",
+    "pose_solution_simd_wasm_bin.wasm",
+    "pose_solution_wasm_bin.js",
+    "pose_solution_wasm_bin.wasm",
+    "pose_web.binarypb"
+  ],
+  "types": "index.d.ts",
+  "unpkg": "pose.js",
+  "version": "0.5.1635988162"
+}

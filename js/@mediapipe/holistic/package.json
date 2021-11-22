@@ -1,0 +1,58 @@
+{
+  "_from": "@mediapipe/holistic",
+  "_id": "@mediapipe/holistic@0.5.1635989137",
+  "_inBundle": false,
+  "_integrity": "sha512-iY1bOZ4QUR1jBwJzmaQI6u3BZLYfOTAdj2S8EgXPp/ngGtcyNN3oaVH3eTGUBzYsBd/MXG1RmDzBPd9e9DyKJw==",
+  "_location": "/@mediapipe/holistic",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "@mediapipe/holistic",
+    "name": "@mediapipe/holistic",
+    "escapedName": "@mediapipe%2fholistic",
+    "scope": "@mediapipe",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/@mediapipe/holistic/-/holistic-0.5.1635989137.tgz",
+  "_shasum": "68a2af45056f1f9bfa9bcf8a5b28a66a0ec56161",
+  "_spec": "@mediapipe/holistic",
+  "_where": "F:\\Git Projects\\mediapipe",
+  "author": {
+    "name": "mhays@google.com"
+  },
+  "browser": {
+    "node-fetch": false,
+    "util": false,
+    "crypto": false
+  },
+  "bundleDependencies": false,
+  "dependencies": {},
+  "deprecated": false,
+  "description": "Mediapipe Holistic Solution",
+  "devDependencies": {},
+  "homepage": "https://google.github.io/mediapipe/solutions/holistic",
+  "jsdelivr": "holistic.js",
+  "keywords": [
+    "AR",
+    "ML",
+    "Augmented"
+  ],
+  "license": "Apache-2.0",
+  "main": "holistic.js",
+  "module": "holistic.js",
+  "name": "@mediapipe/holistic",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "sideEffects": [],
+  "types": "index.d.ts",
+  "unpkg": "holistic.js",
+  "version": "0.5.1635989137"
+}

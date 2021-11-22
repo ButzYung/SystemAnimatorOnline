@@ -1,0 +1,58 @@
+{
+  "_from": "@mediapipe/face_mesh",
+  "_id": "@mediapipe/face_mesh@0.4.1633559619",
+  "_inBundle": false,
+  "_integrity": "sha512-Vc8cdjxS5+O2gnjWH9KncYpUCVXT0h714KlWAsyqJvJbIgUJBqpppbIx8yWcAzBDxm/5cYSuBI5p5ySIPxzcEg==",
+  "_location": "/@mediapipe/face_mesh",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "@mediapipe/face_mesh",
+    "name": "@mediapipe/face_mesh",
+    "escapedName": "@mediapipe%2fface_mesh",
+    "scope": "@mediapipe",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/@mediapipe/face_mesh/-/face_mesh-0.4.1633559619.tgz",
+  "_shasum": "f917e4448e25bc375a905d1d910f1bca450c5e23",
+  "_spec": "@mediapipe/face_mesh",
+  "_where": "F:\\Git Projects\\facemesh",
+  "author": {
+    "name": "mhays@google.com"
+  },
+  "browser": {
+    "node-fetch": false,
+    "util": false,
+    "crypto": false
+  },
+  "bundleDependencies": false,
+  "dependencies": {},
+  "deprecated": false,
+  "description": "Mediapipe Face Mesh Solution",
+  "devDependencies": {},
+  "homepage": "https://google.github.io/mediapipe/solutions/face_mesh",
+  "jsdelivr": "face_mesh.js",
+  "keywords": [
+    "AR",
+    "ML",
+    "Augmented"
+  ],
+  "license": "Apache-2.0",
+  "main": "face_mesh.js",
+  "module": "face_mesh.js",
+  "name": "@mediapipe/face_mesh",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "sideEffects": [],
+  "types": "index.d.ts",
+  "unpkg": "face_mesh.js",
+  "version": "0.4.1633559619"
+}
