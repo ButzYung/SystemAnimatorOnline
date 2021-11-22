@@ -1,4 +1,5 @@
-// System object emultaion (2021-08-06)
+// System object emultaion
+// (2021-11-23)
 
 var use_SA_system_emulation = true
 var use_SA_browser_mode
@@ -2840,6 +2841,7 @@ return net;
 
       var frame_delta_threshold = 1000/30
       var frame_delta = frame_delta_threshold
+      var camera_video_timestamp = 0
       function update_video_canvas() {
 // skip frame if necessary (fps target:30)
 frame_delta += RAF_timestamp_delta
@@ -2849,8 +2851,11 @@ if (_bodyPix.busy || ((RAF_animation_frame_unlimited && !MMD_SA.WebXR.session) &
 frame_delta -= frame_delta_threshold
 
 var video = camera.video
-if (!video.videoWidth)
+if (!video.videoWidth) {
   return
+}
+
+camera_video_timestamp = RAF_timestamp
 
 var video_canvas = camera.video_canvas
 var context = video_canvas.getContext("2d")
@@ -2917,15 +2922,24 @@ if (_bodyPix.enabled) {
 }
 else {
   if (_facemesh.enabled) {
-    _facemesh.update_frame()
+    _facemesh.update_frame(true)
   }
   else if (face_detection.enabled) {
-    face_detection.update_frame()
+    face_detection.update_frame(true)
   }
   if (_poseNet.enabled || _handpose.enabled) {
-    pose_update_frame()
+    pose_update_frame(true)
   }
 }
+
+const cs = camera.video_canvas_facemesh.style
+const scale = (is_mobile) ? 0.25 : 0.4
+if ((cs.pixelWidth != ~~camera.video_canvas.style.pixelWidth*scale) || (cs.pixelHeight != ~~camera.video_canvas.style.pixelHeight*scale)) {
+  cs.pixelWidth  = ~~camera.video_canvas.width*scale
+  cs.pixelHeight = ~~camera.video_canvas.height*scale
+  cs.posLeft = window.innerWidth - cs.pixelWidth
+}
+cs.visibility = "visible"
       }
 
       var video_capture_active
@@ -2939,11 +2953,12 @@ if (!video_capture_active && camera.initialized) {
       }
 
       function remove_video_capture() {
-if (video_capture_active && (!camera.visible && !_facemesh.enabled)) {
+if (video_capture_active && (!camera.visible && !camera.ML_enabled)) {
   video_capture_active = false
   frame_delta = frame_delta_threshold
   System._browser.on_animation_update.remove(update_video_canvas,0)
   System._browser.on_animation_update.remove(video_capture,1)
+  camera.video_canvas_facemesh.style.visibility = "hidden"
 }
       }
 
@@ -2980,8 +2995,49 @@ e.detail.result.return_value = true
       function video_fallback(src) {
 camera.init_stream()
 
-camera.video.loop = true
-camera.video.src = (webkit_electron_mode) ? toFileProtocol(src||"C:\\Users\\user\\Documents\\_.mp4") : (src||"js/headtrackr.mp4");
+if (src && /\.(png|jpg|jpeg|bmp)$/i.test(src)) {
+  let img = camera.video = new Image()
+  img.src = toFileProtocol(src)
+
+  Object.defineProperty(img, "videoWidth", {
+get: function () { return this.width; }
+  });
+  Object.defineProperty(img, "videoHeight", {
+get: function () { return this.height; }
+  });
+}
+else {
+  camera.video.loop = true
+  camera.video.src = (webkit_electron_mode) ? toFileProtocol(src||"C:\\Users\\user\\Documents\\_.mp4") : (src||"js/headtrackr.mp4");
+}
+      }
+
+      var ML_enabled = false;
+      function ML_init() {
+var enabled = _facemesh.enabled || _poseNet.enabled;
+if (ML_enabled == !!enabled)
+  return
+ML_enabled = !!enabled
+
+if (enabled) {
+  add_video_capture()
+
+  frames.reset()
+  frames.add_events()
+
+  DEBUG_show('(Camera ML Mode:ON)', 2)
+}
+else {
+  if (camera.initialized) {
+    camera.video_canvas_face_detection.style.visibility = "hidden"
+    camera.video_canvas_facemesh.style.visibility = "hidden"
+    remove_video_capture()
+  }
+
+  frames.remove_events()
+
+  DEBUG_show('(Camera ML Mode:OFF)', 2)
+}
       }
 
       var pose_initialized, pose_worker_initialized, pose_busy
@@ -2997,17 +3053,20 @@ q_m4 = new THREE.Quaternion()
       });
 
       var finger_list = ["親", "人", "中", "薬", "小"];
-      var finger_list_en = ["thumb", "indexFinger", "middleFinger", "ringFinger", "pinky"];
+      var finger_list_en = ["thumb", "index", "middle", "ring", "pinky"];
       var nj_list = ["０","１","２","３"];
 
       var use_pose_worker = !is_mobile;
 
-      var use_human// = true
-      var use_mixed_human = !is_mobile;
+      var use_human// = true;
+      var use_mixed_human// = !is_mobile;
       var use_tfjs_posenet;
-      var use_movenet = true
-      var use_blazepose// = true
-      var use_blazepose_upper// = true
+      var use_movenet = true;
+      var use_blazepose = true;
+      var use_mediapipe// = true;
+      var use_holistic = url_search_params.get('use_holistic');
+
+      var use_human_only, use_human_pose, use_human_hands;
 
       var posenet_part_name = [
   "nose"
@@ -3033,19 +3092,18 @@ q_m4 = new THREE.Quaternion()
 0, 2,5, 7,8, 11,12,13,14,15,16, 23,24,25,26,27,28
       ];
 
-      var blazepose_upper_translated = [
-0, 2,5, 7,8, 11,12,13,14,15,16, 23,24,25,26,27,28
-      ];
-
       var posenet_part_dummy = []
       posenet_part_name.forEach(name => {
         posenet_part_dummy.push({part:name, score:0})
       });
 
-      var rot_hand_adjust, rot_finger_adjust, rot_thumb_adjust;
+      var rot_hand_adjust, rot_finger_adjust;
 
       function pose_init() {
 pose_initialized = true
+
+// preload facemesh worker (mainly for canvas drawing)
+_facemesh.init()
 
 if (!use_pose_worker) pose_worker_initialized = true;
 
@@ -3067,11 +3125,24 @@ if (MMD_SA_options.model_para_obj.left_arm_z_rot == null) {
   MMD_SA_options.model_para_obj.arm_axis = { "左": new THREE.Vector3().fromArray(armIKL).sub(MMD_SA.TEMP_v3.fromArray(armL)).normalize() }
   MMD_SA_options.model_para_obj.arm_axis["右"] = MMD_SA_options.model_para_obj.arm_axis["左"].clone().setX(-MMD_SA_options.model_para_obj.arm_axis["左"].x)
 
+  MMD_SA_options.model_para_obj.hip_center = new THREE.Vector3().fromArray(bones_by_name["左足"].pmxBone.origin).setX(0);
+  MMD_SA_options.model_para_obj.left_heel_height = bones_by_name["左足首"].pmxBone.origin[1]
+  MMD_SA_options.model_para_obj.left_leg_length = MMD_SA._v3a.fromArray(bones_by_name["左足"].pmxBone.origin).distanceTo(MMD_SA._v3b.fromArray(bones_by_name["左足ＩＫ"].pmxBone.origin));
+
+  rot_hand_adjust = {
+    "1":new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(0, -Math.PI/2* 1, (-MMD_SA_options.model_para_obj.left_arm_z_rot+Math.PI)* 1, "YZX")),
+   "-1":new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(0, -Math.PI/2*-1, (-MMD_SA_options.model_para_obj.left_arm_z_rot+Math.PI)*-1, "YZX"))
+  };
+
+  rot_finger_adjust = {"1":{}, "-1":{}}
+
   MMD_SA_options.model_para_obj.finger_base = {}
   let LR = ["左","右"]
   LR.forEach(d=>{let palm=bones_by_name[d+"手首"].pmxBone.origin; finger_list.forEach((f,f_idx)=>{
     let name = d + f + "指";
     let f_base_index = ((f_idx==0) && (bones_by_name[name+nj_list[0]])) ? 0 : 1;
+    if (!bones_by_name[name+nj_list[f_base_index+0]]) return
+
     let f0 = MMD_SA._v3a.fromArray(bones_by_name[name+nj_list[f_base_index+0]].pmxBone.origin)
     let f1 = MMD_SA._v3b.fromArray(bones_by_name[name+nj_list[f_base_index+1]].pmxBone.origin)
     let v0 = MMD_SA._v3a_.copy(f0).sub(MMD_SA.TEMP_v3.fromArray(palm)).normalize()
@@ -3096,21 +3167,18 @@ if (MMD_SA_options.model_para_obj.left_arm_z_rot == null) {
       let axis = new THREE.Vector3().crossVectors(v0, v1).normalize()
       rot.setFromAxisAngle(axis, angle)
     }
-    let rot_v3 = new THREE.Vector3().setEulerFromQuaternion(rot, "YZX")
+    let rot_v3 = new THREE.Vector3().setEulerFromQuaternion(rot, "ZXY")
     rot_v3.set(0,0,rot_v3.z*((d=="左")?-1:1)).negate()
     f_obj.rot_v3 = rot_v3
-    f_obj.rot = rot.setFromEuler(rot_v3, "YZX")
-  })});
+    f_obj.rot = rot.setFromEuler(rot_v3, "ZXY");
 
-  rot_hand_adjust = {
-    "1":new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(0, -Math.PI/2* 1, (-MMD_SA_options.model_para_obj.left_arm_z_rot+Math.PI)* 1, "YZX")),
-   "-1":new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(0, -Math.PI/2*-1, (-MMD_SA_options.model_para_obj.left_arm_z_rot+Math.PI)*-1, "YZX"))
-  };
-
-  rot_finger_adjust = {}
-
-  let x_axis = MMD_SA._v3a.set(0,1,0);
-  let z_axis = MMD_SA._v3b.set(-1,0,0);
+/*
+  let sign_LR = (d=="左") ? 1 : -1
+  let x_axis = MMD_SA._v3a.fromArray(bones_by_name[name+nj_list[f_base_index+0]].pmxBone.localCoordinate[0]).multiplyScalar(-sign_LR).applyQuaternion(rot_hand_adjust[sign_LR]);
+  let z_axis = MMD_SA._v3b.fromArray(bones_by_name[name+nj_list[f_base_index+0]].pmxBone.localCoordinate[1]).applyQuaternion(rot_hand_adjust[sign_LR]);
+//x_axis.fromArray(x_axis.toArray().map(n=>Math.round(n)))
+//z_axis.fromArray(z_axis.toArray().map(n=>Math.round(n)))
+//console.log(name,x_axis.clone(), z_axis.clone())
   let y_axis = MMD_SA.TEMP_v3.crossVectors(x_axis, z_axis);
   let rot_m4 = MMD_SA.TEMP_m4.set(
     x_axis.x,+x_axis.y, x_axis.z, 0,
@@ -3118,43 +3186,69 @@ if (MMD_SA_options.model_para_obj.left_arm_z_rot == null) {
     z_axis.x, z_axis.y, z_axis.z, 0,
     0,0,0,1
   );
-  rot_finger_adjust["-1"] = new THREE.Quaternion().setFromRotationMatrix(rot_m4)
-
-  rot_m4 = MMD_SA.TEMP_m4.set(
-    x_axis.x,-x_axis.y, x_axis.z, 0,
-    y_axis.x, y_axis.y, y_axis.z, 0,
-   -z_axis.x, z_axis.y, z_axis.z, 0,
-    0,0,0,1
-  );
-  rot_finger_adjust["1"]  = new THREE.Quaternion().setFromRotationMatrix(rot_m4)
-
-  rot_thumb_adjust = {}
-
-
-  x_axis = MMD_SA._v3a.set(1,0,0);
-  y_axis = MMD_SA._v3b.set(0,0,1);
-  z_axis = MMD_SA.TEMP_v3.crossVectors(x_axis, y_axis);
-
-/*
-  x_axis = MMD_SA._v3a.set(0,1,0);
-  y_axis = MMD_SA._v3b.set(1,0,0);
-  z_axis = MMD_SA.TEMP_v3.crossVectors(x_axis, y_axis).negate();
+  rot_finger_adjust[sign_LR][name] = new THREE.Quaternion().setFromRotationMatrix(rot_m4)
 */
-  rot_m4 = MMD_SA.TEMP_m4.set(
-   -x_axis.x, x_axis.y, x_axis.z, 0,
-    y_axis.x, y_axis.y, y_axis.z, 0,
-    z_axis.x,-z_axis.y, z_axis.z, 0,
-    0,0,0,1
-  );
-  rot_thumb_adjust["-1"] = new THREE.Quaternion().setFromRotationMatrix(rot_m4)//xz
 
-  rot_m4 = MMD_SA.TEMP_m4.set(
-   -x_axis.x, x_axis.y, x_axis.z, 0,
-    y_axis.x, y_axis.y, y_axis.z, 0,
-    z_axis.x,-z_axis.y, z_axis.z, 0,
-    0,0,0,1
-  );
-  rot_thumb_adjust["1"]  = new THREE.Quaternion().setFromRotationMatrix(rot_m4)//xz
+if (f_idx > 0) {
+
+  let x_axis = MMD_SA._v3a.set(0,1,0);
+  let z_axis = MMD_SA._v3b.set(-1,0,0);
+  let y_axis = MMD_SA.TEMP_v3.crossVectors(x_axis, z_axis);
+  let rot_m4;
+  if (d=="右") {
+    rot_m4 = MMD_SA.TEMP_m4.set(
+      x_axis.x,+x_axis.y, x_axis.z, 0,
+      y_axis.x, y_axis.y,+y_axis.z, 0,
+      z_axis.x, z_axis.y, z_axis.z, 0,
+      0,0,0,1
+    );
+    rot_finger_adjust["-1"][name] = new THREE.Quaternion().setFromRotationMatrix(rot_m4)
+  }
+  else {
+    rot_m4 = MMD_SA.TEMP_m4.set(
+      x_axis.x,-x_axis.y, x_axis.z, 0,
+      y_axis.x, y_axis.y, y_axis.z, 0,
+     -z_axis.x, z_axis.y, z_axis.z, 0,
+      0,0,0,1
+    );
+    rot_finger_adjust["1"][name]  = new THREE.Quaternion().setFromRotationMatrix(rot_m4)
+  }
+
+}
+else {
+
+  let x_axis = MMD_SA._v3a.set(1,0,0);
+  let y_axis = MMD_SA._v3b.set(0,0,1);
+  let z_axis = MMD_SA.TEMP_v3.crossVectors(x_axis, y_axis);
+
+//  x_axis = MMD_SA._v3a.set(0,1,0);
+//  y_axis = MMD_SA._v3b.set(1,0,0);
+//  z_axis = MMD_SA.TEMP_v3.crossVectors(x_axis, y_axis).negate();
+
+  let rot_m4;
+  if (d=="右") {
+    rot_m4 = MMD_SA.TEMP_m4.set(
+     -x_axis.x, x_axis.y, x_axis.z, 0,
+      y_axis.x, y_axis.y, y_axis.z, 0,
+      z_axis.x,-z_axis.y, z_axis.z, 0,
+      0,0,0,1
+    );
+    rot_finger_adjust["-1"][name] = new THREE.Quaternion().setFromRotationMatrix(rot_m4)//xz
+  }
+  else {
+    rot_m4 = MMD_SA.TEMP_m4.set(
+     -x_axis.x, x_axis.y, x_axis.z, 0,
+      y_axis.x, y_axis.y, y_axis.z, 0,
+      z_axis.x,-z_axis.y, z_axis.z, 0,
+      0,0,0,1
+    );
+    rot_finger_adjust["1"][name]  = new THREE.Quaternion().setFromRotationMatrix(rot_m4)//xz
+  }
+
+}
+
+  })});
+
 }
 
 var para = []
@@ -3162,20 +3256,23 @@ if (is_mobile) {
   para.push('use_mobilenet=1')
 }
 
+if (use_holistic) {
+  para.push('use_holistic=1')
+  use_human = use_mixed_human = false
+  use_blazepose = use_mediapipe = true
+}
+
 if (use_human) {
   para.push('use_human=1')
+
+  use_human_only = true
 
   use_human = true
   use_mixed_human = false
   use_tfjs_posenet = false
 
-  if (use_blazepose) {
-    para.push('use_blazepose=1')
-    if (use_blazepose_upper) {
-      para.push('use_blazepose_upper=1')
-      blazepose_translated = blazepose_upper_translated
-    }
-  }
+  use_human_pose = true
+  use_human_hands = true
 }
 else if (use_mixed_human) {
   para.push('use_mixed_human=1')
@@ -3183,27 +3280,187 @@ else if (use_mixed_human) {
   use_human = true
   use_mixed_human = true
   use_tfjs_posenet = true
-  use_blazepose = false
+
+  use_human_hands = true
 }
 else {
   use_human = false
   use_mixed_human = false
   use_tfjs_posenet = true
-  use_blazepose = false
+}
+
+if (use_blazepose) {
+  para.push('use_blazepose=1')
+  use_mediapipe = true
+}
+
+if (use_mediapipe) {
+  para.push('use_mediapipe=1')
+  if (use_human) {
+    use_human_pose = true
+    use_human_hands = false
+  }
+// dummy
+  use_movenet = true
 }
 
 if (use_movenet) {
   para.push('use_movenet=1')
 }
 
-pose_worker = new Worker('js/pose_worker.js' + ((para.length) ? '?'+para.join('&') : ''))//, ((0&&use_human) ? { type:'module'} : null));
+if (0) {
+  pose_worker = {
+    postMessage: function (msg, transfer) {
+      PoseAT.onmessage({data:msg})
+    }
+  };
+  let script = document.createElement('script');
+  script.onload = function () {
+    PoseAT.init(pose_worker, para)
+  };
+  script.src = "js/pose_lib.js";
+  document.head.appendChild(script);
+}
+else {
+  pose_worker = new Worker('js/pose_worker.js' + ((para.length) ? '?'+para.join('&') : ''))//, ((0&&use_human) ? { type:'module'} : null));
+}
 pose_worker.onmessage = pose_worker_onmessage;
       }
 
-      function pose_worker_onmessage(e) {
-  function process_hand(mesh, name) {
+      function process_head_rotation(mesh, name) {
 var bone = mesh.bones_by_name[name]
-//var s = frames.skin[name]
+var s = this.skin[name]
+var ratio = Math.max(Math.min(s[0].t_delta/s[0].t_delta_frame,1),0)
+
+var rot_parent = s[0].rot_parent;
+if (!rot_parent) {
+  rot_parent = MMD_SA.get_bone_rotation_parent(mesh, name).inverse();
+}
+s[0]._rot_parent = rot_parent
+
+var q_identity = MMD_SA.TEMP_q.set(0,0,0,1)
+var rot = (s[0].no_blending) ? MMD_SA._q2.copy(s[0].rot) : MMD_SA._q2.copy(s[1].rot).slerp(s[0].rot, ratio)
+
+var angle = rot.toAxisAngle()[1] % (Math.PI*2)
+if (angle > Math.PI)
+  angle = Math.PI*2 - angle
+else if ((angle < 0) && (angle < -Math.PI))
+  angle += Math.PI*2
+//console.log(angle)
+angle = Math.abs(angle)
+ratio = (_poseNet.use_3D_pose) ? 0.5 : 0.4 + Math.max(angle-Math.PI/2,0)/(Math.PI/2) * 0.1;
+
+bone.quaternion.copy(MMD_SA._q1.copy(rot_parent).slerp(q_identity, 0.5))
+bone.quaternion.multiply(MMD_SA._q1.copy(rot).slerp(q_identity, 1-ratio))
+
+bone = mesh.bones_by_name['頭']
+bone.quaternion.copy(MMD_SA._q1.copy(rot_parent).slerp(q_identity, 0.5))
+bone.quaternion.multiply(MMD_SA._q1.copy(rot).slerp(q_identity, 1-ratio))
+
+if (ratio < 0.5) {
+  bone = mesh.bones_by_name['上半身2']
+  bone.quaternion.multiply(MMD_SA._q1.copy(rot).slerp(q_identity, 1-(1-ratio*2)))
+}
+      }
+
+// cancel leg/arm rotation here (after IK bone set), instead of reseting frames.skin[].rot, to include the cases when IK and arm/leg rotations are switching for whatever reasons
+      function cancel_leg_rotation(mesh, name) {
+if (camera.poseNet.IK_disabled_check(name)) return
+
+var d = name.charAt(0)
+mesh.bones_by_name[d+'足'].quaternion.set(0,0,0,1)
+mesh.bones_by_name[d+'ひざ'].quaternion.set(0,0,0,1)
+console.log(999)
+      }
+
+      function cancel_arm_rotation(mesh, name) {
+if (camera.poseNet.IK_disabled_check(name)) return
+
+var d = name.charAt(0)
+mesh.bones_by_name[d+'腕'].quaternion.set(0,0,0,1)
+mesh.bones_by_name[d+'ひじ'].quaternion.set(0,0,0,1)
+      }
+
+      var get_bone_position = (function () {
+        var pos_cache = {};
+
+        return function (mesh, name, parent_to_stop) {
+/*
+var obj = pos_cache[name]
+if (!obj || (obj.timestamp != RAF_timestamp)) {
+  let pos = MMD_SA.get_bone_position(mesh, name, parent_to_stop)
+  obj = pos_cache[name] = { pos:pos, timestamp:RAF_timestamp }
+}
+//else { console.log('cache hit:' + name) }
+return obj.pos
+*/
+return MMD_SA.get_bone_position(mesh, name, parent_to_stop);
+        };
+      })();
+
+      function adjust_hip_center(mesh, name) {
+var bone = mesh.bones_by_name[name]
+var s = this.skin[name]
+var ratio = Math.max(Math.min(s[0].t_delta/s[0].t_delta_frame,1),0)
+
+let v_hip = new THREE.Vector3().copy(s[0]._v3_screen).unproject(camera._camera_reset).sub(camera._camera_reset.position).normalize();
+//console.log(new THREE.Vector3().copy(s[0]._v3_screen).unproject(camera._camera_reset).project(camera._camera_reset).toArray(), s[0]._v3_screen.toArray())
+
+if (camera_depth_scale) camera_depth.estimate()
+
+let cam_distance_default = camera._camera_reset.position.z - THREE.MMD.getModels()[0].mesh.position.z
+
+let cam_distance = cam_distance_default
+if (camera_depth_scale && camera_depth.z) cam_distance = camera_depth.z_smoothed
+
+cam_distance = cam_distance_default - (cam_distance_default - cam_distance)
+
+v_hip.multiplyScalar(cam_distance/v_hip.z).negate()
+
+v_hip.z = cam_distance_default + v_hip.z
+//console.log(v_hip.z)
+
+s[0].pos.copy(v_hip)
+
+var pos_offset = new THREE.Vector3().copy(s[1].pos).lerp(s[0].pos, ratio)
+//return
+
+var hipL = get_bone_position(mesh, '左足', '全ての親')
+var hipR = get_bone_position(mesh, '右足', '全ての親')
+var hip_offset = MMD_SA.TEMP_v3.copy(hipL).add(hipR).multiplyScalar(0.5).sub(MMD_SA_options.model_para_obj.hip_center).negate()
+/*
+var legL = get_bone_position(mesh, '左足首', '全ての親')
+var legR = get_bone_position(mesh, '右足首', '全ての親')
+var leg_on_ground = (legL.y < legR.y) ? legL : legR
+var leg_offset = (MMD_SA_options.model_para_obj.left_heel_height + 0.2) - leg_on_ground.y
+leg_offset -= pos_offset.y
+//hip_offset.y = leg_offset
+//console.log(leg_offset)
+*/
+pos_offset.add(hip_offset)
+pos_offset.x *= (camera.x_flipped) ? -1 : 1
+
+if (s[0].absolute)
+  bone.position.set(0,0,0)
+bone.position.add(pos_offset)
+
+/*
+hipL = MMD_SA.get_bone_position(mesh, '左足')
+hipR = MMD_SA.get_bone_position(mesh, '右足')
+hip_offset = MMD_SA.TEMP_v3.copy(hipL).add(hipR).multiplyScalar(0.5)
+//hip_offset.z -= cam_distance_default
+hip_offset.project(camera._camera_reset)
+//console.log(hip_offset.toArray(), s[0]._v3_screen.toArray())
+*/
+      }
+
+      var camera_depth_scale// = 1 * 10;
+
+
+      var pose_worker_onmessage  = (function () {
+        function process_hand(mesh, name) {
+var bone = mesh.bones_by_name[name]
+//var s = this.skin[name]
 var rot_v3, rot, fixedAxis, angle;
 var _d, _name, _bone;
 
@@ -3213,9 +3470,12 @@ _bone = mesh.bones_by_name[d+"手捩"]
 if (_bone) {
   fixedAxis = _bone.pmxBone.fixedAxis;
   fixedAxis = (fixedAxis && MMD_SA._v3a.fromArray(fixedAxis)) || MMD_SA_options.model_para_obj.arm_axis[d];
-  rot_v3 = MMD_SA.TEMP_v3.setEulerFromQuaternion(bone.quaternion, "YZX")
-  angle = rot_v3.y*0.5
-  _bone.quaternion.setFromAxisAngle(fixedAxis, angle);
+  rot_v3 = v3a.setEulerFromQuaternion(bone.quaternion, 'YZX')
+  angle = -rot_v3.y*0.5
+  rot = q1.setFromAxisAngle(fixedAxis, angle);
+  _bone.quaternion.copy(rot);
+
+  bone.quaternion.multiplyQuaternions(rot.conjugate(), bone.quaternion);
 }
 
 if (!mirror_hand) return;
@@ -3232,7 +3492,7 @@ rot_v3 = MMD_SA.TEMP_v3.setEulerFromQuaternion(bone.quaternion, "YZX")
 rot_v3.x *= -1
 _bone.quaternion.setFromEuler(rot_v3, "YZX").conjugate()
 */
-let _s = frames.skin[_name]
+let _s = this.skin[_name]
 if (_s)
   _s[0].rot.copy(_bone.quaternion)
 
@@ -3242,11 +3502,17 @@ if (_bone) {
   fixedAxis = (fixedAxis && MMD_SA._v3a.fromArray(fixedAxis)) || MMD_SA_options.model_para_obj.arm_axis[d];
   _bone.quaternion.setFromAxisAngle(fixedAxis, -angle);
 }
-  }
+        }
 
-  var mirror_hand = !use_human
+        var fps = 0, fps_count = 0, fps_ms = 0, fps_timestamp = 0;
+        var mirror_hand;
 
+        return function (e) {
   var data = ((typeof e.data == "string") && (e.data.charAt(0) === "{")) ? JSON.parse(e.data) : e.data;
+
+// after pose initialized
+// obsolte, as old handpose is not used anymore
+  mirror_hand = false;// !use_human && !use_mediapipe;
 
   if (typeof data === "string") {
     if (data == "OK") {
@@ -3258,38 +3524,68 @@ if (_bone) {
     }
   }
   else {
+    camera._needs_RAF = true
+
     _info_extra = '';
 
-    _facemesh.frames.t_delta = (data.fps && (1000/data.fps)) || data._t
+    let t_now = performance.now()
+    let _t = 0
+    if (fps_timestamp) {
+      _t = t_now - fps_timestamp
+      fps_ms += _t
+      if (++fps_count >= 20) {
+        fps = 1000 / (fps_ms/fps_count)
+        fps_count = fps_ms = 0
+      }
+    }
+    fps_timestamp = t_now
+
+    frames.t_delta = (fps && (1000/fps)) || _t || (data.fps && (1000/data.fps)) || data._t
 
     let arms = [];
     let hands = [];
-    let sign_flip = (camera.double_flip_mode || camera.visible) ? 1 : -1
+    let sign_flip = (camera.x_flipped) ? 1 : -1
 
 let model = THREE.MMD.getModels()[0]
 let bones_by_name = model.mesh.bones_by_name
 
 let pose;
 if (_poseNet.enabled) {
-  if (data.posenet && (use_blazepose || (data.posenet.score > 0.3))) {
+  if (data.posenet && (data.posenet.score > 0.3)) {
+    _poseNet.data_detected++
+
     pose = data.posenet
 
+//_poseNet.use_3D_pose=false
+    let use_3D_pose = _poseNet.use_3D_pose
+
     if (use_blazepose) {
-console.log(pose.keypoints.slice())
+//console.log(pose.keypoints.slice())
       let _keypoints = []
+      let _keypoints3D = []
       blazepose_translated.forEach((i,idx)=>{
         let kp = pose.keypoints[i]
         kp.part = posenet_part_name[idx]
         _keypoints.push(kp)
+
+        kp = pose.keypoints3D[i]
+        kp.part = posenet_part_name[idx]
+        _keypoints3D.push(kp)
       });
       pose.keypoints = _keypoints
-console.log(pose.keypoints.slice())
+      pose._keypoints3D = pose.keypoints3D
+      pose.keypoints3D = _keypoints3D
+//console.log(pose)
+//console.log(pose.keypoints.slice())
     }
 
-    const score_threshold = (use_movenet) ? 0.3 : ((use_tfjs_posenet) ? 0.5 : 0.1);
+    const score_threshold = (use_movenet) ? 0.3 : ((!use_human_pose) ? 0.5 : 0.1);
     pose.keypoints.forEach(p=>{p.score-=score_threshold});
+    if (use_3D_pose) {
+      pose._keypoints3D.forEach(p=>{p.score-=score_threshold});
+    }
 
-    if (!use_tfjs_posenet) {
+    if (use_human_pose) {
       let _keypoints_map = {}
       pose.keypoints.forEach(kp=>{_keypoints_map[kp.part]=kp;});
       let _keypoints = []
@@ -3305,15 +3601,162 @@ console.log(pose.keypoints.slice())
       pose.keypoints = _keypoints
     }
 
+    if (use_3D_pose && (_facemesh.data_detected < 5)) {
+//let y_axis = MMD_SA._v3a_.copy(pose.keypoints3D[0]).sub(MMD_SA._v3b.copy(pose.keypoints3D[1]).add(pose.keypoints3D[2]).multiplyScalar(0.5)).normalize();
+//let x_axis = MMD_SA._v3b_.copy(pose.keypoints3D[1]).sub(MMD_SA._v3b.copy(pose.keypoints3D[2])).normalize();
+
+// nose
+let y_axis = MMD_SA._v3a_.copy( pose.keypoints3D[0]).sub(MMD_SA._v3b.copy(pose._keypoints3D[3]).add(pose._keypoints3D[6]).multiplyScalar(0.5)).normalize();
+// mouth center
+//let y_axis = MMD_SA._v3a_.copy(pose._keypoints3D[9]).sub(pose._keypoints3D[10]).multiplyScalar(0.5) .sub(MMD_SA._v3b.copy(pose._keypoints3D[3]).add(pose._keypoints3D[6]).multiplyScalar(0.5)).normalize();
+
+let x_axis = MMD_SA._v3b_.copy(pose._keypoints3D[3]).sub(MMD_SA._v3b.copy(pose._keypoints3D[6])).normalize();
+//y_axis.negate(); y_axis.y*=-1; x_axis.y*=-1;
+let z_axis = MMD_SA.TEMP_v3.crossVectors(x_axis, y_axis).normalize();
+
+x_axis.crossVectors(y_axis, z_axis);
+//y_axis.crossVectors(z_axis, x_axis);
+
+// http://renderdan.blogspot.com/2006/05/rotation-matrix-from-axis-vectors.html
+rot_m4.set(
+  x_axis.x, x_axis.y, x_axis.z, 0,
+  y_axis.x, y_axis.y, y_axis.z, 0,
+  z_axis.x, z_axis.y, z_axis.z, 0,
+  0,0,0,1
+);
+
+q_m4.setFromRotationMatrix(rot_m4);
+/*
+let xyz = MMD_SA.TEMP_v3.setEulerFromQuaternion(q_m4, "YZX");
+let x_rot = -xyz.x;
+let y_rot = -xyz.y + (Date.now()%(10*1000))/(10*1000)*Math.PI*2;
+let z_rot = -xyz.z;
+
+let rot = new THREE.Quaternion();
+rot.setFromEuler(MMD_SA._v3a.set(x_rot, y_rot*sign_flip, z_rot*sign_flip),"YZX")
+*/
+let rot = q_m4.conjugate();
+rot = rot.clone().multiply(MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.set(Math.PI/8,0,0)));
+//rot = new THREE.Quaternion().setFromEuler(MMD_SA.TEMP_v3.set(Math.PI/8,0,0)).multiply(rot);
+//_info_extra += '\nR:' + new THREE.Vector3().setEulerFromQuaternion(rot, 'YZX').multiplyScalar(180/Math.PI).toArray() + '\n'
+
+//MMD_SA.TEMP_q.set(0,0,0,1)
+//let head =  { after_IK:true, rot:rot.clone().slerp(MMD_SA.TEMP_q, 1-0.35) }
+//let neck =  { after_IK:true, rot:rot.clone().slerp(MMD_SA.TEMP_q, 1-(0.35+0.3)), parent_based:true }
+//let chest = { after_IK:true, rot:rot.clone().slerp(MMD_SA.TEMP_q, 1-0.3) }
+
+//frames.add("skin", "上半身2", chest)
+//frames.add("skin", "頭", head)
+//frames.add("skin", "首", neck)
+frames.add("skin", "首", { after_IK:true, rot:rot, onProcessRotation:process_head_rotation })
+
+if (_facemesh.data_detected < 5) {
+  _facemesh.bb_center[0] = pose.keypoints[0].position.x / camera.video_canvas.width
+  _facemesh.bb_center[1] = pose.keypoints[1].position.y / camera.video_canvas.height
+//_info_extra += '\nbb_center:' + _facemesh.bb_center.join(',') + '\n'
+}
+    }
+
+//_poseNet.IK_disabled=false
+
     let armL = pose.keypoints[5]
     let armR = pose.keypoints[6]
+    let rot_center = new THREE.Quaternion()
+
+    let upper_body_only_mode;
+
+    if (use_3D_pose && camera_depth_scale) camera_depth.prepare(pose)
+
     if ((armL.score > 0) && (armR.score > 0)) {
       use_armIK = true
 
+      let armL3D, armR3D;
+      let rot_torso, rot_chest;
+      let body_rot_parent;
+      if (use_3D_pose) {
+armL3D = pose.keypoints3D[5]
+armR3D = pose.keypoints3D[6]
+let hipL3D = pose.keypoints3D[11]
+let hipR3D = pose.keypoints3D[12]
+
+/*
+NOTE:
+
+1) Process the raw data coordinates as usual.
+2) Convert the reference axis to the raw coordinate system (i.e. inverse y) before any processing.
+3) Inversing the final rotation (.conjugate).
+
+a) inverting the rotation axis (.negate()) or inverting the final rotation (.conjugate()) returns the same result.
+b) spine.angleTo(y_axis) and y_axis.angleTo(spine) are the same.
+*/
+
+        if (upper_body_only_mode || (hipL3D.score <= 0) || (hipR3D.score <= 0)) {
+          upper_body_only_mode = true
+        }
+        else {
+//          check_axis_flip("hip", hipL3D, hipR3D)
+
+          let hip = MMD_SA._v3b.copy(hipL3D).sub(hipR3D).normalize();
+//_info_extra += '\nhip:\n' + hip.toArray().join('\n') + '\n'
+          let x_axis = MMD_SA.TEMP_v3.set(1,0,0)
+          let axis_to_x = v3a.crossVectors(hip, x_axis).normalize()
+          rot_center.setFromAxisAngle(axis_to_x, hip.angleTo(x_axis)).conjugate()
+          if ((pose.keypoints[11].position.y > camera.video_canvas.height) || (pose.keypoints[12].position.y > camera.video_canvas.height)) {
+            upper_body_only_mode = true
+          }
+// make absolutely sure x angle is 0 to prevent weird rotation
+// clear z rotation as well for upper_body_only_mode
+          MMD_SA.clean_axis_rotation(rot_center, 'YZX', (upper_body_only_mode)?2:1)
+//_info_extra += '\nhip-y:\n' + [pose.keypoints[11].position.y, pose.keypoints[12].position.y].join('\n') + '\n'
+//_info_extra += '\ncenter:' + new THREE.Vector3().setEulerFromQuaternion(rot_center, 'YZX').multiplyScalar(180/Math.PI).toArray().join('\n') + '\n'
+        }
+
+        let spine = MMD_SA._v3a.addVectors(armL3D, armR3D).multiplyScalar(0.5).normalize()
+        spine.applyQuaternion(MMD_SA.TEMP_q.copy(rot_center).conjugate());
+//_info_extra += '\nspine:\n' + spine.toArray().join('\n') + '\n'
+        let y_axis = MMD_SA.TEMP_v3.set(0,1,0)
+        y_axis.y *= -1
+        let axis_to_y = v3a.crossVectors(spine, y_axis).normalize()//.negate()
+        rot_torso = new THREE.Quaternion().setFromAxisAngle(axis_to_y, spine.angleTo(y_axis)).conjugate()//.multiply(new THREE.Quaternion().setFromEuler(new THREE.Vector3(0,-Math.PI/2,0)))
+        MMD_SA.clean_axis_rotation(rot_torso, 'XZY')
+//_info_extra += '\nR torso:\n' + MMD_SA.TEMP_v3.setEulerFromQuaternion(rot_torso, 'XZY').multiplyScalar(180/Math.PI).toArray().join('\n') + '\n'
+//_info_extra += '\ny-axis:\n' + y_axis.toArray().join('\n') + '\n'
+
+        let shoulder = MMD_SA._v3b.copy(armL3D).sub(armR3D).normalize()
+        shoulder.applyQuaternion(MMD_SA.TEMP_q.multiplyQuaternions(rot_center, rot_torso).conjugate());
+//        shoulder.applyQuaternion(MMD_SA.TEMP_q.multiplyQuaternions(rot_torso, rot_center).conjugate());//copy(rot_center).conjugate());//
+//_info_extra += '\nshoulder:\n' + shoulder.length() + '\n'
+        x_axis = MMD_SA.TEMP_v3.set(1,0,0)//.applyQuaternion(MMD_SA.TEMP_q.multiplyQuaternions(rot_torso, rot_center))
+        axis_to_x = v3a.crossVectors(shoulder, x_axis).normalize()
+        rot_chest = new THREE.Quaternion().setFromAxisAngle(axis_to_x, shoulder.angleTo(x_axis)).conjugate()
+        let rot_chest_euler = MMD_SA.clean_axis_rotation(rot_chest, 'YZX')
+//_info_extra += '\nrot_chest:\n' + new THREE.Vector3().setEulerFromQuaternion(rot_chest, 'YZX').multiplyScalar(180/Math.PI).toArray().join('\n') + '\n'
+
+        let y_angle_torso = 0//v3a.setEulerFromQuaternion(rot_torso, 'YZX').y
+        let y_angle_chest = rot_chest_euler.y
+        let y_angle = (y_angle_torso + y_angle_chest) % (Math.PI*2);
+        if (y_angle > Math.PI)
+          y_angle  = Math.PI*2 - y_angle
+        else if ((y_angle < 0) && (y_angle < -Math.PI))
+          y_angle += Math.PI*2
+
+        rot_torso.multiply(q1.setFromEuler(v3a.set(0, y_angle/2-y_angle_torso, 0), 'YZX'));
+        rot_chest.multiply(q1.setFromEuler(v3a.set(0, y_angle/2-y_angle_chest, 0), 'YZX'));
+//_info_extra += '\n' + y_angle/2 + '\n'
+        frames.add("skin", "センター", { rot:rot_center.clone(), priority:9 });//, no_blending:true });
+        frames.add("skin", "上半身", { rot:rot_torso.clone() })
+        frames.add("skin", "上半身2", { rot:rot_chest.clone() })
+
+        body_rot_parent = q1.copy(rot_center).multiply(rot_torso).multiply(rot_chest).conjugate();//q1.copy(rot_chest).multiply(rot_torso).multiply(rot_center).conjugate();
+      }
+
       let shoulder_width = Math.sqrt(Math.pow(armL.position.x-armR.position.x,2) + Math.pow(armL.position.y-armR.position.y,2))
 //_info_extra = '\n' + shoulder_width
-      let a_shoulder = Math.asin((armL.position.y-armR.position.y)/shoulder_width)
-      a_shoulder = Math.max(Math.min(a_shoulder/(Math.PI/4), 1),-1) * Math.PI/4 * sign_flip
+      let a_shoulder = 0;
+      if (!use_3D_pose) {
+        a_shoulder = Math.asin((armL.position.y-armR.position.y)/shoulder_width);
+        a_shoulder = Math.max(Math.min(a_shoulder/(Math.PI/4), 1),-1) * Math.PI/4 * sign_flip;
+      }
 //_info_extra = '\n' + a_shoulder*180/Math.PI
 
       let LR = (sign_flip == 1) ? [1,0] : [0,1]
@@ -3327,7 +3770,7 @@ console.log(pose.keypoints.slice())
       }
 
 // not affected by body rotation
-      shoulder_width = _facemesh.face_width*2;
+      shoulder_width = _facemesh.face_width*2 || shoulder_width;
 
       LR.forEach(function (dir, idx) {
 //if (idx) return;
@@ -3340,55 +3783,260 @@ let arm = pose.keypoints[5+dir]
 let elbow = pose.keypoints[7+dir]
 let hand = pose.keypoints[9+dir]
 
-_facemesh.frames.add("skin", d+"肩", {absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA.TEMP_v3.set(0,0,a_shoulder), "YZX")})
+frames.add("skin", d+"肩", {absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA.TEMP_v3.set(0,0,a_shoulder), "YZX")})
+
+let arm3D, elbow3D, hand3D;
+if (use_3D_pose) {
+  arm3D = pose.keypoints3D[5+dir]
+  elbow3D = pose.keypoints3D[7+dir]
+  hand3D = pose.keypoints3D[9+dir]
+}
+//elbow.score=elbow3D.score=hand.score=hand3D.score=0
+
+let IK_disabled = _poseNet.IK_disabled_check();
 
 if ((hand.score > 0) && (dir != hand_dir_discarded)) {
   hands.push({ pos:hand.position, dir:dir, d:d })
 
-  let x_diff = arm.position.x - hand.position.x
-  let y_diff = arm.position.y - hand.position.y
-  x = x_diff/shoulder_width * MMD_SA_options.model_para_obj.shoulder_width * sign_flip
-  y = y_diff/shoulder_width * MMD_SA_options.model_para_obj.shoulder_width
+  if (use_3D_pose) {
+    if (!IK_disabled || (elbow.score <= 0)) {
+      IK_disabled = false
+
+      let v_arm = MMD_SA._v3a.copy(arm3D).sub(hand3D)
+      v_arm.applyQuaternion(body_rot_parent)
+      let arm_length = (elbow.score > 0) ? MMD_SA.TEMP_v3.copy(arm3D).distanceTo(elbow3D) + MMD_SA.TEMP_v3.copy(elbow3D).distanceTo(hand3D) : 0.5;
+      let v_arm_length = Math.min(v_arm.length()/arm_length, 1)
+      v_arm.normalize().multiplyScalar(v_arm_length * MMD_SA_options.model_para_obj.left_arm_length);
+//_info_extra += '\nv_arm'+d+v_arm_length+':\n' + v_arm.toArray().join('\n') + '\n'
+//_info_extra += '\narm'+d+' length:\n' + (MMD_SA.TEMP_v3.copy(pose.keypoints3D[5+dir]).distanceTo(pose.keypoints3D[7+dir]) + MMD_SA.TEMP_v3.copy(pose.keypoints3D[7+dir]).distanceTo(pose.keypoints3D[9+dir])) + '\n'
+//_info_extra += '\narm'+d+' length2:\n' + (MMD_SA.TEMP_v3.copy(pose.keypoints3D[5+dir]).distanceTo(pose.keypoints3D[9+dir])) + '\n'
+
+      x = v_arm.x * sign_flip
+      y = v_arm.y
+      z = z_posenet = v_arm.z
+    }
+    else {
+      let v_arm_upper = MMD_SA._v3a.copy(arm3D).sub(elbow3D).normalize().applyQuaternion(body_rot_parent);
+//_info_extra += '\nv_arm'+d+':\n' + v_arm_upper.toArray().join('\n') + '\n'
+//v_arm_upper.set(0, 0, 1).normalize()
+      let y_axis = MMD_SA.TEMP_v3.set(0,1,0)
+      y_axis.y *= -1
+      let axis_to_y = v3a.crossVectors(v_arm_upper, y_axis).normalize()
+      let rot_arm_upper = new THREE.Quaternion().setFromAxisAngle(axis_to_y, v_arm_upper.angleTo(y_axis)).conjugate();
+//MMD_SA.clean_axis_rotation(rot_arm_upper, 'XZY')
+
+      let v_arm_lower = MMD_SA._v3a.copy(elbow3D).sub(hand3D).normalize().applyQuaternion(body_rot_parent).applyQuaternion(MMD_SA.TEMP_q.copy(rot_arm_upper).conjugate());
+//v_arm_lower.set(0, 0, 1).normalize()
+//_info_extra += '\n'+d+':\n' + new THREE.Vector3().copy(arm3D).sub(elbow3D).normalize().applyQuaternion(body_rot_parent).applyQuaternion(MMD_SA.TEMP_q.copy(rot_arm_upper).conjugate()).toArray().join('\n') + '\n'
+      y_axis = MMD_SA.TEMP_v3.set(0,1,0)
+      y_axis.y *= -1
+      axis_to_y = v3a.crossVectors(v_arm_lower, y_axis).normalize()
+      let rot_arm_lower = new THREE.Quaternion().setFromAxisAngle(axis_to_y, v_arm_lower.angleTo(y_axis)).conjugate()
+//MMD_SA.clean_axis_rotation(rot_arm_lower, 'XZY')
+
+      let aa = rot_arm_lower.toAxisAngle();
+      rot_arm_lower.setFromAxisAngle(aa[0].applyEuler(MMD_SA.TEMP_v3.set(0, 0, -MMD_SA_options.model_para_obj.left_arm_z_rot*((dir==0)?1:-1))), aa[1]);
+
+      rot_arm_upper.multiplyQuaternions( rot_arm_upper, MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.set(0, 0, MMD_SA_options.model_para_obj.left_arm_z_rot*((dir==0)?1:-1))) );
+//      aa = rot_arm_upper.toAxisAngle();
+//      rot_arm_upper.setFromAxisAngle(aa[0].applyEuler(MMD_SA.TEMP_v3.set(0, 0, -MMD_SA_options.model_para_obj.left_arm_z_rot*((dir==0)?1:-1))), aa[1]);
+
+      frames.add("skin", d+"腕",  { absolute:true, rot:rot_arm_upper });
+      frames.add("skin", d+"ひじ", { absolute:true, rot:rot_arm_lower });
+
+//      frames.add("skin", d+"腕",  {absolute:true, rot:new THREE.Quaternion()})
+//      frames.add("skin", d+"ひじ", {absolute:true, rot:new THREE.Quaternion()})
+    }
+  }
+  else {
+    let x_diff = arm.position.x - hand.position.x
+    let y_diff = arm.position.y - hand.position.y
+    x = x_diff/shoulder_width * MMD_SA_options.model_para_obj.shoulder_width * sign_flip
+    y = y_diff/shoulder_width * MMD_SA_options.model_para_obj.shoulder_width
 //if (idx==0) _info_extra = '\n' + hand.position.y + '/'+Date.now();
 //  z = frames.skin[d+"腕ＩＫ"] && frames.skin[d+"腕ＩＫ"][0]._pos_z;
-
-  if (elbow.score > 0) {
-    let arm_upper_length = Math.min(Math.sqrt(Math.pow(hand.position.x-elbow.position.x,2)+Math.pow(hand.position.y-elbow.position.y,2))/shoulder_width, 1)
-    let arm_lower_length = Math.min(Math.sqrt(Math.pow(arm.position.x -elbow.position.x,2)+Math.pow(arm.position.y -elbow.position.y,2))/shoulder_width, 1)
-    z_posenet = (0.25 + (Math.sin(Math.acos(arm_upper_length)) + Math.sin(Math.acos(arm_lower_length)))/2 * 0.75) * MMD_SA_options.model_para_obj.left_arm_length
+    if (elbow.score > 0) { 
+      let arm_upper_length = Math.min(Math.sqrt(Math.pow(hand.position.x-elbow.position.x,2)+Math.pow(hand.position.y-elbow.position.y,2))/shoulder_width, 1)
+      let arm_lower_length = Math.min(Math.sqrt(Math.pow(arm.position.x -elbow.position.x,2)+Math.pow(arm.position.y -elbow.position.y,2))/shoulder_width, 1)
+      z_posenet = (0.25 + (Math.sin(Math.acos(arm_upper_length)) + Math.sin(Math.acos(arm_lower_length)))/2 * 0.75) * MMD_SA_options.model_para_obj.left_arm_length
+    }
   }
 }
 else {
+  IK_disabled = false
+/*
   let f_hand = frames.skin[d+"手首"]
-  if (f_hand && !use_human) {
+  if (f_hand && mirror_hand) {
     f_hand._time_idle = (f_hand._time_idle||0) + data._t
     if (f_hand._time_idle > 1000) {
       frames.remove("skin", d+"手首")
       finger_list.forEach((f,f_idx)=>{nj_list.forEach((n,n_idx)=>{ frames.remove("skin", d+f+"指"+n) })});
     }
   }
-
+*/
   if (elbow.score > 0) {
-    let x_diff = arm.position.x - elbow.position.x
-    let y_diff = arm.position.y - elbow.position.y
-    let dis = Math.sqrt(x_diff*x_diff + y_diff*y_diff)
-    let a = Math.asin(x_diff/dis)
-    x = Math.sin(a) * MMD_SA_options.model_para_obj.left_arm_length * sign_flip
-    y = Math.cos(a) * MMD_SA_options.model_para_obj.left_arm_length * Math.sign(y_diff)
+    if (use_3D_pose) {
+      let _arm3D  = MMD_SA._v3a.copy(arm3D)
+      let _hand3D = MMD_SA._v3b.copy(elbow3D)
+      let v_arm = _arm3D.sub(_hand3D).applyQuaternion(body_rot_parent)
+      v_arm.normalize().multiplyScalar(MMD_SA_options.model_para_obj.left_arm_length);
+
+      x = v_arm.x * sign_flip
+      y = v_arm.y
+      z = z_posenet = v_arm.z
+    }
+    else {
+      let x_diff = arm.position.x - elbow.position.x
+      let y_diff = arm.position.y - elbow.position.y
+      let dis = Math.sqrt(x_diff*x_diff + y_diff*y_diff)
+      let a = Math.asin(x_diff/dis)
+      x = Math.sin(a) * MMD_SA_options.model_para_obj.left_arm_length * sign_flip
+      y = Math.cos(a) * MMD_SA_options.model_para_obj.left_arm_length * Math.sign(y_diff)
+    }
   }
   else {
-    x = -MMD_SA_options.model_para_obj.left_arm_to_IK_xy[1]*((d=="左")?1:-1) * 0.2
+    x = MMD_SA_options.model_para_obj.left_arm_to_IK_xy[1]*((d=="左")?1:-1) * 0.2
     y = -Math.sqrt(MMD_SA_options.model_para_obj.left_arm_length*MMD_SA_options.model_para_obj.left_arm_length - x*x)
   }
 }
 
-arms.push({ pos:{x:x, y:y, z:z, z_posenet:z_posenet}, dir:dir, d:d })
+arms.push({ pos:{x:x, y:y, z:z, z_posenet:z_posenet}, dir:dir, d:d, IK_disabled:IK_disabled })
       });
     }
+
+    if (use_3D_pose) {
+      let LR = (sign_flip == 1) ? [1,0] : [0,1]
+
+      let legs = []
+      let feet = []
+      let hip_angle = 0
+
+      LR.forEach(function (dir, idx) {
+let d = (idx==0)?"左":"右";
+
+let hip   = pose.keypoints3D[11+dir]
+let knee  = pose.keypoints3D[13+dir]
+let ankle = pose.keypoints3D[15+dir]
+
+let rot_leg_upper
+if (knee.score > 0) {
+  let v_leg_upper = MMD_SA._v3a.copy(hip).sub(knee).normalize().applyQuaternion(MMD_SA.TEMP_q.copy(rot_center).conjugate());
+  let y_axis = MMD_SA.TEMP_v3.set(0,1,0)
+  y_axis.y *= -1
+  let axis_to_y = v3a.crossVectors(v_leg_upper, y_axis).normalize()
+  rot_leg_upper = new THREE.Quaternion().setFromAxisAngle(axis_to_y, v_leg_upper.angleTo(y_axis)).conjugate();
+  hip_angle += MMD_SA.clean_axis_rotation(rot_leg_upper, 'XZY').x
+}
+
+let IK_disabled = _poseNet.IK_disabled_check();
+
+if (ankle.score > 0) {
+  let v_leg = MMD_SA._v3a.copy(hip).sub(ankle)
+  let leg_length = (knee.score > 0) ? MMD_SA.TEMP_v3.copy(hip).distanceTo(knee) + MMD_SA.TEMP_v3.copy(knee).distanceTo(ankle) : 0.7;
+
+  let leg_y = leg_length + v_leg.y
+  let _foot = [ankle.y, leg_y]
+
+  if (!IK_disabled || (knee.score <= 0)) {
+    let v_leg_length = Math.min(v_leg.length()/leg_length, 1)
+    v_leg.normalize().multiplyScalar(v_leg_length * MMD_SA_options.model_para_obj.left_leg_length);
+    _poseNet.enable_IK(d+'足ＩＫ', true)
+    legs.push({ pos:v_leg.clone(), rot:[rot_leg_upper], dir:dir, d:d, foot:_foot });
+  }
+  else {
+    let v_leg_lower = MMD_SA._v3a.copy(knee).sub(ankle).normalize().applyQuaternion(MMD_SA.TEMP_q.copy(rot_center).conjugate()).applyQuaternion(MMD_SA.TEMP_q.copy(rot_leg_upper).conjugate());
+    let y_axis = MMD_SA.TEMP_v3.set(0,1,0)
+    y_axis.y *= -1
+    let axis_to_y = v3a.crossVectors(v_leg_lower, y_axis).normalize()
+    let rot_leg_lower = new THREE.Quaternion().setFromAxisAngle(axis_to_y, v_leg_lower.angleTo(y_axis)).conjugate();
+    MMD_SA.clean_axis_rotation(rot_leg_lower, 'XZY')
+
+    _poseNet.enable_IK(d+'足ＩＫ', false)
+    legs.push({ rot:[rot_leg_upper, rot_leg_lower], dir:dir, d:d, foot:_foot });
+  }
+
+  if (IK_disabled) {
+    let heel = pose._keypoints3D[29+dir]
+    let foot = pose._keypoints3D[31+dir]
+    if ((heel.score > 0) && (foot.score > 0)) {
+      let y_axis = MMD_SA._v3a_.copy(heel).sub(ankle).normalize();
+      let z_axis = MMD_SA._v3b_.copy(heel).sub(foot).normalize();
+      let x_axis = v3a.crossVectors(y_axis, z_axis).normalize();
+      y_axis.crossVectors(z_axis, x_axis);
+
+// http://renderdan.blogspot.com/2006/05/rotation-matrix-from-axis-vectors.html
+rot_m4.set(
+  x_axis.x, x_axis.y, x_axis.z, 0,
+  y_axis.x, y_axis.y, y_axis.z, 0,
+  z_axis.x, z_axis.y, z_axis.z, 0,
+  0,0,0,1
+);
+
+      q_m4.setFromRotationMatrix(rot_m4)
+
+      let rot = q_m4.conjugate();
+      rot = rot.clone().multiply(MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.set(-Math.PI/8,0,0)));
+      frames.add("skin", d+'足首',  { after_IK:true, absoulte:true, parent_based:true, angle_limit:[[-Math.PI/4,Math.PI/2], [-Math.PI/3,Math.PI/3], [-Math.PI/4,Math.PI/4]], rot:rot });
+    }
+  }
+  else {
+//    frames.add("skin", d+'つま先',  { after_IK:true, absoulte:true, rot:new THREE.Quaternion() });
+//    frames.add("skin", d+'足首',  { after_IK:true, absoulte:true, rot:new THREE.Quaternion() });
+  }
+}
+else if (knee.score > 0) {
+}
+      });
+
+      hip_angle *= 0.5 * 0.5
+//hip_angle=0
+      let rot_hip = new THREE.Quaternion().setFromEuler(MMD_SA.TEMP_v3.set(hip_angle, 0, 0));
+      frames.add("skin", '下半身', { absolute:true, rot:rot_hip.clone() });
+
+// センター
+//        let center_y = ((legs.length) ? -legs.sort((a,b)=>b.foot[0]-a.foot[0])[0].foot[1] : 0) * MMD_SA_options.model_para_obj.left_leg_length;
+      if (!upper_body_only_mode) {
+let w = camera.video_canvas.width
+let h = camera.video_canvas.height
+let v3_screen = new THREE.Vector3()
+
+let hipL = pose.keypoints[11].position
+let hipR = pose.keypoints[12].position
+
+v3_screen.set(
+   ((hipL.x+hipR.x)/2/w) * 2 - 1
+ ,-((hipL.y+hipR.y)/2/h) * 2 + 1
+ ,0.5
+);
+//console.log(v3_screen)
+//(frames.skin["全ての親"]&&frames.skin["全ての親"][1].pos.clone()||new THREE.Vector3())
+        frames.add("skin", "全ての親", { pos:new THREE.Vector3(), after_IK:true, priority:999, _v3_screen:v3_screen, onProcessPosition:adjust_hip_center });
+      }
+
+      rot_hip.conjugate()
+      legs.forEach((leg) => {
+var d = leg.d
+if (leg.pos) {
+  leg.pos.y += MMD_SA_options.model_para_obj.left_leg_length// + center_y
+  frames.add("skin", d+'足ＩＫ', { absolute:true, pos:leg.pos, priority:999, onFinish:cancel_leg_rotation });
+//_info_extra += '\n' + d+'足ＩＫ:' + leg.pos.clone().toArray().join('\n') + '\n'
+}
+else {
+  if (hip_angle)
+    leg.rot[0].multiplyQuaternions(rot_hip, leg.rot[0])
+  frames.add("skin", d+'足',  { absolute:true, rot:leg.rot[0] });
+  frames.add("skin", d+'ひざ', { absolute:true, rot:leg.rot[1] });
+}
+      });
+    }
+  }
+  else {
+//    _poseNet.data_detected = 0
   }
 }
 
 let hand_data;
+let hand_info = [];
 if (_handpose.enabled && data.handpose && data.handpose.length && hands.length) {
   data.handpose.forEach(function (handpose) {
 //    if ((handpose.handInViewConfidence||handpose.confidence) < 0.6) return;
@@ -3396,19 +4044,22 @@ if (_handpose.enabled && data.handpose && data.handpose.length && hands.length) 
 // https://github.com/tensorflow/tfjs-models/blob/master/handpose/src/keypoints.ts
     hand_data = handpose.annotations;
 //console.log(JSON.parse(JSON.stringify(hand_data)))
-    const z_scale = 2;
+    const z_scale = (use_mediapipe) ? 1 : 2;
+/*
     for (let name in hand_data) {
       hand_data[name].forEach(xyz=>{
 xyz[2]*=z_scale
       });
     }
-
-    let palm = MMD_SA.TEMP_v3.fromArray(hand_data.palmBase[0])
+*/
+// for newer version of human, .palmBase => .palm, .xxxFinger =>.xxx
+//console.log(data.handpose)
+    let palm = MMD_SA.TEMP_v3.fromArray(hand_data.palm[0])
 /*
     let pt = palm.clone()
     let dis = 0
 let z_dis = 0
-    hand_data.middleFinger.forEach(function (p, idx) {
+    hand_data.middle.forEach(function (p, idx) {
       if (idx) {
 z_dis += Math.abs(pt.z-p[2])
         dis += pt.distanceTo(MMD_SA._v3a.fromArray(p))
@@ -3431,13 +4082,13 @@ z_dis += Math.abs(pt.z-p[2])
 
 let d = hand.d
 
-_info_extra += '\n' + ('('+d+'手)') + '\n'
+hand_info.push(d+'手');
 
-let LR = (hand.dir == 1) ? [hand_data.indexFinger[0], hand_data.ringFinger[0]] : [hand_data.ringFinger[0], hand_data.indexFinger[0]]
+let LR = (hand.dir == 1) ? [hand_data.index[0], hand_data.ring[0]] : [hand_data.ring[0], hand_data.index[0]]
 
 let x_rot, y_rot, z_rot;
 
-let y_axis = MMD_SA._v3a_.fromArray(hand_data.palmBase[0]).sub(MMD_SA._v3b.fromArray(hand_data.middleFinger[0])).normalize();
+let y_axis = MMD_SA._v3a_.fromArray(hand_data.palm[0]).sub(MMD_SA._v3b.fromArray(hand_data.middle[0])).normalize();
 y_axis.x = y_axis.x * sign_flip;
 //y_axis.z = y_axis.z * sign_flip;
 let x_axis = MMD_SA._v3b_.fromArray(LR[0]).sub(MMD_SA._v3b.fromArray(LR[1])).normalize();
@@ -3473,12 +4124,12 @@ rot.copy(q_m4).conjugate().multiply(rot_hand_adjust[sign_LR]);
 //rot.setFromEuler(MMD_SA._v3a.set(-z_rot*sign_LR*sign_flip, y_rot*sign_flip, -x_rot*sign_LR), "YZX").multiply(rot_hand_adjust[sign_LR]);
 
 //_info_extra += '\n\n' + data.handpose[0].handInViewConfidence + '\n\n'
-_facemesh.frames.add("skin", d+"手首", {after_IK:true, parent_based:true, rot:rot, onFinish:process_hand });
+frames.add("skin", d+"手首", {after_IK:true, parent_based:true, rot:rot, onFinish:process_hand });
 
 let _d = (d=="左") ? "右" : "左";
 if (mirror_hand) {
 // dummy, to be mirrored
-  _facemesh.frames.add("skin", _d+"手首", {rot:new THREE.Quaternion()});
+  frames.add("skin", _d+"手首", {rot:new THREE.Quaternion()});
 }
 
 let rot_dummy = new THREE.Quaternion()
@@ -3502,7 +4153,7 @@ for (let idx=f_base_index; idx<3; idx++){
 
   let f0 = MMD_SA._v3a.fromArray(finger[idx+0])
   let f1 = MMD_SA._v3b.fromArray(finger[idx+1])
-  let _f = MMD_SA.TEMP_v3.fromArray((idx==f_base_index)?hand_data.palmBase[0]:finger[idx-1])
+  let _f = MMD_SA.TEMP_v3.fromArray((idx==f_base_index)?hand_data.palm[0]:finger[idx-1])
   f0.y = -f0.y
   f1.y = -f1.y
   _f.y = -_f.y
@@ -3543,54 +4194,54 @@ for (let idx=f_base_index; idx<3; idx++){
 rot = MMD_SA._q1.set(0,0,0,1)
 rot_mirror = MMD_SA._q2.set(0,0,0,1)
 if (angle) {
-  let axis = v3a.crossVectors(v0, v1).normalize()//.applyQuaternion(rot_finger_adjust[sign_LR].clone().conjugate())
+  let axis = v3a.crossVectors(v0, v1).normalize()//.applyQuaternion(rot_finger_adjust[sign_LR][name].clone().conjugate())
   rot.setFromAxisAngle(axis, angle)
   rot_mirror.copy(rot)
 //  rot.z*=-1; rot.w*=-1; rot.conjugate();
 
-  rot_v3 = MMD_SA._v3a.setEulerFromQuaternion(rot, "YZX")
+  let euler_order = 'XZY'
+  rot_v3 = MMD_SA._v3a.setEulerFromQuaternion(rot, euler_order)
   if (f_idx > 0)  {
+if (Math.abs(rot_v3.z)>Math.PI/2 || rot_v3.x>Math.PI/2) {continue;}
     rot_v3.y = 0
-    if (idx > f_base_index) rot_v3.z = 0;
+    if (idx > f_base_index) rot_v3.z = 0
+    rot_v3.z*=0.75
     if (rot_v3.x > 0) rot_v3.x /= (idx > f_base_index) ? 4 : 2;
   }
   rot_v3_mirror = MMD_SA._v3b.copy(rot_v3)
-  rot.setFromEuler(rot_v3, "YZX")
+  rot.setFromEuler(rot_v3, euler_order)
 
   if (mirror_hand) {
     rot_v3_mirror.y *= -1
     rot_v3_mirror.z *= -1
-    rot_mirror.setFromEuler(rot_v3_mirror, "YZX")
-  }
-
-  if (idx == f_base_index) {
-//    rot.multiply(f_obj.rot)
+    rot_mirror.setFromEuler(rot_v3_mirror, euler_order)
   }
 
   let aa = rot.toAxisAngle()
   axis = aa[0]
   angle = aa[1]
-  axis.applyQuaternion(MMD_SA.TEMP_q.copy((f_idx==0)?rot_thumb_adjust[sign_LR]:rot_finger_adjust[sign_LR]).conjugate())
+  axis.applyQuaternion(MMD_SA.TEMP_q.copy(rot_finger_adjust[sign_LR][d + f + "指"]).conjugate())
+if (idx == f_base_index) axis.applyQuaternion(f_obj.rot)
   rot.setFromAxisAngle(axis, angle)
 
   if (mirror_hand) {
     aa = rot_mirror.toAxisAngle()
     axis = aa[0]
     angle = aa[1]
-    axis.applyQuaternion(MMD_SA.TEMP_q.copy((f_idx==0)?rot_thumb_adjust[-sign_LR]:rot_finger_adjust[-sign_LR]).conjugate())
+    axis.applyQuaternion(MMD_SA.TEMP_q.copy(rot_finger_adjust[-sign_LR][d + f + "指"]).conjugate())
     rot_mirror.setFromAxisAngle(axis, angle)
   }
 }
-_facemesh.frames.add("skin", name, {absolute:true, rot:rot.clone()});
+frames.add("skin", name, {absolute:true, rot:rot.clone()});
 
 if (mirror_hand) {
   let name = _d + f + "指" + nj_list[f_obj.base_index + (idx-f_base_index)]
 //_info_extra += name + '/'
-  _facemesh.frames.add("skin", name, {absolute:true, rot:rot_mirror.clone()});
+  frames.add("skin", name, {absolute:true, rot:rot_mirror.clone()});
 }
 
 continue
-
+/*
     rot_v3 = MMD_SA._v3a.setEulerFromQuaternion(rot.multiply(f_obj.rot), "YZX")
 //    rot_v3.add(f_obj.rot_v3)
 
@@ -3607,7 +4258,7 @@ if (idx > f_base_index) {
     if (f_idx == 0) {
       rot_v3.set(rot_v3.x,0,0)//rot_v3.z*sign_flip, rot_v3.y*1)
     }
-
+*/
 //let axis_angle = new THREE.Quaternion().setFromEuler(rot_v3, "YZX").toAxisAngle()
 //rot_v3.setEulerFromQuaternion(new THREE.Quaternion().setFromAxisAngle(axis_angle[0].applyQuaternion(_axis_q), axis_angle[1]), "YZX")
   }
@@ -3618,7 +4269,7 @@ if (idx > f_base_index) {
 
   if (f_idx > 0) rot_v3.set(rot_v3.y*1, rot_v3.z*sign_flip, rot_v3.x*sign_LR)//Math.max(Math.min(rot_v3.x*1.5, (idx == f_base_index)?Math.PI/4:0),-Math.PI/1.5)*sign_LR);
 
-  _facemesh.frames.add("skin", name, {absolute:true, rot:new THREE.Quaternion().setFromEuler(rot_v3, "YZX")});
+  frames.add("skin", name, {absolute:true, rot:new THREE.Quaternion().setFromEuler(rot_v3, "YZX")});
 
   if (mirror_hand) {
     if (f_idx > 0) {
@@ -3631,25 +4282,27 @@ if (idx > f_base_index) {
       rot_v3.z *= -1
     }
     let name = _d + f + "指" + nj_list[f_obj.base_index + (idx-f_base_index)]
-    _facemesh.frames.add("skin", name, {absolute:true, rot:new THREE.Quaternion().setFromEuler(rot_v3, "YZX")});
+    frames.add("skin", name, {absolute:true, rot:new THREE.Quaternion().setFromEuler(rot_v3, "YZX")});
   }
 }
 });
  
     }
-
   });
 }
+
+//_info_extra += '\n' + (hand_info.join(',') || '(no hand detected)') + '\n';
 
 arms.forEach(function (arm) {
   var d = arm.d
   if (arm.pos.z == null)
     arm.pos.z = arm.pos.z_posenet || (MMD_SA_options.model_para_obj.left_arm_length*0.2);
 
+  _poseNet.enable_IK(d+"腕ＩＫ", !arm.IK_disabled)
 // not using .absolute for IK (for now), since it has a "default" non-zero value.
-  _facemesh.frames.add("skin", d+"腕ＩＫ", {speed_limit:10, _pos_z:arm.pos.z, pos:new THREE.Vector3(MMD_SA_options.model_para_obj.left_arm_to_IK_xy[0]*((d=="左")?1:-1) + arm.pos.x, MMD_SA_options.model_para_obj.left_arm_to_IK_xy[1] + arm.pos.y, arm.pos.z)})
-  _facemesh.frames.add("skin", d+"腕", {absolute:true, rot:new THREE.Quaternion()})
-  _facemesh.frames.add("skin", d+"ひじ", {absolute:true, rot:new THREE.Quaternion()})
+  if (!arm.IK_disabled) {
+    frames.add("skin", d+"腕ＩＫ", {speed_limit:10, _pos_z:arm.pos.z, priority:999, pos:new THREE.Vector3(MMD_SA_options.model_para_obj.left_arm_to_IK_xy[0]*((d=="左")?1:-1) + arm.pos.x, MMD_SA_options.model_para_obj.left_arm_to_IK_xy[1] + arm.pos.y, arm.pos.z), onFinish:cancel_arm_rotation})
+  }
 
 // if handpose is not detected, use the last rot_parent (for updated handpose, ._rot_parent is undefined, meaning .rot_parent, which is now undefined as well, will be refreshed)
   var hand = frames.skin[d+"手首"]
@@ -3661,44 +4314,78 @@ arms.forEach(function (arm) {
   }
 });
 
-//_facemesh.frames.add("skin", "左腕", {absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA.TEMP_v3.set(0,0,-MMD_SA_options.model_para_obj.left_arm_z_rot+Math.PI/4),"YZX")})
-//_facemesh.frames.add("skin", "左腕ＩＫ", {absolute:true, pos:new THREE.Vector3(10,0,0)})
-//_facemesh.frames.add("skin", "右腕ＩＫ", {absolute:true, pos:new THREE.Vector3(0,0,0)})
+//frames.add("skin", "左腕", {absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA.TEMP_v3.set(0,0,-MMD_SA_options.model_para_obj.left_arm_z_rot+Math.PI/4),"YZX")})
+//frames.add("skin", "左腕ＩＫ", {absolute:true, pos:new THREE.Vector3(10,0,0)})
+//frames.add("skin", "右腕ＩＫ", {absolute:true, pos:new THREE.Vector3(0,0,0)})
 
-    _info_extra += ((_info_extra)?'/':'\n') + 'P-FPS:'+(data.fps||0);// + '/' + data._t;
+    _info_extra += ((_info_extra)?'/':'\n') + 'P-FPS:'+Math.round(fps)+'/'+Math.round(data.fps||0);// + '/' + data._t;
+    if (!use_holistic && !_facemesh.enabled && _info_extra) {
+      DEBUG_show(_info_extra+'\n'+'FPS:'+EV_sync_update.fps_last)
+    }
 
-    if (use_pose_worker && pose) {
-      let _data = { posenet:pose, w:camera.video_canvas.width, h:camera.video_canvas.height }
+    if (data.facemesh) {
+      _facemesh.worker_onmessage({ data:data.facemesh })
+    }
+
+    if (use_pose_worker && pose && _facemesh.worker_initialized) {
+      let _data = { posenet:pose, w:camera.video_canvas.width, h:camera.video_canvas.height, flip_canvas:camera.display_flipped }
       if (data.handpose && data.handpose.length)
         _data.handpose = data.handpose
-      fm_worker.postMessage(_data)
+      if (data.facemesh)
+        _data.facemesh = data.facemesh.faces
+
+      if (use_holistic || !_facemesh.enabled) {
+        _data.draw_pose = true
+        if (!camera.video_canvas_facemesh._offscreen && self.OffscreenCanvas) {
+          _data.canvas = camera.video_canvas_facemesh.transferControlToOffscreen()
+          camera.video_canvas_facemesh._offscreen = true
+          console.log("(Facemesh: use offscreen canvas)")
+        }
+      }
+
+      fm_worker.postMessage(_data, (_data.canvas)?[_data.canvas]:undefined)
     }
 
     pose_busy = false;
   }
 
-      }
+  pose_update_frame()
+        };
+      })();
 
-      function pose_update_frame() {
-if (!use_pose_worker) return;
+      var skip_hand_countdown_max = (use_holistic || use_human_only) ? 0 : 1
 
-var pose_ready = _poseNet.enabled && _poseNet.worker_initialized && camera.video_canvas.width && !_poseNet.busy;
-if (!pose_ready)
-  return
-pose_busy = true
+      function pose_update_frame(delay_update) {
+function update_worker() {
+  if (!use_pose_worker) return;
 
-let video_canvas, w, h;
+  var pose_ready = _poseNet.enabled && _poseNet.worker_initialized && camera_video_timestamp && !_poseNet.busy && video_capture_active && (_poseNet.camera_video_timestamp != camera_video_timestamp);
+  if (!pose_ready)
+    return
+  pose_busy = true
 
-video_canvas = camera.video_canvas
-w = video_canvas.width
-h = video_canvas.height
-let rgba = video_canvas.getContext("2d").getImageData(0,0,w,h).data.buffer;
+  _poseNet.camera_video_timestamp = camera_video_timestamp
 
-let data = { rgba:rgba, w:w, h:h, options:{ use_handpose:_handpose.enabled } };//, threshold:1 };
-pose_worker.postMessage(data, [data.rgba]);
+  let video_canvas, w, h;
 
-data.rgba = rgba = undefined
-data = undefined
+  video_canvas = camera.video_canvas
+  w = video_canvas.width
+  h = video_canvas.height
+  let rgba = video_canvas.getContext("2d").getImageData(0,0,w,h).data.buffer;//(PoseAT) ? video_canvas : video_canvas.getContext("2d").getImageData(0,0,w,h).data.buffer;//
+
+  let data = { rgba:rgba, w:w, h:h, options:{ use_handpose:_handpose.enabled, skip_hand_countdown_max:skip_hand_countdown_max } };//, threshold:1 };
+  pose_worker.postMessage(data, [data.rgba]);//(PoseAT) ? undefined : [data.rgba]);//
+
+  data.rgba = rgba = undefined
+  data = undefined
+}
+
+if (delay_update ||　self.PoseAT) {
+  setTimeout(()=>{ update_worker() },0);
+}
+else {
+  update_worker()
+}
       }
 
       var frames_object = (function () {
@@ -3706,38 +4393,58 @@ function process_bones_core(mesh, name) {
   var bone = mesh.bones_by_name[name]
   var s = this.skin[name]
 
-  s[0].t_delta += RAF_timestamp_delta
-  let ratio = Math.max(Math.min(s[0].t_delta/Math.max(Math.min(s[0].t_delta_frame,200),1000/60),1),0)
+  if (s[0].info[1] == 'facemesh') {
+    if (!_facemesh.data_detected) return
+  }
+  else {
+    if (!_poseNet.data_detected) return
+  }
+
+  s[0].t_delta += RAF_timestamp_delta// * ((s[0].t_delta) ? 1 : 0.5)
+
+  let ratio = Math.max(Math.min(s[0].t_delta/s[0].t_delta_frame,1),0)
   if (s[0].rot) {
-    if (s[0].absolute) {
-      bone.quaternion.set(0,0,0,1)
+    if (s[0].onProcessRotation) {
+      s[0].onProcessRotation.call(this, mesh, name)
     }
-    else if (s[0].parent_based) {
-      let rot_parent = s[0].rot_parent;
-      if (!rot_parent) {
-        rot_parent = MMD_SA.get_bone_rotation_parent(mesh, name).inverse();
+    else {
+      let rot = q1.set(0,0,0,1);
+      if (s[0].absolute) {
+        bone.quaternion.set(0,0,0,1)
       }
-      s[0]._rot_parent = rot_parent
-      bone.quaternion.copy(rot_parent)
-    }
-    bone.quaternion.multiply((s[0].no_blending) ? s[0].rot : MMD_SA.TEMP_q.copy(s[1].rot).slerp(s[0].rot, ratio))
-/*
-    if (s[0].angle_limit) {
-      let {axis, angle} = bone.quaternion.toAxisAngle()
-      if (angle > Math.PI)
-        angle = Math.PI*2 - angle
-      if (Math.abs(angle) > s[0].angle_limit) {
-        angle = s[0].angle_limit * Math.sign(angle)
-        bone.quaternion.setFromAxisAngle(axis, angle)
+      if (s[0].parent_based) {
+        let rot_parent = s[0].rot_parent;
+        if (!rot_parent) {
+          rot_parent = MMD_SA.get_bone_rotation_parent(mesh, name)
+          rot_parent.inverse()
+        }
+        s[0]._rot_parent = rot_parent
+        rot.copy(rot_parent)
       }
+
+      rot.multiply((s[0].no_blending) ? s[0].rot : MMD_SA.TEMP_q.copy(s[1].rot).slerp(s[0].rot, ratio));
+
+      if (s[0].angle_limit) {
+        let rot_euler = v3a.setEulerFromQuaternion(rot).toArray()
+        s[0].angle_limit.forEach((a, idx)=>{
+          rot_euler[idx] = Math.min(Math.max(rot_euler[idx], a[0]), a[1])
+        });
+        rot.setFromEuler(v3a.fromArray(rot_euler))
+      }
+
+      bone.quaternion.multiply(rot)
     }
-*/
   }
   if (s[0].pos) {
 //console.log(bone.position.toArray())
-    if (s[0].absolute)
-      bone.position.set(0,0,0)
-    bone.position.add(MMD_SA.TEMP_v3.copy(s[1].pos).lerp(s[0].pos, ratio))
+    if (s[0].onProcessPosition) {
+      s[0].onProcessPosition.call(this, mesh, name)
+    }
+    else {
+      if (s[0].absolute)
+        bone.position.set(0,0,0)
+      bone.position.add(MMD_SA.TEMP_v3.copy(s[1].pos).lerp(s[0].pos, ratio))
+    }
     if (s[0].speed_limit) {
       if (!s[1].pos_last) {
         s[1].pos_last = new THREE.Vector3()
@@ -3754,20 +4461,22 @@ function process_bones_core(mesh, name) {
 //DEBUG_show(s[0].t_delta/100)
   }
 
-  s[0].onFinish && s[0].onFinish(mesh, name);
+  s[0].onFinish && s[0].onFinish.call(this, mesh, name);
 }
 
 function process_bones(e) {
   var mesh = e.detail.model.mesh
 
   var skin = this.skin
-  Object.keys(skin).forEach((name) => {
+  var skin_sorted = Object.keys(skin).filter(n=>!skin[n][0].after_IK).sort((a,b) => {
+let _a = skin[a][0].priority || 0
+let _b = skin[b][0].priority || 0
+return _a-_b;
+  });
+
+  skin_sorted.forEach((name) => {
     let bone = mesh.bones_by_name[name]
     if (!bone)
-      return
-
-    let s = skin[name]
-    if (s[0].after_IK)
       return
 
     process_bones_core.call(this, mesh, name)
@@ -3794,6 +4503,8 @@ return _a-_b;
 }
 
 function process_morphs(e) {
+  if (!_facemesh.data_detected) return
+
   var model = e.detail.model
   var mesh = model.mesh
   var targets = model.morph.targets
@@ -3829,9 +4540,10 @@ function process_morphs(e) {
     let m = morph[name]
     if (m.disabled)
       return
-    m[0].t_delta += RAF_timestamp_delta
 
-    let ratio = Math.max(Math.min(m[0].t_delta/Math.max(Math.min(m[0].t_delta_frame,200),1000/60),1),0)
+    m[0].t_delta += RAF_timestamp_delta// * ((m[0].t_delta) ? 1 : 0.5)
+
+    let ratio = Math.max(Math.min(m[0].t_delta/m[0].t_delta_frame,1),0)
     let weight = m[0].weight * ratio + m[1].weight * (1-ratio)
 
     morph_weight[name] = weight
@@ -3883,26 +4595,38 @@ function process_morphs(e) {
   });
 }
 
-function add(type, name, obj) {
-  obj.t_delta = 0
-  obj.t_delta_frame = this.t_delta
+function add(info, name, obj) {
+  obj.timestamp = RAF_timestamp
 
-  var blending_ratio = 0.5 + Math.max(Math.min((obj.t_delta_frame-50)/150, 1),0) * 0.5
+  obj.t_delta = 0
+  obj.t_delta_frame = this.t_delta * (((name.indexOf('指') != -1) || (name.indexOf('手首') != -1)) ? skip_hand_countdown_max+1 : 1);
+  obj.t_delta_frame = Math.max(Math.min(obj.t_delta_frame,200),1000/60)
+
+  obj.info = info.split("|")
+  var type = obj.info[0]
 
   var target = this[type][name]
   if (target) {
-    if (!obj.no_blending) {
-      if (obj.pos) {
-        obj.pos.lerp(target[0].pos, 1-blending_ratio)
-      }
-      if (obj.rot) {
-        obj.rot.slerp(target[0].rot, 1-blending_ratio)
-      }
-      if (obj.weight != null) {
-        obj.weight = obj.weight * blending_ratio + target[0].weight * (1-blending_ratio)
-      }
+    if (RAF_timestamp == target[0].timestamp) {
+      target[0] = Object.assign(target[0], obj)
     }
-    this[type][name] = [obj, target[0]]
+    else {
+      if (!obj.no_blending) {
+// smooth "flickering" of data between detections
+        let blending_ratio = (_poseNet.use_3D_pose || (obj.info[1] == "facemesh")) ? 0.5 + Math.max(Math.min((obj.t_delta_frame-50)/150, 1),0) * 0.5 : 1;//((name.indexOf('腕ＩＫ') != -1) ? 2/3 : 1);//
+
+        if (obj.pos) {
+          obj.pos.lerp(target[0].pos, 1-blending_ratio)
+        }
+        if (obj.rot) {
+          obj.rot.slerp(target[0].rot, 1-blending_ratio)
+        }
+        if (obj.weight != null) {
+          obj.weight = obj.weight * blending_ratio + target[0].weight * (1-blending_ratio)
+        }
+      }
+      this[type][name] = [obj, target[0]]
+    }
   }
   else {
     this[type][name] = [obj, obj]
@@ -3955,6 +4679,8 @@ return f;
       camera = {
   initialized: false
 
+ ,get ML_enabled() { return ML_enabled; }
+
  ,get target_devicePixelRatio() {
 return target_devicePixelRatio || window.devicePixelRatio;
   }
@@ -3963,7 +4689,7 @@ target_devicePixelRatio = (v == window.devicePixelRatio) ? 0 : v
   }
 
  ,get double_flip_mode() {
-return double_flip_mode && !camera.visible;
+return double_flip_mode && !camera.mirror_3D;
   }
  ,set double_flip_mode(v) {
 double_flip_mode = v;
@@ -3976,11 +4702,24 @@ return (!!video_flipped) ^ (!!camera.double_flip_mode);
  ,set video_flipped(v) {
 video_flipped = v;
 if (this.video_canvas)
-  this.video_canvas.width = this.video_canvas.height = 0;
+  this.video_canvas.width = this.video_canvas.height = camera_video_timestamp = 0;
   }
 
- ,start: function (src) {
+ ,get display_flipped() {
+return (camera.mirror_3D) ? false : (video_flipped != camera.video_flipped);
+  }
+
+ ,get mirror_3D() {
+return camera.visible;
+  }
+
+ ,get x_flipped() { return camera.double_flip_mode || camera.mirror_3D; }
+
+ ,start: async function (src) {
 var AR_options = MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR
+
+MMD_SA.reset_camera()
+this._camera_reset = MMD_SA._trackball_camera.object.clone()
 
 if (this.initialized) {
   if (this.visible)
@@ -3993,23 +4732,83 @@ if (this.initialized) {
 
 /*aspectRatio:1.777777778*/
 var constraints = { video:this.set_constraints() }
-constraints.video.facingMode = "user"
 
 if (src) {
   video_fallback(src)
 }
 else {
-  navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
+  try {
+    if (is_mobile) {
+      constraints.video.facingMode = "user"
+    }
+
+    if (MMD_SA_options.Dungeon) {
+      MMD_SA_options.Dungeon.run_event([
+//0
+  [
+    {
+       message: {
+  content: "(finding camera...)"
+       }
+    },
+    {
+      func: ()=>{
+        MMD_SA_options.Dungeon.run_event(null,0,0)
+      }
+    }
+  ],
+      ]);
+    }
+
+    let stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+    if (!is_mobile) {
+      let list = await navigator.mediaDevices.enumerateDevices();
+
+      list = list.filter((d) => d.kind=="videoinput");
+      if (list.length > 1) {
+        if (MMD_SA_options.user_camera.preference)
+          list.sort((a,b)=>(MMD_SA_options.user_camera.preference.label.test(a.label) && -1) || (MMD_SA_options.user_camera.preference.label.test(a.label) && 1) || 0);
+//        constraints.video.deviceId = list[0].deviceId
+
+        if (MMD_SA_options.Dungeon) {
+          await new Promise((resolve)=>{
+            MMD_SA_options.Dungeon.run_event([
+//0
+  [
+    {
+       message: {
+  content: 'Choose a camera.' + list.map((d, idx)=>'\n' + (idx+1) + '. ' + d.label).join('')
+ ,bubble_index: 3
+ ,branch_list: list.map((d, idx)=>{ return { key:idx+1, branch_index:idx+1 }; })
+       }
+    },
+    {
+      func: ()=>{
+        MMD_SA_options.Dungeon.run_event(null,0,0)
+      }
+    }
+  ]
+              ].concat(list.map((d)=>[{ func:()=>{ constraints.video.deviceId=d.deviceId; resolve(); }, ended:true }]))
+            );
+          });
+        }
+
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      }
+    }
+
     camera.init_stream(stream)
 
     if (AR_options && AR_options.dom_overlay) AR_options.dom_overlay.use_dummy_webgl = true
 
     DEBUG_show("(User camera:ON)", 2)
-  }).catch(function (err) {
+  }
+  catch (err) {
     video_fallback()
     console.error(err)
     DEBUG_show("(ERROR: Camera unavailable, using fallback video instead)", 3)
-  });
+  }
 }
   }
 
@@ -4300,19 +5099,26 @@ fd_worker.onmessage = function (e) {
   if (typeof data === "string") {
 DEBUG_show(data, 2)
     face_detection.worker_initialized = true
-    face_detection.enabled = true
   }
   else {
+    camera._needs_RAF = true
+
 //DEBUG_show(Date.now()+":"+data.dets.length)
     if (data._t) DEBUG_show(data._t)
     face_detection.dets = data.dets
     face_detection.busy = false
+
+    camera.video_canvas_face_detection.style.left = camera.video_canvas.style.left
+    camera.video_canvas_face_detection.style.top  = camera.video_canvas.style.top
+
     if (!self.OffscreenCanvas) {
       System._browser.on_animation_update.add(function() {
 face_detection.update_frame_local(null, face_detection.dets)
       },0,0);
     }
   }
+
+  face_detection.update_frame()
 };
     }
 
@@ -4334,8 +5140,7 @@ if (enabled) {
 
   if (!this.initialized)
     init()
-  else if (!this.worker_initialized)
-    return
+//  else if (!this.worker_initialized) return
 }
 else {
   if (camera.initialized)
@@ -4352,37 +5157,51 @@ if (!this.face_cover) {
 
      ,dets: null
 
-     ,update_frame:  function () {
-if (!this.enabled || !this.worker_initialized || this.busy)
-  return
-this.busy = true
+     ,camera_video_timestamp: 0
+     ,update_frame:  function (delay_update) {
+function update_worker() {
+  var ready = face_detection.enabled && face_detection.worker_initialized && camera_video_timestamp && !face_detection.busy && video_capture_active && (face_detection.camera_video_timestamp != camera_video_timestamp);
+  if (!ready)
+    return
+  face_detection.busy = true
 
-camera.video_canvas_face_detection.style.visibility = "visible"
+  face_detection.camera_video_timestamp = camera_video_timestamp
 
-let video_canvas, w, h;
+  camera.video_canvas_face_detection.style.visibility = "visible"
 
-video_canvas = camera.video_canvas
-w = video_canvas.width
-h = video_canvas.height
+  let video_canvas, w, h;
 
-let rgba = video_canvas.getContext("2d").getImageData(0,0,w,h).data.buffer;
+  video_canvas = camera.video_canvas
+  w = video_canvas.width
+  h = video_canvas.height
 
-let cs = camera.video_canvas_face_detection.style
-if ((cs.width != video_canvas.style.width) || (cs.height != video_canvas.style.height)) {
-  cs.width  = video_canvas.style.width
-  cs.height = video_canvas.style.height
+  let rgba = video_canvas.getContext("2d").getImageData(0,0,w,h).data.buffer;
+
+  let cs = camera.video_canvas_face_detection.style
+  if ((cs.width != video_canvas.style.width) || (cs.height != video_canvas.style.height)) {
+    cs.width  = video_canvas.style.width
+    cs.height = video_canvas.style.height
+  }
+
+  let data = { rgba:rgba, w:w, h:h };//, threshold:1 };
+  if (!camera.video_canvas_face_detection._offscreen && self.OffscreenCanvas) {
+    data.canvas = camera.video_canvas_face_detection.transferControlToOffscreen()
+    camera.video_canvas_face_detection._offscreen = true
+    console.log("(Face detection: use offscreen canvas)")
+  }
+
+  fd_worker.postMessage(data, (data.canvas)?[data.canvas,data.rgba]:[data.rgba]);
+
+  data.rgba = rgba = undefined
+  data = undefined
 }
 
-let data = { rgba:rgba, w:w, h:h };//, threshold:1 };
-if (!camera.video_canvas_face_detection._offscreen && self.OffscreenCanvas) {
-  data.canvas = camera.video_canvas_face_detection.transferControlToOffscreen()
-  camera.video_canvas_face_detection._offscreen = true
-  console.log("(Face detection: use offscreen canvas)")
+if (delay_update || self.PoseAT) {
+  setTimeout(()=>{ update_worker() },0);
 }
-fd_worker.postMessage(data, (data.canvas)?[data.canvas,data.rgba]:[data.rgba]);
-
-data.rgba = rgba = undefined
-data = undefined
+else {
+  update_worker()
+}
       }
 
      ,update_frame_local: function (canvas, dets) {
@@ -4488,20 +5307,14 @@ var eye_data_height_ref_pts = {L:[159,145], R:[386,374]};
     var TRIANGULATION
 
     var use_faceLandmarksDetection = !is_mobile
-    var use_human_facemesh = url_search_params.get('use_human_facemesh') || !is_mobile
+// NOTE: Not using human for now, as there is a memory leak in Chromium v93+ affecting human regardless of whether it is webgl or wasm backend, webworker or not.
+    var use_human_facemesh// = url_search_params.get('use_human_facemesh') || !is_mobile
+    var use_mediapipe_facemesh = url_search_params.get('use_mediapipe_facemesh')
 
     function init() {
+if (_facemesh.initialized)
+  return
 _facemesh.initialized = true
-
-/*
-// non-worker Facemesh TEST
-facemesh.load({maxFaces:1}).then(function (model) {
-  _facemesh.model = model
-  _facemesh.worker_initialized = true
-  _facemesh.enabled = true
-});
-return;
-*/
 
 fetch("js/facemesh_triangulation.json").then(response => response.json()).then(data => {TRIANGULATION=data});
 
@@ -4520,19 +5333,84 @@ if (use_faceLandmarksDetection) {
 if (use_human_facemesh) {
   params.push('use_human_facemesh=1')
 }
+else if (use_mediapipe_facemesh) {
+  params.push('use_mediapipe_facemesh=1')
+}
 
 fm_worker = new Worker('js/facemesh_worker.js' + ((params.length)?'?'+params.join('&'):''));
 
 // holistic (worker TEST)
 //fm_worker = new Worker('js/holistic_worker.js' + ((params.length)?'?'+params.join('&'):''));
 
-fm_worker.onmessage = function (e) {
+fm_worker.onmessage = facemesh_worker_onmessage;
+    }
+
+function draw_facemesh(faces, w,h) {
+  var canvas = camera.video_canvas_facemesh
+  var context = canvas.getContext("2d")
+  var eyes = faces[0].eyes
+
+  if ((canvas.width != w) || (canvas.height != h)) {
+    canvas.width  = w
+    canvas.height = h
+  }
+
+  context.clearRect(0,0,w,h)
+
+  context.globalAlpha = 0.5
+  context.fillStyle = 'black'
+  context.fillRect(0,0,w,h)
+
+  context.fillStyle = '#32EEDB';
+  context.strokeStyle = '#32EEDB';
+  context.lineWidth = 0.5;
+  const keypoints = faces[0].scaledMesh;
+  for (let i = 0, i_max=TRIANGULATION.length/3; i < i_max; i++) {
+    const points = [
+TRIANGULATION[i * 3], TRIANGULATION[i * 3 + 1],
+TRIANGULATION[i * 3 + 2]
+    ].map(index => keypoints[index]);
+    drawPath(context, points, true);
+  }
+
+  eyes.forEach(function (eye) {
+    var c = eye[0]/2
+    var r = eye[1]/2
+    context.beginPath();
+    context.arc(c, r, 1, 0, 2*Math.PI, false);
+    context.lineWidth = 3;
+    context.strokeStyle = 'red';
+    context.stroke();
+  });
+}
+
+// https://github.com/tensorflow/tfjs-models/tree/master/facemesh/demo
+// START
+
+// https://github.com/tensorflow/tfjs-models/blob/master/facemesh/demo/index.js
+function drawPath(ctx, points, closePath) {
+  const region = new Path2D();
+  region.moveTo(points[0][0]/2, points[0][1]/2);
+  for (let i = 1; i < 3; i++) {
+    const point = points[i];
+    region.lineTo(point[0]/2, point[1]/2);
+  }
+
+  if (closePath) {
+    region.closePath();
+  }
+  ctx.stroke(region);
+}
+
+var facemesh_worker_onmessage = (function () {
+  var fps = 0, fps_count = 0, fps_ms = 0, fps_timestamp = 0;
+
+return function (e) {
   var data = ((typeof e.data == "string") && (e.data.charAt(0) === "{")) ? JSON.parse(e.data) : e.data;
 
   if (typeof data === "string") {
     if (data == "OK") {
       _facemesh.worker_initialized = true
-      _facemesh.enabled = true
     }
     else {
       DEBUG_show(data, 2)
@@ -4543,13 +5421,20 @@ fm_worker.onmessage = function (e) {
     pose_worker_onmessage({data:data})
   }
   else {
+camera._needs_RAF = true
+
 let info = ""
 bb_center = [0.5, 0.5]
 
-let sign_flip = (camera.double_flip_mode || camera.visible) ? 1 : -1
+if (data.faces.length)
+  _facemesh.data_detected++
+else
+  _facemesh.data_detected = 0
 
-if (data.faces.length) {
+if (data.faces.length && (!_poseNet.enabled || !_poseNet.use_3D_pose ||(_facemesh.data_detected >= 5))) {
   let face = data.faces[0]
+
+  let sign_flip = (camera.x_flipped) ? 1 : -1
 
   if (face.bb_center)
     bb_center = face.bb_center
@@ -4607,17 +5492,24 @@ z_rot = -xyz.z;
   }
 
   let rot = new THREE.Quaternion();
-  rot.setFromEuler(MMD_SA._v3a.set(x_rot, y_rot*sign_flip, _z_rot*sign_flip),"YZX").slerp(MMD_SA.TEMP_q.set(0,0,0,1), 1-0.35)
+  rot.setFromEuler(MMD_SA._v3a.set(x_rot, y_rot*sign_flip, _z_rot*sign_flip),"YZX")
+  MMD_SA.TEMP_q.set(0,0,0,1)
 
-  let head =  { after_IK:true, rot:rot.clone() }
-  let neck =  { after_IK:true, rot:rot.clone() }
-  let chest = { after_IK:true, rot:rot.clone().slerp(MMD_SA.TEMP_q.set(0,0,0,1), 1-0.3/0.35) }
+  let t_now = performance.now()
+  let _t = 0
+  if (fps_timestamp) {
+    _t = t_now - fps_timestamp
+    fps_ms += _t
+    if (++fps_count >= 20) {
+      fps = 1000 / (fps_ms/fps_count)
+      fps_count = fps_ms = 0
+    }
+  }
+  fps_timestamp = t_now
 
-  _facemesh.frames.t_delta = (data.fps && (1000/data.fps)) || data._t
+  frames.t_delta = (fps && (1000/fps)) || _t || (data.fps && (1000/data.fps)) || data._t
 
-  _facemesh.frames.add("skin", "頭", head)
-  _facemesh.frames.add("skin", "首", neck)
-  _facemesh.frames.add("skin", "上半身", chest)
+  frames.add("skin|facemesh", "首", { after_IK:true, rot:rot, onProcessRotation:process_head_rotation })
 
 // lips inner:13,14
 // lips outer:0,17
@@ -4737,16 +5629,15 @@ z_rot = -xyz.z;
     smile = Math.min(happy_abs*0.2 + smile*(1+happy_abs*0.5), 0.4)
   }
 
-  _facemesh.frames.add("morph", "にこり", { weight:Math.min(smile + happy*0.75, 0.75) })
-  _facemesh.frames.add("morph", "困る", { weight:(sad+fear)/2*0.75 })
-  _facemesh.frames.add("morph", "怒り", { weight:angry*0.75 })
+  frames.add("morph|facemesh", "にこり", { weight:Math.min(smile + happy*0.75, 0.75) })
+  frames.add("morph|facemesh", "困る", { weight:(sad+fear)/2*0.75 })
+  frames.add("morph|facemesh", "怒り", { weight:angry*0.75 })
   eyebrow_up += surprise*0.2
 
-  _facemesh.frames.add("morph", "笑い", { weight:smile })
-  _facemesh.frames.add("morph", "びっくり", { weight:surprise*0.75 })
+  frames.add("morph|facemesh", "笑い", { weight:smile })
+  frames.add("morph|facemesh", "びっくり", { weight:surprise*0.75 })
 
-  _facemesh.frames.add("morph", "あ", { weight:mouth_open })
-  _facemesh.frames.add("morph", "にやり", { weight:mouth_wide })
+  frames.add("morph|facemesh", "にやり", { weight:mouth_wide })
 
   let rot_inv = MMD_SA.TEMP_q.setFromEuler(MMD_SA._v3a.set(x_rot,y_rot,z_rot),"YZX").conjugate()
   let L = [];
@@ -4762,8 +5653,15 @@ z_rot = -xyz.z;
   let mouth_up = Math.max(-(m_up+m_down)*180/Math.PI + 20*(mouth_open), 0)
   if (mouth_up)
     mouth_up = Math.min(mouth_up/20, 0.75)
-  _facemesh.frames.add("morph", "∧", { weight:Math.min(mouth_up + sad*0.25, 1) })
+  mouth_up = Math.min(mouth_up + sad*0.25, 1)
 
+// お
+  mouth_up *= 0.5
+  mouth_open = mouth_open * (1-mouth_up)
+
+  frames.add("morph|facemesh", "あ", { weight:mouth_open })
+  frames.add("morph|facemesh", "お", { weight:mouth_up })
+// ∧
 
   let blink = {L:[0],R:[0]}
   let _eye_data_order = {L:[],R:[]}
@@ -4834,7 +5732,7 @@ if (use_faceLandmarksDetection) {
   let eye_y_rot = _eye_y_rot[0] * rot_ratio + _eye_y_rot[1] * (1-rot_ratio)
 // after_IK does NOT work for eyes for some unknown reasons
   let two_eyes = { absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(-(eye_x_rot-0.3)*15/180*Math.PI, eye_y_rot*sign_flip*20/180*Math.PI, 0),"YZX") }
-  _facemesh.frames.add("skin", "両目", two_eyes)
+  frames.add("skin|facemesh", "両目", two_eyes)
 
   let LR_exists = (THREE.MMD.getModels()[0].pmx.morphs_index_by_name["まばたきL"] != null);
   let blink_factor = (LR_exists) ? Math.min(Math.max(Math.abs(blink.L[0]-blink.R[0])-(0.25+(1-Math.min(Math.max((Math.PI/6-Math.abs(y_rot))/(Math.PI/12),0),1))*1),0)/0.25, 1) : 0;
@@ -4843,12 +5741,12 @@ if (use_faceLandmarksDetection) {
   blink.R[0] = blink.R[0]*blink_factor + blink0*(1-blink_factor)
 
   if (LR_exists) {
-    _facemesh.frames.add("morph", "まばたき"+((sign_flip == 1)?"L":"R"), { weight:Math.max(Math.min(1-blink.L[0]*0.8-smile,1),0) })
-    _facemesh.frames.add("morph", "まばたき"+((sign_flip == 1)?"R":"L"), { weight:Math.max(Math.min(1-blink.R[0]*0.8-smile,1),0) })
-    _facemesh.frames.add("morph", "まばたき", { weight:0 })
+    frames.add("morph|facemesh", "まばたき"+((sign_flip == 1)?"L":"R"), { weight:Math.max(Math.min(1-blink.L[0]*0.8-smile,1),0) })
+    frames.add("morph|facemesh", "まばたき"+((sign_flip == 1)?"R":"L"), { weight:Math.max(Math.min(1-blink.R[0]*0.8-smile,1),0) })
+    frames.add("morph|facemesh", "まばたき", { weight:0 })
   }
   else {
-    _facemesh.frames.add("morph", "まばたき", { weight:Math.max(Math.min(1-blink.L[0]*0.8-smile,1),0) })
+    frames.add("morph|facemesh", "まばたき", { weight:Math.max(Math.min(1-blink.L[0]*0.8-smile,1),0) })
   }
 }
 else {
@@ -4860,110 +5758,25 @@ else {
     eye_y_rot = Math.max(Math.min((eye[2]*2-y_rot/(Math.PI/2))*(1-Math.abs(y_rot)/Math.PI),1),-1)
   }
 
-if (blink_detection) {
-  face.eyes.forEach(function (e, idx) {
-    let dir = e[4][0]
-    for (let i = 0; i < 4; i++) {
-      blink[dir][i] = 0
-      let LR = eye_data[dir][i]
-      let e_data = e[5][i]
-
-      let _eye_open_average = LR.eye_open_average
-      if (!_eye_open_average) {
-        if (calibration_condition) {
-          LR.eye_open_data.push(e_data)
-
-          let edge_size = parseInt(LR.eye_open_data.length*0.3)
-          _eye_open_average = LR.eye_open_data.sort((a,b)=>a-b).slice(edge_size, LR.eye_open_data.length-edge_size).reduce((accumulator, currentValue) => accumulator + currentValue) / (LR.eye_open_data.length-edge_size*2)
-          if (!calibrating) {
-            LR.eye_open_average = _eye_open_average
-          }
-        }
-        else {
-          _eye_open_average = LR._eye_open_average
-        }
-      }
-      if (calibration_condition) {
-        if (LR.eye_open_lower > e_data)
-          LR.eye_open_lower = e_data
-      }
-
-      LR._eye_open_average = _eye_open_average
-      if (_eye_open_average) {
-        let b = e_data
-        if (b < _eye_open_average*0.9) {
-          let _eye_open_lower = Math.max(Math.min(LR.eye_open_lower, _eye_open_average*0.6), _eye_open_average*0.2)
-          b = Math.min((_eye_open_average*0.9-b)/(_eye_open_lower+_eye_open_average*0),1)
-          blink[dir][i] = b*b
-        }
-      }
-    }
-
-    let eye_data_qualified = eye_data[dir].filter(function (e) {
-      if (!e._eye_open_average)
-        return false
-      if ((e._eye_open_average > 0.8) || (e._eye_open_average < 0.2))
-        return false
-      if ((e.eye_open_lower > e._eye_open_average*0.7)/* || (e.eye_open_lower < e._eye_open_average*0.1)*/)
-        return false
-      return true
-    });
-
-    let _blink = blink[dir]
-    if (eye_data_qualified.length == 0) {
-      _blink[0] = 0
-    }
-    else {
-      eye_data_qualified.sort((a,b)=>_blink[b.index]-_blink[a.index]);
-      let index = eye_data_qualified[0].index
-      _eye_data_order[dir][0] = index
-      let b = _blink[index]
-
-      if (eye_data_qualified.length >= 2) {
-        index = eye_data_qualified[1].index
-        b = (b + _blink[index]) / 2
-        _eye_data_order[dir].push(index)
-      }
-
-      _blink[0] = b
-    }
-  });
-
-  let LR_exists = (THREE.MMD.getModels()[0].pmx.morphs_index_by_name["まばたきL"] != null)
-  if (0) {//LR_exists && (Math.abs(blink.L[0] - blink.R[0]) > 0.75)) {
-    let weight = (blink.L[0]+blink.R[0])/4
-    _facemesh.frames.add("morph", "まばたきL", { weight:blink.L[0]/2+weight })
-   _facemesh.frames.add("morph", "まばたきR", { weight:blink.R[0]/2+weight })
-  }
-  else {
-    let weight = (blink.L[0]+blink.R[0])/2
-    _facemesh.frames.add("morph", "まばたき", { weight:weight })
-//    _facemesh.frames.add("morph", "まばたきL", { weight:weight })
-//    _facemesh.frames.add("morph", "まばたきR", { weight:weight })
-  }
-}
-else {
   let eyebrow_factor = eyebrow_up*0.25
   if (eyebrow_factor < 0)
     eyebrow_factor = Math.min(eyebrow_factor + smile, 0)
   let weight = Math.max(Math.min(0.1 - eye_x_rot*((eye_x_rot<0)?2:1)*0.2 - eyebrow_factor, 0.5), 0)
-  _facemesh.frames.add("morph", "まばたき", { weight:weight })
-}
+  frames.add("morph|facemesh", "まばたき", { weight:weight })
 
   let eye_rot_confidence = 1.25 + Math.pow((blink.L[0]+blink.R[0])/2,2)*1.75
   eye_x_rot = Math.sign(eye_x_rot) * Math.pow(Math.abs(eye_x_rot), eye_rot_confidence)
   eye_y_rot = Math.sign(eye_y_rot) * Math.pow(Math.abs(eye_y_rot), eye_rot_confidence)
   let two_eyes = { absolute:true, rot:new THREE.Quaternion().setFromEuler(MMD_SA._v3a.set(-eye_x_rot*15/180*Math.PI, eye_y_rot*sign_flip*20/180*Math.PI, 0),"YZX") }
-  _facemesh.frames.add("skin", "両目", two_eyes)
+  frames.add("skin|facemesh", "両目", two_eyes)
 }
 
-_facemesh.frames.add("morph", "上", { weight:Math.max(Math.min(eyebrow_up,1),-1) })
+frames.add("morph|facemesh", "上", { weight:Math.max(Math.min(eyebrow_up,1),-1) })
 
 
 info = info || (face.eyes.length && [
 ((calibrating)?'Calibrating('+calibration_percent+'%):Make a calm face!':'(face data calibrated)')+'/'+(Math.round(face.faceInViewConfidence*100))+'%',
-((face.emotion) ? JSON.stringify(face.emotion) : "Neutral")
-// /*eye_x_rot*100, eye_y_rot*100,*/(!blink_detection)?'auto blink':(_eye_data_order.L.length&&_eye_data_order.R.length)?_eye_data_order.L.join('+')+':'+~~(eye_data.L[_eye_data_order.L[0]]._eye_open_average*100)+'/'+~~(eye_data.L[_eye_data_order.L[0]].eye_open_lower*100)+'/'+_eye_data_order.R.join('+')+':'+~~(eye_data.R[_eye_data_order.R[0]]._eye_open_average*100)+'/'+~~(eye_data.R[_eye_data_order.R[0]].eye_open_lower*100):'(no blink data)'
+((face.emotion) ? JSON.stringify(face.emotion) : "Neutral"),
 ].join("\n"));
 
 if (_info_extra) info += _info_extra;
@@ -4971,8 +5784,12 @@ if (_info_extra) info += _info_extra;
 //info = [(m_up)*180/Math.PI,(m_down)*180/Math.PI,mouth_up].join('\n')
 //info = [y_rot*180/Math.PI, z_rot*180/Math.PI, x_rot*180/Math.PI, lips_inner_height,lips_width_average+'/'+lips_width].join('\n')
 }
-DEBUG_show(((info && (info+'\n'+'FPS:'+EV_sync_update.fps_last+'\n'))||'')+'F-FPS:'+(data.fps||0) )//+'/'+data._t)
-self._faces_=data.faces
+else {
+  info = '(no facemesh data)\n' + _info_extra
+}
+
+DEBUG_show(((info && (info+'\n'+'FPS:'+EV_sync_update.fps_last+'\n'))||'')+'F-FPS:'+Math.round(fps)+'/'+Math.round(data.fps||0) )//+'/'+data._t)
+
     _facemesh.busy = false
 
     if (data.faces.length && !self.OffscreenCanvas && TRIANGULATION) {
@@ -4981,75 +5798,22 @@ draw_facemesh(data.faces, Math.round(camera.video_canvas.width/2),Math.round(cam
       },0,0);
     }
   }
+
+  _facemesh.update_frame()
 };
-    }
-
-function draw_facemesh(faces, w,h) {
-  var canvas = camera.video_canvas_facemesh
-  var context = canvas.getContext("2d")
-  var eyes = faces[0].eyes
-
-  if ((canvas.width != w) || (canvas.height != h)) {
-    canvas.width  = w
-    canvas.height = h
-  }
-
-  context.clearRect(0,0,w,h)
-
-  context.globalAlpha = 0.5
-  context.fillStyle = 'black'
-  context.fillRect(0,0,w,h)
-
-  context.fillStyle = '#32EEDB';
-  context.strokeStyle = '#32EEDB';
-  context.lineWidth = 0.5;
-  const keypoints = faces[0].scaledMesh;
-  for (let i = 0, i_max=TRIANGULATION.length/3; i < i_max; i++) {
-    const points = [
-TRIANGULATION[i * 3], TRIANGULATION[i * 3 + 1],
-TRIANGULATION[i * 3 + 2]
-    ].map(index => keypoints[index]);
-    drawPath(context, points, true);
-  }
-
-  eyes.forEach(function (eye) {
-    var c = eye[0]/2
-    var r = eye[1]/2
-    context.beginPath();
-    context.arc(c, r, 1, 0, 2*Math.PI, false);
-    context.lineWidth = 3;
-    context.strokeStyle = 'red';
-    context.stroke();
-  });
-}
-
-// https://github.com/tensorflow/tfjs-models/tree/master/facemesh/demo
-// START
-
-// https://github.com/tensorflow/tfjs-models/blob/master/facemesh/demo/index.js
-function drawPath(ctx, points, closePath) {
-  const region = new Path2D();
-  region.moveTo(points[0][0]/2, points[0][1]/2);
-  for (let i = 1; i < 3; i++) {
-    const point = points[i];
-    region.lineTo(point[0]/2, point[1]/2);
-  }
-
-  if (closePath) {
-    region.closePath();
-  }
-  ctx.stroke(region);
-}
+})();
 
 var canvas_resized = document.createElement("canvas");
 
-var bb_center
+var bb_center = []
 
 // END
 
     _facemesh = {
       initialized: false
      ,worker_initialized: false
+
+     ,data_detected: 0
 
      ,get blink_detection() {
 return blink_detection;
@@ -5080,6 +5844,10 @@ if (!this.initialized)
   use_faceLandmarksDetection = v
       }
 
+     ,get _can_skip_RAF() {
+return this.enabled && use_mediapipe_facemesh;
+      }
+
      ,face_width: 0
 
      ,get enabled() {
@@ -5090,127 +5858,114 @@ if (enabled == !!v)
   return
 enabled = !!v
 
-bb_center = [0.5, 0.5]
+this.data_detected = 0
+
+bb_center[0] = bb_center[1] = 0.5
 
 if (enabled) {
   if (!this.initialized)
     init()
-  else if (!this.worker_initialized)
-    return
-
-  add_video_capture()
-
-  reset_calibration()
+//  else if (!this.worker_initialized) return
 
   auto_blink_default = MMD_SA_options.auto_blink
 
-  this.frames.reset()
-  this.frames.add_events()
+  reset_calibration()
 }
 else {
-  if (camera.initialized) {
-    camera.video_canvas_face_detection.style.visibility = "hidden"
-    camera.video_canvas_facemesh.style.visibility = "hidden"
-    remove_video_capture()
-  }
   MMD_SA_options.auto_blink = auto_blink_default
-
-  this.frames.remove_events()
 }
+
+ML_init()
       }
+
+     ,get bb_center() { return bb_center; }
+     ,set bb_center(v) { bb_center = v; }
 
      ,frames: frames
 
-     ,update_frame: function () {
-if (!this.enabled || !this.worker_initialized || !camera.video_canvas.width || this.busy)
-  return
-this.busy = true
+     ,init: function () { init(); }
+
+     ,worker_onmessage: facemesh_worker_onmessage
+
+     ,camera_video_timestamp: 0
+     ,update_frame: function (delay_update) {
+function update_worker() {
+  var ready = _facemesh.enabled && _facemesh.worker_initialized && camera_video_timestamp && !_facemesh.busy && !_poseNet.use_holistic && video_capture_active && (_facemesh.camera_video_timestamp != camera_video_timestamp);
+  if (!ready)
+    return
+  _facemesh.busy = true
+
+  _facemesh.camera_video_timestamp = camera_video_timestamp
 
 // .auto_blink can be eanbled by other features. This ensures that it is properly disabled.
-if (blink_detection) {
-  MMD_SA_options.auto_blink = false
-}
-
-//camera.video_canvas.style.visibility="hidden"
-/*
-// non-worker Facemesh TEST
-_facemesh.model.estimateFaces(camera.video_canvas).then(function (faces) {
-//  DEBUG_show(faces.length+'/'+Date.now())
-  self._faces_=faces
-  _facemesh.busy = false
-});
-return;
-*/
-
-camera.video_canvas_facemesh.style.visibility = "visible"
-
-let video_canvas;
-let cw, ch;
-let sw, sh;
-let sx, sy;
-let need_resize;
-
-video_canvas = camera.video_canvas
-sx = sy = 0
-cw = sw = video_canvas.width
-ch = sh = video_canvas.height
-
-if (MMD_SA_options.user_camera.pixel_limit.facemesh) {
-  let ratio = Math.sqrt(video_canvas.width * video_canvas.height / MMD_SA_options.user_camera.pixel_limit.facemesh)
-  if (ratio > 1) {
-    let target_ratio = Math.ceil(ratio/0.5)*0.5
-    cw = sw = Math.round(video_canvas.width /target_ratio)
-    ch = sh = Math.round(video_canvas.height/target_ratio)
-    video_canvas = canvas_resized
-    need_resize = true
+  if (blink_detection) {
+    MMD_SA_options.auto_blink = false
   }
-}
 
-let facemesh_bb_ratio;
-if (MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio && use_pose_worker) {// && !is_mobile) {// || !screen.orientation || /landscape/.test(screen.orientation.type))) {//
-  facemesh_bb_ratio = MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio
-  let d = Math.round(Math.min(cw,ch) * facemesh_bb_ratio)
-  sx = Math.round(Math.max(Math.min(cw*bb_center[0] - d/2, cw-d), 0))
-  sy = Math.round(Math.max(Math.min(ch*bb_center[1] - d/2, ch-d), 0))
-  sw = d
-  sh = d
-//sx=cw/4;sy=ch/4;sw=cw/2;sh=ch/2;
-}
+  let video_canvas;
+  let cw, ch;
+  let sw, sh;
+  let sx, sy;
+  let need_resize;
 
-let ctx = video_canvas.getContext("2d")
-if (need_resize) {
-  if ((video_canvas.width != cw) || (video_canvas.height != ch)) {
-    video_canvas.width  = cw
-    video_canvas.height = ch
-    video_canvas.globalCompositeOperation = "copy"
-    console.log('Facemesh canvas:' + cw + 'x' + ch)
+  video_canvas = camera.video_canvas
+  sx = sy = 0
+  cw = sw = video_canvas.width
+  ch = sh = video_canvas.height
+
+  if (MMD_SA_options.user_camera.pixel_limit.facemesh) {
+    let ratio = Math.sqrt(video_canvas.width * video_canvas.height / MMD_SA_options.user_camera.pixel_limit.facemesh)
+    if (ratio > 1) {
+      let target_ratio = Math.ceil(ratio/0.5)*0.5
+      cw = sw = Math.round(video_canvas.width /target_ratio)
+      ch = sh = Math.round(video_canvas.height/target_ratio)
+      video_canvas = canvas_resized
+      need_resize = true
+    }
   }
-  ctx.drawImage(camera.video_canvas, 0,0,cw,ch)
+
+  let facemesh_bb_ratio;
+  if (MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio && use_pose_worker) {// && !is_mobile) {// || !screen.orientation || /landscape/.test(screen.orientation.type))) {//
+    facemesh_bb_ratio = MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio
+    let d = Math.round(Math.min(cw,ch) * facemesh_bb_ratio)
+    sx = Math.round(Math.max(Math.min(cw*bb_center[0] - d/2, cw-d), 0))
+    sy = Math.round(Math.max(Math.min(ch*bb_center[1] - d/2, ch-d), 0))
+    sw = d
+    sh = d
+  }
+
+  let ctx = video_canvas.getContext("2d")
+  if (need_resize) {
+    if ((video_canvas.width != cw) || (video_canvas.height != ch)) {
+      video_canvas.width  = cw
+      video_canvas.height = ch
+      video_canvas.globalCompositeOperation = "copy"
+      console.log('Facemesh canvas:' + cw + 'x' + ch)
+    }
+    ctx.drawImage(camera.video_canvas, 0,0,cw,ch)
+  }
+
+  let rgba = ctx.getImageData(sx,sy,sw,sh).data.buffer;
+
+  let data = { rgba:rgba, w:cw, h:ch, options:{draw_canvas:true, flip_canvas:camera.display_flipped, bb:{x:sx, y:sy, w:sw, h:sh, ratio:facemesh_bb_ratio||0}, use_pose_worker:(_poseNet.enabled && !use_pose_worker), use_handpose:_handpose.enabled} };//, threshold:1 };
+  if (!camera.video_canvas_facemesh._offscreen && self.OffscreenCanvas) {
+    data.canvas = camera.video_canvas_facemesh.transferControlToOffscreen()
+    camera.video_canvas_facemesh._offscreen = true
+    console.log("(Facemesh: use offscreen canvas)")
+  }
+
+  fm_worker.postMessage(data, (data.canvas)?[data.canvas,data.rgba]:[data.rgba]);
+
+  data.rgba = rgba = undefined
+  data = undefined
 }
 
-let rgba = ctx.getImageData(sx,sy,sw,sh).data.buffer;
-
-let cs = camera.video_canvas_facemesh.style
-const scale = (is_mobile) ? 0.25 : 0.4
-if ((cs.pixelWidth != ~~camera.video_canvas.style.pixelWidth*scale) || (cs.pixelHeight != ~~camera.video_canvas.style.pixelHeight*scale)) {
-  cs.pixelWidth  = ~~camera.video_canvas.width*scale
-  cs.pixelHeight = ~~camera.video_canvas.height*scale
-  cs.posLeft = window.innerWidth - cs.pixelWidth
+if (delay_update || self.PoseAT) {
+  setTimeout(()=>{ update_worker() },0);
 }
-
-let data = { rgba:rgba, w:cw, h:ch, options:{draw_canvas:true, flip_canvas:camera.double_flip_mode, blink_detection:blink_detection, bb:{x:sx, y:sy, w:sw, h:sh, ratio:facemesh_bb_ratio||0}, use_pose_worker:(_poseNet.enabled && !use_pose_worker), use_handpose:_handpose.enabled} };//, threshold:1 };
-if (!camera.video_canvas_facemesh._offscreen && self.OffscreenCanvas) {
-  data.canvas = camera.video_canvas_facemesh.transferControlToOffscreen()
-  camera.video_canvas_facemesh._offscreen = true
-  console.log("(Facemesh: use offscreen canvas)")
+else {
+  update_worker()
 }
-fm_worker.postMessage(data, (data.canvas)?[data.canvas,data.rgba]:[data.rgba]);
-
-data.rgba = rgba = undefined
-data = undefined
-
-// holistic
-//holistic.send({image:video_canvas});
       }
 
     };
@@ -5222,6 +5977,10 @@ data = undefined
  ,poseNet: (function () {
     var enabled = false;
 
+    var _use_3D_pose = true;
+    var _IK_disabled = true;
+    var _IK_enabled_list = {};
+
     _poseNet = {
   get enabled() {
 return enabled;
@@ -5231,15 +5990,57 @@ if (enabled == !!v)
   return
 enabled = !!v
 
+this.data_detected = 0
+
 if (enabled) {
   if (!this.initialized)
     pose_init()
-  else if (!this.worker_initialized)
-    return
+//  else if (!this.worker_initialized) return
+
+  MMD_SA_options.user_camera.ML_models.pose.events.enabled  && MMD_SA_options.user_camera.ML_models.pose.events.enabled()
+}
+else {
+  MMD_SA_options.user_camera.ML_models.pose.events.disabled && MMD_SA_options.user_camera.ML_models.pose.events.disabled()
+}
+
+ML_init()
+
+if (use_holistic) {
+  setTimeout(()=>{
+    if (enabled)
+      _facemesh.enabled = _handpose.enabled = enabled
+    else
+      _handpose.enabled = enabled
+    DEBUG_show('(Holistic Mode:' + ((enabled)?'ON':'OFF') + ')', 2)
+  }, 0);
 }
   }
 
+ ,data_detected: 0
+
+ ,get use_3D_pose() { return enabled && _use_3D_pose && use_blazepose; }
+ ,set use_3D_pose(v) { _use_3D_pose = v; }
+
+ ,get use_holistic() { return enabled && use_holistic; }
+
+ ,set IK_disabled(v) { _IK_disabled = v; }
+
+ ,IK_disabled_check: function (name) {
+var disabled = _IK_disabled && this.use_3D_pose && this.data_detected;
+if (disabled && name) {
+  if (_IK_enabled_list[name])
+    disabled = false
+}
+return disabled
+  }
+
+ ,enable_IK: function (name, enabled) {
+_IK_enabled_list[name] = enabled
+  }
+
  ,frames: frames
+
+ ,camera_video_timestamp: 0
 
  ,get busy() { return pose_busy; }
  ,get initialized() { return pose_initialized; }
@@ -5265,8 +6066,7 @@ enabled = !!v
 if (enabled) {
   if (!this.initialized)
     pose_init()
-  else if (!this.worker_initialized)
-    return
+//  else if (!this.worker_initialized) return
 }
   }
 
@@ -5455,9 +6255,10 @@ this.visible = true
 
 if (self.MMD_SA) {
   SL.style.transform = SL_2D_front.style.transform = "scaleX(-1)"
+//  THREE.MMD.getModels().forEach((m)=>{m.resetPhysics(30)});
 }
 
-this.video_canvas.width = this.video_canvas.height = 0
+this.video_canvas.width = this.video_canvas.height = camera_video_timestamp = 0
 
 if (camera.target_devicePixelRatio != window.devicePixelRatio) {
   camera.target_devicePixelRatio = 0
@@ -5483,7 +6284,8 @@ if (self.MMD_SA) {
 }
 
 this.video_canvas.style.visibility = "hidden"
-this.video_canvas.width = this.video_canvas.height = 0
+
+this.video_canvas.width = this.video_canvas.height = camera_video_timestamp = 0
 
 face_detection.enabled = false
 _bodyPix.enabled = false
@@ -5680,56 +6482,3 @@ return path
 };
 
 System._init();
-
-// holistic
-/*
-var holistic;
-(function () {
-
-window.addEventListener('DOMContentLoaded', (event) => {
-var script = document.createElement('script');
-script.async = true
-script.onload = function () {
-  holistic = new Holistic({locateFile: (file) => {
-    return `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`;
-  }});
-  holistic.setOptions({
-    upperBodyOnly: true,
-    smoothLandmarks: true,
-    minDetectionConfidence: 0.5,
-    minTrackingConfidence: 0.5
-  });
-  holistic.onResults((results)=>{console.log(results)});
-
-//  var c = document.createElement("canvas");c.getContext("2d");
-var c = document.createElement("video");
-  holistic.send({image:c}).then(a=>a);
-};
-script.src = "https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js";
-
-document.head.appendChild(script);
-});
-
-})();
-*/
-/*
-var handsfree;
-(function () {
-
-window.addEventListener('DOMContentLoaded', (event) => {
-var script = document.createElement('script');
-script.onload = function () {
-  handsfree = new Handsfree({holistic: true})
-  handsfree.start()
-
-  handsfree.use('logger', data => {
-    console.log(data)
-  })
-};
-script.src = "https://unpkg.com/handsfree@8.1.2/build/lib/handsfree.js";
-
-document.head.appendChild(script);
-});
-
-})();
-*/
