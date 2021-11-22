@@ -1,4 +1,4 @@
-// (2021-08-06)
+// (2021-11-23)
 
 /*!
  * jThree JavaScript Library v2.1.2
@@ -920,6 +920,32 @@ THREE.Quaternion.prototype = {
 
 		}
 
+// AT: backported (https://raw.githubusercontent.com/mrdoob/three.js/dev/build/three.js)
+			const sqrSinHalfTheta = 1.0 - cosHalfTheta * cosHalfTheta;
+
+			if (sqrSinHalfTheta <= Number.EPSILON) {
+				const s = 1 - t;
+				this.w = s * w + t * this.w;
+				this.x = s * x + t * this.x;
+				this.y = s * y + t * this.y;
+				this.z = s * z + t * this.z;
+				this.normalize();
+
+				return this;
+			}
+/*
+// nslerp (https://stackoverflow.com/questions/46156903/how-to-lerp-between-two-quaternions)
+
+this.x = x - t*(x - this.x);
+this.y = y - t*(y - this.y);
+this.z = z - t*(z - this.z);
+this.w = w - t*(w - this.w);
+return this.normalize();
+*/
+			const sinHalfTheta = Math.sqrt(sqrSinHalfTheta);
+			const halfTheta = Math.atan2(sinHalfTheta, cosHalfTheta);
+
+/*
 		var halfTheta = Math.acos( cosHalfTheta );
 		var sinHalfTheta = Math.sqrt( 1.0 - cosHalfTheta * cosHalfTheta );
 
@@ -933,7 +959,7 @@ THREE.Quaternion.prototype = {
 			return this;
 
 		}
-
+*/
 		var ratioA = Math.sin( ( 1 - t ) * halfTheta ) / sinHalfTheta,
 		ratioB = Math.sin( t * halfTheta ) / sinHalfTheta;
 
@@ -5094,45 +5120,6 @@ if (distance < -negRadius) this._containing = false//Math.max(0, this._containin
 
 	}(),
 
-// AT: (backported from r59) .getPositionFromMatrix is faster than .applyMatrix4 (don't see why .applyMatrix4 is needed anyways)
-	intersectsObject: function () {
-
-		var center = new THREE.Vector3();
-
-		return function ( object ) {
-
-			// this method is expanded inlined for performance reasons.
-
-			var geometry = object.geometry;
-			var matrix = object.matrixWorld;
-
-			if ( geometry.boundingSphere === null ) geometry.computeBoundingSphere();
-
-			var negRadius = - geometry.boundingSphere.radius * matrix.getMaxScaleOnAxis();
-
-			center.getPositionFromMatrix( matrix );
-
-			var planes = this.planes;
-
-			for ( var i = 0; i < 6; i ++ ) {
-
-				var distance = planes[ i ].distanceToPoint( center );
-
-				if ( distance < negRadius ) {
-
-					return false;
-
-				}
-
-			}
-
-			return true;
-
-		};
-
-	}(),
-
-/*
 	intersectsObject: function () {
 
 		var center = new THREE.Vector3();
@@ -5167,7 +5154,7 @@ if (distance < -negRadius) this._containing = false//Math.max(0, this._containin
 		};
 
 	}(),
-*/
+
 	intersectsSphere: function ( sphere ) {
 
 		var planes = this.planes;
@@ -9864,6 +9851,9 @@ THREE.Material.prototype = {
 material.offset = this.offset && this.offset.clone();
 material.repeat = this.repeat && this.repeat.clone();
 
+// AT: uniTexture
+if ("uniTexture" in this) material.uniTexture = this.uniTexture;
+
 		return material;
 
 	},
@@ -12136,9 +12126,103 @@ THREE.ShaderChunk = {
 	"mirrorCoord = mirrorTextureMatrix * worldPosition;",
 "#endif",
 
+		"#else",
+
+// AT: uniTexture
+"#ifdef USE_UNI_TEXTURE",
+"vec4 worldPosition = modelMatrix * vec4( position, 1.0 );",
+"#endif",
+
 		"#endif"
 
+// AT: uniTexture
+// ignore skinning
+,
+"#ifdef USE_UNI_TEXTURE",
+
+		"vec3 uniTexture_pos;",
+
+		"#if defined( USE_MORPHTARGETS )",
+
+			"uniTexture_pos = morphed;",
+
+		"#endif",
+
+		"#if ! defined( USE_MORPHTARGETS )",
+
+// AT: displacement map
+//"#if defined( VERTEX_TEXTURES ) && ( defined( USE_DISPLACEMENTMAP ) || defined( USE_WAVE_TEXTURE ) )",
+//	"uniTexture_pos = displacedPosition;",
+//"#else",
+
+			"uniTexture_pos = position;",
+
+//"#endif",
+
+		"#endif",
+
+  "uniTexture_pos = uniTexture_pos - vec3(uniTexture_bs, -uniTexture_bs, uniTexture_bs) * 10.;",
+
+  "uniTexture_MatrixRain_opacity = (uniTexture_MatrixRain_height_limit.x > 0.0) ? clamp((1.0 - (uniTexture_MatrixRain_height_limit.y + uniTexture_bs - position.y) / (uniTexture_bs * 2.0) - uniTexture_MatrixRain_height_limit.x) / (uniTexture_MatrixRain_height_limit.x*0.25), 0.0, 1.0) : 1.0;",
+
+  "uniTexture_vUv = vec2(-length(uniTexture_pos.xz), length(uniTexture_pos.yz)) * 0.1 / uniTexture_scale;",
+
+  "#if !(MAX_SPOT_LIGHTS > 0 || defined( USE_BUMPMAP ) || defined(USE_XRAY_PASS))",
+  "  vWorldPosition = worldPosition.xyz;",
+  "#endif",
+
+"#endif",
+
 	].join("\n"),
+
+// AT: uniTexture
+uniTexture_pars_vertex: [
+  '#ifdef USE_UNI_TEXTURE',
+  '  uniform float uniTexture_bs;',
+  '  uniform float uniTexture_scale;',
+  '  uniform vec2 uniTexture_MatrixRain_height_limit;',
+  '  varying vec2 uniTexture_vUv;',
+  '  varying float uniTexture_MatrixRain_opacity;',
+  '  #if !(MAX_SPOT_LIGHTS > 0 || defined( USE_BUMPMAP ) || defined(USE_XRAY_PASS))',
+  '    varying vec3 vWorldPosition;',
+  '  #endif',
+  '#endif',
+].join("\n"),
+uniTexture_pars_fragment: [
+  '#ifdef USE_UNI_TEXTURE',
+  '  uniform int uniTexture_state;',
+  '  uniform sampler2D uniTexture_map;',
+  '  uniform vec4 uniTexture_null_zone;',
+  '  varying vec2 uniTexture_vUv;',
+  '  varying float uniTexture_MatrixRain_opacity;',
+  '  #if !(MAX_SPOT_LIGHTS > 0 || defined( USE_BUMPMAP ) || defined(USE_XRAY_PASS))',
+  '    varying vec3 vWorldPosition;',
+  '  #endif',
+  '#endif',
+].join("\n"),
+uniTexture_fragment: [
+  '#ifdef USE_UNI_TEXTURE',
+//  '  gl_FragColor.rgb=vec3(0.,0.,0.);',
+  'if (uniTexture_state == 1) {',
+  '  vec4 uni_texture = texture2D( uniTexture_map, uniTexture_vUv );',
+  '  #ifdef USE_MATRIX_RAIN_GREEN',
+  '    vec3 _color_org = gl_FragColor.rgb;',
+  '    float _gray = 0.3 * gl_FragColor.r + 0.59 * gl_FragColor.g + 0.11 * gl_FragColor.b;',
+  '    gl_FragColor.rgb = vec3(_gray) * uni_texture.rgb;',// vec3(_gray*0.25 * uni_texture.g) + vec3(_gray*0.75) * uni_texture.rgb;',
+  '    if (uniTexture_MatrixRain_opacity < 1.0) { gl_FragColor.rgb = mix(vec3(0.0, _gray, 0.0), gl_FragColor.rgb, uniTexture_MatrixRain_opacity); }',
+  '    if (uniTexture_null_zone.w > 0.0) { gl_FragColor.rgb = mix(_color_org, gl_FragColor.rgb, clamp((distance(vWorldPosition, uniTexture_null_zone.xyz) / (uniTexture_null_zone.w * 1.5) - 0.6667) * 3.0, 0.0, 1.0) ); }',
+// * (0.75+uni_texture.g*0.25)
+//  '    gl_FragColor.rgb = vec3(uni_texture.a);',
+  '  #endif',
+  '  #ifdef USE_MATRIX_RAIN_COLOR',
+  '    float _rain_a = uniTexture_MatrixRain_opacity * ((uniTexture_null_zone.w > 0.0) ? clamp((distance(vWorldPosition, uniTexture_null_zone.xyz) / (uniTexture_null_zone.w * 1.25) - 0.75) * 4.0, 0.0, 1.0) : 1.0);',
+  '    gl_FragColor.rgb *= 1.0-_rain_a + _rain_a*uni_texture.g;',
+  '  #endif',
+  '} else if (uniTexture_state == 2) {',
+  '  gl_FragColor.rgb *= texture2D( uniTexture_map, uniTexture_vUv ).rgb;',
+  '}',
+  '#endif',
+].join("\n"),
 
 	envmap_vertex : [
 
@@ -14023,6 +14107,17 @@ THREE.UniformsLib = {
 
 	}
 
+// AT: uniTexture
+,uniTexture: {
+  "uniTexture_state": { type:"i", value: 0 },
+  "uniTexture_map": { type:"t", value: null },
+  "uniTexture_bs": { type: "f", value: 20 },
+  "uniTexture_scale": { type: "f", value: 1 },
+  "uniTexture_null_zone": { type: "v4", value: new THREE.Vector4(0,0,0,0) },
+  "uniTexture_MatrixRain_height_limit": { type: "v2", value: new THREE.Vector2(0,0) },
+},
+
+
 };
 
 THREE.ShaderLib = {
@@ -14034,6 +14129,8 @@ THREE.ShaderLib = {
 			THREE.UniformsLib[ "common" ],
 			THREE.UniformsLib[ "fog" ],
 			THREE.UniformsLib[ "shadowmap" ]
+// AT: uniTexture
+,THREE.UniformsLib[ "uniTexture" ]
 
 		] ),
 
@@ -14046,6 +14143,8 @@ THREE.ShaderLib = {
 			THREE.ShaderChunk[ "morphtarget_pars_vertex" ],
 			THREE.ShaderChunk[ "skinning_pars_vertex" ],
 			THREE.ShaderChunk[ "shadowmap_pars_vertex" ],
+// AT: uniTexture
+THREE.ShaderChunk[ "uniTexture_pars_vertex" ],
 
 			"void main() {",
 
@@ -14092,6 +14191,8 @@ THREE.ShaderLib = {
 			THREE.ShaderChunk[ "fog_pars_fragment" ],
 			THREE.ShaderChunk[ "shadowmap_pars_fragment" ],
 			THREE.ShaderChunk[ "specularmap_pars_fragment" ],
+// AT: uniTexture
+THREE.ShaderChunk[ "uniTexture_pars_fragment" ],
 
 // AT: depth buffer TEST
 THREE.ShaderChunk[ "AT_depth_render_mode_pars_fragment" ],
@@ -14111,7 +14212,8 @@ THREE.ShaderChunk[ "AT_depth_render_mode_fragment" ],
 				THREE.ShaderChunk[ "shadowmap_fragment" ],
 
 				THREE.ShaderChunk[ "linear_to_gamma_fragment" ],
-
+// AT: uniTexture
+THREE.ShaderChunk[ "uniTexture_fragment" ],
 				THREE.ShaderChunk[ "fog_fragment" ],
 
 			"}"
@@ -14128,6 +14230,8 @@ THREE.ShaderChunk[ "AT_depth_render_mode_fragment" ],
 			THREE.UniformsLib[ "fog" ],
 			THREE.UniformsLib[ "lights" ],
 			THREE.UniformsLib[ "shadowmap" ],
+// AT: uniTexture
+THREE.UniformsLib[ "uniTexture" ],
 
 			{
 				"ambient"  : { type: "c", value: new THREE.Color( 0xffffff ) },
@@ -14157,6 +14261,8 @@ THREE.ShaderChunk[ "AT_depth_render_mode_fragment" ],
 			THREE.ShaderChunk[ "morphtarget_pars_vertex" ],
 			THREE.ShaderChunk[ "skinning_pars_vertex" ],
 			THREE.ShaderChunk[ "shadowmap_pars_vertex" ],
+// AT: uniTexture
+THREE.ShaderChunk[ "uniTexture_pars_vertex" ],
 
 			"void main() {",
 
@@ -14201,6 +14307,8 @@ THREE.ShaderChunk[ "AT_depth_render_mode_fragment" ],
 			THREE.ShaderChunk[ "fog_pars_fragment" ],
 			THREE.ShaderChunk[ "shadowmap_pars_fragment" ],
 			THREE.ShaderChunk[ "specularmap_pars_fragment" ],
+// AT: uniTexture
+THREE.ShaderChunk[ "uniTexture_pars_fragment" ],
 
 // AT: depth buffer TEST
 THREE.ShaderChunk[ "AT_depth_render_mode_pars_fragment" ],
@@ -14239,7 +14347,8 @@ THREE.ShaderChunk[ "AT_depth_render_mode_fragment" ],
 				THREE.ShaderChunk[ "shadowmap_fragment" ],
 
 				THREE.ShaderChunk[ "linear_to_gamma_fragment" ],
-
+// AT: uniTexture
+THREE.ShaderChunk[ "uniTexture_fragment" ],
 				THREE.ShaderChunk[ "fog_fragment" ],
 
 			"}"
@@ -14256,6 +14365,8 @@ THREE.ShaderChunk[ "AT_depth_render_mode_fragment" ],
 
 			THREE.UniformsLib[ "bump" ],
 			THREE.UniformsLib[ "normalmap" ],
+// AT: uniTexture
+THREE.UniformsLib[ "uniTexture" ],
 
 // AT: displacement map
 {
@@ -14353,6 +14464,9 @@ THREE.ShaderChunk[ "AT_depth_render_mode_fragment" ],
 	"uniform mat4 mirrorTextureMatrix;",
 	"varying vec4 mirrorCoord;",
 "#endif",
+
+// AT: uniTexture
+THREE.ShaderChunk[ "uniTexture_pars_vertex" ],
 
 			"void main() {",
 
@@ -14509,6 +14623,8 @@ THREE.ShaderChunk[ "AT_depth_render_mode_fragment" ],
 			THREE.ShaderChunk[ "bumpmap_pars_fragment" ],
 			THREE.ShaderChunk[ "normalmap_pars_fragment" ],
 			THREE.ShaderChunk[ "specularmap_pars_fragment" ],
+// AT: uniTexture
+THREE.ShaderChunk[ "uniTexture_pars_fragment" ],
 
 // AT: depth buffer TEST
 THREE.ShaderChunk[ "AT_depth_render_mode_pars_fragment" ],
@@ -14541,7 +14657,8 @@ THREE.ShaderChunk[ "AT_depth_render_mode_fragment" ],
 				THREE.ShaderChunk[ "shadowmap_fragment" ],
 
 				THREE.ShaderChunk[ "linear_to_gamma_fragment" ],
-
+// AT: uniTexture
+THREE.ShaderChunk[ "uniTexture_fragment" ],
 				THREE.ShaderChunk[ "fog_fragment" ],
 
 			"}"
@@ -20972,6 +21089,9 @@ waveTexture: (material.waveBaseSpeed != null),
 // AT: mirror texture
 mirrorTexture: (material.mirrorTextureIndex != null),
 
+// AT: uniTexture
+uniTexture: !!(use_MatrixRain && (material.uniTexture || (( (object._model_index != null) || ( material instanceof THREE.MeshBasicMaterial ) || ( material instanceof THREE.MeshLambertMaterial ) || ( material instanceof THREE.MeshPhongMaterial ) ) && (material.uniTexture={state:(use_MatrixRain)?1:2}) ))),
+
 			normalMap: !!material.normalMap,
 			specularMap: !!material.specularMap,
 
@@ -21241,6 +21361,57 @@ if (self.MMD_SA && (u == "depth_render_mode")) {
 				refreshUniformsShadow( m_uniforms, lights );
 
 			}
+
+// AT: uniTexture
+if (material.uniTexture) {
+//    mesh._uniTexture_center.copy(mesh.geometry.boundingSphere.center)//.applyMatrix4(mesh.matrixWorld).applyMatrix4(camera.matrixWorldInverse);
+// NOTE: cloned materials (MMD?) may not have these uniforms
+  let bs = object.geometry.boundingSphere
+  // refresh regardless of refreshMaterial
+  if (m_uniforms.uniTexture_state) {
+    m_uniforms.uniTexture_state.value = material.uniTexture.state
+  }
+  if (m_uniforms.uniTexture_scale) {
+    if (object._uniTexture_scale) {
+      m_uniforms.uniTexture_scale.value = object._uniTexture_scale
+    }
+    else {
+// NOTE: For cloned objects with varying scale, use a fixed ._uniTexture_scale value instead
+// For simplicity, assume 10 as scale for all .x objects
+      let scale
+      if (object.material.materials && (object._model_index == null)) {
+        scale = 5/10
+//console.log(object)
+      }
+      else {
+        scale = 1
+        let obj = object
+        while (obj && !(obj instanceof THREE.Scene)) {
+          scale *= Math.max(obj.scale.x, obj.scale.y, obj.scale.z) || 1
+          obj = obj.parent
+        }
+        scale = Math.min(5/scale, 1)
+        if (scale < 0.1)
+          scale *= 2
+      }
+      m_uniforms.uniTexture_scale.value = Math.min(Math.ceil(bs.radius/50), 4) * scale * (material.uniTexture.scale||1);// * ((material.repeat && Math.max(material.repeat.x, material.repeat.y)) || 1)
+    }
+  }
+
+  if (m_uniforms.uniTexture_bs) {
+    m_uniforms.uniTexture_bs.value = bs.radius
+  }
+  if (m_uniforms.uniTexture_null_zone && MMD_SA.MMD_started) {
+    let c_pos = THREE.MMD.getModels()[0].mesh.position
+    m_uniforms.uniTexture_null_zone.value.set(c_pos.x, c_pos.y+10, c_pos.z, (object._model_index==0)?999:10)
+  }
+  if (m_uniforms.uniTexture_MatrixRain_height_limit) {
+    m_uniforms.uniTexture_MatrixRain_height_limit.value.set(object._uniTexture_fadeout||0, bs.center.y)
+  }
+  if (m_uniforms.uniTexture_map) {
+    m_uniforms.uniTexture_map.value = material.uniTexture.map || MMD_SA.matrix_rain.matrix_texture;
+  }
+}
 
 			// ADD by katwat | http://www20.atpages.jp/katwat/wp/
 			if (material.refreshUniforms) {
@@ -22493,6 +22664,9 @@ parameters.waveTexture ? "#define RIPPLE_RANGE " + ((self.MMD_SA && MMD_SA_optio
 // AT: mirror texture
 parameters.mirrorTexture ? "#define USE_MIRROR_TEXTURE" : "",
 
+// AT: uniTexture
+parameters.uniTexture ? "#define USE_UNI_TEXTURE" : "",
+
 			parameters.normalMap ? "#define USE_NORMALMAP" : "",
 			parameters.specularMap ? "#define USE_SPECULARMAP" : "",
 			parameters.vertexColors ? "#define USE_COLOR" : "",
@@ -22639,6 +22813,9 @@ parameters.computerNormalFromDisplacement ? "#define COMPUTE_NORMAL_FROM_DISPLAC
 parameters.waveTexture ? "#define USE_WAVE_TEXTURE" : "",
 // AT: mirror texture
 parameters.mirrorTexture ? "#define USE_MIRROR_TEXTURE" : "",
+
+// AT: uniTexture
+parameters.uniTexture ? "#define USE_UNI_TEXTURE" + ((use_MatrixRain) ? ((MMD_SA.matrix_rain.full_color) ? "\n#define USE_MATRIX_RAIN_COLOR" : "\n#define USE_MATRIX_RAIN_GREEN") : "") : "",
 
 			parameters.normalMap ? "#define USE_NORMALMAP" : "",
 			parameters.specularMap ? "#define USE_SPECULARMAP" : "",
@@ -37889,7 +38066,16 @@ if (that.getAttribute( "type" ) && (that.getAttribute( "type" ) == "Mirror")) {
   _mirror.push(MMD_SA._THREE_mirror[MMD_SA._THREE_mirror.length-1])
 }
 else
-			setObj( that, new THREE[ ( that.getAttribute( "type" ) || "" ) + "Material" ]( tmp ) );
+// AT: uniTexture (and basically any custom properties)
+{
+  let _obj = new THREE[ ( that.getAttribute( "type" ) || "" ) + "Material" ]( tmp );
+  if ("uniTexture" in tmp) {
+    _obj.uniTexture = tmp.uniTexture;
+//    if (_obj.uniTexture.map) _obj.uniTexture.map = eval(_obj.uniTexture.map);
+  }
+  setObj( that, _obj);
+}
+//			setObj( that, new THREE[ ( that.getAttribute( "type" ) || "" ) + "Material" ]( tmp ) );
 
 		} );
 
@@ -38175,7 +38361,8 @@ function getFn( text ) {
 }
 
 function getHash( string ) {
-	return string ? JSON.parse( "{" + $.trim( string ).replace( /([^\s;]+)?\s*:/g, '"$1":' ).replace( /:\s*([^;]+);+/g, ':"$1",' ).replace( /\s+/g, ' ').replace( /:"(true|false)",/g, ":$1," ).replace( /:"(-?(\d+\.\d+|\d+))",/g, ":$1," ).slice( 0, -1 ) + "}" ) : {};
+// AT: parse object string 
+	return string ? JSON.parse( "{" + $.trim( string ).replace( /([^\s;]+)?\s*:/g, '"$1":' ).replace( /:\s*([^;]+);+/g, ':"$1",' ).replace( /\s+/g, ' ').replace( /:"(true|false)",/g, ":$1," ).replace( /:"(-?(\d+\.\d+|\d+))",/g, ":$1," ).replace(/\:"\{([^\:\}]*)\}"/g, (match, p1)=>':{'+decodeURIComponent(p1)+'}').slice( 0, -1 ) + "}" ) : {};
 }
 
 function getArr( string ) {

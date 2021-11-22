@@ -1,4 +1,4 @@
-// (2021-08-06)
+// (2021-11-23)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -1780,7 +1780,7 @@ if (make_armIK) {
 
     bone_plus = Object.assign({}, bone);
     bone_plus.name = bone_plus.nameEn = LR+"腕ＩＫ";
-    bone_plus.parent = that.bones.findIndex((b)=>(b.name=="上半身"));
+    bone_plus.parent = that.bones.findIndex((b)=>(b.name=="上半身2"));
     bone_plus.IK = {
   control: 57.29578/180*Math.PI
  ,effector: bone_index
@@ -3017,6 +3017,8 @@ MMDShader = { // MOD MeshPhongMaterial
 		THREE.UniformsLib.fog,
 		THREE.UniformsLib.lights,
 		THREE.UniformsLib.shadowmap,
+// AT: uniTexture
+THREE.UniformsLib[ "uniTexture" ],
 		{
 			"ambient"  : { type: "c", value: new THREE.Color( 0xffffff ) },
 			"emissive" : { type: "c", value: new THREE.Color( 0x000000 ) },
@@ -3039,6 +3041,8 @@ MMDShader = { // MOD MeshPhongMaterial
 // AT: custom shader START
 	vertexShader: '#define MMD\n#define PHONG\nvarying vec3 vViewPosition;varying vec3 vNormal;\n#if defined( USE_MAP ) || defined( USE_BUMPMAP ) || defined( USE_NORMALMAP ) || defined( USE_SPECULARMAP )\nvarying vec2 vUv;uniform vec4 offsetRepeat;\n#endif\n#ifdef USE_LIGHTMAP\nvarying vec2 vUv2;\n#endif\n#if defined( USE_ENVMAP ) && ! defined( USE_BUMPMAP ) && ! defined( USE_NORMALMAP )\nvarying vec3 vReflect;uniform float refractionRatio;uniform bool useRefract;\n#endif\n#ifndef PHONG_PER_PIXEL\n#if MAX_POINT_LIGHTS > 0\nuniform vec3 pointLightPosition[ MAX_POINT_LIGHTS ];uniform float pointLightDistance[ MAX_POINT_LIGHTS ];varying vec4 vPointLight[ MAX_POINT_LIGHTS ];\n#endif\n#if MAX_SPOT_LIGHTS > 0\nuniform vec3 spotLightPosition[ MAX_SPOT_LIGHTS ];uniform float spotLightDistance[ MAX_SPOT_LIGHTS ];varying vec4 vSpotLight[ MAX_SPOT_LIGHTS ];\n#endif\n#endif\n'
 
+// AT: uniTexture
++ THREE.ShaderChunk[ "uniTexture_pars_vertex" ] + '\n'
 
 //  || defined(USE_XRAY_PASS)
 + '#if MAX_SPOT_LIGHTS > 0 || defined( USE_BUMPMAP ) || defined(USE_XRAY_PASS)\n'
@@ -3087,6 +3091,22 @@ MMDShader = { // MOD MeshPhongMaterial
 //+ 'objectPosition += ( morphTarget0 - position ) * morphTargetInfluences[ 0 ];objectPosition += ( morphTarget1 - position ) * morphTargetInfluences[ 1 ];objectPosition += ( morphTarget2 - position ) * morphTargetInfluences[ 2 ];objectPosition += ( morphTarget3 - position ) * morphTargetInfluences[ 3 ];\n#ifndef USE_MORPHNORMALS\nobjectPosition += ( morphTarget4 - position ) * morphTargetInfluences[ 4 ];objectPosition += ( morphTarget5 - position ) * morphTargetInfluences[ 5 ];objectPosition += ( morphTarget6 - position ) * morphTargetInfluences[ 6 ];objectPosition += ( morphTarget7 - position ) * morphTargetInfluences[ 7 ];\n'
 + '#endif\n'
 
+
+// AT: uniTexture
+// ignore skinning
++ '#ifdef USE_UNI_TEXTURE\n'
++ '  vec3 uniTexture_pos = objectPosition;\n'
+
+//+ '  uniTexture_vUv = vec2(((0.+uniTexture_pos.x * abs(normalize(objectNormal.xz).y) + uniTexture_pos.z * abs(normalize(objectNormal.xz).x))) * 0.1, ((0.+uniTexture_pos.y * abs(normalize(objectNormal.yz).y) + uniTexture_pos.z * abs(normalize(objectNormal.yz).x))) * 0.1);\n'
+//+ '  uniTexture_vUv = vec2(((999.+uniTexture_pos.x + uniTexture_pos.z * abs(normalize(objectNormal.xz).x))) * 0.1, ((999.+uniTexture_pos.y + uniTexture_pos.z * abs(normalize(objectNormal.yz).x))) * 0.1);\n'
+
+//+ '  uniTexture_vUv = vec2(0.+ ((uniTexture_pos.x==0.0)?sign(uniTexture_pos.x):1.0)* length(uniTexture_pos.xz)*0.1, 0.+ ((uniTexture_pos.y==0.0)?sign(uniTexture_pos.y):1.0)* length(uniTexture_pos.yz)*0.1);\n'
+
+//+ '  uniTexture_vUv = vec2((normalize(uniTexture_pos.xz).x * 0.5 + 0.5) * 1.0, (normalize(uniTexture_pos.yz).x * 0.5 + 0.5) * 1.0);\n'
+//+ '  uniTexture_vUv = vec2(uv.x, -uv.y);\n'
++ '#endif\n'
+
+
 + '#ifdef USE_SKINNING\nobjectPosition.xyz = ( skinMatrix * vec4( objectPosition, 1.0 ) ).xyz;\n#endif\nvec4 mvPosition = modelViewMatrix * vec4( objectPosition, 1.0 );gl_Position = projectionMatrix * mvPosition;\n'
 
 + '#ifdef MMD\n'
@@ -3105,6 +3125,24 @@ MMDShader = { // MOD MeshPhongMaterial
 + 'vViewPosition = -mvPosition.xyz;\n#if defined( USE_ENVMAP ) || defined( PHONG ) || defined( LAMBERT ) || defined ( USE_SHADOWMAP )\nvec4 worldPosition = modelMatrix * vec4( objectPosition, 1.0 );\n#endif\n#if defined( USE_ENVMAP ) && ! defined( USE_BUMPMAP ) && ! defined( USE_NORMALMAP )\nvec3 worldNormal = mat3( modelMatrix[ 0 ].xyz, modelMatrix[ 1 ].xyz, modelMatrix[ 2 ].xyz ) * objectNormal;worldNormal = normalize( worldNormal );vec3 cameraToVertex = normalize( worldPosition.xyz - cameraPosition );if ( useRefract ) {vReflect = refract( cameraToVertex, worldNormal, refractionRatio );} else {vReflect = reflect( cameraToVertex, worldNormal );}\n#endif\n#ifndef PHONG_PER_PIXEL\n#if MAX_POINT_LIGHTS > 0\nfor( int i = 0; i < MAX_POINT_LIGHTS; i ++ ) {vec4 lPosition = viewMatrix * vec4( pointLightPosition[ i ], 1.0 );vec3 lVector = lPosition.xyz - mvPosition.xyz;float lDistance = 1.0;if ( pointLightDistance[ i ] > 0.0 )lDistance = 1.0 - min( ( length( lVector ) / pointLightDistance[ i ] ), 1.0 );vPointLight[ i ] = vec4( lVector, lDistance );}\n#endif\n#if MAX_SPOT_LIGHTS > 0\nfor( int i = 0; i < MAX_SPOT_LIGHTS; i ++ ) {vec4 lPosition = viewMatrix * vec4( spotLightPosition[ i ], 1.0 );vec3 lVector = lPosition.xyz - mvPosition.xyz;float lDistance = 1.0;if ( spotLightDistance[ i ] > 0.0 )lDistance = 1.0 - min( ( length( lVector ) / spotLightDistance[ i ] ), 1.0 );vSpotLight[ i ] = vec4( lVector, lDistance );}\n#endif\n#endif\n'
 
 
+// AT: uniTexture
++ '#ifdef USE_UNI_TEXTURE\n'
++ [
+
+  "uniTexture_pos = uniTexture_pos - vec3(uniTexture_bs, -uniTexture_bs, uniTexture_bs) * 10.;",
+
+  "uniTexture_MatrixRain_opacity = (uniTexture_MatrixRain_height_limit.x > 0.0) ? clamp((1.0 - (uniTexture_MatrixRain_height_limit.y + uniTexture_bs - position.y) / (uniTexture_bs * 2.0) - uniTexture_MatrixRain_height_limit.x) / (uniTexture_MatrixRain_height_limit.x*0.25), 0.0, 1.0) : 1.0;",
+
+  "uniTexture_vUv = vec2(-length(uniTexture_pos.xz), length(uniTexture_pos.yz)) * 0.1 / uniTexture_scale;",
+
+  "#if !(MAX_SPOT_LIGHTS > 0 || defined( USE_BUMPMAP ) || defined(USE_XRAY_PASS))",
+  "  vWorldPosition = worldPosition.xyz;",
+  "#endif",
+
+  ].join("\n") + '\n'
++ '#endif\n'
+
+
 //  || defined(USE_XRAY_PASS)
 + '#if MAX_SPOT_LIGHTS > 0 || defined( USE_BUMPMAP ) || defined(USE_XRAY_PASS)\n'
 + 'vWorldPosition = worldPosition.xyz;\n'
@@ -3121,6 +3159,9 @@ MMDShader = { // MOD MeshPhongMaterial
 
 	fragmentShader:
   '#define MMD\nuniform vec3 diffuse;uniform float opacity;uniform vec3 ambient;uniform vec3 emissive;uniform vec3 specular;uniform float shininess;\n#ifdef USE_COLOR\nvarying vec3 vColor;\n#endif\n#if defined( USE_MAP ) || defined( USE_BUMPMAP ) || defined( USE_NORMALMAP ) || defined( USE_SPECULARMAP )\nvarying vec2 vUv;\n#endif\n#ifdef USE_MAP\nuniform sampler2D map;\n#endif\n#ifdef USE_LIGHTMAP\nvarying vec2 vUv2;uniform sampler2D lightMap;\n#endif\n#ifdef USE_ENVMAP\nuniform float reflectivity;uniform samplerCube envMap;uniform float flipEnvMap;uniform int combine;\n#if defined( USE_BUMPMAP ) || defined( USE_NORMALMAP )\nuniform bool useRefract;uniform float refractionRatio;\n#else\nvarying vec3 vReflect;\n#endif\n#endif\n#ifdef USE_FOG\nuniform vec3 fogColor;\n#ifdef FOG_EXP2\nuniform float fogDensity;\n#else\nuniform float fogNear;uniform float fogFar;\n#endif\n#endif\nuniform vec3 ambientLightColor;\n#if MAX_DIR_LIGHTS > 0\nuniform vec3 directionalLightColor[ MAX_DIR_LIGHTS ];uniform vec3 directionalLightDirection[ MAX_DIR_LIGHTS ];\n#endif\n#if MAX_HEMI_LIGHTS > 0\nuniform vec3 hemisphereLightSkyColor[ MAX_HEMI_LIGHTS ];uniform vec3 hemisphereLightGroundColor[ MAX_HEMI_LIGHTS ];uniform vec3 hemisphereLightDirection[ MAX_HEMI_LIGHTS ];\n#endif\n#if MAX_POINT_LIGHTS > 0\nuniform vec3 pointLightColor[ MAX_POINT_LIGHTS ];\n#ifdef PHONG_PER_PIXEL\nuniform vec3 pointLightPosition[ MAX_POINT_LIGHTS ];uniform float pointLightDistance[ MAX_POINT_LIGHTS ];\n#else\nvarying vec4 vPointLight[ MAX_POINT_LIGHTS ];\n#endif\n#endif\n#if MAX_SPOT_LIGHTS > 0\nuniform vec3 spotLightColor[ MAX_SPOT_LIGHTS ];uniform vec3 spotLightPosition[ MAX_SPOT_LIGHTS ];uniform vec3 spotLightDirection[ MAX_SPOT_LIGHTS ];uniform float spotLightAngleCos[ MAX_SPOT_LIGHTS ];uniform float spotLightExponent[ MAX_SPOT_LIGHTS ];\n#ifdef PHONG_PER_PIXEL\nuniform float spotLightDistance[ MAX_SPOT_LIGHTS ];\n#else\nvarying vec4 vSpotLight[ MAX_SPOT_LIGHTS ];\n#endif\n#endif\n'
+
+// AT: uniTexture
++ THREE.ShaderChunk[ "uniTexture_pars_fragment" ] + '\n'
 
 
 //  || defined(USE_XRAY_PASS)
@@ -3323,7 +3364,7 @@ MMDShader = { // MOD MeshPhongMaterial
 //+ '#endif\n' //commented out for mmd.three.js v0.94
 
 
-+ '#ifdef GAMMA_OUTPUT\ngl_FragColor.xyz = sqrt( gl_FragColor.xyz );\n#endif\n#ifdef MMD\n}\n#endif\n#ifdef USE_FOG\nfloat depth = gl_FragCoord.z / gl_FragCoord.w;\n#ifdef FOG_EXP2\nconst float LOG2 = 1.442695;float fogFactor = exp2( - fogDensity * fogDensity * depth * depth * LOG2 );fogFactor = 1.0 - clamp( fogFactor, 0.0, 1.0 );\n#else\nfloat fogFactor = smoothstep( fogNear, fogFar, depth );\n#endif\ngl_FragColor = mix( gl_FragColor, vec4( fogColor, gl_FragColor.w ), fogFactor );\n#endif\n'
++ '#ifdef GAMMA_OUTPUT\ngl_FragColor.xyz = sqrt( gl_FragColor.xyz );\n#endif\n#ifdef MMD\n}\n#endif\n'
 
 
 // X-ray
@@ -3340,6 +3381,12 @@ MMDShader = { // MOD MeshPhongMaterial
 + MMD_SA.MME_shader("HDR").fshader
 + MMD_SA.MME_shader("self_overlay").fshader
 
+
+// AT: uniTexture
++ THREE.ShaderChunk[ "uniTexture_fragment" ] + '\n'
+
+
++ '#ifdef USE_FOG\nfloat depth = gl_FragCoord.z / gl_FragCoord.w;\n#ifdef FOG_EXP2\nconst float LOG2 = 1.442695;float fogFactor = exp2( - fogDensity * fogDensity * depth * depth * LOG2 );fogFactor = 1.0 - clamp( fogFactor, 0.0, 1.0 );\n#else\nfloat fogFactor = smoothstep( fogNear, fogFar, depth );\n#endif\ngl_FragColor = mix( gl_FragColor, vec4( fogColor, gl_FragColor.w ), fogFactor );\n#endif\n'
 
 + '}'
 // END
@@ -3886,10 +3933,14 @@ if (mm) {
   if (para_SA.IK_disabled && para_SA.IK_disabled.test(target.name)) {
     continue
   }
+  if (System._browser.camera.poseNet.IK_disabled_check(target.name)) {
+    continue
+  }
 // arm IK
   if (/\u8155\uFF29\uFF2B/.test(target.name)) {
     let _vmd = MMD_SA.vmd_by_filename[mm.filename]
     if (!System._browser.camera.use_armIK && _vmd && !_vmd.use_armIK && !para_SA.use_armIK) { continue }
+//DEBUG_show( THREE.MMD.getModels()[0].mesh.bones_by_name["左腕ＩＫ"].position.toArray() )
   }
 }
 		effector = bones[ik.effector];
@@ -6028,7 +6079,7 @@ let idata =  _ctx.getImageData(0,0,w,h).data
 let imask = _ctx2.getImageData(0,0,w,h).data
 let is_transparent = false
 for (var i = 0, i_length = idata.length; i < i_length; i+=4) {
-  if ((imask[i+3] > 64) && (idata[i+3] < 192)) {//230)) {
+  if (idata[i+3] < 192) {//230)) {
     is_transparent = true
     break
   }
