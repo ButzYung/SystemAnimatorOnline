@@ -1,4 +1,5 @@
-// EQP core (v2.1.2)
+// EQP core
+// (2021-11-23)
 
 var use_EQP_core = true
 
@@ -25,7 +26,7 @@ use_full_fps_registered = true
 function EQP_EV_usage_PROCESS(obj, u, decay_factor) {
   u /= 100
   if (use_full_fps)
-    decay_factor *= 2 / EV_sync_update.count_to_10fps_
+    decay_factor *= ((RAF_animation_frame_unlimited)?1:2)/EV_sync_update.count_to_10fps_
 
 // decay control
   if (Settings.ReverseAnimation) {
