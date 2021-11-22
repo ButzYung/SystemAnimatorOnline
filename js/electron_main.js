@@ -1,4 +1,5 @@
-// SA Electron - Main EXTENDED (2020-10-27)
+// SA Electron - Main EXTENDED
+// (2021-11-23)
 
 /*
 eval on Electron v1.6.x has some scope issues/bugs which makes the global variables on this script inaccessible inside functions.
@@ -67,6 +68,17 @@ let contextMenu_click_thru
 let MMD_model_material_index, MMD_model_material_label, MMD_model_list
 
 let menu_item_index
+
+
+const webPreferences_default = {
+  nodeIntegration: true,
+  enableRemoteModule: true,
+// https://www.electronjs.org/docs/breaking-changes#default-changed-contextisolation-defaults-to-true
+  contextIsolation: false,
+//  nodeIntegrationInWorker: true,
+//  preload: toLocalPath(SA_path + '\\' + 'js\\electron_preload.js'),
+//  backgroundThrottling: false,
+};
 
 
 // Quit when all windows are closed.
@@ -192,21 +204,15 @@ if (c_json) {
   const {width, height} = (global.WallpaperEngine_mode) ? electron.screen.getPrimaryDisplay().size : {width:160,height:160}
 
   if (1) {
-    mainWindow = new BrowserWindow({icon:__dirname + toLocalPath("\\") + icon_name, width:width, height:height, resizable:false, frame:false, transparent:global.is_transparent, show:false
- ,webPreferences: {
-    nodeIntegration: true
-   ,enableRemoteModule: true
-//   ,nodeIntegrationInWorker: true
-//    preload: toLocalPath(SA_path + '\\' + 'js\\electron_preload.js')
-//    backgroundThrottling: false
-  }
+    mainWindow = new BrowserWindow({icon:__dirname + toLocalPath("\\") + icon_name, width:width, height:height, resizable:false, frame:false, transparent:global.is_transparent, show:false,
+webPreferences: webPreferences_default,
     });
     mainWindow.setIgnoreMouseEvents(true)
     mainWindow.loadURL((SA_path && toFileProtocol(SA_path + '\\' + 'SystemAnimator_webkit.html')) || 'file://' + __dirname + '/index.html');
   }
   else {
     mainWindow = new BrowserWindow({icon:__dirname + toLocalPath("\\") + icon_name, width: 1280, height: 720});
-    mainWindow.loadURL(toFileProtocol("F:\\Programs Portable\\node-webkit\\_TEMP\\test.html"));
+    mainWindow.loadURL('https://vladmandic.github.io/human/demo/index.html'); //'https://code.mediapipe.dev/codepen/holistic'); //toFileProtocol("F:\\Programs Portable\\node-webkit\\_TEMP\\test.html"));//
   }
 
 //(SA_path && toFileProtocol(SA_path + '\\' + 'SystemAnimator_webkit.html')) || 'file://' + __dirname + '/index.html');
@@ -223,6 +229,14 @@ if (c_json) {
 
 
   webContents = mainWindow.webContents;
+
+// https://www.electronjs.org/docs/breaking-changes#removed-remote-module
+// https://www.npmjs.com/package/@electron/remote
+if (parseInt(process.versions.electron) >= 14) {
+  require('@electron/remote/main').initialize();
+  require("@electron/remote/main").enable(webContents);
+}
+
   webContents.on('new-window', function(event, url){
     event.preventDefault();
     electron.shell.openExternal(url);
@@ -670,7 +684,7 @@ const DropArea_show = function (visible) {
 
   contextMenu.items[menu_item_index['Show drop area']].enabled = true
 
-  var win_options = {width:256, height:256, focusable:false, webPreferences:{nodeIntegration:true,enableRemoteModule:true}, resizable:false, frame:false, transparent:true}
+  var win_options = {width:256, height:256, focusable:false, webPreferences:webPreferences_default, resizable:false, frame:false, transparent:true}
   if ('getChildWindows' in mainWindow) {
     win_options.parent = mainWindow
   }
