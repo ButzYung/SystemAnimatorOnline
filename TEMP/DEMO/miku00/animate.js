@@ -1327,6 +1327,8 @@ if (skin.time < 1) {
 
  ,trackball_camera_limit: { "min": { length:8 } }
 
+ ,motion_tracking_enabled: true
+
  ,onstart: function () {
 let model = THREE.MMD.getModels()[0]
 let bones_by_name = model.mesh.bones_by_name
@@ -1918,16 +1920,48 @@ if (mf) {
 //DEBUG_show(Date.now()+":"+MMD_SA._custom_morph.length)
       }
 
+      function check_case(m_obj) {
+if (!m_obj.case_list) return false
+
+var case_index = (m_obj.case_index == null) ? -1 : m_obj.case_index;
+if (++case_index < m_obj.case_list.length) {
+  m_obj.case_index = case_index
+  m_obj.case_list[case_index](m_obj.name)
+  return true
+}
+
+m_obj.case_index = -1
+return false
+      }
+
       var morph_event_registered = false
 
       var morph_form = [null]
       var morph_form_index = 0
+
+      var _motion_list_index = 0
+      var _motion_list = []
 
       window.addEventListener("MMDStarted", function () {
 var mf = MMD_SA_options.model_para_obj.morph_form
 if (mf) {
   morph_form = morph_form.concat(Object.values(mf))
 }
+
+_motion_list[0] = [
+  {name:"standmix2_modified"},
+  {
+    name:"stand_simple",
+    case_list: [
+(name)=>{ MMD_SA_options.motion_para[name].center_view_enforced = true },
+(name)=>{ MMD_SA_options.motion_para[name].center_view_enforced = false }
+    ]
+  },
+  {name:"i-shaped_balance_TDA_f0-50"},
+  ((1||MMD_SA_options.WebXR.AR._adult_mode) ? {name:"leg_hold"} : null),
+  {name:"gal_model_motion_with_legs-2_loop_v01"},
+  {name:"chair_sit01_armIK"}
+].filter(m=>m!=null);
       });
 
       return {
@@ -1937,6 +1971,8 @@ if (mf) {
  ,stock_max: 1
  ,stock_default: 1
  ,action: {
+    set _motion_list_index(v) { _motion_list_index = v; },
+
     func: function () {
 var model_mesh = THREE.MMD.getModels()[0].mesh
 if (!model_mesh.visible)
@@ -1949,24 +1985,32 @@ if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle
     window.addEventListener("SA_MMD_model0_process_morphs", morph_event)
   }
 
-  let motion_list = ["standmix2_modified","stand_simple", "i-shaped_balance_TDA_f0-50", ((1||MMD_SA_options.WebXR.AR._adult_mode)?"leg_hold":null), "gal_model_motion_with_legs-2_loop_v01","chair_sit01_armIK"].filter(m=>m!=null);
-  let motion_index = motion_list.findIndex((m)=>(MMD_SA_options.motion_shuffle_list_default[0]==MMD_SA_options.motion_index_by_name[m]));
-  if (++motion_index >= motion_list.length) {
-    motion_index = 0
-    if (++morph_form_index == morph_form.length) morph_form_index = 0;
+  let camera = System._browser.camera
+  let motion_list_index = (camera.ML_enabled && camera.poseNet.enabled) ? 1 : 0
+  if ((motion_list_index == 1) && !_motion_list[1]) {
+    _motion_list[1] = _motion_list[0].filter((m)=>MMD_SA_options.motion_para[m.name].motion_tracking_enabled);
   }
 
-// special case for stand_simple
-  let mp_stand_simple = MMD_SA_options.motion_para["stand_simple"]
-  if (motion_index == 1) {
-    mp_stand_simple.center_view_enforced = true
+  let motion_list = _motion_list[motion_list_index]
+  let motion_index
+  if (motion_list_index != _motion_list_index) {
+    motion_index = -1
+    motion_list.forEach((m)=>{ if (m.case_list) m.case_index = -1; });
   }
-  else if ((motion_index == 2) && mp_stand_simple.center_view_enforced) {
-    mp_stand_simple.center_view_enforced = false
-    motion_index--
+  else {
+    motion_index = motion_list.findIndex((m)=>(MMD_SA_options.motion_shuffle_list_default[0]==MMD_SA_options.motion_index_by_name[m.name]));
+  }
+  _motion_list_index = motion_list_index
+
+  if ((motion_index == -1) || !check_case(motion_list[motion_index])) {
+    if (++motion_index >= motion_list.length) {
+      motion_index = 0
+      if (++morph_form_index == morph_form.length) morph_form_index = 0;
+    }
+    check_case(motion_list[motion_index])
   }
 
-  MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name[motion_list[motion_index]]]
+  MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name[motion_list[motion_index].name]]
 
   MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice()
   MMD_SA._force_motion_shuffle = true
@@ -2020,7 +2064,7 @@ else {
 
    ,"facemesh" : {
   icon_path: Settings.f_path + '/assets/assets.zip#/icon/face_scan_64x64.png'
- ,info_short: "Facemesh AI"
+ ,info_short: "Motion Tracking"
 // ,is_base_inventory: true
  ,stock_max: 1
  ,stock_default: 1
@@ -2041,6 +2085,8 @@ else  {
   MMD_SA.WebXR.user_camera.facemesh.enabled = false
   MMD_SA.WebXR.user_camera.poseNet.enabled = false
   MMD_SA.WebXR.user_camera.handpose.enabled = false
+  MMD_SA_options.Dungeon_options.item_base['magic_wand'].action._motion_list_index = -1
+  MMD_SA_options.Dungeon_options.item_base['magic_wand'].action.func()
   DEBUG_show("Camera ML Mode:OFF", 2)
 }
     }
@@ -2560,7 +2606,8 @@ DEBUG_show("Facemesh AI:ON", 2)
 MMD_SA.WebXR.user_camera.poseNet.enabled = true
 MMD_SA.WebXR.user_camera.handpose.enabled = false
 MMD_SA.WebXR.user_camera.facemesh.enabled = false
-DEBUG_show("PoseNet AI:ON", 3)
+MMD_SA_options.Dungeon_options.item_base['magic_wand'].action.func()
+DEBUG_show("Pose AI:ON", 3)
           }
          ,ended: true
         }
@@ -2572,7 +2619,8 @@ DEBUG_show("PoseNet AI:ON", 3)
 MMD_SA.WebXR.user_camera.poseNet.enabled = true
 MMD_SA.WebXR.user_camera.handpose.enabled = true
 MMD_SA.WebXR.user_camera.facemesh.enabled = false
-DEBUG_show("PoseNet/Handpose AI:ON", 3)
+MMD_SA_options.Dungeon_options.item_base['magic_wand'].action.func()
+DEBUG_show("Pose/Hands AI:ON", 3)
           }
          ,ended: true
         }
@@ -2584,7 +2632,8 @@ DEBUG_show("PoseNet/Handpose AI:ON", 3)
 MMD_SA.WebXR.user_camera.facemesh.enabled = true
 MMD_SA.WebXR.user_camera.poseNet.enabled = true
 MMD_SA.WebXR.user_camera.handpose.enabled = false
-DEBUG_show("Facemesh/PoseNet AI:ON", 3)
+MMD_SA_options.Dungeon_options.item_base['magic_wand'].action.func()
+DEBUG_show("Facemesh/Pose AI:ON", 3)
           }
          ,ended: true
         }
@@ -2596,7 +2645,8 @@ DEBUG_show("Facemesh/PoseNet AI:ON", 3)
 MMD_SA.WebXR.user_camera.facemesh.enabled = true
 MMD_SA.WebXR.user_camera.poseNet.enabled = true
 MMD_SA.WebXR.user_camera.handpose.enabled = true
-DEBUG_show("Facemesh/PoseNet/Handpose AI:ON", 4)
+MMD_SA_options.Dungeon_options.item_base['magic_wand'].action.func()
+DEBUG_show("Facemesh/Pose/Hands AI:ON", 4)
           }
          ,ended: true
         }
