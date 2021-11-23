@@ -1,4 +1,4 @@
-// (2021-11-23)
+// (2021-11-24)
 
 /*!
  * jThree JavaScript Library v2.1.2
@@ -1914,7 +1914,7 @@ THREE.Vector3.prototype = {
 		return this;
 
 	},
-
+/*
 	setEulerFromQuaternion: function ( q, order ) {
 
 		// q is assumed to be normalized
@@ -1975,136 +1975,11 @@ THREE.Vector3.prototype = {
 		return this;
 
 	},
+*/
 
-/*
 // AT: backported
-		setFromRotationMatrix: function ( m, order ) {
-
-//			var clamp = _Math.clamp;
-		function clamp( x ) {
-
-			return Math.min( Math.max( x, -1 ), 1 );
-
-		}
-
-			// assumes the upper 3x3 of m is a pure rotation matrix (i.e, unscaled)
-
-			var te = m.elements;
-			var m11 = te[ 0 ], m12 = te[ 4 ], m13 = te[ 8 ];
-			var m21 = te[ 1 ], m22 = te[ 5 ], m23 = te[ 9 ];
-			var m31 = te[ 2 ], m32 = te[ 6 ], m33 = te[ 10 ];
-
-			order = order || 'XYZ';
-
-			if ( order === 'XYZ' ) {
-
-				this.y = Math.asin( clamp( m13, - 1, 1 ) );
-
-				if ( Math.abs( m13 ) < 0.99999 ) {
-
-					this.x = Math.atan2( - m23, m33 );
-					this.z = Math.atan2( - m12, m11 );
-
-				} else {
-
-					this.x = Math.atan2( m32, m22 );
-					this.z = 0;
-
-				}
-
-			} else if ( order === 'YXZ' ) {
-
-				this.x = Math.asin( - clamp( m23, - 1, 1 ) );
-
-				if ( Math.abs( m23 ) < 0.99999 ) {
-
-					this.y = Math.atan2( m13, m33 );
-					this.z = Math.atan2( m21, m22 );
-
-				} else {
-
-					this.y = Math.atan2( - m31, m11 );
-					this.z = 0;
-
-				}
-
-			} else if ( order === 'ZXY' ) {
-
-				this.x = Math.asin( clamp( m32, - 1, 1 ) );
-
-				if ( Math.abs( m32 ) < 0.99999 ) {
-
-					this.y = Math.atan2( - m31, m33 );
-					this.z = Math.atan2( - m12, m22 );
-
-				} else {
-
-					this.y = 0;
-					this.z = Math.atan2( m21, m11 );
-
-				}
-
-			} else if ( order === 'ZYX' ) {
-
-				this.y = Math.asin( - clamp( m31, - 1, 1 ) );
-
-				if ( Math.abs( m31 ) < 0.99999 ) {
-
-					this.x = Math.atan2( m32, m33 );
-					this.z = Math.atan2( m21, m11 );
-
-				} else {
-
-					this.x = 0;
-					this.z = Math.atan2( - m12, m22 );
-
-				}
-
-			} else if ( order === 'YZX' ) {
-
-				this.z = Math.asin( clamp( m21, - 1, 1 ) );
-
-				if ( Math.abs( m21 ) < 0.99999 ) {
-
-					this.x = Math.atan2( - m23, m22 );
-					this.y = Math.atan2( - m31, m11 );
-
-				} else {
-
-					this.x = 0;
-					this.y = Math.atan2( m13, m33 );
-
-				}
-
-			} else if ( order === 'XZY' ) {
-
-				this.z = Math.asin( - clamp( m12, - 1, 1 ) );
-
-				if ( Math.abs( m12 ) < 0.99999 ) {
-
-					this.x = Math.atan2( m32, m22 );
-					this.y = Math.atan2( m13, m11 );
-
-				} else {
-
-					this.x = Math.atan2( - m23, m33 );
-					this.y = 0;
-
-				}
-
-			} else {
-
-				console.warn( 'THREE.Euler: .setFromRotationMatrix() given unsupported order: ' + order );
-
-			}
-
-//			this._order = order;
-
-//			if ( update !== false ) this.onChangeCallback();
-
-			return this;
-
-		},
+// https://github.com/mrdoob/three.js/blob/dev/src/math/Euler.js
+// https://github.com/mrdoob/three.js/issues/5659
 
 		setEulerFromQuaternion: function () {
 
@@ -2112,16 +1987,16 @@ THREE.Vector3.prototype = {
 var matrix;
 window.addEventListener("jThree_ready", function () {matrix = new THREE.Matrix4()});
 
-			return function setFromQuaternion( q, order ) {
+			return function ( q, order ) {
 
 				matrix.makeRotationFromQuaternion( q );
 
-				return this.setFromRotationMatrix( matrix, order );
+				return this.setEulerFromRotationMatrix( matrix, order );
 
 			};
 
 		}(),
-*/
+
 
 	getPositionFromMatrix: function ( m ) {
 
