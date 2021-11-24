@@ -7700,6 +7700,8 @@ this._look_at_mouse = v
   Object.defineProperty(MMD_SA_options, "look_at_screen_ratio",
 {
   get: function () {
+if (System._browser.camera.ML_enabled && !MMD_SA.WebXR.session) return 0;
+
 var mm = MMD_SA.MMD.motionManager
 var para_SA = mm.para_SA
 
