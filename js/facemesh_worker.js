@@ -215,8 +215,7 @@ function rgba_to_grayscale(rgba, center, radius) {
   return gray;
 }
 
-var use_pose_worker;
-var pose_worker, pose_worker_ready;
+var recalculate_z_rotation_from_scaledMesh;
 
 async function init() {
   try {
@@ -258,6 +257,7 @@ estimateFaces: async function (obj, config) {
 
       model = await faceLandmarksDetection.load(faceLandmarksDetection.SupportedPackages.mediapipeFacemesh, {maxFaces:1});
 
+      recalculate_z_rotation_from_scaledMesh = true
       postMessage('(Face-landmarks-detection initialized)')
     }
     else {
@@ -341,12 +341,6 @@ _t_now = performance.now()
 _t_list[0] = _t_now-_t
 _t = _t_now
 
-if (use_mediapipe_facemesh) {
-//console.log(_t_list.reduce((a,c)=>a+c))
-//    postMessage(JSON.stringify({ faces:[], _t:_t_list.reduce((a,c)=>a+c) }));
-//    return
-}
-
   if ((use_mediapipe_facemesh) ? (!faces.multiFaceLandmarks||!faces.multiFaceLandmarks.length) : (!faces.length || ((faces[0].faceInViewConfidence||faces[0].confidence) < 0.7))) {
     postMessage(JSON.stringify({ faces:[], _t:_t_list.reduce((a,c)=>a+c) }));
     draw([], w,h, options)
@@ -370,14 +364,8 @@ _t = _t_list.reduce((a,c)=>a+c)
   }
 
   let draw_camera// = true;
-  if (use_pose_worker && pose_worker_ready) {
-    let data = { rgba:rgba.buffer, w:cw, h:ch, options:{ use_handpose:options.use_handpose, _t:_t } };//, threshold:1 };
-    pose_worker.postMessage(data, [data.rgba]);
-    pose_worker_ready = false
-    draw_camera = false
-  }
 
-  postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:face.faceScore||face.faceInViewConfidence||0, scaledMesh:(canvas)?{454:sm[454],234:sm[234]}:sm, mesh:face.mesh, eyes:eyes, bb_center:face.bb_center, emotion:face.emotion, rotation:face.rotation }], _t:_t, fps:fps }));
+  postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:face.faceScore||face.faceInViewConfidence||0, scaledMesh:(canvas)?{454:sm[454],234:sm[234]}:sm, mesh:face.mesh, eyes:eyes, bb_center:face.bb_center, emotion:face.emotion, rotation:face.rotation }], _t:_t, fps:fps, recalculate_z_rotation_from_scaledMesh:recalculate_z_rotation_from_scaledMesh }));
 
   if (draw_camera) {
     if (!canvas_camera) {
@@ -831,44 +819,12 @@ function draw_hand() {
   });
 }
 
-function pose_worker_onmessage(e) {
-  var data = ((typeof e.data == "string") && (e.data.charAt(0) === "{")) ? JSON.parse(e.data) : e.data;
-
-  if (typeof data === "string") { 
-    if (data == "OK") {
-      pose_worker_ready = true
-    }
-    else {
-//      DEBUG_show(data, 2)
-//      System._browser.console.log(data)
-    }
-  }
-  else {
-    pose_worker_ready = true
-
-    postMessage(data);
-
-    posenet = data.posenet
-    pose_w = cw
-    pose_h = ch
-    handpose = data.handpose
-    data.posenet = undefined
-    data.handpose = undefined
-  }
-}
-
 onmessage = function (e) {
   let t = performance.now()
   let data = (typeof e.data === "string") ? JSON.parse(e.data) : e.data;
 
   if (data.options) {
-    use_pose_worker = data.options.use_pose_worker
     flip_canvas = data.options.flip_canvas
-
-    if (use_pose_worker && !pose_worker) {
-      pose_worker = new Worker('pose_worker.js?use_mobilenet=1');
-      pose_worker.onmessage = pose_worker_onmessage;
-    }
   }
 
   if (data.canvas) {
