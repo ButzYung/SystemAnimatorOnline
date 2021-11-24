@@ -3056,15 +3056,13 @@ q_m4 = new THREE.Quaternion()
       var finger_list_en = ["thumb", "index", "middle", "ring", "pinky"];
       var nj_list = ["０","１","２","３"];
 
-      var use_pose_worker = !is_mobile;
-
       var use_human// = true;
       var use_mixed_human// = !is_mobile;
       var use_tfjs_posenet;
       var use_movenet = true;
       var use_blazepose = true;
       var use_mediapipe// = true;
-      var use_holistic = url_search_params.get('use_holistic');
+      var use_holistic = url_search_params.get('use_holistic') || is_mobile;
 
       var use_human_only, use_human_pose, use_human_hands;
 
@@ -3104,8 +3102,6 @@ pose_initialized = true
 
 // preload facemesh worker (mainly for canvas drawing)
 _facemesh.init()
-
-if (!use_pose_worker) pose_worker_initialized = true;
 
 if (MMD_SA_options.model_para_obj.left_arm_z_rot == null) {
   let model = THREE.MMD.getModels()[0]
@@ -3334,7 +3330,7 @@ var ratio = Math.max(Math.min(s[0].t_delta/s[0].t_delta_frame,1),0)
 
 var rot_parent = s[0].rot_parent;
 if (!rot_parent) {
-  rot_parent = MMD_SA.get_bone_rotation_parent(mesh, name).inverse();
+  rot_parent = q1.copy(bone.quaternion).multiply(mesh.bones_by_name['頭'].quaternion);//MMD_SA.get_bone_rotation_parent(mesh, name).inverse();//
 }
 s[0]._rot_parent = rot_parent
 
@@ -3350,13 +3346,19 @@ else if ((angle < 0) && (angle < -Math.PI))
 angle = Math.abs(angle)
 ratio = (_poseNet.use_3D_pose) ? 0.5 : 0.4 + Math.max(angle-Math.PI/2,0)/(Math.PI/2) * 0.1;
 
+var rot_head = q1.multiplyQuaternions(rot_parent, MMD_SA._q1.copy(rot).slerp(q_identity, 1-ratio*2));
+rot_head.setFromEuler(v3a.fromArray(v3a.setEulerFromQuaternion(rot_head, 'YZX').toArray().map((a)=>Math.sign(a) * Math.min(Math.abs(a), Math.PI/2))), 'YZX').slerp(q_identity, 0.5);
+bone.quaternion.copy(rot_head);
+mesh.bones_by_name['頭'].quaternion.copy(rot_head);
+
+/*
 bone.quaternion.copy(MMD_SA._q1.copy(rot_parent).slerp(q_identity, 0.5))
 bone.quaternion.multiply(MMD_SA._q1.copy(rot).slerp(q_identity, 1-ratio))
 
 bone = mesh.bones_by_name['頭']
 bone.quaternion.copy(MMD_SA._q1.copy(rot_parent).slerp(q_identity, 0.5))
 bone.quaternion.multiply(MMD_SA._q1.copy(rot).slerp(q_identity, 1-ratio))
-
+*/
 if (ratio < 0.5) {
   bone = mesh.bones_by_name['上半身2']
   bone.quaternion.multiply(MMD_SA._q1.copy(rot).slerp(q_identity, 1-(1-ratio*2)))
@@ -4327,7 +4329,7 @@ arms.forEach(function (arm) {
       _facemesh.worker_onmessage({ data:data.facemesh })
     }
 
-    if (use_pose_worker && pose && _facemesh.worker_initialized) {
+    if (pose && _facemesh.worker_initialized) {
       let _data = { posenet:pose, w:camera.video_canvas.width, h:camera.video_canvas.height, flip_canvas:camera.display_flipped }
       if (data.handpose && data.handpose.length)
         _data.handpose = data.handpose
@@ -4357,8 +4359,6 @@ arms.forEach(function (arm) {
 
       function pose_update_frame(delay_update) {
 function update_worker() {
-  if (!use_pose_worker) return;
-
   var pose_ready = _poseNet.enabled && _poseNet.worker_initialized && camera_video_timestamp && !_poseNet.busy && video_capture_active && (_poseNet.camera_video_timestamp != camera_video_timestamp);
   if (!pose_ready)
     return
@@ -5309,10 +5309,10 @@ var eye_data_height_ref_pts = {L:[159,145], R:[386,374]};
 
     var TRIANGULATION
 
-    var use_faceLandmarksDetection = !is_mobile
+    var use_faceLandmarksDetection = !is_mobile;
 // NOTE: Not using human for now, as there is a memory leak in Chromium v93+ affecting human regardless of whether it is webgl or wasm backend, webworker or not.
     var use_human_facemesh// = url_search_params.get('use_human_facemesh') || !is_mobile
-    var use_mediapipe_facemesh = is_mobile || url_search_params.get('use_mediapipe_facemesh')
+    var use_mediapipe_facemesh = url_search_params.get('use_mediapipe_facemesh') || is_mobile;
 
     function init() {
 if (_facemesh.initialized)
@@ -5327,6 +5327,9 @@ for (var i = 0; i < 4; i++)
 var params = []
 if (System._browser.use_WASM_SIMD) {
   params.push('simd=1')
+}
+if (use_holistic) {
+  use_faceLandmarksDetection = true
 }
 if (use_mediapipe_facemesh) {
   use_faceLandmarksDetection = true
@@ -5486,9 +5489,10 @@ z_rot = -xyz.z;
   let _dis = Math.sqrt(_x_diff*_x_diff + _y_diff*_y_diff) / Math.cos(y_rot)
   _facemesh.face_width = _dis
 
-  let _z_rot
+// The .mesh returned by TFJS facemesh has (near) 0 z rotation, and thus its z rotation should be recalculated from .scaledMesh
 // not needed anymore for human v1.1.9+
-  if (use_faceLandmarksDetection && !use_human_facemesh) {
+  let _z_rot
+  if (data.recalculate_z_rotation_from_scaledMesh) {
     _z_rot = Math.asin(_y_diff / _dis)
   }
   else {
@@ -5929,7 +5933,7 @@ function update_worker() {
   }
 
   let facemesh_bb_ratio;
-  if (MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio && use_pose_worker) {// && !is_mobile) {// || !screen.orientation || /landscape/.test(screen.orientation.type))) {//
+  if (MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio) {// && !is_mobile) {// || !screen.orientation || /landscape/.test(screen.orientation.type))) {//
     facemesh_bb_ratio = MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio
     let d = Math.round(Math.min(cw,ch) * facemesh_bb_ratio)
     sx = Math.round(Math.max(Math.min(cw*bb_center[0] - d/2, cw-d), 0))
@@ -5951,7 +5955,7 @@ function update_worker() {
 
   let rgba = ctx.getImageData(sx,sy,sw,sh).data.buffer;
 
-  let data = { rgba:rgba, w:cw, h:ch, options:{draw_canvas:true, flip_canvas:camera.display_flipped, bb:{x:sx, y:sy, w:sw, h:sh, ratio:facemesh_bb_ratio||0}, use_pose_worker:(_poseNet.enabled && !use_pose_worker), use_handpose:_handpose.enabled} };//, threshold:1 };
+  let data = { rgba:rgba, w:cw, h:ch, options:{draw_canvas:true, flip_canvas:camera.display_flipped, bb:{x:sx, y:sy, w:sw, h:sh, ratio:facemesh_bb_ratio||0}} };//, threshold:1 };
   if (!camera.video_canvas_facemesh._offscreen && self.OffscreenCanvas) {
     data.canvas = camera.video_canvas_facemesh.transferControlToOffscreen()
     camera.video_canvas_facemesh._offscreen = true
