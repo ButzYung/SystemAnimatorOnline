@@ -3603,7 +3603,7 @@ if (_poseNet.enabled) {
       pose.keypoints = _keypoints
     }
 
-    if (use_3D_pose && (_facemesh.data_detected < 5)) {
+    if (use_3D_pose && !_facemesh.data_detected_stable) {
 //let y_axis = MMD_SA._v3a_.copy(pose.keypoints3D[0]).sub(MMD_SA._v3b.copy(pose.keypoints3D[1]).add(pose.keypoints3D[2]).multiplyScalar(0.5)).normalize();
 //let x_axis = MMD_SA._v3b_.copy(pose.keypoints3D[1]).sub(MMD_SA._v3b.copy(pose.keypoints3D[2])).normalize();
 
@@ -3652,7 +3652,7 @@ rot = rot.clone().multiply(MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.set(Math.PI
 //frames.add("skin", "首", neck)
 frames.add("skin", "首", { after_IK:true, rot:rot, onProcessRotation:process_head_rotation })
 
-if (_facemesh.data_detected < 5) {
+if (!_facemesh.data_detected_stable) {
   _facemesh.bb_center[0] = pose.keypoints[0].position.x / camera.video_canvas.width
   _facemesh.bb_center[1] = pose.keypoints[1].position.y / camera.video_canvas.height
 //_info_extra += '\nbb_center:' + _facemesh.bb_center.join(',') + '\n'
@@ -5438,13 +5438,16 @@ if (data.faces.length)
 else
   _facemesh.data_detected = 0
 
-if (data.faces.length && (!_poseNet.enabled || !_poseNet.use_3D_pose ||(_facemesh.data_detected >= 5))) {
+if (data.faces.length) {// && (_facemesh.data_detected_stable || !_poseNet.use_3D_pose)) {
+  if (data.faces[0].bb_center) bb_center = data.faces[0].bb_center;
+}
+
+if (data.faces.length && _facemesh.data_detected_stable) {
   let face = data.faces[0]
 
   let sign_flip = (camera.x_flipped) ? 1 : -1
 
-  if (face.bb_center)
-    bb_center = face.bb_center
+//  if (face.bb_center) bb_center = face.bb_center;
 
 // LR:234,454
 // TB:10,152
@@ -5815,13 +5818,28 @@ var canvas_resized = document.createElement("canvas");
 
 var bb_center = []
 
+var _data_detected = 0
+var _data_detected_ini_timestamp = 0
+
 // END
 
     _facemesh = {
       initialized: false
      ,worker_initialized: false
 
-     ,data_detected: 0
+     ,get data_detected() { return _data_detected; }
+     ,set data_detected(v) {
+if (v) {
+  if (!_data_detected) {
+    _data_detected_ini_timestamp = RAF_timestamp
+  }
+}
+else {
+  _data_detected_ini_timestamp = 0
+}
+_data_detected = v
+      }
+     ,get data_detected_stable() { return _data_detected_ini_timestamp && (RAF_timestamp-_data_detected_ini_timestamp > 500); }
 
      ,get blink_detection() {
 return blink_detection;
@@ -5917,14 +5935,17 @@ function update_worker() {
   let need_resize;
 
   video_canvas = camera.video_canvas
-  sx = sy = 0
-  cw = sw = video_canvas.width
-  ch = sh = video_canvas.height
+  let vw = video_canvas.width, vh = video_canvas.height;
 
+  sx = sy = 0
+  cw = sw = vw
+  ch = sh = vh
+
+  let target_ratio
   if (MMD_SA_options.user_camera.pixel_limit.facemesh) {
     let ratio = Math.sqrt(video_canvas.width * video_canvas.height / MMD_SA_options.user_camera.pixel_limit.facemesh)
     if (ratio > 1) {
-      let target_ratio = Math.ceil(ratio/0.5)*0.5
+      target_ratio = Math.ceil(ratio/0.5)*0.5
       cw = sw = Math.round(video_canvas.width /target_ratio)
       ch = sh = Math.round(video_canvas.height/target_ratio)
       video_canvas = canvas_resized
@@ -5932,30 +5953,53 @@ function update_worker() {
     }
   }
 
-  let facemesh_bb_ratio;
+  let facemesh_bb_ratio, facemesh_bb_scale;
   if (MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio) {// && !is_mobile) {// || !screen.orientation || /landscape/.test(screen.orientation.type))) {//
     facemesh_bb_ratio = MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio
     let d = Math.round(Math.min(cw,ch) * facemesh_bb_ratio)
-    sx = Math.round(Math.max(Math.min(cw*bb_center[0] - d/2, cw-d), 0))
-    sy = Math.round(Math.max(Math.min(ch*bb_center[1] - d/2, ch-d), 0))
     sw = d
     sh = d
+    if (!_facemesh.data_detected && (facemesh_bb_ratio < 1)) {
+      let _d = Math.min(cw,ch)
+      sx = Math.round(Math.max(Math.min(cw/2 - _d/2, cw-_d), 0)) * facemesh_bb_ratio
+      sy = Math.round(Math.max(Math.min(ch/2 - _d/2, ch-_d), 0)) * facemesh_bb_ratio
+
+      facemesh_bb_scale = facemesh_bb_ratio
+      facemesh_bb_ratio = 1
+      video_canvas = canvas_resized
+      need_resize = true
+    }
+    else {
+      sx = Math.round(Math.max(Math.min(cw*bb_center[0] - d/2, cw-d), 0))
+      sy = Math.round(Math.max(Math.min(ch*bb_center[1] - d/2, ch-d), 0))
+    }
   }
 
   let ctx = video_canvas.getContext("2d")
   if (need_resize) {
-    if ((video_canvas.width != cw) || (video_canvas.height != ch)) {
-      video_canvas.width  = cw
-      video_canvas.height = ch
-      video_canvas.globalCompositeOperation = "copy"
-      console.log('Facemesh canvas:' + cw + 'x' + ch)
+    ctx.globalCompositeOperation = "copy"
+    if (facemesh_bb_scale) {
+      video_canvas.width =  sw
+      video_canvas.height = sh
+      let d = Math.min(vw,vh);
+      let _sx = Math.round(Math.max(Math.min(vw/2 - d/2, vw-d), 0)), _sy = Math.round(Math.max(Math.min(vh/2 - d/2, vh-d), 0));
+      ctx.drawImage(camera.video_canvas, _sx,_sy,d,d, 0,0,video_canvas.width,video_canvas.height)
+      console.log('Facemesh canvas('+cw+'x'+ch+'=>'+sw+'x'+sh+'):' + [_sx,_sy,d,d].join(',') + '=>' + [sx,sy,sw,sh].join(','))
     }
-    ctx.drawImage(camera.video_canvas, 0,0,cw,ch)
+    else {
+      if ((video_canvas.width != sw) || (video_canvas.height != sh)) {
+        video_canvas.width  = sw
+        video_canvas.height = sh
+        console.log('Facemesh canvas('+cw+'x'+ch+')')
+      }
+      ctx.drawImage(camera.video_canvas, Math.round(sx*target_ratio),Math.round(sy*target_ratio),Math.round(sw*target_ratio),Math.round(sh*target_ratio), 0,0,sw,sh)
+//      ctx.drawImage(camera.video_canvas, 0,0,cw,ch)
+    }
   }
 
-  let rgba = ctx.getImageData(sx,sy,sw,sh).data.buffer;
+  let rgba = (need_resize) ? ctx.getImageData(0,0,sw,sh).data.buffer : ctx.getImageData(sx,sy,sw,sh).data.buffer;
 
-  let data = { rgba:rgba, w:cw, h:ch, options:{draw_canvas:true, flip_canvas:camera.display_flipped, bb:{x:sx, y:sy, w:sw, h:sh, ratio:facemesh_bb_ratio||0}} };//, threshold:1 };
+  let data = { rgba:rgba, w:cw*(facemesh_bb_scale||1), h:ch*(facemesh_bb_scale||1), options:{draw_canvas:true, flip_canvas:camera.display_flipped, bb:{x:sx, y:sy, w:sw, h:sh, ratio:facemesh_bb_ratio||0, scale:facemesh_bb_scale||1}} };//, threshold:1 };
   if (!camera.video_canvas_facemesh._offscreen && self.OffscreenCanvas) {
     data.canvas = camera.video_canvas_facemesh.transferControlToOffscreen()
     camera.video_canvas_facemesh._offscreen = true
