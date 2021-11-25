@@ -363,6 +363,13 @@ _t = _t_list.reduce((a,c)=>a+c)
     fps_count = fps_ms = 0
   }
 
+  if (bb.scale < 1) {
+    let s = 1/bb.scale
+    sm.forEach(xyz => {xyz[0]*=s; xyz[1]*=s;});
+    eyes.forEach((e)=>{e[0]*=s; e[1]*=s;});
+  }
+//console.log(face.bb_center)
+
   let draw_camera// = true;
 
   postMessage(JSON.stringify({ faces:[{ faceInViewConfidence:face.faceScore||face.faceInViewConfidence||0, scaledMesh:(canvas)?{454:sm[454],234:sm[234]}:sm, mesh:face.mesh, eyes:eyes, bb_center:face.bb_center, emotion:face.emotion, rotation:face.rotation }], _t:_t, fps:fps, recalculate_z_rotation_from_scaledMesh:recalculate_z_rotation_from_scaledMesh }));
@@ -558,8 +565,6 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
   }
 
   faces[0].bb = bb
-  faces[0].bb_ratio = bb.ratio
-//  faces[0].bb_ratio = Math.max((face.boundingBox.bottomRight[0]-face.boundingBox.topLeft[0])/w, (face.boundingBox.bottomRight[1]-face.boundingBox.topLeft[1])/h)
   faces[0].bb_center = [(face.boundingBox.topLeft[0]+(face.boundingBox.bottomRight[0]-face.boundingBox.topLeft[0])/2+sx)/w, (face.boundingBox.topLeft[1]+(face.boundingBox.bottomRight[1]-face.boundingBox.topLeft[1])/2+sy)/h]
 
   return faces
