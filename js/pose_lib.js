@@ -667,7 +667,6 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
   }
 
   faces[0].bb = bb
-  faces[0].bb_ratio = bb.ratio
   faces[0].bb_center = [(face.boundingBox.topLeft[0]+(face.boundingBox.bottomRight[0]-face.boundingBox.topLeft[0])/2+sx)/w, (face.boundingBox.topLeft[1]+(face.boundingBox.bottomRight[1]-face.boundingBox.topLeft[1])/2+sy)/h]
 
   return faces
@@ -694,7 +693,7 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
     hands = hands_adjust(result)
 
     if (result.faceLandmarks && result.faceLandmarks.length) {
-      faces = process_facemesh({multiFaceLandmarks:[result.faceLandmarks]}, w,h, {x:0, y:0, w:w, h:h, ratio:0});
+      faces = process_facemesh({multiFaceLandmarks:[result.faceLandmarks]}, w,h, {x:0, y:0, w:w, h:h, ratio:0, scale:1});
 
       let face = faces[0]
       let sm = face.scaledMesh;
