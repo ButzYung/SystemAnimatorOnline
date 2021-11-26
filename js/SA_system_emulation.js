@@ -3330,7 +3330,8 @@ var ratio = Math.max(Math.min(s[0].t_delta/s[0].t_delta_frame,1),0)
 
 var rot_parent = s[0].rot_parent;
 if (!rot_parent) {
-  rot_parent = q1.copy(bone.quaternion).multiply(mesh.bones_by_name['頭'].quaternion);//MMD_SA.get_bone_rotation_parent(mesh, name).inverse();//
+  rot_parent = MMD_SA.get_bone_rotation_parent(mesh, name).inverse();
+  rot_parent.multiply(bone.quaternion).multiply(mesh.bones_by_name['頭'].quaternion);
 }
 s[0]._rot_parent = rot_parent
 
