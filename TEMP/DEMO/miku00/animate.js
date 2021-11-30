@@ -1746,8 +1746,8 @@ if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle
 
  ,user_camera: {
     pixel_limit: {
-      _default_: 1920*1080,//1280*720,//
-//      facemesh : 1280*720,
+      _default_: [1920,1080],
+//      facemesh : [640,360],
       facemesh_bb_ratio: (is_mobile) ? 1 : 0.5,
     },
     display: (is_mobile) ? {} : { scale:0.4, top:0, left:-1 },
