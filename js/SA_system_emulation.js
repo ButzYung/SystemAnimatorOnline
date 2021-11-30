@@ -2871,8 +2871,8 @@ if ((video_canvas.width != w) || (video_canvas.height != h)) {
     video_canvas.style.height = window.innerHeight + "px"
   }
   else {
-    let _w = (w * MMD_SA_options.user_camera.display.scale)
-    let _h = (h * MMD_SA_options.user_camera.display.scale)
+    let _w = (window.innerWidth  * MMD_SA_options.user_camera.display.scale)
+    let _h = (window.innerHeight * MMD_SA_options.user_camera.display.scale)
     video_canvas.style.width  = _w + "px"
     video_canvas.style.height = _h + "px"
 
@@ -2913,7 +2913,7 @@ else {
 }
 //context.restore()
 
-video_canvas.style.visibility = (!camera.visible || _bodyPix.enabled || (face_detection.initialized && face_detection.worker_initialized && !face_detection.dets)) ? "hidden" : "visible";
+video_canvas.style.visibility = (!camera.visible || _bodyPix.enabled || (face_detection.initialized && face_detection.worker_initialized && !face_detection.dets)) ? "hidden" : "inherit";
       }
 
       function video_capture() {
@@ -2933,13 +2933,15 @@ else {
 }
 
 const cs = camera.video_canvas_facemesh.style
-const scale = (is_mobile) ? 0.25 : 0.4
-if ((cs.pixelWidth != ~~camera.video_canvas.style.pixelWidth*scale) || (cs.pixelHeight != ~~camera.video_canvas.style.pixelHeight*scale)) {
-  cs.pixelWidth  = ~~camera.video_canvas.width*scale
-  cs.pixelHeight = ~~camera.video_canvas.height*scale
-  cs.posLeft = window.innerWidth - cs.pixelWidth
+const scale = Math.min(0.5/(MMD_SA_options.user_camera.display.scale||1), (is_mobile) ? 0.25 : 1)
+const w = ~~camera.video_canvas.style.pixelWidth*scale
+const h = ~~camera.video_canvas.style.pixelHeight*scale
+if ((cs.pixelWidth != w) || (cs.pixelHeight != h)) {
+  cs.pixelWidth  = w
+  cs.pixelHeight = h
+  cs.posLeft = window.innerWidth - w
 }
-cs.visibility = "visible"
+cs.visibility = "inherit"
       }
 
       var video_capture_active
@@ -3045,11 +3047,14 @@ else {
       var v3a;
       var q1;
       var rot_m4, q_m4;
+      var v2a, v2b;
       window.addEventListener("jThree_ready", function () {
 v3a = new THREE.Vector3()
 q1 = new THREE.Quaternion()
 rot_m4 = new THREE.Matrix4()
 q_m4 = new THREE.Quaternion()
+v2a = new THREE.Vector2()
+v2b = new THREE.Vector2()
       });
 
       var finger_list = ["親", "人", "中", "薬", "小"];
@@ -3122,6 +3127,7 @@ if (MMD_SA_options.model_para_obj.left_arm_z_rot == null) {
   MMD_SA_options.model_para_obj.arm_axis["右"] = MMD_SA_options.model_para_obj.arm_axis["左"].clone().setX(-MMD_SA_options.model_para_obj.arm_axis["左"].x)
 
   MMD_SA_options.model_para_obj.hip_center = new THREE.Vector3().fromArray(bones_by_name["左足"].pmxBone.origin).setX(0);
+  MMD_SA_options.model_para_obj.spine_length = bones_by_name["首"].pmxBone.origin[1] - MMD_SA_options.model_para_obj.hip_center.y;
   MMD_SA_options.model_para_obj.left_heel_height = bones_by_name["左足首"].pmxBone.origin[1]
   MMD_SA_options.model_para_obj.left_leg_length = MMD_SA._v3a.fromArray(bones_by_name["左足"].pmxBone.origin).distanceTo(MMD_SA._v3b.fromArray(bones_by_name["左足ＩＫ"].pmxBone.origin));
 
@@ -3414,14 +3420,13 @@ if (camera_depth_scale) camera_depth.estimate()
 let cam_distance_default = camera._camera_reset.position.z - THREE.MMD.getModels()[0].mesh.position.z
 
 let cam_distance = cam_distance_default
-if (camera_depth_scale && camera_depth.z) cam_distance = camera_depth.z_smoothed
+if (camera_depth_scale && camera_depth.z) cam_distance = camera_depth.z_smoothed || camera_depth.z;
 
-cam_distance = cam_distance_default - (cam_distance_default - cam_distance)
+//console.log(cam_distance,cam_distance_default,v_hip.z)
 
 v_hip.multiplyScalar(cam_distance/v_hip.z).negate()
 
 v_hip.z = cam_distance_default + v_hip.z
-//console.log(v_hip.z)
 
 s[0].pos.copy(v_hip)
 
@@ -3457,7 +3462,161 @@ hip_offset.project(camera._camera_reset)
 */
       }
 
-      var camera_depth_scale// = 1 * 10;
+      var camera_depth_scale = 1 * 10;
+
+      var camera_depth = (function () {
+
+        var camera_depth_data = []
+        var camera_depth_list = []
+//var _min_=999,_max_=0;
+
+        function prepare(pose) {
+var armL = pose.keypoints[5]
+var armR = pose.keypoints[6]
+var hipL = pose.keypoints[11]
+var hipR = pose.keypoints[12]
+if ((armL.score <= 0) || (armR.score <= 0) || (hipL.score <= 0) || (hipR.score <= 0)) {
+  return
+}
+
+var armL3D = pose.keypoints3D[5]
+var armR3D = pose.keypoints3D[6]
+
+var spine = MMD_SA._v3a.addVectors(armL3D, armR3D).multiplyScalar(0.5)
+var y_axis = MMD_SA.TEMP_v3.set(0,1,0)
+y_axis.y *= -1
+var axis_to_y = v3a.crossVectors(spine, y_axis).normalize()
+var _ax = MMD_SA._v3b.setEulerFromQuaternion(MMD_SA.TEMP_q.setFromAxisAngle(axis_to_y, spine.angleTo(y_axis)).conjugate(), 'XZY').x
+
+var hip2D = v2a.copy(hipL.position).add(hipR.position).multiplyScalar(0.5)
+var shoulder2D = v2b.copy(armL.position).add(armR.position).multiplyScalar(0.5)
+let spine2D_length = hip2D.distanceTo(shoulder2D)
+//shoulder2D.sub(hip2D).normalize().multiplyScalar(spine2D_length/Math.cos(_ax)).add(hip2D)
+shoulder2D.copy(hip2D); shoulder2D.y -= spine2D_length/Math.cos(_ax);
+_info_extra += '\nspine:' + [spine2D_length, hip2D.distanceTo(shoulder2D), _ax*180/Math.PI, spine.length()].join('\n') + '\n'
+
+camera_depth_data = [{ point2D:[{position:shoulder2D.clone()}, {position:hip2D.clone()}], z_diff:0 }];
+        }
+
+        function estimate() {
+if (!camera_depth_data.length) return;
+
+// センター
+var camera = System._browser.camera
+var w = camera.video_canvas.width
+var h = camera.video_canvas.height
+//MMD_SA._trackball_camera.object
+var v3_screen = v3a;
+
+var camera_depth = []
+
+camera_depth_data.forEach((data) => {
+  v3_screen.set(
+     (data.point2D[0].position.x/w) * 2 - 1
+   ,-(data.point2D[0].position.y/h) * 2 + 1
+   ,0.5
+  );
+
+  var v3_armL = MMD_SA._v3a.copy(v3_screen.unproject(camera._camera_reset).sub(camera._camera_reset.position).normalize());
+
+  v3_screen.set(
+     (data.point2D[1].position.x/w) * 2 - 1
+   ,-(data.point2D[1].position.y/h) * 2 + 1
+   ,0.5
+  );
+
+  var v3_hipR = MMD_SA._v3b.copy(v3_screen.unproject(camera._camera_reset).sub(camera._camera_reset.position).normalize());
+
+  var length, z_diff;
+  if (data.v3) {
+    length = data.v3.length()
+//pos_hipR.z - pos_armL.z
+    z_diff = data.v3.z
+  }
+  else {
+    length = MMD_SA_options.model_para_obj.spine_length
+    z_diff = 0
+  }
+
+/*
+
+Math.pow(v3_armL.x*s_armL - v3_hipR.x*s_hipR, 2) + Math.pow(v3_armL.y*s_armL - v3_hipR.y*s_hipR, 2) + Math.pow(v3_armL.z*s_armL - v3_hipR.z*s_hipR, 2) = length*length
+
+v3_hipL.z*s_armL - v3_arm.z*s_hipR = z_diff
+(z_diff + v3_armL.z*s_armL)/v3_hipR.z = s_hipR
+
+v3_armL.z*s_armL - v3_hip.z*s_hipR = z_diff
+(v3_armL.z*s_armL - z_diff)/v3_hip.z = s_hipR
+
+Math.pow(v3_armL.x*s_armL - v3_hipR.x*(z_diff + v3_armL.z*s_armL)/v3_hipR.z, 2) + Math.pow(v3_armL.y*s_armL - v3_hipR.y*(z_diff + v3_armL.z*s_armL)/v3_hipR.z, 2) + Math.pow(v3_armL.z*s_armL - (z_diff + v3_armL.z*s_armL), 2) = length*length
+
+v3_armL.x*s_armL - v3_hipR.x*z_diff - v3_hipR.x*v3_armL.z*s_armL/v3_hipR.z
+s_armL * (v3_armL.x - v3_hipR.x*v3_armL.z/v3_hipR.z) -v3_hipR.x*z_diff
+
+s_armL*s_armL * Math.pow(v3_armL.x - v3_hipR.x*v3_armL.z/v3_hipR.z, 2) + 2 * s_armL * (v3_armL.x - v3_hipR.x*v3_armL.z/v3_hipR.z) * -v3_hipR.x*z_diff + Math.pow(v3_hipR.x*z_diff, 2)
+
+s_armL*s_armL * (Math.pow(v3_armL.x - v3_hipR.x*v3_armL.z/v3_hipR.z, 2) + Math.pow(v3_armL.y - v3_hipR.y*v3_armL.z/v3_hipR.z, 2) + Math.pow(v3_armL.z - v3_armL.z, 2))   = ( length*length - Math.pow(v3_hipR.x*z_diff, 2) - Math.pow(v3_hipR.y*z_diff, 2) - Math.pow(v3_hipR.z*z_diff, 2) ) -  s_armL * 2*((v3_armL.x - v3_hipR.x*v3_armL.z/v3_hipR.z) + (v3_armL.y - v3_hipR.y*v3_armL.z/v3_hipR.z) + (v3_armL.z - v3_armL.z))
+
+(2/B)*(2/B) = (3/(B*B))*(3/(B*B))
+4/(B^2) = 9/(B^4)
+4 * B^2 = 9
+
+let a = Math.sqrt(Math.pow(v3_armL.x - v3_hipR.x*v3_armL.z/v3_hipR.z, 2) + Math.pow(v3_armL.y - v3_hipR.y*v3_armL.z/v3_hipR.z, 2) + 0)
+let b = ((v3_armL.x - v3_hipR.x*v3_armL.z/v3_hipR.z) + (v3_armL.y - v3_hipR.y*v3_armL.z/v3_hipR.z) + 0)
+let c = Math.sqrt(b*b / (a*a))
+
+Math.pow(s_armL*a/c, 2) + 2*s_armL * b / (c*c) = ( length*length - Math.pow(v3_hipR.x*z_diff, 2) - Math.pow(v3_hipR.y*z_diff, 2) - Math.pow(v3_hipR.z*z_diff, 2) )
+Math.pow(s_armL*a/c + 1, 2) = ( length*length - Math.pow(v3_hipR.x*z_diff, 2) - Math.pow(v3_hipR.y*z_diff, 2) - Math.pow(v3_hipR.z*z_diff, 2) ) + 1
+s_armL*a/c + 1 = Math.sqrt(( length*length - Math.pow(v3_hipR.x*z_diff, 2) - Math.pow(v3_hipR.y*z_diff, 2) - Math.pow(v3_hipR.z*z_diff, 2) ) + 1)
+s_armL*a/c = Math.sqrt(( length*length - Math.pow(v3_hipR.x*z_diff, 2) - Math.pow(v3_hipR.y*z_diff, 2) - Math.pow(v3_hipR.z*z_diff, 2) ) + 1) - 1
+
+s_armL = (Math.sqrt(( length*length - Math.pow(v3_hipR.x*z_diff, 2) - Math.pow(v3_hipR.y*z_diff, 2) - Math.pow(v3_hipR.z*z_diff, 2) ) + 1) - 1) / (a/c)
+
+*/
+
+  let a = Math.sqrt(Math.pow(v3_armL.x - v3_hipR.x*v3_armL.z/v3_hipR.z, 2) + Math.pow(v3_armL.y - v3_hipR.y*v3_armL.z/v3_hipR.z, 2) + 0)
+  let b = ((v3_armL.x - v3_hipR.x*v3_armL.z/v3_hipR.z) + (v3_armL.y - v3_hipR.y*v3_armL.z/v3_hipR.z) + 0)
+  let c = b/a//Math.sqrt(b*b / (a*a))
+// if z_diff is "reversed", then the sign is inversed (default is 1).
+  let _z_ = 1
+  let s_armL = (Math.sqrt(( length*length ) + 1) - 1) / (a/c);//(Math.sqrt(( length*length - _z_*(Math.pow(v3_hipR.x*z_diff, 2) + Math.pow(v3_hipR.y*z_diff, 2) + Math.pow(v3_hipR.z*z_diff, 2)) ) + 1) - 1) / (a/c);//
+
+//  let s_hipR = (z_diff + v3_armL.z*s_armL)/v3_hipR.z
+
+  v3_armL.multiplyScalar(s_armL)
+//  v3_hipR.multiplyScalar(s_hipR)
+
+//console.log((v3_hipR.z - v3_armL.z), z_diff)
+//if (Math.sign(v3_hipR.z - v3_armL.z) != Math.sign(z_diff)) console.log(999)
+
+  camera_depth.push({ z:-v3_armL.z*1.5, id:data.id })
+});
+
+camera_depth.sort((a,b)=>b.z-a.z)
+var _z = camera_depth[0].z
+this.z = _z
+
+camera_depth_list = camera_depth_list.filter((d)=>RAF_timestamp-d.timestamp<200)
+camera_depth_list.push({ timestamp:RAF_timestamp, z:_z })
+
+z = camera_depth_list.reduce((a,b)=>a+b.z, 0)/camera_depth_list.length
+/*
+if (z < _min_)
+  _min_ = z
+if (z > _max_)
+  _max_ = z
+console.log(camera_depth[0].id + ':' + ~~_z + '/' + Math.round(_z-z) + '('+ ~~_min_ + '-' + ~~_max_ + '/' + camera_depth_list.length)
+*/
+this.z_smoothed = z
+
+camera_depth_data = []
+        }
+
+        return {
+  prepare:prepare,
+  estimate:estimate
+        };
+      })();
 
 
       var pose_worker_onmessage  = (function () {
@@ -4466,7 +4625,9 @@ function process_bones_core(mesh, name) {
 }
 
 function process_bones(e) {
-  var mesh = e.detail.model.mesh
+  var model = e.detail.model
+  var mesh = model.mesh
+  var motion_para = MMD_SA.motion[model.skin._motion_index].para_SA
 
   var skin = this.skin
   var skin_sorted = Object.keys(skin).filter(n=>!skin[n][0].after_IK).sort((a,b) => {
@@ -4480,12 +4641,18 @@ return _a-_b;
     if (!bone)
       return
 
+    var info = skin[name][0].info[1]
+    if ((!info || /pose/.test(info)) && !motion_para.motion_tracking_enabled)
+      return
+
     process_bones_core.call(this, mesh, name)
   });
 }
 
 function process_bones_after_IK(e) {
-  var mesh = e.detail.model.mesh
+  var model = e.detail.model
+  var mesh = model.mesh
+  var motion_para = MMD_SA.motion[model.skin._motion_index].para_SA
 
   var skin = this.skin
   var skin_sorted = Object.keys(skin).filter(n=>skin[n][0].after_IK).sort((a,b) => {
@@ -4497,6 +4664,10 @@ return _a-_b;
   skin_sorted.forEach((name) => {
     let bone = mesh.bones_by_name[name]
     if (!bone)
+      return
+
+    var info = skin[name][0].info[1]
+    if ((!info || /pose/.test(info)) && !motion_para.motion_tracking_enabled)
       return
 
     process_bones_core.call(this, mesh, name)
@@ -4823,6 +4994,16 @@ if (!this.video) {
   this.video.autoplay = true
 
   let vs
+
+  this.video_host = document.createElement("div")
+  vs = this.video_host.style
+  vs.position = "absolute"
+  vs.left = "0px"
+  vs.top = "0px"
+  vs.zIndex = 0
+//  vs.visibility = "hidden"
+  SL_Host.appendChild(this.video_host)
+
   this.video_canvas = document.createElement("canvas")
   vs = this.video_canvas.style
   vs.position = "absolute"
@@ -4830,7 +5011,7 @@ if (!this.video) {
   vs.top = "0px"
   vs.zIndex = 0
   vs.visibility = "hidden"
-  SL_Host.appendChild(this.video_canvas)
+  this.video_host.appendChild(this.video_canvas)
 
   this.video_canvas_bodyPix = document.createElement("canvas")
   vs = this.video_canvas_bodyPix.style
@@ -4839,7 +5020,7 @@ if (!this.video) {
   vs.top = "0px"
   vs.zIndex = 0
   vs.visibility = "hidden"
-  SL_Host.appendChild(this.video_canvas_bodyPix)
+  this.video_host.appendChild(this.video_canvas_bodyPix)
 
   this.video_canvas_face_detection = document.createElement("canvas")
   vs = this.video_canvas_face_detection.style
@@ -4848,7 +5029,7 @@ if (!this.video) {
   vs.top = "0px"
   vs.zIndex = 0
   vs.visibility = "hidden"
-  SL_Host.appendChild(this.video_canvas_face_detection)
+  this.video_host.appendChild(this.video_canvas_face_detection)
 
   this.video_canvas_facemesh = document.createElement("canvas")
   vs = this.video_canvas_facemesh.style
@@ -4857,7 +5038,7 @@ if (!this.video) {
   vs.top = "0px"
   vs.zIndex = 0
   vs.visibility = "hidden"
-  SL_Host.appendChild(this.video_canvas_facemesh)
+  this.video_host.appendChild(this.video_canvas_facemesh)
 }
 
 this.initialized = true
@@ -4990,7 +5171,7 @@ return bodyPix.toMask(seg, options.foregroundColor, options.backgroundColor);
 
  ,update_frame: async function (image=camera.video_canvas, options_seg, options_mask, options_draw) {
 if (snapshot.check_status()) {
-  camera.video_canvas.style.visibility = "visible"
+  camera.video_canvas.style.visibility = "inherit"
   camera.video_canvas_bodyPix.style.visibility = "hidden"
   SL.style.visibility = "visible"
   return
@@ -5036,7 +5217,7 @@ context.restore()
 context.globalCompositeOperation = "destination-over"
 context.drawImage(image, 0,0)
 
-camera.video_canvas_bodyPix.style.visibility = "visible"
+camera.video_canvas_bodyPix.style.visibility = "inherit"
 SL.style.visibility = "hidden"
 
 //options_draw.canvas.style.visibility = "visible"
@@ -5171,7 +5352,7 @@ function update_worker() {
 
   face_detection.camera_video_timestamp = camera_video_timestamp
 
-  camera.video_canvas_face_detection.style.visibility = "visible"
+  camera.video_canvas_face_detection.style.visibility = "inherit"
 
   let video_canvas, w, h;
 
@@ -5943,12 +6124,14 @@ function update_worker() {
   ch = sh = vh
 
   let target_ratio
-  if (MMD_SA_options.user_camera.pixel_limit.facemesh) {
-    let ratio = Math.sqrt(video_canvas.width * video_canvas.height / MMD_SA_options.user_camera.pixel_limit.facemesh)
+  let limit = MMD_SA_options.user_camera.pixel_limit.facemesh
+  if (limit) {
+    let ratio = Math.sqrt(cw * ch / (limit[0] * limit[1]))
     if (ratio > 1) {
-      target_ratio = Math.ceil(ratio/0.5)*0.5
-      cw = sw = Math.round(video_canvas.width /target_ratio)
-      ch = sh = Math.round(video_canvas.height/target_ratio)
+      target_ratio = (cw / ch > limit[0] / limit[1]) ? cw/limit[0] : ch/limit[1]
+      cw = sw = Math.round(cw / target_ratio)
+      ch = sh = Math.round(ch / target_ratio)
+
       video_canvas = canvas_resized
       need_resize = true
     }
@@ -6079,7 +6262,7 @@ if (use_holistic) {
  ,set IK_disabled(v) { _IK_disabled = v; }
 
  ,IK_disabled_check: function (name) {
-var disabled = _IK_disabled && this.use_3D_pose && this.data_detected;
+var disabled = _IK_disabled && this.use_3D_pose && this.data_detected && MMD_SA.MMD.motionManager.para_SA.motion_tracking_enabled;
 if (disabled && name) {
   if (_IK_enabled_list[name])
     disabled = false
@@ -6355,12 +6538,12 @@ var DPR = window.devicePixelRatio / this.target_devicePixelRatio
 var w = Math.round(window.innerWidth  * DPR)
 var h = Math.round(window.innerHeight * DPR)
 
-if (!target_devicePixelRatio && MMD_SA_options.user_camera.pixel_limit._default_) {
-  let ratio = Math.sqrt(w * h / MMD_SA_options.user_camera.pixel_limit._default_)
-  if (ratio > 1) {
-    let target_ratio = Math.ceil(ratio/0.5)*0.5
-    w = Math.round(w / target_ratio)
-    h = Math.round(h / target_ratio)
+var limit = MMD_SA_options.user_camera.pixel_limit._default_
+if (!target_devicePixelRatio && limit) {
+  if (!is_mobile || (Math.sqrt(w * h / (limit[0] * limit[1])) > 1)) {
+    let target_ratio = (window.innerWidth / window.innerHeight > limit[0] / limit[1]) ? window.innerWidth/limit[0] : window.innerHeight/limit[1]
+    w = Math.round(window.innerWidth  / target_ratio)
+    h = Math.round(window.innerHeight / target_ratio)
   }
 }
 
@@ -6378,6 +6561,8 @@ else {
 
 if (constraints_extra)
   constraints = Object.assign(constraints, constraints_extra)
+
+console.log('Camera constraints', constraints)
 
 return constraints
   }
