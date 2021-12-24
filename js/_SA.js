@@ -1,6 +1,6 @@
 /*
 
-_SA.js (2021-08-06)
+_SA.js (2021-12-24)
 
 System Animator
 (c) Butz Yung / Anime Theme. All rights reserved.
@@ -843,6 +843,7 @@ function SA_OnKeyDown(event, enforced) {
         if (p_win.returnBoolean("AutoItStayOnDesktop") && !WallpaperEngine_mode)
           WebKit_object.stay_on_desktop(!p_win.webkit_IgnoreMouseEvents_disabled)
         webkit_window.setIgnoreMouseEvents(!p_win.webkit_IgnoreMouseEvents_disabled)
+        webkit_window.setFocusable(p_win.webkit_IgnoreMouseEvents_disabled)
       }
       catch (err) {}
 
