@@ -2971,7 +2971,7 @@ window.addEventListener("SA_AR_onARFrame", (function () {
     var update_frame = false
     return function () {
       var camera = System._browser.camera
-      if (self.PoseAT || MMD_SA.WebXR.session || !camera.initialized || (!camera.facemesh._can_skip_RAF && !camera.poseNet.enabled) || camera._needs_RAF) {
+      if (self.PoseAT || !camera.initialized || (!camera.facemesh._can_skip_RAF && !camera.poseNet.enabled) || camera._needs_RAF || (RAF_timestamp_delta > 25)) {
         camera._needs_RAF = false
         update_frame = true
       }
