@@ -1,4 +1,4 @@
-// (2021-11-24)
+// (2021-12-24)
 
 /*!
  * jThree JavaScript Library v2.1.2
@@ -37268,7 +37268,7 @@ if (self.MMD_SA && !src) {
 //https://github.com/mrdoob/three.js/issues/582
 //https://stackoverflow.com/questions/17786723/flickering-planes
   xml +=
-  '			<camera id="MMD_camera" ' + ((MMD_SA_options.camera_param) ? 'param="' + ((typeof MMD_SA_options.camera_param == 'string') ? MMD_SA_options.camera_param : MMD_SA_options.camera_param.join(" ")) + '" ' : '') + 'style="position:' + MMD_SA_options.camera_position.join(" ") + '; lookAt:' + (MMD_SA_options.camera_position[0] + ' ' + MMD_SA_options.camera_position[1]) + ' 0;" />\n'
+  '			<camera id="MMD_camera" ' + ((MMD_SA_options.camera_type) ? 'type="' + MMD_SA_options.camera_type + '" ' : '') + ((MMD_SA_options.camera_param) ? 'param="' + ((typeof MMD_SA_options.camera_param == 'string') ? MMD_SA_options.camera_param : MMD_SA_options.camera_param.join(" ")) + '" ' : '') + 'style="position:' + MMD_SA_options.camera_position.join(" ") + '; lookAt:' + (MMD_SA_options.camera_position[0] + ' ' + MMD_SA_options.camera_position[1]) + ' 0;" />\n'
 + '		</scene>\n'
 + '	</body>\n'
 + '</goml>'
