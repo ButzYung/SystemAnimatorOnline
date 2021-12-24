@@ -1,5 +1,5 @@
 // SA Electron - Main EXTENDED
-// (2021-11-23)
+// (2021-12-24)
 
 /*
 eval on Electron v1.6.x has some scope issues/bugs which makes the global variables on this script inaccessible inside functions.
@@ -720,6 +720,15 @@ const DropArea_show = function (visible) {
 
 
 // global, for remote.getGlobal(name)
+
+const { ipcMain } = require('electron')
+ipcMain.on('getGlobal', (event, name, arg1) => {
+  switch (name) {
+    case "DropArea_drop":
+      global[name](arg1)
+      break
+  }
+})
 
 global.is_transparent = true
 global.is_natural_opaque = false
