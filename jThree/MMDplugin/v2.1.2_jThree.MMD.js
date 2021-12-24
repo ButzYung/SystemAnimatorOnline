@@ -1,4 +1,4 @@
-// (2021-11-23)
+// (2021-12-24)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -1736,7 +1736,7 @@ if (!cloned) {
 		this.bones.push( new Bone( bin ) );
 	}
 // AT: add armIK
-let make_armIK = self.MMD_SA && (model_para_obj.make_armIK || MMD_SA_options.make_armIK);
+let make_armIK = self.MMD_SA && (model_para_obj.make_armIK || MMD_SA_options.make_armIK) && (this.bones.findIndex((b)=>(b.name=="左腕ＩＫ")) == -1);
 if (make_armIK) {
 //bone = f
   let bone_index = this.bones.length;
@@ -1751,13 +1751,17 @@ if (make_armIK) {
     let bone_index_ini = that.bones.findIndex((b)=>(b.name==LR+"腕"));
 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Bitwise_Operators
+    mask = 0x300 | 0x100;
+
     bone = that.bones.find((b)=>(b.name==LR+"腕"));
     bone_plus = Object.assign({}, bone);
     bone_plus.name = bone_plus.nameEn = LR+"腕+";
+    bone_plus._index_IKAT = bone_index_ini-1+0.1 -32768;
     that.bones.push(bone_plus);
-    mask = 0x300 | 0x100;
     bone.flags |= mask;
     bone.additionalTransform = [ bone_index, 1 ];
+// to ensure it is processed BEFORE certain IK for some complicated bone systems
+    bone._index_IKAT = bone_index_ini+0 -32768;
     IK_link.unshift(bone_index);
     bone_index++;
 
@@ -1765,10 +1769,11 @@ if (make_armIK) {
     bone_plus = Object.assign({}, bone);
     bone_plus.name = bone_plus.nameEn = LR+"ひじ+";
     bone_plus.parent = bone_index-1;
+    bone_plus._index_IKAT = bone_index_ini-1+0.2 -32768;
     that.bones.push(bone_plus);
-    mask = 0x300 | 0x100;
     bone.flags |= mask;
     bone.additionalTransform = [ bone_index, 1 ];
+    bone._index_IKAT = bone_index_ini+1 -32768;
     IK_link.unshift(bone_index);
     bone_index++;
 
@@ -1776,11 +1781,13 @@ if (make_armIK) {
     bone_plus = Object.assign({}, bone);
     bone_plus.name = bone_plus.nameEn = LR+"手首+";
     bone_plus.parent = bone_index-1;
+    bone_plus._index_IKAT = bone_index_ini-1+0.3 -32768;
     that.bones.push(bone_plus);
 
     bone_plus = Object.assign({}, bone);
     bone_plus.name = bone_plus.nameEn = LR+"腕ＩＫ";
     bone_plus.parent = that.bones.findIndex((b)=>(b.name=="上半身2"));
+    bone_plus._index_IKAT = bone_index_ini-1+0.4 -32768;
     bone_plus.IK = {
   control: 57.29578/180*Math.PI
  ,effector: bone_index
@@ -1790,9 +1797,11 @@ if (make_armIK) {
     bone_plus.flags |= 0x20;
     that.bones.push(bone_plus);
 
+// 手首
     mask = 0x300 | 0x100;
     bone.flags |= mask;
     bone.additionalTransform = [ bone_index, 1 ];
+    bone._index_IKAT = bone_index_ini+2 -32768;
     bone_index+=2;
 
     for (let i = bone_index_ini; i < bones_length; i++) {
@@ -3948,7 +3957,7 @@ if (mm) {
 		//	continue; // cancel
 		//}
 		setGlobalPosition(mesh, target, targetPos);
-//if (target.name.indexOf("右足非捩IK") != -1) DEBUG_show(targetPos.toArray())
+//if (target.name.indexOf("左腕WIK") != -1 && System._browser.camera.poseNet.enabled) console.log(targetPos.toArray())
 		il = ik.iteration;
 // AT: ik_iteration_factor
 il = Math.max(Math.floor(il * ik_iteration_factor), 1);
@@ -5813,24 +5822,46 @@ Model.prototype.load = function( modelUrl, motionUrl, onload ) {
 };
 
 // AT: _update_IK_and_AddTrans
-Model.prototype._update_IK_and_AddTrans = function (afterPhysics) {
+Model.prototype._update_IK_and_AddTrans = function (afterPhysics, bone_name) {
   var that = this
 
-  var IK_and_AddTrans = this.mesh._IK_and_AddTrans
+  var IK_and_AddTrans = _IK_and_AddTrans = this.mesh._IK_and_AddTrans
   var is_IK
   var a_ini, a_end, idx_last
-  if (afterPhysics) {
-    a_ini = this.mesh._IK_and_AddTrans_afterPhysics_index
+
+  if (bone_name) {
+    let bone = this.mesh.bones_by_name[bone_name]
+    IK_and_AddTrans = bone._IK_and_AddTrans
+    if (!IK_and_AddTrans) {
+      let b_list = [bone._index]
+      IK_and_AddTrans = _IK_and_AddTrans.filter((b)=>{
+if (b.pmxBone.additionalTransform && (!b.pmxBone.IK || b._additionalTransform_only)) {
+  if (b_list.indexOf(b.pmxBone.additionalTransform[0]) != -1) {
+    b_list.push(b._index)
+    return true
+  }
+}
+return false
+      });
+    }
+    this.mesh._IK_and_AddTrans = IK_and_AddTrans
+    a_ini = 0
     idx_last = IK_and_AddTrans.length - 1
   }
   else {
-    a_ini = 0
-    idx_last = (this.mesh._IK_and_AddTrans_afterPhysics_index || IK_and_AddTrans.length) - 1
+    if (afterPhysics) {
+      a_ini = this.mesh._IK_and_AddTrans_afterPhysics_index
+      idx_last = IK_and_AddTrans.length - 1
+    }
+    else {
+      a_ini = 0
+      idx_last = (this.mesh._IK_and_AddTrans_afterPhysics_index || IK_and_AddTrans.length) - 1
+    }
   }
-  var a_end = -1
-//var str=""
+  a_end = -1
+
+//var str=''
   for (var idx = a_ini; idx <= idx_last; idx++) {
-//  this.mesh._IK_and_AddTrans.forEach(function (b, idx) {
     var b = IK_and_AddTrans[idx]
     if (is_IK) {
       if (b.pmxBone.IK && !b._additionalTransform_only) {
@@ -5867,9 +5898,10 @@ Model.prototype._update_IK_and_AddTrans = function (afterPhysics) {
         that.addTrans.update({ini:a_ini, end:a_end})
       }
     }
-//  });
   }
-//DEBUG_show(str+'\n'+Date.now())
+//if (str) DEBUG_show(str+'\n'+Date.now())
+
+  this.mesh._IK_and_AddTrans = _IK_and_AddTrans
 }
 
 Model.prototype.create = function( param, oncreate ) {
@@ -6000,8 +6032,7 @@ console.log(bone._index+'/'+_bone._index)
     var pbone_a = a.pmxBone
     var pbone_b = b.pmxBone
 // it ends up that it may really be just as simple as processing all IK first and then additionalTransform
-    return (((pbone_a.afterPhysics&&8192)||0)+((pbone_a.additionalTransform&&(!pbone_a.IK||a._additionalTransform_only)&&4096)||0)+pbone_a.deformHierachy*1024+a._index) - (((pbone_b.afterPhysics&&8192)||0)+((pbone_b.additionalTransform&&(!pbone_b.IK||b._additionalTransform_only)&&4096)||0)+pbone_b.deformHierachy*1024+b._index);
-//    return (((pbone_a.additionalTransform&&(!pbone_a.IK||a._additionalTransform_only)&&1024)||0)+a._index) - (((pbone_b.additionalTransform&&(!pbone_b.IK||b._additionalTransform_only)&&1024)||0)+b._index);
+    return (((pbone_a.afterPhysics&&32768)||0)+((pbone_a.additionalTransform&&(!pbone_a.IK||a._additionalTransform_only)&&8192)||0)+pbone_a.deformHierachy*1024+(pbone_a._index_IKAT||a._index)) - (((pbone_b.afterPhysics&&32768)||0)+((pbone_b.additionalTransform&&(!pbone_b.IK||b._additionalTransform_only)&&8192)||0)+pbone_b.deformHierachy*1024+(pbone_b._index_IKAT||b._index));
 
 // deformHierachy(2048) > additionalTransform belonging to any IK hierarchy(1024) > IK(0) > additionalTransform NOT belonging to any IK hierarchy(-1024) + bone index
 //    return (pbone_a.deformHierachy*2048+(((pbone_a.additionalTransform&&(!pbone_a.IK||a._additionalTransform_only)) && ((IK_child_transform[a._index] && -1024)||-1024))||0)+a._index) - (pbone_b.deformHierachy*2048+(((pbone_b.additionalTransform&&(!pbone_b.IK||b._additionalTransform_only)) && ((IK_child_transform[b._index] && -1024)||-1024))||0)+b._index)
@@ -6680,7 +6711,7 @@ if (look_at_screen || look_at_mouse) {
   }
 
 if (look_at_mouse) {
-  var _pos
+  let _pos
   if (model_para.look_at_character!= null) {
     _pos = THREE.MMD.getModels()[model_para.look_at_character].mesh.position.clone()
     _pos.y += 15
@@ -6689,20 +6720,25 @@ if (look_at_mouse) {
     _pos = model_para.look_at_target()
   }
   else {
-    var _cursor = (webkit_electron_mode) ? System._browser._electron_cursor_pos : { x:System._browser._WE_mouse_x, y:System._browser._WE_mouse_y }
-    var _window = (webkit_electron_mode) ? System._browser._electron_window_pos.slice(0) : [Lbody_host.style.posLeft, Lbody_host.style.posTop]
+    let _cursor = (webkit_electron_mode) ? System._browser._electron_cursor_pos : { x:System._browser._WE_mouse_x, y:System._browser._WE_mouse_y }
+    let _window = (webkit_electron_mode) ? System._browser._electron_window_pos.slice(0) : [Lbody_host.style.posLeft, Lbody_host.style.posTop]
     if (is_SA_child_animation) {
       var ani = parent.SA_child_animation[SA_child_animation_id]
       _window[0] += ani.x
       _window[1] += ani.y
     }
-    _pos = (new THREE.Vector3(((_cursor.x-_window[0])/B_content_width-0.5)*640, -((_cursor.y-_window[1])/B_content_height-0.5)*480, (para_SA.look_at_mouse_z||0))).unproject(MMD_SA._trackball_camera.object)//.sub(_head_pos)
-//var _a_ = _pos.toArray()
-    var position0 = MMD_SA._trackball_camera.position0//object.position//
-    var cv = MMD_SA.center_view_lookAt
+
+    let y = (_cursor.y-_window[1])/B_content_height-0.5 - ((MMD_SA_options.camera_type == 'Ort')?0.5:0);
+    _pos = (new THREE.Vector3(((_cursor.x-_window[0])/B_content_width-0.5)*640, -(y)*480, (para_SA.look_at_mouse_z||0))).unproject(MMD_SA._trackball_camera.object)//.sub(_head_pos)
+    if (MMD_SA_options.camera_type == 'Ort') {
+//DEBUG_show([((_cursor.x-_window[0])/B_content_width-0.5), -(y)])
+      _pos.multiplyScalar(1/100)
+    }
+
+    let position0 = MMD_SA._trackball_camera.position0//object.position//
+    let cv = MMD_SA.center_view_lookAt
     _pos.x += (position0.x - mesh.position.x) + cv[0]//position0.x + cv[0]//
     _pos.z -= cv[2]
-//DEBUG_show(_a_+'\n'+_pos.toArray()+'\n'+position0.toArray())
   }
 
   if (!MMD_SA._mouse_pos_3D[this._model_index])
@@ -6710,8 +6746,8 @@ if (look_at_mouse) {
   else {
     ["x", "y", "z"].forEach(function (axis) {
 var diff = _pos[axis] - MMD_SA._mouse_pos_3D[that._model_index][axis]
-if (Math.abs(diff) > 5)
-  diff = ((diff > 0) ? 1 : -1) * 5
+var limit = 5
+if (Math.abs(diff) > limit)  diff = Math.sign(diff) * limit;
 MMD_SA._mouse_pos_3D[that._model_index][axis] += diff
     });
 //DEBUG_show(_pos.toArray()+'\n'+MMD_SA._mouse_pos_3D[0].toArray())
