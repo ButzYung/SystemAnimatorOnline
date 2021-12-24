@@ -1,4 +1,4 @@
-// (2021-08-06)
+// (2021-12-24)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -4106,15 +4106,26 @@ ss.sheet.insertRule([
  ,'}'
 ].join('\n'), 0);
 
-var d = document.createElement("div")
-var ds = d.style
+var d, ds;
+
+var dungeon_UI = d = document.createElement("div")
+ds = d.style
+d.id = "Ldungeon_UI"
+ds.position = "absolute"
+ds.left = ds.top = '0px'
+ds.zIndex = 2
+ds.visibility = (System._browser.overlay_mode) ? "hidden" : "inherit"
+SL_Host.appendChild(d)
+
+d = document.createElement("div")
+ds = d.style
 d.id = "Ldungeon_map"
 ds.position = "absolute"
 ds.backgroundColor = "rgba(0,0,0, 0.5)"
 ds.zIndex = 2
 ds.opacity = 0.75
 ds.transformOrigin = "100% 100%"
-SL_Host.appendChild(d)
+dungeon_UI.appendChild(d)
 
 d = document.createElement("canvas")
 ds = d.style
@@ -4160,7 +4171,7 @@ ds.posLeft = 8
 ds.posTop = 24+22+4
 ds.zIndex = 3
 ds.transformOrigin = "0% 0%"
-SL_Host.appendChild(d)
+dungeon_UI.appendChild(d)
 
 d = document.createElement("div")
 ds = d.style
@@ -10703,7 +10714,7 @@ for (let name in this.character.states) {
       [
         {
           message: {
-  content: "1. Graphics Presets (PC)\n2. Graphics Effects (Scene)\n3. WebXR Options\n4. Facemesh\n5. Cancel"
+  content: "1. Graphics Presets (PC)\n2. Graphics Effects (Scene)\n3. WebXR Options\n4. Overlay Mode\n5. Cancel"
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:1 }
@@ -10856,11 +10867,13 @@ DEBUG_show("3D Resolution:" + (((is_default_res) && (Math.round(MMD_SA._renderer
      ,[
         {
           message: {
-  content: "1. Face landmarks detection\n2. Cancel"
+  content: "1. Normal\n2. UI off\n3. UI off + chroma key\n4. Cancel"
  ,bubble_index: 3
  ,branch_list: [
-    { key:1, branch_index:12 }
-   ,{ key:2 }
+    { key:1, branch_index:12 },
+    { key:2, branch_index:13 },
+    { key:3, branch_index:14 },
+    { key:4 }
   ]
           }
         }
@@ -10869,10 +10882,28 @@ DEBUG_show("3D Resolution:" + (((is_default_res) && (Math.round(MMD_SA._renderer
      ,[
         {
   func: function () {
-//var bd = System._browser.camera.facemesh.blink_detection
-//System._browser.camera.facemesh.blink_detection = !bd
-System._browser.camera.facemesh.use_faceLandmarksDetection = !System._browser.camera.facemesh.use_faceLandmarksDetection
-DEBUG_show('Face landmarks detection:' + ((System._browser.camera.facemesh.use_faceLandmarksDetection)?'ON':'OFF'), 3)
+System._browser.overlay_mode = 0
+DEBUG_show('Overlay Mode:Normal', 3)
+  }
+ ,ended: true
+        }
+      ]
+// 13
+     ,[
+        {
+  func: function () {
+System._browser.overlay_mode = 1
+DEBUG_show('Overlay Mode:UI off', 3)
+  }
+ ,ended: true
+        }
+      ]
+// 14
+     ,[
+        {
+  func: function () {
+System._browser.overlay_mode = 2
+DEBUG_show('Overlay Mode:UI off + chroma key', 3)
   }
  ,ended: true
         }
