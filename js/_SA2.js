@@ -1,4 +1,4 @@
-// (2021-08-06)
+// (2021-12-24)
 
 var IPC
 
@@ -459,9 +459,6 @@ Facebook_SA.IPC_Facebook(para)
   var IgnoreMouseEvents = returnBoolean("IgnoreMouseEvents")
   if (webkit_mode) {
     try {
-      if (!WallpaperEngine_mode && webkit_window)
-        webkit_window.setAlwaysOnTop(AutoItAlwaysOnTop)
-
       if (WallpaperEngine_mode) {
         System.Gadget.Settings.writeString("AutoItStayOnDesktop", "non_default")
 //        System.Gadget.Settings.writeString("CSSTransformFullscreen", "non_default")
@@ -513,6 +510,9 @@ window.addEventListener("SA_resized_once", function () {
     if (windows_mode) {
       var no_focus = IgnoreMouseEvents || AutoItStayOnDesktop
       webkit_window.setFocusable(!no_focus)
+// have to set it here AFTER focus/setFocusable in newer version of Electron
+      if (!WallpaperEngine_mode && webkit_window)
+        webkit_window.setAlwaysOnTop(AutoItAlwaysOnTop)
     }
   }
 // TEST mode for Electron
