@@ -1,4 +1,4 @@
-// System Animator core - EXTRA (2020-06-26)
+// System Animator core - EXTRA (2021-12-24)
 
 var use_SA_browser_mode
 var use_SA_system_emulation, use_SA_gimage_emulation
@@ -145,12 +145,12 @@ function SA_load_scripts() {
         Settings_default._custom_[s_name] = Settings_default_by_path[System.Gadget.path][s_name]
     }
 
-    if (WallpaperEngine_mode && !SA_HTA_folder && !is_SA_child_animation) {
-      var fs = SA_require('fs')
-      var ani_path = WallpaperEngine_CEF_mode && System.Gadget.Settings.readString("animation_path_default.txt")
+    if ((WallpaperEngine_mode||webkit_electron_mode) && !SA_HTA_folder && !is_SA_child_animation) {
+      let fs = SA_require('fs')
+      let ani_path = WallpaperEngine_CEF_mode && System.Gadget.Settings.readString("animation_path_default.txt")
 //setTimeout('DEBUG_show("' + (WallpaperEngine_CEF_mode && System.Gadget.Settings.readString("animation_path_default.txt")) + '",0,1)',1000)
       if (!ani_path) {
-        var animation_path_default = System.Gadget.path + toLocalPath('\\TEMP\\animation_path_default.txt')
+        let animation_path_default = System.Gadget.path + toLocalPath('\\TEMP\\animation_path_default.txt')
         if (fs.existsSync(animation_path_default)) {
           try {
             ani_path = fs.readFileSync(animation_path_default, 'utf8').toString().trim()
@@ -172,7 +172,7 @@ function SA_load_scripts() {
         }
         catch (err) {}
       }
-      if (!SA_HTA_folder)
+      if (!SA_HTA_folder && WallpaperEngine_mode)
         SA_HTA_folder = path_demo["demo11"]
     }
 
@@ -505,6 +505,8 @@ function SA_load_body() {
 + '<div style="position:absolute; top:30px; left:0px;"><input id="MC_seek" class="MC_button_s" style="width:140px; height:20px;" type="range" min="0" max="100" step="1" value="0" onmouseover="SL_MC_MouseEnter({Name:this.id})" onmousedown="this._update_disabled=true" onmouseup="this._update_disabled=false" onchange="try { if (this._media_obj) { var t=parseInt(this.value)/100*this._media_obj.duration; var mod=(t-this._media_obj.currentTime)/30; if (mod) SL_MC_Seek(mod, true, true); } } catch (err) {}" /></div>\n'
 + '</div>\n'
 
++ '<div id="Lmenu_host" style="position:absolute; top:0px; left:0px;">\n'
+
 + '<div id="Lquick_menu" style="position:absolute; visibility:hidden; background-color:rgba(68,79,91, 0.66); left:2px; width:' + (18*((is_mobile)?2:1)*5+2) + 'px; height:20px; z-index:499; border:1px solid gray; border-radius:5px; transform-origin:0% 50%;">\n'
 + ' <div style="position:absolute; top:1px; left:1px">\n'
 + '  <div id="Lquick_menu_close_button" class="QuickMenu_button" style="left:' + ((is_mobile)?'0px;width:36px;':'0px') + '" onclick="System._browser.confirmClose(true)" title="Close">\n'
@@ -554,6 +556,8 @@ function SA_load_body() {
 + '  <div style="position:absolute; top:2px; left:2px;">&#x25E2;</div>\n'
 + ' </div>\n'
 + ' <div id="LbuttonRotate" style="position:absolute; top:0px; left:0px; width:12px; height:12px; font-family:Symbola; font-size:12px; color:rgba(0,0,0,0.75); visibility:hidden;" class="Tooltip_LR" title="Drag to rotate. Double-click to switch to resize mode.">&#x25D5;</div>\n'
++ '</div>\n'
+
 + '</div>\n'
 
 // Lnumpad old
