@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2021-11-23)
+// (2021-12-24)
 
 var use_full_spectrum = true
 
@@ -683,7 +683,12 @@ else
 
     var filename = RegExp.$1
 
+    if (!MMD_SA_options.motion_shuffle) {
+      if (!MMD_SA_options.motion_by_song_name) MMD_SA_options.motion_by_song_name = {}
+      MMD_SA_options.motion_by_song_name[filename] = { motion_name:MMD_SA.MMD.motionManager.filename }
+    }
     var motion_by_song_name = MMD_SA_options.motion_by_song_name && MMD_SA_options.motion_by_song_name[filename]
+
     if (motion_by_song_name) {
       vo.motion_by_song_name_mode = true
       MMD_SA.playbackRate = 0
@@ -858,7 +863,7 @@ for (var i = 0; i < 5; i++)
 for (var i = 0; i < 5; i++)
   MMD_SA_options.motion.push({path:'MMD.js/motion/motion_basic_pack01.zip#/_number_meter_' + (i+1) + '.vmd', jThree_para:{}, match:{skin_jThree:/^(\u53F3)(\u80A9|\u8155|\u3072\u3058|\u624B\u9996|\u624B\u6369|.\u6307.)/}})
 
-var use_startup_screen = !!MMD_SA_options.startup_screen || (!MMD_SA_options.MMD_disabled && ((/AT_SystemAnimator_v0001\.gadget/.test(System.Gadget.path) && !returnBoolean("AutoItStayOnDesktop")) || ((MMD_SA_options.Dungeon || (browser_native_mode && !webkit_window)) && (MMD_SA_options.startup_screen !== false))));
+var use_startup_screen = !!MMD_SA_options.startup_screen || (!MMD_SA_options.MMD_disabled && ((/AT_SystemAnimator_v0001\.gadget/.test(System.Gadget.path) && !SA_topmost_window.returnBoolean("AutoItStayOnDesktop") && !SA_topmost_window.returnBoolean('IgnoreMouseEvents')) || ((MMD_SA_options.Dungeon || (browser_native_mode && !webkit_window)) && (MMD_SA_options.startup_screen !== false))));
 if (use_startup_screen) {
   if (!MMD_SA_options.startup_screen)
     MMD_SA_options.startup_screen = {}
@@ -2507,9 +2512,12 @@ context.textBaseline = 'top'
 context.save()
 
 //if (para.invertH_side) flipH_bubble=!flipH_bubble
-if (flipH_bubble) {
-  context.translate(canvas.width, 0);
-  context.scale(-1, 1);
+var flipH, flipV;
+flipV = (MMD_SA_options.camera_type=='Ort');
+flipH = !!flipH_bubble ^ flipV;
+if (flipV || flipH) {
+  context.translate((flipH)?canvas.width:0, (flipV)?canvas.height:0);
+  context.scale((flipH)?-1:1, (flipV)?-1:1);
 }
 context.drawImage(b.image, 0,0)
 
@@ -2600,9 +2608,10 @@ var y = bb[1] + parseInt((bb[3] - h)/2) + ((para.text_offset && para.text_offset
 
 context.save()
 
-if (System._browser.camera.mirror_3D) {
-  context.translate(canvas.width, 0);
-  context.scale(-1, 1);
+flipH = !!System._browser.camera.mirror_3D ^ flipV;
+if (flipV || flipH) {
+  context.translate((flipH)?canvas.width:0, (flipV)?canvas.height:0);
+  context.scale((flipH)?-1:1, (flipV)?-1:1);
 }
 
 for (var i = 0, i_length = msg_line.length; i < i_length; i++) {
