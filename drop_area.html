@@ -58,9 +58,10 @@ _dragCancelDefault(e)
   }
 
   var _drop = function (e) {
-_dragCancelDefault(e)
+_dragCancelDefault(e);
 
-var path = e.dataTransfer.files[0].path
+var path = e.dataTransfer.files[0].path;
+
 /*
 var item = new System.Shell._FolderItem(new WebKit_object["Shell.Application"]._FolderItem({path:path}))
 
@@ -68,7 +69,17 @@ if (DragDrop.validate_func(item))
   DragDrop.onDrop_finish(item)
 */
 
-require('electron').remote.getGlobal("DropArea_drop")(path)
+// NOTE: getGlobal is NOT reliable here with the current version of @electron/remote
+//if ((require('electron').remote || require('@electron/remote')).getGlobal("is_transparent")) document.getElementById('Ldrop_area').style.visibility="hidden";
+//(require('electron').remote || require('@electron/remote')).getGlobal("DropArea_drop")(path);
+var remote = require('electron').remote;
+if (remote) {
+  remote.getGlobal("DropArea_drop")(path);
+}
+else {
+  let ipcRenderer = require('electron').ipcRenderer;
+  ipcRenderer.send('getGlobal', 'DropArea_drop', path);
+}
   }
 
   document.addEventListener("dragenter", _dragEnter, false);
