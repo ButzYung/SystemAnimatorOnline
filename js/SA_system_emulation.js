@@ -1,5 +1,5 @@
 // System object emultaion
-// (2021-11-23)
+// (2021-12-24)
 
 var use_SA_system_emulation = true
 var use_SA_browser_mode
@@ -94,6 +94,7 @@ SA_top_window.resizeToAbsolute = (function () {
   var resized;
 
   return function (w, h) {
+/*
 // fix a strange bug when initializing a fullscreen window
     if (!resized && Settings.CSSTransformFullscreen && (w == screen.availWidth) && (h == screen.availHeight)) {
       this.resizeTo(w-1, h-1)
@@ -102,6 +103,8 @@ SA_top_window.resizeToAbsolute = (function () {
     else {
       this.resizeTo(w, h)
     }
+*/
+webkit_window.setContentSize(w, h)
     resized = true
 
     if (absolute_screen_mode && !System._browser._window_move_timerID) {
@@ -760,6 +763,56 @@ System._browser.document_body_style_pixelHeight.set.call(this, v);
   }
 });
 }
+
+Object.defineProperty(this, "overlay_mode", (function () {
+  var overlay_mode = 0
+  var bg_display_default = ''
+  var bg_color_default = ''
+
+  if (0) {
+    setTimeout(()=>{
+      System._browser.overlay_mode = 2
+    }, 500);
+  }
+
+  return {
+    get: function () { return overlay_mode; },
+    set: function (v) {
+if (v == overlay_mode) return;
+
+switch (v) {
+  case 2:
+    bg_state_default = LdesktopBG_host.style.display
+    LdesktopBG_host.style.display = "none"
+
+    bg_color_default = document.body.style.backgroundColor
+    document.body.style.backgroundColor = "#00FF00"
+
+  case 1:
+    Lmenu_host.style.visibility = "hidden"
+    if (this.camera.video_host)
+      this.camera.video_host.style.visibility = "hidden"
+    if (document.getElementById('Ldungeon_UI'))
+      document.getElementById('Ldungeon_UI').style.visibility = "hidden"
+    break
+
+  default:
+    if (overlay_mode == 2) {
+      LdesktopBG.style.backgroundColor = bg_state_default
+      document.body.style.backgroundColor = bg_color_default
+    }
+
+    Lmenu_host.style.visibility = "inherit"
+    if (this.camera.video_host)
+      this.camera.video_host.style.visibility = "inherit"
+    if (document.getElementById('Ldungeon_UI'))
+      document.getElementById('Ldungeon_UI').style.visibility = "inherit"
+}
+
+overlay_mode = v
+    }
+  };
+})());
 
 var child_animation_as_texture = (is_SA_child_animation && parent.MMD_SA_options && parent.MMD_SA_options.child_animation_as_texture)
 if (child_animation_as_texture) {
@@ -3379,7 +3432,6 @@ if (camera.poseNet.IK_disabled_check(name)) return
 var d = name.charAt(0)
 mesh.bones_by_name[d+'足'].quaternion.set(0,0,0,1)
 mesh.bones_by_name[d+'ひざ'].quaternion.set(0,0,0,1)
-console.log(999)
       }
 
       function cancel_arm_rotation(mesh, name) {
@@ -3493,9 +3545,9 @@ var shoulder2D = v2b.copy(armL.position).add(armR.position).multiplyScalar(0.5)
 let spine2D_length = hip2D.distanceTo(shoulder2D)
 //shoulder2D.sub(hip2D).normalize().multiplyScalar(spine2D_length/Math.cos(_ax)).add(hip2D)
 shoulder2D.copy(hip2D); shoulder2D.y -= spine2D_length/Math.cos(_ax);
-_info_extra += '\nspine:' + [spine2D_length, hip2D.distanceTo(shoulder2D), _ax*180/Math.PI, spine.length()].join('\n') + '\n'
+//_info_extra += '\nspine:' + [spine2D_length, hip2D.distanceTo(shoulder2D), _ax*180/Math.PI, spine.length()].join('\n') + '\n'
 
-camera_depth_data = [{ point2D:[{position:shoulder2D.clone()}, {position:hip2D.clone()}], z_diff:0 }];
+camera_depth_data = [{ point2D:[{position:shoulder2D.clone()}, {position:hip2D.clone()}], data3D:{length:MMD_SA_options.model_para_obj.spine_length, z_diff:0} }];
         }
 
         function estimate() {
@@ -3528,15 +3580,9 @@ camera_depth_data.forEach((data) => {
   var v3_hipR = MMD_SA._v3b.copy(v3_screen.unproject(camera._camera_reset).sub(camera._camera_reset.position).normalize());
 
   var length, z_diff;
-  if (data.v3) {
-    length = data.v3.length()
+  length = data.data3D.length
 //pos_hipR.z - pos_armL.z
-    z_diff = data.v3.z
-  }
-  else {
-    length = MMD_SA_options.model_para_obj.spine_length
-    z_diff = 0
-  }
+  z_diff = data.data3D.z_diff
 
 /*
 
@@ -3621,6 +3667,8 @@ camera_depth_data = []
 
       var pose_worker_onmessage  = (function () {
         function process_hand(mesh, name) {
+var model = THREE.MMD.getModels()[mesh._model_index]
+
 var bone = mesh.bones_by_name[name]
 //var s = this.skin[name]
 var rot_v3, rot, fixedAxis, angle;
@@ -3635,7 +3683,13 @@ if (_bone) {
   rot_v3 = v3a.setEulerFromQuaternion(bone.quaternion, 'YZX')
   angle = -rot_v3.y*0.5
   rot = q1.setFromAxisAngle(fixedAxis, angle);
+
+  if (_bone.quaternion.x || _bone.quaternion.y || _bone.quaternion.z) {
+    _bone.quaternion.conjugate()
+    model._update_IK_and_AddTrans(false, d+"手捩")
+  }
   _bone.quaternion.copy(rot);
+  model._update_IK_and_AddTrans(false, d+"手捩")
 
   bone.quaternion.multiplyQuaternions(rot.conjugate(), bone.quaternion);
 }
@@ -3763,7 +3817,12 @@ if (_poseNet.enabled) {
       pose.keypoints = _keypoints
     }
 
-    if (use_3D_pose && !_facemesh.data_detected_stable) {
+    if (!_facemesh.data_detected_stable) {
+      _facemesh.bb_center[0] = pose.keypoints[0].position.x / camera.video_canvas.width
+      _facemesh.bb_center[1] = pose.keypoints[0].position.y / camera.video_canvas.height
+//_info_extra += '\nbb_center:' + _facemesh.bb_center.join(',') + '\n'
+
+      if (use_3D_pose) {
 //let y_axis = MMD_SA._v3a_.copy(pose.keypoints3D[0]).sub(MMD_SA._v3b.copy(pose.keypoints3D[1]).add(pose.keypoints3D[2]).multiplyScalar(0.5)).normalize();
 //let x_axis = MMD_SA._v3b_.copy(pose.keypoints3D[1]).sub(MMD_SA._v3b.copy(pose.keypoints3D[2])).normalize();
 
@@ -3811,12 +3870,7 @@ rot = rot.clone().multiply(MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.set(Math.PI
 //frames.add("skin", "頭", head)
 //frames.add("skin", "首", neck)
 frames.add("skin", "首", { after_IK:true, rot:rot, onProcessRotation:process_head_rotation })
-
-if (!_facemesh.data_detected_stable) {
-  _facemesh.bb_center[0] = pose.keypoints[0].position.x / camera.video_canvas.width
-  _facemesh.bb_center[1] = pose.keypoints[1].position.y / camera.video_canvas.height
-//_info_extra += '\nbb_center:' + _facemesh.bb_center.join(',') + '\n'
-}
+      }
     }
 
 //_poseNet.IK_disabled=false
@@ -4481,7 +4535,7 @@ arms.forEach(function (arm) {
 //frames.add("skin", "右腕ＩＫ", {absolute:true, pos:new THREE.Vector3(0,0,0)})
 
     _info_extra += ((_info_extra)?'/':'\n') + 'P-FPS:'+Math.round(fps)+'/'+Math.round(data.fps||0);// + '/' + data._t;
-    if (!use_holistic && !_facemesh.enabled && _info_extra) {
+    if (!use_holistic && !_facemesh.enabled && _info_extra && !System._browser.overlay_mode) {
       DEBUG_show(_info_extra+'\n'+'FPS:'+EV_sync_update.fps_last)
     }
 
@@ -4550,6 +4604,8 @@ else {
 
       var frames_object = (function () {
 function process_bones_core(mesh, name) {
+  var model, update_IK_and_AddTrans;
+
   var bone = mesh.bones_by_name[name]
   var s = this.skin[name]
 
@@ -4568,6 +4624,19 @@ function process_bones_core(mesh, name) {
       s[0].onProcessRotation.call(this, mesh, name)
     }
     else {
+// undo existing IK and transforms
+      if (s[0].after_IK) {
+        update_IK_and_AddTrans = !bone._update_IK_and_AddTrans || bone._update_IK_and_AddTrans.length;
+        if (update_IK_and_AddTrans) {
+          model = THREE.MMD.getModels()[mesh._model_index]
+          if (bone.quaternion.x || bone.quaternion.y || bone.quaternion.z) {
+            bone.quaternion.conjugate()
+            model._update_IK_and_AddTrans(false, name)
+            bone.quaternion.conjugate()
+          }
+        }
+      }
+
       let rot = q1.set(0,0,0,1);
       if (s[0].absolute) {
         bone.quaternion.set(0,0,0,1)
@@ -4622,6 +4691,8 @@ function process_bones_core(mesh, name) {
   }
 
   s[0].onFinish && s[0].onFinish.call(this, mesh, name);
+
+  update_IK_and_AddTrans && model._update_IK_and_AddTrans(false, name);
 }
 
 function process_bones(e) {
@@ -4675,7 +4746,7 @@ return _a-_b;
 }
 
 function process_morphs(e) {
-  if (!_facemesh.data_detected) return
+//  if (!_facemesh.data_detected) return
 
   var model = e.detail.model
   var mesh = model.mesh
@@ -4924,9 +4995,7 @@ else {
        }
     },
     {
-      func: ()=>{
-        MMD_SA_options.Dungeon.run_event(null,0,0)
-      }
+      goto_branch: 0
     }
   ],
       ]);
@@ -4954,11 +5023,6 @@ else {
  ,bubble_index: 3
  ,branch_list: list.map((d, idx)=>{ return { key:idx+1, branch_index:idx+1 }; })
        }
-    },
-    {
-      func: ()=>{
-        MMD_SA_options.Dungeon.run_event(null,0,0)
-      }
     }
   ]
               ].concat(list.map((d)=>[{ func:()=>{ constraints.video.deviceId=d.deviceId; resolve(); }, ended:true }]))
@@ -5001,7 +5065,7 @@ if (!this.video) {
   vs.left = "0px"
   vs.top = "0px"
   vs.zIndex = 0
-//  vs.visibility = "hidden"
+  vs.visibility = (System._browser.overlay_mode) ? "hidden" : "inherit"
   SL_Host.appendChild(this.video_host)
 
   this.video_canvas = document.createElement("canvas")
@@ -5613,23 +5677,23 @@ return function (e) {
 camera._needs_RAF = true
 
 let info = ""
-bb_center = [0.5, 0.5]
 
 if (data.faces.length)
   _facemesh.data_detected++
 else
   _facemesh.data_detected = 0
 
-if (data.faces.length) {// && (_facemesh.data_detected_stable || !_poseNet.use_3D_pose)) {
-  if (data.faces[0].bb_center) bb_center = data.faces[0].bb_center;
+if (data.faces.length && data.faces[0].bb_center) {
+  bb_center = data.faces[0].bb_center
+}
+else if (!_poseNet.enabled) {
+  bb_center = [0.5, 0.5]
 }
 
 if (data.faces.length && _facemesh.data_detected_stable) {
   let face = data.faces[0]
 
   let sign_flip = (camera.x_flipped) ? 1 : -1
-
-//  if (face.bb_center) bb_center = face.bb_center;
 
 // LR:234,454
 // TB:10,152
@@ -5981,7 +6045,8 @@ else {
   info = '(no facemesh data)\n' + _info_extra
 }
 
-DEBUG_show(((info && (info+'\n'+'FPS:'+EV_sync_update.fps_last+'\n'))||'')+'F-FPS:'+Math.round(fps)+'/'+Math.round(data.fps||0) )//+'/'+data._t)
+if (!System._browser.overlay_mode)
+  DEBUG_show(((info && (info+'\n'+'FPS:'+EV_sync_update.fps_last+'\n'))||'')+'F-FPS:'+Math.round(fps)+'/'+Math.round(data.fps||0) )//+'/'+data._t)
 
     _facemesh.busy = false
 
@@ -6021,7 +6086,7 @@ else {
 }
 _data_detected = v
       }
-     ,get data_detected_stable() { return _data_detected_ini_timestamp && (RAF_timestamp-_data_detected_ini_timestamp > 500); }
+     ,get data_detected_stable() { return _data_detected_ini_timestamp && (RAF_timestamp-_data_detected_ini_timestamp > 250); }
 
      ,get blink_detection() {
 return blink_detection;
@@ -6123,7 +6188,7 @@ function update_worker() {
   cw = sw = vw
   ch = sh = vh
 
-  let target_ratio
+  let target_ratio = 1
   let limit = MMD_SA_options.user_camera.pixel_limit.facemesh
   if (limit) {
     let ratio = Math.sqrt(cw * ch / (limit[0] * limit[1]))
@@ -6137,38 +6202,37 @@ function update_worker() {
     }
   }
 
-  let facemesh_bb_ratio, facemesh_bb_scale;
+  let facemesh_bb_ratio, facemesh_bb_scale, d;
   if (MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio) {// && !is_mobile) {// || !screen.orientation || /landscape/.test(screen.orientation.type))) {//
     facemesh_bb_ratio = MMD_SA_options.user_camera.pixel_limit.facemesh_bb_ratio
-    let d = Math.round(Math.min(cw,ch) * facemesh_bb_ratio)
+    d = Math.round(Math.min(cw,ch) * facemesh_bb_ratio)
     sw = d
     sh = d
-    if (!_facemesh.data_detected && (facemesh_bb_ratio < 1)) {
-      let _d = Math.min(cw,ch)
-      sx = Math.round(Math.max(Math.min(cw/2 - _d/2, cw-_d), 0)) * facemesh_bb_ratio
-      sy = Math.round(Math.max(Math.min(ch/2 - _d/2, ch-_d), 0)) * facemesh_bb_ratio
+    let bb_scale = 1
+    if ((_facemesh.data_detected < 5) && (facemesh_bb_ratio < 1) && !_poseNet.enabled) {
+      bb_scale = facemesh_bb_ratio + (1-facemesh_bb_ratio) * (1-Math.min(_facemesh.data_detected/5, 1));
+      d = Math.round(Math.min(cw,ch) * bb_scale)
 
-      facemesh_bb_scale = facemesh_bb_ratio
-      facemesh_bb_ratio = 1
+      facemesh_bb_scale = facemesh_bb_ratio / bb_scale
+      facemesh_bb_ratio = bb_scale
       video_canvas = canvas_resized
       need_resize = true
     }
-    else {
-      sx = Math.round(Math.max(Math.min(cw*bb_center[0] - d/2, cw-d), 0))
-      sy = Math.round(Math.max(Math.min(ch*bb_center[1] - d/2, ch-d), 0))
-    }
+    sx = Math.max(Math.min(cw*bb_center[0] - d/2, cw-d), 0) * (facemesh_bb_scale||1)
+    sy = Math.max(Math.min(ch*bb_center[1] - d/2, ch-d), 0) * (facemesh_bb_scale||1)
   }
 
   let ctx = video_canvas.getContext("2d")
   if (need_resize) {
     ctx.globalCompositeOperation = "copy"
+    let _sx=sx, _sy=sy, _sw=sw, _sh=sh;
     if (facemesh_bb_scale) {
-      video_canvas.width =  sw
-      video_canvas.height = sh
-      let d = Math.min(vw,vh);
-      let _sx = Math.round(Math.max(Math.min(vw/2 - d/2, vw-d), 0)), _sy = Math.round(Math.max(Math.min(vh/2 - d/2, vh-d), 0));
-      ctx.drawImage(camera.video_canvas, _sx,_sy,d,d, 0,0,video_canvas.width,video_canvas.height)
-      console.log('Facemesh canvas('+cw+'x'+ch+'=>'+sw+'x'+sh+'):' + [_sx,_sy,d,d].join(',') + '=>' + [sx,sy,sw,sh].join(','))
+      _sw = _sh = d
+      if ((video_canvas.width != sw) || (video_canvas.height != sh)) {
+        video_canvas.width =  sw
+        video_canvas.height = sh
+        console.log('Facemesh canvas('+cw+'x'+ch+'=>'+sw+'x'+sh+'):' + [_sx,_sy,d,d].join(',') + '=>' + [sx,sy,sw,sh].join(','))
+      }
     }
     else {
       if ((video_canvas.width != sw) || (video_canvas.height != sh)) {
@@ -6176,14 +6240,13 @@ function update_worker() {
         video_canvas.height = sh
         console.log('Facemesh canvas('+cw+'x'+ch+')')
       }
-      ctx.drawImage(camera.video_canvas, Math.round(sx*target_ratio),Math.round(sy*target_ratio),Math.round(sw*target_ratio),Math.round(sh*target_ratio), 0,0,sw,sh)
-//      ctx.drawImage(camera.video_canvas, 0,0,cw,ch)
     }
+    ctx.drawImage(camera.video_canvas, Math.round(_sx*target_ratio),Math.round(_sy*target_ratio),Math.round(_sw*target_ratio),Math.round(_sh*target_ratio), 0,0,sw,sh)
   }
 
   let rgba = (need_resize) ? ctx.getImageData(0,0,sw,sh).data.buffer : ctx.getImageData(sx,sy,sw,sh).data.buffer;
 
-  let data = { rgba:rgba, w:cw*(facemesh_bb_scale||1), h:ch*(facemesh_bb_scale||1), options:{draw_canvas:true, flip_canvas:camera.display_flipped, bb:{x:sx, y:sy, w:sw, h:sh, ratio:facemesh_bb_ratio||0, scale:facemesh_bb_scale||1}} };//, threshold:1 };
+  let data = { rgba:rgba, w:cw*(facemesh_bb_scale||1), h:ch*(facemesh_bb_scale||1), options:{draw_canvas:true, flip_canvas:camera.display_flipped, bb:{x:Math.round(sx), y:Math.round(sy), w:sw, h:sh, ratio:facemesh_bb_ratio||0, scale:facemesh_bb_scale||1}} };//, threshold:1 };
   if (!camera.video_canvas_facemesh._offscreen && self.OffscreenCanvas) {
     data.canvas = camera.video_canvas_facemesh.transferControlToOffscreen()
     camera.video_canvas_facemesh._offscreen = true
@@ -6261,14 +6324,17 @@ if (use_holistic) {
 
  ,set IK_disabled(v) { _IK_disabled = v; }
 
- ,IK_disabled_check: function (name) {
-var disabled = _IK_disabled && this.use_3D_pose && this.data_detected && MMD_SA.MMD.motionManager.para_SA.motion_tracking_enabled;
+ ,IK_disabled_check: (function () {
+    var RE_default = new RegExp("(" + toRegExp(["腕ＩＫ","足ＩＫ","つま先ＩＫ"],"|") + ")$");;
+    return function (name) {
+var disabled = _IK_disabled && this.use_3D_pose && this.data_detected && MMD_SA.MMD.motionManager.para_SA.motion_tracking_enabled && (!name || RE_default.test(name));
 if (disabled && name) {
   if (_IK_enabled_list[name])
     disabled = false
 }
 return disabled
-  }
+    };
+  })()
 
  ,enable_IK: function (name, enabled) {
 _IK_enabled_list[name] = enabled
