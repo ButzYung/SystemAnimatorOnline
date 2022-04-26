@@ -1,5 +1,6 @@
 ﻿
 _private/
 TEMP/_config_local/
+node_modules/OSC.js/
 au3/*.exe
 au3/*/*.exe
