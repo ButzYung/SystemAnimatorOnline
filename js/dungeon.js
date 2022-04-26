@@ -1,4 +1,4 @@
-// (2021-12-24)
+// (2022-04-26)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -129,7 +129,7 @@ return g
    ,ground_y: 0
    ,ground_normal: null
    ,grounded: false
-   ,camera_position_base_default: (MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR) ? ([0,10,30]) : [0,10,-30]
+   ,camera_position_base_default: null
    ,camera_position_base: null
    ,speed_scale: 1
 //   ,boundingBox_scale: {x:2, y:1, z:2}
@@ -668,7 +668,19 @@ var d_stock = document.getElementById("Ldungeon_inventory_item" + index + "_stoc
 d_stock.textContent = this.stock
 d_stock.style.visibility = (this.stock && (this.item.stock_max != 1)) ? "inherit" : "hidden"
 
-document.getElementById("Ldungeon_inventory_item" + index).setAttribute("data-title", this.item.info_short||("Item"+index))
+const d = document.getElementById("Ldungeon_inventory_item" + index)
+
+// not accessing .info directly as it may be a getter function
+if ("info" in this.item) {
+  d.className = 'Dungeon_inventory_item_info'
+  d.setAttribute("data-info", this.item.info_short + ':\n' + this.item.info)
+}
+else {
+  d.className = 'Dungeon_inventory_item_info_short'
+  d.setAttribute("data-info_short", this.item.info_short||("Item"+index))
+}
+
+d.style.visibility = (this.item.is_always_visible) ? "visible" : "inherit"
   }
 
  ,action_check: (function () {
@@ -699,6 +711,12 @@ inventory = {
   max_row: 4
  ,max_base: 8
  ,list: []
+
+ ,UI: {
+    info: {
+      scale: 1.5
+    }
+  }
 
 // for mobile
  ,_item_selected_index: null
@@ -2433,15 +2451,22 @@ console.log("Fog:"+ ((MMD_SA.scene.fog instanceof THREE.Fog) ? MMD_SA.scene.fog.
 if (options_base.skydome) {
   let dome_obj = MMD_SA_options.mesh_obj_by_id["DomeMESH"]
   if (options.skydome) {
-    dome_obj._obj.visible = true
     dome_obj.scale = MMD_SA._trackball_camera.object.far*0.5/(64*4)//(this.grid_size * (this.view_radius * 4)) / (64*4)
-    if (!options.skydome.texture_setup)
-      options.skydome.texture_setup = options_base.skydome.texture_setup
-    options.skydome.texture_setup()
     this.ceil_material_index_default = options.ceil_material_index_default = -1
     if (use_MatrixRain) {
       dome_obj._obj._uniTexture_fadeout = 0.5 + ((options.skydome.fog && options.skydome.fog.height)||0.025);
       dome_obj._obj._uniTexture_scale = 10
+    }
+
+    if (!options.skydome.texture_setup)
+      options.skydome.texture_setup = options_base.skydome.texture_setup
+
+    if (options.skydome.visible !== false) {
+      dome_obj._obj.visible = true
+      options.skydome.texture_setup()
+    }
+    else {
+      dome_obj._obj.visible = false
     }
   }
   else {
@@ -2992,14 +3017,14 @@ var head_pos = MMD_SA._v3a.copy(head_pos_absolute).sub(mesh.position)
 //DEBUG_show(head_pos.toArray())
 
 var camera_obj = MMD_SA._trackball_camera.object
-camera_obj.position.set(head_pos_absolute.x, head_pos_absolute.y-0.25, head_pos_absolute.z+4);
+camera_obj.position.set(head_pos_absolute.x, head_pos_absolute.y-0.25, head_pos_absolute.z+4+12);
 //camera_obj.up.set(0, 1, 0);
 //console.log(head_pos)
 camera_obj.lookAt(MMD_SA.TEMP_v3.set(head_pos_absolute.x, head_pos_absolute.y-0.25+1, head_pos_absolute.z));
   }, (frame_to_skip-1), 0);
 
   System._browser.on_animation_update.add(function () {
-var d_min = Math.min(SL.width, SL.height)
+var d_min = Math.min(SL.width, SL.height) * 0.2
 var canvas = MMD_SA_options.Dungeon.character.icon
 var ctx = canvas.getContext("2d")
 ctx.imageSmoothingQuality = "high"
@@ -3223,7 +3248,9 @@ window.addEventListener("jThree_ready", function () {
     System._browser.load_file(para_SA.icon_path, function (xhr) {
       var icon = new Image()
       icon.onload = function () {
-        icon_canvas.getContext("2d").drawImage(icon, 0,0,64,64)
+        var ctx = icon_canvas.getContext("2d")
+        ctx.imageSmoothingQuality = "high"
+        ctx.drawImage(icon, 0,0,64,64)
         icon = undefined
       };
       icon.src = URL.createObjectURL(xhr.response)
@@ -3750,6 +3777,8 @@ context.globalAlpha = 1
 context.clearRect(0,0,cw,ch)
 context.drawImage(img, 0,0,img.width,img.height, 0,0,cw,ch)
 
+MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.visible = true
+
 var fog = this.fog
 if (!fog)
   return
@@ -3841,6 +3870,10 @@ if (options.inventory) {
     this.inventory.max_base = options.inventory.max_base
   if (options.inventory.max_row)
     this.inventory.max_row  = options.inventory.max_row
+  if (options.inventory.UI) {
+    if (options.inventory.UI.info)
+      Object.assign(this.inventory.UI.info, options.inventory.UI.info)
+  }
 }
 this.inventory.initialize()
 
@@ -3857,6 +3890,7 @@ this.item_base._backpack_ = Object.assign({
  ,info_short: "Backpack"
  ,index_default: MMD_SA_options.Dungeon.inventory.max_base-1
  ,is_base_inventory: true
+ ,is_always_visible: true
  ,stock_max: 1
  ,sound: [
     {
@@ -3867,7 +3901,20 @@ this.item_base._backpack_ = Object.assign({
   ]
  ,action: {
     func: function () {
-Ldungeon_inventory_backpack.style.visibility = (Ldungeon_inventory_backpack.style.visibility != "hidden") ? "hidden" : "inherit"
+if (System._browser.overlay_mode) {
+  if (Ldungeon_inventory.style.visibility == "hidden")
+    Ldungeon_inventory.style.visibility = "inherit"
+  else if (Ldungeon_inventory_backpack.style.visibility != "hidden")
+    Ldungeon_inventory.style.visibility = Ldungeon_inventory_backpack.style.visibility = "hidden"
+  else
+    Ldungeon_inventory_backpack.style.visibility = "inherit"
+}
+else {
+  Ldungeon_inventory_backpack.style.visibility = (Ldungeon_inventory_backpack.style.visibility != "hidden") ? "hidden" : "inherit"
+}
+
+Ldungeon_inventory.style.posLeft = Ldungeon_inventory_backpack.style.posLeft = (B_content_width - (MMD_SA_options.Dungeon.inventory.max_base)*64) * ((System._browser.overlay_mode && (Ldungeon_inventory.style.visibility == "hidden")) ? 1 : 0.5);
+
 if (MMD_SA_options.Dungeon.nipplejs_manager)
   Ljoystick.style.visibility = ((Ldungeon_inventory_backpack.style.visibility != "hidden") || options.joystick_disabled) ? "hidden" : "inherit"
     }
@@ -4088,21 +4135,48 @@ window.addEventListener("MMDStarted", function (e) {
 // UI START
 (function () {
 var ss = document.createElement('style')
+ss.id = 'CSSdungeon'
 document.head.appendChild(ss)
+
 ss.sheet.insertRule([
-  '.Dungeon_inventory_item:hover:after{'
+  '.Dungeon_inventory_item_info_short:hover:after{'
  ,'background: #333;'
  ,'background: rgba(0,0,0,.8);'
  ,'border-radius: 5px;'
  ,'color: #fff;'
  ,'padding: 5px 5px;'
  ,'position: absolute;'
- ,'top:  -16px;'
+ ,'top:  -' + (5+5+12*1) + 'px;'
  ,'left: -16px;'
  ,'z-index: 999;'
  ,'width: 80px;'
+ ,'height: ' + (5+5+12*1) + 'px;'
  ,'font-size:10px;'
- ,'content: attr(data-title);'
+ ,'content: attr(data-info_short);'
+ ,'}'
+].join('\n'), 0);
+
+ss.sheet.insertRule([
+  '.Dungeon_inventory_item_info:hover:after{'
+ ,'background: #333;'
+ ,'background: rgba(0,0,0,.8);'
+ ,'border-radius: 5px;'
+ ,'color: #fff;'
+ ,'padding: 5px 5px;'
+ ,'position: absolute;'
+ ,'top:  -' + (5+5+12*5) + 'px;'
+ ,'left: -16px;'
+ ,'z-index: 999;'
+ ,'width: 280px;'
+ ,'height: ' + (5+5+12*5) + 'px;'
+ ,'font-size: 10px;'
+ ,'content: attr(data-info);'//"' + this.item.info + '";'//
+// https://www.digitalocean.com/community/tutorials/css-line-break-content-property
+// https://developer.mozilla.org/en-US/docs/Web/CSS/white-space
+ ,'white-space: pre-wrap;'
+
+ ,'transform-origin: bottom center;'
+ ,'transform: scale(' + MMD_SA_options.Dungeon.inventory.UI.info.scale + ');'
  ,'}'
 ].join('\n'), 0);
 
@@ -4114,7 +4188,7 @@ d.id = "Ldungeon_UI"
 ds.position = "absolute"
 ds.left = ds.top = '0px'
 ds.zIndex = 2
-ds.visibility = (System._browser.overlay_mode) ? "hidden" : "inherit"
+ds.visibility = "inherit"
 SL_Host.appendChild(d)
 
 d = document.createElement("div")
@@ -4217,12 +4291,26 @@ for (var i = 0, i_max = inv.max_base; i < i_max; i++) {
   var d_inv = d = document.createElement("div")
   ds = d.style
   d.id = "Ldungeon_inventory_item" + idx
-  d.className = "Dungeon_inventory_item"
+  d.className = "Dungeon_inventory_item_info_short"
   ds.position = "absolute"
   ds.posLeft = i * 64
   ds.posTop  = (r) ? (r-1)*64 : 0
   ds.width = ds.height = "64px"
   ds.backgroundImage = "url(" + MMD_SA_options.Dungeon.blob_url.get("BlankSlot.png") + ")"
+
+  d.addEventListener("mouseover", function (e) {
+var inv_item = inv.list[idx]
+inv_item.item.onmouseover && inv_item.item.onmouseover(e, idx);
+
+// not accessing .info directly as it may be a getter function
+if ("info" in inv_item.item) {
+  this.setAttribute("data-info", inv_item.item.info_short + ':\n' + inv_item.item.info)
+}
+  }, true);
+  d.addEventListener("mouseout", function (e) {
+var inv_item = inv.list[idx]
+inv_item.item.onmouseout && inv_item.item.onmouseout(e, idx);
+  }, true);
 
   d.draggable  = true
   d.addEventListener("mousedown", function (e) {
@@ -4284,6 +4372,8 @@ e.dataTransfer.dropEffect = "move"
 e.stopPropagation();
 e.preventDefault();
 var index_source = e.dataTransfer.getData("text");
+if (!index_source)
+  return
 //DEBUG_show(index_source,0,1)
 drop_item(index_source, idx);
   });
@@ -4460,7 +4550,7 @@ update_status_bar(true)
 })();
 
 var place_inventory = function (e) {
-  Ldungeon_inventory.style.posLeft = Ldungeon_inventory_backpack.style.posLeft = (B_content_width - (inv.max_base)*64) / 2
+  Ldungeon_inventory.style.posLeft = Ldungeon_inventory_backpack.style.posLeft = (B_content_width - (inv.max_base)*64) * ((System._browser.overlay_mode && (Ldungeon_inventory.style.visibility == "hidden")) ? 1 : 0.5);
   Ldungeon_inventory.style.posTop  = B_content_height - 64 - 4
   Ldungeon_inventory.style.pixelWidth  = (inv.max_base)*64
   Ldungeon_inventory.style.pixelHeight = 64
@@ -6151,11 +6241,18 @@ if (msg_branch_list) {
   for (var i = 0, i_max = msg_branch_list.length; i < i_max; i++) {
     var branch = msg_branch_list[i]
     if ((k == 96+branch.key) || (k == 48+branch.key)) {
-      d._states.dialogue_branch_mode = null
-      if ((branch.event_id != null) || (branch.branch_index != null))
-        d.run_event(branch.event_id, branch.branch_index, 0)
-      else
-        d.run_event()
+      if (MMD_SA_options.SpeechBubble_branch && MMD_SA_options.SpeechBubble_branch.confirm_keydown && (branch.key != MMD_SA.SpeechBubble._branch_key_) && (MMD_SA.SpeechBubble.msg_line.some(msg=>MMD_SA_options.SpeechBubble_branch.RE.test(msg)&&(RegExp.$1==branch.key)))) {
+        MMD_SA.SpeechBubble._branch_key_ = branch.key
+        MMD_SA.SpeechBubble._update_placement(true)
+      }
+      else {
+        MMD_SA.SpeechBubble._branch_key_ = null
+        d._states.dialogue_branch_mode = null
+        if ((branch.event_id != null) || (branch.branch_index != null))
+          d.run_event(branch.event_id, branch.branch_index, 0)
+        else
+          d.run_event()
+      }
       break
     }
   }
@@ -9965,12 +10062,13 @@ window.addEventListener("jThree_ready", function () {
   d.key_map[38].camera_position_preset_index = 0
 
   camera_position_preset.push(c.camera_position_base_default.slice())
-  var v3 = new THREE.Vector3(0,30,-60)
+  var z_sign = Math.sign(camera_position_preset[0][2])
+  var v3 = new THREE.Vector3(0,30,60*z_sign)
   for (var a = 0; a < 1; a++) {
     camera_position_preset.push(v3.clone().applyEuler(new THREE.Vector3(0,a*90*Math.PI/180,0)).toArray())
   }
 
-  var v3 = new THREE.Vector3(0,45,-120)
+  var v3 = new THREE.Vector3(0,45,120*z_sign)
   for (var a = 0; a < 1; a++) {
     camera_position_preset.push(v3.clone().applyEuler(new THREE.Vector3(0,a*90*Math.PI/180,0)).toArray())
   }
@@ -10867,14 +10965,22 @@ DEBUG_show("3D Resolution:" + (((is_default_res) && (Math.round(MMD_SA._renderer
      ,[
         {
           message: {
-  content: "1. Normal\n2. UI off\n3. UI off + chroma key\n4. Cancel"
+  get content() { return '1. Normal\n2. UI off\n3. UI off + chroma key' + ((MMD_SA_options.user_camera.ML_models.enabled && (System._browser.overlay_mode == 0)) ? '\n4. Toggle camera display\n5. Toggle wireframe display\n6. Toggle debug info\n7. Done' : '\n4. Done'); }
  ,bubble_index: 3
- ,branch_list: [
-    { key:1, branch_index:12 },
-    { key:2, branch_index:13 },
-    { key:3, branch_index:14 },
-    { key:4 }
-  ]
+ ,get branch_list() {
+return [
+  { key:1, branch_index:12 },
+  { key:2, branch_index:13 },
+  { key:3, branch_index:14 },
+].concat((MMD_SA_options.user_camera.ML_models.enabled) ? [
+  { key:4, branch_index:15 },
+  { key:5, branch_index:16 },
+  { key:6, branch_index:17 },
+  { key:7 }
+] : [
+  { key:4 }
+]);
+  }
           }
         }
       ]
@@ -10885,7 +10991,7 @@ DEBUG_show("3D Resolution:" + (((is_default_res) && (Math.round(MMD_SA._renderer
 System._browser.overlay_mode = 0
 DEBUG_show('Overlay Mode:Normal', 3)
   }
- ,ended: true
+ ,goto_branch: 11
         }
       ]
 // 13
@@ -10895,7 +11001,7 @@ DEBUG_show('Overlay Mode:Normal', 3)
 System._browser.overlay_mode = 1
 DEBUG_show('Overlay Mode:UI off', 3)
   }
- ,ended: true
+ ,goto_branch: 11
         }
       ]
 // 14
@@ -10905,7 +11011,37 @@ DEBUG_show('Overlay Mode:UI off', 3)
 System._browser.overlay_mode = 2
 DEBUG_show('Overlay Mode:UI off + chroma key', 3)
   }
- ,ended: true
+ ,goto_branch: 11
+        }
+      ]
+// 15
+     ,[
+        {
+  func: function () {
+MMD_SA_options.user_camera.display.video.hidden = !MMD_SA_options.user_camera.display.video.hidden;
+DEBUG_show('Camera display:' + ((MMD_SA_options.user_camera.display.video.hidden) ? 'HIDDEN' : 'VISIBLE'), 3)
+  }
+ ,goto_branch: 11
+        }
+      ]
+// 16
+     ,[
+        {
+  func: function () {
+MMD_SA_options.user_camera.display.wireframe.hidden = !MMD_SA_options.user_camera.display.wireframe.hidden;
+DEBUG_show('Wireframe display:' + ((MMD_SA_options.user_camera.display.wireframe.hidden) ? 'HIDDEN' : 'VISIBLE'), 3)
+  }
+ ,goto_branch: 11
+        }
+      ]
+// 17
+     ,[
+        {
+  func: function () {
+MMD_SA_options.user_camera.ML_models.debug_hidden = !MMD_SA_options.user_camera.ML_models.debug_hidden;
+DEBUG_show('Debug info:' + ((MMD_SA_options.user_camera.ML_models.debug_hidden) ? 'HIDDEN' : 'VISIBLE'), 3)
+  }
+ ,goto_branch: 11
         }
       ]
     ]
