@@ -29,7 +29,8 @@
  *
  * Date: 2015-02-25
  */
-// AT: (2021-08-06)
+// AT: customizations
+// (2022-04-26)
 
 THREE.TrackballControls = function ( object, domElement ) {
 
@@ -808,6 +809,9 @@ THREE.TrackballControls.prototype = {
 
 	getMouseOnScreen: function ( pageX, pageY, optionalTarget ) {
 
+// AT: 3D mirrored
+if (System._browser.camera.mirror_3D) pageX = this.screen.width - ( pageX - this.screen.left );
+
 		return ( optionalTarget || new THREE.Vector2 ).set(
 			( pageX - this.screen.left ) / this.screen.width,
 			( pageY - this.screen.top ) / this.screen.height
@@ -816,6 +820,9 @@ THREE.TrackballControls.prototype = {
 	},
 
 	getMouseProjectionOnBall: function ( pageX, pageY, projection ) {
+
+// AT: 3D mirrored
+if (System._browser.camera.mirror_3D) pageX = this.screen.width - ( pageX - this.screen.left );
 
 		var mouseOnBall = new THREE.Vector3(
 			( pageX - this.screen.width * 0.5 - this.screen.left ) / (this.screen.width*.5),
