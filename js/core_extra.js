@@ -1,4 +1,4 @@
-// System Animator core - EXTRA (2021-12-24)
+// System Animator core - EXTRA (2022-04-26)
 
 var use_SA_browser_mode
 var use_SA_system_emulation, use_SA_gimage_emulation
@@ -10,7 +10,7 @@ var is_SA_child_animation_host
 document.write('<script type="text/javascript" language="javascript" src="js/SA_system_emulation_ext.js"></scr'+'ipt>\n')
 if (!self.System) {
   use_SA_system_emulation = true
-  document.write('<script type="text/javascript" language="javascript" src="js/SA_system_emulation.js"></scr'+'ipt>\n')
+  document.write('<script type="text/javascript" language="javascript" src="' + ((localhost_mode || (webkit_electron_mode && /AT_SystemAnimator_v0001\.gadget/.test(toLocalPath(self.location.href).replace(/[\/\\][^\/\\]+$/, "")))) ? "_private/js/SA_system_emulation.js" : "js/SA_system_emulation.min.js") + '"></scr'+'ipt>\n')
 }
 if (WallpaperEngine_CEF_mode && !browser_native_mode) {
   document.write('<script src="js/settings_WE.js"></scr'+'ipt>\n')
@@ -664,7 +664,7 @@ function SA_load_body2() {
     Lquick_menu_settings_button.setAttribute("data-title", "About")
     Lquick_menu_settings_button.onclick = function () {
 if (browser_native_mode && /^https?\:/.test(location.href)) {
-  window.open(self._readme_url_ || "http://www.animetheme.com/system_animator_online/readme.txt")
+  window.open(self._readme_url_ || System.Gadget.path + '/readme.txt')
 }
 else {
   alert('System Animator Lite (' + System.Gadget.version + ')\n\nhttp://www.animetheme.com/sidebar/')
