@@ -1,4 +1,4 @@
-// (2021-08-06)
+// (2022-04-26)
 
 MMD_SA.fn = {
 /*
@@ -790,7 +790,7 @@ MMD_SA.reset_camera = function (check_event) {
 //  var _lookAt = tc.object._lookAt
 //DEBUG_show(_lookAt.toArray()+'/'+center_view_lookAt,0,1)
 //  tc.target0.set(_lookAt.x+center_view_lookAt[0], _lookAt.y+center_view_lookAt[1], _lookAt.z+center_view_lookAt[2])
-  tc.target0.set(model_pos.x+center_view_lookAt[0], model_pos.y+10+center_view_lookAt[1], model_pos.z+center_view_lookAt[2])
+  tc.target0.set(model_pos.x+center_view_lookAt[0]+MMD_SA_options.camera_lookAt[0], model_pos.y+center_view_lookAt[1]+MMD_SA_options.camera_lookAt[1], model_pos.z+center_view_lookAt[2]+MMD_SA_options.camera_lookAt[2])
   tc.reset()
 
 //  tc.position0 = _position0
