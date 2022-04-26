@@ -1,11 +1,34 @@
 // System Animator core - EXTRA (2022-04-26)
 
-var use_SA_browser_mode
-var use_SA_system_emulation, use_SA_gimage_emulation
+var use_SA_gimage_emulation
 
 var SA_HTA_folder, SA_HTA_folder_parent
 var SA_project_JSON
 var is_SA_child_animation_host
+
+// moved from SA_system_emulation.js
+var use_SA_system_emulation = true
+var use_SA_browser_mode
+
+var PC_count_absolute = 0
+
+var xul_mode, webkit_mode
+
+var HTA_use_GPU_acceleration
+
+var oShell
+var Shell_OBJ, FSO_OBJ
+
+var is_SA_child_animation = parent && (parent != self) && !parent.is_chrome_window && parent.SA_child_animation_max;
+var SA_topmost_window = (is_SA_child_animation) ? parent : self;
+// obsolete, mainly for XUL mode only
+var SA_top_window = (xul_mode && !is_SA_child_animation) ? parent : self;
+
+var absolute_screen_mode
+
+// for all gadgets
+var SA_child_animation_id = 99
+var ie9_native = /Trident.[5-9]/i.test(navigator.userAgent)
 
 document.write('<script type="text/javascript" language="javascript" src="js/SA_system_emulation_ext.js"></scr'+'ipt>\n')
 if (!self.System) {
