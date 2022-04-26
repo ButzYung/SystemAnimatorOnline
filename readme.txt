@@ -1,38 +1,35 @@
-﻿(Document version 2.5)
+﻿(Document version 3.0)
 
-Introduction:
+System Animator Online - Overview:
 
-  This is a PREVIEW version of "System Animator 11", which now works (partially) on web browsers (Google Chrome/Firefox only, for now) instead of being just a desktop gadget.
+  This is a WIP version of "System Animator", a major version advancement with focus on working as a web app instead of being just a desktop gadget. It fully supports MikuMikuDance (MMD) models and motions to create an immersive 3D environment.
 
-  For more information about System Animator, please visit the following page.
+  It's hard to describe what System Animator Online can do in a few words. From a simple music visualizer to a full-featured 3D RPG, a simple AR gadget on your phone to a full-body motion tracking app on your browser, the possibility is endless.
+
+  For more information about the desktop gadget version of System Animator, please visit the following page.
   http://www.animetheme.com/sidebar/
 
 ----------------------------
 
-Featured Demos:
+XR Animator:
 
-- 3D Miku The Dancer (drop any MP3 and she will dance for you)
-  https://sao.animetheme.com/
+  "XR　Animator" is our new featured web app based on System Animator Online, which supports full-body motion tracking using just a single webcam, right on your web browser. It uses the machine learning (ML) solution from MediaPipe and TensorFlow.js to detect the 3D poses from a live webcam video, which is then used to drive the 3D avatar (MMD model) as if you are controlling it with your body. It can be used for whatever AR/VR purpose, and even for VTubing.
 
-- 3D Miku RPG
-  https://sao.animetheme.com/?cmd_line=/TEMP/DEMO/miku_rpg01
+  It has a variety of motion tracking options. You can choose to track the face, full body, or something in between (any combination of face/body/hands).
 
-- 3D Vocaloid Fighters - Miku vs Teto
-  https://sao.animetheme.com/?cmd_line=/TEMP/DEMO/miku_battle_arena01
+  It works on all major web browsers both on desktop and smartphone. On browsers supporting both web worker and OffscreenCanvas (e.g. Chrome), it can achieve 60fps visual rendering and 30fps body pose detection on a medicore PC. On smartphones with limited processing power, you may want to use limit its usage on face tracking.
 
-- 3D Multiplayer RPG (up to 3 players)
-  https://sao.animetheme.com/SystemAnimator_online_multiplayer.html
+  Confused? Check out this video demo and watch XR Animator in action!
+  https://www.youtube.com/watch?v=_4B4gwdKGYw
 
-- 3D Miku - Augmented Reality (AR) demo
-  https://sao.animetheme.com/?cmd_line=/TEMP/DEMO/miku00
-
-  All demos support the use of custom MMD (MikuMikuDance) model. Drop a zip of your favorite MMD model at the beginning, press the START button, and the demo will proceed with your model instead of the default one.
+  Check out XR Animator now!
+  https://sao.animetheme.com/XR_Animator.html
 
 ----------------------------
 
 Augmented Reality (AR) support:
 
-  Some demos support the "Augmented Reality" (AR) mode on mobile phones, which renders the 3D models that appear as if they exist in the real world. The AR mode requires mobile phones that support Google's ARCore technology, Chrome browser and the experimental WebXR API. Follow the steps below.
+  "XR　Animator" and some other demos of System Animator Online support the "Augmented Reality" (AR) mode on mobile phones, which renders the 3D models that appear as if they exist in the real world. The AR mode requires mobile phones that support Google's ARCore technology, Chrome browser and the new WebXR API. Follow the steps below.
 
 1) Check below for a list of ARCore-supported devices.
    https://developers.google.com/ar/discover/supported-devices
@@ -65,7 +62,7 @@ Augmented Reality (AR) support:
 
 Selfie feature:
 
-  The latested demo supports the AR selfie feature, using both the frond camera (for AR) AND the "selfie" camera, allowing you to take a selfie with Miku in AR mode. It runs directly on Chrome 83+ (which is still Beta right now). For Chrome 81 or older, some WebXR-related flags need to be enabled in order to use the AR selfie feature. To enjoy all features, the "WebXR Incubations" flag need to be enabled.
+  The AR demo also supports the AR selfie feature, using both the frond camera (for AR) AND the "selfie" camera, allowing you to take a selfie with Miku in AR mode.
 
   Before you enter the AR mode, you need to click the Selfie icon and enable the Selfie mode first. Then you can toggle the Selfie mode at any time during the AR session. By default, Miku is always displayed in front of you in Selfie mode. Click the "BodyPix AI" icon to enable the AI mode, which detects your shape inside the camera, allowing Miku to blend into the background and appear to be behind you. Note that the AI mode is SLOW. You will probably need the latest Android phone to get a smooth frame rate.
 
@@ -73,6 +70,27 @@ Selfie feature:
 
   Check out the following video for demonstration.
   https://youtu.be/TIMPqV9lVH8
+
+----------------------------
+
+Other featured demos:
+
+- 3D Miku The Dancer (drop any MP3 and she will dance for you)
+  https://sao.animetheme.com/
+
+- 3D Miku RPG
+  https://sao.animetheme.com/?cmd_line=/TEMP/DEMO/miku_rpg01
+
+- 3D Vocaloid Fighters - Miku vs Teto
+  https://sao.animetheme.com/?cmd_line=/TEMP/DEMO/miku_battle_arena01
+
+- 3D Multiplayer RPG (up to 3 players)
+  https://sao.animetheme.com/SystemAnimator_online_multiplayer.html
+
+- 3D Miku - Augmented Reality (AR) demo
+  https://sao.animetheme.com/?cmd_line=/TEMP/DEMO/miku00
+
+  All demos support the use of custom MMD (MikuMikuDance) model. Drop a zip of your favorite MMD model at the beginning, press the START button, and the demo will proceed with your model instead of the default one.
 
 ----------------------------
 
@@ -115,12 +133,22 @@ Copyright/License/Credits:
   - JSZip (used under MIT license)
     https://stuk.github.io/jszip/
 
+  - MediaPipe
+    https://github.com/google/mediapipe
+
+  - TensorFlow.js
+    https://github.com/tensorflow/tfjs
+
   - PeerJS
     https://peerjs.com/
 
+
 - Other third-party assests:
 
-  - "Appearance Miku" 3D Model
+  - "ニコニ立体ちゃん" MMD Model
+    http://3d.nicovideo.jp/alicia/
+
+  - "Appearance Miku" MMD Model
     - Readme/License:
       http://www.animetheme.com/system_animator_online/jThree/model/Appearance%20Miku/Readme.txt
 
@@ -133,14 +161,19 @@ Copyright/License/Credits:
   - 格闘シーン簡易作成用モーション by spinach さん
     http://www.nicovideo.jp/watch/sm29537433
 
-  - Some texture/image sources
+  - Some texture/image/icon sources
     https://3dtextures.me/
     https://opengameart.org/content/rpg-inventory
     https://opengameart.org/content/fantasy-icon-pack-by-ravenmore-0
     https://opengameart.org/content/potion-bottles
+    https://www.flaticon.com/
+    https://www.iconfinder.com/
+    https://icon-icons.com/en/pack/Social-Distancing/2274
+    https://github.com/icons8/flat-color-icons
+    https://www.behance.net/gallery/41818673/FREE-SPORT-ICONS
 
   - 3D skydome textures by Ryntaro Nukata/額田倫太郎
-    http://www.geocities.jp/miew_miew_fc/MMD.htm 
+    http://ryntaro-n.anime.coocan.jp/MMD.htm
 
   - Simple Explosion by Bleed
     https://remusprites.carbonmade.com/
@@ -152,6 +185,8 @@ Copyright/License/Credits:
   - Various 3D background effects ported and modified from codes found on "Shadertoy"
     https://www.shadertoy.com/
 
+
+- Other third-party assests used in some demos:
 
   - もぐ式りょう/りく/りょく/りん by Mogg
     https://3d.nicovideo.jp/works/td55798
