@@ -1,6 +1,6 @@
 /*
 
-_SA.js (2021-12-24)
+_SA.js (2022-04-26)
 
 System Animator
 (c) Butz Yung / Anime Theme. All rights reserved.
@@ -240,7 +240,7 @@ if (1||Settings.CSSTransformFullscreen) {
       });
     }
 
-    LbuttonFullscreen.addEventListener("click", function (event) {
+    LbuttonFullscreen.addEventListener("click", async function (event) {
 if (is_SA_child_animation) {
   if (is_SA_child_animation_host) {
     parent.document.getElementById("LbuttonFullscreen").click()
@@ -255,7 +255,9 @@ if (is_SA_child_animation) {
 if (is_mobile && (is_SA_child_animation_host || self.MMD_SA)) {
   LbuttonFullscreen.style.visibility = "hidden"
   LbuttonRestore.style.visibility = "inherit"
-  document.documentElement.requestFullscreen().then(()=>{DEBUG_show('Fullscreen:ON',2)});
+// Some browsers (e.g. Safari) does not return promise for requestFullscreen. Use await instead of then().
+  await document.documentElement.requestFullscreen()
+  DEBUG_show('Fullscreen:ON',2)
   return
 }
 
@@ -2355,7 +2357,7 @@ System._browser._s_left = System._browser._s_top = null
     document.body.style._set()
 
   if (self.SL_MC_video_obj)
-    SL_MC_Place(SL_MC_Place_scale_last)
+    SL_MC_Place()
 
 // skip for HTA
   if (!ie9_native) {
