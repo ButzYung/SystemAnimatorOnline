@@ -1,4 +1,4 @@
-// (2021-12-24)
+// (2022-04-26)
 
 /*!
  * jThree JavaScript Library v2.1.2
@@ -1021,7 +1021,72 @@ return this.normalize();
   return [new THREE.Vector3(x,y,z), angle]
 }
 
+// AT: backported
+// https://github.com/mrdoob/three.js/blob/master/src/math/Quaternion.js
+,setFromUnitVectors: function ( vFrom, vTo ) {
+
+		// assumes direction vectors vFrom and vTo are normalized
+
+		let r = vFrom.dot( vTo ) + 1;
+
+		if ( r < Number.EPSILON ) {
+
+			// vFrom and vTo point in opposite directions
+
+			r = 0;
+
+			if ( Math.abs( vFrom.x ) > Math.abs( vFrom.z ) ) {
+
+				this.x = - vFrom.y;
+				this.y = vFrom.x;
+				this.z = 0;
+				this.w = r;
+
+			} else {
+
+				this.x = 0;
+				this.y = - vFrom.z;
+				this.z = vFrom.y;
+				this.w = r;
+
+			}
+
+		} else {
+
+			// crossVectors( vFrom, vTo ); // inlined to avoid cyclic dependency on Vector3
+
+			this.x = vFrom.y * vTo.z - vFrom.z * vTo.y;
+			this.y = vFrom.z * vTo.x - vFrom.x * vTo.z;
+			this.z = vFrom.x * vTo.y - vFrom.y * vTo.x;
+			this.w = r;
+
+		}
+
+		return this.normalize();
+
+}
+
+// AT: setFromRotationMatrix does not always work on matrix set from basis (see "Issues" below)
+// http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
+,setFromBasis: (function () {
+  var v3;
+  window.addEventListener('jThree_ready', ()=>{ v3=new THREE.Vector3() });
+  return function (m4) {
+    return this.setFromEuler(v3.setEulerFromRotationMatrix(m4));
+  };
+})()
+
 };
+
+// AT: spherical coordinate system
+THREE.Quaternion.prototype.setFromVectorSpherical = (function () {
+  var v3_euler;
+  window.addEventListener('jThree_ready', ()=>{ v3_euler=new THREE.Vector3() });
+  return function (axis, v3) {
+    var euler_order = (axis.y) ? 'XZY' : 'YZX';
+    return this.setFromEuler(v3_euler.setFromVectorSpherical(axis, v3), euler_order);
+  };
+})();
 
 THREE.Quaternion.slerp = function ( qa, qb, qm, t ) {
 
@@ -2127,7 +2192,59 @@ window.addEventListener("jThree_ready", function () {matrix = new THREE.Matrix4(
 
 }()
 
+// AT: spherical coordinate system
+// https://github.com/mrdoob/three.js/blob/master/src/math/Spherical.js
+// https://en.wikipedia.org/wiki/Spherical_coordinate_system
+,toSphericalCoords: function (r) {
+
+		var x = this.x, y = this.y, z = this.z;
+		var theta, phi;
+
+		const radius = r || Math.sqrt( x * x + y * y + z * z );
+
+		if ( radius === 0 ) {
+
+			theta = 0;
+			phi = 0;
+
+		} else {
+
+			theta = Math.atan2( x, z );
+			phi = Math.acos( THREE.Math.clamp( y / radius, - 1, 1 ) );
+
+		}
+
+		return [radius, theta, phi];
+
+}
+
 };
+
+// AT: spherical coordinate system
+THREE.Vector3.prototype.setFromVectorSpherical = (function () {
+  var v3_scs = new THREE.Vector3();
+
+  return function (axis, v3) {
+    var sc;
+    if (axis.y) {
+      v3_scs.set(-v3.z, v3.x, -v3.y)
+      if (axis.y > 0)
+        v3_scs.negate()
+      sc = v3_scs.toSphericalCoords(1);
+      this.set(sc[1], 0, Math.PI/2-sc[2])
+//const len = new THREE.Vector3().setEulerFromQuaternion(new THREE.Quaternion().setFromUnitVectors(axis, v3), 'XZY').setY(0).sub(this).length(); if (len > 0.000001) console.log('Y',len);
+    }
+    else if (axis.x) {
+      v3_scs.set(-v3.z, v3.y, v3.x)
+      if (axis.x < 0)
+        v3_scs.negate()
+      sc = v3_scs.toSphericalCoords(1);
+      this.set(0, sc[1], Math.PI/2-sc[2])
+//const len = new THREE.Vector3().setEulerFromQuaternion(new THREE.Quaternion().setFromUnitVectors(axis, v3), 'YZX').setX(0).sub(this).length(); if (len > 0.000001) console.log('X',len);
+    }
+    return this;
+  };
+})();
 
 THREE.Vector3.prototype.projectOnVector = function () {
 
