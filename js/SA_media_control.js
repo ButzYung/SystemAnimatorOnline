@@ -1,4 +1,5 @@
-// Media control for Silverlight and HTML5 Canvas (v2.1.1)
+// Media control for Silverlight and HTML5 Canvas
+// (2022-04-26)
 
 var EV_SL_MediaEnded, EV_SL_MediaOpened
 
@@ -142,37 +143,40 @@ function SL_MC_Update() {
   }
 }
 
-var SL_MC_Place_scale_last
+var SL_MC_Place = (function () {
+  var scale_last, x_offset_last, y_offset_last;
 
-function SL_MC_Place(scale) {
-  System._browser.update_tray()
+  return function (scale=scale_last||1, x_offset=x_offset_last||0, y_offset=y_offset_last||0) {
+    System._browser.update_tray()
 
-  if (scale == -1) {
-    SL_MC_video_obj = null
-    C_media_control.style.visibility = "hidden"
-    return
-  }
+    if (scale == -1) {
+      SL_MC_video_obj = null
+      C_media_control.style.visibility = "hidden"
+      return
+    }
 
-  if (!scale)
-    scale = 1
-  SL_MC_Place_scale_last = scale
-  var w = 150 * scale
-  var h = 45 * scale
+    scale_last = scale
+    x_offset_last = x_offset
+    y_offset_last = y_offset
 
-  setTimeout(function () {
-C_media_control.style.posLeft = Math.round((((browser_native_mode) ? screen.availWidth : B_content_width) - w) / 2);
-C_media_control.style.posTop  = (((browser_native_mode) ? screen.availHeight: B_content_height) - h) - 20 - ((B_content_height > screen.availHeight-45) ? B_content_height - (screen.availHeight-45) : 0);
-  }, 0);
+    var w = 150 * scale
+    var h = 45  * scale
 
-  var mcs = C_media_control.style
-  if (scale == 1) {
-    mcs.msTransform = mcs.msTransformOrigin = "";
-  }
-  else {
-    mcs.msTransform = "scale(" + scale + ")";
-    mcs.msTransformOrigin = "0% 0%";
-  }
-}
+    setTimeout(function () {
+C_media_control.style.posLeft = Math.round((((browser_native_mode) ? screen.availWidth : B_content_width) - w) / 2) + x_offset;
+C_media_control.style.posTop  = (((browser_native_mode) ? screen.availHeight: B_content_height) - h) - 20 - ((B_content_height > screen.availHeight-45) ? B_content_height - (screen.availHeight-45) : 0) + y_offset;
+    }, 0);
+
+    var mcs = C_media_control.style
+    if (scale == 1) {
+      mcs.transform = mcs.transformOrigin = "none";
+    }
+    else {
+      mcs.transform = "scale(" + scale + ")";
+      mcs.transformOrigin = "0% 0%";
+    }
+  };
+})();
 
 function SL_MC_Linked_Control(func_name) {
   var ao = Audio_BPM.audio_obj
