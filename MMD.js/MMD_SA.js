@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2021-12-24)
+// (2022-04-26)
 
 var use_full_spectrum = true
 
@@ -282,7 +282,7 @@ SL._media_player = {
     SL_MC_video_obj = SL._media_player
   }
 
-  if (SL_MC_video_obj && MMD_SA.music_mode) {
+  if (SL_MC_video_obj && (MMD_SA.music_mode || System._browser.camera.media_control_enabled)) {
     if (SL._mouseout_timerID) {
       clearTimeout(SL._mouseout_timerID)
       SL._mouseout_timerID = null
@@ -424,7 +424,14 @@ DragDrop.onDrop_finish = function (item) {
 
     var zip_file = SA_topmost_window.DragDrop._path_to_obj[src.replace(/^(.+)[\/\\]/, "")]
 
-new self.JSZip().loadAsync(zip_file)
+new self.JSZip().loadAsync(zip_file, {
+  decodeFileName: (function () {
+    const decoder = new TextDecoder('shift-jis')
+    return function (bytes) {
+      return decoder.decode(bytes);
+    };
+  })()
+})
 .then(function (zip) {
 // will be called, even if content is corrupted
 //console.log(999,src)
@@ -642,7 +649,7 @@ mmd.setFrameNumber(-1)
 if (!SL._media_player) {
   SL_MC_simple_mode = true
 
-  SL._media_player = SL_MC_video_obj = document.createElement("audio")
+  SL._media_player = SL_MC_video_obj = new Audio()//document.createElement("audio")
 
   SL_MC_video_obj.addEventListener("canplaythrough", function (e) {
 SL_MC_Place()
@@ -799,6 +806,21 @@ if (!ao.ontimeupdate)
     Audio_BPM.findBPM(vo)
 
     return false
+  }
+  else if (item.isFileSystem && /([^\/\\]+)\.(png|jpg|jpeg|bmp|mp4|mkv)$/i.test(src)) {
+//console.log(toFileProtocol(item.path), item)
+    if (MMD_SA_options.user_camera.enabled || System._browser.camera.ML_enabled) {
+      if (System._browser.camera.initialized && !System._browser.camera.stream) {
+        System._browser.camera.init_stream(src)
+      }
+      else {
+        System._browser.camera.local_src = src
+        DEBUG_show('(local media file assigned)', 3)
+      }
+    }
+    else {
+      DEBUG_show('(motion tracking required)', 3)
+    }
   }
   else {
     if (!item._winamp_JSON)
@@ -2336,9 +2358,42 @@ return this.MME_shader_fshader[name]
  ,GOML_scene: ""
 
 // speech bubble START
- ,SpeechBubble: {
-    bubble_index: -1
-   ,bubbles: [
+ ,SpeechBubble: (function () {
+    var bb_cache = {}
+
+    var bb_list = []
+
+    function SB(index, para) {
+this.index = index || '';
+
+bb_list.push(this);
+this.list = bb_list
+
+this.bubble_index = -1
+
+this.use_sprite = true
+
+this._canvas = null
+this._txr = null
+this._mesh = null
+this.loaded = false
+
+this.flipH_side = false
+this.flipH_bubble = false
+
+this.msg_group = {
+  group_name_current: "",
+  group_by_name: {}
+};
+
+this.msg = ""
+this.msg_timerID = null
+
+this.visible = false
+
+this.hidden_time_ref = Date.now()
+
+this.bubbles = [
   {
     image_url:System.Gadget.path+'/images/SB_kakukaku01.png'
    ,font: '"Segoe Print",fantasy'
@@ -2351,9 +2406,9 @@ return this.MME_shader_fshader[name]
 
    ,bounding_box: [43,123, 452,252]
    ,left_sided: true
-  }
+  },
 
- ,{
+  {
     image_url:System.Gadget.path+'/images/SB_irregular01.png'
    ,font: '"Segoe Print",fantasy'
    ,font_unicode: 'DFKai-SB,"Microsoft JhengHei"'
@@ -2364,9 +2419,9 @@ return this.MME_shader_fshader[name]
    ,auto_wrap: true
 
    ,bounding_box: [135,144, 313,221]
-  }
+  },
 
- ,{
+  {
     image_url:System.Gadget.path+'/images/SB_mokumoku01.png'
    ,font: '"Segoe Print",fantasy'
    ,font_unicode: 'DFKai-SB,"Microsoft JhengHei"'
@@ -2378,9 +2433,9 @@ return this.MME_shader_fshader[name]
 
    ,bounding_box: [87,133, 373,233]
    ,left_sided: true
-  }
+  },
 
- ,{
+  {
     image_url:System.Gadget.path+'/images/SB_mokumoku01a.png'
    ,font: '"Segoe Print",fantasy'
    ,font_unicode: 'DFKai-SB,"Microsoft JhengHei"'
@@ -2393,47 +2448,56 @@ return this.MME_shader_fshader[name]
    ,bounding_box: [87,133, 373,233]
    ,left_sided: true
   }
-    ]
+];
 
-   ,use_sprite: true
+para && Object.assign(this, para);
+    }
 
-   ,init: function () {
+    SB.prototype.create = function (index) { return new SB(index) };
+
+    SB.prototype.init = function () {
+bb_list.forEach((b)=>{ b._init() });
+    };
+
+    SB.prototype._init = function () {
 for (var i = 0, i_length = this.bubbles.length; i < i_length; i++) {
-  var b = this.bubbles[i]
-  b.image = new Image()
-  b.image.src = toFileProtocol(b.image_url)
+  let b = this.bubbles[i]
+  let cache = bb_cache[b.image_url]
+  if (!cache) {
+    cache = bb_cache[b.image_url] = new Image()
+    cache.src = toFileProtocol(b.image_url)
+  }
+  b.image = cache
 }
 
 MMD_SA.GOML_import +=
-  '<canvas id="j3_speechCanvas"></canvas>\n'
+  '<canvas id="j3_speechCanvas' + this.index + '"></canvas>\n';
 
 MMD_SA.GOML_head +=
-//'<txr id="SpeechBubbleTXR" canvas="canvas" animation="false" />\n'
-  '<txr id="SpeechBubbleTXR" canvas="#j3_speechCanvas" animation="false" />\n'
-
+  '<txr id="SpeechBubbleTXR' + this.index + '" canvas="#j3_speechCanvas' + this.index + '" animation="false" />\n'
 //+ '<geo id="SpeechBubbleGEO" type="Plane" param="10 10" />\n'
-+ '<mtl id="SpeechBubbleMTL" type="' + ((this.use_sprite)?"Sprite":"MeshBasic") + '" param="map:#SpeechBubbleTXR;sizeAttenuation:false;depthTest:false;" />\n';
++ '<mtl id="SpeechBubbleMTL' + this.index + '" type="' + ((this.use_sprite)?"Sprite":"MeshBasic") + '" param="map:#SpeechBubbleTXR' + this.index + ';sizeAttenuation:false;depthTest:false;" />\n';
 
 MMD_SA.GOML_scene +=
-  '<' + ((this.use_sprite)?"sprite":"mesh") + ' id="SpeechBubbleMESH" mtl="#SpeechBubbleMTL" style="position:0 0 0; scale:0;" />\n';
-    }
+  '<' + ((this.use_sprite)?"sprite":"mesh") + ' id="SpeechBubbleMESH' + this.index + '" mtl="#SpeechBubbleMTL' + this.index + '" style="position:0 0 0; scale:0;" />\n';
+    };
 
-   ,_canvas: null
-   ,_txr: null
-   ,_mesh: null
-   ,loaded: false
-   ,onload: function () {
+    SB.prototype.onload = function () {
+bb_list.forEach((b)=>{ b._onload() });
+    };
+
+    SB.prototype._onload = function () {
 this.loaded = true
 
 for (var i = 0, i_length = this.bubbles.length; i < i_length; i++) {
-  var b = this.bubbles[i]
-  var bb_f = b.bounding_box_flipH = b.bounding_box.slice(0)
+  let b = this.bubbles[i]
+  let bb_f = b.bounding_box_flipH = b.bounding_box.slice(0)
   bb_f[0] = b.image.width - bb_f[0] - bb_f[2]
 }
 
-this._canvas = jThree( "import" ).contents().find( "#j3_speechCanvas" )[0];//jThree( "import" ).contents().find( "canvas" )[ 0 ];
-this._txr = jThree( "#SpeechBubbleTXR" ).three( 0 );
-this._mesh = jThree( "#SpeechBubbleMESH" ).three( 0 );
+this._canvas = jThree( "import" ).contents().find( "#j3_speechCanvas" + this.index )[0];
+this._txr = jThree( "#SpeechBubbleTXR" + this.index ).three( 0 );
+this._mesh = jThree( "#SpeechBubbleMESH" + this.index ).three( 0 );
 this._mesh.renderDepth = 0
 
 this.pos_base_ref = {
@@ -2442,11 +2506,9 @@ this.pos_base_ref = {
  ,character_pos_ref: new THREE.Vector3()
  ,_v3: new THREE.Vector3()
 };
-    }
+    };
 
-   ,flipH_side: false
-   ,flipH_bubble: false
-   ,get_flipH_bubble: function (msg_changed) {
+    SB.prototype.get_flipH_bubble = function (msg_changed) {
 var rot = this._mesh._rotation || ((this.use_sprite) ? {x:0,y:0,z:0} : this._mesh.rotation)
 
 var flipH_bubble = (Math.PI/2 - Math.abs(rot.y) < Math.PI/20) ? ((msg_changed) ? false : ((this.flipH_side) ? !this.flipH_bubble : this.flipH_bubble)) : rot.z
@@ -2454,9 +2516,9 @@ if (this.flipH_side)
   flipH_bubble = !flipH_bubble
 
 return !!flipH_bubble
-    }
+    };
 
-   ,update_bubble: function (flipH_bubble, para) {
+    SB.prototype.update_bubble = function (flipH_bubble, para) {
 if (!para)
   para = {}
 this.flipH_bubble = flipH_bubble
@@ -2593,6 +2655,8 @@ if ((msg.length > column_max) && ((para.auto_wrap || b.auto_wrap) || (msg.indexO
 else
   msg_line = msg.split("\n")
 
+this.msg_line = msg_line
+
 var w_max = 0, h_max = font_size
 for (var i = 0, i_length = msg_line.length; i < i_length; i++) {
   var m = context.measureText(msg_line[i])
@@ -2606,6 +2670,8 @@ var bb = (flipH_bubble) ? b.bounding_box_flipH : b.bounding_box
 var x = bb[0] + parseInt((bb[2] - w)/2) + ((para.text_offset && para.text_offset.x) || 0)
 var y = bb[1] + parseInt((bb[3] - h)/2) + ((para.text_offset && para.text_offset.y) || 0)
 
+context.fillStyle = "black"
+
 context.save()
 
 flipH = !!System._browser.camera.mirror_3D ^ flipV;
@@ -2614,23 +2680,28 @@ if (flipV || flipH) {
   context.scale((flipH)?-1:1, (flipV)?-1:1);
 }
 
+var branch_index = -1
 for (var i = 0, i_length = msg_line.length; i < i_length; i++) {
+  if (MMD_SA_options.SpeechBubble_branch) {
+    if (MMD_SA_options.SpeechBubble_branch.RE.test(msg_line[i]))
+      branch_index = RegExp.$1
+    let fillStyle = (branch_index > -1) ? MMD_SA_options.SpeechBubble_branch.fillStyle || 'Navy' : 'black';
+    if (MMD_SA_options.SpeechBubble_branch.confirm_keydown && (MMD_SA.SpeechBubble._branch_key_ != null)) {
+      if ((branch_index > -1) && (branch_index == MMD_SA.SpeechBubble._branch_key_)) {
+        fillStyle = 'red'
+      }
+    }
+    context.fillStyle = fillStyle
+  }
   context.fillText(msg_line[i], x, y + i*(h_max+10))
 }
 
 context.restore()
 
 this._txr.needsUpdate = true
-    }
+    };
 
-   ,msg_group: {
-  group_name_current: ""
- ,group_by_name: {}
-    }
-
-   ,msg: ""
-   ,msg_timerID: null
-   ,message: function (bubble_index, msg, duration, para) {
+    SB.prototype.message = function (bubble_index, msg, duration, para) {
 if (!para)
   para = {}
 
@@ -2685,8 +2756,8 @@ var x_diff = cam.x - head_pos.x
 var left_sided = b.left_sided
 if (para.flipH)
   left_sided = !left_sided
-var flipH_side = (para.flipH_side != null) ? para.flipH_side : (Math.abs(x_diff) < 2) ? ((msg_changed) ? false : this.flipH_side) : ((left_sided) ? (x_diff>0) : (x_diff<0))
-if (para.invertH_side) {
+var flipH_side = (para.flipH_side != null) ? para.flipH_side : (Math.abs(x_diff) < 2) ? ((msg_changed) ? false : this.list[0].flipH_side) : ((left_sided) ? (x_diff>0) : (x_diff<0))
+if (!!para.invertH_side ^ !!this.invertH_side) {
   flipH_side = !flipH_side
 }
 if (para_SA.SpeechBubble_flipH)
@@ -2697,7 +2768,7 @@ var pos_mod = (para.pos_mod) || para_SA.SpeechBubble_pos_mod || b.pos_mod || ((M
 var x_mod = ((flipH_side && !left_sided) || (!flipH_side && left_sided)) ? -10 : 10
 
 this.distance_scale = (para.distance_scale || 1) * Math.min(Math.pow(MMD_SA.camera_position.distanceTo(THREE.MMD.getModels()[0].mesh.position)/30,2), 1);
-this.scale = para.scale || 1
+this.scale = (para.scale || 1) * (MMD_SA_options.SpeechBubble_scale||1)
 
 this.pos_base_ref.center.copy(head_pos);
 this.pos_base_ref.dir.set(
@@ -2723,12 +2794,13 @@ this.show()
 if (duration == null)
   duration = 2000 + ((msg.length > 10) ? (msg.length - 10) * 100 : 0)
 if (duration) {
+  let that = this
   this.msg_timerID = setTimeout(function () {
-MMD_SA.SpeechBubble.msg_timerID = null
-MMD_SA.SpeechBubble.hide()
+that.msg_timerID = null
+that.hide()
 
 if (our_group) {
-  MMD_SA.SpeechBubble.msg_timerID = setTimeout(function () {
+  that.msg_timerID = setTimeout(function () {
     our_group.index += (our_group.index == -1) ? 2 : 1
     if (our_group.index >= our_group.list.length) {
       if (!our_group.para.loop || !(our_group.para.loop--)) {
@@ -2741,14 +2813,14 @@ if (our_group) {
         our_group.list.shuffle()
     }
     var g = our_group.list[our_group.index]
-    MMD_SA.SpeechBubble.message(g[0], g[1], g[2], g[3])
+    that.message(g[0], g[1], g[2], g[3])
   }, (our_group.para.interval||2000));
 }
   }, duration);
 }
-    }
+    };
 
-   ,update_position: function (scale) {
+    SB.prototype.update_position = function (scale) {
 if (!scale)
   scale = 1
 
@@ -2764,12 +2836,17 @@ this._mesh.position.copy(this.pos_base_ref.dir).multiplyScalar(this.distance_sca
 this._mesh.scale.set(1,1,1).multiplyScalar(this.scale * scale * ((is_landscape && 1.5) || 1) * ((this.use_sprite)?1/3:1))
 
 //this.pos_base.copy(this._mesh.position).sub(this.pos_base_ref.character_pos_ref)
-   }
+   };
 
-   ,update_placement: function () {
+    SB.prototype.update_placement = function () {
 if (!MMD_SA_options.use_speech_bubble)
   return
 
+bb_list.forEach(b=>{b._update_placement()});
+
+    };
+
+    SB.prototype._update_placement = function (enforced) {
 var mesh = this._mesh
 if (!mesh.visible)
   return
@@ -2777,6 +2854,16 @@ if (!mesh.visible)
 var dis = this._mesh.position.distanceTo(MMD_SA._trackball_camera.object.position)
 var scale = (!this.use_sprite && (dis > 32)) ? 1 + (dis-32)/64 : 1
 //DEBUG_show(scale+'/'+Date.now())
+
+if (!this.index) {
+  let sight_v3 = MMD_SA._v3a.copy(MMD_SA._trackball_camera.object._lookAt).sub(MMD_SA._trackball_camera.object.position).normalize()
+  let PC_v3 = MMD_SA._v3b.copy(this.pos_base_ref.center).sub(MMD_SA._trackball_camera.object.position).normalize()
+  if ((dis < 20) || (sight_v3.angleTo(PC_v3) > Math.PI/4)) {
+//DEBUG_show(sight_v3.angleTo(PC_v3)*180/Math.PI+'/'+Date.now())
+    this.pos_base_ref.center.copy(sight_v3).multiplyScalar(30).add(MMD_SA._trackball_camera.object.position)
+  }
+}
+
 this.update_position(scale)
 
 mesh._rotation = MMD_SA.face_camera(this.position, null, true)
@@ -2784,7 +2871,7 @@ if (!this.use_sprite)
   mesh.rotation.copy(mesh._rotation)
 
 var flipH_bubble = this.get_flipH_bubble()
-if (flipH_bubble != this.flipH_bubble) {
+if (enforced || (flipH_bubble != this.flipH_bubble)) {
   this.update_bubble(flipH_bubble)
 }
 /*
@@ -2792,27 +2879,25 @@ var dis = MMD_SA._trackball_camera.object.position.distanceTo(mesh.position)
 if (dis > 128)
   mesh.scale.set(2,2,2)
 */
-    }
+    };
 
-   ,get position() {
-return this._mesh.position
-    }
+    Object.defineProperty(SB.prototype, 'position', {
+get: function () { return this._mesh.position }
+    });
 
-   ,visible: false
-   ,show: function () {
+    SB.prototype.show = function () {
 if (!this.visible) {
   this.visible = true
-  window.dispatchEvent(new CustomEvent("SA_SpeechBubble_show"));
+  window.dispatchEvent(new CustomEvent("SA_SpeechBubble_show" + this.index));
 }
-jThree( "#SpeechBubbleMESH" ).show();
-    }
+jThree( "#SpeechBubbleMESH" + this.index ).show();
+    };
 
-   ,hidden_time_ref: Date.now()
-   ,get hidden_time() {
-return ((this.visible) ? 0 : Date.now() - this.hidden_time_ref)
-    }
+    Object.defineProperty(SB.prototype, 'hidden_time', {
+get: function () { return ((this.visible) ? 0 : Date.now() - this.hidden_time_ref) }
+    });
 
-   ,hidden_time_check: function (duration) {
+    SB.prototype.hidden_time_check = function (duration) {
 if (this.hidden_time < duration)
   return false
 
@@ -2822,23 +2907,32 @@ if (Math.random() < 0.5) {
 }
 
 return true
-    }
+    };
 
-   ,hide: function () {
+    SB.prototype.hide = function () {
 if (this.visible) {
   if (this.msg_timerID) {
     clearTimeout(this.msg_timerID)
     this.msg_timerID = null
   }
 
+  this.msg = ""
+  this._branch_key_ = null
+
   this.hidden_time_ref = Date.now()
 
   this.visible = false
-  window.dispatchEvent(new CustomEvent("SA_SpeechBubble_hide"));
+  window.dispatchEvent(new CustomEvent("SA_SpeechBubble_hide" + this.index));
 }
-jThree( "#SpeechBubbleMESH" ).hide();
-    }
-  }
+jThree( "#SpeechBubbleMESH" + this.index ).hide();
+    };
+
+    new SB();
+
+    new SB(1, {invertH_side:true});
+
+    return bb_list[0];
+  })()
 // END
 
  ,face_camera: function (v3, q_to_apply, absolute_facing) {
@@ -2902,35 +2996,39 @@ while ((_bone.parent !== mesh) && (_bone.parent !== parent_to_stop)) {
   _bone = _bone.parent;
   pos.applyMatrix4(TEMP_m4.makeRotationFromQuaternion(_bone.quaternion).setPosition(_bone.position));
 }
-if (_bone.parent !== parent_to_stop)
+if (!parent_to_stop)
   pos.applyMatrix4(TEMP_m4.makeRotationFromQuaternion(mesh.quaternion).setPosition(mesh.position));
 
 return pos;
     };
   })()
 
- ,get_bone_rotation: function (mesh, name, parent_only) {
+ ,get_bone_rotation: function (mesh, name, parent_only, parent_to_stop) {
 var rot = new THREE.Quaternion();
 var bone = (typeof name == "string") ? mesh.bones_by_name[name] : mesh.bones[name]
 if (!bone)
   return rot
 
+if (parent_to_stop && (typeof parent_to_stop == "string"))
+  parent_to_stop = mesh.bones_by_name[parent_to_stop]
+
 if (!parent_only)
   rot.copy(bone.quaternion)
 
 var _bone = bone;
-while (_bone.parent !== mesh) {
+while ((_bone.parent !== mesh) && (_bone.parent !== parent_to_stop)) {
   _bone = _bone.parent;
 // parent x self (NOTE: multiply(_bone.quaternion) without the second parameter rot is self x parent, which is incorrect)
   rot.multiply(_bone.quaternion, rot)
 }
-rot.multiply(mesh.quaternion, rot)
+if (!parent_to_stop)
+  rot.multiply(mesh.quaternion, rot)
 
 return rot.normalize();
   }
 
- ,get_bone_rotation_parent: function (mesh, name) {
-return this.get_bone_rotation(mesh, name, true)
+ ,get_bone_rotation_parent: function (mesh, name, parent_to_stop) {
+return this.get_bone_rotation(mesh, name, true, parent_to_stop)
   }
 
  ,clean_axis_rotation: (function () {
@@ -7056,6 +7154,8 @@ MMD_SA_options.texture_resolution_limit=2048
 
   if (!MMD_SA_options.camera_position)
     MMD_SA_options.camera_position = [0,10,30]
+  if (!MMD_SA_options.camera_lookAt)
+    MMD_SA_options.camera_lookAt = [0,MMD_SA_options.camera_position[1],0]
   if (!MMD_SA_options.camera_rotation)
     MMD_SA_options.camera_rotation = [0,0,0]
 //MMD_SA_options.use_random_camera=true
@@ -7076,10 +7176,20 @@ MMD_SA_options.texture_resolution_limit=2048
 
   if (!MMD_SA_options.user_camera)
     MMD_SA_options.user_camera = {}
+
+  if (MMD_SA_options.user_camera.mirror_3D == null)
+    MMD_SA_options.user_camera.mirror_3D = 1
+
   if (!MMD_SA_options.user_camera.pixel_limit)
     MMD_SA_options.user_camera.pixel_limit = {}
+
   if (!MMD_SA_options.user_camera.display)
     MMD_SA_options.user_camera.display = {}
+  if (!MMD_SA_options.user_camera.display.video)
+    MMD_SA_options.user_camera.display.video = {}
+  if (!MMD_SA_options.user_camera.display.wireframe)
+    MMD_SA_options.user_camera.display.wireframe = {}
+
   if (!MMD_SA_options.user_camera.ML_models)
     MMD_SA_options.user_camera.ML_models = {};
   ['facemesh','pose','hands'].forEach((model)=>{
@@ -7089,6 +7199,16 @@ MMD_SA_options.texture_resolution_limit=2048
     if (!m.events)
       m.events = {}
   });
+
+  if (MMD_SA_options.user_camera.ML_models.facemesh.use_mediapipe == null)
+    MMD_SA_options.user_camera.ML_models.facemesh.use_mediapipe = System._browser.url_search_params.use_mediapipe_facemesh
+  if (MMD_SA_options.user_camera.ML_models.use_holistic == null)
+    MMD_SA_options.user_camera.ML_models.use_holistic = System._browser.url_search_params.use_holistic
+
+  if (MMD_SA_options.user_camera.ML_models.facemesh.use_mediapipe || MMD_SA_options.user_camera.ML_models.worker_disabled)
+    System._browser.camera.facemesh.use_mediapipe = true
+  if (MMD_SA_options.user_camera.ML_models.use_holistic)
+    System._browser.camera.poseNet._use_holistic_ = true
 
   var _trackball_camera_limit_adjust = function () {}
   if (MMD_SA_options.trackball_camera_limit) {
@@ -7182,6 +7302,14 @@ return this.model_para_obj.MME || this._MME
       return (v == parseInt(v)) ? v + ".0" : v
     }
   };
+
+
+// adjust Dungeon options
+  if (MMD_SA_options.Dungeon) {
+    MMD_SA_options.Dungeon.character.camera_position_base_default = MMD_SA_options.camera_position.slice()
+    if (!MMD_SA_options.WebXR || !MMD_SA_options.WebXR.AR)
+      MMD_SA_options.Dungeon.character.camera_position_base_default[2] *= -1
+  }
 
 
 // extra models START
@@ -7734,14 +7862,31 @@ this._look_at_screen_ratio = v
   }
 });
 
-
-  if (MMD_SA_options.WebXR) {
+  if (MMD_SA_options.user_camera.ML_models.enabled) {
     window.addEventListener("jThree_ready", function () {
 MMD_SA_options.model_para_obj_all.forEach(function (model_para_obj) {
   model_para_obj.use_default_boundingBox = true
 });
 
 var morph_default = MMD_SA_options.model_para_obj.morph_default = MMD_SA_options.model_para_obj.morph_default || {};
+
+var facemesh_morph = {}
+if (MMD_SA_options.model_para_obj.facemesh_morph) {
+  for (const name in MMD_SA_options.model_para_obj.facemesh_morph) {
+    let name_new;
+    switch (name) {
+      case "mouth_narrow":
+        name_new = "ω"
+        break
+      default:
+        name_new = name
+    }
+    facemesh_morph[name_new] = MMD_SA_options.model_para_obj.facemesh_morph[name]
+  }
+}
+MMD_SA_options.model_para_obj.facemesh_morph = facemesh_morph
+//console.log(facemesh_morph)
+
 // "まばたきL", "まばたきR"
 // お <==> ∧
 var _morph = [
@@ -7749,7 +7894,6 @@ var _morph = [
   "上","下","にこり","困る","怒り",
   "まばたき","笑い","びっくり","まばたきL","まばたきR"
 ];
-var facemesh_morph = MMD_SA_options.model_para_obj.facemesh_morph = MMD_SA_options.model_para_obj.facemesh_morph || {};
 _morph.forEach(function (m) {
   if (!facemesh_morph[m])
     facemesh_morph[m] = {name:m}
@@ -7759,7 +7903,8 @@ _morph.forEach(function (m) {
     morph_default[mm] = { weight:0 }
 });
     });
-
+  }
+  if (MMD_SA_options.WebXR) {
     window.addEventListener("MMDStarted", function () {
 THREE.MMD.getModels().forEach(function (model) {
   model.mesh.frustumCulled = false
@@ -7908,8 +8053,9 @@ MMD_SA.GOML_head +=
   if (!MMD_SA_options.height)
     MMD_SA_options.height = AR_para.video_height || 512
 
-  if (MMD_SA_options.use_speech_bubble)
+  if (MMD_SA_options.use_speech_bubble) {
     MMD_SA.SpeechBubble.init()
+  }
 
 // save some headaches for physics glitches on start
   window.addEventListener("MMDStarted", function () {
@@ -8132,7 +8278,7 @@ console.log("three.core.min.js")
     );
   }
   else {
-    let XMLHttpRequestZIP_path = ((localhost_mode || (webkit_electron_mode && FSO_OBJ.FileExists(System.Gadget.path + "/_private/js/XMLHttpRequestZIP.js"))) ? "_private/js/XMLHttpRequestZIP.js" : "js/XMLHttpRequestZIP_.js");
+    let XMLHttpRequestZIP_path = ((localhost_mode || (webkit_electron_mode && /AT_SystemAnimator_v0001\.gadget/.test(System.Gadget.path))) ? "_private/js/XMLHttpRequestZIP.js" : "js/XMLHttpRequestZIP_.js");
     console.log(XMLHttpRequestZIP_path)
     js.push(
   XMLHttpRequestZIP_path
@@ -8269,32 +8415,4 @@ if (returnBoolean("UseMatrixRain") || use_MatrixRain) {
 var use_WebGL_2D// = false
 if (use_WebGL_2D) {
   document.write('<script language="JavaScript" src="js/html5_webgl2d.js"></scr'+'ipt>');
-}
-
-// Tensorflow - BodyPix
-if (MMD_SA_options.WebXR && MMD_SA_options.WebXR.AR) {
-//  document.write('<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.2"></scr'+'ipt>');
-  document.write('<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></scr'+'ipt>');
-
-  console.log("Use BodyPix");
-//  document.write('<script async src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.0"></scr'+'ipt>');
-  document.write('<script async src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix"></scr'+'ipt>');
-
-/*
-  console.log("Use PoseNet");
-  document.write('<script async src="https://cdn.jsdelivr.net/npm/@tensorflow-models/posenet"></scr'+'ipt>');
-
-  console.log("Use Handpose");
-  document.write('<script async src="https://cdn.jsdelivr.net/npm/@tensorflow-models/handpose@0.0.6/dist/handpose.js"></scr'+'ipt>');
-*/
-
-// non-worker Facemesh TEST
-//  document.write('<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/facemesh"></scr'+'ipt>');
-/*
-  document.write('<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tf-backend-wasm.js"></scr'+'ipt>');
-  document.write('<script>\n'
-+ 'tf.setBackend("wasm").then(async function () {  console.log("TFJS WASM backend") });'
-+ '</scr'+'ipt>');
-*/
-
 }
