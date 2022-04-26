@@ -7204,6 +7204,8 @@ MMD_SA_options.texture_resolution_limit=2048
     MMD_SA_options.user_camera.ML_models.facemesh.use_mediapipe = System._browser.url_search_params.use_mediapipe_facemesh
   if (MMD_SA_options.user_camera.ML_models.use_holistic == null)
     MMD_SA_options.user_camera.ML_models.use_holistic = System._browser.url_search_params.use_holistic
+  if (MMD_SA_options.user_camera.ML_models.worker_disabled == null)
+    MMD_SA_options.user_camera.ML_models.worker_disabled = (typeof OffscreenCanvas == "undefined")
 
   if (MMD_SA_options.user_camera.ML_models.facemesh.use_mediapipe || MMD_SA_options.user_camera.ML_models.worker_disabled)
     System._browser.camera.facemesh.use_mediapipe = true
