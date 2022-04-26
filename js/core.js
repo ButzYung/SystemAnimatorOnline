@@ -1,5 +1,5 @@
 // System Animator core basics
-// (2021-11-23)
+// (2022-04-26)
 
 var use_SA_browser_mode
 
@@ -488,6 +488,8 @@ var webkit_electron_remote
 var webkit_window, webkit_electron_screen, webkit_electron_dialog
 var webkit_IgnoreMouseEvents_disabled;
 
+var is_chrome = /chrome/i.test( navigator.userAgent );
+
 (function () {
   webkit_mode = /WebKit/i.test(navigator.userAgent)
   if (browser_native_mode && !webkit_mode) {
@@ -531,6 +533,17 @@ Settings_default._custom_.Display = "-1"
 + '<script type="text/javascript" language="javascript" src="js/file_io.js"></scr'+'ipt>\n'
     )
     return
+  }
+
+  if (!document.documentElement.requestFullscreen) {
+    document.documentElement.requestFullscreen = function () {
+if (this.webkitRequestFullscreen) {
+  this.webkitRequestFullscreen()
+}
+else {
+  console.log('(Fullscreen API not supported)')
+}
+    };
   }
 
   if (!webkit_mode)
