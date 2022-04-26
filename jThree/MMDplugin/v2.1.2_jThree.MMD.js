@@ -1,4 +1,4 @@
-// (2021-12-24)
+// (2022-04-26)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -1429,10 +1429,14 @@ Bone = function( bin ) {
 	this.flags = bin.readUint16();
 	//console.log(this.flags.toString(16));
 	if ( ( this.flags & 1 ) !== 0 ) {
-		bin.readBoneIndex(); // dummy read
+// AT: end
+this.end = bin.readBoneIndex();
+//		bin.readBoneIndex(); // dummy read
 		//this.end = bin.readBoneIndex();
 	} else {
-		bin.readVector(3); // dummy read
+// AT: end
+this.end = convV( bin.readVector(3) );
+//		bin.readVector(3); // dummy read
 		//this.end = convV( bin.readVector(3) );
 	}
 	/* if ( ( this.flags & 2 ) !== 0 ) {
@@ -5431,7 +5435,7 @@ let motion_para
 if (self.MMD_SA) {
   let model_para_obj = MMD_SA_options.model_para_obj_all[this.mesh._model_index];
   let motion_name
-  if (this._motion_index != null) {
+  if ((this._motion_index != null) && MMD_SA.motion[this._motion_index]) {
     motion_name = MMD_SA.motion[this._motion_index].filename
   }
   else {
@@ -5974,6 +5978,21 @@ if (self.MMD_SA) {
       });
     }
   });
+
+// AT: auto-adjust "dummy" center bone for some models
+if ((mesh.bones_by_name['センター'].pmxBone.origin[1] == 0) && (mesh.bones_by_name['グルーブ'])) {
+  let y_center = mesh.bones_by_name['グルーブ'].pmxBone.origin[1]
+  mesh.bones_by_name['センター'].pmxBone.origin[1] = y_center
+
+  let y_offset = y_center - mesh.bones_by_name['センター'].parent.pmxBone.origin[1]
+  let index_center = mesh.bones_by_name['センター']._index
+  mesh.geometry.bones[index_center].pos[1] = y_offset
+  mesh.geometry.bones.forEach(function (gbone, idx) {
+    if (gbone.parent == index_center)
+      gbone.pos[1] -= y_offset
+  });
+}
+
   mesh.geometry.bones.forEach(function (gbone, idx) {
     var bone = mesh.bones[idx]
     var pbone = bone.pmxBone
@@ -6067,7 +6086,7 @@ mesh.material.materials.forEach( function( v ,idx ) {
 //console.log(v)
   if (self.MMD_SA) {
     let img, w, h;
-    let m = material_para[v.name] || {};
+    let m = material_para[v.name] || (material_para._default_ && Object.assign({}, material_para._default_)) || {};
     if (m.depthWrite != null) { v.depthWrite = m.depthWrite; }
     let auto_detect = auto_detect_material_para && (m.transparent == null)// && !material_para[v.name]
     if (auto_detect) {
