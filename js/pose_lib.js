@@ -1,25 +1,8 @@
-// (2021-11-23)
+// (2022-04-26)
 
 var PoseAT = (function () {
 
   var is_worker = (typeof window !== "object");
-
-  var use_human;
-  var use_mixed_human;
-  var use_tfjs, use_tfjs_posenet, use_mediapipe, use_blazepose, use_movenet, use_holistic, use_mediapipe_hands;
-
-  var use_human_only, use_human_pose, use_human_hands;
-
-  var human;
-
-  var posenet_model, handpose_model;
-  var holistic_model;
-
-  var use_mobilenet;
-
-  var no_hand_countdown = 0, no_hand_countdown_max = 3;
-
-  var fps = 0, fps_count = 0, fps_ms = 0;
 
   var postMessageAT = (is_worker) ? postMessage : function (msg, transfer) {
     _PoseAT._worker.onmessage({data:msg})
@@ -46,22 +29,6 @@ else {
 }
   }
 
-  function _onmessage(e) {
-    let t = performance.now()
-    let data = (typeof e.data === "string") ? JSON.parse(e.data) : e.data;
-
-    if (data.canvas) {
-      canvas = data.canvas
-      context = canvas.getContext("2d")
-    }
-
-    if (data.rgba) {
-      process_video_buffer(data.rgba, data.w,data.h, data.options);
-
-      data.rgba = undefined
-      data = undefined
-    }
-  }
 
   async function init(_worker, param) {
 _PoseAT._worker = _worker;
@@ -84,9 +51,7 @@ else {
   param = new URLSearchParams(self.location.search.substring(1));
 }
 
-if (is_worker) {
-  _PoseAT._canvas_for_imagedata = new OffscreenCanvas(1,1);
-}
+//if (is_worker) _PoseAT._canvas_for_imagedata = new OffscreenCanvas(1,1);
 
 if (use_human || param.get('use_human')) {
   use_human_only = true
@@ -146,7 +111,13 @@ if (use_movenet || param.get('use_movenet')) {
 
 use_mobilenet = param.get('use_mobilenet');
 
-if (use_holistic) {
+postMessageAT('(Pose worker initialized)')
+postMessageAT('OK')
+  }
+
+  var posenet_initialized, handpose_initialized, holistic_initialized, human_initialized;
+  async function load_lib(options) {
+if (options.use_holistic && !holistic_initialized) {
   await load_scripts('@mediapipe/holistic/holistic.js');
 
   await (async function () {
@@ -176,12 +147,15 @@ predict: async function (img, config) {
   return holistic_results;
 }
     };
+
+    holistic_initialized = true
   })();
 
   console.log('(Mediapipe Holistic initialized)')
   postMessageAT('(Mediapipe Holistic initialized)')
 }
-else if (use_tfjs) {
+
+if (!options.use_holistic && use_tfjs && !posenet_initialized) {
   if (use_mediapipe && use_blazepose) {
     await load_scripts('@mediapipe/pose/pose.js');//'https://cdn.jsdelivr.net/npm/@mediapipe/pose');
   }
@@ -194,7 +168,7 @@ else if (use_tfjs) {
   }
 }
 
-if (use_human) {
+if (use_human && !human_initialized) {
   await load_scripts('./human/dist/human.js');
 
   human = new Human.default();//(is_worker) ? new Human.default() : new Human();
@@ -250,23 +224,24 @@ minConfidence: 0.2
 //human.warmup().then(()=>{console.log('OK')});
 
   console.log('(Human - body:' + !!use_human_pose + '/hand:' + !!use_human_hands + ')')
+
+  human_initialized = true
 }
 
-
-try {
-  if (!use_holistic && !use_human_pose) {
+if (!options.use_holistic && !use_human_pose && !posenet_initialized) {
 /*
-    await load_scripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tf-backend-wasm.js');
-    tf.wasm.setWasmPaths('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/');
-    await tf.setBackend("wasm")
+  await load_scripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tf-backend-wasm.js');
+  tf.wasm.setWasmPaths('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/');
+  await tf.setBackend("wasm")
 */
-    if (use_movenet) {
-      await load_scripts((use_mediapipe && use_blazepose)?'@mediapipe/pose-detection.js':'https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection');
+  if (use_movenet) {
+    await load_scripts((use_mediapipe && use_blazepose)?'@mediapipe/pose-detection.js':'https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection');
 
-      if (use_blazepose) {
-        const detectorConfig = (use_mediapipe) ?
+    if (use_blazepose) {
+      const detectorConfig = (use_mediapipe) ?
 {
   runtime: 'mediapipe',
+//  modelType: 'heavy'
 //  solutionPath: 'base/node_modules/@mediapipe/pose'
 }
 :
@@ -275,24 +250,24 @@ try {
   enableSmoothing: true,
   modelType: 'full'
 };
-        posenet = await poseDetection.createDetector(poseDetection.SupportedModels.BlazePose, detectorConfig);
+      posenet = await poseDetection.createDetector(poseDetection.SupportedModels.BlazePose, detectorConfig);
 
-        let msg = '(' + ((use_mediapipe) ? 'Mediapipe' : 'TFJS') + ' BlazePose initialized)';
-        console.log(msg)
-        postMessageAT(msg)
-      }
-      else {
-        const detectorConfig = {modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER};//{modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING};//
-        posenet = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, detectorConfig);
-
-        console.log('(MoveNet initialized)')
-        postMessageAT('(MoveNet initialized)')
-      }
+      let msg = '(' + ((use_mediapipe) ? 'Mediapipe' : 'TFJS') + ' BlazePose initialized)';
+      console.log(msg)
+      postMessageAT(msg)
     }
     else {
-      await load_scripts('https://cdn.jsdelivr.net/npm/@tensorflow-models/posenet');
+      const detectorConfig = {modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER};//{modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING};//
+      posenet = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, detectorConfig);
 
-      posenet_model = await posenet.load((use_mobilenet) ?
+      console.log('(MoveNet initialized)')
+      postMessageAT('(MoveNet initialized)')
+    }
+  }
+  else {
+    await load_scripts('https://cdn.jsdelivr.net/npm/@tensorflow-models/posenet');
+
+    posenet_model = await posenet.load((use_mobilenet) ?
 {
   architecture: 'MobileNetV1',
   outputStride: 16,
@@ -306,67 +281,87 @@ try {
 //  inputResolution: { width: 257, height: 200 },
   quantBytes: 2/2
 }
-      );
+    );
 
-      console.log('(PoseNet initialized)')
-      postMessageAT('(PoseNet initialized)')
-    }
+    console.log('(PoseNet initialized)')
+    postMessageAT('(PoseNet initialized)')
   }
 
-  if (!use_holistic && !use_human_hands) {
-    if (1) {
-      await load_scripts('@mediapipe/hands/hands.js');//'https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js');//
+  posenet_initialized = true
+}
 
-      await (async function () {
-        var hands = new Hands({locateFile: (file) => {
+if (!options.use_holistic && !use_human_hands && options.use_handpose && !handpose_initialized) {
+  await load_scripts('@mediapipe/hands/hands.js');//'https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js');//
+
+  await (async function () {
+    var hands = new Hands({locateFile: (file) => {
 return _PoseAT.path_adjusted('@mediapipe/hands/' + file);
 //return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
-        }});
+    }});
 
-        hands.setOptions({
+    hands.setOptions({
 maxNumHands: 2,
 minDetectionConfidence: 0.5,
 minTrackingConfidence: 0.5,
 modelComplexity: 1,
-        });
+    });
 
-        var hands_results;
-        hands.onResults((results)=>{
+    var hands_results;
+    hands.onResults((results)=>{
 hands_results = results;
-        });
+    });
 
-        await hands.initialize();
+    await hands.initialize();
 
-        handpose_model = {
+    handpose_model = {
 estimateHands: async function (img, config) {
   await hands.send({image:img});
   return hands_results;
 }
-        };
-      })();
+    };
+  })();
 
-      console.log('(Mediapipe hands initialized)')
-      postMessageAT('(Mediapipe hands initialized)')
-    }
-// obsolete
-/*
-    else {
-//    await load_scripts('https://cdn.jsdelivr.net/npm/@tensorflow-models/handpose@0.0.6/dist/handpose.js');
-await load_scripts('handpose.js');
+  console.log('(Mediapipe hands initialized)')
+  postMessageAT('(Mediapipe hands initialized)')
 
-      handpose_model = await handpose.load()
-
-      console.log('(Handpose initialized)')
-      postMessageAT('(Handpose initialized)')
-    }
-*/
-  }
-
-  postMessageAT('OK')
+  handpose_initialized = true
 }
-catch (err) { postMessageAT('PoseNet/Handpose ERROR:' + err) }
-
   }
+
+
+var use_human;
+var use_mixed_human;
+var use_tfjs, use_tfjs_posenet, use_mediapipe, use_blazepose, use_movenet, use_holistic, use_mediapipe_hands;
+
+var use_human_only, use_human_pose, use_human_hands;
+
+var human;
+
+var posenet_model, handpose_model;
+var holistic_model;
+
+var use_mobilenet;
+
+var no_hand_countdown = 0, no_hand_countdown_max = 3;
+
+var fps = 0, fps_count = 0, fps_ms = 0;
+
+function _onmessage(e) {
+  let t = performance.now()
+  let data = (typeof e.data === "string") ? JSON.parse(e.data) : e.data;
+
+  if (data.canvas) {
+    canvas = data.canvas
+    context = canvas.getContext("2d")
+  }
+
+  if (data.rgba) {
+    process_video_buffer(data.rgba, data.w,data.h, data.options);
+
+    data.rgba = undefined
+    data = undefined
+  }
+}
 
 var skip_hand_countdown = 0
 
@@ -386,7 +381,7 @@ async function process_video_buffer(rgba, w,h, options) {
       return pose;
     }
 
-    if (use_holistic) {
+    if (options.use_holistic) {
       const _result = pose
       if (_result.ea && _result.ea.length && _result.poseLandmarks && _result.poseLandmarks.length) {
 // https://github.com/tensorflow/tfjs-models/blob/master/pose-detection/src/blazepose_mediapipe/detector.ts
@@ -444,7 +439,7 @@ name: BLAZEPOSE_KEYPOINTS[i]
   function hands_adjust(hands) {
     if (!hands || use_human_hands) return hands
 
-    if (use_holistic) {
+    if (options.use_holistic) {
       const _result = hands
       hands = { image:_result.image, multiHandedness:[], multiHandLandmarks:[] }
       if (_result.leftHandLandmarks && _result.leftHandLandmarks.length) {
@@ -465,8 +460,9 @@ name: BLAZEPOSE_KEYPOINTS[i]
     var ih = hands.image.height
     for (var i = 0, i_max = Math.min(hands.multiHandedness.length,2); i < i_max; i++) {
       let h = hands.multiHandLandmarks[i].map((_h)=>[_h.x*iw, _h.y*ih, _h.z*iw]);
-      _hands[i] = {
+      _hands.push({
 score: hands.multiHandedness[i].score,
+label: hands.multiHandedness[i].label,
 keypoints: h,
 // ["thumb", "index", "middle", "ring", "pinky"]
 annotations: {
@@ -477,7 +473,7 @@ annotations: {
   "ring":   [h[13],h[14],h[15],h[16]],
   "pinky":  [h[17],h[18],h[19],h[20]]
 }
-      };
+      });
     }
 
 //console.log(_hands)
@@ -599,7 +595,7 @@ function process_facemesh(faces, w,h, bb) {
 if (use_faceLandmarksDetection) {
 // https://github.com/tensorflow/tfjs-models/blob/master/face-landmarks-detection/src/mediapipe-facemesh/keypoints.ts
 // NOTE: video source is assumed to be mirrored (eg. video L == landmarks R)
-    yx = (LR == "L") ? [sm[473][1], sm[473][0]] : [sm[468][1], sm[468][0]];
+    yx = (LR == ((use_mediapipe_facemesh)?"R":"L")) ? [sm[473][1], sm[473][0]] : [sm[468][1], sm[468][0]];
 }
 else {
   if ((gray_w != cw) || (gray_h != ch)) {
@@ -672,6 +668,13 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
   return faces
 }
 
+  try {
+    await load_lib(options)
+  }
+  catch (err) {
+    postMessageAT('PoseNet/Handpose ERROR:' + err)
+    return
+  }
 
   let _t = performance.now()
 
@@ -685,7 +688,7 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
   let use_mediapipe_facemesh = true
   let use_faceLandmarksDetection = true
 
-  if (use_holistic) {
+  if (options.use_holistic) {
     const result = await holistic_model.predict(rgba);
 //console.log(result)
 
