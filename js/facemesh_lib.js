@@ -1,4 +1,4 @@
-// (2022-04-26)
+// (2022-04-28)
 
 var FacemeshAT = (function () {
 
@@ -794,6 +794,7 @@ const RED = "#FF2C35";
   }
   else {
     eyes.forEach(function (eye) {
+      if (!eye) return
       var c = eye[0]/2
       var r = eye[1]/2
       context.beginPath();
