@@ -2601,17 +2601,17 @@ if (this.boneKeys.length || this.morphKeys.length) {
 VMD.prototype.load = function( url_raw, onload ) {
 // AT: VMD by filename
 // NOTE: url_raw is the raw path WITHOUT toLocalPath (because this will turn the url to blob url in browser, which makes info like file type and such unrecognizable)
-const url = decodeURIComponent(url_raw);
-MMD_SA.vmd_by_filename[decodeURIComponent(url_raw.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, ""))] = this;
+url_raw = decodeURIComponent(url_raw);
+MMD_SA.vmd_by_filename[url_raw.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, "")] = this;
 
 // AT: BVH
 if (/\.bvh$/i.test(url_raw)) {
-  MMD_SA.BVHLoader().then(()=>{ BVHLoader.VMD = VMD; BVHLoader.load(decodeURIComponent(url_raw)).then((bones)=>{ onload(BVHLoader.toVMD(bones)); }); });
+  MMD_SA.BVHLoader().then(()=>{ BVHLoader.VMD = VMD; BVHLoader.load(url_raw).then((bones)=>{ onload(BVHLoader.toVMD(bones)); }); });
   return
 }
 
 	var that = this;
-	loadBuffer( url, function( xhr ) {
+	loadBuffer( toLocalPath(url_raw), function( xhr ) {
 		that.url = url_raw;
 		that.parse( xhr.response );
 		onload( that );
