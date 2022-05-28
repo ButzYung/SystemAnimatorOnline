@@ -12,7 +12,7 @@ import {
 	Sphere,
 	Vector2,
 	Vector3
-} from './three.module.js';
+} from './three.module.min.js';
 
 const _m1 = new Matrix4();
 const _obj = new Object3D();
