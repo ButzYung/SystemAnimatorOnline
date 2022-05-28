@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2022-04-26)
+// (2022-05-28)
 
 var use_full_spectrum = true
 
@@ -66,6 +66,18 @@ ds.position = "absolute"
 ds.left = ds.top = "0px"
 ds.zIndex = 2
 SL_Host_Parent.appendChild(d)
+
+if (MMD_SA_options.use_THREEX) {
+  const c = document.createElement("canvas")
+  c.id = "SLX"
+  c.width  = self.EV_width  = MMD_SA_options.width
+  c.height = self.EV_height = MMD_SA_options.height
+  const cs = c.style
+  cs.position = "absolute"
+  cs.left = cs.top = "0px"
+  cs.zIndex = 1
+  SL_Host.appendChild(c)
+}
 
 var c = document.createElement("canvas")
 c.id = "SL"
@@ -214,7 +226,7 @@ for (var i = 0, len = MMD_SA_options.custom_action.length; i < len; i++) {
 
 MMD_SA_options.motion.forEach(function (motion) {
   if (motion.para_SA)
-    MMD_SA_options.motion_para[motion.path.replace(/^.+[\/\\]/, "").replace(/\.vmd$/i, "")] = motion.para_SA
+    MMD_SA_options.motion_para[motion.path.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, "")] = motion.para_SA
 });
 
 // media control START
@@ -414,7 +426,7 @@ vo.audio_onended = function (e) {
 
 Audio_BPM.checkWinamp(vo)
 
-DragDrop_RE = eval('/\\.(' + DragDrop_RE_default_array.concat(["vmd", "mp3", "wav", "aac", "zip"]).join("|") + ')$/i')
+DragDrop_RE = eval('/\\.(' + DragDrop_RE_default_array.concat(["vmd", "bvh", "mp3", "wav", "aac", "zip", "vrm"]).join("|") + ')$/i')
 
 DragDrop.onDrop_finish = function (item) {
   var src = item.path
@@ -422,7 +434,7 @@ DragDrop.onDrop_finish = function (item) {
 //DEBUG_show(toFileProtocol(src))
 //    if (!MMD_SA.jThree_ready) return;
 
-    var zip_file = SA_topmost_window.DragDrop._path_to_obj[src.replace(/^(.+)[\/\\]/, "")]
+    const zip_file = SA_topmost_window.DragDrop._path_to_obj[src.replace(/^(.+)[\/\\]/, "")]
 
 new self.JSZip().loadAsync(zip_file, {
   decodeFileName: (function () {
@@ -462,7 +474,7 @@ new self.JSZip().loadAsync(zip_file, {
     music_list.slice(0,keys_available.length).forEach(function (music) {
       var music_filename = music.name.replace(/^.+[\/\\]/, "").replace(/\.\w+$/, "")
 //DEBUG_show(music_filename,0,1)
-      var vmd = zip.file(new RegExp(toRegExp(music_filename)+"\\.vmd"))
+      var vmd = zip.file(new RegExp(toRegExp(music_filename)+"\\.(vmd|bvh)"))
       if (vmd.length) {
         files_added = true
         let k = keys_available.shift()
@@ -492,72 +504,36 @@ new self.JSZip().loadAsync(zip_file, {
   if (!MMD_SA.jThree_ready) return;
 
   var pmx_list = zip.file(/\.pmx$/i)
+  var vrm_list = []
   if (!pmx_list.length) {
-    if (!files_added)
-      DEBUG_show("(No MMD model found)")
-    return
-  }
-//  DEBUG_show(pmx_list[0].name)
+    if (MMD_SA_options.use_THREEX)
+      vrm_list = zip.file(/\.vrm$/i);
 
-  var model_filename = pmx_list[0].name.replace(/^.+[\/\\]/, "")
-
-MMD_SA._init_my_model = function () {
-  var _MME_v = {};
-  ["_toFloat", "_EV_usage_PROCESS", "PostProcessingEffects"].forEach(function (p) {
-    _MME_v[p] = MMD_SA_options.MME[p]
-  });
-
-  MMD_SA_options.model_path_default = MMD_SA_options.model_path = src + "#/" + pmx_list[0].name
-
-  var model_filename_cleaned = model_filename.replace(/[\-\_]copy\d+\.pmx$/, ".pmx").replace(/[\-\_]v\d+\.pmx$/, ".pmx")
-  var model_para_obj = MMD_SA_options.model_para_obj = Object.assign({}, MMD_SA_options.model_para[model_filename] || MMD_SA_options.model_para[model_filename_cleaned] || MMD_SA_options.model_para._default_ || {})
-  model_para_obj._filename_raw = model_filename
-  model_para_obj._filename = model_filename
-  model_para_obj._filename_cleaned = model_filename_cleaned
-
-  if (!model_para_obj.skin_default)
-    model_para_obj.skin_default = { _is_empty:true }
-// save some headaches and make sure that every VMD has morph (at least a dummy) in "Dungeon" mode
-  if (!model_para_obj.morph_default) model_para_obj.morph_default = {}//{ _is_empty:!MMD_SA_options.Dungeon }//
-
-  MMD_SA_options._MME = Object.clone(MMD_SA_options._MME_)
-  if (Object.keys(MMD_SA_options._MME).length == 0) {
-    MMD_SA_options._MME = {
-      self_overlay: {
-  enabled: 1
- ,opacity: 0.4
-      }
-     ,HDR: {
-  enabled: 1
- ,opacity: 0.2
-      }
-     ,serious_shader: {
-  enabled: 0
-      }
+    files_added = files_added || !!vrm_list.length;
+    if (!files_added) {
+      if (!vrm_list.length)
+        DEBUG_show("(No 3D model found)")
+      return
     }
   }
 
-//console.log(MMD_SA_options._MME)
-//model_para_obj.skin_default = { "くちびる上_IK": { pos:{x:0, y:0.1, z:0} } }
-//model_para_obj.morph_default = { "あ2": { weight:1 } }
+  const sb = document.getElementById("LMMD_StartButton")
 
-// always use the default .character
-  model_para_obj.character = MMD_SA_options.model_para_obj_all[0].character
+  if (pmx_list.length) {
+    MMD_SA.THREEX.enabled = false
 
-  MMD_SA_options.model_para_obj_all[0] = MMD_SA_options.model_para_obj_by_filename[model_filename] = model_para_obj
-  model_para_obj._model_index = 0
-  for (var p in _MME_v) {
-    MMD_SA_options.MME[p] = _MME_v[p];
-  }
-};
+    const model_filename = pmx_list[0].name.replace(/^.+[\/\\]/, "")
 
-  var sb = document.getElementById("LMMD_StartButton")
-  if (sb) {
-    let info_extra = ""
-    let model_json = zip.file(/model\.json$/i)
-    if (model_json.length) {
-      info_extra = "(+config)"
-      model_json[0].async("text").then(function (json) {
+    MMD_SA._init_my_model = function () {
+      MMD_SA.init_my_model(src, pmx_list[0].name)
+    };
+
+    if (sb) {
+      let info_extra = ""
+      let model_json = zip.file(/model\.json$/i)
+      if (model_json.length) {
+        info_extra = "(+config)"
+        model_json[0].async("text").then(function (json) {
 MMD_SA_options.model_para = Object.assign(MMD_SA_options.model_para, JSON.parse(json, function (key, value) {
   if (typeof value == "string") {
     if (/^eval\((.+)\)$/.test(value)) {
@@ -567,31 +543,63 @@ MMD_SA_options.model_para = Object.assign(MMD_SA_options.model_para, JSON.parse(
   return value
 }));
 console.log("(model.json updated)")
-      });
-    }
+        });
+      }
 
-    sb._msg_mouseover = [
+      sb._msg_mouseover = [
   model_filename + info_extra
- ,"Press START to begin with your custom MMD model."
+ ,"Press START to begin with your custom 3D model."
  ,""
  ,"(Click here to reset to the default model.)"
-    ].join("\n");
-    DEBUG_show(sb._msg_mouseover, -1);
-
-    MMD_SA._click_to_reset = function () {
-      MMD_SA._init_my_model = null;
-      SystemAnimator_caches.delete("/user-defined-local/my_model.zip");
-      sb._msg_mouseover = "Press START to begin loading.\n\n(Drop a MMD model zip to use your own model.)"
+      ].join("\n");
       DEBUG_show(sb._msg_mouseover, -1);
-      Ldebug.style.cursor = "default";
-      Ldebug.removeEventListener("click", MMD_SA._click_to_reset);
-      MMD_SA._click_to_reset = null;
-    };
-    Ldebug.style.cursor = "pointer";
-    Ldebug.addEventListener("click", MMD_SA._click_to_reset);
-  }
 
-  SystemAnimator_caches.put("/user-defined-local/my_model.zip", new Response(zip_file, {status:200, statusText:"custom_PC_model"}));
+      MMD_SA._click_to_reset = function () {
+MMD_SA._init_my_model = null;
+SystemAnimator_caches.delete("/user-defined-local/my_model.zip");
+sb._msg_mouseover = sb._msg_mouseover_default;
+DEBUG_show(sb._msg_mouseover, -1);
+Ldebug.style.cursor = "default";
+Ldebug.removeEventListener("click", MMD_SA._click_to_reset);
+MMD_SA._click_to_reset = null;
+};
+      Ldebug.style.cursor = "pointer";
+      Ldebug.addEventListener("click", MMD_SA._click_to_reset);
+    }
+
+    SystemAnimator_caches.put("/user-defined-local/my_model.zip", new Response(zip_file, {status:200, statusText:"custom_PC_model"}));
+  }
+  else if (vrm_list.length) {
+    MMD_SA.THREEX.enabled = true
+    MMD_SA_options.THREEX_options.model_path = src + '#/' + vrm_list[0].name
+
+    const model_filename = vrm_list[0].name.replace(/^.+[\/\\]/, "")
+
+    if (sb) {
+      let info_extra = ''
+      sb._msg_mouseover = [
+  model_filename + info_extra
+ ,"Press START to begin with your custom 3D model."
+ ,""
+ ,"(Click here to reset to the default model.)"
+      ].join("\n");
+      DEBUG_show(sb._msg_mouseover, -1);
+
+      MMD_SA._click_to_reset = function () {
+SystemAnimator_caches.delete("/user-defined-local/my_model.zip");
+MMD_SA_options.THREEX_options.model_path = MMD_SA_options.THREEX_options.model_path_default;
+sb._msg_mouseover = sb._msg_mouseover_default;
+DEBUG_show(sb._msg_mouseover, -1);
+Ldebug.style.cursor = "default";
+Ldebug.removeEventListener("click", MMD_SA._click_to_reset);
+MMD_SA._click_to_reset = null;
+};
+      Ldebug.style.cursor = "pointer";
+      Ldebug.addEventListener("click", MMD_SA._click_to_reset);
+    }
+
+    SystemAnimator_caches.put("/user-defined-local/my_model.zip", new Response(zip_file, {status:200, statusText:"custom_PC_model"}));
+  }
 }, function (e) {
     // won't be called
   console.error("ZIP error (" + src + ")")
@@ -599,9 +607,44 @@ console.log("(model.json updated)")
 
 //console.log(DragDrop)
   }
-  else if (item.isFileSystem && /([^\/\\]+)\.vmd$/i.test(src)) {
-    var filename = RegExp.$1
+  else if (item.isFileSystem && /([^\/\\]+)\.(vrm)$/i.test(src)) {
+    if (!MMD_SA_options.use_THREEX) return
 
+    MMD_SA.THREEX.enabled = true
+    MMD_SA_options.THREEX_options.model_path = src
+
+    const sb = document.getElementById("LMMD_StartButton")
+
+    const model_filename = src.replace(/^.+[\/\\]/, "")
+
+    if (sb) {
+      let info_extra = ''
+      sb._msg_mouseover = [
+  model_filename + info_extra
+ ,"Press START to begin with your custom 3D model."
+ ,""
+ ,"(Click here to reset to the default model.)"
+      ].join("\n");
+      DEBUG_show(sb._msg_mouseover, -1);
+
+      MMD_SA._click_to_reset = function () {
+//SystemAnimator_caches.delete("/user-defined-local/my_model.zip");
+MMD_SA_options.THREEX_options.model_path = MMD_SA_options.THREEX_options.model_path_default;
+sb._msg_mouseover = sb._msg_mouseover_default;
+DEBUG_show(sb._msg_mouseover, -1);
+Ldebug.style.cursor = "default";
+Ldebug.removeEventListener("click", MMD_SA._click_to_reset);
+MMD_SA._click_to_reset = null;
+};
+      Ldebug.style.cursor = "pointer";
+      Ldebug.addEventListener("click", MMD_SA._click_to_reset);
+    }
+  }
+  else if (item.isFileSystem && /([^\/\\]+)\.(vmd|bvh)$/i.test(src)) {
+    if (!MMD_SA.MMD_started) {
+      DEBUG_show("(no custom VMD/BVH motion before MMD loaded)", 2)
+      return
+    }
     if (MMD_SA.music_mode) {
       DEBUG_show("(no external motion while music is still playing)", 2)
       return
@@ -610,34 +653,20 @@ console.log("(model.json updated)")
       return
     }
 
-    var index = MMD_SA_options.motion_index_by_name[src.replace(/^.+[\/\\]/, "").replace(/\.vmd$/i, "")]
+    var filename = RegExp.$1
+
+    var index = MMD_SA_options.motion_index_by_name[src.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, "")]
     if (index != null) {
       if (MMD_SA.use_jThree) {
         MMD_SA_options.motion_shuffle = [index]
         MMD_SA_options.motion_shuffle_list_default = null
         MMD_SA._force_motion_shuffle = true
       }
-      else
-        DEBUG_show("(motion already existed)", 2)
       return
     }
 
     if (MMD_SA.use_jThree) {
       MMD_SA.load_external_motion(src)
-    }
-    else {
-      var motion = new MMD.Motion(src)
-      motion._index = 0
-      motion.load(function() {
-var mm = new MMD.MotionManager()
-
-var mmd = MMD_SA.MMD
-MMD_SA.motion[this._index] = mmd.motionManager = mm
-mm.addModelMotion(MMD_SA.model, this, true, 0)
-mm.para_SA = (MMD_SA_options.motion_para[filename] || {})
-mm.modelMotions[0].process_bones = mm.para_SA.process_bones
-mmd.setFrameNumber(-1)
-      })
     }
   }
   else if (item.isFolder) {
@@ -845,7 +874,7 @@ if (MMD_SA_options.MMD_disabled)
   return [0,0,0]
 var para_SA = this.MMD.motionManager.para_SA
 var cv = (para_SA.center_view || MMD_SA_options.center_view || [0,0,0]).slice()
-if (MMD_SA_options.Dungeon) {
+if (MMD_SA_options.Dungeon && !MMD_SA.music_mode) {
   if (!para_SA.center_view_enforced)
     cv[2] = -cv[2]
   let c = MMD_SA_options.Dungeon.character
@@ -996,9 +1025,9 @@ let sb_func = function () {
     sb.id = "LMMD_StartButton"
     sb.className = "StartButton"
 //  sb.href="#"
-    sb.addEventListener("click", function () {
+    sb.addEventListener("click", async function () {
       if (MMD_SA_options.Dungeon_options && MMD_SA_options.Dungeon_options.multiplayer) {
-        var mp = MMD_SA_options.Dungeon.multiplayer
+        const mp = MMD_SA_options.Dungeon.multiplayer
         if (!mp.is_host && !mp.is_client) {
           if (!confirm("You are about to start without joining a game from other players, which means you will start in \"host\" mode. In this mode, you won't be able to join other players' games, but on the other hand, other players can join yours."))
             return
@@ -1007,9 +1036,12 @@ let sb_func = function () {
       }
 //      sb.style.display = "none"
       document.body.removeChild(sb)
+
+      await MMD_SA.THREEX.init()
+
       init(); resize();
     }, true);
-    sb._msg_mouseover = "Press START to begin loading.\n\n(Drop a MMD model zip to use your own model.)"
+    sb._msg_mouseover = sb._msg_mouseover_default = 'Press START to begin loading.\n\n(Drop a MMD model zip' + ((MMD_SA_options.use_THREEX) ? '/VRM' : '') + ' to use your 3D model.)';
     sb.addEventListener("mouseover", function () {
       DEBUG_show(this._msg_mouseover, -1)
     }, true);
@@ -1038,78 +1070,6 @@ else {
 }
 // jThree END
 }
-else {
-// MMD.js START
-var mmd = this.MMD = new MMD(c, c.width, c.height);
-mmd.initShaders();
-mmd.initParameters();
-mmd.registerKeyListener(document);
-mmd.registerMouseListener(c_host);
-
-var miku = this.model = new MMD.Model(MMD_SA_options.model_path.replace(/[\/\\][^\/\\]+$/, ""), MMD_SA_options.model_path.replace(/^.+[\/\\]/, ""));
-
-miku.load(function() {
-  mmd.addModel(miku);
-  mmd.initBuffers();
-  mmd.start();
-//DEBUG_show([miku.bones[miku.bone_table[4].index].name, miku.bone_group_names[miku.bone_table[4].group_index-1], miku.bones[miku.bones[miku.bone_table[4].index].parent_bone_index].name],0,1)
-//DEBUG_show(JSON.stringify(miku.bone_table_by_name),0,1)
-  self.EV_animate_full = function () {
-MMD_SA.MMD.step()
-  }
-
-  MMD_SA.motion = [mmd.motionManager]
-  var m_default = new MMD.Motion(MMD_SA_options.motion[0].path)
-  m_default.load(function () {
-    var m = MMD_SA_options.motion[0]
-    mmd.addModelMotion(miku, this, true, 0, m.match)
-    MMD_SA.motion[0].para_SA = (MMD_SA_options.motion_para[MMD_SA_options.motion[0].path.replace(/^.+[\/\\]/, "").replace(/\.vmd$/i, "")] || {})
-
-    MMD_SA._motion_loaded = 1
-
-    MMD_SA.motion_number_meter_index = MMD_SA_options.motion.length
-    for (var i = 0; i < 5; i++)
-      MMD_SA_options.motion.push({path:'MMD.js/motion/_number_meter_' + (i+1) + '.vmd', match:{bone_group:["腕","指"], bone_name_RE:/\u5DE6/}})
-    for (var i = 0; i < 5; i++)
-      MMD_SA_options.motion.push({path:'MMD.js/motion/_number_meter_' + (i+1) + '.vmd', match:{bone_group:["腕","指"], bone_name_RE:/\u53F3/}})
-
-    for (var i = 1, len = MMD_SA_options.motion.length; i < len; i++) {
-      var m = MMD_SA_options.motion[i]
-      if (!m.path)
-        continue
-
-      var motion = new MMD.Motion(m.path)
-      motion._index = i
-      motion.load(function() {
-var _index = this._index
-var m = MMD_SA_options.motion[_index]
-var mm = new MMD.MotionManager()
-MMD_SA.motion[_index] = mm
-mm.addModelMotion(miku, this, true, 0, m.match)
-mm.para_SA = (MMD_SA_options.motion_para[m.path.replace(/^.+[\/\\]/, "").replace(/\.vmd$/i, "")] || {})
-
-if (++MMD_SA._motion_loaded +1 < len)
-  return
-
-for (var k = 0; k < len; k++) {
-  var _mm = MMD_SA.motion[k]
-  if (!_mm)
-    continue
-
-  _mm.modelMotions[0].process_bones = (_mm.para_SA.process_bones || MMD_SA_options.motion[k].process_bones)
-}
-mmd.play()
-
-MMD_SA.motion_shuffle()
-
-//DEBUG_show('(NOTE: PMD model support in System Animator is obsolete. Please use PMX model instead.)')
-      })
-    }
-  })
-});
-// MMD.js END
-}
-
   }
 
 
@@ -1343,14 +1303,6 @@ if (is_bone_action && this._kissing) {
 
 //    if (MMD_SA_options.use_speech_bubble && (this.frame == 0)) MMD_SA.SpeechBubble.message(0, ["Here is your X'mas kiss~\n\u2661"].shuffle()[0], 5000, { pos_mod:[-3,-5,0] });
 //"主人，錫錫～\u2661", "飛吻啊，主人～\u2661"
-  }
-  else {
-    var head_ry = (objs["頭"]) ? quat4.toEuler(objs["頭"].rotation)[0] : 0
-    var neck_ry = (objs["首"]) ? quat4.toEuler(objs["首"].rotation)[0] : 0
-//DEBUG_show([mod, head_ry+neck_ry])
-    MMD_SA.process_bone(objs, "上半身", [head_ry+neck_ry, 0, mod])
-    MMD_SA.process_bone(objs, "頭", [0, 0, -mod/2], (head_ry)?[0,1,1]:null)
-    MMD_SA.process_bone(objs, "首", [0, 0, -mod/2], (neck_ry)?[0,1,1]:null)
   }
 }
 
@@ -1644,7 +1596,7 @@ MMD_SA.fadeout_canvas.width  = SL.width
 MMD_SA.fadeout_canvas.height = SL.height
 var context = MMD_SA.fadeout_canvas.getContext("2d")
 context.globalCompositeOperation = 'copy'
-context.drawImage(SL, 0,0)
+context.drawImage(MMD_SA.THREEX.SL, 0,0)
 /*
 var imagedata = context.getImageData(0,0,w,h).data
 for (var i = 0; i < 8; i++)
@@ -1658,12 +1610,12 @@ return motion_changed
   }
 
  ,load_external_motion: function (src, _onload) {
-var name_new = src.replace(/^.+[\/\\]/, "").replace(/\.vmd$/i, "")
+var name_new = src.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, "")
 
 var index = MMD_SA.motion_index_for_external
 var m = MMD_SA_options.motion[index]
 var path_old = m.path
-var name_old = (path_old) ? m.path.replace(/^.+[\/\\]/, "").replace(/\.vmd$/i, "") : ""
+var name_old = (path_old) ? m.path.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, "") : ""
 if (name_old) {
   MMD_SA_options.motion_index_by_name[name_old] = null
 //DEBUG_show(name_old,0,1)
@@ -1678,7 +1630,7 @@ function _finalize() {
 // assigning a new MotionManager() ensures that motion change can be detected in .motion_shuffle() even though the motion index remains the same
   var mm = MMD_SA.motion[index] = new MMD_SA.MMD.MotionManager()
   mm.filename = name_new
-  mm.para_SA = MMD_SA_options.motion_para[name_new] || { random_range_disabled:true }
+  mm.para_SA = Object.assign(MMD_SA_options.motion_para[name_new]||{}, { look_at_screen:false, random_range_disabled:true });
   mm._index = mm.para_SA._index = index
   mm.para_SA._path = src
 
@@ -1693,7 +1645,7 @@ function _finalize() {
 }
 
 function _vmd(vmd_morph) {
-  model._VMD(toFileProtocol(src), function( vmd ) {
+  function _vmd_loaded( vmd ) {
     vmd._index = MMD_SA.motion_index_for_external
 
     if (vmd_morph) {
@@ -1712,7 +1664,9 @@ function _vmd(vmd_morph) {
     }
 
     _finalize()
-  });
+  }
+
+  model._VMD(toFileProtocol(src), _vmd_loaded);
 }
 
 if (MMD_SA.vmd_by_filename[name_new]) {
@@ -1741,8 +1695,6 @@ if (this.use_jThree) {
   });
   if (must_update) jThree.MMD.pause()
 }
-else
-  this.MMD.setFrameNumber(parseInt(time*30)-1)
   }
 
 // getter/setter on MMD_SA.meter_motion_disabled instead of MMD_SA_options.meter_motion_disabled for backward compatibility (PMD version)
@@ -2371,6 +2323,7 @@ this.list = bb_list
 
 this.bubble_index = -1
 
+// this is always true now basically
 this.use_sprite = true
 
 this._canvas = null
@@ -2470,16 +2423,23 @@ for (var i = 0, i_length = this.bubbles.length; i < i_length; i++) {
   b.image = cache
 }
 
-MMD_SA.GOML_import +=
-  '<canvas id="j3_speechCanvas' + this.index + '"></canvas>\n';
+  MMD_SA_options.mesh_obj_preload_list.push({ id:'SpeechBubbleMESH' + this.index, create:function () {
+const THREE = MMD_SA.THREEX.THREE;
 
-MMD_SA.GOML_head +=
-  '<txr id="SpeechBubbleTXR' + this.index + '" canvas="#j3_speechCanvas' + this.index + '" animation="false" />\n'
-//+ '<geo id="SpeechBubbleGEO" type="Plane" param="10 10" />\n'
-+ '<mtl id="SpeechBubbleMTL' + this.index + '" type="' + ((this.use_sprite)?"Sprite":"MeshBasic") + '" param="map:#SpeechBubbleTXR' + this.index + ';sizeAttenuation:false;depthTest:false;" />\n';
+const material = new THREE.SpriteMaterial({
+  map: new THREE.Texture(document.createElement('canvas')),
+  sizeAttenuation: false,
+  depthTest: false,
+});
 
-MMD_SA.GOML_scene +=
-  '<' + ((this.use_sprite)?"sprite":"mesh") + ' id="SpeechBubbleMESH' + this.index + '" mtl="#SpeechBubbleMTL' + this.index + '" style="position:0 0 0; scale:0;" />\n';
+if (!MMD_SA.THREEX.enabled) {
+  material.useScreenCoordinates = false;
+  material.scaleByViewport = false;
+}
+
+return new THREE.Sprite( material );
+  } });
+
     };
 
     SB.prototype.onload = function () {
@@ -2495,9 +2455,9 @@ for (var i = 0, i_length = this.bubbles.length; i < i_length; i++) {
   bb_f[0] = b.image.width - bb_f[0] - bb_f[2]
 }
 
-this._canvas = jThree( "import" ).contents().find( "#j3_speechCanvas" + this.index )[0];
-this._txr = jThree( "#SpeechBubbleTXR" + this.index ).three( 0 );
-this._mesh = jThree( "#SpeechBubbleMESH" + this.index ).three( 0 );
+this._mesh = MMD_SA.THREEX.mesh_obj.get_three('SpeechBubbleMESH' + this.index);
+this._txr = this._mesh.material.map;
+this._canvas = this._txr.image;
 this._mesh.renderDepth = 0
 
 this.pos_base_ref = {
@@ -2749,8 +2709,7 @@ var para_SA = MMD_SA.MMD.motionManager.para_SA
 
 var cam = MMD_SA.camera_position
 
-// use the most updated head pose
-var head_pos = para.head_pos || MMD_SA.get_bone_position(THREE.MMD.getModels()[0].mesh, "頭")//MMD_SA._head_pos//
+var head_pos = para.head_pos || MMD_SA._head_pos;//MMD_SA.get_bone_position(THREE.MMD.getModels()[0].mesh, "頭");//
 
 var x_diff = cam.x - head_pos.x
 var left_sided = b.left_sided
@@ -2890,7 +2849,7 @@ if (!this.visible) {
   this.visible = true
   window.dispatchEvent(new CustomEvent("SA_SpeechBubble_show" + this.index));
 }
-jThree( "#SpeechBubbleMESH" + this.index ).show();
+MMD_SA.THREEX.mesh_obj.get( "SpeechBubbleMESH" + this.index ).show();
     };
 
     Object.defineProperty(SB.prototype, 'hidden_time', {
@@ -2924,7 +2883,7 @@ if (this.visible) {
   this.visible = false
   window.dispatchEvent(new CustomEvent("SA_SpeechBubble_hide" + this.index));
 }
-jThree( "#SpeechBubbleMESH" + this.index ).hide();
+MMD_SA.THREEX.mesh_obj.get( "SpeechBubbleMESH" + this.index ).hide();
     };
 
     new SB();
@@ -3018,11 +2977,11 @@ if (!parent_only)
 var _bone = bone;
 while ((_bone.parent !== mesh) && (_bone.parent !== parent_to_stop)) {
   _bone = _bone.parent;
-// parent x self (NOTE: multiply(_bone.quaternion) without the second parameter rot is self x parent, which is incorrect)
-  rot.multiply(_bone.quaternion, rot)
+// parent x self
+  rot.multiplyQuaternions(_bone.quaternion, rot)
 }
 if (!parent_to_stop)
-  rot.multiply(mesh.quaternion, rot)
+  rot.multiplyQuaternions(mesh.quaternion, rot)
 
 return rot.normalize();
   }
@@ -3054,34 +3013,6 @@ return this._camera_position_ || ((MMD_SA_options.use_JSARToolKit && MMD_SA.AR_o
   }
 
  ,gravity: [0,-1,0]
-
- ,_x_object_show: function (forced) {
-if (!MMD_SA._x_object_displayed_once)
-  return
-if (!this.visible || forced) {
-  this.visible = true
-//  var obj = this._obj
-//  obj.scale.x = obj.scale.y = obj.scale.z = this.scale
-  if (!/^\#mikuPmx/.test(this.id)) {
-    jThree(this.id).show()
-    return true
-  }
-}
-  }
-
- ,_x_object_hide: function (forced) {
-if (!MMD_SA._x_object_displayed_once)
-  return
-if (this.visible || forced) {
-  this.visible = false
-//  var obj = this._obj
-//  obj.scale.x = obj.scale.y = obj.scale.z = 0
-  if (!/^\#mikuPmx/.test(this.id)) {
-    jThree(this.id).hide()
-    return true
-  }
-}
-  }
 
  ,_skin_interp_default: new Uint8Array([20,20,20,20,20,20,20,20, 107,107,107,107,107,107,107,107])
 
@@ -4522,6 +4453,7 @@ return drop_list
     };
   })()
 
+
  ,WebXR: (function () {
     var xr;
     var _camera;
@@ -4807,6 +4739,8 @@ window.dispatchEvent(new CustomEvent("SA_AR_zoom_scale_update"));
  ,xrViewerSpaceHitTestSource: null
  ,xrTransientInputHitTestSource: null
  ,onSessionStart: async function (session) {
+const THREE = MMD_SA.THREEX.THREE;
+
 this.session = session
 
 const AR_options = MMD_SA_options.WebXR.AR;
@@ -4885,10 +4819,11 @@ c_host.addEventListener( 'touchmove', touchmove, false );
 
 this.camera = MMD_SA._trackball_camera.object
 
-this.renderer = MMD_SA.renderer;
+// abstract object (the actual render is renderer.obj)
+this.renderer = MMD_SA.THREEX.renderer;
 //this.renderer.autoClear = false;
 
-this.gl = this.renderer.getContext();
+this.gl = this.renderer.obj.getContext();
 
 this.use_dummy_webgl = session.domOverlayState && AR_options.dom_overlay && AR_options.dom_overlay.use_dummy_webgl;
 if (this.use_dummy_webgl) {
@@ -4899,11 +4834,12 @@ if (this.use_dummy_webgl) {
 
 try {
   await this.gl.makeXRCompatible();
-  let DPR = MMD_SA._renderer.devicePixelRatio / window.devicePixelRatio
+
+  let DPR = this.renderer.devicePixelRatio / window.devicePixelRatio
   let framebufferScaleFactor
   if (DPR != 1) {
     framebufferScaleFactor = DPR
-    MMD_SA._renderer.devicePixelRatio = window.devicePixelRatio
+    this.renderer.devicePixelRatio = window.devicePixelRatio
   }
   session.updateRenderState({ baseLayer: new XRWebGLLayer(session, this.gl, ((framebufferScaleFactor||AR_options.framebufferScaleFactor||System._browser.url_search_params.xr_fb_scale) && {framebufferScaleFactor:Math.max(0,Math.min(1,framebufferScaleFactor||AR_options.framebufferScaleFactor||parseFloat(System._browser.url_search_params.xr_fb_scale)||1))}) || null) });
   this.frameOfRef = await session.requestReferenceSpace('local');
@@ -4950,10 +4886,10 @@ if (!this.reticle) {
   let reticle0 = new THREE.Mesh(geometry, material);
 
   this.reticle = new THREE.Object3D()
-  this.reticle.useQuaternion = true
+  if (!MMD_SA.THREEX.enabled) this.reticle.useQuaternion = true
   this.reticle.add(reticle0)
 
-  MMD_SA.scene.add(this.reticle)
+  MMD_SA.THREEX.scene.add(this.reticle)
   this.reticle.scale.set(10,10,10)
 
   Object.defineProperty(this.reticle, "visible", {
@@ -4985,22 +4921,7 @@ MMD_SA.reset_camera = function () {}
 MMD_SA._trackball_camera.enabled = false
 xr.camera.matrixAutoUpdate = false;
 
-//THREE.MMD.getModels()[0].mesh.visible = false
-xr.XR_objects_by_id = {}
-MMD_SA.scene.__objects.forEach(function (obj, idx) {
-// top-level objects/MMD models only
-// Note: MMD model(SkinnedMesh) is wrapped by Object3D. Ignore that wrapper.
-  if (((obj.parent != MMD_SA.scene) && !(obj instanceof THREE.SkinnedMesh)) || (obj.children[0] instanceof THREE.SkinnedMesh)) return;
-//DEBUG_show(idx,0,1)
-  if (!obj._XR_id)
-    obj._XR_id = THREE.Math.generateUUID()
-  xr.XR_objects_by_id[obj._XR_id] = {
-    obj: obj
-   ,visible: obj.visible
-  };
-  if (obj.visible)
-    obj.visible = false
-});
+THREE.MMD.getModels()[0].mesh.visible = false
 //document.getElementById("SL_Host").style.visibility = "hidden"
 
 let ao = SL_MC_video_obj && SL_MC_video_obj.vo && SL_MC_video_obj.vo.audio_obj;
@@ -5010,7 +4931,7 @@ if (ao && !ao.paused) {
 
 if (1) {
   if (!this.use_dummy_webgl) {
-    document.getElementById("SL").style.visibility = "hidden"
+    document.getElementById("SL").style.visibility = MMD_SA.THREEX.SL.style.visibility = "hidden"
   }
   document.getElementById("LdesktopBG_host").style.visibility = "hidden"
   document.getElementById("Lquick_menu").style.display = "none"
@@ -5036,11 +4957,7 @@ session.requestAnimationFrame(xr.onARFrame);
   }
 
  ,restore_scene: function () {
-MMD_SA.scene.__objects.forEach(function (obj) {
-  var xr_obj = obj._XR_id && xr.XR_objects_by_id[obj._XR_id];
-  if (xr_obj && xr_obj.visible)
-    obj.visible = true
-});
+THREE.MMD.getModels()[0].mesh.visible = true
 MMD_SA.SpeechBubble.hide();
 //System._browser.on_animation_update.add(function () { document.getElementById("SL_Host").style.visibility = "visible"; },0,0);
   }
@@ -5084,7 +5001,6 @@ this.input_event = { inputSources:[], touches:[] }
 
 var model_mesh = THREE.MMD.getModels()[0].mesh
 this.restore_scene()
-this.XR_objects_by_id = null
 
 model_mesh.position.y = 0
 model_mesh.quaternion.set(0,0,0,1)
@@ -5108,7 +5024,7 @@ if (RAF_timerID) {
 RAF_timerID = requestAnimationFrame(Animate_RAF)
 
 if (1) {
-  document.getElementById("SL").style.visibility = "visible"
+  document.getElementById("SL").style.visibility = MMD_SA.THREEX.SL.style.visibility = "inherit"
   document.getElementById("LdesktopBG_host").style.visibility = "visible"
   document.getElementById("Lquick_menu").style.display = "block"
 
@@ -5144,22 +5060,23 @@ if (pose) {
   if (!this.use_dummy_webgl || (this.user_camera.initialized && !this.user_camera.visible)) {
     this.renderer.device_framebuffer = session.renderState.baseLayer.framebuffer;
     if (framebuffer_changed) {
-      document.getElementById("SL").style.visibility = "hidden"
+      document.getElementById("SL").style.visibility = MMD_SA.THREEX.SL.style.visibility = "hidden"
     }
   }
   else {
     this.renderer.device_framebuffer = null;
     if (framebuffer_changed) {
-      document.getElementById("SL").style.visibility = "visible"
+      document.getElementById("SL").style.visibility = MMD_SA.THREEX.SL.style.visibility = "inherit"
+// this works for both THREE and THREEX
       MMD_SA._renderer.__resize(EV_width, EV_height)
 //      window.dispatchEvent(new Event('resize'))
     }
   }
 
-  const DPR = MMD_SA._renderer.devicePixelRatio / window.devicePixelRatio;
+  const DPR = this.renderer.devicePixelRatio / window.devicePixelRatio;
   for (let view of pose.views) {
     const viewport = session.renderState.baseLayer.getViewport(view);
-    this.renderer.setViewport(viewport.x*DPR, viewport.y*DPR, viewport.width*DPR, viewport.height*DPR);
+    this.renderer.obj.setViewport(viewport.x*DPR, viewport.y*DPR, viewport.width*DPR, viewport.height*DPR);
 
     this.camera.projectionMatrix.fromArray(view.projectionMatrix);
     this.camera.matrix.fromArray(view.transform.matrix);
@@ -5431,10 +5348,175 @@ if (navigator.xr) {
     return xr;
   })()
 
+
+ ,get_bone_axis_rotation: (function () {
+    var RE_arm = new RegExp("^(" + toRegExp(["左","右"],"|") + ")(" + toRegExp(["肩","腕","ひじ","手首"],"|") + "|." + toRegExp("指") + ".)");
+
+    return function (name_full, enforced) {
+var d = name_full.charAt(0)
+var sign_LR = (d=="左") ? 1 : -1
+
+var model = THREE.MMD.getModels()[0]
+var bones_by_name = model.mesh.bones_by_name
+
+var x_axis, y_axis, z_axis;
+
+// not using .localCoordinate for now, as some models have broken .localCoordinate values, and the calculated ones are just accurate enough in most cases
+if (0&& bones_by_name[name_full].pmxBone.localCoordinate) {
+// z from .localCoordinate is already inverted
+  x_axis = MMD_SA._v3a.fromArray(bones_by_name[name_full].pmxBone.localCoordinate[0]);
+// z-axis inverted
+  z_axis = MMD_SA._v3b.fromArray(bones_by_name[name_full].pmxBone.localCoordinate[1]).negate();
+  if (sign_LR == -1) { x_axis.x *= -1; z_axis.x *= -1; }
+
+  y_axis = MMD_SA.TEMP_v3.crossVectors(x_axis, z_axis).normalize().negate();
+}
+else {
+  const axis_end = bones_by_name[name_full].pmxBone.end;
+  const axis = (typeof axis_end == 'number') ? ((axis_end == -1) ? MMD_SA._v3a.fromArray(bones_by_name[name_full].pmxBone.origin).sub(bones_by_name[name_full].parent.pmxBone.origin) : MMD_SA._v3a.fromArray(model.mesh.bones[axis_end].pmxBone.origin).sub(MMD_SA._v3a_.fromArray(bones_by_name[name_full].pmxBone.origin))).normalize() : MMD_SA._v3a.fromArray(axis_end).normalize();
+
+  if (RE_arm.test(name_full)) {
+    x_axis = axis;
+    if (sign_LR == -1) x_axis.x *= -1;
+
+    z_axis = MMD_SA._v3b.set(0,0,1).applyQuaternion(MMD_SA._q1.setFromUnitVectors(MMD_SA._v3b_.set(1,0,0), x_axis));
+
+    y_axis = MMD_SA.TEMP_v3.crossVectors(x_axis, z_axis).normalize().negate();
+ } 
+  else {
+    y_axis = axis.negate();
+    y_axis.z *= -1
+    z_axis = MMD_SA._v3b.set(0,0,1).applyQuaternion(MMD_SA._q1.setFromUnitVectors(MMD_SA._v3b_.set(0,1,0), y_axis));
+    sign_LR = 1
+
+    x_axis = MMD_SA.TEMP_v3.crossVectors(y_axis, z_axis).normalize();
+  }
+}
+
+let rot_m4 = MMD_SA.TEMP_m4.set(
+    x_axis.x, x_axis.y, x_axis.z, 0,
+    y_axis.x, y_axis.y, y_axis.z, 0,
+    z_axis.x, z_axis.y, z_axis.z, 0,
+    0,0,0,1
+);
+
+var r = new THREE.Quaternion().setFromBasis(rot_m4);
+
+// you can only invert 2+ axes directly in quaternion by inverting the signs
+// inverting .z and .y is the same as inverting .x and .w
+if (sign_LR==1) { r.z *= -1; r.y *= -1; }
+/*
+let a = MMD_SA.TEMP_v3.setEulerFromQuaternion(r, 'ZYX')
+a.z *= -1;
+a.y *= -1;
+r.setFromEuler(a, 'ZYX')
+*/
+//console.log(name_full, x_axis.clone(), y_axis.clone(), z_axis.clone(), x_axis.angleTo(z_axis))
+//console.log(name_full, new THREE.Vector3().setEulerFromQuaternion(r, 'ZYX').multiplyScalar(180/Math.PI));
+
+if (MMD_SA.THREEX.enabled && !enforced) {
+  if (name.indexOf('指') != -1) {
+    const r_v3 = MMD_SA.TEMP_v3.setEulerFromQuaternion(r, 'ZYX');
+    r_v3.z -= Math.sign(r_v3.z) * 37.4224/180*Math.PI;
+    r.setFromEuler(r_v3, 'ZYX');
+  }
+  else {
+    r.set(0,0,0,1)
+  }
+}
+
+return r;
+    };
+  })()
+
+ ,load_texture: function (url) {
+const THREE = MMD_SA.THREEX.THREE;
+
+const canvas = document.createElement('canvas')
+const texture = new THREE.Texture(canvas)
+
+System._browser.load_file(toFileProtocol(url), async function (xhr) {
+  const bitmap = await createImageBitmap(xhr.response)
+
+  canvas.width  = bitmap.width
+  canvas.height = bitmap.height
+  canvas.getContext('2d').drawImage(bitmap, 0,0)
+  texture.needsUpdate = true
+
+  bitmap.close()
+}, 'blob', true);
+
+return texture;
+  }
+
+ ,BVHLoader: function () {
+return System._browser.load_script(toFileProtocol(System.Gadget.path + ((localhost_mode || (webkit_electron_mode && /AT_SystemAnimator_v0001\.gadget/.test(System.Gadget.path))) ? '/_private/js/BVHLoader.js' : '/js/BVHLoader.min.js')));
+  }
+
+ ,VMD_FileWriter: function () {
+return Promise.all([
+  System._browser.load_script(toFileProtocol(System.Gadget.path + '/js/VMD_filewriter.js')),
+  System._browser.load_script(toFileProtocol(System.Gadget.path + '/js/encoding.min.js'))
+]);
+  }
+
 // temp stuff
  ,_readVector_scale: 1
  ,_mouse_pos_3D: []
 
+};
+
+
+MMD_SA.init_my_model = function (zip_path, path_local) {
+  var model_filename = path_local.replace(/^.+[\/\\]/, "")
+
+  var _MME_v = {};
+  ["_toFloat", "_EV_usage_PROCESS", "PostProcessingEffects"].forEach(function (p) {
+    _MME_v[p] = MMD_SA_options.MME[p]
+  });
+
+  MMD_SA_options.model_path_default = MMD_SA_options.model_path = zip_path + "#/" + path_local
+
+  var model_filename_cleaned = model_filename.replace(/[\-\_]copy\d+\.pmx$/, ".pmx").replace(/[\-\_]v\d+\.pmx$/, ".pmx")
+  var model_para_obj = MMD_SA_options.model_para_obj = Object.assign({}, MMD_SA_options.model_para[model_filename] || MMD_SA_options.model_para[model_filename_cleaned] || MMD_SA_options.model_para._default_ || {})
+  model_para_obj._filename_raw = model_filename
+  model_para_obj._filename = model_filename
+  model_para_obj._filename_cleaned = model_filename_cleaned
+
+  if (!model_para_obj.skin_default)
+    model_para_obj.skin_default = { _is_empty:true }
+// save some headaches and make sure that every VMD has morph (at least a dummy) in "Dungeon" mode
+  if (!model_para_obj.morph_default) model_para_obj.morph_default = {}//{ _is_empty:!MMD_SA_options.Dungeon }//
+
+  MMD_SA_options._MME = Object.clone(MMD_SA_options._MME_)
+  if (Object.keys(MMD_SA_options._MME).length == 0) {
+    MMD_SA_options._MME = {
+      self_overlay: {
+  enabled: 1
+ ,opacity: 0.4
+      }
+     ,HDR: {
+  enabled: 1
+ ,opacity: 0.2
+      }
+     ,serious_shader: {
+  enabled: 0
+      }
+    }
+  }
+
+//console.log(MMD_SA_options._MME)
+//model_para_obj.skin_default = { "くちびる上_IK": { pos:{x:0, y:0.1, z:0} } }
+//model_para_obj.morph_default = { "あ2": { weight:1 } }
+
+// always use the default .character
+  model_para_obj.character = MMD_SA_options.model_para_obj_all[0].character
+
+  MMD_SA_options.model_para_obj_all[0] = MMD_SA_options.model_para_obj_by_filename[model_filename] = model_para_obj
+  model_para_obj._model_index = 0
+  for (var p in _MME_v) {
+    MMD_SA_options.MME[p] = _MME_v[p];
+  }
 };
 
 
@@ -5994,10 +6076,11 @@ ss_texture_by_filename[ss.filename] = {
 
     if (!MMD_SA_options.GOML_head) MMD_SA_options.GOML_head = "";
 
-    for (let name in ss_texture_by_filename) {
-      MMD_SA_options.GOML_head +=
-  '<txr id="' + name + '_TXR" src="' + toFileProtocol(ss_texture_by_filename[name].url) + '" />\n';
-    }
+    window.addEventListener('jThree_ready', ()=>{
+for (let name in ss_texture_by_filename) {
+  MMD_SA.THREEX.mesh_obj.set(name + '_TXR', MMD_SA.load_texture(ss_texture_by_filename[name].url), true);
+}
+    });
 
     function SpriteSheet(obj) {
 Object.assign(this, obj)
@@ -6017,10 +6100,12 @@ this.parent = obj
     }
 
     SpriteAnimator.prototype.reset = function (ss) {
-	
+const use_THREEX = MMD_SA.THREEX.enabled;
+
 // NOTE: r58 sets uv offset/scale from the sprite material, not the texture.
 var sprite = this.parent.sprite
 var texture = sprite.material
+if (use_THREEX) texture = texture.map;
 
 var para = this.parent.para
 
@@ -6037,15 +6122,15 @@ this.sprite_sheet = ss
 
 this.numberOfTiles_extended = para.frame_count || ss.frame_count;
 
-/*
-	texture.wrapS = texture.wrapT = THREE.RepeatWrapping; 
-	texture.repeat.set( 1 / this.tilesHorizontal, 1 / this.tilesVertical );
-*/
-//	material.uvOffset.copy( this.uvOffset );
-//	material.uvScale.copy( this.uvScale );
-texture.uvScale.set( 1 / this.tilesHorizontal, 1 / this.tilesVertical );
-
-texture.uvOffset.x = texture.uvOffset.y = 0
+  if (use_THREEX) {
+    texture.repeat.set( 1/this.tilesHorizontal, 1/this.tilesVertical );
+    texture.offset.x = texture.offset.y = 0
+//  texture.needsUpdate = true;
+  }
+  else {
+    texture.uvScale.set( 1 / this.tilesHorizontal, 1 / this.tilesVertical );
+    texture.uvOffset.x = texture.uvOffset.y = 0
+  }
 
 	// how long should each image be displayed?
 	this.tileDisplayDuration = ss.frame_interval;
@@ -6065,9 +6150,19 @@ sprite.visible = true
     }
 
     SpriteAnimator.prototype.update = function( milliSec ) {
+const use_THREEX = MMD_SA.THREEX.enabled;
+
 //DEBUG_show(milliSec)
 var sprite = this.parent.sprite
 var texture = sprite.material
+var offset
+if (use_THREEX) {
+  texture = texture.map
+  offset = 'offset'
+}
+else {
+  offset = 'uvOffset'
+}
 
 var para = this.parent.para
 
@@ -6100,12 +6195,12 @@ var currentTile = Math.min(this.currentTile, this.numberOfTiles-1);
 
 			var currentColumn = currentTile % this.tilesHorizontal;
 //			texture.offset.x = currentColumn / this.tilesHorizontal;
-texture.uvOffset.x = currentColumn / this.tilesHorizontal;
+texture[offset].x = currentColumn / this.tilesHorizontal;
 //			var currentRow = Math.floor( currentTile / this.tilesHorizontal );
 var currentRow = (this.tilesVertical-1) - Math.floor( currentTile / this.tilesHorizontal );
 //			texture.offset.y = currentRow / this.tilesVertical;
 //var currentRow = Math.ceil( currentTile / this.tilesHorizontal );
-texture.uvOffset.y = currentRow / this.tilesVertical;
+texture[offset].y = currentRow / this.tilesVertical;
 		}
     };
 // sprite animator END
@@ -6166,6 +6261,9 @@ return true
 var texture_obj_list = []
 
 function TextureObject(texture_obj) {
+  const use_THREEX = MMD_SA.THREEX.enabled;
+  const THREE = MMD_SA.THREEX.THREE;
+
   this._obj = texture_obj
   Object.assign(this, texture_obj)
 
@@ -6181,6 +6279,7 @@ function TextureObject(texture_obj) {
   this.canvas.width = this.canvas.height = 1
 
   this.texture = new THREE.Texture(this.canvas)
+//  if (use_THREEX) this.texture.wrapS = this.texture.wrapT = THREE.RepeatWrapping;
   this.texture.needsUpdate = true
 }
 
@@ -6207,17 +6306,23 @@ return function (texture_obj) {
     })();
 
     function create_sprite_obj(texture) {
+const use_THREEX = MMD_SA.THREEX.enabled;
+const THREE = MMD_SA.THREEX.THREE;
+
 //  console.log(explosion_texture)
-var material = new THREE.SpriteMaterial({ map:texture });// , useScreenCoordinates:true /*,alignment:THREE.SpriteAlignment.topLeft*/  } );
-material.useScreenCoordinates = false;
+var material = new THREE.SpriteMaterial({ map:texture.clone() });// , useScreenCoordinates:true /*,alignment:THREE.SpriteAlignment.topLeft*/  } );
 material.depthTest = false;//true;//
 material.sizeAttenuation = true;
-material.scaleByViewport = false;
+if (!use_THREEX) {
+  material.useScreenCoordinates = false;
+  material.scaleByViewport = false;
+}
+
 var sprite = new THREE.Sprite( material );
 //console.log(sprite)
 //console.log(MMD_SA.SpeechBubble._mesh)
 //sprite.renderDepth = 999999
-MMD_SA.scene.add( sprite );
+MMD_SA.THREEX.scene.add( sprite );
 
 var obj_free = { sprite:sprite }
 sprite_obj_list.push(obj_free)
@@ -6231,9 +6336,26 @@ sprite_obj_list.concat(VFX.obj_list).forEach(function (ss) {
 });
     });
 
-// added after jThree_ready to make sure that they are added LAST
-    window.addEventListener("jThree_ready",() => {
-      window.addEventListener("SA_MMD_model_all_process_bones", (function () {
+// use SA_MMD_after_updateMotion even to make sure they are added LAST after all motion updates
+    window.addEventListener("MMDStarted", () => {
+      window.addEventListener("SA_MMD_after_updateMotion", ()=>{
+THREE.MMD.getModels().forEach((model, idx) => {
+  var mesh = model.mesh
+
+// MMD mesh is wrapped by a "dummy" Object3D
+// set to false to manually update MMD/model matrixWorld, BEFORE (and skipping) the default routine of MMD mesh matrixWorld update
+  mesh.parent.matrixAutoUpdate = mesh.matrixAutoUpdate = false;
+
+  if (!mesh.matrixAutoUpdate) {
+    mesh.updateMatrix()
+    mesh.updateMatrixWorld()
+
+    MMD_SA.THREEX.get_model(idx).update_model();
+  }
+});
+      });
+
+      window.addEventListener("SA_MMD_after_updateMotion", (function () {
 function get_bone_list(_SFX) {
   var bone_list = {}
 
@@ -6298,17 +6420,17 @@ Object.keys(bone_list).forEach((bone_name) => {
   bone_data[bone_name] = {}
 });
 
-var mesh_m4 = TEMP_m4.makeRotationFromQuaternion(mesh.quaternion).setPosition(mesh.position)
+const modelX = MMD_SA.THREEX.get_model(mesh._model_index);
+const mesh_m4 = modelX.mesh.matrixWorld;//TEMP_m4.makeRotationFromQuaternion(mesh.quaternion).setPosition(mesh.position);//
 for (let bone_name in bone_list) {
-  let b = bone_list[bone_name]
+  const b = bone_list[bone_name]
   if (b.pos) {
-    bone_data[bone_name].pos = MMD_SA.get_bone_position(mesh, bone_name, mesh)
-    if (mesh._bone_to_position_last)
-      bone_data[bone_name].pos.sub(mesh._bone_to_position_last.bone_pos_offset)
+    bone_data[bone_name].pos = modelX.get_bone_position_by_MMD_name(bone_name, true);//MMD_SA.get_bone_position(mesh, bone_name, mesh);//
+//    if (mesh._bone_to_position_last) bone_data[bone_name].pos.sub(mesh._bone_to_position_last.bone_pos_offset);
     bone_data[bone_name].pos.applyMatrix4(mesh_m4)
   }
   if (b.rot)
-    bone_data[bone_name].rot = MMD_SA.get_bone_rotation(mesh, bone_name)
+    bone_data[bone_name].rot = modelX.get_bone_rotation_by_MMD_name(bone_name);//MMD_SA.get_bone_rotation(mesh, bone_name);//
 }
 
 _SFX.forEach((SFX, idx) => {
@@ -6419,7 +6541,7 @@ model_para._SFX_one_time = null;
 };
       })());
 
-      window.addEventListener("SA_MMD_model_all_process_bones", function () {
+      window.addEventListener("SA_MMD_after_updateMotion", function () {
 if (MMD_SA_options.Dungeon) {
   sprite_obj_list.forEach(function (ss) {
     if (ss.para.id && /^pointer_/.test(ss.para.id))
@@ -6562,8 +6684,10 @@ this.create = function (para) {
   this.init_3D()
 
   var mesh = _create.call(this, para)
-  mesh.useQuaternion = true
-  MMD_SA.scene.add(mesh)
+
+  if (!MMD_SA.THREEX.enabled) mesh.useQuaternion = true;
+
+  MMD_SA.THREEX.scene.add(mesh)
 
   var obj = new FX(this, mesh, para);
   this.obj_list.push(obj)
@@ -6576,9 +6700,6 @@ this.animate = animate;
       })(),
 
       init: function () {
-if (!MMD_SA_options.GOML_head)
-  MMD_SA_options.GOML_head = ""
-
 var txr_preload_list = {}
 
 for (let name in this.list) {
@@ -6589,12 +6710,12 @@ for (let name in this.list) {
     Object.assign(txr_preload_list, fx.txr_preload_list)
 }
 
-for (let name in txr_preload_list) {
-  let ss = txr_preload_list[name]
-
-  MMD_SA_options.GOML_head +=
-    '<txr id="' + name + '" src="' + (toFileProtocol(ss.url)) + '" />\n';
-}
+window.addEventListener('jThree_ready', ()=>{
+  for (let name in txr_preload_list) {
+    let ss = txr_preload_list[name]
+    MMD_SA.THREEX.mesh_obj.set(name, MMD_SA.load_texture(ss.url), true);
+  }
+});
       },
 
       animate: function (name, para) {
@@ -6650,6 +6771,8 @@ this.txr_preload_list = {
         },
 // init_3D
         function () {
+const THREE = MMD_SA.THREEX.THREE;
+
 // THREE.CylinderGeometry = function ( radiusTop, radiusBottom, height, radiusSegments, heightSegments, openEnded )
 this.geo = new THREE.CylinderGeometry( 15, 10, 5, 8*2, 1, true );
 this.geo.applyMatrix(new THREE.Matrix4().setPosition(new THREE.Vector3().set(0, 2.5, 0)));
@@ -6660,11 +6783,13 @@ this.geo.faceVertexUvs[ 0 ].forEach((v) => {
   });
 });
 */
-this.tex = jThree("#aura01_TXR").three(0)
+this.tex = MMD_SA.THREEX.mesh_obj.get_three("aura01_TXR");
 this.tex_repeat_x = 4
         },
 // create
         function () {
+const THREE = MMD_SA.THREEX.THREE;
+
 var tex = this.tex.clone()
 tex.repeat.x = this.tex_repeat_x
 tex.wrapS = THREE.RepeatWrapping;
@@ -6677,7 +6802,9 @@ var mesh = new THREE.Mesh(this.geo, new THREE.MeshBasicMaterial({
 //  side:/*THREE.BackSide*/THREE.DoubleSide,
   transparent:true,
 }));
-mesh.useQuaternion = true
+
+if (!MMD_SA.THREEX.enabled) mesh.useQuaternion = true;
+
 //console.log(mesh)
 //return mesh
 
@@ -6688,7 +6815,9 @@ var mesh2 = new THREE.Mesh(this.geo, new THREE.MeshBasicMaterial({
 //  side:/*THREE.BackSide*/THREE.DoubleSide,
   transparent:true,
 }));
-mesh2.useQuaternion = true
+
+if (!MMD_SA.THREEX.enabled) mesh2.useQuaternion = true;
+
 mesh2.scale.set(1.001,1,1.001);
 
 Object.defineProperty(mesh, "visible", (function () {
@@ -6712,7 +6841,9 @@ Object.defineProperty(mesh2, "visible", (function () {
 })());
 
 var obj = new THREE.Object3D();
-obj.useQuaternion = true
+
+if (!MMD_SA.THREEX.enabled) obj.useQuaternion = true;
+
 obj.add(mesh);
 obj.add(mesh2);
 return obj;
@@ -6755,11 +6886,13 @@ this.txr_preload_list = {
         },
 // init_3D
         function () {
+const THREE = MMD_SA.THREEX.THREE;
+
 // THREE.RingGeometry = function ( innerRadius, outerRadius, thetaSegments, phiSegments, thetaStart, thetaLength )
 this.geo = new THREE.RingGeometry( 5, 10, 8*2, 1 );
 this.geo.applyMatrix(new THREE.Matrix4().makeRotationFromEuler(new THREE.Vector3().set(-Math.PI/2, 0, 0)));
 
-this.tex = jThree("#aura01_TXR").three(0)
+this.tex = MMD_SA.THREEX.mesh_obj.get_three("aura01_TXR");
 this.tex_repeat_x = 8
         },
 // create
@@ -6776,7 +6909,9 @@ var mesh = new THREE.Mesh(this.geo, new THREE.MeshBasicMaterial({
 //  side:THREE.BackSide,//THREE.DoubleSide,
   transparent:true,
 }));
-mesh.useQuaternion = true
+
+if (!MMD_SA.THREEX.enabled) mesh.useQuaternion = true;
+
 //console.log(mesh)
 return mesh
         },
@@ -6828,7 +6963,9 @@ if (!ss) {
   return
 }
 
-var texture = jThree("#" + ss.filename + "_TXR").three(0)
+const THREE = MMD_SA.THREEX.THREE;
+
+var texture = MMD_SA.THREEX.mesh_obj.get_three(ss.filename + "_TXR");
 if (ss.texture_variant) {
   let variant = ss_texture_by_filename[ss.filename].variant
   if (variant[ss.texture_variant.id]) {
@@ -6896,6 +7033,9 @@ return obj_free
   }
 
  ,display: function (texture_obj, para) {
+const use_THREEX = MMD_SA.THREEX.enabled;
+const THREE = MMD_SA.THREEX.THREE;
+
 texture_obj = Texture_Object(texture_obj)
 var texture = texture_obj.texture
 
@@ -6918,8 +7058,14 @@ texture_obj.update()
 obj_free.sprite.material.blending = (para.blending) ? THREE[ss.blending.charAt(0).toUpperCase() + ss.blending.substring(1).toLowerCase() + 'Blending'] : THREE.NormalBlending
 obj_free.sprite.material.depthTest = false
 obj_free.sprite.material.map = texture
-obj_free.sprite.material.uvScale.set(1,1)
-obj_free.sprite.material.uvOffset.set(0,0)
+if (use_THREEX) {
+  texture.repeat.set(1,1)
+  texture.offset.set(0,0)
+}
+else {
+  obj_free.sprite.material.uvScale.set(1,1)
+  obj_free.sprite.material.uvOffset.set(0,0)
+}
 
 if (para.pos)
   obj_free.sprite.position.copy(para.pos)
@@ -7030,6 +7176,1125 @@ else
 })();
 
 
+MMD_SA.THREEX = (function () {
+
+  function init() {
+data.scene = new THREE.Scene();
+data.renderer = new THREE.WebGLRenderer({
+  canvas: SLX,
+  alpha: true,
+  antialias: true,
+  stencil: false,
+  preserveDrawingBuffer: true
+});
+
+window.addEventListener("jThree_ready", ()=>{
+  v1 = new THREE.Vector3()
+  v2 = new THREE.Vector3()
+  v3 = new THREE.Vector3()
+  v4 = new THREE.Vector3()
+
+  q1 = new THREE.Quaternion()
+  q2 = new THREE.Quaternion()
+  q3 = new THREE.Quaternion()
+  q4 = new THREE.Quaternion()
+
+  e1 = new THREE.Euler()
+  e2 = new THREE.Euler()
+  e3 = new THREE.Euler()
+  e4 = new THREE.Euler()
+
+  m1 = new THREE.Matrix4()
+  m2 = new THREE.Matrix4()
+  m3 = new THREE.Matrix4()
+  m4 = new THREE.Matrix4()
+
+// 37.4224, 35
+  rot_arm_axis[ 1] = new THREE.Quaternion().setFromEuler(e1.set(0,0,37.4224/180*Math.PI))
+  rot_arm_axis[-1] = rot_arm_axis[ 1].clone().conjugate()
+
+  rot_shoulder_axis[ 1] = new THREE.Quaternion().setFromEuler(e1.set(0,0,5/180*Math.PI))
+  rot_shoulder_axis[-1] = rot_shoulder_axis[ 1].clone().conjugate()
+});
+
+window.addEventListener("MMDStarted", ()=>{
+  _THREE.MMD.getModels().forEach((model,i)=>{
+    var bones_by_name = model.mesh.bones_by_name
+    var model_para = MMD_SA_options.model_para_obj_all[i]
+
+    model_para._hip_pos = v1.fromArray(bones_by_name['上半身'].pmxBone.origin).add(v2.fromArray(bones_by_name['下半身'].pmxBone.origin)).multiplyScalar(0.5).toArray();
+    model_para._hip_offset = v1.fromArray(model_para._hip_pos).sub(v2.fromArray(bones_by_name['センター'].pmxBone.origin)).toArray();
+    model_para.left_leg_length = MMD_SA._v3a.fromArray(bones_by_name["左足"].pmxBone.origin).distanceTo(MMD_SA._v3b.fromArray(bones_by_name["左ひざ"].pmxBone.origin)) + MMD_SA._v3b.distanceTo(MMD_SA._v3a.fromArray(bones_by_name["左足首"].pmxBone.origin));
+  });
+});
+
+if (1) {
+  MMD_SA.init_my_model(System.Gadget.path + '/jThree/model/DUMMY.zip', 'DUMMY_v01.pmx')
+}
+
+VRM.init()
+
+VRM.load(MMD_SA_options.THREEX_options.model_path, {
+  vrm_index: 0,
+
+  get_parent: function () {
+    if (!MMD_SA.MMD_started) return null
+
+    this.parent_data = _THREE.MMD.getModels()[0]
+    return this.parent_data.mesh;
+  },
+
+  update: function () {}
+});
+  }
+
+  function model_obj(index, model, para) {
+this.index = index
+
+if (model)
+  this.model = model
+if (para)
+  this.para = para
+
+/*
+ define the following properties on each inherited class
+.mesh
+.get_bone_by_MMD_name()
+.update_model()
+*/
+
+models[index] = this
+  }
+
+  function MMD_dummy_obj(index) {
+model_obj.call(this, index);
+  }
+
+  model_obj.prototype = {
+    constructor: model_obj,
+
+    get model_para() {
+if (!threeX.enabled) return MMD_SA_options.model_para_obj_all[this.index];
+
+return MMD_SA_options.THREEX_options.model_para[this.model_path.replace(/^.+[\/\\]/, '')] || {};
+    },
+
+    get model_path() {
+if (!threeX.enabled) {
+  return (MMD_SA.MMD_started) ? this.model.pmx.url : ((this.index == 0) ? MMD_SA_options.model_path : MMD_SA_options.model_path_extra[this.index-1]);
+}
+
+return (MMD_SA.MMD_started) ? this.para.url : ((this.index == 0) ? MMD_SA_options.THREEX_options.model_path : MMD_SA_options.THREEX_options.model_path_extra[this.index-1]);
+    },
+
+    get_bone_position_by_MMD_name: function (name, local_only) {
+var bone = this.get_bone_by_MMD_name(name);
+if (!bone) return null;
+
+const is_MMD_dummy = (this.type=='MMD_dummy');
+const bone_matrix = (is_MMD_dummy) ? bone.skinMatrix : bone.matrixWorld;
+
+const pos = new THREE.Vector3().setFromMatrixPosition(bone_matrix);
+
+if (local_only) {
+  if (!is_MMD_dummy)
+    pos.sub(this.mesh.position)
+}
+else {
+  if (is_MMD_dummy)
+    pos.add(this.mesh.position)
+}
+
+return pos;
+    },
+
+    get_bone_rotation_by_MMD_name: (function () {
+      var _m1, _q1;
+      window.addEventListener('jThree_ready', ()=>{
+_m1 = new THREE.Matrix4();
+_q1 = new THREE.Quaternion();
+      });
+
+      return function (name, local_only) {
+var bone = this.get_bone_by_MMD_name(name);
+if (!bone) return null;
+
+const is_MMD_dummy = (this.type=='MMD_dummy');
+//if (parent_only) bone = bone.parent;
+const bone_matrix = (is_MMD_dummy) ? bone.skinMatrix : bone.matrixWorld;
+
+const rot = new THREE.Quaternion().setFromRotationMatrix(_m1.extractRotation(bone_matrix));
+
+if (local_only) {
+  if (!is_MMD_dummy)
+    rot.premultiply(_q1.copy(this.mesh.quaternion.conjugate()))
+}
+else {
+  if (is_MMD_dummy)
+    rot.premultiply(this.mesh.quaternion)
+}
+
+return rot;
+      };
+    })(),
+
+    update_model: function () {}
+  };
+
+  MMD_dummy_obj.prototype = Object.create( model_obj.prototype );
+
+  Object.defineProperties(MMD_dummy_obj.prototype, {
+    type: {
+      value: 'MMD_dummy'
+    },
+
+    model: {
+      get: function () { return _THREE.MMD.getModels()[this.index]; }
+    },
+
+    mesh: {
+      get: function () { return this.model.mesh; }
+    },
+
+    get_bone_by_MMD_name: {
+      value: function (name) { return this.mesh.bones_by_name[name]; }
+    }
+  });
+
+  var VRM = (function () {
+    function process_rotation(rot) {
+rot.x *= -1
+rot.z *= -1
+return rot
+    }
+
+    function process_position(pos) {
+pos.x *= -1
+pos.z *= -1
+return pos
+    }
+
+    function init() {
+      window.addEventListener("MMDStarted", ()=>{
+//        vrm_list.sort((a,b)=>a.index-b.index);
+
+        vrm_list.forEach(vrm=>{
+vrm.boundingBox = VRM.computeBoundingBox(vrm.model.scene);
+vrm.boundingBox.min.multiplyScalar(vrm_scale);
+vrm.boundingBox.max.multiplyScalar(vrm_scale);
+
+vrm.boudningSphere = vrm.boundingBox.getBoundingSphere(new THREE.Sphere());
+MMD_SA_options.Dungeon.utils.adjust_boundingBox(vrm)
+
+const MMD_geo = _THREE.MMD.getModels()[vrm.index].mesh.geometry;
+MMD_geo.boundingBox = new _THREE.Box3().copy(vrm.boundingBox);
+MMD_geo.boundingBox_list = [MMD_geo.boundingBox];
+MMD_geo.boundingSphere = new _THREE.Sphere().copy(vrm.boudningSphere);
+
+if (MMD_SA_options.Dungeon)
+  MMD_SA_options.Dungeon.character.boundingBox = MMD_geo.boundingBox.clone();
+
+//console.log(vrm, MMD_geo)
+        });
+
+        _THREE.MMD.getModels().forEach((model,i)=>{
+          const VRMSchema = THREE.VRMSchema
+          const bones_by_name = model.mesh.bones_by_name
+          for (const name in bones_by_name) {
+if (bone_map_by_MMD_name[name] != null) continue
+
+let name_short = name
+const starting_char = name.charAt(0)
+const ending_char = name.charAt(name.length-1)
+
+let ending_number = parseInt(ending_char)
+if (isNaN(ending_number))
+  ending_number = nj_list.indexOf(ending_char)
+if (ending_number != -1)
+  name_short = name.substring(0, name.length-1)
+
+let dir
+if ((starting_char.indexOf('左') != -1) || (starting_char.indexOf('右') != -1)) {
+  name_short = name_short.substring(1)
+  dir = (starting_char.indexOf('左') != -1) ? 'Left' : 'Right'
+}
+
+let vrm_name = ''
+switch (name_short) {
+  case "上半身":
+    if (ending_number == 2)
+      vrm_name = VRMSchema.HumanoidBoneName.Chest
+    break
+
+  case "首":
+    vrm_name = VRMSchema.HumanoidBoneName.Neck
+    break
+  case "頭":
+    vrm_name = VRMSchema.HumanoidBoneName.Head
+    break
+  case "目":
+    vrm_name = VRMSchema.HumanoidBoneName[dir + 'Eye']
+    break
+
+  case "肩":
+    vrm_name = VRMSchema.HumanoidBoneName[dir + 'Shoulder']
+    break
+  case "腕":
+    vrm_name = VRMSchema.HumanoidBoneName[dir + 'UpperArm']
+    break
+  case "ひじ":
+    vrm_name = VRMSchema.HumanoidBoneName[dir + 'LowerArm']
+    break
+  case "手首":
+    vrm_name = VRMSchema.HumanoidBoneName[dir + 'Hand']
+    break
+
+  case "親指":
+  case "人指":
+  case "中指":
+  case "薬指":
+  case "小指":
+    const finger_name = name_short.charAt(0)
+    const finger_index = ending_number - ((finger_name == '親') ? 0 : 1)
+    const finger_name_full = dir + finger_list_en[finger_list[finger_name]] + ((finger_index==0) ? 'Proximal' : ((finger_index==1) ? 'Intermediate' : 'Distal'))
+//console.log(finger_name_full)
+    vrm_name = VRMSchema.HumanoidBoneName[finger_name_full]
+    break
+
+  case "足":
+    vrm_name = VRMSchema.HumanoidBoneName[dir + 'UpperLeg']
+    break
+  case "ひざ":
+    vrm_name = VRMSchema.HumanoidBoneName[dir + 'LowerLeg']
+    break
+  case "足首":
+    vrm_name = VRMSchema.HumanoidBoneName[dir + 'Foot']
+    break
+  default:
+//console.log(name, name_short)
+}
+//if (vrm_name) console.log(name, vrm_name)
+bone_map_by_MMD_name[name] = vrm_name
+MMD_bone_list.push(name)
+          }
+        });
+      });
+    }
+
+    function get_MMD_bone_pos(bone, v) {
+return v.copy(bone.position).sub(v4.fromArray(bone.pmxBone.origin));
+    }
+
+    function VRM_object(index, vrm, para) {
+var para = Object.assign({ pos0:{} }, para);
+var humanBones = vrm.humanoid.humanBones
+for (const name in humanBones) {
+//console.log(name, vrm.humanoid.humanBones[name])
+  const bone_array = vrm.humanoid.humanBones[name]
+  if (!bone_array.length) continue
+
+  const pos = v1.set(0,0,0)
+  let bone = bone_array[0].node
+  while (bone.type == 'Bone') {
+    pos.add(bone.position)
+    bone = bone.parent
+  }
+  para.pos0[name] = pos.toArray()
+}
+
+para.left_leg_length = (v1.fromArray(para.pos0['leftUpperLeg']).distanceTo(v2.fromArray(para.pos0['leftLowerLeg'])) + v2.distanceTo(v1.fromArray(para.pos0['leftFoot']))) * vrm_scale;
+
+model_obj.call(this, index, vrm, para);
+this.mesh = vrm.scene;
+
+if (!MMD_SA.MMD_started)
+  vrm_list.push(this)
+    }
+
+    VRM_object.prototype = Object.create( model_obj.prototype );
+
+    Object.defineProperties(VRM_object.prototype, {
+      type: {
+        value: 'VRM'
+      },
+
+      get_bone_by_MMD_name : {
+        value: function (name) {
+return (!bone_map_by_MMD_name[name]) ? null : this.model.humanoid.getBoneNode(bone_map_by_MMD_name[name]);
+        }
+      },
+
+      update_model: {
+        value: function () {
+var mesh = this.mesh
+mesh.matrixAutoUpdate = false
+
+var vrm = this.model
+var VRMSchema = THREE.VRMSchema
+
+mesh.quaternion.multiplyQuaternions(q1.set(0,1,0,0), mesh.quaternion)
+
+
+// bone START
+
+var mesh_MMD = _THREE.MMD.getModels()[0].mesh
+var bones_by_name = mesh_MMD.bones_by_name
+MMD_bone_list.forEach(name=>{
+  const bone = this.get_bone_by_MMD_name(name)
+  if (!bone) return
+
+  const bone_MMD = bones_by_name[name]
+//let r = MMD_SA.TEMP_v3.setEulerFromQuaternion(bone_MMD.quaternion); r.x*=-1; let q = MMD_SA.TEMP_q.setFromEuler(r);
+//  const aa = bone_MMD.quaternion.toAxisAngle(); bone.quaternion.copy(q1.setFromAxisAngle(aa[0].applyQuaternion(q2.set(0,1,0,0)), aa[1]))
+  bone.quaternion.copy(bone_MMD.quaternion)
+  process_rotation(bone.quaternion)
+});
+
+var MMD_model_para = MMD_SA_options.model_para_obj_all[this.index]
+var model_scale = 1/vrm_scale * this.para.left_leg_length / MMD_model_para.left_leg_length
+
+var center_bone = bones_by_name['センター']
+var center_bone_pos = get_MMD_bone_pos(center_bone, v1);
+var center_bone_offset = v2.fromArray(MMD_model_para._hip_offset);
+center_bone_pos.add(v3.copy(center_bone_offset).applyQuaternion(center_bone.quaternion).sub(center_bone_offset));
+
+var root_bone = bones_by_name['全ての親']
+var root_bone_pos = get_MMD_bone_pos(root_bone, v2);
+center_bone_pos.add(root_bone_pos);
+
+center_bone_pos.multiplyScalar(model_scale);
+
+vrm.humanoid.getBoneNode('hips').position.fromArray(this.para.pos0['hips']).add(process_position(center_bone_pos))
+
+var upper_body_bone = bones_by_name['上半身']
+var lower_body_bone = bones_by_name['下半身']
+var hips_rot  = q1.copy(center_bone.quaternion).multiply(q2.copy(lower_body_bone.quaternion))
+var spine_rot = q2.copy(lower_body_bone.quaternion).conjugate().multiply(q3.copy(upper_body_bone.quaternion))
+
+vrm.humanoid.getBoneNode('hips').quaternion.copy(process_rotation(hips_rot));
+vrm.humanoid.getBoneNode('spine').quaternion.copy(process_rotation(spine_rot));
+
+['左','右'].forEach((LR,d)=>{['腕','手'].forEach((b_name,b_i)=>{
+  const bone = bones_by_name[LR + b_name + '捩']
+  if (!bone) return
+
+  const [axis, angle] = bone.quaternion.toAxisAngle();
+  if (angle) {
+    const dir = (d == 0) ? 1 : -1;
+    const sign = (Math.sign(axis.x) == dir) ? 1 : -1;
+    vrm.humanoid.getBoneNode(((dir==1)?'left':'right') + ((b_i==0)?'Upper':'Lower') + 'Arm').quaternion.multiply(process_rotation(q1.setFromAxisAngle(v1.set(dir*sign,0,0), angle)));
+//DEBUG_show(Date.now()+'/'+angle)
+  }
+})});
+
+//両目
+const eye_bone = bones_by_name['両目']
+const eyeL = vrm.humanoid.getBoneNode('leftEye')
+const eyeR = vrm.humanoid.getBoneNode('rightEye')
+if (eyeL && eyeR) {
+  eyeL.quaternion.premultiply(process_rotation(q1.copy(eye_bone.quaternion)));
+  eyeR.quaternion.premultiply(process_rotation(q1.copy(eye_bone.quaternion)));
+}
+
+// bone END
+
+
+// morph START
+
+const blendshape_weight = {};
+const MMD_morph_weight = mesh_MMD.geometry.morphs_weight_by_name;
+MMD_morph_list.forEach(name => {
+  const w = MMD_morph_weight[name]
+  if (w == null) return
+
+  const blendshape_name = morph_map_by_MMD_name[name]
+  blendshape_weight[blendshape_name] = Math.max(blendshape_weight[blendshape_name]||0, w)
+});
+
+const blink = blendshape_weight['blink'] || 0;
+blendshape_weight['blink_l'] = Math.max(blendshape_weight['blink_l']||0, blink);
+blendshape_weight['blink_r'] = Math.max(blendshape_weight['blink_r']||0, blink);
+blendshape_weight['blink'] = 0;
+
+//じと目
+if (MMD_morph_weight['じと目']) {
+  let w = MMD_morph_weight['じと目'] * (1 - Math.max(blendshape_weight['blink_l'], blendshape_weight['blink_r'])) * 0.3;
+  blendshape_weight['blink'] = w;
+}
+
+// びっくり
+if (MMD_morph_weight['びっくり']) {
+  const w = 1 + MMD_morph_weight['びっくり'] * 2;
+  blendshape_weight['blink_l'] = Math.pow(blendshape_weight['blink_l'], 2);
+  blendshape_weight['blink_r'] = Math.pow(blendshape_weight['blink_r'], 2);
+  blendshape_weight['blink'] = Math.pow(blendshape_weight['blink'], 2);
+}
+
+// にやり, ω
+const mouth_open = Math.max(blendshape_weight['a']||0, blendshape_weight['i']||0, blendshape_weight['u']||0, blendshape_weight['e']||0, blendshape_weight['o']||0);
+[{n:'u', w:MMD_morph_weight['にやり']}, {n:'e', w:MMD_morph_weight['ω']}].forEach(obj => {
+  if (!obj.w) return
+
+  const w = blendshape_weight[obj.n] || 0;
+  blendshape_weight[obj.n] = w + (1-w) * obj.w * (mouth_open*0.8 + (1-mouth_open)*0.2);
+});
+
+// should be safe to reset geometry.morphs_weight_by_name after blendshape update, when MMD is not used
+for (const name in MMD_morph_weight) {
+  MMD_morph_weight[name] = 0
+}
+
+for (const name in blendshape_weight) {
+  vrm.blendShapeProxy.setValue(name, blendshape_weight[name])
+}
+
+// morph END
+
+
+vrm.update(RAF_timestamp_delta/1000)
+//  vrm.springBoneManager.lateUpdate(RAF_timestamp_delta/1000)
+
+if (!mesh.matrixAutoUpdate) {
+  mesh.updateMatrix()
+  mesh.updateMatrixWorld()
+}
+        }
+      }
+    });
+
+    const vrm_scale = 11;
+
+    let vrm_list = [];
+
+    const bone_map_by_MMD_name = {};
+    const MMD_bone_list = [];
+
+    const morph_map_by_MMD_name = {
+"あ": "a",
+"あ２": "a",
+
+"い": "i",
+
+"う": "u",
+//"ω"
+
+"え": "e",
+//"にやり"
+
+"お": "o",
+
+"まばたき": "blink",
+
+"まばたきL": "blink_l",
+"ウィンク": "blink_l",
+"ウィンク２": "blink_l",
+
+"まばたきR": "blink_r",
+"ウィンク右": "blink_r",
+"ｳｨﾝｸ２右": "blink_r",
+
+"照れ": "fun",
+
+"困る": "sorrow",
+
+"怒り": "angry",
+    };
+    const MMD_morph_list = Object.keys(morph_map_by_MMD_name);
+
+    const finger_list = {"親":0, "人":1, "中":2, "薬":3, "小":4};
+    const finger_list_en = ["Thumb", "Index", "Middle", "Ring", "Little"];
+    const nj_list = ["０","１","２","３"];
+
+    return {
+      get list() { return vrm_list; },
+      set list(v) { vrm_list = v; },
+
+      init: init,
+
+      computeBoundingBox: function (obj) {
+const bb = new THREE.Box3();
+
+obj.traverse(c => {
+  if (c.isMesh && c.geometry)
+    c.geometry.boundingBox && bb.union(c.geometry.boundingBox);
+});
+
+return bb;
+      },
+
+      load: async function (url, para) {
+MMD_SA.fn.load_length_extra++
+
+var url_raw = url;
+var model_filename = url.replace(/^.+[\/\\]/, '')
+
+var object_url;
+await new Promise((resolve) => {
+  if (!/\.zip\#/i.test(url)) {
+    url = toLocalPath(url)
+    resolve()
+    return
+  }
+
+  System._browser.load_file(url, function(xhr) {
+    object_url = url = URL.createObjectURL(xhr.response);
+    resolve();
+  }, 'blob', true);
+});
+
+const GLTF_loader = new THREE.GLTFLoader();
+
+GLTF_loader.load(
+
+  // URL of the VRM you want to load
+  url,
+
+  // called when the resource is loaded
+  (gltf) => {
+    // generate a VRM instance from gltf
+    THREEX.VRM.from(gltf).then((vrm) => {
+
+      console.log(vrm);
+
+data.scene.add(vrm.scene)
+
+// reduce physics glitches by ignoring the world space
+vrm.springBoneManager.setCenter(vrm.scene)
+
+vrm.scene.quaternion.set(0,1,0,0)
+vrm.scene.scale.set(vrm_scale, vrm_scale, vrm_scale)
+
+var vrm_obj = new VRM_object(para.vrm_index, vrm, { url:url });
+
+var obj = Object.assign({
+  data: vrm_obj,
+  obj: vrm.scene,
+  get parent() { return this.get_parent(); },
+
+  no_scale: true,
+}, para);//, MMD_SA_options.THREEX_options.model_para[model_filename]||{});
+
+obj_list.push(obj)
+
+if (object_url) {
+  URL.revokeObjectURL(object_url)
+}
+
+MMD_SA.fn.setupUI()
+    });
+  },
+
+  // called while loading is progressing
+  (progress) => {},//console.log('Loading model...', 100.0 * (progress.loaded / progress.total), '%'),
+
+  // called when loading has errors
+  (error) => console.error(error)
+
+);
+        }
+
+    };
+  })();
+
+  var enabled = true;
+  var loaded, loading, resolve_loading;
+
+  var THREE, _THREE;
+  var data = {};
+  var obj_list = [];
+  var models = {};
+
+  var v1, v2, v3, v4;
+  var q1, q2, q3, q4;
+  var e1, e2, e3, e4;
+  var m1, m2, m3, m4;
+
+  var rot_arm_axis = {};
+  var rot_shoulder_axis = {};
+
+  var threeX  = {
+
+    data: data,
+
+    get v1(){return v1},get v2(){return v2},get v3(){return v3},get v4(){return v4},
+    get q1(){return q1},get q2(){return q2},get q3(){return q3},get q4(){return q4},
+    get e1(){return e1},get e2(){return e2},get e3(){return e3},get e4(){return e4},
+    get m1(){return m1},get m2(){return m2},get m3(){return m3},get m4(){return m4},
+
+    get enabled() { return MMD_SA_options.use_THREEX && enabled; },
+    set enabled(v) {
+enabled = !!v
+// save some headaches to not change SL's visibility here
+//SL.style.visibility  = (!enabled) ? 'inherit' : 'hidden'
+SLX.style.visibility = ( enabled) ? 'inherit' : 'hidden'
+    },
+
+    get THREE() { return (this.enabled) ? THREE : self.THREE; },
+
+    get obj_list() { return obj_list; },
+    set obj_list(v) { obj_list = v; },
+
+    get SL() { return document.getElementById((this.enabled) ? "SLX" : "SL"); },
+
+    get scene() { return (this.enabled) ? data.scene : MMD_SA.scene; },
+
+    get_model: function (index) { return models[index]; },
+
+    init: function () {
+// common init START
+THREE = _THREE = self.THREE;
+
+for (let i = 0; i < MMD_SA_options.model_path_extra.length+1; i++) {
+  models[i] = new MMD_dummy_obj(i);
+}
+// common init END
+
+if (!this.enabled) return Promise.resolve()
+
+if (loaded) {
+  init()
+  return Promise.resolve()
+}
+
+if (!MMD_SA_options.THREEX_options.model_path && !MMD_SA_options.THREEX_options.enabled_by_default) {
+  this.enabled = false
+  return Promise.resolve()
+}
+
+if (!MMD_SA_options.THREEX_options.model_path) {
+  MMD_SA_options.THREEX_options.model_path = System.Gadget.path + '/three.js/model/AliciaSolid.zip#/AliciaSolid.vrm'
+  MMD_SA_options.THREEX_options.model_para['AliciaSolid.vrm'] = {
+    icon_path: 'icon_v01.jpg'
+  }
+}
+
+DEBUG_show('Loading three.js...')
+
+if (!loading) {
+  MMD_SA.THREEX.load_scripts()
+}
+
+return new Promise((resolve)=>{
+  resolve_loading = function () {
+    init()
+    resolve()
+  };
+});
+    },
+
+    load_scripts: async function () {
+loading = true
+
+//await System._browser.load_script('./three.js/three.min.js');
+
+const THREE_module = await import(System.Gadget.path + '/three.js/three.module.min.js');
+self.THREE = {};
+for (const name in THREE_module) self.THREE[name] = THREE_module[name];
+const Geometry_module = await import(System.Gadget.path + '/three.js/Geometry.js');
+for (const name in Geometry_module) self.THREE[name] = Geometry_module[name];
+self.THREE.XLoader = _THREE.XLoader;
+
+await System._browser.load_script('./three.js/GLTFLoader.js');
+// min version doesn't work for some reasons
+await System._browser.load_script('./three.js/three-vrm_v0.6.11.js');
+
+THREE = self.THREEX = self.THREE
+self.THREE = _THREE
+
+
+// extend three.js START
+
+// http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToAngle/
+// https://github.com/mrdoob/three.js/blob/master/src/math/Vector4.js
+THREE.Quaternion.prototype.toAxisAngle = function () {
+  if (this.w > 1) this.normalise(); // if w>1 acos and sqrt will produce errors, this cant happen if quaternion is normalised
+  var angle = 2 * Math.acos(this.w);
+  var s = Math.sqrt(1-this.w*this.w); // assuming quaternion normalised then w is less than 1, so term always positive.
+  if (s < 0.0001) { // test to avoid divide by zero, s is always positive due to sqrt
+    // if s close to zero then direction of axis not important
+    x = 1;//this.x; // if it is important that axis is normalised then replace with x=1; y=z=0;
+    y = 0;//this.y;
+    z = 0;//this.z;
+  } else {
+    x = this.x / s; // normalise axis
+    y = this.y / s;
+    z = this.z / s;
+  }
+
+  return [new THREE.Vector3(x,y,z), angle]
+};
+
+// backward compatibility START
+
+THREE.Euler.prototype.multiplyScalar = THREE.Vector3.prototype.multiplyScalar;
+THREE.Euler.prototype.add = THREE.Vector3.prototype.add;
+THREE.Euler.prototype.setEulerFromQuaternion = THREE.Euler.prototype.setFromQuaternion;
+
+THREE.Box3.prototype.size = function (size_v3=new THREE.Vector3()) {
+  return this.getSize(size_v3);
+};
+THREE.Box3.prototype.center = function (center_v3=new THREE.Vector3()) {
+  return this.getCenter(center_v3);
+};
+
+THREE.Vector3.prototype.getPositionFromMatrix = THREE.Vector3.prototype.setFromMatrixPosition;
+
+THREE.Quaternion.prototype.setFromEuler = (function () {
+  const setFromEuler = THREE.Quaternion.prototype.setFromEuler;
+
+  return function (euler, order) {
+    if (order) euler._order = order;
+    return setFromEuler.call(this, euler);
+  };
+})();
+
+THREE.Matrix4.decompose = (function () {
+  const decompose = THREE.Matrix4.decompose;
+
+  return function (position, quaternion, scale) {
+    if (position) return decompose.call(this, position, quaternion, scale);
+
+    position = new THREE.Vector3();
+    quaternion = new THREE.Quaternion();
+    scale = new THREE.Vector3();
+
+    decompose.call(this, position, quaternion, scale);
+    return [position, quaternion, scale];
+  };
+})();
+
+THREE.Math = THREE.MathUtils;
+
+Object.defineProperty(THREE.Object3D.prototype, 'renderDepth', {
+  get: function () { return this.renderOrder; },
+  set: function (v) { this.renderOrder = v; },
+});
+
+// backward compatibility END
+
+// extend three.js END
+
+
+loading = false
+loaded = true
+resolve_loading && resolve_loading()
+    },
+
+    get models() { return models; },
+
+    mesh_obj: (function () {
+      function mesh_obj(id, obj) {
+this.id = id
+this._obj = obj
+
+mesh_obj_by_id[id] = this
+      }
+
+      mesh_obj.prototype.three = function () {
+return this._obj;
+      };
+
+      mesh_obj.prototype.show = function () {
+this._obj.visible = true;
+      };
+
+      mesh_obj.prototype.hide = function () {
+this._obj.visible = false;
+      };
+
+      const mesh_obj_by_id = {};
+
+      let mesh_obj_list = [];
+
+      window.addEventListener("jThree_ready", () => {
+const THREE = threeX.THREE;
+
+MMD_SA_options.x_object.forEach((x_obj, idx) => {
+  if (!x_obj.path) return
+
+  const url = toFileProtocol(x_obj.path)
+  new THREE.XLoader( url, function( mesh ) {
+var model_filename = toLocalPath(url).replace(/^.+[\/\\]/, "")
+var model_filename_cleaned = model_filename.replace(/[\-\_]copy\d+\.x$/, ".x").replace(/[\-\_]v\d+\.x$/, ".x")
+var model_para = MMD_SA_options.model_para[model_filename] || MMD_SA_options.model_para[model_filename_cleaned] || {}
+
+const _mesh = mesh;
+mesh = new THREE.Object3D()
+mesh.add(_mesh)
+//console.log(mesh)
+
+if (MMD_SA.THREEX.enabled) {
+}
+else {
+  if (model_para.instanced_drawing)
+    mesh.instanced_drawing = model_para.instanced_drawing
+//  mesh.instanced_drawing = 99
+
+  let material_para = model_para.material_para || {}
+  material_para = material_para._default_ || {}
+  if (material_para.receiveShadow != false)
+    mesh.receiveShadow = true
+
+  mesh.useQuaternion = true
+}
+
+threeX.mesh_obj.set("x_object" + idx, mesh)
+
+mesh.scale.set(0,0,0)
+
+console.log(mesh)
+MMD_SA.fn.setupUI()
+  }, function() {
+  });
+});
+      });
+
+      window.addEventListener("GOML_ready", () => {
+MMD_SA_options.mesh_obj_preload_list.forEach(obj => {
+  threeX.mesh_obj.set(obj.id, obj.create())
+});
+      });
+
+      return {
+get: function (id) {
+  id = id.replace(/^\#/, '');
+  return mesh_obj_by_id[id] || jThree('#' + id);
+},
+
+get_three: function (id) {
+  return this.get(id).three(0);
+},
+
+set: function (id, obj, skip_scene) {
+  new mesh_obj(id, obj)
+
+  if (!skip_scene) {
+    threeX.scene.add(obj)
+    obj.visible = false
+  }
+
+  return obj
+}
+      };
+    })(),
+
+    renderer: (function () {
+      var _device_framebuffer = null;
+
+      return {
+        get obj() { return (threeX.enabled) ? data.renderer : MMD_SA._renderer; },
+
+// device framebuffer (mainly for WebXR)
+        get device_framebuffer() { return _device_framebuffer; },
+        set device_framebuffer(fb) {
+if (fb != _device_framebuffer) {
+  _device_framebuffer = fb
+  const _gl = this.obj.getContext()
+  _gl.bindFramebuffer(_gl.FRAMEBUFFER, fb);
+}
+        },
+
+        get devicePixelRatio() { return (threeX.enabled) ? this.obj.getPixelRatio() : this.obj.devicePixelRatio; },
+        set devicePixelRatio(v) {
+if (!threeX.enabled) {
+  this.obj.devicePixelRatio = v;
+}
+else {
+  this.obj.setPixelRatio(v);
+}
+        },
+
+        setSize: function (width, height) {
+MMD_SA._renderer.setSize(width, height);
+threeX.enabled && this.obj.setSize(width, height);
+        },
+
+        render: function (scene, camera) {
+if (!threeX.enabled) return false
+
+threeX.camera.update(camera)
+
+var lights = scene.__lights
+lights.forEach(light=>{
+  threeX.light.update(light)
+});
+
+obj_list.forEach((obj) => {
+  var mesh = obj.obj
+  var p = obj.parent
+  if (!p) {
+    mesh.visible = false
+    return
+  }
+
+  mesh.position.copy(p.position)
+  mesh.quaternion.copy(p.quaternion)
+  if (!obj.no_scale)
+    mesh.scale.copy(p.scale)
+  mesh.visible = p.visible
+
+  obj.update && obj.update()
+});
+
+if (MMD_SA.MMD_started) {
+  _THREE.MMD.getModels().forEach((m,idx)=>{
+    var mesh = m.mesh
+
+// if mesh.matrixAutoUpdate is true, update the model matrixWorld here (AFTER the default routine of MMD mesh matrixWorld update)
+    if (mesh.matrixAutoUpdate) {
+      MMD_SA.THREEX.get_model(idx).update_model();
+    }
+
+// MMD physics (.simulate()) has been skipped. Do the necessary stuff here.
+    if (mesh._reset_rigid_body_physics_ > 0) {
+      mesh._reset_rigid_body_physics_ = Math.max(mesh._reset_rigid_body_physics_ - Math.min(RAF_timestamp_delta/1000*30, 1), 0)
+    }
+
+    m.simulateCallback && m.simulateCallback();
+  });
+}
+
+data.renderer.render(data.scene, data.camera);
+
+//DEBUG_show(Date.now())
+return true
+        }
+      };
+    })(),
+
+    camera: {
+      get obj() { return (threeX.enabled) ? data.camera : (MMD_SA._renderer.__camera || MMD_SA._trackball_camera.object); },
+
+      clone: function (camera) {
+if (!threeX.enabled) return
+
+var c = new THREE.PerspectiveCamera( camera.fov, camera.aspect, camera.near, camera.far )
+camera._THREEX_child = c
+
+if (!data.camera) data.camera = c
+return c
+      },
+
+      update: function (camera) {
+if (!threeX.enabled) return
+
+var c = camera._THREEX_child
+c.position.copy(camera.position)
+c.quaternion.copy(camera.quaternion)
+c.up.copy(camera.up)
+
+if (MMD_SA.WebXR.session) {
+  c.projectionMatrix.copy(camera.projectionMatrix)
+  c.matrix.copy(camera.matrix)
+  c.matrixWorld.copy(camera.matrixWorld)
+}
+      },
+
+      resize: function (width, height) {
+(MMD_SA._renderer.__camera || MMD_SA._trackball_camera.object).resize(width, height);
+if (threeX.enabled) {
+  this.obj.aspect = width/height
+  this.obj.updateProjectionMatrix()
+}
+      }
+    },
+
+    light: {
+      clone: function (light) {
+if (!threeX.enabled) return
+
+var type
+if (light instanceof _THREE.DirectionalLight) {
+  type = 'DirectionalLight'
+}
+else if (light instanceof _THREE.AmbientLight) {
+  type = 'AmbientLight'
+}
+
+var l = new THREE[type]()
+light._THREEX_child = l
+data.scene.add(l)
+
+// https://threejs.org/docs/#api/en/lights/DirectionalLight
+if (type == 'DirectionalLight') {
+  data.scene.add(l.target)
+}
+      },
+
+      update: function (light) {
+if (!threeX.enabled) return
+
+var c = light._THREEX_child
+c.position.copy(light.position)
+c.color.copy(light.color)
+if (c.type == 'DirectionalLight') {
+  c_max = Math.max(c.color.r, c.color.g, c.color.b)
+  c.intensity = light.intensity / c_max
+  c.target.position.copy(light.target.position)
+}
+      }
+    },
+
+    VRM: VRM,
+
+    utils: {
+
+      convert_A_pose_rotation_to_T_pose: (function () {
+//"肩",
+        var RE = new RegExp("^(" + toRegExp(["左","右"],"|") + ")(" + toRegExp(["腕","ひじ","手"],"|") + "|." + toRegExp("指") + ")(.*)$");
+
+        return function (name, rot, sign_inverted) {
+if (!threeX.enabled) return
+
+if (!RE.test(name)) return
+
+var dir = (RegExp.$1 == '左') ? 1 : -1;
+if (sign_inverted) dir *= -1;
+
+q1.fromArray(rot)
+
+const aa = q1.toAxisAngle()
+
+if (RegExp.$3.indexOf('捩') != -1) {
+// It seems that 捩 bone rotation is always screwed for any modified T-pose MMD model. Just ignore it for now (you don't really need to modify it to transfer this rotation to other non-MMD model anyways).
+/*
+  if (!aa[1]) return
+  const sign = (Math.sign(aa[0].x) == dir) ? 1 : -1;
+  q1.setFromAxisAngle(v1.set(dir*sign,0,0), aa[1]);
+//q1.set(0,0,0,1)
+//console.log(name, aa[0].toArray())
+*/
+}
+else {
+  const rot_axis = rot_arm_axis;//(RegExp.$2 == '肩') ? rot_shoulder_axis : rot_arm_axis;
+  q1.setFromAxisAngle(aa[0].applyQuaternion(rot_axis[dir]), aa[1])
+  if ((RegExp.$2 == '腕')) {// || (RegExp.$2 == '肩')) {
+    q1.multiplyQuaternions(rot_axis[-dir], q1)
+
+// curious to know how these VMD-to-VRM can be done simply by multiplying without rotating axis (seems so?)
+// https://github.com/JLChnToZ/vrm-dance-viewer/blob/master/src/worker/loaders/vmd2vrmanim.ts
+// https://github.com/reminjp/three-vrm/blob/master/src/data/VMD.ts
+//q1.multiply(rot_axis[-dir])
+  }
+}
+
+q1.toArray().forEach((v,i)=>{ rot[i]=v });
+        };
+      })(),
+
+      convert_T_pose_rotation_to_A_pose: function (name, rot) {
+this.convert_A_pose_rotation_to_T_pose(name, rot, true);
+      }
+
+    }
+
+  };
+
+  return threeX;
+
+})();
+
+
 (function () {
 // defaults START
   use_full_fps_registered = true
@@ -7042,6 +8307,20 @@ else
 
   MMD_SA_options.custom_default && MMD_SA_options.custom_default()
   window.dispatchEvent(new CustomEvent("SA_MMD_init"))
+
+
+// THREEX_options START
+
+if (!MMD_SA_options.THREEX_options)
+  MMD_SA_options.THREEX_options = {}
+
+MMD_SA_options.THREEX_options.model_path_default = MMD_SA_options.THREEX_options.model_path || ''
+
+if (!MMD_SA_options.THREEX_options.model_para)
+  MMD_SA_options.THREEX_options.model_para = {}
+
+// THREEX_options END
+
 
 // save some headaches
   if (is_mobile && !is_SA_child_animation) {
@@ -7178,10 +8457,12 @@ MMD_SA_options.texture_resolution_limit=2048
     MMD_SA_options.user_camera = {}
 
   if (MMD_SA_options.user_camera.mirror_3D == null)
-    MMD_SA_options.user_camera.mirror_3D = 1
+    MMD_SA_options.user_camera.mirror_3D = 0//1
 
   if (!MMD_SA_options.user_camera.pixel_limit)
     MMD_SA_options.user_camera.pixel_limit = {}
+  if (!MMD_SA_options.user_camera.pixel_limit._default_)
+    MMD_SA_options.user_camera.pixel_limit._default_ = [1280,720]
 
   if (!MMD_SA_options.user_camera.display)
     MMD_SA_options.user_camera.display = {}
@@ -7865,6 +9146,8 @@ this._look_at_screen_ratio = v
 });
 
   if (MMD_SA_options.user_camera.ML_models.enabled) {
+    MMD_SA_options.look_at_mouse = false
+
     window.addEventListener("jThree_ready", function () {
 MMD_SA_options.model_para_obj_all.forEach(function (model_para_obj) {
   model_para_obj.use_default_boundingBox = true
@@ -7921,6 +9204,9 @@ THREE.MMD.getModels().forEach(function (model) {
     MMD_SA_options.mesh_obj = []
   MMD_SA_options.mesh_obj_by_id = {}
 
+  if (!MMD_SA_options.mesh_obj_preload_list)
+    MMD_SA_options.mesh_obj_preload_list = []
+
   if (!MMD_SA_options.MMD_disabled) {
     for (var i = 0, i_max = MMD_SA_options.model_para_obj_all.length; i < i_max; i++) {
       MMD_SA_options.mesh_obj.push({ id:"mikuPmx"+i })
@@ -7929,10 +9215,10 @@ THREE.MMD.getModels().forEach(function (model) {
 
 // Circular spectrum
   if (MMD_SA_options.use_CircularSpectrum) {
-    var _r = MMD_SA_options.CircularSpectrum_radius || 10
-    var _divider = 128
-    var _cube_size = _r * 2 * Math.PI / (_divider * 2)
-
+    const _r = MMD_SA_options.CircularSpectrum_radius || 10
+    const _divider = 128
+    const _cube_size = _r * 2 * Math.PI / (_divider * 2)
+/*
     MMD_SA.GOML_head +=
   '<geo id="CircularSpectrumGEO" type="Cube" param="' + [_cube_size,_cube_size,_cube_size].join(" ") + '" />\n'
 + '<mtl id="CircularSpectrumMTL" type="MeshBasic" param="color:' + (MMD_SA_options.CircularSpectrum_color || '#0f0') + ';" />\n';
@@ -7940,14 +9226,36 @@ THREE.MMD.getModels().forEach(function (model) {
     MMD_SA.GOML_scene +=
   '<obj id="CircularSpectrumMESH" style="position:' + (MMD_SA_options.CircularSpectrum_position || [0,10,0]).join(" ") + '; scale:0;">\n';
 
-    for (var i = 0; i < _divider; i++) {
-      var _a = (i / _divider) * Math.PI * 2
+    for (let i = 0; i < _divider; i++) {
+      const _a = (i / _divider) * Math.PI * 2
       MMD_SA.GOML_scene +=
   '<mesh id="CircularSpectrum' + i + 'MESH" geo="#CircularSpectrumGEO" mtl="#CircularSpectrumMTL" style="position:' + [_r*Math.sin(_a),_r*Math.cos(_a),0].join(" ") + '; rotate:' + [0,0,-_a].join(" ") + ';" />\n'
     }
 
     MMD_SA.GOML_scene +=
   '</obj>\n';
+*/
+
+    MMD_SA_options.mesh_obj_preload_list.push({ id:'CircularSpectrumMESH', create:function () {
+const THREE = MMD_SA.THREEX.THREE;
+
+const geometry = new THREE.BoxGeometry(_cube_size,_cube_size,_cube_size);
+const material = new THREE.MeshBasicMaterial({ color:(MMD_SA_options.CircularSpectrum_color || '#0f0') });
+
+const obj = new THREE.Object3D();
+for (let i = 0; i < _divider; i++) {
+  const _a = (i / _divider) * Math.PI * 2;
+  const mesh = MMD_SA.THREEX.mesh_obj.set('CircularSpectrum' + i + 'MESH', new THREE.Mesh(geometry, material), true);
+  mesh.position.set(_r*Math.sin(_a), _r*Math.cos(_a), 0);
+  mesh.rotation.set(0, 0, -_a);
+  obj.add(mesh);
+}
+obj.position.fromArray(MMD_SA_options.CircularSpectrum_position || [0,10,0]);
+
+obj.scale.set(0,0,0)
+
+return obj;
+    } });
 
     MMD_SA_options.mesh_obj.push({ id:"CircularSpectrumMESH", scale:0 })
   }
@@ -7956,14 +9264,11 @@ THREE.MMD.getModels().forEach(function (model) {
   if (MMD_SA_options.allows_kissing && (MMD_SA_options.custom_action.indexOf("kissing") == -1))
     MMD_SA_options.custom_action.push("kissing")
   if (MMD_SA_options.custom_action.indexOf("kissing") != -1) {
-    MMD_SA.GOML_head +=
-  '<geo id="KissGEO" type="Plane" param="1 1" />\n'
-+ '<txr id="KissTXR" src="' + (toFileProtocol(System.Gadget.path + '/images/kiss_mark_red_o66.png')) + '" />\n'
-+ '<mtl id="KissMTL" type="MeshBasic" param="map:#KissTXR;" />\n';
+    MMD_SA_options.mesh_obj_preload_list.push({ id:'KissMESH', create:function () {
+const THREE = MMD_SA.THREEX.THREE;
 
-    MMD_SA.GOML_scene +=
-  '<mesh id="KissMESH" geo="#KissGEO" mtl="#KissMTL" style="position:0 0 0; scale:0;" />\n';
-
+return new THREE.Mesh( new THREE.PlaneGeometry(1,1), new THREE.MeshBasicMaterial({ map:MMD_SA.load_texture(System.Gadget.path + '/images/kiss_mark_red_o66.png'), transparent:true }) );
+    } });
     MMD_SA_options.mesh_obj.push({ id:"KissMESH" })
   }
 
@@ -8175,7 +9480,7 @@ m.resetPhysics(30)
 
   MMD_SA_options.motion_index_by_name = []
   for (var i = 0, i_max = MMD_SA_options.motion.length; i < i_max; i++) {
-    MMD_SA_options.motion_index_by_name[MMD_SA_options.motion[i].path.replace(/^.+[\/\\]/, "").replace(/\.vmd$/i, "")] = i
+    MMD_SA_options.motion_index_by_name[MMD_SA_options.motion[i].path.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, "")] = i
   }
 
   // backup these lists for default use, just in case they are modified later
@@ -8359,22 +9664,6 @@ js.push("jThree/plugin/three_" + effect.name + ".js")
   if (MMD_SA_options.use_JSARToolKit) {
     js.push("js/JSARToolKit.js")
   }
-}
-else {
-  js = [
-  "MMD.js/libs/gl-matrix.js"
- ,"MMD.js/libs/glMatrixUtils.js"
- ,"MMD.js/libs/sjis.js"
-// ,"MMD.js/libs/DataView.js"
- ,"MMD.js/src/MMD.js"
- ,"MMD.js/src/MMD.Model.js"
- ,"MMD.js/src/MMD.Motion.js"
- ,"MMD.js/src/MMD.TextureManager.js"
- ,"MMD.js/src/MMD.ShadowMap.js"
- ,"MMD.js/src/MMD.VertexShaderSource.js"
- ,"MMD.js/src/MMD.FragmentShaderSource.js"
- ,"MMD.js/src/MMD.MotionManager.js"
- ]
 }
 
   var html = ""
