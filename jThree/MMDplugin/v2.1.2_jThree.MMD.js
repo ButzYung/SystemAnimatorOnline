@@ -2601,8 +2601,7 @@ if (this.boneKeys.length || this.morphKeys.length) {
 VMD.prototype.load = function( url_raw, onload ) {
 // AT: VMD by filename
 // NOTE: url_raw is the raw path WITHOUT toLocalPath (because this will turn the url to blob url in browser, which makes info like file type and such unrecognizable)
-url_raw = decodeURIComponent(url_raw);
-MMD_SA.vmd_by_filename[url_raw.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, "")] = this;
+MMD_SA.vmd_by_filename[decodeURIComponent(url_raw.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, ""))] = this;
 
 // AT: BVH
 if (/\.bvh$/i.test(url_raw)) {
