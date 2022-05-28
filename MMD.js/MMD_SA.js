@@ -557,6 +557,8 @@ console.log("(model.json updated)")
       MMD_SA._click_to_reset = function () {
 MMD_SA._init_my_model = null;
 SystemAnimator_caches.delete("/user-defined-local/my_model.zip");
+// reset THREEX.enabled to default
+MMD_SA.THREEX.enabled = true
 sb._msg_mouseover = sb._msg_mouseover_default;
 DEBUG_show(sb._msg_mouseover, -1);
 Ldebug.style.cursor = "default";
@@ -1666,7 +1668,7 @@ function _vmd(vmd_morph) {
     _finalize()
   }
 
-  model._VMD(toFileProtocol(src), _vmd_loaded);
+  model._VMD(src, _vmd_loaded);
 }
 
 if (MMD_SA.vmd_by_filename[name_new]) {
@@ -1675,7 +1677,7 @@ if (MMD_SA.vmd_by_filename[name_new]) {
 else {
   let para_SA = MMD_SA_options.motion_para[name_new] = MMD_SA_options.motion_para[name_new] || {}
   if (para_SA.morph_component_by_filename) {
-    model._VMD(toFileProtocol(src.replace(/[^\/\\]+$/, "")) + para_SA.morph_component_by_filename + ".vmd", function( vmd ) {
+    model._VMD(src.replace(/[^\/\\]+$/, "") + para_SA.morph_component_by_filename + ".vmd", function( vmd ) {
       _vmd(vmd)
     });
   }
@@ -7764,7 +7766,7 @@ vrm.springBoneManager.setCenter(vrm.scene)
 vrm.scene.quaternion.set(0,1,0,0)
 vrm.scene.scale.set(vrm_scale, vrm_scale, vrm_scale)
 
-var vrm_obj = new VRM_object(para.vrm_index, vrm, { url:url });
+var vrm_obj = new VRM_object(para.vrm_index, vrm, { url:url_raw });
 
 var obj = Object.assign({
   data: vrm_obj,
@@ -7962,6 +7964,8 @@ THREE.Matrix4.decompose = (function () {
     return [position, quaternion, scale];
   };
 })();
+
+THREEX.BufferGeometry.prototype.applyMatrix = THREEX.BufferGeometry.prototype.applyMatrix4;
 
 THREE.Math = THREE.MathUtils;
 
@@ -9576,7 +9580,7 @@ self.Module = { TOTAL_MEMORY:52428800*2 };
     }
   }
 
-  var js_min_mode = self._js_min_mode_ || (/*!MMD_SA_options.WebXR && */browser_native_mode && !webkit_window && !localhost_mode);
+  const js_min_mode = self._js_min_mode_ || (/*!MMD_SA_options.WebXR && */browser_native_mode && !webkit_window && !localhost_mode) || (webkit_electron_mode && !/AT_SystemAnimator_v0001\.gadget/.test(System.Gadget.path));
 
   if (js_min_mode) {
 console.log("three.core.min.js")
@@ -9585,10 +9589,8 @@ console.log("three.core.min.js")
     );
   }
   else {
-    let XMLHttpRequestZIP_path = ((localhost_mode || (webkit_electron_mode && /AT_SystemAnimator_v0001\.gadget/.test(System.Gadget.path))) ? "_private/js/XMLHttpRequestZIP.js" : "js/XMLHttpRequestZIP_.js");
-    console.log(XMLHttpRequestZIP_path)
     js.push(
-  XMLHttpRequestZIP_path
+  "_private/js/XMLHttpRequestZIP.js"
  ,"js/jszip.js"
 
  ,"jThree/script/"+js_prefix+"jThree.js"
