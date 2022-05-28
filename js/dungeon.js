@@ -713,7 +713,7 @@ inventory = {
 
  ,UI: {
     info: {
-      scale: 1.5*2
+      scale: 1.5
     }
   }
 
