@@ -4881,6 +4881,7 @@ if (AR_options.light_estimation_enabled !== false) {
   }
 }
 
+System._browser.console.log(1)
 if (!this.reticle) {
   let geometry = new THREE.RingGeometry(0.1, 0.11, 24, 1);
   geometry.applyMatrix(new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(-90)));
@@ -4914,6 +4915,7 @@ if (xr.ground_plane)
 }
 this.reticle.visible = false
 
+System._browser.console.log(2)
 this.hit_ground_y = null
 this.hit_ground_y_lowest = null
 
@@ -4931,6 +4933,7 @@ if (ao && !ao.paused) {
   SL_MC_Play()
 }
 
+System._browser.console.log(3)
 if (1) {
   if (!this.use_dummy_webgl) {
     document.getElementById("SL").style.visibility = MMD_SA.THREEX.SL.style.visibility = "hidden"
@@ -4956,6 +4959,7 @@ if (1) {
 window.dispatchEvent(new CustomEvent("SA_AR_onSessionStarted"));
 
 session.requestAnimationFrame(xr.onARFrame);
+System._browser.console.log(4)
   }
 
  ,restore_scene: function () {
