@@ -1659,7 +1659,7 @@ cam_pos.copy(MMD_SA._trackball_camera.object.position)
  ,"kissing"
   ]
 
-// ,use_CircularSpectrum: true
+ ,use_CircularSpectrum: true
 
  ,look_at_screen: true
 
@@ -1789,7 +1789,7 @@ if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle
     enabled: true,
 //    mirror_3D: 0,
     pixel_limit: {
-      _default_: [1280,720],//[1920,1080],//
+//      _default_: [1280,720],//[1920,1080],//
       fixed: !is_mobile,
 //      facemesh : [640,360],
       facemesh_bb_ratio: (is_mobile) ? 1 : 0.5,
@@ -1847,10 +1847,16 @@ wireframe:{
   }
 
  ,SpeechBubble_branch: {
-//    confirm_keydown:true,
+    confirm_keydown:true,
     RE: /^(\d)\.\s/
   }
  ,SpeechBubble_scale: 1.25
+
+ ,use_THREEX: true
+ ,THREEX_options: {
+    enabled_by_default: true,
+//    model_path: System.Gadget.path + '/TEMP/DEMO/models/AvatarSample_A.vrm'
+  }
 
 // END
 };
@@ -2315,7 +2321,10 @@ if (MMD_SA.WebXR.user_camera.bodyPix.enabled) {
   return true
 }
 
-if (!MMD_SA.WebXR.user_camera.ML_enabled) {
+if (System._browser.camera.motion_recorder.speed) {
+  System._browser.camera.motion_recorder.speed = 0
+}
+else if (!MMD_SA.WebXR.user_camera.ML_enabled) {
   MMD_SA_options.Dungeon.run_event("_FACEMESH_",0)
 }
 else  {
@@ -2328,13 +2337,20 @@ else  {
  ,get info() {
 var info = ''
 
-if (System._browser.camera.ML_enabled) {
+if (System._browser.camera._info) {
+  info += System._browser.camera._info;
+}
+else if (System._browser.camera.motion_recorder.speed) {
+   info +=
+  '- Double-click to stop motion recording.';
+}
+else if (System._browser.camera.ML_enabled) {
   if (!System._browser.camera.visible) {
     info +=
   '- To choose a video input, double-click the "Selfie camera" item. You can use a webcam, or drop a local video/picture file.\n';
   }
     info +=
-  '- To change motion capture options or turn it off, double-click this item.';
+  '- To record motion while capturing, change options or turn it off, double-click this item.';
 }
 else {
     info +=
@@ -2863,12 +2879,13 @@ else {
       [
         {
           message: {
-  content: "Enable selfie camera for AR/VR purpose?\n1. Yes\n2. Yes (flip video)\n3. No"
+  content: "Enable selfie camera for AR/VR purpose?\n1. Yes\n2. Yes (flip video)\n3. No\n4. Options"
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:1 }
    ,{ key:2, branch_index:2 }
    ,{ key:3 }
+   ,{ key:4, branch_index:3 }
   ]
           }
         }
@@ -2891,6 +2908,51 @@ MMD_SA.WebXR.user_camera.video_flipped=true;
 MMD_SA.WebXR.user_camera.start((0&&webkit_electron_mode) ? toFileProtocol("C:\\Users\\user\\Documents\\_.mp4") : null);
           }
          ,ended: "_SELFIE_"
+        }
+      ]
+//3
+     ,[
+        {
+          message: {
+  get content() { return 'Choose a pixel limit (current is ' + (MMD_SA_options.user_camera.pixel_limit.current||MMD_SA_options.user_camera.pixel_limit._default_).join('x') + ').\n1. Default (' + MMD_SA_options.user_camera.pixel_limit._default_.join('x') + ')\n2. 1280x720\n3. 1920x1080\n4. Cancel'; }
+ ,bubble_index: 3
+ ,branch_list: [
+    { key:1, branch_index:4 }
+   ,{ key:2, branch_index:5 }
+   ,{ key:3, branch_index:6 }
+   ,{ key:4 }
+  ]
+          }
+        }
+      ]
+// 4
+     ,[
+        {
+          func: function () {
+MMD_SA_options.user_camera.pixel_limit.current = null
+DEBUG_show('Video pixel limit: ' + MMD_SA_options.user_camera.pixel_limit._default_.join('x'), 2)
+          }
+         ,ended: true
+        }
+      ]
+// 5
+     ,[
+        {
+          func: function () {
+MMD_SA_options.user_camera.pixel_limit.current = [1280,720]
+DEBUG_show('Video pixel limit: 1280x720', 2)
+          }
+         ,ended: true
+        }
+      ]
+// 6
+     ,[
+        {
+          func: function () {
+MMD_SA_options.user_camera.pixel_limit.current = [1920,1080]
+DEBUG_show('Video pixel limit: 1920x1080', 2)
+          }
+         ,ended: true
         }
       ]
     ]
@@ -3065,7 +3127,7 @@ function onDrop_change_wallpaper(item) {
 function onDrop_change_panorama(item) {
   var src = item.path
   if (item.isFileSystem && /([^\/\\]+)\.(png|jpg|jpeg|bmp)$/i.test(src)) {
-    change_panaroma(0, src)
+    change_panorama(0, src)
   }
   else {
     _onDrop_finish.call(DragDrop, item)
@@ -3133,24 +3195,28 @@ Object.defineProperty(this, "visible", {
 var model_filename = toLocalPath(url).replace(/^.+[\/\\]/, "")
 var model_filename_cleaned = model_filename.replace(/[\-\_]copy\d+\.x$/, ".x").replace(/[\-\_]v\d+\.x$/, ".x")
 var model_para = MMD_SA_options.model_para[model_filename] || MMD_SA_options.model_para[model_filename_cleaned] || {}
-if (model_para.instanced_drawing)
-  mesh.instanced_drawing = model_para.instanced_drawing
-//mesh.instanced_drawing = 99
+
+if (MMD_SA.THREEX.enabled) {
+}
+else {
+  if (model_para.instanced_drawing)
+    mesh.instanced_drawing = model_para.instanced_drawing
+//  mesh.instanced_drawing = 99
+
+  let material_para = model_para.material_para || {}
+  material_para = material_para._default_ || {}
+  if (material_para.receiveShadow != false)
+    mesh.receiveShadow = true
+
+  mesh.useQuaternion = true
+}
+MMD_SA.THREEX.scene.add(mesh)
 
 var placement = model_para.placement || {};
 mesh.position.copy(THREE.MMD.getModels()[0].mesh.position)
 if (placement.position)
   mesh.position.add(placement.position)
 mesh.scale.multiplyScalar(placement.scale||10)
-
-var material_para = model_para.material_para || {}
-material_para = material_para._default_ || {}
-if (material_para.receiveShadow != false)
-  mesh.receiveShadow = true
-
-MMD_SA.scene.add(mesh)
-
-mesh.useQuaternion = true
 
 var object3d = Object.assign({}, model_para)
 if (!object3d.user_data) object3d.user_data = {}
@@ -3161,7 +3227,7 @@ object3d_list.push(object3d)
 if (object3d.parent_bone)
   MMD_SA_options.Dungeon.accessory_list.push(object3d)
 
-//console.log(object3d)
+console.log(object3d)
 
 if (!object3d.parent_bone) {
   System._browser.camera.poseNet.auto_grounding = true
@@ -3174,18 +3240,18 @@ if (!object3d.parent_bone) {
   });
 }
 
-var panaroma_loading;
-function change_panaroma(index, src) {
+var panorama_loading;
+function change_panorama(index, src) {
   function show() {
-    panaroma_loading = false
+    panorama_loading = false
     sd.texture_index = index
     sd.texture_setup()
     System._browser.camera.display_floating = (MMD_SA_options.user_camera.display.floating || (MMD_SA_options.user_camera.display.floating_auto !== false));
   }
 
   var sd = MMD_SA_options.Dungeon_options.skydome
-  if (panaroma_loading) {
-    DEBUG_show('(panaroma still loading)', 2)
+  if (panorama_loading) {
+    DEBUG_show('(panorama still loading)', 2)
     return
   }
   if (index && sd.texture_cache_list[index] && sd.texture_cache_list[index].complete) {
@@ -3193,12 +3259,40 @@ function change_panaroma(index, src) {
     return
   }
 
-  panaroma_loading = true
+  panorama_loading = true
   var image = sd.texture_cache_list[index] = sd.texture_cache_list[index] || new Image();
   image.onload = function () {
     show()
   };
   image.src = toFileProtocol(src)
+}
+
+var dome_axis_angle = 0
+var dome_rotation = 0
+var dome_rotation_speed = 0
+function rotate_dome() {
+  var axis = MMD_SA.TEMP_v3.set(0,1,0)
+  axis.applyEuler(MMD_SA._v3a.set(0, 0, dome_axis_angle/180*Math.PI))
+  dome_rotation = (dome_rotation + RAF_timestamp_delta/(1000*60*10) * dome_rotation_speed * 360) % 360;
+
+  MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.useQuaternion = true
+  MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.quaternion.setFromAxisAngle(axis, dome_rotation/180*Math.PI)
+}
+
+function ML_off() {
+  MMD_SA.WebXR.user_camera.facemesh.enabled = false
+  MMD_SA.WebXR.user_camera.poseNet.enabled = false
+  MMD_SA.WebXR.user_camera.handpose.enabled = false
+  MMD_SA_options.Dungeon_options.item_base['magic_wand'].action._motion_list_index = -1
+  MMD_SA_options.Dungeon_options.item_base['magic_wand'].action.func()
+}
+
+function mirror_3D_off() {
+  if (MMD_SA_options.user_camera.mirror_3D) {
+    System._browser.camera.hide()
+    MMD_SA_options.user_camera.mirror_3D = 0
+    System._browser.camera.show()
+  }
 }
 
 var bg_state_default, bg_color_default, bg_wallpaper_default, webcam_as_bg_default;
@@ -3215,26 +3309,37 @@ window.addEventListener('jThree_ready', (e)=>{
 
 var bg_branch = 5
 var panorama_branch = 12
-var object3D_branch = 16
+var object3D_branch = 18
 var done_branch = 11
-var about_branch = 17
+var about_branch = 19
+var export_motion_branch = 22
+var record_motion_branch = 25
 
 return [
 //0
       [
         {
           message: {
-  get content() { return '1. Overlay & UI\n2. BG/Scene/3D' + ((System._browser.camera.ML_enabled) ? '\n3. Tracking OFF\n4. About\n5. Cancel' : '\n3. About\n4. Cancel'); }
+  get content() { return (System._browser.camera.ML_enabled) ? ((System._browser.camera.motion_recorder.vmd) ? '1. Export motion to file\n2. Record motion\n3. Tracking OFF\n4. Cancel' : '1. Record motion\n2. Tracking OFF\n3. Cancel') : '1. Overlay & UI\n2. BG/Scene/3D' + ((/\.bvh$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd) ? '\n3. Export motion to file\n4. About\n5. Cancel' : '\n3. About\n4. Cancel'); }
  ,bubble_index: 3
  ,get branch_list() {
-return [
+return (System._browser.camera.ML_enabled) ? ((System._browser.camera.motion_recorder.vmd) ? [
+  { key:1, branch_index:export_motion_branch },
+  { key:2, branch_index:record_motion_branch },
+  { key:3, branch_index:2 },
+  { key:4 }
+] : [
+  { key:1, branch_index:record_motion_branch },
+  { key:2, branch_index:2 },
+  { key:3 }
+]) : [
   { key:1, branch_index:1 },
   { key:2, branch_index:3 }
-].concat((System._browser.camera.ML_enabled) ? [
-  { key:3, branch_index:2 },
+].concat((/\.bvh$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd) ? [
+  { key:3, branch_index:export_motion_branch },
   { key:4, branch_index:about_branch },
   { key:5 }
-] :　[
+] :[
   { key:3, branch_index:about_branch },
   { key:4 }
 ]);
@@ -3252,12 +3357,7 @@ return [
      ,[
         {
           func: function () {
-MMD_SA.WebXR.user_camera.facemesh.enabled = false
-MMD_SA.WebXR.user_camera.poseNet.enabled = false
-MMD_SA.WebXR.user_camera.handpose.enabled = false
-MMD_SA_options.Dungeon_options.item_base['magic_wand'].action._motion_list_index = -1
-MMD_SA_options.Dungeon_options.item_base['magic_wand'].action.func()
-DEBUG_show("Camera ML Mode:OFF", 2)
+ML_off()
           }
          ,ended: true
         }
@@ -3290,6 +3390,11 @@ LdesktopBG.style.backgroundImage = bg_wallpaper_default
 MMD_SA_options.user_camera.display.webcam_as_bg = webcam_as_bg_default
 
 MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.visible = false
+dome_axis_angle = 0
+dome_rotation = 0
+dome_rotation_speed = 0
+System._browser.on_animation_update.remove(rotate_dome,1)
+
 object3d_list.forEach(object3d => {
   MMD_SA.scene.remove(object3d._obj);
   if (object3d.parent_bone)
@@ -3373,29 +3478,32 @@ DEBUG_show('(Use webcam as BG)', 2)
          ,goto_branch: bg_branch
         }
       ]
-//11
+// 11
      ,[
         {
           func: function () {
-DragDrop.onDrop_finish = _onDrop_finish;
+DragDrop.onDrop_finish = _onDrop_finish
+System._browser.camera._info = ''
           }
          ,ended: true
         }
       ]
-//12
+// 12
      ,[
         {
           func: function () {
 DragDrop.onDrop_finish = onDrop_change_panorama;
           }
          ,message: {
-  content: 'Choose a 3D panorama, or drop a panorama image file.\n1. Blue sky\n2. Angel\'s staircase\n3. Stars & Milky Way\n4. Done'
+  content: 'Choose a 3D panorama, or drop a panorama image file.\n1. Blue sky\n2. Angel\'s staircase\n3. Stars & Milky Way\n4. >> Rotation speed+\n5. >> Rotation angle+\n6. Done'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:panorama_branch+1 }
    ,{ key:2, branch_index:panorama_branch+2 }
    ,{ key:3, branch_index:panorama_branch+3 }
-   ,{ key:4, branch_index:done_branch }
+   ,{ key:4, branch_index:panorama_branch+4 }
+   ,{ key:5, branch_index:panorama_branch+5 }
+   ,{ key:6, branch_index:done_branch }
   ]
           }
         }
@@ -3404,7 +3512,7 @@ DragDrop.onDrop_finish = onDrop_change_panorama;
      ,[
         {
           func: function () {
-change_panaroma(1, System.Gadget.path + '/images/_dungeon/tex/ryntaro_nukata/blue_sky.jpg')
+change_panorama(1, System.Gadget.path + '/images/_dungeon/tex/ryntaro_nukata/blue_sky.jpg')
           }
          ,goto_branch: panorama_branch
         }
@@ -3413,7 +3521,7 @@ change_panaroma(1, System.Gadget.path + '/images/_dungeon/tex/ryntaro_nukata/blu
      ,[
         {
           func: function () {
-change_panaroma(2, System.Gadget.path + '/images/_dungeon/tex/ryntaro_nukata/angel_staircase.jpg')
+change_panorama(2, System.Gadget.path + '/images/_dungeon/tex/ryntaro_nukata/angel_staircase.jpg')
           }
          ,goto_branch: panorama_branch
         }
@@ -3422,12 +3530,51 @@ change_panaroma(2, System.Gadget.path + '/images/_dungeon/tex/ryntaro_nukata/ang
      ,[
         {
           func: function () {
-change_panaroma(3, System.Gadget.path + '/images/_dungeon/tex/stars_milky_way.jpg')
+change_panorama(3, System.Gadget.path + '/images/_dungeon/tex/stars_milky_way.jpg')
           }
          ,goto_branch: panorama_branch
         }
       ]
 // 16
+     ,[
+        {
+          func: function () {
+if (!MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.visible) {
+  DEBUG_show('(Dome panorama not visible)', 2)
+  return
+}
+
+if (dome_rotation_speed)
+  dome_rotation_speed *= 2
+else {
+  dome_rotation_speed = 1
+  System._browser.on_animation_update.add(rotate_dome,0,1,-1)
+}
+if (dome_rotation_speed > 16) {
+  dome_rotation_speed = 0
+  System._browser.on_animation_update.remove(rotate_dome,1)
+}
+DEBUG_show('Dome rotation speed: x' + dome_rotation_speed, 2)
+          }
+         ,goto_branch: panorama_branch
+        }
+      ]
+// 17
+     ,[
+        {
+          func: function () {
+if (!MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.visible) {
+  DEBUG_show('(Dome panorama not visible)', 2)
+  return
+}
+
+dome_axis_angle = (dome_axis_angle + 18) % 360;
+DEBUG_show('Dome rotation angle: ' + dome_axis_angle + '°', 2)
+          }
+         ,goto_branch: panorama_branch
+        }
+      ]
+// 18
      ,[
         {
           func: function () {
@@ -3442,7 +3589,7 @@ DragDrop.onDrop_finish = onDrop_change_object3D;
           }
         }
       ]
-// 17
+// 19
      ,[
         {
           message: {
@@ -3456,7 +3603,7 @@ DragDrop.onDrop_finish = onDrop_change_object3D;
           }
         }
       ]
-// 18
+// 20
      ,[
         {
           func: function () {
@@ -3469,7 +3616,7 @@ else
          ,ended: true
         }
       ]
-// 19
+// 21
      ,[
         {
           func: function () {
@@ -3478,6 +3625,126 @@ if (webkit_electron_mode)
   webkit_electron_remote.shell.openExternal(url)
 else
   window.open(url)
+          }
+         ,ended: true
+        }
+      ]
+// 22
+     ,[
+        {
+          func: function () {
+          }
+         ,message: {
+  get content() { return 'Choose a motion file format to export.\n1. VMD' + ((0) ? '\n2. BVH\n3.Cancel' : '\n2. Cancel'); } 
+ ,bubble_index: 3
+ ,get branch_list() {
+return [
+  { key:1, branch_index:export_motion_branch+1 }
+].concat((0) ? [
+  { key:2, branch_index:export_motion_branch+2 }
+ ,{ key:3 }
+] : [
+  { key:2 }
+]);
+  }
+          }
+        }
+      ]
+// 23
+     ,[
+        {
+          func: function () {
+var filename;
+var vmd = System._browser.camera.motion_recorder.vmd;
+if (vmd) {
+  filename = 'motion.vmd'
+}
+else {
+  vmd = System._browser.camera.motion_recorder.vmd || MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename];
+  filename = MMD_SA.MMD.motionManager.filename + '.vmd'
+}
+
+setTimeout(()=>{
+  MMD_SA.VMD_FileWriter().then(()=>{
+    VMD_FileWriter(filename, vmd.boneKeys,vmd.morphKeys);
+    System._browser.camera.motion_recorder.vmd = null
+  });
+}, 0);
+          }
+         ,message: {
+  content: 'Please wait while the file is being generated for saving.'
+ ,duration: 3
+          }
+         ,ended: true
+        }
+      ]
+// 24
+     ,[
+      ]
+// 25
+     ,[
+        {
+          func: function () {
+if (System._browser.camera.initialized) {
+  MMD_SA_options.Dungeon.run_event()
+}
+else {
+  MMD_SA.SpeechBubble.message(0, 'Choose a video input for motion capture first before you can record motion.', 5*1000)
+  MMD_SA_options.Dungeon.run_event(null,done_branch,0)
+}
+          }
+        },
+        {
+          func: function () {
+System._browser.camera._info =
+  '- Recording allows motion to be exported to a file later.\n'
++ '- If your PC is slow, choose a slower speed to ensure that you can capture all the frames.\n'
++ '- Live camera will always be recorded at normal speed.';
+          }
+         ,message: {
+  content: 'Choose a speed to record motion.\n1. x 1\n2. x 0.5\n3. x 0.25\n4. Cancel'
+ ,bubble_index: 3
+ ,branch_list: [
+  { key:1, branch_index:record_motion_branch+1 },
+  { key:2, branch_index:record_motion_branch+2 },
+  { key:3, branch_index:record_motion_branch+3 },
+  { key:4, branch_index:done_branch }
+  ]
+          }
+        }
+      ]
+// 26
+     ,[
+        {
+          func: function () {
+mirror_3D_off()
+System._browser.camera.motion_recorder.speed = 1
+System._browser.camera._info = ''
+DEBUG_show('(Motion recording STARTED / x1 speed)', 3)
+          }
+         ,ended: true
+        }
+      ]
+// 27
+     ,[
+        {
+          func: function () {
+mirror_3D_off()
+System._browser.camera.motion_recorder.speed = 0.5
+System._browser.camera._info = ''
+DEBUG_show('(Motion recording STARTED / x0.5 speed)', 3)
+          }
+         ,ended: true
+        }
+      ]
+// 28
+     ,[
+        {
+          func: function () {
+mirror_3D_off()
+System._browser.camera.motion_recorder.speed = 0.25
+System._browser.camera._info = ''
+DEBUG_show('(Motion recording STARTED / x0.25 speed)', 3)
           }
          ,ended: true
         }
@@ -3842,4 +4109,3 @@ window.addEventListener("SA_AR_onARFrame", (function () {
 if (MMD_SA_options.Dungeon_options)
   document.write('<script language="JavaScript" src="js/dungeon.js"></scr'+'ipt>');
 document.write('<script language="JavaScript" src="MMD.js/MMD_SA.js"></scr'+'ipt>');
-
