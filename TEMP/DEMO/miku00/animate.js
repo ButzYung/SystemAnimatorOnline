@@ -1847,7 +1847,7 @@ wireframe:{
   }
 
  ,SpeechBubble_branch: {
-    confirm_keydown:true,
+//    confirm_keydown:true,
     RE: /^(\d)\.\s/
   }
  ,SpeechBubble_scale: 1.25
