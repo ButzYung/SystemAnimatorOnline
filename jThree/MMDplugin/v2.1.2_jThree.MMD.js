@@ -1,4 +1,4 @@
-// (2022-04-26)
+// (2022-05-28)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -71,10 +71,10 @@ else
     })
 
     if (MMD_SA_options.use_speech_bubble && !MMD_SA_options.MMD_disabled) {
-      var SB = MMD_SA.SpeechBubble
+      const SB = MMD_SA.SpeechBubble
       SB._mesh.scale.x = SB._mesh.scale.y = SB._mesh.scale.z = 1
       if (!SB.visible)
-        jThree( "#SpeechBubbleMESH" ).hide()
+        MMD_SA.THREEX.mesh_obj.get("SpeechBubbleMESH").hide()
     }
   }
 
@@ -84,13 +84,14 @@ else
   });
 
 // CircularSpectrumMESH
-  var obj = MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]
+  let obj = MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]
   if (obj) {
     if (MMD_SA.music_mode || (WallpaperEngine_CEF_mode && MMD_SA.AudioFFT && MMD_SA.AudioFFT._has_audio)) {
       if (MMD_SA.AudioFFT && MMD_SA.AudioFFT._fft128) {
-        if (!MMD_SA_options.CircularSpectrum_position) {
-          var cv = MMD_SA.center_view
-          obj._obj.position.set(cv[0], cv[1]+10, cv[2])
+        let pos_spectrum = MMD_SA_options.CircularSpectrum_position
+        if (!pos_spectrum) {
+          pos_spectrum = MMD_SA.center_view
+          pos_spectrum[1] += 10
         }
 
 // for Dungeon
@@ -102,27 +103,31 @@ else
           if (!obj._pos_updated_) {
             MMD_SA_options.Dungeon.character.pos_update()
             obj._pos_updated_ = true
+            obj._obj.position.add(MMD_SA.TEMP_v3.fromArray(pos_spectrum))
           }
+        }
+        else {
+          obj._obj.position.fromArray(pos_spectrum)
         }
 
 //        var beat = (EV_usage_sub && EV_usage_sub.BD) ? EV_usage_sub.BD.beat : 0
-        var scale = obj._obj.scale
+        const scale = obj._obj.scale
         scale.x = scale.y = scale.z = 1
 
         obj.show()
 
-        var _fft      = MMD_SA.AudioFFT._fft128
-        var _fft_last = MMD_SA.AudioFFT._fft_last128
-        for (var i = 0, i_max = _fft.length; i < i_max; i++) {
-          var v = _fft[i]
-          var v_last = _fft_last[i] || 0
+        const _fft      = MMD_SA.AudioFFT._fft128
+        const _fft_last = MMD_SA.AudioFFT._fft_last128
+        for (let i = 0, i_max = _fft.length; i < i_max; i++) {
+          let v = _fft[i]
+          let v_last = _fft_last[i] || 0
           if (v > 100)
             v = 100
           if (v < v_last - 10)
             v = v_last - 10
           _fft_last[i] = v
 
-          var obj = jThree("#CircularSpectrum" + i + "MESH").three(0)
+          const obj = MMD_SA.THREEX.mesh_obj.get_three("CircularSpectrum" + i + "MESH")
           obj.material.opacity = MMD_SA_options.CircularSpectrum_opacity || 0.8
           obj.scale.y = 0.5 + (v/100) * 19.5
         }
@@ -1467,8 +1472,8 @@ this.fixedAxis = convV( bin.readVector(3) );
 	}
 	if ( ( this.flags & 0x800) !== 0 ) {
 // AT: localCoordinate
-//this.localCoordinate = [ convV( bin.readVector(3) ), convV( bin.readVector(3) ) ];
-		bin.readVector(3); bin.readVector(3); // dummy read
+this.localCoordinate = [ convV( bin.readVector(3) ), convV( bin.readVector(3) ) ];
+//		bin.readVector(3); bin.readVector(3); // dummy read
 		//this.localCoordinate = [ convV( bin.readVector(3) ), convV( bin.readVector(3) ) ];
 		//console.log('localCoordinate ', this.localCoordinate);
 	}
@@ -1862,7 +1867,7 @@ if (model_para_obj.skin_weight) {
 
 // AT: まばたきL/R
 let blink = this.morphs.find((m)=>m.name=="まばたき");
-if (blink && self.MMD_SA && MMD_SA_options.WebXR) {
+if (blink && self.MMD_SA && MMD_SA_options.user_camera.ML_models.enabled) {
   console.log("Use まばたきL/R")
   let blink_L = Object.assign({}, blink);
   let blink_R = Object.assign({}, blink);
@@ -2393,16 +2398,7 @@ if ((v.texture >= 0) && !MMD_SA.use_webgl2) {
 	geo.boundingSphere = geo.boundingBox.getBoundingSphere();
 
 // AT: adjust bb/bs for game
-if (self.MMD_SA && MMD_SA_options.Dungeon && (!model_para.is_object && !model_para.use_default_boundingBox)) {
-// save some headaches by setting xz center as (0,0), with equal xz size (z no bigger than x)
-  var _v3 = geo.boundingBox.size()
-  var _xz = (_v3.x + ((_v3.z > _v3.x) ? _v3.x : _v3.z))*0.5 *0.5 *(MMD_SA_options.Dungeon._bb_xz_factor_||1)
-  geo.boundingBox.min.x = geo.boundingBox.min.z = -_xz
-  geo.boundingBox.max.x = geo.boundingBox.max.z =  _xz
-
-  geo.boundingSphere = geo.boundingBox.getBoundingSphere()
-  geo.boundingSphere.radius *= 0.5
-}
+self.MMD_SA && MMD_SA_options.Dungeon && MMD_SA_options.Dungeon.utils.adjust_boundingBox(geo, model_para);
 
 console.log("boundingBox/Sphere-" + that._model_index, geo.boundingBox, geo.boundingSphere)
 	// done
@@ -2604,7 +2600,13 @@ if (this.boneKeys.length || this.morphKeys.length) {
 };
 VMD.prototype.load = function( url, onload ) {
 // AT: VMD by filename
-if (self.MMD_SA) MMD_SA.vmd_by_filename[decodeURIComponent(url.replace(/^.+[\/\\]/, "").replace(/\.vmd$/i, ""))] = this;
+if (self.MMD_SA) MMD_SA.vmd_by_filename[decodeURIComponent(url.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, ""))] = this;
+// AT: BVH
+if (/\.bvh$/i.test(url)) {
+  MMD_SA.BVHLoader().then(()=>{ BVHLoader.VMD = VMD; BVHLoader.load(toFileProtocol(decodeURIComponent(url))).then((bones)=>{ onload(BVHLoader.toVMD(bones)); }); });
+  return
+}
+
 	var that = this;
 	loadBuffer( url, function( xhr ) {
 		that.url = url;
@@ -2614,8 +2616,9 @@ if (self.MMD_SA) MMD_SA.vmd_by_filename[decodeURIComponent(url.replace(/^.+[\/\\
 };
 // AT: Use regular expression to filter frames (RE), that = this, stuff
 VMD.prototype.generateSkinAnimation = function( pmx, RE ) {
-var model_para_obj = self.MMD_SA && MMD_SA_options.model_para_obj_all[pmx._model_index]
-var motion_para = self.MMD_SA && MMD_SA_options.motion_para[decodeURIComponent(this.url.replace(/^.+[\/\\]/, "").replace(/\.vmd$/i, ""))];
+var model_para_obj = self.MMD_SA && MMD_SA_options.model_para_obj_all[pmx._model_index];
+var is_A_pose = /\.vmd$/i.test(this.url);
+var motion_para = self.MMD_SA && MMD_SA_options.motion_para[decodeURIComponent(this.url.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, ""))];
 var motion_sd = motion_para && motion_para.adjustment_per_model && (motion_para.adjustment_per_model[model_para_obj._filename] || motion_para.adjustment_per_model[model_para_obj._filename_cleaned] || motion_para.adjustment_per_model._default_);
 motion_sd = (motion_sd && motion_sd.skin_default) || {};
 var multi_model_motion = (MMD_SA_options.model_para_obj_all.length > 1) && motion_para && (motion_para.model_index_list || motion_para.model_name_RegExp)
@@ -2677,6 +2680,8 @@ var multi_model = (MMD_SA_options.model_para_obj_all.length > 1)
 var model_scale = (model_para_obj.model_scale||1) * ((MMD_SA_options.WebXR) ? (MMD_SA_options.WebXR.model_scale || 0.9) : 1);
 		boneKeys.forEach( function( w ) {
 			if ( v.name === w.name ) {
+// AT: rot for T-pose
+is_A_pose && MMD_SA.THREEX.utils.convert_A_pose_rotation_to_T_pose(v.name, w.rot);
 if ((multi_model && sd) || (model_scale != 1)) {
   w = Object.assign({}, w)
   w.rot = w.rot.slice()
@@ -2762,6 +2767,9 @@ keys.push({
  ,rot:  MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.fromArray(((_rot) ? [-_rot.x, _rot.y, -_rot.z] : [0,0,0]).map((n,i) => n*Math.PI/180+rot_add[xyz[i]]*((i==1)?1:-1))), 'YXZ').toArray()
  ,interp: new Uint8Array(key.interp || [20,20,20,20,20,20,20,20, 107,107,107,107,107,107,107,107])
 });
+
+// AT: rot for T-pose
+is_A_pose && MMD_SA.THREEX.utils.convert_A_pose_rotation_to_T_pose(v.name, keys[keys.length-1].rot);
     });
 //if (sd.keys && (v.name.indexOf("ＩＫ")!=-1)) {DEBUG_show(JSON.stringify(keys),0,1);DEBUG_show(JSON.stringify(sd),0,1);}
     last = keys[keys.length-1];
@@ -2778,10 +2786,9 @@ var _rot = key_mod.rot
 if (_pos)
   key.pos = [_pos.x, _pos.y, -_pos.z].map((n,i) => n+pos_add[xyz[i]]*((i==2)?-1:1))
 if (_rot) {
-//console.log(v.name+'/'+key_mod.frame)
-//console.log((new THREE.Quaternion()).set(key.rot[0], key.rot[1], key.rot[2], key.rot[3]).normalize())
-//console.log((new THREE.Quaternion()).setFromEuler((new THREE.Vector3()).setEulerFromQuaternion(MMD_SA._q1.set(key.rot[0],key.rot[1],key.rot[2],key.rot[3]).normalize(), 'YXZ'), 'YXZ').normalize())
   key.rot = MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.fromArray([-_rot.x, _rot.y, -_rot.z].map((n,i) => n*Math.PI/180+rot_add[xyz[i]]*((i==1)?1:-1))), 'YXZ').toArray()
+// AT: rot for T-pose
+  is_A_pose && MMD_SA.THREEX.utils.convert_A_pose_rotation_to_T_pose(v.name, key.rot);
 }
 if (key_mod.interp)
   key.interp = new Uint8Array(key_mod.interp)
@@ -2811,10 +2818,10 @@ if ((!motion_para || !motion_para.IK_disabled || motion_para.IK_disabled._IK_nam
     if (p[0]==0 && p[1]==0 && p[2]==0 && r[0]==0 && r[1]==0 && r[2]==0)
       IK_disabled = true
   }
-//let _filename = decodeURIComponent(that.url.replace(/^.+[\/\\]/, "").replace(/\.vmd$/i, ""))
+//let _filename = decodeURIComponent(that.url.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, ""))
 //if (/IA_HIGHER_light_version/.test(_filename)) console.log(_filename, keys)
   if (IK_disabled) {
-    let filename = decodeURIComponent(that.url.replace(/^.+[\/\\]/, "").replace(/\.vmd$/i, ""))
+    let filename = decodeURIComponent(that.url.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, ""))
 //console.log(filename, keys)
     motion_para = MMD_SA_options.motion_para[filename] = MMD_SA_options.motion_para[filename] || {};
     motion_para.IK_disabled = motion_para.IK_disabled || {
@@ -2838,7 +2845,7 @@ if (motion_para && motion_para.IK_disabled && motion_para.IK_disabled._IK_name_l
   if (motion_para.IK_disabled._IK_name_list.length == 0)
     delete motion_para.IK_disabled
   else
-    console.log("IK disabled auto:", decodeURIComponent(that.url.replace(/^.+[\/\\]/, "").replace(/\.vmd$/i, "")))
+    console.log("IK disabled auto:", decodeURIComponent(that.url.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, "")))
 }
 
 // AT: _timeMax
@@ -2861,7 +2868,7 @@ if (!self.MMD_SA || model_para_obj.morph_default._is_empty) {
 var _RE = self.MMD_SA && model_para_obj.morph_filter
 var that = this
 var targets_extra = [];
-var motion_para = self.MMD_SA && MMD_SA_options.motion_para[decodeURIComponent(this.url.replace(/^.+[\/\\]/, "").replace(/\.vmd$/i, ""))];
+var motion_para = self.MMD_SA && MMD_SA_options.motion_para[decodeURIComponent(this.url.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, ""))];
 var motion_md = motion_para && motion_para.adjustment_per_model && (motion_para.adjustment_per_model[model_para_obj._filename] || motion_para.adjustment_per_model[model_para_obj._filename_cleaned] || motion_para.adjustment_per_model._default_);
 motion_md = (motion_md && motion_md.morph_default) || {};
 
@@ -5764,7 +5771,6 @@ var skinnedMesh_updateMatrixWorld = function( force ) {
 		this.matrixWorldNeedsUpdate = false;
 		force = true;
 	}
-//if (this._mesh_parent && this._mesh_parent._RAF_timestamp_) { if (this._mesh_parent._update_count == null) this._mesh_parent._update_count=0; if (this._mesh_parent._RAF_timestamp_ != RAF_timestamp) { DEBUG_show(this._mesh_parent._update_count+'\n'+Date.now()); this._mesh_parent._update_count=0; }; this._mesh_parent._update_count++; }
 // AT: prevent duplicated updates for clones
 if (this._mesh_parent && this._mesh_parent._RAF_timestamp_) { if (this._mesh_parent._RAF_timestamp_ == RAF_timestamp) return; this._mesh_parent._RAF_timestamp_ = RAF_timestamp; }
 	for ( i = 0, l = this.children.length; i < l; i ++ ) {
@@ -5772,7 +5778,8 @@ if (this._mesh_parent && this._mesh_parent._RAF_timestamp_) { if (this._mesh_par
 		if ( child instanceof THREE.Bone ) {
 // AT: afterPhysics
 // .pmxBone can be undefined if the model is a clone
-if (!child.pmxBone || !child.pmxBone.afterPhysics)
+// don't update if this.matrixAutoUpdate is false
+if ((this.matrixAutoUpdate || force) && (!child.pmxBone || !child.pmxBone.afterPhysics))
 			child.update( this.identityMatrix, false );
 		} else {
 			child.updateMatrixWorld( true );
@@ -6661,7 +6668,7 @@ var head_name = "頭"//"首"//
 var _head_pos = null
 if (self.MMD_SA) {
   if (!model_para.is_object) {
-    _head_pos = MMD_SA.get_bone_position(mesh, head_name)
+    _head_pos = MMD_SA.THREEX.get_model(this._model_index).get_bone_position_by_MMD_name(head_name);
 //DEBUG_show(this._model_index,0,1)
   }
   if (this._model_index == 0) {
@@ -6703,7 +6710,8 @@ if (self.MMD_SA && _head_pos && (mesh.bones_by_name[head_name]) && (look_at_scre
   var look_at_mouse = (!look_at_mouse_disabled && MMD_SA_options.look_at_mouse) || (model_para.look_at_character != null) || model_para.look_at_target
 
 if (look_at_screen || look_at_mouse) {
-  var p_rotation_inversed = (MMD_SA_options.look_at_screen_parent_rotation || (System._browser.camera.facemesh.enabled && mesh.bones_by_name["全ての親"].quaternion) || MMD_SA.get_bone_rotation_parent(mesh, head_name)).inverse()
+// not using MMD_SA.get_bone_rotation_parent here as it includes the look-at-screen rotation from the previous frame
+  var p_rotation_inversed = (MMD_SA_options.look_at_screen_parent_rotation || (System._browser.camera.facemesh.enabled && mesh.bones_by_name["全ての親"].quaternion) || MMD_SA.get_bone_rotation_parent(mesh, head_name)).conjugate();
   var r = MMD_SA.face_camera(_head_pos, p_rotation_inversed)
 
   var angle_x_limit = para_SA.look_at_screen_angle_x_limit || [Math.PI*0.5, -Math.PI*0.5]
@@ -7376,6 +7384,8 @@ if (v._model_index > 0) return
 window.dispatchEvent(new CustomEvent("SA_MMD_model_all_process_bones"));
 		checkCallback();
 		motionTime += dt;
+// AT: event for stuff that have to be LAST after updateMotion
+window.dispatchEvent(new CustomEvent("SA_MMD_after_updateMotion"));
 	},
 	seekMotion: function( time, forceUpdate ) {
 		if ( !forceUpdate && !motionPlaying ) {

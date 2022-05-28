@@ -1,4 +1,4 @@
-// (2022-04-26)
+// (2022-05-28)
 
 MMD_SA.fn = {
 /*
@@ -50,14 +50,43 @@ else {
 //console.log(999, this.length+'/'+load_length)
     }
 
-   ,x_object_init: function () {
+   ,x_object_init: (function () {
+      function _x_object_show(forced) {
+if (!MMD_SA._x_object_displayed_once)
+  return
+if (!this.visible || forced) {
+  this.visible = true
+//  var obj = this._obj
+//  obj.scale.x = obj.scale.y = obj.scale.z = this.scale
+  if (!/^\#mikuPmx/.test(this.id)) {
+    MMD_SA.THREEX.mesh_obj.get(this.id).show()
+    return true
+  }
+}
+      }
+
+      function _x_object_hide(forced) {
+if (!MMD_SA._x_object_displayed_once)
+  return
+if (this.visible || forced) {
+  this.visible = false
+//  var obj = this._obj
+//  obj.scale.x = obj.scale.y = obj.scale.z = 0
+  if (!/^\#mikuPmx/.test(this.id)) {
+    MMD_SA.THREEX.mesh_obj.get(this.id).hide()
+    return true
+  }
+}
+      }
+
+      return function () {
   MMD_SA_options.x_object.forEach(function (x_object, idx) {
 MMD_SA_options.x_object_by_name[x_object.path.replace(/^.+[\/\\]/, "").replace(/\.x$/i, "")] = x_object
-x_object.id = "#x_object" + idx
-x_object.show = MMD_SA._x_object_show
-x_object.hide = MMD_SA._x_object_hide
+x_object.id = x_object.id || "#x_object" + idx;
+x_object.show = _x_object_show
+x_object.hide = _x_object_hide
 
-x_object._obj = jThree(x_object.id).three(0)
+x_object._obj = MMD_SA.THREEX.mesh_obj.get_three(x_object.id)
 // no need to update shadow here for .x objects
 /*
 var mesh = x_object._obj.children[0]
@@ -101,8 +130,8 @@ x_object.visible = (x_object.hidden_on_start) ? false : (x_object._obj.scale.x >
 //console.log(x_object)
 MMD_SA_options.mesh_obj_by_id[x_object.id] = MMD_SA_options.mesh_obj_by_id["#"+x_object.id] = x_object
 x_object.id = "#" + x_object.id
-x_object.show = MMD_SA._x_object_show
-x_object.hide = MMD_SA._x_object_hide
+x_object.show = _x_object_show
+x_object.hide = _x_object_hide
 
 if (/^\#mikuPmx(\d+)$/.test(x_object.id)) {
   x_object._obj = THREE.MMD.getModels()[parseInt(RegExp.$1)].mesh
@@ -121,7 +150,7 @@ this._obj.visible = v
 }
 else {
   if (!x_object._obj)
-    x_object._obj = jThree(x_object.id).three(0)
+    x_object._obj = MMD_SA.THREEX.mesh_obj.get_three(x_object.id)
 
   var mesh = (x_object._obj.children.length) ? x_object._obj.children[0] : x_object._obj
   if (x_object.castShadow) {
@@ -139,6 +168,7 @@ else {
 
   MMD_SA_options.mesh_obj_all = MMD_SA_options.x_object.concat(MMD_SA_options.mesh_obj)
     }
+    })()
 
    ,init: function () {
 // main START
@@ -250,10 +280,10 @@ for (var i = 0, len = MMD_SA_options.motion.length; i < len; i++) {
     continue
   }
 
-  var filename = decodeURIComponent(motion.path.replace(/^.+[\/\\]/, "").replace(/\.vmd$/i, ""))
+  var filename = decodeURIComponent(motion.path.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, ""))
   var para_SA = MMD_SA_options.motion_para[filename] || {}
 
-  var vmd = (jThree.getReferent) ? jThree.getReferent("#vmd" + i).three(0) : MMD_SA.vmd_by_filename[filename]
+  var vmd = MMD_SA.vmd_by_filename[filename]//(jThree.getReferent) ? jThree.getReferent("#vmd" + i).three(0) : MMD_SA.vmd_by_filename[filename]
   vmd._index = i
 
   if (motion.is_vmd_component) {
@@ -472,22 +502,49 @@ var bone = mesh.bones_by_name[p_bone.name]
 if (!bone)
   return
 
-var bone_objs = bone.skinMatrix.decompose()
-var pos = bone_objs[0]
-var rot = bone_objs[1]
+var obj = x_object._obj
+
+var pos, rot;
+var modelX;
+if (MMD_SA.THREEX.enabled) {
+  modelX = MMD_SA.THREEX.get_model(model_index)
+  const boneX = modelX.get_bone_by_MMD_name(p_bone.name);
+  if (!boneX) return;
+//console.log(boneX)
+//MMD_SA.THREEX.m1.copy(modelX.mesh.matrixWorld).invert()
+  boneX.matrixWorld.decompose(MMD_SA.THREEX.v1, MMD_SA.THREEX.q1, MMD_SA.THREEX.v2);
+  pos = MMD_SA.THREEX.v1.sub(modelX.mesh.position);
+//console.log(pos)
+  rot = MMD_SA.THREEX.q1;
+  if (modelX.type == 'VRM') {
+    rot.premultiply(MMD_SA.THREEX.q2.set(0,1,0,0));
+    rot.x *= -1;
+    rot.z *= -1;
+  }
+//console.log(MMD_SA.THREEX.e1.setFromQuaternion(rot, 'ZYX').multiplyScalar(180/Math.PI).toArray(), MMD_SA.THREEX.e2.setFromQuaternion(boneX.quaternion, 'ZYX').multiplyScalar(180/Math.PI).toArray(), new THREE.Vector3().setFromQuaternion(bone.skinMatrix.decompose()[1], 'ZYX').multiplyScalar(180/Math.PI).toArray())
+}
+else {
+  obj.useQuaternion = true
+
+// This is after updateMatrixWorld. The skinMatrix should be the latest.
+  const bone_objs = bone.skinMatrix.decompose()
+  pos = bone_objs[0]
+  rot = bone_objs[1]
+
 /*
-var pos = MMD_SA.get_bone_position(mesh, p_bone.name)
-var rot = MMD_SA.get_bone_rotation(mesh, p_bone.name)
+  pos = MMD_SA.get_bone_position(mesh, p_bone.name, mesh)
+  rot = MMD_SA.get_bone_rotation(mesh, p_bone.name, mesh)
 //DEBUG_show(pos.toArray()+'\n'+new THREE.Vector3().setEulerFromQuaternion(rot).toArray())
 */
-var obj = x_object._obj
+}
 
 obj.position.copy(pos)
 if (p_bone.position) {
-  obj.position.add(MMD_SA.TEMP_v3.set(p_bone.position.x, p_bone.position.y, -p_bone.position.z).applyQuaternion(rot))
+  const pos_offset = MMD_SA.TEMP_v3.set(p_bone.position.x, p_bone.position.y, -p_bone.position.z);
+//console.log(pos_offset.toArray().join(','))
+  obj.position.add(pos_offset.applyQuaternion(rot))
 }
 
-obj.useQuaternion = true
 obj.quaternion.copy(rot)
 if (p_bone.rotation) {
   if (!p_bone.rotation._quaternion) {

@@ -1,4 +1,4 @@
-// (2022-04-26)
+// (2022-05-28)
 
 /*!
  * jThree JavaScript Library v2.1.2
@@ -1003,15 +1003,16 @@ return this.normalize();
 
 // AT: to AxisAngle
 // http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToAngle/
+// https://github.com/mrdoob/three.js/blob/master/src/math/Vector4.js
 ,toAxisAngle: function () {
   if (this.w > 1) this.normalise(); // if w>1 acos and sqrt will produce errors, this cant happen if quaternion is normalised
   var angle = 2 * Math.acos(this.w);
   var s = Math.sqrt(1-this.w*this.w); // assuming quaternion normalised then w is less than 1, so term always positive.
-  if (s < 0.001) { // test to avoid divide by zero, s is always positive due to sqrt
+  if (s < 0.0001) { // test to avoid divide by zero, s is always positive due to sqrt
     // if s close to zero then direction of axis not important
-    x = this.x; // if it is important that axis is normalised then replace with x=1; y=z=0;
-    y = this.y;
-    z = this.z;
+    x = 1;//this.x; // if it is important that axis is normalised then replace with x=1; y=z=0;
+    y = 0;//this.y;
+    z = 0;//this.z;
   } else {
     x = this.x / s; // normalise axis
     y = this.y / s;
@@ -1076,6 +1077,11 @@ return this.normalize();
   };
 })()
 
+};
+
+// AT: workaround to support the latest three.js
+THREE.Quaternion.prototype.premultiply = function (q) {
+  return this.multiplyQuaternions(q, this);
 };
 
 // AT: spherical coordinate system
@@ -2218,7 +2224,23 @@ window.addEventListener("jThree_ready", function () {matrix = new THREE.Matrix4(
 
 }
 
+// AT: workaround to support the latest three.js
+,get _x() { return this.x; }
+,set _x(v) { this.x = v; }
+,get _y() { return this.y; }
+,set _y(v) { this.y = v; }
+,get _z() { return this.z; }
+,set _z(v) { this.z = v; }
+
 };
+
+THREE.Vector3.prototype.setFromMatrixPosition = THREE.Vector3.prototype.getPositionFromMatrix;
+
+THREE.Euler = THREE.Vector3;
+THREE.Euler.prototype._order = 'XYZ';
+THREE.Euler.prototype.isEuler = true;
+THREE.Euler.prototype._onChangeCallback = function () {};
+THREE.Euler.prototype.setFromQuaternion = THREE.Euler.prototype.setEulerFromQuaternion;
 
 // AT: spherical coordinate system
 THREE.Vector3.prototype.setFromVectorSpherical = (function () {
@@ -6883,7 +6905,7 @@ THREE.Object3D.prototype = {
 		// update children
 
 		for ( var i = 0, l = this.children.length; i < l; i ++ ) {
-
+//if (MMD_SA.MMD_started && (this.children[ i ]._model_index==0)) DEBUG_show(!!force+'/'+Date.now())
 			this.children[ i ].updateMatrixWorld( force );
 
 		}
@@ -9623,7 +9645,7 @@ if (!tex) tex = image;
 // AT: zip file
 // use XMLHttpRequestZIP for all textures and take advantage of the cache feature
 if (!/^(data|blob)\:/.test(url) || /\.zip\#/i.test(toLocalPath(url))) {
-  var xhr = new XMLHttpRequestZIP;
+  let xhr = new XMLHttpRequestZIP;
   xhr.onload = function () {
 //console.log(url, this.responseType, this.response)
 var obj_url = URL.createObjectURL(this.response)
@@ -19959,6 +19981,9 @@ function AT_painterSortStable(a,b) {
 
 	this.render = function ( scene, camera, renderTarget, forceClear ) {
 
+// AT: THREEX
+//if (self.MMD_SA && MMD_SA.THREEX.renderer.render( scene, camera )) return
+
 		var i, il,
 
 		webglObject, object,
@@ -19987,6 +20012,10 @@ if (!scene._RAF_timestamp_ || (scene._RAF_timestamp_ != RAF_timestamp)) { if (sc
 
 		_projScreenMatrix.multiplyMatrices( camera.projectionMatrix, camera.matrixWorldInverse );
 		_frustum.setFromMatrix( _projScreenMatrix );
+
+// AT: THREEX
+// after updateMatrixWorld, to save some headaches
+if (self.MMD_SA && MMD_SA.THREEX.renderer.render( scene, camera )) return
 
 		// update WebGL objects
 
@@ -23543,7 +23572,7 @@ else
 
 		} else {
 // AT: device framebuffer (mainly for WebXR)
-			framebuffer = this.device_framebuffer;//null;
+			framebuffer = MMD_SA.THREEX.renderer.device_framebuffer;//this.device_framebuffer;//null;
 
 			width = _viewportWidth;
 			height = _viewportHeight;
@@ -23888,21 +23917,6 @@ if (self.MMD_SA) MMD_SA.WebGL_initialized=true; window.dispatchEvent(new CustomE
 
 };
 
-// AT: device framebuffer (mainly for WebXR)
-Object.defineProperty(THREE.WebGLRenderer.prototype, "device_framebuffer", {
-  get: function () {
-return this._device_framebuffer || null;
-  }
-
- ,set: function (fb) {
-let _device_framebuffer = this._device_framebuffer || null;
-if (fb != _device_framebuffer) {
-  this._device_framebuffer = fb
-  let _gl = this.getContext()
-  _gl.bindFramebuffer(_gl.FRAMEBUFFER, fb);
-}
-  }
-});
 
 /**
  * @author szimek / https://github.com/szimek/
@@ -29488,6 +29502,9 @@ THREE.CubeGeometry = function ( width, height, depth, widthSegments, heightSegme
 	this.mergeVertices();
 
 };
+
+// AT: updated name
+THREE.BoxGeometry = THREE.CubeGeometry;
 
 THREE.CubeGeometry.prototype = Object.create( THREE.Geometry.prototype );
 /**
@@ -37371,14 +37388,15 @@ if (self.MMD_SA && !src) {
   '<mmd model="#mikuPmx' + (idx+1) + '" onLoad="(self.MMD_SA||parent.MMD_SA).fn.setupUI()" />\n'
     });
   }
-
+// AT: THREEX
+/*
   for (var i = 0, length = MMD_SA_options.x_object.length; i < length; i++) {
-    var x_obj = MMD_SA_options.x_object[i]
+    const x_obj = MMD_SA_options.x_object[i]
     if (x_obj.path)
       xml +=
   '			<obj id="x_object' + i + '" model="' + ((/^(\w+\:|\/)/.test(x_obj.path)) ? toFileProtocol(x_obj.path) : x_obj.path) + '" style="' + (x_obj.style || '') + '" onLoad="(self.MMD_SA||parent.MMD_SA).fn.setupUI()" />\n'
   }
-
+*/
 
 // z fighting/blinking issues (use a bigger "near" value? smaller near-to-far range?)
 //https://stackoverflow.com/questions/40328722/how-can-i-solve-z-fighting-using-three-js
@@ -37892,9 +37910,12 @@ else
 				} else {
 // AT: fov, aspect, near, far
 					obj = new THREE.PerspectiveCamera( tmp.fov, tmp.aspect, tmp.near, tmp.far );
+self.MMD_SA && MMD_SA.THREEX.camera.clone(obj);
 				}
 
 			}
+// AT: useQuaternion
+obj.useQuaternion=true
 
 			setObj( that, obj );
 
@@ -38101,6 +38122,7 @@ else
 // AT: light_list, shadow map Test
 if (self.MMD_SA) {
   var light = THREE_obj[THREE_obj.length-1]
+  MMD_SA.THREEX.light.clone(light)
 /*
   if (MMD_SA.light_list.length > 1) {//(this.getAttribute( "type" ) == "Dir") {
     light.castShadow = true
@@ -39031,10 +39053,12 @@ MMD_SA._renderer = that;
 
 						width  = w || MMD_SA_options.width;
 						height = h || MMD_SA_options.height;
-						renderer.setSize( width, height );
+//						renderer.setSize( width, height );
+MMD_SA.THREEX.renderer.setSize( width, height );
 
 						if ( renderer.__camera ) {
-							renderer.__camera.resize( width, height );
+//							renderer.__camera.resize( width, height );
+MMD_SA.THREEX.camera.resize( width, height );
 						}
 
 						renderer.__renderTarget.forEach( function( target ) {

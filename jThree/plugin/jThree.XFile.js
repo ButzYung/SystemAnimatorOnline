@@ -1,4 +1,4 @@
-// (2021-08-06)
+// (2022-05-28)
 
 /*!
  * jThree.XFile.js JavaScript Library v1.1
@@ -33,6 +33,9 @@
  */
 
 THREE.XLoader = function( url, fn, error ) {
+// AT: THREEX
+const THREE = MMD_SA.THREEX.THREE;
+
 	this.txrPath = /\//.test( url ) ? url.slice( 0, url.lastIndexOf( "/" ) + 1 ) : "";
 // AT: url
 this.url = url
@@ -51,7 +54,8 @@ this.url = url
 	this.meshNormalsVector = [];
 
 	this.gmt = new THREE.Geometry;
-	this.mtrs = new THREE.MeshFaceMaterial;
+// AT: THREEX
+	this.mtrs = this.MeshFaceMaterial();
 
 // AT: XMLHttpRequestZIP
 	var xhr = new XMLHttpRequestZIP;
@@ -85,7 +89,51 @@ if (!/\.zip/i.test(url)) {
 
 THREE.XLoader.prototype = {
 	constructor: THREE.XLoader,
+
+// AT: THREEX
+MeshFaceMaterial: function () {
+  return (MMD_SA.THREEX.enabled) ? { materials:[] } : new THREE.MeshFaceMaterial();
+},
+
+get mesh_material() { return (MMD_SA.THREEX.enabled) ? this.mtrs.materials : this.mtrs; },
+
+TextureLoader: function ( url, mapping, onLoad, onError ,para ) {
+  const THREE = MMD_SA.THREEX.THREE;
+
+		var image = new Image();
+// AT: texture_resolution_limit
+if (para && para.texture_resolution_limit) image._texture_resolution_limit = para.texture_resolution_limit;
+		var texture = new THREE.Texture( image, mapping );
+
+// always use the old THREE version loader to take advantage of the zip loading and other SA-specific feature
+		var loader = new self.THREE.ImageLoader();
+
+		loader.addEventListener( 'load', function ( event ) {
+
+			texture.image = event.content;
+			texture.needsUpdate = true;
+
+			if ( onLoad ) onLoad( texture );
+
+		} );
+
+		loader.addEventListener( 'error', function ( event ) {
+
+			if ( onError ) onError( event.message );
+
+		} );
+
+		loader.load( url, image );
+
+//		texture.sourceFile = url;
+
+		return texture;
+
+},
+
 	parse: function( text ) {
+// AT: THREEX
+const THREE = MMD_SA.THREEX.THREE;
 
 		var that = this;
 
@@ -97,49 +145,6 @@ THREE.XLoader.prototype = {
 			this.uvIdx.forEach( function( arr ) {
 				that.gmt.faceVertexUvs[ 0 ].push( [ that.uvArr[ arr[ 0 ] ], that.uvArr[ arr[ 1 ] ], that.uvArr[ arr[ 2 ] ], that.uvArr[ arr[ 3 ] ] ] );
 			} );
-/*
-var uv_x_min = []
-var uv_x_max = []
-var uv_y_min = []
-var uv_y_max = []
-for (var i = 0; i < 20; i++) {
-  uv_x_min[i] =  999
-  uv_x_max[i] = -999
-  uv_y_min[i] =  999
-  uv_y_max[i] = -999
-}
-
-this.gmt.faces.forEach( function( face, idx ) {
-  var m_index = face.materialIndex
-  that.gmt.faceVertexUvs[ 0 ][idx].forEach(function (uv) {
-if (!uv) return
-    uv_x_min[m_index] = Math.min(uv_x_min[m_index], uv.x)
-    uv_x_max[m_index] = Math.max(uv_x_max[m_index], uv.x)
-    uv_y_min[m_index] = Math.min(uv_y_min[m_index], uv.y)
-    uv_y_max[m_index] = Math.max(uv_y_max[m_index], uv.y)
-  });
-});
-
-for (var i = 0; i < 20; i++) {
-  if (uv_x_min[i] ==  999)
-    break
-
-  var map = this.mtrs.materials[i].map
-  if (!map)
-    continue
-
-  var x_repeat = Math.round(Math.max(Math.abs(uv_x_min[i]), Math.abs(uv_x_max[i])-1))
-  var y_repeat = Math.round(Math.max(Math.abs(uv_y_min[i]), Math.abs(uv_y_max[i])-1))
-  if (!x_repeat && !y_repeat)
-    continue
-
-  map.wrapS = map.wrapT = THREE.RepeatWrapping;
-//  map.repeat.set(2, 2)
-//  map.needsUpdate = true
-
-  console.log(uv_x_min[i]+','+uv_y_min[i]+'/'+uv_x_max[i]+','+uv_y_max[i])
-}
-*/
 		}
 
 		if ( this.vColors.length ) {
@@ -149,20 +154,29 @@ for (var i = 0; i < 20; i++) {
 			} );
 		}
 
+// AT: THREEX
+if (!MMD_SA.THREEX.enabled)
 		this.gmt.computeCentroids();
+
 // AT: always compute face normals (mainly for better collision detetction)
 //		!this.meshNormalsVector.length && this.gmt.computeFaceNormals();
 this.gmt.computeFaceNormals();
-		this.gmt.computeVertexNormals();
-// AT: boundings
-if (self.MMD_SA) {
-  this.gmt.computeBoundingBox();
-  this.gmt.boundingSphere = this.gmt.boundingBox.getBoundingSphere();
-  console.log(toLocalPath(this.txrPath)+'\n'+JSON.stringify(this.gmt.boundingBox))
 
-//  this.gmt = THREE.BufferGeometryUtils.fromGeometry(this.gmt)
+		this.gmt.computeVertexNormals();
+
+if (MMD_SA.THREEX.enabled) {
+  const buffer_geometry = this.gmt.toBufferGeometry();
+  this.gmt.dispose();
+  this.gmt = buffer_geometry;
+//  console.log(this.gmt)
 }
-		!this.txrLength && this.onload( new THREE.Mesh( this.gmt, this.mtrs ) );
+
+// AT: boundings
+this.gmt.computeBoundingBox();
+this.gmt.boundingSphere = this.gmt.boundingBox.getBoundingSphere(new THREE.Sphere());
+console.log(toLocalPath(this.txrPath)+'\n'+JSON.stringify(this.gmt.boundingBox))
+
+		!this.txrLength && this.onload( new THREE.Mesh( this.gmt, this.mesh_material ) );
 
 // AT: need to keep .txrPath
 //		this.txrPath =
@@ -208,6 +222,8 @@ if (self.MMD_SA) {
 		return "rgb(" + Math.floor( r * 100 ) + "%," + Math.floor( g * 100 ) + "%," + Math.floor( b * 100 ) + "%)";
 	},
 	Mesh: function( row ) {
+// AT: THREEX
+const THREE = MMD_SA.THREEX.THREE;
 
 		row = row.split( ";" );
 
@@ -238,6 +254,8 @@ if (self.MMD_SA) {
 
 	},
 	MeshNormals: function( row ) {
+// AT: THREEX
+const THREE = MMD_SA.THREEX.THREE;
 
 		row = row.split( ";" );
 
@@ -270,22 +288,20 @@ if (self.MMD_SA) {
 	MeshMaterialList: function( row ) {
 		if ( this.n < 3 ) return;
 		this.gmt.faces[ this.n - 3 ].materialIndex = +row.match( /[0-9]+/ )[ 0 ];
-/*
-if (this.gmt.faces[ this.n - 3 ].materialIndex==0) {
-  if (!this._TEMP_face_)
-    this._TEMP_face_=[]
-  this._TEMP_face_.push(this.gmt.faces[ this.n - 3 ])
-}
-*/
 	},
 	Material: function( row ) {
+// AT: THREEX
+const THREE = MMD_SA.THREEX.THREE;
+
 		row = row.split( ";" );
 
-		if ( this.n === 1 ) {
-			this.mtr = new THREE.MeshPhongMaterial( { ambient: "#444", color: this.toRgb( row[ 0 ], row[ 1 ], row[ 2 ] ), opacity: +row[ 3 ] } );
-
 // AT: material_para
-var material_para = this.material_para[this.mtrs.materials.length] || this.material_para._default_ || {}
+const material_para = this.material_para[this.mtrs.materials.length] || this.material_para._default_ || {}
+
+		if ( this.n === 1 ) {
+// AT: ignore ambient as it no longer exists in newer three.js
+			this.mtr = new THREE.MeshPhongMaterial( { /*ambient: "#444",*/ color: this.toRgb( row[ 0 ], row[ 1 ], row[ 2 ] ), opacity: +row[ 3 ] } );
+
 if (material_para.side == 2)
   this.mtr.side = THREE.DoubleSide
 if (material_para.transparent === false)
@@ -297,9 +313,16 @@ if (material_para.alphaTest != null)
 this.transparency_check(material_para)
 
 // AT: base color (will be reverted if the material has texture)
-this.mtr.base_color = [row[ 0 ], row[ 1 ], row[ 2 ]].join(",")
-this.mtr.color.setStyle("#FFF")
-this.mtr.ambient.setStyle(material_para.ambient || "#FFF")
+if (MMD_SA.THREEX.enabled) {
+  const ambient = new THREE.Color()
+  ambient.setStyle(material_para.ambient || "#FFF")
+  this.mtr.color.setStyle(material_para.ambient || this.toRgb( row[ 0 ]*ambient.r, row[ 1 ]*ambient.g, row[ 2 ]*ambient.b ))
+}
+else {
+  this.mtr.base_color = [row[ 0 ], row[ 1 ], row[ 2 ]].join(",")
+  this.mtr.color.setStyle("#FFF")
+  this.mtr.ambient.setStyle(material_para.ambient || "#FFF")
+}
 
 			this.mtrs.materials.push( this.mtr );
 		} else if ( this.n === 2 ) {
@@ -307,10 +330,12 @@ this.mtr.ambient.setStyle(material_para.ambient || "#FFF")
 			this.mtr.shininess = (+ row[ 0 ]) || 5;
 		} else if ( this.n === 3 ) {
 //this.mtr.specular.setStyle("rgb(100%,100%,100%)")
-			this.mtr.specular.setStyle( this.toRgb( row[ 0 ], row[ 1 ], row[ 2 ] ) );
+			this.mtr.specular.setStyle('#000');// this.toRgb( row[ 0 ], row[ 1 ], row[ 2 ] ) );
 //console.log([row[ 0 ], row[ 1 ], row[ 2 ]].join(","))
 		} else if ( this.n === 4 ) {
-			this.mtr.emissive.setStyle( this.toRgb( row[ 0 ], row[ 1 ], row[ 2 ] ) );
+const ambient = new THREE.Color()
+if (MMD_SA.THREEX.enabled) ambient.setStyle('#000');//material_para.ambient || "#444")
+			this.mtr.emissive.setStyle( this.toRgb( row[ 0 ]*ambient.r, row[ 1 ]*ambient.g, row[ 2 ]*ambient.b ) );
 		}
 
 	},
@@ -346,6 +371,9 @@ transparency_check: (function () {
 shift_jis_decoder: new TextDecoder('shift-jis'),
 
 	TextureFilename: function( row ) {
+// AT: THREEX
+const THREE = MMD_SA.THREEX.THREE;
+
 //console.log(this.txrPath + ',' + row)
 // AT: .x model may have texture filenames with repeated blackslashes. Use .split(/\\+/) instead of .split( "\\" ).
 		row = row.split( '"' )[ 1 ].split(/\\+/).join( "/" ).split( "*" )[ 0 ];
@@ -360,7 +388,7 @@ row = material_para.row || row
 // AT: revert base color
 if (this.mtr.base_color) {
   this.mtr.color.setArray(this.mtr.base_color.split(",").map(function (c) { return parseFloat(c) * 255; }))
-  this.mtr.base_color = null
+  delete this.mtr.base_color
   this.mtr.ambient.setStyle(material_para.ambient || "#444")
 }
 
@@ -372,19 +400,17 @@ this.transparency_check(material_para, row)
 		}
 
 // AT: check if file exists
-if (self.MMD_SA) {
-  if (!FSO_OBJ.FileExists(toLocalPath(_txrPath + row))) {
-    console.error("Texture file not found (" + toLocalPath(_txrPath + row) + ")")
-    return
-  }
+if (!FSO_OBJ.FileExists(toLocalPath(_txrPath + row))) {
+  console.error("Texture file not found (" + toLocalPath(_txrPath + row) + ")")
+  return
 }
 
 		var that = this;
 		this.txrLength++;
 
 // AT: child animation as texture
-if (self.MMD_SA && MMD_SA_options.child_animation_as_texture && MMD_SA_options.child_animation_as_texture_swap_list) {
-  var texture_swapped = 0
+if (MMD_SA_options.child_animation_as_texture && MMD_SA_options.child_animation_as_texture_swap_list) {
+  let texture_swapped = 0
   MMD_SA_options.child_animation_as_texture_swap_list.forEach(function (filename, idx) {
     if (row.indexOf(filename) == -1)
       return
@@ -395,30 +421,29 @@ if (self.MMD_SA && MMD_SA_options.child_animation_as_texture && MMD_SA_options.c
 
   if (texture_swapped) {
     if ( --that.txrLength == 0 )
-      that.onload( new THREE.Mesh( that.gmt, that.mtrs ) )
+      that.onload( new THREE.Mesh( that.gmt, that.mesh_material ) )
     return
   }
 }
 
 // AT: normal map, specular map, etc
-if (self.MMD_SA) {
-  var is_zip = /\.zip\#/i.test(toLocalPath(_txrPath))
+  const is_zip = /\.zip\#/i.test(toLocalPath(_txrPath))
 
-  var row_normalMap = row.replace(/\.(png|jpg|bmp|jpeg|tga)$/i, "_normal." + ((material_para.use_normal_jpg)?"jpg":"png"))
-  var normalMap = _txrPath + row_normalMap
+  const row_normalMap = row.replace(/\.(png|jpg|bmp|jpeg|tga)$/i, "_normal." + ((material_para.use_normal_jpg)?"jpg":"png"))
+  const normalMap = _txrPath + row_normalMap
   if (material_para.use_normal || ((browser_native_mode || is_zip) ? material_para.use_normal : FSO_OBJ.FileExists(toLocalPath(normalMap)))) {
 		if ( this.txrs[ row_normalMap ] ) {
 			this.mtr.normalMap = this.txrs[ row_normalMap ];
 			return;
 		}
 		this.txrLength++;
-		this.mtr.normalMap = this.txrs[ row_normalMap ] = THREE.ImageUtils.loadTexture( _txrPath + row_normalMap, undefined, function() {
+		this.mtr.normalMap = this.txrs[ row_normalMap ] = that.TextureLoader( _txrPath + row_normalMap, undefined, function() {
 			if ( --that.txrLength ) return;
-			that.onload( new THREE.Mesh( that.gmt, that.mtrs ) );
+			that.onload( new THREE.Mesh( that.gmt, that.mesh_material ) );
 			that = null;
 		}, function() {
 			if ( --that.txrLength ) return;
-			that.onerror( new THREE.Mesh( that.gmt, that.mtrs ) );
+			that.onerror( new THREE.Mesh( that.gmt, that.mesh_material ) );
 			that = null;
 		} );
 // AT: always us RepeatWrapping
@@ -426,19 +451,19 @@ this.mtr.normalMap.wrapS = this.mtr.normalMap.wrapT = THREE.RepeatWrapping;
 console.log("Normal map", row_normalMap)
   }
 
-  var row_specularMap = row.replace(/\.(png|jpg|bmp|jpeg|tga)$/i, "_specular." + ((material_para.use_specular_jpg)?"jpg":"png"))
-  var specularMap = _txrPath + row_specularMap
+  const row_specularMap = row.replace(/\.(png|jpg|bmp|jpeg|tga)$/i, "_specular." + ((material_para.use_specular_jpg)?"jpg":"png"))
+  const specularMap = _txrPath + row_specularMap
   if (material_para.use_specular || ((browser_native_mode || is_zip) ? material_para.use_specular : FSO_OBJ.FileExists(toLocalPath(specularMap)))) {
 		if ( this.txrs[ row_specularMap ] ) {
 			this.mtr.specularMap = this.txrs[ row_specularMap ];
 			return;
 		}
 		this.txrLength++;
-		this.mtr.specularMap = this.txrs[ row_specularMap ] = THREE.ImageUtils.loadTexture( _txrPath + row_specularMap, undefined, function(tex_specular) {
-var row_metalMap = row.replace(/\.(png|jpg|bmp|jpeg|tga)$/i, "_metalness." + ((material_para.use_metalness_jpg)?"jpg":"png"))
-var metalMap = _txrPath + row_metalMap
+		this.mtr.specularMap = this.txrs[ row_specularMap ] = that.TextureLoader( _txrPath + row_specularMap, undefined, function(tex_specular) {
+const row_metalMap = row.replace(/\.(png|jpg|bmp|jpeg|tga)$/i, "_metalness." + ((material_para.use_metalness_jpg)?"jpg":"png"))
+const metalMap = _txrPath + row_metalMap
 if (material_para.use_metalness || ((browser_native_mode || is_zip) ? material_para.use_metalness : FSO_OBJ.FileExists(toLocalPath(metalMap)))) {
-  THREE.ImageUtils.loadTexture( _txrPath + row_metalMap, undefined, function(tex_metal) {
+  that.TextureLoader( _txrPath + row_metalMap, undefined, function(tex_metal) {
     let canvas = document.createElement("canvas")
     let w = canvas.width  = tex_specular.image.width
     let h = canvas.height = tex_specular.image.height
@@ -458,7 +483,7 @@ if (material_para.use_metalness || ((browser_native_mode || is_zip) ? material_p
     console.log("Metal map merged with specular map", row_metalMap)
 
 			if ( --that.txrLength ) return;
-			that.onload( new THREE.Mesh( that.gmt, that.mtrs ) );
+			that.onload( new THREE.Mesh( that.gmt, that.mesh_material ) );
 			that = null;
   });
   return;
@@ -481,11 +506,11 @@ else if (!material_para.use_specular_as_metalness) {
 }
 
 			if ( --that.txrLength ) return;
-			that.onload( new THREE.Mesh( that.gmt, that.mtrs ) );
+			that.onload( new THREE.Mesh( that.gmt, that.mesh_material ) );
 			that = null;
 		}, function() {
 			if ( --that.txrLength ) return;
-			that.onerror( new THREE.Mesh( that.gmt, that.mtrs ) );
+			that.onerror( new THREE.Mesh( that.gmt, that.mesh_material ) );
 			that = null;
 		} );
 this.mtr.specular.setStyle("rgb(100%,100%,100%)");
@@ -493,15 +518,14 @@ this.mtr.specular.setStyle("rgb(100%,100%,100%)");
 this.mtr.specularMap.wrapS = this.mtr.specularMap.wrapT = THREE.RepeatWrapping;
 console.log("Specular map", row_specularMap)
   }
-}
 
-		this.mtr.map = this.txrs[ row ] = THREE.ImageUtils.loadTexture( _txrPath + row, undefined, function() {
+		this.mtr.map = this.txrs[ row ] = this.TextureLoader( _txrPath + row, undefined, function() {
 			if ( --that.txrLength ) return;
-			that.onload( new THREE.Mesh( that.gmt, that.mtrs ) );
+			that.onload( new THREE.Mesh( that.gmt, that.mesh_material ) );
 			that = null;
 		}, function() {
 			if ( --that.txrLength ) return;
-			that.onerror( new THREE.Mesh( that.gmt, that.mtrs ) );
+			that.onerror( new THREE.Mesh( that.gmt, that.mesh_material ) );
 			that = null;
 		} );
 // AT: always us RepeatWrapping
@@ -510,6 +534,9 @@ this.mtr.map.wrapS = this.mtr.map.wrapT = THREE.RepeatWrapping;
 this.transparency_check(material_para, row)
 	},
 	MeshTextureCoords: function( row ) {
+// AT: THREEX
+const THREE = MMD_SA.THREEX.THREE;
+
 		if ( this.n === 1 ) return;
 		row = row.split( ";" );
 		var v;
@@ -561,13 +588,12 @@ if (this._material_para)
   return this._material_para
 
 this._material_para = {}
-if (self.MMD_SA) {
-  var model_filename = toLocalPath(this.url).replace(/^.+[\/\\]/, "")
-  var model_filename_cleaned = model_filename.replace(/[\-\_]copy\d+\.x$/, ".x").replace(/[\-\_]v\d+\.x$/, ".x")
-  var model_para = MMD_SA_options.model_para[model_filename] || MMD_SA_options.model_para[model_filename_cleaned]
-  this._material_para = (model_para && model_para.material_para) || this._material_para
+
+const model_filename = toLocalPath(this.url).replace(/^.+[\/\\]/, "")
+const model_filename_cleaned = model_filename.replace(/[\-\_]copy\d+\.x$/, ".x").replace(/[\-\_]v\d+\.x$/, ".x")
+const model_para = MMD_SA_options.model_para[model_filename] || MMD_SA_options.model_para[model_filename_cleaned]
+this._material_para = (model_para && model_para.material_para) || this._material_para
 //console.log(999, model_filename_cleaned, this._material_para)
-}
 
 return this._material_para
   }
@@ -580,7 +606,7 @@ jThree.modelHooks.x = function( url, loaded, errored ) {
 if (!loaded) return
 //console.log(mesh)
 //mesh.castShadow=true
-//if (self.MMD_SA) mesh.castShadow = !!MMD_SA_options.use_shadowMap;
+//mesh.castShadow = !!MMD_SA_options.use_shadowMap;
 
 // AT: model_para
 // AT: instanced drawing
