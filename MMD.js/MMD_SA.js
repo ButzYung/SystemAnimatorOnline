@@ -4921,7 +4921,7 @@ MMD_SA.reset_camera()
 MMD_SA._reset_camera = MMD_SA.reset_camera
 MMD_SA.reset_camera = function () {}
 MMD_SA._trackball_camera.enabled = false
-xr.camera.matrixAutoUpdate = false;
+this.camera.matrixAutoUpdate = false;
 
 self.THREE.MMD.getModels()[0].mesh.visible = false
 //document.getElementById("SL_Host").style.visibility = "hidden"
@@ -4956,7 +4956,6 @@ if (1) {
 window.dispatchEvent(new CustomEvent("SA_AR_onSessionStarted"));
 
 session.requestAnimationFrame(xr.onARFrame);
-System._browser.console.log(4)
   }
 
  ,restore_scene: function () {
@@ -8191,10 +8190,11 @@ c.position.copy(camera.position)
 c.quaternion.copy(camera.quaternion)
 c.up.copy(camera.up)
 
-if (MMD_SA.WebXR.session) {
-  c.projectionMatrix.copy(camera.projectionMatrix)
+c.matrixAutoUpdate = camera.matrixAutoUpdate
+if (!c.matrixAutoUpdate) {
   c.matrix.copy(camera.matrix)
   c.matrixWorld.copy(camera.matrixWorld)
+  c.projectionMatrix.copy(camera.projectionMatrix)
 }
       },
 
