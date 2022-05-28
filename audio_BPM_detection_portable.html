@@ -74,21 +74,26 @@ require('electron').ipcRenderer.on('audio_BPM_detection_finished', function (eve
 */
 
 onload = function () {
-  var e_remote = require('electron').remote
-//  var e_window = e_remote.getCurrentWindow()
-
   if (/file\=([^\&]+)/.test(self.location.search)) {
-    var path = toFileProtocol(decodeURIComponent(RegExp.$1))
+    const path = toFileProtocol(decodeURIComponent(RegExp.$1))
 //"C:\\Users\\user\\Desktop\\Youthful Days' Graffiti (Extended Mix).mp3"
 
-    var BPM_by_id3 = (/BPM_by_id3\=([^\&]+)/.test(self.location.search)) ? parseFloat(RegExp.$1) : 0
+    const BPM_by_id3 = (/BPM_by_id3\=([^\&]+)/.test(self.location.search)) ? parseFloat(RegExp.$1) : 0
 //alert(BPM_by_id3)
-    var window_id = (/window_id\=([^\&]+)/.test(self.location.search)) ? parseInt(RegExp.$1) : -1
+    const window_id = (/window_id\=([^\&]+)/.test(self.location.search)) ? parseInt(RegExp.$1) : -1
 
     Audio_BPM_detection_portable(path, {BPM_by_id3:BPM_by_id3}, function (data) {
-var data_all = { data:data, window_id:window_id }
-e_remote.getGlobal("mainWindow_postMessage")("audio_BPM_detection_finished", JSON.stringify(data_all))
-setTimeout(function () { self.close() }, 500)
+const data_all = { data:data, window_id:window_id }
+try{
+  const e_remote = require('electron').remote || require('@electron/remote');
+
+  e_remote.getGlobal("mainWindow_postMessage")("audio_BPM_detection_finished", JSON.stringify(data_all))
+  setTimeout(function () { self.close() }, 500)
+}
+catch (err) {
+  DEBUG_show(err,0,1)
+  setTimeout(function () { self.close() }, 10*1000)
+}
     });
   }
   else {
