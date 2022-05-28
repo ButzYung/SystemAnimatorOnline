@@ -5075,7 +5075,7 @@ if (pose) {
     }
   }
 
-  const DPR = this.renderer.devicePixelRatio / window.devicePixelRatio;
+  const DPR = ((MMD_SA.THREEX.enabled) ? 1 : this.renderer.devicePixelRatio) / window.devicePixelRatio;
   for (let view of pose.views) {
     const viewport = session.renderState.baseLayer.getViewport(view);
     this.renderer.obj.setViewport(viewport.x*DPR, viewport.y*DPR, viewport.width*DPR, viewport.height*DPR);
