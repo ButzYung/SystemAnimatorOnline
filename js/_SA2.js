@@ -1,4 +1,4 @@
-// (2021-12-24)
+// (2022-05-28)
 
 var IPC
 
@@ -328,10 +328,6 @@ if (WallpaperEngine_mode)
   System.Gadget.Settings._writeSettings()
       break
 
-    case "FACEBOOK":
-Facebook_SA.tray_menu_func(para)
-      break
-
     case "CUSTOM":
 System._browser.tray_menu_custom.process_func && System._browser.tray_menu_custom.process_func(para)
       break
@@ -382,10 +378,6 @@ console.log("IPC message:" + decodeURIComponent(type))
 } catch (err) { console.error(err) }
 }
 
-   ,ipcRenderer_Facebook: function (event, message) {
-var para = message.split("|")
-Facebook_SA.IPC_Facebook(para)
-    }
   }
 })();
 
@@ -416,10 +408,6 @@ Facebook_SA.IPC_Facebook(para)
 
   if (!is_SA_child_animation && returnBoolean("UseWebcamHeadtracking"))
     document.write('<script language="JavaScript" src="js/headtracker_ar.js"></scr'+'ipt>')
-
-  if (self.use_Facebook_API) {
-    document.write('<script language="JavaScript" src="js/facebook_api.js"></scr'+'ipt>')
-  }
 
   if (gallery.length && !gallery_cache_obj.SS_mode) {
     var galleries = (SEQ_gallery) ? SEQ_gallery : [{gallery:gallery}]
@@ -494,10 +482,6 @@ ipcRenderer.on('capturePage', function (event, message) {
 
 ipcRenderer.on('tray_menu', function (event, message) {
   IPC.active_IPC.ipcRenderer_tray_menu(event, message)
-});
-
-ipcRenderer.on('Facebook', function (event, message) {
-  IPC.active_IPC.ipcRenderer_Facebook(event, message)
 });
       }
 
