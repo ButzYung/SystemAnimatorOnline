@@ -4881,7 +4881,6 @@ if (AR_options.light_estimation_enabled !== false) {
   }
 }
 
-System._browser.console.log(1)
 if (!this.reticle) {
   let geometry = new THREE.RingGeometry(0.1, 0.11, 24, 1);
   geometry.applyMatrix(new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(-90)));
@@ -4915,7 +4914,6 @@ if (xr.ground_plane)
 }
 this.reticle.visible = false
 
-System._browser.console.log(2)
 this.hit_ground_y = null
 this.hit_ground_y_lowest = null
 
@@ -4925,7 +4923,7 @@ MMD_SA.reset_camera = function () {}
 MMD_SA._trackball_camera.enabled = false
 xr.camera.matrixAutoUpdate = false;
 
-THREE.MMD.getModels()[0].mesh.visible = false
+self.THREE.MMD.getModels()[0].mesh.visible = false
 //document.getElementById("SL_Host").style.visibility = "hidden"
 
 let ao = SL_MC_video_obj && SL_MC_video_obj.vo && SL_MC_video_obj.vo.audio_obj;
@@ -4933,7 +4931,6 @@ if (ao && !ao.paused) {
   SL_MC_Play()
 }
 
-System._browser.console.log(3)
 if (1) {
   if (!this.use_dummy_webgl) {
     document.getElementById("SL").style.visibility = MMD_SA.THREEX.SL.style.visibility = "hidden"
