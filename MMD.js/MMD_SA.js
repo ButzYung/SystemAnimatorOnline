@@ -7190,6 +7190,8 @@ data.renderer = new THREE.WebGLRenderer({
   preserveDrawingBuffer: true
 });
 
+data.renderer.setPixelRatio(window.devicePixelRatio);
+
 window.addEventListener("jThree_ready", ()=>{
   v1 = new THREE.Vector3()
   v2 = new THREE.Vector3()
