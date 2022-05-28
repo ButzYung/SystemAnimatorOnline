@@ -1,4 +1,4 @@
-// (2022-04-26)
+// (2022-05-28)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -236,8 +236,7 @@ d.PC_follower_list.forEach(function (para) {
     return
 
   if (obj.rot_base) {
-    obj._obj.rotation.copy(obj.rot_base).multiplyScalar(Math.PI/180).add(that.rot)
-    obj._obj.rotation.x
+    obj._obj.rotation.copy(MMD_SA.TEMP_v3.copy(obj.rot_base)).multiplyScalar(Math.PI/180).add(that.rot)
     if (that.about_turn)
       obj._obj.rotation.add(MMD_SA.TEMP_v3.set(0,Math.PI,0))
     obj._obj.quaternion.setFromEuler(obj._obj.rotation)
@@ -250,7 +249,7 @@ d.PC_follower_list.forEach(function (para) {
       }
       else
         obj._ground_normal.copy(that.ground_normal)
-      var ground_q = new THREE.Quaternion().setFromRotationMatrix(MMD_SA.TEMP_m4.lookAt(MMD_SA.TEMP_v3.set(0,0,0), MMD_SA._v3a.set(0,0,-1), obj._ground_normal))
+      const ground_q = new THREE.Quaternion().setFromRotationMatrix(MMD_SA.TEMP_m4.lookAt(MMD_SA.TEMP_v3.set(0,0,0), MMD_SA._v3a.set(0,0,-1), obj._ground_normal))
 
       MMD_SA.TEMP_q.copy(obj._obj.quaternion)
       obj._obj.quaternion.copy(ground_q).multiply(MMD_SA.TEMP_q)
@@ -267,8 +266,8 @@ d.PC_follower_list.forEach(function (para) {
   }
   pos.add(that.pos)
   if (para.grounded) {
-    var x = ~~(pos.x/d.grid_size)
-    var y = ~~(pos.z/d.grid_size)
+    const x = ~~(pos.x/d.grid_size)
+    const y = ~~(pos.z/d.grid_size)
     pos.y = d.get_para(x,y,true).ground_y || 0
   }
 
@@ -714,7 +713,7 @@ inventory = {
 
  ,UI: {
     info: {
-      scale: 1.5
+      scale: 1.5*2
     }
   }
 
@@ -3012,8 +3011,8 @@ var mesh = THREE.MMD.getModels()[0].mesh
 mesh.geometry.boundingBox.expandByScalar(20)
 mesh.geometry.boundingSphere.radius += 20
 
-var head_pos_absolute = MMD_SA.get_bone_position(mesh, "頭")
-var head_pos = MMD_SA._v3a.copy(head_pos_absolute).sub(mesh.position)
+var head_pos_absolute = MMD_SA.get_bone_position(mesh, "頭");
+var head_pos = MMD_SA._v3a.copy(head_pos_absolute).sub(mesh.position);
 //DEBUG_show(head_pos.toArray())
 
 var camera_obj = MMD_SA._trackball_camera.object
@@ -3024,6 +3023,7 @@ camera_obj.lookAt(MMD_SA.TEMP_v3.set(head_pos_absolute.x, head_pos_absolute.y-0.
   }, (frame_to_skip-1), 0);
 
   System._browser.on_animation_update.add(function () {
+const SL = MMD_SA.THREEX.SL;
 var d_min = Math.min(SL.width, SL.height) * 0.2
 var canvas = MMD_SA_options.Dungeon.character.icon
 var ctx = canvas.getContext("2d")
@@ -3236,25 +3236,23 @@ window.addEventListener("jThree_ready", function () {
         para_SA.character.combat_stats_base.attack_combo_list = MMD_SA_options.Dungeon_options._attack_combo_list
     }
 
-    if (!para_SA.icon_path)
+    const para_SAX = MMD_SA.THREEX.get_model(idx).model_para;
+    if (!para_SAX.icon_path)
       return
 //System.Gadget.path + '\\icon_teto_512x512.png'
 
-    if (!/^\w+\:/.test(para_SA.icon_path))
-      para_SA.icon_path = MMD_SA_options.model_path.replace(/[^\/\\]+$/, "") + para_SA.icon_path
+    if (!/^\w+\:/.test(para_SAX.icon_path))
+      para_SAX.icon_path = MMD_SA.THREEX.get_model(idx).model_path.replace(/[^\/\\]+$/, "") + para_SAX.icon_path
 
-    var icon_canvas = para_SA._icon_canvas = document.createElement("canvas")
+    var icon_canvas = para_SA._icon_canvas = para_SAX._icon_canvas = document.createElement("canvas")
     icon_canvas.width = icon_canvas.height = 64
-    System._browser.load_file(para_SA.icon_path, function (xhr) {
-      var icon = new Image()
-      icon.onload = function () {
-        var ctx = icon_canvas.getContext("2d")
-        ctx.imageSmoothingQuality = "high"
-        ctx.drawImage(icon, 0,0,64,64)
-        icon = undefined
-      };
-      icon.src = URL.createObjectURL(xhr.response)
-    });
+    System._browser.load_file(para_SAX.icon_path, async function (xhr) {
+      const bitmap = await createImageBitmap(xhr.response);//, { resizeWidth:64, resizeHeight:64, resizeQuality:'high' });
+      const ctx = icon_canvas.getContext("2d")
+      ctx.imageSmoothingQuality = "high"
+      ctx.drawImage(bitmap, 0,0,64,64);
+      bitmap.close()
+    }, 'blob', true);
   });
 
   MMD_SA_options.Dungeon.character.combat_stats_base = MMD_SA_options.model_para_obj.character.combat_stats_base
@@ -3363,6 +3361,8 @@ if (!MMD_SA_options.GOML_scene)
   MMD_SA_options.GOML_scene = ""
 if (!MMD_SA_options.mesh_obj)
   MMD_SA_options.mesh_obj = []
+if (!MMD_SA_options.mesh_obj_preload_list)
+  MMD_SA_options.mesh_obj_preload_list = []
 
 if (MMD_SA_options.hidden_before_start == null)
   MMD_SA_options.hidden_before_start = true
@@ -3762,11 +3762,11 @@ parseInt(result[3], 16)
     ] : [0,0,0];
 }
       return function () {
-var dome_tex = jThree("#DomeTXR").three(0)
+var dome_tex = MMD_SA.THREEX.mesh_obj.get_three('DomeMESH').material.map;
 dome_tex.needsUpdate = true
 
 var img = MMD_SA_options.Dungeon_options.skydome.texture_cache_list[this.texture_index||0]
-var canvas = jThree( "import" ).contents().find( "#DomeTXRCanvas" )[0]//dome_tex.image
+var canvas = dome_tex.image;
 var cw = (img.width  > 4096) ? 4096 : img.width
 var ch = (img.height > 2048) ? 2048 : img.height
 canvas.width  = cw
@@ -3799,20 +3799,18 @@ context.fillRect(0,(ch-h-h_gradient), cw,h_gradient)
     })();
   }
 
-  MMD_SA_options.GOML_import +=
-  '<canvas id="DomeTXRCanvas"></canvas>\n';
+  MMD_SA_options.mesh_obj_preload_list.push({ id:"DomeMESH", create:function () {
+const THREE = MMD_SA.THREEX.THREE;
 
-  MMD_SA_options.GOML_head +=
-  '<geo id="DomeGEO" type="Sphere" param="' + [64*4, 64,64].join(" ") + '" />\n'
-+ '<txr id="DomeTXR" canvas="#DomeTXRCanvas" animation="false" />\n'
-+ '<mtl id="DomeMTL" type="MeshBasic" param="map:#DomeTXR; side:1; fog:false;" />\n';
-
-  MMD_SA_options.GOML_scene +=
-  '<mesh id="DomeMESH" geo="#DomeGEO" mtl="#DomeMTL" style="position:0 0 0; scale:1;" />\n';
+return new THREE.Mesh(
+  new THREE.SphereGeometry( 64*4, 64,64 ),
+  new THREE.MeshBasicMaterial( { map:new THREE.Texture(document.createElement('canvas')), side:THREE.BackSide, fog:false } )
+);
+  } });
 
   MMD_SA_options.mesh_obj.push({ id:"DomeMESH", scale:1 });
 
-  window.addEventListener("MMDStarted", function () { jThree("#DomeMESH").three(0).renderDepth=99999; })
+  window.addEventListener("MMDStarted", function () { MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.renderDepth = 99999; })
 
   if (!options.PC_follower_list)
     options.PC_follower_list = []
@@ -5873,13 +5871,14 @@ let cache = obj._obj
 intersection.set(0,0,0)
 if (obj._mesh.geometry.boundingBox) {
   let bb_list = obj._mesh.geometry.boundingBox_list || [obj._mesh.geometry.boundingBox]
+
   let click = obj.onclick[obj._click_index]
   bb_list.some(function (b3, bb_idx) {
     if (bb_idx) {
       if (!click.func && !click.event_id && (!click.events || !click.events[bb_idx]))
         return
     }
-//if (obj._click_index==0) DEBUG_show(bb_idx,0,1)
+
     bb.copy(b3)
     if (obj._mesh.bones) {
       let _mesh = obj._mesh._mesh_parent || obj._mesh
@@ -7679,7 +7678,7 @@ else {
           geo.computeBoundingBox();
         }
         if (!geo.boundingSphere) {
-          geo.boundingSphere = geo.boundingBox.getBoundingSphere();
+          geo.boundingSphere = geo.boundingBox.getBoundingSphere(new THREE.Sphere());
         }
 //console.log(geo.boundingBox)
       });
@@ -7911,7 +7910,7 @@ Object.defineProperty(obj.cache.list, "0", {
   });
 })();
 
-  MMD_SA.SpeechBubble._mesh.renderDepth = -9999999
+  MMD_SA.SpeechBubble._mesh.renderDepth = 9999999 * ((!MMD_SA.THREEX.enabled) ? -1 : 1);
   MMD_SA.SpeechBubble.bubbles.forEach(function (b) {
     b.pos_mod = [0,-2.5,0]
   });
@@ -13382,6 +13381,21 @@ for (var y = 0, y_max = h+2; y <= y_max; y++) {
 _grid_array[~~(h/2)+1][~~(w/2)+1] = 2
 
 return _grid_array
+    }
+
+   ,adjust_boundingBox: function (geo, model_para={}) {
+if (!model_para.is_object && !model_para.use_default_boundingBox) {
+  const THREE = MMD_SA.THREEX.THREE;
+
+// save some headaches by setting xz center as (0,0), with equal xz size (z no bigger than x)
+  const _v3 = geo.boundingBox.size()
+  const _xz = (_v3.x + ((_v3.z > _v3.x) ? _v3.x : _v3.z))*0.5 *0.5 *(MMD_SA_options.Dungeon._bb_xz_factor_||1)
+  geo.boundingBox.min.x = geo.boundingBox.min.z = -_xz
+  geo.boundingBox.max.x = geo.boundingBox.max.z =  _xz
+
+  geo.boundingSphere = geo.boundingBox.getBoundingSphere(new THREE.Sphere())
+  geo.boundingSphere.radius *= 0.5
+}
     }
 
   }
