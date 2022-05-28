@@ -7735,7 +7735,7 @@ var model_filename = url.replace(/^.+[\/\\]/, '')
 var object_url;
 await new Promise((resolve) => {
   if (!/\.zip\#/i.test(url)) {
-    url = toLocalPath(url)
+    url = toFileProtocol(url)
     resolve()
     return
   }
@@ -8018,8 +8018,9 @@ const THREE = threeX.THREE;
 MMD_SA_options.x_object.forEach((x_obj, idx) => {
   if (!x_obj.path) return
 
-  const url = toFileProtocol(x_obj.path)
-  new THREE.XLoader( url, function( mesh ) {
+// separating url and toFileProtocol(url) here, but x_obj.path is almost always a zip url, so they are effectively the same anyways (i.e. not a blob url)
+  const url = x_obj.path;
+  new THREE.XLoader( toFileProtocol(url), function( mesh ) {
 var model_filename = toLocalPath(url).replace(/^.+[\/\\]/, "")
 var model_filename_cleaned = model_filename.replace(/[\-\_]copy\d+\.x$/, ".x").replace(/[\-\_]v\d+\.x$/, ".x")
 var model_para = MMD_SA_options.model_para[model_filename] || MMD_SA_options.model_para[model_filename_cleaned] || {}
