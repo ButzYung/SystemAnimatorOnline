@@ -2598,18 +2598,21 @@ if (this.boneKeys.length || this.morphKeys.length) {
 	// done
 	delete bin.stringMap;
 };
-VMD.prototype.load = function( url, onload ) {
+VMD.prototype.load = function( url_raw, onload ) {
 // AT: VMD by filename
-if (self.MMD_SA) MMD_SA.vmd_by_filename[decodeURIComponent(url.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, ""))] = this;
+// NOTE: url_raw is the raw path WITHOUT toLocalPath (because this will turn the url to blob url in browser, which makes info like file type and such unrecognizable)
+const url = toFileProtocol(decodeURIComponent(url_raw));
+MMD_SA.vmd_by_filename[decodeURIComponent(url_raw.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, ""))] = this;
+
 // AT: BVH
-if (/\.bvh$/i.test(url)) {
-  MMD_SA.BVHLoader().then(()=>{ BVHLoader.VMD = VMD; BVHLoader.load(toFileProtocol(decodeURIComponent(url))).then((bones)=>{ onload(BVHLoader.toVMD(bones)); }); });
+if (/\.bvh$/i.test(url_raw)) {
+  MMD_SA.BVHLoader().then(()=>{ BVHLoader.VMD = VMD; BVHLoader.load(url).then((bones)=>{ onload(BVHLoader.toVMD(bones)); }); });
   return
 }
 
 	var that = this;
 	loadBuffer( url, function( xhr ) {
-		that.url = url;
+		that.url = url_raw;
 		that.parse( xhr.response );
 		onload( that );
 	});
