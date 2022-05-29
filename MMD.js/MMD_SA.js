@@ -1298,7 +1298,6 @@ if (is_bone_action && this._kissing) {
       var head_pos = MMD_SA._v3a.copy(MMD_SA._head_pos)
 //      head_pos.y += 1
       kiss._obj.position.copy(head_pos.add(MMD_SA._v3b.copy(MMD_SA.camera_position).sub(head_pos).multiplyScalar(0.2 + ratio*0.6)))
-      kiss._obj.rotation = MMD_SA.face_camera(kiss._obj.position, null, true)
       kiss._obj.scale.x = kiss._obj.scale.y = kiss._obj.scale.z = 0.5 + ratio * 0.5
       kiss.show()
     }
@@ -9275,7 +9274,13 @@ return obj;
     MMD_SA_options.mesh_obj_preload_list.push({ id:'KissMESH', create:function () {
 const THREE = MMD_SA.THREEX.THREE;
 
-return new THREE.Mesh( new THREE.PlaneGeometry(1,1), new THREE.MeshBasicMaterial({ map:MMD_SA.load_texture(System.Gadget.path + '/images/kiss_mark_red_o66.png'), transparent:true }) );
+const para = { map:MMD_SA.load_texture(System.Gadget.path + '/images/kiss_mark_red_o66.png'), depthTest:false };
+if (!MMD_SA.THREEX.enabled) {
+  para.useScreenCoordinates = false;
+}
+const material = new THREE.SpriteMaterial(para);
+
+return new THREE.Sprite(material);
     } });
     MMD_SA_options.mesh_obj.push({ id:"KissMESH" })
   }
