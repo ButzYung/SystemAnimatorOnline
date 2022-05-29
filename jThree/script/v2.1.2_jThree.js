@@ -1,4 +1,4 @@
-// (2022-05-28)
+// (2022-05-30)
 
 /*!
  * jThree JavaScript Library v2.1.2
@@ -1005,7 +1005,7 @@ return this.normalize();
 // http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToAngle/
 // https://github.com/mrdoob/three.js/blob/master/src/math/Vector4.js
 ,toAxisAngle: function () {
-  if (this.w > 1) this.normalise(); // if w>1 acos and sqrt will produce errors, this cant happen if quaternion is normalised
+  if (this.w > 1) this.normalize(); // if w>1 acos and sqrt will produce errors, this cant happen if quaternion is normalised
   var angle = 2 * Math.acos(this.w);
   var s = Math.sqrt(1-this.w*this.w); // assuming quaternion normalised then w is less than 1, so term always positive.
   if (s < 0.0001) { // test to avoid divide by zero, s is always positive due to sqrt
