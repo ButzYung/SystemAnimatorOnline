@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2022-05-28)
+// (2022-05-30)
 
 var use_full_spectrum = true
 
@@ -7610,13 +7610,14 @@ MMD_morph_list.forEach(name => {
   const w = MMD_morph_weight[name]
   if (w == null) return
 
-  const blendshape_name = morph_map_by_MMD_name[name]
+  const blendshape_name = blendshape_map_by_MMD_name[name]
   blendshape_weight[blendshape_name] = Math.max(blendshape_weight[blendshape_name]||0, w)
 });
 
 const blink = blendshape_weight['blink'] || 0;
-blendshape_weight['blink_l'] = Math.max(blendshape_weight['blink_l']||0, blink);
-blendshape_weight['blink_r'] = Math.max(blendshape_weight['blink_r']||0, blink);
+const blink_factor = 1 - (blendshape_weight['fun']||0) * 0.25;
+blendshape_weight['blink_l'] = Math.max(blendshape_weight['blink_l']||0, blink) * blink_factor;
+blendshape_weight['blink_r'] = Math.max(blendshape_weight['blink_r']||0, blink) * blink_factor;
 blendshape_weight['blink'] = 0;
 
 //じと目
@@ -7672,7 +7673,7 @@ if (!mesh.matrixAutoUpdate) {
     const bone_map_by_MMD_name = {};
     const MMD_bone_list = [];
 
-    const morph_map_by_MMD_name = {
+    const blendshape_map_by_MMD_name = {
 "あ": "a",
 "あ２": "a",
 
@@ -7702,7 +7703,7 @@ if (!mesh.matrixAutoUpdate) {
 
 "怒り": "angry",
     };
-    const MMD_morph_list = Object.keys(morph_map_by_MMD_name);
+    const MMD_morph_list = Object.keys(blendshape_map_by_MMD_name);
 
     const finger_list = {"親":0, "人":1, "中":2, "薬":3, "小":4};
     const finger_list_en = ["Thumb", "Index", "Middle", "Ring", "Little"];
@@ -7910,7 +7911,7 @@ self.THREE = _THREE
 // http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToAngle/
 // https://github.com/mrdoob/three.js/blob/master/src/math/Vector4.js
 THREE.Quaternion.prototype.toAxisAngle = function () {
-  if (this.w > 1) this.normalise(); // if w>1 acos and sqrt will produce errors, this cant happen if quaternion is normalised
+  if (this.w > 1) this.normalize(); // if w>1 acos and sqrt will produce errors, this cant happen if quaternion is normalised
   var angle = 2 * Math.acos(this.w);
   var s = Math.sqrt(1-this.w*this.w); // assuming quaternion normalised then w is less than 1, so term always positive.
   if (s < 0.0001) { // test to avoid divide by zero, s is always positive due to sqrt
