@@ -1,4 +1,4 @@
-// (2022-05-30)
+// (2022-06-18)
 
 /*!
  * jThree JavaScript Library v2.1.2
@@ -1077,11 +1077,23 @@ return this.normalize();
   };
 })()
 
-};
-
 // AT: workaround to support the latest three.js
-THREE.Quaternion.prototype.premultiply = function (q) {
+,get _x() { return this.x; }
+,set _x(v) { this.x = v; }
+,get _y() { return this.y; }
+,set _y(v) { this.y = v; }
+,get _z() { return this.z; }
+,set _z(v) { this.z = v; }
+,get _w() { return this.w; }
+,set _w(v) { this.w = v; }
+
+,isQuaternion: true
+,_onChangeCallback: function () {}
+
+,premultiply: function (q) {
   return this.multiplyQuaternions(q, this);
+}
+
 };
 
 // AT: spherical coordinate system
