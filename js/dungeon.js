@@ -1,4 +1,4 @@
-// (2022-05-28)
+// (2022-06-18)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -3767,10 +3767,15 @@ dome_tex.needsUpdate = true
 
 var img = MMD_SA_options.Dungeon_options.skydome.texture_cache_list[this.texture_index||0]
 var canvas = dome_tex.image;
-var cw = (img.width  > 4096) ? 4096 : img.width
-var ch = (img.height > 2048) ? 2048 : img.height
-canvas.width  = cw
-canvas.height = ch
+// Note: After the initial use of a texture, its dimensions, format, and type cannot be changed. (r135)
+// https://threejs.org/docs/index.html#api/en/textures/Texture
+// https://discourse.threejs.org/t/gl-invalid-value-offset-overflows-texture-dimensions/35561
+var cw = (is_mobile) ? 2048 : 4096;
+var ch = 2048;
+if ((canvas.width != cw) || (canvas.height != ch)) {
+  canvas.width  = cw
+  canvas.height = ch
+}
 
 var context = canvas.getContext("2d")
 context.globalAlpha = 1
