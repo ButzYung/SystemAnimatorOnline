@@ -1,4 +1,4 @@
-// (2022-04-26)
+// (2022-06-18)
 
 var PoseAT = (function () {
 
@@ -142,8 +142,8 @@ holistic_results = results;
     await holistic.initialize();
 
     holistic_model = {
-predict: async function (img, config) {
-  await holistic.send({image:img});
+predict: async function (img, config, timestamp) {
+  await holistic.send({image:img}, timestamp);
   return holistic_results;
 }
     };
@@ -367,6 +367,8 @@ var skip_hand_countdown = 0
 
 var eyes;
 var eyes_xy_last = [[0,0],[0,0]];
+
+var vt, vt_offset=0, vt_last=-1;
 
 async function process_video_buffer(rgba, w,h, options) {
   function pose_adjust(pose) {
@@ -676,7 +678,20 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
     return
   }
 
-  let _t = performance.now()
+  let _t = performance.now();
+
+  if (options.timestamp != null) {
+    vt = options.timestamp + vt_offset;
+    if (vt <= vt_last) {
+      vt_offset = (vt_last - options.timestamp) + 16.6667;
+      vt = options.timestamp + vt_offset;;
+    }
+    vt_last = vt;
+  }
+  else {
+    vt = _t;
+  }
+//console.log(vt)
 
   if (rgba instanceof ArrayBuffer)
     rgba = new ImageData(new Uint8ClampedArray(rgba), w,h)
@@ -689,7 +704,7 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
   let use_faceLandmarksDetection = true
 
   if (options.use_holistic) {
-    const result = await holistic_model.predict(rgba);
+    const result = await holistic_model.predict(rgba, {}, vt);
 //console.log(result)
 
     pose = pose_adjust(result)
@@ -720,7 +735,7 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
     }
   }
   else if (no_hand_countdown <= 0) {
-    pose = await ((use_human_pose) ? human.detect(rgba) : ((use_movenet) ? posenet.estimatePoses(rgba, {}, _t) : posenet_model.estimateSinglePose(rgba, {})));
+    pose = await ((use_human_pose) ? human.detect(rgba) : ((use_movenet) ? posenet.estimatePoses(rgba, {}, vt) : posenet_model.estimateSinglePose(rgba, {})));
     pose = pose_adjust((use_human_pose) ? pose.body[0] : pose)
 
     if (options.use_handpose && (handpose_model || use_human_hands) && (skip_hand_countdown-- <= 0)) {
@@ -742,7 +757,7 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
     }
   }
   else {
-    let p_list = [(use_human_pose) ? human.detect(rgba).then(result=>result.body[0]) : ((use_movenet) ? posenet.estimatePoses(rgba, {}, _t) : posenet_model.estimateSinglePose(rgba, {})).then(_pose=>_pose)]
+    let p_list = [(use_human_pose) ? human.detect(rgba).then(result=>result.body[0]) : ((use_movenet) ? posenet.estimatePoses(rgba, {}, vt) : posenet_model.estimateSinglePose(rgba, {})).then(_pose=>_pose)]
     if (options.use_handpose && (handpose_model || use_human_hands) && (skip_hand_countdown-- <= 0)) {
       skip_hand_countdown = options.skip_hand_countdown_max||0
       p_list.push((handpose_model) ? handpose_model.estimateHands(rgba).then(_hands=>_hands) : human.detect(rgba).then(result=>result.hand));
