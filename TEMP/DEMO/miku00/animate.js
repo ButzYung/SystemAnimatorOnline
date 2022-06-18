@@ -1855,7 +1855,9 @@ wireframe:{
  ,use_THREEX: true
  ,THREEX_options: {
     enabled_by_default: true,
-//    model_path: System.Gadget.path + '/TEMP/DEMO/models/AvatarSample_A.vrm'
+//    use_MMD: true,
+    use_MMDAnimationHelper: true,
+//    model_path: 'C:\\Users\\user\\Downloads\\iroha+kazama+v1.0\\iroha kazama v1.0\\model\\iroha kazama ver1.0.pmx'//System.Gadget.path + '/TEMP/DEMO/models/AvatarSample_A.vrm'
   }
 
 // END
@@ -3196,6 +3198,11 @@ var model_filename = toLocalPath(url).replace(/^.+[\/\\]/, "")
 var model_filename_cleaned = model_filename.replace(/[\-\_]copy\d+\.x$/, ".x").replace(/[\-\_]v\d+\.x$/, ".x")
 var model_para = MMD_SA_options.model_para[model_filename] || MMD_SA_options.model_para[model_filename_cleaned] || {}
 
+let material_para = model_para.material_para || {}
+material_para = material_para._default_ || {}
+if (material_para.receiveShadow != false)
+  mesh.receiveShadow = true
+
 if (MMD_SA.THREEX.enabled) {
 }
 else {
@@ -3203,13 +3210,9 @@ else {
     mesh.instanced_drawing = model_para.instanced_drawing
 //  mesh.instanced_drawing = 99
 
-  let material_para = model_para.material_para || {}
-  material_para = material_para._default_ || {}
-  if (material_para.receiveShadow != false)
-    mesh.receiveShadow = true
-
   mesh.useQuaternion = true
 }
+
 MMD_SA.THREEX.scene.add(mesh)
 
 var placement = model_para.placement || {};
@@ -3314,24 +3317,27 @@ var done_branch = 11
 var about_branch = 19
 var export_motion_branch = 22
 var record_motion_branch = 25
+var mocap_options_branch = 29
 
 return [
 //0
       [
         {
           message: {
-  get content() { return (System._browser.camera.ML_enabled) ? ((System._browser.camera.motion_recorder.vmd) ? '1. Export motion to file\n2. Record motion\n3. Tracking OFF\n4. Cancel' : '1. Record motion\n2. Tracking OFF\n3. Cancel') : '1. Overlay & UI\n2. BG/Scene/3D' + ((/\.bvh$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd) ? '\n3. Export motion to file\n4. About\n5. Cancel' : '\n3. About\n4. Cancel'); }
+  get content() { return (System._browser.camera.ML_enabled) ? ((System._browser.camera.motion_recorder.vmd) ? '1. Export motion to file\n2. Record motion\n3. Mocap options\n4. Mocap OFF\n5. Cancel' : '1. Record motion\n2. Mocap options\n3. Mocap OFF\n4. Cancel') : '1. Overlay & UI\n2. BG/Scene/3D' + ((/\.bvh$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd) ? '\n3. Export motion to file\n4. About\n5. Cancel' : '\n3. About\n4. Cancel'); }
  ,bubble_index: 3
  ,get branch_list() {
 return (System._browser.camera.ML_enabled) ? ((System._browser.camera.motion_recorder.vmd) ? [
   { key:1, branch_index:export_motion_branch },
   { key:2, branch_index:record_motion_branch },
-  { key:3, branch_index:2 },
-  { key:4 }
+  { key:3, branch_index:mocap_options_branch },
+  { key:4, branch_index:2 },
+  { key:5 }
 ] : [
   { key:1, branch_index:record_motion_branch },
-  { key:2, branch_index:2 },
-  { key:3 }
+  { key:2, branch_index:mocap_options_branch },
+  { key:3, branch_index:2 },
+  { key:4 }
 ]) : [
   { key:1, branch_index:1 },
   { key:2, branch_index:3 }
@@ -3686,10 +3692,16 @@ setTimeout(()=>{
         {
           func: function () {
 if (System._browser.camera.initialized) {
-  MMD_SA_options.Dungeon.run_event()
+  if (!System._browser.camera.ML_warmed_up) {
+    MMD_SA.SpeechBubble.message(0, 'Mocap AI models are still warming up. Try again in a few seconds.', 3*1000)
+    MMD_SA_options.Dungeon.run_event(null,done_branch,0)
+  }
+  else {
+    MMD_SA_options.Dungeon.run_event()
+  }
 }
 else {
-  MMD_SA.SpeechBubble.message(0, 'Choose a video input for motion capture first before you can record motion.', 5*1000)
+  MMD_SA.SpeechBubble.message(0, 'Choose a video input for motion capture first before you can record motion.', 3*1000)
   MMD_SA_options.Dungeon.run_event(null,done_branch,0)
 }
           }
@@ -3747,6 +3759,43 @@ System._browser.camera._info = ''
 DEBUG_show('(Motion recording STARTED / x0.25 speed)', 3)
           }
          ,ended: true
+        }
+      ]
+// 29
+     ,[
+        {
+          func: function () {
+System._browser.camera._info =
+  '- Turn auto-grounding on if your avatar is always grounding with a fixed horizontal camera angle.\n'
++ '- Turn eyeblink sync on if you want blinks of both eyes to be the same.'
+          }
+         ,message: {
+  get content() { return '1. Auto-grounding ' + ((System._browser.camera.poseNet.auto_grounding)?'OFF':'ON') + '\n2. Eyeblink LR sync ' + ((System._browser.camera.facemesh.blink_sync)?'OFF':'ON') + '\n3. Done'; } 
+ ,bubble_index: 3
+ ,branch_list: [
+  { key:1, branch_index:mocap_options_branch+1 },
+  { key:2, branch_index:mocap_options_branch+2 },
+  { key:3, branch_index:done_branch }
+  ]
+          }
+        }
+      ]
+// 30
+     ,[
+        {
+          func: function () {
+System._browser.camera.poseNet.auto_grounding = !System._browser.camera.poseNet.auto_grounding;
+          }
+         ,goto_branch: mocap_options_branch
+        }
+      ]
+// 31
+     ,[
+        {
+          func: function () {
+System._browser.camera.facemesh.blink_sync = !System._browser.camera.facemesh.blink_sync;
+          }
+         ,goto_branch: mocap_options_branch
         }
       ]
 ];
@@ -3922,6 +3971,9 @@ MMD_SA.custom_action_default["cover_undies"].action._condition = function (is_bo
   return _default;
 };
 
+const use_THREEX = MMD_SA.THREEX.enabled;
+const THREE = MMD_SA.THREEX.THREE;
+
 let geometry = new THREE.PlaneGeometry(1000,1000)
 /*
 let tex = document.createElement("canvas")
@@ -3932,23 +3984,26 @@ tex.width = tex.height = 1
 tex = new THREE.Texture(tex)
 tex.needsUpdate = true
 */
-let material = new THREE.MeshBasicMaterial({ color: 0x000000, transparent:true });//false });//
+let material = (use_THREEX) ? new THREE.ShadowMaterial() : new THREE.MeshBasicMaterial({ color: 0x000000, transparent:true });//false });//
 geometry.applyMatrix(new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(-90)));
 let ground = MMD_SA.WebXR.ground_plane = new THREE.Mesh(geometry, material);
 ground.receiveShadow = true;
-ground.receiveShadowAlpha = true;
-MMD_SA.scene.add(ground)
+if (!use_THREEX) ground.receiveShadowAlpha = true;
+MMD_SA.THREEX.scene.add(ground)
 
-let wall_geo = new THREE.CubeGeometry(30,30,30);
+let wall_geo = new THREE.BoxGeometry(30,30,30);
 wall_geo.applyMatrix(new THREE.Matrix4().makeTranslation(0,10,-15));
 let wall = MMD_SA.WebXR._wall = new THREE.Mesh(wall_geo, material);
-wall.useQuaternion = true
 wall.receiveShadow = true;
-wall.receiveShadowAlpha = true;
-MMD_SA.scene.add(wall)
+if (!use_THREEX) {
+  wall.useQuaternion = true;
+  wall.receiveShadowAlpha = true;
+}
+MMD_SA.THREEX.scene.add(wall)
 
 window.addEventListener("SA_MMD_toggle_shadowMap", function () {
-  ground.receiveShadow = wall.receiveShadow = ground.receiveShadowAlpha = wall.receiveShadowAlpha = MMD_SA_options.use_shadowMap
+  ground.receiveShadow = wall.receiveShadow = MMD_SA_options.use_shadowMap;
+  if (!use_THREEX) ground.receiveShadowAlpha = wall.receiveShadowAlpha = MMD_SA_options.use_shadowMap;
   material.opacity = (MMD_SA_options.use_shadowMap) ? 0.5 : 0
   material.needsUpdate = true
 });
@@ -3961,7 +4016,7 @@ let circle_2m_geometry = new THREE.RingGeometry(19.5, 20.5, 24, 1);
 circle_2m_geometry.applyMatrix(new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(-90)));
 let circle_2m_material = new THREE.MeshBasicMaterial({ color:0xDC143C });
 let circle_2m = MMD_SA.WebXR._circle_2m = new THREE.Mesh(circle_2m_geometry, circle_2m_material);
-MMD_SA.scene.add(circle_2m);
+MMD_SA.THREEX.scene.add(circle_2m);
 circle_2m_material.opacity = 0.5;
 circle_2m.visible = false;
 
@@ -3975,6 +4030,8 @@ Object.defineProperty(MMD_SA.WebXR, "_item_reticle", {
 });
 
 window.addEventListener("SA_Dungeon_onstart", function () {
+
+const THREE = self.THREE;
 
 let v3a = new THREE.Vector3()
 let v3b = new THREE.Vector3()
