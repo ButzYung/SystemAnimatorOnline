@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2022-05-30)
+// (2022-06-18)
 
 var use_full_spectrum = true
 
@@ -936,7 +936,9 @@ if (browser_native_mode || MMD_SA_options.Dungeon || use_startup_screen) {
   });
 }
 
-let init = function () {
+let init = async function () {
+  await MMD_SA.THREEX.init()
+
   if (MMD_SA._init_my_model) {
     MMD_SA._init_my_model()
     MMD_SA._init_my_model = null
@@ -950,76 +952,13 @@ let init = function () {
 
   MMD_SA.MME_init()
   MMD_SA.jThree_ready()
+
+  resize()
 };
 
 if (use_startup_screen) {
-/*
-  MMD_SA_options.startup_screen = (function () {
-    var div_p, div0, div1, yt, sb;
-    return {
-      init: function (ending_func) {
-div_p = document.createElement("div")
-div_p.style.position = "absolute"
-div_p.style.width  = "100%"
-div_p.style.height = "100%"
-div_p.style.left = div_p.style.top = "0px"
-
-div0 = document.createElement("div")
-div0.style.position = "absolute"
-div0.style.width  = "100%"
-div0.style.height = "75%"
-div0.style.left = div0.style.top = "0px"
-
-div1 = document.createElement("div")
-div1.style.position = "absolute"
-div1.style.width  = "100%"
-div1.style.height = "25%"
-div1.style.left = "0px"
-div1.style.top  = "75%"
-
-sb = document.createElement("div")
-sb.className = "StartButton"
-sb.addEventListener("click", function () {
-  MMD_SA_options.startup_screen.clear()
-  ending_func()
-}, true);
-sb.style.zIndex = 9999
-sb.textContent = "Continue"
-//div1.appendChild(sb)
-
-//div0.innerHTML = '<iframe style="position:absolute; top:50%; left:50%; z-index:9999; transform:translate(-50%,-50%);" width="60%" height="80%" src="https://www.youtube.com/embed/7HHlOOJdoNA?rel=0&amp;showinfo=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>'
-
-var yt = document.createElement("iframe")
-yt.style.position = "absolute"
-yt.style.top = yt.style.left = "50%"
-yt.style.zIndex = 9999
-yt.style.transform = "translate(-50%,-50%)"
-yt.style.width  = "60%"
-yt.style.height = "80%"
-yt.frameBorder = 0
-yt.allow="autoplay; encrypted-media"
-yt.allowFullscreen = true
-yt.onload = function () {
-//  yt.contentWindow.onclick = function () {
-    div1.appendChild(sb)
-//  }
-}
-yt.src = "https://www.youtube.com/embed/7HHlOOJdoNA?rel=0&amp;showinfo=0"
-div0.appendChild(yt)
-
-div_p.appendChild(div0)
-div_p.appendChild(div1)
-document.body.appendChild(div_p)
-      }
-
-     ,clear: function () {
-document.body.removeChild(div_p)
-      }
-    };
-  })();
-*/
   if (MMD_SA_options.startup_screen.init) {
-    MMD_SA_options.startup_screen.init(function () { init(); resize(); });
+    MMD_SA_options.startup_screen.init(async ()=>{ await init(); });
   }
   else {
 let sb_func = function () {
@@ -1039,9 +978,7 @@ let sb_func = function () {
 //      sb.style.display = "none"
       document.body.removeChild(sb)
 
-      await MMD_SA.THREEX.init()
-
-      init(); resize();
+      await init();
     }, true);
     sb._msg_mouseover = sb._msg_mouseover_default = 'Press START to begin loading.\n\n(Drop a MMD model zip' + ((MMD_SA_options.use_THREEX) ? '/VRM' : '') + ' to use your 3D model.)';
     sb.addEventListener("mouseover", function () {
@@ -7191,6 +7128,20 @@ data.renderer = new THREE.WebGLRenderer({
 
 data.renderer.setPixelRatio(window.devicePixelRatio);
 
+if (MMD_SA_options.use_shadowMap) {
+  data.renderer.shadowMap.enabled = true;
+  data.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+}
+
+if (THREE.OutlineEffect) {
+  data.OutlineEffect = new THREE.OutlineEffect( data.renderer, {
+defaultThickness: 0.001,
+defaultColor: [ 0.25, 0.25, 0.25 ],
+defaultAlpha: 0.5,
+//defaultKeepAlive: true // keeps outline material in cache even if material is removed from scene
+  });
+}
+
 window.addEventListener("jThree_ready", ()=>{
   v1 = new THREE.Vector3()
   v2 = new THREE.Vector3()
@@ -7226,7 +7177,10 @@ window.addEventListener("MMDStarted", ()=>{
     var model_para = MMD_SA_options.model_para_obj_all[i]
 
     model_para._hip_pos = v1.fromArray(bones_by_name['上半身'].pmxBone.origin).add(v2.fromArray(bones_by_name['下半身'].pmxBone.origin)).multiplyScalar(0.5).toArray();
-    model_para._hip_offset = v1.fromArray(model_para._hip_pos).sub(v2.fromArray(bones_by_name['センター'].pmxBone.origin)).toArray();
+    model_para._hip_offset = {};
+    model_para._hip_offset['センター'] = v1.fromArray(model_para._hip_pos).sub(v2.fromArray(bones_by_name['センター'].pmxBone.origin)).toArray();
+    model_para._hip_offset['グルーブ'] = v1.fromArray(model_para._hip_pos).sub(v2.fromArray(bones_by_name['グルーブ'].pmxBone.origin)).toArray();
+    model_para._hip_offset['腰'] = v1.fromArray(model_para._hip_pos).sub(v2.fromArray(bones_by_name['腰'].pmxBone.origin)).toArray();
     model_para.left_leg_length = MMD_SA._v3a.fromArray(bones_by_name["左足"].pmxBone.origin).distanceTo(MMD_SA._v3b.fromArray(bones_by_name["左ひざ"].pmxBone.origin)) + MMD_SA._v3b.distanceTo(MMD_SA._v3a.fromArray(bones_by_name["左足首"].pmxBone.origin));
   });
 });
@@ -7235,20 +7189,40 @@ if (1) {
   MMD_SA.init_my_model(System.Gadget.path + '/jThree/model/DUMMY.zip', 'DUMMY_v01.pmx')
 }
 
-VRM.init()
+if (MMD_SA_options.THREEX_options.use_MMD) {
+  MMD.init()
+//F:\\MMD\\models\\Tda式初音ミク・アペンドVer1.00\\Tda式初音ミク・アペンド_Ver1.00.pmx
+//F:\\MMD\\models\\--\\H35\\H35a11_v05.pmx
+//F:\\MMD\\stages\\体育館\\体育館.pmx
+  MMD.load('F:\\MMD\\models\\--\\H35\\H35a11_v05.pmx', {
+    pmx_index: 0,
 
-VRM.load(MMD_SA_options.THREEX_options.model_path, {
-  vrm_index: 0,
+    get_parent: function () {
+      if (!MMD_SA.MMD_started) return null
 
-  get_parent: function () {
-    if (!MMD_SA.MMD_started) return null
+      this.parent_data = _THREE.MMD.getModels()[0]
+      return this.parent_data.mesh;
+    },
 
-    this.parent_data = _THREE.MMD.getModels()[0]
-    return this.parent_data.mesh;
-  },
+    update: function () {}
+  });
+}
+else {
+  VRM.init()
 
-  update: function () {}
-});
+  VRM.load(MMD_SA_options.THREEX_options.model_path, {
+    vrm_index: 0,
+
+    get_parent: function () {
+      if (!MMD_SA.MMD_started) return null
+
+      this.parent_data = _THREE.MMD.getModels()[0]
+      return this.parent_data.mesh;
+    },
+
+    update: function () {}
+  });
+}
   }
 
   function model_obj(index, model, para) {
@@ -7314,6 +7288,7 @@ return pos;
     get_bone_rotation_by_MMD_name: (function () {
       var _m1, _q1;
       window.addEventListener('jThree_ready', ()=>{
+const THREE = MMD_SA.THREEX.THREE;
 _m1 = new THREE.Matrix4();
 _q1 = new THREE.Quaternion();
       });
@@ -7364,6 +7339,146 @@ return rot;
     }
   });
 
+
+// MMD START
+  var MMD = (function () {
+
+    function init() {
+      if (THREE.MMDAnimationHelper) {
+        data.MMDAnimationHelper = new THREE.MMDAnimationHelper();
+        data.MMDAnimationHelper_clock = new THREE.Clock();
+      }
+    }
+
+    function PMX_object(index, pmx, para) {
+model_obj.call(this, index, pmx, para);
+this.mesh = pmx;
+
+if (!MMD_SA.MMD_started)
+  pmx_list.push(this)
+    }
+
+    PMX_object.prototype = Object.create( model_obj.prototype );
+
+    Object.defineProperties(PMX_object.prototype, {
+      type: {
+        value: 'PMX'
+      },
+
+      get_bone_by_MMD_name : {
+        value: function (name) {
+return this.bones_by_name[name];
+        }
+      },
+
+      update_model: {
+        value: function () {
+var mesh = this.mesh
+//mesh.matrixAutoUpdate = false
+
+// bone START
+
+var mesh_MMD = _THREE.MMD.getModels()[0].mesh
+var bones_by_name = mesh_MMD.bones_by_name
+
+mesh.position.copy(mesh_MMD.position);
+mesh.quaternion.copy(mesh_MMD.quaternion);
+
+data.MMDAnimationHelper && data.MMDAnimationHelper.update(data.MMDAnimationHelper_clock.getDelta());
+        }
+      }
+    });
+
+    var pmx_list = [];
+
+    return {
+      get pmx_list() { return pmx_list; },
+      set pmx_list(v) { pmx_list = v; },
+
+      init: init,
+
+      load: async function (url, para) {
+MMD_SA.fn.load_length_extra++
+
+var url_raw = url;
+var model_filename = url.replace(/^.+[\/\\]/, '')
+
+var object_url;
+await new Promise((resolve) => {
+  if (!/\.zip\#/i.test(url)) {
+    url = toFileProtocol(url)
+    resolve()
+    return
+  }
+
+  System._browser.load_file(url, function(xhr) {
+    object_url = url = URL.createObjectURL(xhr.response);
+    resolve();
+  }, 'blob', true);
+});
+
+const loader = new THREE.MMDLoader();
+
+loader.loadWithAnimation(
+
+  // URL of the PMX you want to load
+  url,
+System.Gadget.path + '/MMD.js/motion/demo/after_school_stride/after_school_stride.vmd',
+
+  function ( mmd ) {
+const mesh = mmd.mesh
+
+data.MMDAnimationHelper && data.MMDAnimationHelper.add( mmd.mesh, { animation:mmd.animation, physics:false } );
+
+if (MMD_SA_options.use_shadowMap) {
+  mesh.castShadow = true
+}
+
+data.scene.add( mesh );
+console.log(mesh)
+
+var pmx_obj = new PMX_object(para.pmx_index, mesh, { url:url_raw });
+
+var bones_by_name = {}
+mesh.skeleton.bones.forEach(b=>{
+  bones_by_name[b.name] = b;
+});
+
+pmx_obj.bones_by_name = bones_by_name;
+
+var obj = Object.assign({
+  data: pmx_obj,
+  obj: mesh,
+  get parent() { return this.get_parent(); },
+
+  no_scale: true,
+}, para);//, MMD_SA_options.THREEX_options.model_para[model_filename]||{});
+
+obj_list.push(obj)
+
+if (object_url) {
+  URL.revokeObjectURL(object_url)
+}
+
+MMD_SA.fn.setupUI()
+
+  },
+
+  // called while loading is progressing
+  (progress) => {},
+
+  // called when loading has errors
+  (error) => console.error(error)
+
+);
+      },
+
+    };
+  })();
+// MMD END
+
+
+// VRM START
   var VRM = (function () {
     function process_rotation(rot) {
 rot.x *= -1
@@ -7484,8 +7599,8 @@ MMD_bone_list.push(name)
       });
     }
 
-    function get_MMD_bone_pos(bone, v) {
-return v.copy(bone.position).sub(v4.fromArray(bone.pmxBone.origin));
+    function get_MMD_bone_pos(mesh, bone, v) {
+return v.fromArray(mesh.geometry.bones[bone._index].pos).negate().add(bone.position);
     }
 
     function VRM_object(index, vrm, para) {
@@ -7553,26 +7668,33 @@ MMD_bone_list.forEach(name=>{
   process_rotation(bone.quaternion)
 });
 
-var MMD_model_para = MMD_SA_options.model_para_obj_all[this.index]
-var model_scale = 1/vrm_scale * this.para.left_leg_length / MMD_model_para.left_leg_length
+var MMD_model_para = MMD_SA_options.model_para_obj_all[this.index];
+var model_scale = 1/vrm_scale * this.para.left_leg_length / MMD_model_para.left_leg_length;
 
-var center_bone = bones_by_name['センター']
-var center_bone_pos = get_MMD_bone_pos(center_bone, v1);
-var center_bone_offset = v2.fromArray(MMD_model_para._hip_offset);
-center_bone_pos.add(v3.copy(center_bone_offset).applyQuaternion(center_bone.quaternion).sub(center_bone_offset));
+var center_bone_pos = v1.set(0,0,0);
+var hips_rot = q1.set(0,0,0,1);
+['センター', 'グルーブ', '腰'].forEach(hip_name => {
+  const hip_bone = bones_by_name[hip_name]
+  const hip_bone_pos = get_MMD_bone_pos(mesh_MMD, hip_bone, v4);
+  const hip_bone_offset = v2.fromArray(MMD_model_para._hip_offset[hip_name]);
+  hip_bone_pos.add(v3.copy(hip_bone_offset).applyQuaternion(hip_bone.quaternion).sub(hip_bone_offset).applyQuaternion(hips_rot));
+  center_bone_pos.add(hip_bone_pos);
+
+  hips_rot.multiply(hip_bone.quaternion);
+});
 
 var root_bone = bones_by_name['全ての親']
-var root_bone_pos = get_MMD_bone_pos(root_bone, v2);
+var root_bone_pos = get_MMD_bone_pos(mesh_MMD, root_bone, v2);
 center_bone_pos.add(root_bone_pos);
 
 center_bone_pos.multiplyScalar(model_scale);
-
 vrm.humanoid.getBoneNode('hips').position.fromArray(this.para.pos0['hips']).add(process_position(center_bone_pos))
 
 var upper_body_bone = bones_by_name['上半身']
 var lower_body_bone = bones_by_name['下半身']
-var hips_rot  = q1.copy(center_bone.quaternion).multiply(q2.copy(lower_body_bone.quaternion))
-var spine_rot = q2.copy(lower_body_bone.quaternion).conjugate().multiply(q3.copy(upper_body_bone.quaternion))
+
+hips_rot.multiply(lower_body_bone.quaternion);
+var spine_rot = q2.copy(lower_body_bone.quaternion).conjugate().multiply(upper_body_bone.quaternion)
 
 vrm.humanoid.getBoneNode('hips').quaternion.copy(process_rotation(hips_rot));
 vrm.humanoid.getBoneNode('spine').quaternion.copy(process_rotation(spine_rot));
@@ -7760,19 +7882,32 @@ GLTF_loader.load(
 
       console.log(vrm);
 
-data.scene.add(vrm.scene)
+const mesh_obj = vrm.scene
+if (MMD_SA_options.use_shadowMap) {
+  mesh_obj.traverseVisible(obj=>{
+    if (obj.isMesh) obj.castShadow = true;
+  });
+}
+
+data.scene.add(mesh_obj);
+
+mesh_obj.quaternion.set(0,1,0,0)
+mesh_obj.scale.set(vrm_scale, vrm_scale, vrm_scale)
+
+if (data.OutlineEffect) {
+  mesh_obj.traverseVisible(obj=>{
+    if (obj.isMesh) obj.userData.outlineParameters = { visible: true };
+  });
+}
 
 // reduce physics glitches by ignoring the world space
-vrm.springBoneManager.setCenter(vrm.scene)
-
-vrm.scene.quaternion.set(0,1,0,0)
-vrm.scene.scale.set(vrm_scale, vrm_scale, vrm_scale)
+vrm.springBoneManager.setCenter(mesh_obj)
 
 var vrm_obj = new VRM_object(para.vrm_index, vrm, { url:url_raw });
 
 var obj = Object.assign({
   data: vrm_obj,
-  obj: vrm.scene,
+  obj: mesh_obj,
   get parent() { return this.get_parent(); },
 
   no_scale: true,
@@ -7799,6 +7934,8 @@ MMD_SA.fn.setupUI()
 
     };
   })();
+// VRM END
+
 
   var enabled = true;
   var loaded, loading, resolve_loading;
@@ -7827,10 +7964,11 @@ MMD_SA.fn.setupUI()
 
     get enabled() { return MMD_SA_options.use_THREEX && enabled; },
     set enabled(v) {
-enabled = !!v
-// save some headaches to not change SL's visibility here
+if (!MMD_SA_options.use_THREEX) return;
+enabled = !!v;
+// save some headaches to not change SL's visibility here as other features (e.g. mouse events) may require it to be visible
 //SL.style.visibility  = (!enabled) ? 'inherit' : 'hidden'
-SLX.style.visibility = ( enabled) ? 'inherit' : 'hidden'
+SLX.style.visibility = ( enabled) ? 'inherit' : 'hidden';
     },
 
     get THREE() { return (this.enabled) ? THREE : self.THREE; },
@@ -7897,6 +8035,23 @@ for (const name in THREE_module) self.THREE[name] = THREE_module[name];
 const Geometry_module = await import(System.Gadget.path + '/three.js/Geometry.js');
 for (const name in Geometry_module) self.THREE[name] = Geometry_module[name];
 self.THREE.XLoader = _THREE.XLoader;
+
+if (MMD_SA_options.THREEX_options.use_OutlineEffect) {
+  const OutlineEffect_module = await import(System.Gadget.path + '/three.js/OutlineEffect.js');
+  for (const name in OutlineEffect_module) self.THREE[name] = OutlineEffect_module[name];
+  console.log('OutlineEffect.js loaded')
+}
+
+if (MMD_SA_options.THREEX_options.use_MMD) {
+  const MMD_module = await import(System.Gadget.path + '/three.js/loaders/MMDLoader.js');
+  for (const name in MMD_module) self.THREE[name] = MMD_module[name];
+  console.log('MMDLoader.js loaded')
+  if (MMD_SA_options.THREEX_options.use_MMDAnimationHelper) {
+    const MMDAnimationHelper_module = await import(System.Gadget.path + '/three.js/animation/MMDAnimationHelper.js');
+    for (const name in MMDAnimationHelper_module) self.THREE[name] = MMDAnimationHelper_module[name];
+    console.log('MMDAnimationHelper.js loaded')
+  }
+}
 
 await System._browser.load_script('./three.js/GLTFLoader.js');
 // min version doesn't work for some reasons
@@ -8030,17 +8185,17 @@ mesh = new THREE.Object3D()
 mesh.add(_mesh)
 //console.log(mesh)
 
+let material_para = model_para.material_para || {}
+material_para = material_para._default_ || {}
+if (material_para.receiveShadow != false)
+  mesh.receiveShadow = true
+
 if (MMD_SA.THREEX.enabled) {
 }
 else {
   if (model_para.instanced_drawing)
     mesh.instanced_drawing = model_para.instanced_drawing
 //  mesh.instanced_drawing = 99
-
-  let material_para = model_para.material_para || {}
-  material_para = material_para._default_ || {}
-  if (material_para.receiveShadow != false)
-    mesh.receiveShadow = true
 
   mesh.useQuaternion = true
 }
@@ -8161,7 +8316,15 @@ if (MMD_SA.MMD_started) {
   });
 }
 
-data.renderer.render(data.scene, data.camera);
+if (data.OutlineEffect) {
+//  data.renderer.autoClear = true
+  data.OutlineEffect.render( data.scene, data.camera );
+//  data.renderer.autoClear = false
+}
+else {
+  data.renderer.render(data.scene, data.camera);
+}
+
 
 //DEBUG_show(Date.now())
 return true
@@ -8221,12 +8384,16 @@ else if (light instanceof _THREE.AmbientLight) {
 
 var l = new THREE[type]()
 light._THREEX_child = l
-data.scene.add(l)
 
 // https://threejs.org/docs/#api/en/lights/DirectionalLight
 if (type == 'DirectionalLight') {
+  const para = MMD_SA_options.shadow_para
+  l.shadow.mapSize.set(para.shadowMapWidth, para.shadowMapWidth)
+
   data.scene.add(l.target)
 }
+
+data.scene.add(l)
       },
 
       update: function (light) {
@@ -8236,9 +8403,34 @@ var c = light._THREEX_child
 c.position.copy(light.position)
 c.color.copy(light.color)
 if (c.type == 'DirectionalLight') {
+  c.intensity = light.intensity
+
   c_max = Math.max(c.color.r, c.color.g, c.color.b)
-  c.intensity = light.intensity / c_max
+  const c_scale = Math.min(1/c_max)//, 2.5)
+  c.color.multiplyScalar(c_scale)
+//  c.intensity /= c_max
+
   c.target.position.copy(light.target.position)
+
+  if (c.castShadow != light.castShadow) {
+    c.castShadow = light.castShadow
+    if (c.castShadow) {
+      const para = light//MMD_SA_options.shadow_para
+      c.shadow.camera.left = para.shadowCameraLeft
+      c.shadow.camera.right = para.shadowCameraRight
+      c.shadow.camera.top = para.shadowCameraTop
+      c.shadow.camera.bottom = para.shadowCameraBottom
+      c.shadow.camera.updateProjectionMatrix()
+//console.log(para)
+/*
+if (!this._shadow_camera_helper) {
+const helper = this._shadow_camera_helper = new THREE.CameraHelper( c.shadow.camera );
+data.scene.add(helper)
+}
+*/
+      console.log('(THREEX shadow camera enabled)')
+    }
+  }
 }
       }
     },
