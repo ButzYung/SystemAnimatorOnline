@@ -1,4 +1,4 @@
-// (2022-06-18)
+// (2022-06-23)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -10976,7 +10976,7 @@ return [
   { key:1, branch_index:12 },
   { key:2, branch_index:13 },
   { key:3, branch_index:14 },
-].concat((MMD_SA_options.user_camera.ML_models.enabled) ? [
+].concat((MMD_SA_options.user_camera.ML_models.enabled && (System._browser.overlay_mode == 0)) ? [
   { key:4, branch_index:15 },
   { key:5, branch_index:16 },
   { key:6, branch_index:17 },
