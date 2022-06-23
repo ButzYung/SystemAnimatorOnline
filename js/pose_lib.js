@@ -1,4 +1,4 @@
-// (2022-06-18)
+// (2022-06-23)
 
 var PoseAT = (function () {
 
@@ -796,7 +796,9 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
 
   postMessageAT(JSON.stringify({ posenet:pose, handpose:hands, facemesh:facemesh, _t:_t, fps:fps }));
 
+  if (rgba instanceof ImageBitmap) rgba.close();
 //rgba.dispose();
+
   rgba = undefined;
 }
 

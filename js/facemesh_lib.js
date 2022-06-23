@@ -1,4 +1,4 @@
-// (2022-04-28)
+// (2022-06-23)
 
 var FacemeshAT = (function () {
 
@@ -427,22 +427,19 @@ _t = _t_now = performance.now()
   let cw = bb.w
   let ch = bb.h
 //console.log(bb)
-  rgba = new Uint8ClampedArray(rgba);
-/*
-createImageData(rgba, cw,ch);
-postMessageAT(JSON.stringify({ faces:[], _t:0 }));
-return
-*/
+  if (rgba instanceof ArrayBuffer)
+    rgba = new ImageData(new Uint8ClampedArray(rgba), cw,ch)
+
   let faces
   if (use_mediapipe_facemesh) {
-    faces = await model.estimateFaces({input:new ImageData(rgba, cw,ch)});
+    faces = await model.estimateFaces({input:rgba});
   }
   else if (use_human_facemesh) {
-    const result = await human.detect(new ImageData(rgba, cw,ch));
+    const result = await human.detect(rgba);
     faces = result.face
   }
   else {
-    faces = (use_faceLandmarksDetection) ? await model.estimateFaces({input:new ImageData(rgba, cw,ch)}) : await model.estimateFaces(new ImageData(rgba, cw,ch));
+    faces = (use_faceLandmarksDetection) ? await model.estimateFaces({input:rgba}) : await model.estimateFaces(rgba);
   }
 //console.log(faces[0])
 
@@ -502,9 +499,13 @@ _t = _t_list.reduce((a,c)=>a+c)
         canvas_camera.height = ch
       }
     }
-    canvas_camera.getContext("2d").putImageData(new ImageData(rgba, cw,ch), 0,0);
+    if (rgba instanceof ImageData)
+      canvas_camera.getContext("2d").putImageData(rgba, 0,0)
+    else
+      canvas_camera.drawImage(rgba, 0,0)
   }
 
+  if (rgba instanceof ImageBitmap) rgba.close();
   rgba = undefined;
 
   draw(faces, w,h, options)
