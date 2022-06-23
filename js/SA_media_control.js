@@ -1,5 +1,5 @@
 // Media control for Silverlight and HTML5 Canvas
-// (2022-04-26)
+// (2022-06-23)
 
 var EV_SL_MediaEnded, EV_SL_MediaOpened
 
@@ -385,7 +385,7 @@ function SL_MC_Backward(ignore_linked_control) {
 
 function SL_MC_Seek(mod, forced_seek, from_seek_bar) {
   if (SL_MC_simple_mode) {
-    SL_MC_video_obj.currentTime += 30 * mod
+    SL_MC_video_obj.currentTime += ((self.MMD_SA && MMD_SA_options.user_camera.ML_models.enabled) ? 1 : 30) * mod
     return
   }
 
