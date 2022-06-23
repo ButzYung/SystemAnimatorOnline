@@ -3319,25 +3319,29 @@ var export_motion_branch = 22
 var record_motion_branch = 25
 var mocap_options_branch = 29
 
+var show_other_options = false
+
 return [
 //0
       [
         {
           message: {
-  get content() { return (System._browser.camera.ML_enabled) ? ((System._browser.camera.motion_recorder.vmd) ? '1. Export motion to file\n2. Record motion\n3. Mocap options\n4. Mocap OFF\n5. Cancel' : '1. Record motion\n2. Mocap options\n3. Mocap OFF\n4. Cancel') : '1. Overlay & UI\n2. BG/Scene/3D' + ((/\.bvh$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd) ? '\n3. Export motion to file\n4. About\n5. Cancel' : '\n3. About\n4. Cancel'); }
+  get content() { return (!show_other_options && System._browser.camera.ML_enabled) ? ((System._browser.camera.motion_recorder.vmd) ? '1. Export motion to file\n2. Record motion\n3. Mocap options\n4. Mocap OFF\n5. Other options\n6. Cancel' : '1. Record motion\n2. Mocap options\n3. Mocap OFF\n4. Other options\n5. Cancel') : '1. Overlay & UI\n2. BG/Scene/3D' + ((/\.bvh$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd) ? '\n3. Export motion to file\n4. About\n5. Cancel' : '\n3. About\n4. Cancel'); }
  ,bubble_index: 3
  ,get branch_list() {
-return (System._browser.camera.ML_enabled) ? ((System._browser.camera.motion_recorder.vmd) ? [
+return (!show_other_options && System._browser.camera.ML_enabled) ? ((System._browser.camera.motion_recorder.vmd) ? [
   { key:1, branch_index:export_motion_branch },
   { key:2, branch_index:record_motion_branch },
   { key:3, branch_index:mocap_options_branch },
   { key:4, branch_index:2 },
-  { key:5 }
+  { key:5, event_id:{ func:()=>{show_other_options=true;setTimeout(()=>{show_other_options=false},0);}, goto_event: { id:"_FACEMESH_OPTIONS_", branch_index:0 } } },
+  { key:6 }
 ] : [
   { key:1, branch_index:record_motion_branch },
   { key:2, branch_index:mocap_options_branch },
   { key:3, branch_index:2 },
-  { key:4 }
+  { key:4, event_id:{ func:()=>{show_other_options=true;setTimeout(()=>{show_other_options=false},0);}, goto_event: { id:"_FACEMESH_OPTIONS_", branch_index:0 } } },
+  { key:5 }
 ]) : [
   { key:1, branch_index:1 },
   { key:2, branch_index:3 }
