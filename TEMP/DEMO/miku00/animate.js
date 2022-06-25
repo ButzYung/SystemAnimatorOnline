@@ -4149,7 +4149,8 @@ window.addEventListener("SA_AR_onARFrame", (function () {
     var update_frame = false
     return function () {
       var camera = System._browser.camera
-      if ((RAF_timestamp_delta > 25) || MMD_SA_options.user_camera.ML_models.worker_disabled || !camera.initialized || camera._needs_RAF || !camera.ML_busy || (camera.ML_fps > 40) || (!(camera.facemesh.enabled && camera.facemesh.use_mediapipe) && !camera.poseNet.enabled)) {
+// (camera.ML_fps > 40)
+      if ((RAF_timestamp_delta > 25) || MMD_SA_options.user_camera.ML_models.worker_disabled || !camera.initialized || camera._needs_RAF || !camera.ML_busy || (!is_mobile && (camera.ML_fps > 10)) || (!(camera.facemesh.enabled && camera.facemesh.use_mediapipe) && !camera.poseNet.enabled)) {
         camera._needs_RAF = false
         update_frame = true
       }
