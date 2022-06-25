@@ -4147,10 +4147,11 @@ window.addEventListener("SA_AR_onARFrame", (function () {
 
   EV_sync_update.fps_control = (function () {
     var update_frame = false
+    var cooling_count = 0
     return function () {
       var camera = System._browser.camera
 // (camera.ML_fps > 40)
-      if ((RAF_timestamp_delta > 25) || MMD_SA_options.user_camera.ML_models.worker_disabled || !camera.initialized || camera._needs_RAF || !camera.ML_busy || (!is_mobile && (camera.ML_fps > 10)) || (!(camera.facemesh.enabled && camera.facemesh.use_mediapipe) && !camera.poseNet.enabled)) {
+      if ((RAF_timestamp_delta > 25) || MMD_SA_options.user_camera.ML_models.worker_disabled || !camera.initialized || camera._needs_RAF || !camera.ML_busy || (!is_mobile && (--cooling_count < 0) && ((camera.ML_fps > 10) || ((cooling_count=10) && false))) || (!(camera.facemesh.enabled && camera.facemesh.use_mediapipe) && !camera.poseNet.enabled)) {
         camera._needs_RAF = false
         update_frame = true
       }
