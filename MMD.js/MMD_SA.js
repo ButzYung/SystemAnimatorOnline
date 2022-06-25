@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2022-06-23)
+// (2022-06-25)
 
 var use_full_spectrum = true
 
@@ -8686,7 +8686,7 @@ MMD_SA_options.texture_resolution_limit=2048
   if (MMD_SA_options.user_camera.ML_models.use_holistic == null)
     MMD_SA_options.user_camera.ML_models.use_holistic = System._browser.url_search_params.use_holistic
   if (MMD_SA_options.user_camera.ML_models.worker_disabled == null)
-    MMD_SA_options.user_camera.ML_models.worker_disabled = (typeof OffscreenCanvas == "undefined")
+    MMD_SA_options.user_camera.ML_models.worker_disabled = (typeof OffscreenCanvas == "undefined") || System._browser.url_search_params.ML_worker_disabled
 
   if (MMD_SA_options.user_camera.ML_models.facemesh.use_mediapipe || MMD_SA_options.user_camera.ML_models.worker_disabled)
     System._browser.camera.facemesh.use_mediapipe = true
