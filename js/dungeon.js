@@ -1,4 +1,4 @@
-// (2022-06-23)
+// (2022-07-08)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -6630,7 +6630,9 @@ return function (e) {
   if (d.check_states())
     return
 
-  var t = performance.now()
+// use performance.now() from topmost window (the same window where RAF_timestamp comes from), as this value can be different among different child windows
+  var t = SA_topmost_window.performance.now()
+
   time_diff = Math.min((time_last) ? (t - time_last)/1000 : 1/30, 1/20)
   time_last = t
 
