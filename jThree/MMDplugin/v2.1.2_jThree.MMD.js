@@ -1,4 +1,4 @@
-// (2022-05-28)
+// (2022-07-08)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -5969,7 +5969,6 @@ if (self.MMD_SA) {
   mesh.bones_by_name = {}
   mesh._IK_and_AddTrans = []
   var IK_child = {}
-  var IK_child_transform = {}
   mesh.geometry.bones.forEach(function (gbone, idx) {
     var bone = mesh.bones[idx]
     mesh.bones_by_name[gbone.name] = bone
@@ -5981,9 +5980,9 @@ if (self.MMD_SA) {
       mesh._IK_and_AddTrans.push(bone)
 
       var ik = pbone.IK
-      IK_child[ik.effector] = true
+      IK_child[ik.effector] = idx
       ik.links.forEach(function (link) {
-        IK_child[link.bone] = true
+        IK_child[link.bone] = idx
       });
     }
   });
@@ -6017,21 +6016,13 @@ if (pbone.IK) {
 else
       mesh._IK_and_AddTrans.push(bone)
 
-      if (at && IK_child[at[0]]) {
-        IK_child[bone._index] = IK_child_transform[bone._index] = true
+      if (IK_child[idx]) {
+        const b = mesh.bones[IK_child[idx]]
+        const p = b.pmxBone
+//        pbone._index_IKAT = pbone._index_IKAT || (p.deformHierachy - pbone.deformHierachy) * 1024 + b._index + idx/1000;
+        p._index_IKAT = Math.min(p._index_IKAT||99999, 8192 + (pbone.deformHierachy - p.deformHierachy) * 1024 + idx - 0.5);
+//console.log(bone.name, b.name, pbone._index_IKAT)
       }
-/*
-      var _bone = bone.parent
-      while (_bone !== mesh) {
-        at = _bone.pmxBone.additionalTransform
-        if (at && IK_child[at[0]]) {
-          IK_child_transform[bone._index] = true
-console.log(bone._index+'/'+_bone._index)
-          break
-        }
-        _bone = _bone.parent
-      }
-*/
     }
   });
 //console.log(IK_child)
@@ -6059,14 +6050,12 @@ console.log(bone._index+'/'+_bone._index)
   mesh._IK_and_AddTrans.sort(function (a, b) {
     var pbone_a = a.pmxBone
     var pbone_b = b.pmxBone
-// it ends up that it may really be just as simple as processing all IK first and then additionalTransform
+// in general, process IK first and then additionalTransform
+// for additionalTransforms that are parts of a IK, process the IK just before the first associated additionalTransform
     return (((pbone_a.afterPhysics&&32768)||0)+((pbone_a.additionalTransform&&(!pbone_a.IK||a._additionalTransform_only)&&8192)||0)+pbone_a.deformHierachy*1024+(pbone_a._index_IKAT||a._index)) - (((pbone_b.afterPhysics&&32768)||0)+((pbone_b.additionalTransform&&(!pbone_b.IK||b._additionalTransform_only)&&8192)||0)+pbone_b.deformHierachy*1024+(pbone_b._index_IKAT||b._index));
 
-// deformHierachy(2048) > additionalTransform belonging to any IK hierarchy(1024) > IK(0) > additionalTransform NOT belonging to any IK hierarchy(-1024) + bone index
-//    return (pbone_a.deformHierachy*2048+(((pbone_a.additionalTransform&&(!pbone_a.IK||a._additionalTransform_only)) && ((IK_child_transform[a._index] && -1024)||-1024))||0)+a._index) - (pbone_b.deformHierachy*2048+(((pbone_b.additionalTransform&&(!pbone_b.IK||b._additionalTransform_only)) && ((IK_child_transform[b._index] && -1024)||-1024))||0)+b._index)
-//    return (pbone_a.deformHierachy*2048+((!pbone_a.IK && 1024)||0)+a._index) - (pbone_b.deformHierachy*2048+((!pbone_b.IK && 1024)||0)+b._index)
-//    return (pbone_a.deformHierachy*2048+a._index) - (pbone_b.deformHierachy*2048+b._index)
-//    return (((!pbone_a.IK && 10240)||0)+pbone_a.deformHierachy*1024+a._index) - (((!pbone_b.IK && 10240)||0)+pbone_b.deformHierachy*1024+b._index)
+//    return (((pbone_a.afterPhysics&&32768)||0)+pbone_a.deformHierachy*1024+(pbone_a._index_IKAT||a._index)) - (((pbone_b.afterPhysics&&32768)||0)+pbone_b.deformHierachy*1024+(pbone_b._index_IKAT||b._index));
+//    return (((pbone_a.afterPhysics&&32768)||0)+((pbone_a.additionalTransform&&(!pbone_a.IK||a._additionalTransform_only)&&(!IK_child[a._index])&&8192)||0)+pbone_a.deformHierachy*1024+(pbone_a._index_IKAT||a._index)) - (((pbone_b.afterPhysics&&32768)||0)+((pbone_b.additionalTransform&&(!pbone_b.IK||b._additionalTransform_only)&&(!IK_child[b._index])&&8192)||0)+pbone_b.deformHierachy*1024+(pbone_b._index_IKAT||b._index));
   });
 //console.log(mesh._IK_and_AddTrans)
   if (MMD_SA.use_afterPhysics) {
