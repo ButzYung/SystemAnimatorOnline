@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2022-06-25)
+// (2022-07-08)
 
 var use_full_spectrum = true
 
@@ -7194,7 +7194,7 @@ if (MMD_SA_options.THREEX_options.use_MMD) {
 //F:\\MMD\\models\\Tda式初音ミク・アペンドVer1.00\\Tda式初音ミク・アペンド_Ver1.00.pmx
 //F:\\MMD\\models\\--\\H35\\H35a11_v05.pmx
 //F:\\MMD\\stages\\体育館\\体育館.pmx
-  MMD.load('F:\\MMD\\models\\--\\H35\\H35a11_v05.pmx', {
+  MMD.load((/\.pmx$/i.test(MMD_SA_options.THREEX_options.model_path) && MMD_SA_options.THREEX_options.model_path)||'F:\\MMD\\models\\--\\H35\\H35a11_v05.pmx', {
     pmx_index: 0,
 
     get_parent: function () {
