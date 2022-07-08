@@ -1241,7 +1241,8 @@ if (model.skin.time >= 140/30) {
 ]
     }
 
-   ,"chair_sit01_armIK": {
+   ,"chair_sit01_armIK": (function () {
+      return {
   onstart: function () {
 this._ground_plane_visible = MMD_SA.WebXR.ground_plane.visible
   }
@@ -1259,6 +1260,16 @@ MMD_SA.WebXR.ground_plane.visible = false
   }
 
  ,motion_tracking_enabled: true, motion_tracking_upper_body_only: true
+
+ ,motion_tracking: {
+    hand_as_foot: {
+      transform_position: function (pos) {
+pos.y += MMD_SA_options.model_para_obj.left_arm_to_IK_xy[1];
+pos.z -= MMD_SA_options.model_para_obj.left_leg_length * 0.25
+pos.multiplyScalar(1.5)
+      }
+    }
+  }
 
  ,process_bones: function (model, skin) {
 var mesh = model.mesh
@@ -1285,6 +1296,8 @@ posL.z -= ground_y_diff
 posR.y -= ground_y_diff
 posR.z -= ground_y_diff
 
+//DEBUG_show(posL.toArray().join('\n'))
+
 if (skin.time < 1) {
   let factor = Math.min(skin.time/1,1)
   factor = (1 - factor*factor) * Math.abs(ground_y_diff/chair_ground_y)
@@ -1295,6 +1308,9 @@ if (skin.time < 1) {
   mesh.bones_by_name["左足ＩＫ"].quaternion.multiply(ankle_rot)
   mesh.bones_by_name["右足ＩＫ"].quaternion.multiply(ankle_rot)
 }
+
+System._browser.camera.poseNet.enable_IK('左腕ＩＫ', true)
+System._browser.camera.poseNet.enable_IK('右腕ＩＫ', true)
   }
 
  ,freeze_onended: true
@@ -1327,8 +1343,8 @@ if (skin.time < 1) {
  ,{ name:"頭", weight_screen:0.5, weight_screen_y:0.25, weight_motion:1 }
  ,{ name:"上半身2", weight_screen:0.75, weight_screen_x:0,weight_screen_y:1, weight_motion:1 }
 ]
-
-    }
+      };
+    })()
 
    ,"walk_A34_f0-42": {
 motion_tracking_enabled: true, motion_tracking_upper_body_only: true
