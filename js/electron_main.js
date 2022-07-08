@@ -1,5 +1,5 @@
 // SA Electron - Main EXTENDED
-// (2021-12-24)
+// (2022-07-08)
 
 /*
 eval on Electron v1.6.x has some scope issues/bugs which makes the global variables on this script inaccessible inside functions.
@@ -61,7 +61,6 @@ let contextMenu_MMD_visual_effects_HDR
 let contextMenu_MMD_visual_effects_SeriousShader, contextMenu_MMD_visual_effects_SeriousShader_shadow_opacity, contextMenu_MMD_visual_effects_SeriousShader_shadow_opacity_material_x050
 let contextMenu_MMD_visual_effects_PostProcessing, contextMenu_MMD_visual_effects_PostProcessing_SAO, contextMenu_MMD_visual_effects_PostProcessing_SAO_disabled_by_material, contextMenu_MMD_visual_effects_PostProcessing_Diffusion, contextMenu_MMD_visual_effects_PostProcessing_BloomPostProcess, contextMenu_MMD_visual_effects_PostProcessing_BloomPostProcess_blur_size, contextMenu_MMD_visual_effects_PostProcessing_BloomPostProcess_intensity, contextMenu_MMD_visual_effects_PostProcessing_BloomPostProcess_threshold
 let contextMenu_MMD_visual_effects_Shadow, contextMenu_MMD_visual_effects_Light, contextMenu_MMD_visual_effects_Light_color, contextMenu_MMD_visual_effects_Light_color_RGB, contextMenu_MMD_visual_effects_Light_position, contextMenu_MMD_visual_effects_Light_position_XYZ
-let contextMenu_FB
 let contextMenu_Custom, contextMenu_Custom_submenu_by_name = {}
 let contextMenu_click_thru
 
@@ -280,14 +279,13 @@ if (parseInt(process.versions.electron) >= 14) {
  ,'Active window': 8
  ,'Media control': 11
  ,'MMD/3D': 12
- ,'Facebook': 13
 
- ,'Custom': 14
+ ,'Custom': 13
 
- ,'Show drop area': 15
- ,'DevTools': 18
- ,'Pause/Resume': 19
- ,'Close': 22
+ ,'Show drop area': 14
+ ,'DevTools': 17
+ ,'Pause/Resume': 18
+ ,'Close': 21
 
 // 2nd level
  ,'50% on hover': 4
@@ -594,19 +592,6 @@ webContents.send('tray_menu', 'OPACITY:apply_to_child')
   _items.push({label: 'Lock child dragging', type: 'checkbox', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'LOCK_CHILD_DRAGGING:' + ((menuItem.checked)?1:0)) }})
   contextMenu_active_window = Menu.buildFromTemplate(_items);
 
-  contextMenu_FB = Menu.buildFromTemplate([
-    {label: 'Log in', click: function (menuItem, browserWindow) { contextMenu.items[menu_item_index["Facebook"]].enabled=menuItem.visible=false; global.FB_login(); }}
-   ,{label: 'Visit post', visible:false, click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'FACEBOOK:visit_post') }}
-   ,{label: 'Visit link', visible:false, click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'FACEBOOK:visit_link') }}
-   ,{label: 'Play video', visible:false, click: function (menuItem, browserWindow) { contextMenu_FB.items[4].visible=true; webContents.send('tray_menu', 'FACEBOOK:play_video') }}
-   ,{label: 'Stop video', visible:false, click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'FACEBOOK:stop_video') }}
-   ,{type: 'separator' }
-   ,{label: 'Next Post', visible:false, click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'FACEBOOK:next_post') }}
-   ,{label: 'Previous Post', visible:false, click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'FACEBOOK:previous_post') }}
-   ,{label: 'Shuffle Feed', visible:false, click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'FACEBOOK:shuffle_feed') }}
-   ,{label: 'Reset Feed', visible:false, click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'FACEBOOK:reset_feed') }}
-  ]);
-
   contextMenu_click_thru = Menu.buildFromTemplate([
     {label: 'Full', type: 'checkbox', click: function (menuItem, browserWindow) { DropArea_hide(menuItem.checked); contextMenu_click_thru.items[1].checked=false; webContents.send('tray_menu', 'CLICK_THRU:1') }}
    ,{label: 'Partial', enabled:global.is_transparent, type: 'checkbox', click: function (menuItem, browserWindow) { contextMenu_click_thru.items[0].checked=false; webContents.send('tray_menu', 'CLICK_THRU_PARTIAL:1') }}
@@ -631,7 +616,6 @@ webContents.send('tray_menu', 'OPACITY:apply_to_child')
    ,{label: 'Size', submenu: contextMenu_size}
    ,{label: 'Media control', submenu: contextMenu_media_control}
    ,{label: 'MMD/3D', submenu: contextMenu_MMD}
-   ,{label: 'Facebook', submenu: contextMenu_FB, enabled:false, visible:false}
    ,{label: 'Custom', submenu: contextMenu_Custom, visible:false}
    ,{label: 'Show drop area', type: 'checkbox', click: function (menuItem, browserWindow) { DropArea_show(menuItem.checked) }}
    ,{label: 'Settings', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'SETTINGS:1') }}
@@ -1173,22 +1157,6 @@ if (shadow_opacity_scale == 0.5)
     }
   }
 
-  if ("Facebook" in para) {
-    var _fb = para.Facebook
-    if (_fb.enabled) {
-      contextMenu.items[menu_item_index['Facebook']].enabled = contextMenu.items[menu_item_index['Facebook']].visible = _fb.enabled
-    }
-// in newer version of Electron, it seems .items are not available if the parent menu is disabled.
-    else if (contextMenu.items[menu_item_index['Facebook']].enabled) {
-      contextMenu_FB.items[1].visible = !!_fb.visit_post
-      contextMenu_FB.items[2].visible = !!_fb.visit_link
-      contextMenu_FB.items[3].visible = !!_fb.play_video
-      contextMenu_FB.items[4].visible = !!_fb.stop_video
-      for (var i = 6; i <= 9; i++)
-        contextMenu_FB.items[i].visible = !!_fb.next_post
-    }
-  }
-
   if (global.WallpaperEngine_mode) {
     [0,1, menu_item_index['Stay on desktop'],menu_item_index['Auto pause'], menu_item_index['Pause/Resume'], menu_item_index['Close']].forEach(function (index) {
       contextMenu.items[index].enabled = false
@@ -1221,6 +1189,9 @@ setTimeout(function () {capturePage_in_process = false}, 200)
   });
 }
 
+// For backward compatibility only. Use ipcRenderer instead.
+// https://www.npmjs.com/package/@electron/remote
+// https://www.electronjs.org/docs/latest/api/ipc-renderer
 global.mainWindow_postMessage = function (channel, msg) {
   webContents.send(channel, msg)
 }
@@ -1297,84 +1268,6 @@ global.GetImageSize = function (filename) {
   }
 
   return null
-}
-
-// Facebook API
-// https://github.com/nageshpodilapu/Using-Facebook-Twitter-API-with-Electron-Application/blob/master/index.js
-let FB_login_processing, FB_login_successful
-let FB_authWindow
-
-global.FB_login = function (reset) {
-  if (FB_login_processing) {
-    return
-  }
-
-  if (reset) {
-    FB_login_successful = false
-  }
-
-  if (FB_login_successful) {
-    return
-  }
-
-  FB_login_processing = true
-
-  var options = {
-    client_id: '1837630969807148',
-//    scopes: "public_profile,user_videos",
-    redirect_uri: "https://www.facebook.com/connect/login_success.html"
-  };
-
-  FB_authWindow = new BrowserWindow({ width:450, height:300, show:false, webPreferences:{nodeIntegration:true} });
-  FB_authWindow.setContentProtection(true)
-
-//    var facebookAuthURL = "https://www.facebook.com/dialog/oauth?client_id=" + options.client_id + "&redirect_uri=" + options.redirect_uri + "&response_type=token,granted_scopes&scope=" + options.scopes + "&display=popup";
-  FB_authWindow.loadURL(toFileProtocol(SA_path+'\\electron_fb_login.html'));
-/*
-  FB_authWindow.on('hide', function() {
-    contextMenu.items[menu_item_index["Facebook"]].enabled = true//FB_login_successful
-    contextMenu_FB.items[0].visible = !FB_login_successful
-    setTimeout(function () {
-try {
-  if (FB_authWindow)
-    FB_authWindow.close()
-}
-catch (err) {}
-    }, 20*1000);
-  });
-*/
-  FB_authWindow.on('closed', function() {
-    FB_login_processing = false
-    contextMenu.items[menu_item_index["Facebook"]].enabled = true//FB_login_successful
-    contextMenu_FB.items[0].visible = !FB_login_successful
-    FB_authWindow = null;
-  });
-//    FB_authWindow.show();
-/*
-    FB_authWindow.webContents.on('did-get-redirect-request', function (event, oldUrl, newUrl) {
-      var raw_code = /access_token=([^&]*)/.exec(newUrl) || null;
-      access_token = (raw_code && raw_code.length > 1) ? raw_code[1] : null;
-      error = /\?error=(.+)$/.exec(newUrl);
-      if(access_token) {
-        FB.setAccessToken(access_token);
-        FB.api('/me', { fields: ['id', 'name', 'picture.width(800).height(800)'] }, function (res) {
-console.log(newUrl);
-console.log(res.name);
-console.log(res.id);
-console.log(res.picture.data.url);
-        });
-        FB_authWindow.close();
-      }
-    });
-*/
-}
-
-global.FB_login_succeed = function (url, access_token) {
-  FB_login_successful = true
-  contextMenu.items[menu_item_index["Facebook"]].enabled = true
-  contextMenu_FB.items[0].visible = false
-
-  webContents.send('Facebook', 'LOGIN_RESULT|' + encodeURI(url) + '|' + access_token)
 }
 
 })();
