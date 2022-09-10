@@ -8244,10 +8244,7 @@ set: function (id, obj, skip_scene) {
     renderer: (function () {
       var _device_framebuffer = null;
 
-      window.addEventListener('jThree_ready', (function () {
-        var bindFramebuffer;
-
-        return function () {
+      window.addEventListener('jThree_ready', function () {
 // a "hack" to set default framebuffer for WebXR
 if (threeX.enabled) {
   const state = threeX.renderer.obj.state;
@@ -8256,8 +8253,7 @@ if (threeX.enabled) {
     return this._bindFramebuffer( target, (framebuffer === null) ? _device_framebuffer : framebuffer );
   };
 }
-        };
-      })());
+      });
 
       return {
         get obj() { return (threeX.enabled) ? data.renderer : MMD_SA._renderer; },
