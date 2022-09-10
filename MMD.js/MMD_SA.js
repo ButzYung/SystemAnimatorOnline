@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2022-07-08)
+// (2022-09-10)
 
 var use_full_spectrum = true
 
@@ -7193,6 +7193,7 @@ if (MMD_SA_options.THREEX_options.use_MMD) {
   MMD.init()
 //F:\\MMD\\models\\Tda式初音ミク・アペンドVer1.00\\Tda式初音ミク・アペンド_Ver1.00.pmx
 //F:\\MMD\\models\\--\\H35\\H35a11_v05.pmx
+//F:\\MMD\\models\\YYB Hatsune Miku_NT\\YYB Hatsune Miku_NT_1.0ver.pmx
 //F:\\MMD\\stages\\体育館\\体育館.pmx
   MMD.load((/\.pmx$/i.test(MMD_SA_options.THREEX_options.model_path) && MMD_SA_options.THREEX_options.model_path)||'F:\\MMD\\models\\--\\H35\\H35a11_v05.pmx', {
     pmx_index: 0,
@@ -8250,9 +8251,14 @@ set: function (id, obj, skip_scene) {
         get device_framebuffer() { return _device_framebuffer; },
         set device_framebuffer(fb) {
 if (fb != _device_framebuffer) {
-  _device_framebuffer = fb
-  const _gl = this.obj.getContext()
-  _gl.bindFramebuffer(_gl.FRAMEBUFFER, fb);
+  _device_framebuffer = fb;
+  const _gl = this.obj.getContext();
+  if (threeX.enabled) {
+    this.obj.state.bindFramebuffer(_gl.FRAMEBUFFER, fb);
+  }
+  else {
+    _gl.bindFramebuffer(_gl.FRAMEBUFFER, fb);
+  }
 }
         },
 
@@ -8684,14 +8690,14 @@ MMD_SA_options.texture_resolution_limit=2048
   if (MMD_SA_options.user_camera.ML_models.facemesh.use_mediapipe == null)
     MMD_SA_options.user_camera.ML_models.facemesh.use_mediapipe = true//System._browser.url_search_params.use_mediapipe_facemesh
   if (MMD_SA_options.user_camera.ML_models.use_holistic == null)
-    MMD_SA_options.user_camera.ML_models.use_holistic = System._browser.url_search_params.use_holistic
+    MMD_SA_options.user_camera.ML_models.use_holistic = !!System._browser.url_search_params.use_holistic || null
   if (MMD_SA_options.user_camera.ML_models.worker_disabled == null)
     MMD_SA_options.user_camera.ML_models.worker_disabled = (typeof OffscreenCanvas == "undefined") || System._browser.url_search_params.ML_worker_disabled
 
   if (MMD_SA_options.user_camera.ML_models.facemesh.use_mediapipe || MMD_SA_options.user_camera.ML_models.worker_disabled)
     System._browser.camera.facemesh.use_mediapipe = true
-  if (MMD_SA_options.user_camera.ML_models.use_holistic)
-    System._browser.camera.poseNet._use_holistic_ = true
+  if (typeof MMD_SA_options.user_camera.ML_models.use_holistic == 'boolean')
+    System._browser.camera.poseNet._use_holistic_ = MMD_SA_options.user_camera.ML_models.use_holistic
 
   var _trackball_camera_limit_adjust = function () {}
   if (MMD_SA_options.trackball_camera_limit) {
