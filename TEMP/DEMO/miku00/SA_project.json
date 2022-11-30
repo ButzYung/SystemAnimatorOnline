@@ -4,6 +4,7 @@
 
  ,"config_default": {
     "DisableTransparency": "non_default"
+   ,"DisableBackgroundThrottling": "non_default"
   }
 
 }
