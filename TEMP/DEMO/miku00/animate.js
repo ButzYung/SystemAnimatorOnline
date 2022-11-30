@@ -1363,9 +1363,9 @@ motion_tracking_enabled: true, motion_tracking_upper_body_only: true
  ,onstart: function () {
 let model = THREE.MMD.getModels()[0]
 let bones_by_name = model.mesh.bones_by_name
-let head = bones_by_name["頭"].pmxBone.origin
+let head = MMD_SA._head_pos;
 
-this.center_view = (this.center_view_enforced) ? [0, (head[1])*1.05-11.4, -20] : [0,0,0]
+this.center_view = (this.center_view_enforced) ? [0, (head.y)*1.025-11.4, -20] : [0,0,0]
   }
 
  ,object_click_disabled: true
@@ -1743,6 +1743,7 @@ cam_pos.copy(MMD_SA._trackball_camera.object.position)
   }
 
  ,WebXR: {
+    model_scale: (is_mobile) ? 0.9 : 1,
     AR: {
       dom_overlay: { root:"Lbody" }
 
@@ -1833,7 +1834,7 @@ wireframe:{
     },
     ML_models: {
       enabled: true,
-//      use_holistic: true,
+//      use_holistic: false,
 //      worker_disabled: true,
 //      debug_hidden: true,
       facemesh: {
@@ -1885,8 +1886,8 @@ wireframe:{
     MMD_SA_options.height = screen.height
   }
   else {
-    MMD_SA_options.width  = 800
-    MMD_SA_options.height = 600
+    MMD_SA_options.width  = 640//800
+    MMD_SA_options.height = 480//600
   }
 
 //  RAF_animation_frame_unlimited = true
@@ -1966,6 +1967,86 @@ model.mesh.quaternion.copy(MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.set(0, rot_
   }
 */
   };
+
+  window.addEventListener('MMDStarted', ()=>{
+    if (!/_MissBigHK_\-ghost_buruma2/.test(MMD_SA_options.model_path)) return;
+
+    System._browser.on_animation_update.add((function () {
+      var canvas = document.createElement('canvas');
+      canvas.width  = 512;
+      canvas.height = 256;
+
+      var context = canvas.getContext('2d');
+      context.fillStyle = 'black';
+      context.font = 'bold 60px "Segoe Print"';
+      context.textBaseline = 'top';
+
+      var tex = THREE.MMD.getModels()[0].mesh.material.materials.find(m=>m.name=='sweater+').map;
+
+      var canvas_content = [];
+
+      return function () {
+var content = [];
+if (System._browser.motion_control.ready) {
+  const Key = System._browser.motion_control.Key;
+  const key_pressed = System._browser.motion_control.key_pressed;
+
+  let txt = '';
+  if (key_pressed[Key.W]) {
+    if (key_pressed[Key.A])
+      txt += '⬉'
+    else if (key_pressed[Key.D])
+      txt += '⬈'
+    else
+      txt += '⬆'
+  }
+  else if (key_pressed[Key.S]) {
+    if (key_pressed[Key.A])
+      txt += '⬋'
+    else if (key_pressed[Key.D])
+      txt += '⬊'
+    else
+      txt += '⬇'
+  }
+  else {
+    if (key_pressed[Key.A])
+      txt += '⬅'
+    else if (key_pressed[Key.D])
+      txt += '⮕'
+  }
+
+  if (txt) txt = '🎮' + txt;
+  content.push(txt);
+}
+else {
+  content.push('#XRAnimator');//'⬆️🎯🏃Ⓐ⌨️🎮🎥');
+}
+
+var content_txt = content.join()
+if (canvas_content.join() == content_txt) return;
+canvas_content = content;
+
+context.clearRect(0,0,512,256);
+
+if (content_txt) {
+  let w_max = 0, h_max = 60;
+  for (let i = 0, i_length = content.length; i < i_length; i++) {
+    const m = context.measureText(content[i])
+    if (w_max < m.width)
+      w_max = m.width
+  }
+
+  let y = (256 - content.length*(h_max+10)) / 2;
+  for (let i = 0, i_length = content.length; i < i_length; i++) {
+    context.fillText(content[i], (512-w_max)/2, y + i*(h_max+10))
+  }
+}
+
+tex.image = canvas;
+tex.needsUpdate = true;
+      };
+    })(), 0,0,-1)
+  });
 
 
 // dungeon options START
@@ -3152,6 +3233,25 @@ function onDrop_change_panorama(item) {
   }
 }
 
+function onDrop_change_facemesh_calibration(item) {
+  var src = item.path
+  if (item.isFileSystem && /([^\/\\]+)\.json$/i.test(src)) {
+//console.log(item)
+    fetch(toFileProtocol(src)).then((response) => response.json()).then((data) => {
+if (!data.facemesh_calibration_type) {
+  MMD_SA.SpeechBubble.message(0, 'This is not a valid facemesh calibration JSON file.', 3*1000);
+}
+else {
+  System._browser.camera.facemesh.import_calibration(data);
+}
+MMD_SA_options.Dungeon.run_event(null,done_branch,0);
+    });
+  }
+  else {
+    _onDrop_finish.call(DragDrop, item)
+  }
+}
+
 function onDrop_change_object3D(item) {
  var src = item.path
   if (item.isFileSystem && /([^\/\\]+)\.zip$/i.test(src)) {
@@ -3334,6 +3434,8 @@ var about_branch = 19
 var export_motion_branch = 22
 var record_motion_branch = 25
 var mocap_options_branch = 29
+var facemesh_options_branch = 34
+var motion_control_branch = 40
 
 var show_other_options = false
 
@@ -3342,7 +3444,7 @@ return [
       [
         {
           message: {
-  get content() { return (!show_other_options && System._browser.camera.ML_enabled) ? ((System._browser.camera.motion_recorder.vmd) ? '1. Export motion to file\n2. Record motion\n3. Mocap options\n4. Mocap OFF\n5. Other options\n6. Cancel' : '1. Record motion\n2. Mocap options\n3. Mocap OFF\n4. Other options\n5. Cancel') : '1. Overlay & UI\n2. BG/Scene/3D' + ((/\.bvh$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd) ? '\n3. Export motion to file\n4. About\n5. Cancel' : '\n3. About\n4. Cancel'); }
+  get content() { return (!show_other_options && System._browser.camera.ML_enabled) ? ((System._browser.camera.motion_recorder.vmd) ? '1. Export motion to file\n2. Record motion\n3. Mocap options\n4. Mocap OFF' : '1. Record motion\n2. Mocap options\n3. Mocap OFF\n4. Enable motion control') + '\n5. Other options\n6. Cancel' : '1. Overlay & UI\n2. BG/Scene/3D' + ((/\.bvh$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd) ? '\n3. Export motion to file\n4. About\n5. Cancel' : '\n3. About\n4. Cancel'); }
  ,bubble_index: 3
  ,get branch_list() {
 return (!show_other_options && System._browser.camera.ML_enabled) ? ((System._browser.camera.motion_recorder.vmd) ? [
@@ -3356,8 +3458,9 @@ return (!show_other_options && System._browser.camera.ML_enabled) ? ((System._br
   { key:1, branch_index:record_motion_branch },
   { key:2, branch_index:mocap_options_branch },
   { key:3, branch_index:2 },
-  { key:4, event_id:{ func:()=>{show_other_options=true;setTimeout(()=>{show_other_options=false},0);}, goto_event: { id:"_FACEMESH_OPTIONS_", branch_index:0 } } },
-  { key:5 }
+  { key:4, branch_index:motion_control_branch },
+  { key:5, event_id:{ func:()=>{show_other_options=true;setTimeout(()=>{show_other_options=false},0);}, goto_event: { id:"_FACEMESH_OPTIONS_", branch_index:0 } } },
+  { key:6 }
 ]) : [
   { key:1, branch_index:1 },
   { key:2, branch_index:3 }
@@ -3786,16 +3889,20 @@ DEBUG_show('(Motion recording STARTED / x0.25 speed)', 3)
         {
           func: function () {
 System._browser.camera._info =
-  '- Turn auto-grounding on if your avatar is always grounding with a fixed horizontal camera angle.\n'
-+ '- Turn eyeblink sync on if you want blinks of both eyes to be the same.'
+  '- Enable "Leg IK" to record motion in VMD with leg IK output.\n'
++ '- "Leg scale adjustment" adjust rotations by adapting the leg length difference between source and 3D model.\n'
++ '- Turn auto-grounding on if the person in the video is always grounding with a fixed horizontal camera angle.'
           }
          ,message: {
-  get content() { return '1. Auto-grounding ' + ((System._browser.camera.poseNet.auto_grounding)?'OFF':'ON') + '\n2. Eyeblink LR sync ' + ((System._browser.camera.facemesh.blink_sync)?'OFF':'ON') + '\n3. Done'; } 
+  get content() { return '1. Leg IK:' + ((MMD_SA_options.user_camera.ML_models.pose.use_legIK)?'ON':'OFF') + '\n2. Leg scale adjustment:' + ((!System._browser.camera.poseNet.leg_scale_adjustment)?'OFF':((System._browser.camera.poseNet.leg_scale_adjustment>0 && '+')||'')+System._browser.camera.poseNet.leg_scale_adjustment) + '\n3. Auto-grounding:' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON') + '\n4. Clear bounding box\n5. Facemesh options\n6. Done'; }
  ,bubble_index: 3
  ,branch_list: [
   { key:1, branch_index:mocap_options_branch+1 },
   { key:2, branch_index:mocap_options_branch+2 },
-  { key:3, branch_index:done_branch }
+  { key:3, branch_index:mocap_options_branch+3 },
+  { key:4, branch_index:mocap_options_branch+4 },
+  { key:5, branch_index:facemesh_options_branch },
+  { key:6, branch_index:done_branch }
   ]
           }
         }
@@ -3804,7 +3911,11 @@ System._browser.camera._info =
      ,[
         {
           func: function () {
-System._browser.camera.poseNet.auto_grounding = !System._browser.camera.poseNet.auto_grounding;
+MMD_SA_options.user_camera.ML_models.pose.use_legIK = !MMD_SA_options.user_camera.ML_models.pose.use_legIK;
+if (MMD_SA_options.user_camera.ML_models.pose.use_legIK) {
+  System._browser.camera.poseNet.frames.remove('skin', '左ひざ');
+  System._browser.camera.poseNet.frames.remove('skin', '右ひざ');
+}
           }
          ,goto_branch: mocap_options_branch
         }
@@ -3813,11 +3924,180 @@ System._browser.camera.poseNet.auto_grounding = !System._browser.camera.poseNet.
      ,[
         {
           func: function () {
-System._browser.camera.facemesh.blink_sync = !System._browser.camera.facemesh.blink_sync;
+if (++System._browser.camera.poseNet.leg_scale_adjustment > 5) System._browser.camera.poseNet.leg_scale_adjustment = -5;
           }
          ,goto_branch: mocap_options_branch
         }
       ]
+// 32
+     ,[
+        {
+          func: function () {
+System._browser.camera.poseNet.auto_grounding = !System._browser.camera.poseNet.auto_grounding;
+          }
+         ,goto_branch: mocap_options_branch
+        }
+      ]
+// 33
+     ,[
+        {
+          func: function () {
+const camera = System._browser.camera;
+if (!camera.poseNet.enabled) {
+  DEBUG_show('(Body mocap only)', 2);
+  return;
+}
+if (!camera.video || (camera.video.pause && !camera.video.paused)) {
+  DEBUG_show('(Paused video input required)', 2);
+  return;
+}
+if (!camera.poseNet._bb) {
+  DEBUG_show('(No bounding box to clear)', 2);
+  return;
+}
+
+System._browser.camera.poseNet.bb_clear = 15
+          }
+         ,goto_branch: mocap_options_branch
+        }
+      ]
+
+// 34
+     ,[
+        {
+          message: {
+  get content() {
+const camera = System._browser.camera;
+
+return '\n1. Eyeblink LR sync:' + ((!System._browser.camera.facemesh.blink_sync)?'OFF':'ON') + '\n2. Eye tracking:' + ((!System._browser.camera.facemesh.eye_tracking)?'OFF':'ON') + ((camera.facemesh.enabled && camera.video) ? '\n3. Reset calibration\n4. Import calibration\n5. Export calibration\n6. Done' : '\n3. Done');
+  }
+ ,bubble_index: 3
+ ,get branch_list() {
+const camera = System._browser.camera;
+
+return (camera.facemesh.enabled && camera.video) ? [
+  { key:1, branch_index:facemesh_options_branch+1 },
+  { key:2, branch_index:facemesh_options_branch+2 },
+  { key:3, branch_index:facemesh_options_branch+3 },
+  { key:4, branch_index:facemesh_options_branch+4 },
+  { key:5, branch_index:facemesh_options_branch+5 },
+  { key:6, branch_index:done_branch }
+    ] : [
+  { key:1, branch_index:facemesh_options_branch+1 },
+  { key:2, branch_index:facemesh_options_branch+2 },
+  { key:3, branch_index:done_branch }
+];
+  }
+          }
+        }
+      ]
+// 35
+     ,[
+        {
+          func: function () {
+System._browser.camera.facemesh.blink_sync = !System._browser.camera.facemesh.blink_sync;
+          }
+         ,goto_branch: facemesh_options_branch
+        }
+      ]
+// 36
+     ,[
+        {
+          func: function () {
+System._browser.camera.facemesh.eye_tracking = !System._browser.camera.facemesh.eye_tracking;
+          }
+         ,goto_branch: facemesh_options_branch
+        }
+      ]
+// 37
+     ,[
+        {
+          func: function () {
+System._browser.camera.facemesh.reset_calibration(true);
+MMD_SA_options.Dungeon.run_event(null,done_branch,0);
+          }
+        }
+      ]
+// 38
+     ,[
+        {
+          func: function () {
+DragDrop.onDrop_finish = onDrop_change_facemesh_calibration;
+          }
+         ,message: {
+  content: 'Drop a JSON file containing the facemesh calibration data.\n1. Cancel'
+ ,bubble_index: 3
+ ,branch_list: [
+    { key:1, branch_index:done_branch }
+  ]
+          }
+        }
+      ]
+// 39
+     ,[
+        {
+          func: function () {
+const facemesh = System._browser.camera.facemesh;
+
+if (!facemesh.calibrated) {
+  MMD_SA.SpeechBubble.message(0, 'Calibration needs to be complete before it can be exported.', 3*1000);
+}
+else {
+  facemesh.export_calibration();
+}
+MMD_SA_options.Dungeon.run_event(null,done_branch,0);
+          }
+        }
+      ]
+
+// 40
+     ,[
+        {
+          func: function () {
+if (!webkit_electron_mode) {
+  MMD_SA.SpeechBubble.message(0, 'This option is for native app mode only.', 3*1000)
+  MMD_SA_options.Dungeon.run_event(null,done_branch,0)
+}
+else {
+  MMD_SA_options.Dungeon.run_event()
+}
+          }
+        }
+       ,{
+          message: {
+  content: '1. Virtual mouse\n2. Game 01 (PSO2NGS) \n3. Cancel'
+ ,bubble_index: 3
+ ,branch_list: [
+  { key:1, branch_index:motion_control_branch+1 },
+  { key:2, branch_index:motion_control_branch+2 },
+  { key:3, branch_index:done_branch }
+  ]
+          }
+        }
+      ]
+// 41
+     ,[
+        {
+          func: function () {
+System._browser.motion_control.virtual_mouse.enabled = true
+System._browser.motion_control.enabled = true
+MMD_SA.SpeechBubble.message(0, 'Hold an index-up gesture for 1 second to start, flipped backward for 1 second to end.', 3*1000)
+          }
+         ,ended: true
+        }
+      ]
+// 42
+     ,[
+        {
+          func: function () {
+System._browser.motion_control.game01.enabled = true
+System._browser.motion_control.enabled = true
+MMD_SA.SpeechBubble.message(0, 'Hold an index-up gesture for 1 second to start, flipped backward for 1 second to end.', 3*1000)
+          }
+         ,ended: true
+        }
+      ]
+
 ];
     })()
 
@@ -4165,9 +4445,10 @@ window.addEventListener("SA_AR_onARFrame", (function () {
     var update_frame = false
     var cooling_count = 0
     return function () {
-      var camera = System._browser.camera
-// (camera.ML_fps > 40)
-      if ((RAF_timestamp_delta > 25) || MMD_SA_options.user_camera.ML_models.worker_disabled || !camera.initialized || camera._needs_RAF || !camera.ML_busy || (!is_mobile && ((camera.ML_fps > ((camera.poseNet.enabled && camera.poseNet.use_holistic)?10:20)) || (cooling_count=10)) && (!camera.video.paused && (--cooling_count < 0))) || (!(camera.facemesh.enabled && camera.facemesh.use_mediapipe) && !camera.poseNet.enabled)) {
+      var camera = System._browser.camera;
+
+// when backgroundThrottling is disabled and the app is hidden (i.e. System._browser.hidden), every requestAnimationFrame must be called and drawn (with dummy stuff in this case) to prevent the frames from halting
+      if (System._browser.hidden || (RAF_timestamp_delta > 25) || MMD_SA_options.user_camera.ML_models.worker_disabled || !camera.initialized || camera._needs_RAF || !camera.ML_busy || (!is_mobile && ((camera.ML_fps > ((camera.poseNet.enabled && camera.poseNet.use_holistic)?15:20)) || (cooling_count=10)) && (!camera.video.paused && (--cooling_count < 0))) || (!(camera.facemesh.enabled && camera.facemesh.use_mediapipe) && !camera.poseNet.enabled)) {
         camera._needs_RAF = false
         update_frame = true
       }
@@ -4176,6 +4457,8 @@ window.addEventListener("SA_AR_onARFrame", (function () {
       }
 
       RAF_timestamp_delta_accumulated = (update_frame) ? 0 : RAF_timestamp_delta_accumulated + RAF_timestamp_delta;
+
+      System._browser.motion_control.setMousePosition();
 
       return update_frame
     };
