@@ -1,4 +1,4 @@
-// System Animator core - EXTRA (2022-04-26)
+// System Animator core - EXTRA (2022-11-30)
 
 var use_SA_gimage_emulation
 
@@ -135,11 +135,12 @@ function SA_load_scripts() {
         SA_HTA_folder = p[hta_index]
         if (/^system-animator\:\/+/.test(SA_HTA_folder))
           SA_HTA_folder = decodeURIComponent(SA_HTA_folder.replace(/^system-animator\:\/+/, "")).replace(/[\/\\]$/, "")
-        else if (browser_native_mode && /^\//.test(SA_HTA_folder))
+        else if ((browser_native_mode || (self._url_search_params_ && self._url_search_params_.cmd_line)) && /^\//.test(SA_HTA_folder))
           SA_HTA_folder = System.Gadget.path + SA_HTA_folder
         SA_HTA_folder = path_demo[SA_HTA_folder] || SA_HTA_folder
 //console.log(SA_HTA_folder, self.location.href)
       }
+//console.log(params,p,System.Gadget.path)
 //else console.log(p[hta_index])
     }
 
@@ -309,15 +310,17 @@ if (!WallpaperEngine_CEF_mode) {
   }
 }
 
+System.Gadget.Settings._settings_default = {
+  "Folder": path_demo_by_url[SA_HTA_folder] || ("$SA_HTA_folder$" + ((SA_HTA_folder_full == SA_HTA_folder) ? "" : encodeURIComponent(SA_HTA_folder_full.substr(SA_HTA_folder.length))))
+};
+
 if (c_js) {
   // direct eval for XUL
   html += SystemEXT.ReadJS(c_js, true)
 //  html += '<script type="text/javascript" language="javascript" src="' + toFileProtocol(SA_HTA_folder) + '/_config_local.js"></scr'+'ipt>\n'
 }
 else {
-  System.Gadget.Settings._settings = SystemEXT._default._settings = {
-"Folder": path_demo_by_url[SA_HTA_folder] || ("$SA_HTA_folder$" + ((SA_HTA_folder_full == SA_HTA_folder) ? "" : encodeURIComponent(SA_HTA_folder_full.substr(SA_HTA_folder.length))))
-  }
+  System.Gadget.Settings._settings = SystemEXT._default._settings = Object.assign({}, System.Gadget.Settings._settings_default);
 //alert(System.Gadget.Settings._settings.Folder)
 
 // settings from localStorage
