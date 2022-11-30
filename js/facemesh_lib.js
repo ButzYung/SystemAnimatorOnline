@@ -1,4 +1,4 @@
-// (2022-06-23)
+// (2022-11-30)
 
 var FacemeshAT = (function () {
 
@@ -695,7 +695,7 @@ function draw(faces, w,h, options) {
       cancelAnimationFrame(RAF_timerID)
     RAF_timerID = requestAnimationFrame(function () {
       RAF_timerID = null
-      draw_facemesh(faces, Math.round(w/2),Math.round(h/2));
+      draw_facemesh(faces, w,h);
       draw_pose()
     });
   }
@@ -706,10 +706,13 @@ var canvas_camera;
 
 var facemesh_drawn;
 
-function draw_facemesh(faces, w,h, rgba) {
+function draw_facemesh(faces, w_full,h_full, rgba) {
   function distance(a,b) {
 return Math.sqrt(Math.pow(a[0]-b[0],2) + Math.pow(a[1]-b[1],2))
   }
+
+  const w = Math.round(w_full/2);
+  const h = Math.round(h_full/2);
 
   if ((canvas.width != w) || (canvas.height != h)) {
     canvas.width  = w
@@ -806,18 +809,20 @@ const RED = "#FF2C35";
     });
   }
 
-  context.globalAlpha = 1/3
-  context.strokeStyle = 'white';
-  context.lineWidth = 3;
-  const region = new Path2D();
+  if ((bb.w < w_full) || (bb.h < h_full)) {
+    context.globalAlpha = 1/3
+    context.strokeStyle = 'white';
+    context.lineWidth = 3;
+    const region = new Path2D();
 
-  region.moveTo(bb.x/2, bb.y/2);
-  region.lineTo(bb.x/2+bb.w/2, bb.y/2);
-  region.lineTo(bb.x/2+bb.w/2, bb.y/2+bb.h/2);
-  region.lineTo(bb.x/2, bb.y/2+bb.h/2);
+    region.moveTo(bb.x/2, bb.y/2);
+    region.lineTo(bb.x/2+bb.w/2, bb.y/2);
+    region.lineTo(bb.x/2+bb.w/2, bb.y/2+bb.h/2);
+    region.lineTo(bb.x/2, bb.y/2+bb.h/2);
 
-  region.closePath();
-  context.stroke(region);
+    region.closePath();
+    context.stroke(region);
+  }
 
   context.restore()
 }
