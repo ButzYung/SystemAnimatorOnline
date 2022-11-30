@@ -1,4 +1,4 @@
-// (2022-07-08)
+// (2022-11-30)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -498,6 +498,8 @@ para_SA.motion_blending = {
         ca._time_ini = RAF_timestamp
         ca._seek_time_ = (mm_old.para_SA.loop_on_blending && !mm_old.para_SA.freeze_onended && _delta0_from_last_loop && (_delta0_from_last_loop + ((mm_old.firstFrame_ && mm_old.firstFrame_/30) || 0))) || Math.min(skin_blend.time+delta, mm_old.lastFrame_/30-(1/59)/1000);
 //console.log(mm_old.filename, !!mm_old.para_SA.freeze_onended, ca._seek_time_)
+
+        MMD_SA._ignore_physics_reset = true;
       }
 
       let obj = model._MMD_SA_cache_current = model._MMD_SA_cache[motion.path]
@@ -519,6 +521,42 @@ para_SA.motion_blending = {
       model.resetMotion(ignore_physics_reset || MMD_SA._ignore_physics_reset)
     }
 //DEBUG_show(motion.path.replace(/^.+[\/\\]/, "")+"/"+mmd.motionManager.filename+'/'+(MMD_SA_options.motion[model.skin._motion_index].path.replace(/^.+[\/\\]/, ""))+'/'+parseInt(mm.lastFrame_/30)+'/'+Date.now())
+
+
+    if (blending_options) {
+MMD_SA.fadeout_opacity = null;
+    }
+    if (MMD_SA.fadeout_opacity == 1) {
+MMD_SA.fadeout_texture_uploaded = false;
+
+const w = SL.width;
+const h = SL.height;
+//var ini = parseInt((w * h) * Math.random()) * 4
+/*
+var gl = MMD_SA.MMD.gl;
+if (!MMD_SA.fadeout_image)
+  MMD_SA.fadeout_image = new Uint8Array(w * h * 4);
+gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, MMD_SA.fadeout_image);
+for (var i = 0; i < 8; i++)
+  DEBUG_show(MMD_SA.fadeout_image[ini + i],0,1)
+*/
+// for desktop and mobile
+MMD_SA.fadeout_canvas.width  = SL.width;
+MMD_SA.fadeout_canvas.height = SL.height;
+
+const context = MMD_SA.fadeout_canvas.getContext("2d");
+context.globalCompositeOperation = 'copy';
+context.drawImage(MMD_SA.THREEX.SL, 0,0);
+/*
+var imagedata = context.getImageData(0,0,w,h).data
+for (var i = 0; i < 8; i++)
+  DEBUG_show(imagedata[ini + i],0,1)
+*/
+//DEBUG_show("(pixels read)",0,1)
+
+MMD_SA.fadeout_opacity = 0.95;
+    }
+
 
     model.skin._loop_timestamp = RAF_timestamp
 
@@ -1671,7 +1709,7 @@ if (self.MMD_SA) {
   model_para_obj = MMD_SA_options.model_para_obj_by_filename[filename_raw]
   this._model_index = this._model_index_default = model_para_obj._model_index
 
-  MMD_SA._readVector_scale = (model_para_obj.model_scale||1) * ((MMD_SA_options.WebXR) ? (MMD_SA_options.WebXR.model_scale || 0.9) : 1);
+  MMD_SA._readVector_scale = (model_para_obj.model_scale||1) * ((MMD_SA_options.WebXR) ? (MMD_SA_options.WebXR.model_scale || 1.0) : 1);
 
   if (/\#clone(\d+)\.pmx$/.test(filename_raw)) {
     cloned = true
@@ -2120,10 +2158,17 @@ if (onerror_func) onerror_func()
 		};
 		monitor.add();
 
+// AT: adjusted path
+let texturePath = that.texturePath;
+if (/^\.\.[\/\\]/.test(fname)) {
+  fname = fname.substring(3);
+  texturePath = texturePath.replace(/[^\/\\]+\/$/, '');
+}
+
 // AT: load default toon and .dds texture START
 		if ( ext === 'dds' ) {
 var _fname = (!self.MMD_SA || !MMD_SA_options.flip_DDS || /^data:image/.test( fname )) ? fname : fname.replace(/[^\/\\]+$/, "flipV/$&");
-			texture = THREE.ImageUtils.loadCompressedTexture( /^data:image/.test( fname ) ? _fname : toFileProtocol(that.texturePath + _fname), undefined,
+			texture = THREE.ImageUtils.loadCompressedTexture( /^data:image/.test( fname ) ? _fname : toFileProtocol(texturePath + _fname), undefined,
 				function( texture ) {
 					// !!! format is DXT1 or DXT3 or DXT5 !!!
 					texture.hasTransparency = ( texture.format !== THREE.RGB_S3TC_DXT1_Format );
@@ -2132,7 +2177,7 @@ var _fname = (!self.MMD_SA || !MMD_SA_options.flip_DDS || /^data:image/.test( fn
 				},
 				onerror);
 		} else {
-var _texturePath = (/^toon\d\d\.bmp$/.test(fname)) ? System.Gadget.path + '\\MMD.js\\data\\' : that.texturePath;
+var _texturePath = (/^toon\d\d\.bmp$/.test(fname)) ? System.Gadget.path + '\\MMD.js\\data\\' : texturePath;
 			texture = THREE.ImageUtils.loadTexture( /^data:image/.test( fname ) ? fname : toFileProtocol(_texturePath + fname), undefined,
 // AT: closure for _material
 (function () {
@@ -2679,7 +2724,7 @@ if (sd) {
 		keys = [];
 // AT: multi-model, model_scale
 var multi_model = (MMD_SA_options.model_para_obj_all.length > 1)
-var model_scale = (model_para_obj.model_scale||1) * ((MMD_SA_options.WebXR) ? (MMD_SA_options.WebXR.model_scale || 0.9) : 1);
+var model_scale = (model_para_obj.model_scale||1) * ((MMD_SA_options.WebXR) ? (MMD_SA_options.WebXR.model_scale || 1.0) : 1);
 		boneKeys.forEach( function( w ) {
 			if ( v.name === w.name ) {
 // AT: rot for T-pose
@@ -3358,6 +3403,13 @@ THREE.UniformsLib[ "uniTexture" ],
 //+'shadowColor = vec3((shadowCoord.z>0.)?1.:0.);\n'
 
 + '#elif defined( SHADOWMAP_TYPE_PCF_SOFT )\nfloat shadow = 0.0;float xPixelOffset = 1.0 / shadowMapSize[ i ].x;float yPixelOffset = 1.0 / shadowMapSize[ i ].y;float dx0 = -1.0 * xPixelOffset;float dy0 = -1.0 * yPixelOffset;float dx1 = 1.0 * xPixelOffset;float dy1 = 1.0 * yPixelOffset;mat3 shadowKernel;mat3 depthKernel;depthKernel[0][0] = unpackDepth( texture2D( shadowMap[ i ], shadowCoord.xy + vec2( dx0, dy0 ) ) );depthKernel[0][1] = unpackDepth( texture2D( shadowMap[ i ], shadowCoord.xy + vec2( dx0, 0.0 ) ) );depthKernel[0][2] = unpackDepth( texture2D( shadowMap[ i ], shadowCoord.xy + vec2( dx0, dy1 ) ) );depthKernel[1][0] = unpackDepth( texture2D( shadowMap[ i ], shadowCoord.xy + vec2( 0.0, dy0 ) ) );depthKernel[1][1] = unpackDepth( texture2D( shadowMap[ i ], shadowCoord.xy ) );depthKernel[1][2] = unpackDepth( texture2D( shadowMap[ i ], shadowCoord.xy + vec2( 0.0, dy1 ) ) );depthKernel[2][0] = unpackDepth( texture2D( shadowMap[ i ], shadowCoord.xy + vec2( dx1, dy0 ) ) );depthKernel[2][1] = unpackDepth( texture2D( shadowMap[ i ], shadowCoord.xy + vec2( dx1, 0.0 ) ) );depthKernel[2][2] = unpackDepth( texture2D( shadowMap[ i ], shadowCoord.xy + vec2( dx1, dy1 ) ) );vec3 shadowZ = vec3( shadowCoord.z );shadowKernel[0] = vec3(lessThan(depthKernel[0], shadowZ ));shadowKernel[0] *= vec3(0.25);shadowKernel[1] = vec3(lessThan(depthKernel[1], shadowZ ));shadowKernel[1] *= vec3(0.25);shadowKernel[2] = vec3(lessThan(depthKernel[2], shadowZ ));shadowKernel[2] *= vec3(0.25);vec2 fractionalCoord = 1.0 - fract( shadowCoord.xy * shadowMapSize[i].xy );shadowKernel[0] = mix( shadowKernel[1], shadowKernel[0], fractionalCoord.x );shadowKernel[1] = mix( shadowKernel[2], shadowKernel[1], fractionalCoord.x );vec4 shadowValues;shadowValues.x = mix( shadowKernel[0][1], shadowKernel[0][0], fractionalCoord.y );shadowValues.y = mix( shadowKernel[0][2], shadowKernel[0][1], fractionalCoord.y );shadowValues.z = mix( shadowKernel[1][1], shadowKernel[1][0], fractionalCoord.y );shadowValues.w = mix( shadowKernel[1][2], shadowKernel[1][1], fractionalCoord.y );shadow = dot( shadowValues, vec4( 1.0 ) );shadowColor = shadowColor * vec3( ( 1.0 - darkness * shadow ) );\n'
+// AT: shadow_opacity
++ [
+"#ifndef SHADOWMAP_CASCADE",
+  'float shadow_opacity = 1. - min(pow(length((shadowCoord.xy-0.5)*2.),4.), 1.);',
+  'shadowColor = mix(vec3(1.), shadowColor, shadow_opacity);',//vec3(1.-shadow_opacity);',//
+"#endif",
+].join('\n') + '\n'
 + '#else\nvec4 rgbaDepth = texture2D( shadowMap[ i ], shadowCoord.xy );float fDepth = unpackDepth( rgbaDepth );if ( fDepth < shadowCoord.z )shadowColor = shadowColor * vec3( 1.0 - darkness );\n#endif\n'
 
 + '}//LOOP_END\n#ifdef SHADOWMAP_DEBUG\n#ifdef SHADOWMAP_CASCADE\nif ( inFrustum && inFrustumCount == 1 ) gl_FragColor.xyz *= frustumColors[ i ];\n#else\nif ( inFrustum ) gl_FragColor.xyz *= frustumColors[ i ];\n#endif\n#endif\n}\n#ifdef GAMMA_OUTPUT\nshadowColor *= shadowColor;\n#endif\n'
@@ -5988,7 +6040,7 @@ if (self.MMD_SA) {
   });
 
 // AT: auto-adjust "dummy" center bone for some models
-if ((mesh.bones_by_name['センター'].pmxBone.origin[1] == 0) && (mesh.bones_by_name['グルーブ'])) {
+if ((mesh.bones_by_name['センター'] && (mesh.bones_by_name['センター'].pmxBone.origin[1] == 0)) && (mesh.bones_by_name['グルーブ'])) {
   let y_center = mesh.bones_by_name['グルーブ'].pmxBone.origin[1]
   mesh.bones_by_name['センター'].pmxBone.origin[1] = y_center
 
@@ -6344,6 +6396,8 @@ Model.prototype.resetPhysics = function (f) {
     f = para_SA.reset_rigid_body_physics_step||MMD_SA_options.reset_rigid_body_physics_step
   }
   this.mesh._reset_rigid_body_physics_ = Math.max(this.mesh._reset_rigid_body_physics_||0, f);
+
+  if (MMD_SA.THREEX.enabled) MMD_SA.THREEX.models[this._model_index].resetPhysics();
 };
 
 // AT: check model visibility
@@ -6702,13 +6756,13 @@ if (self.MMD_SA && _head_pos && (mesh.bones_by_name[head_name]) && (look_at_scre
 
 if (look_at_screen || look_at_mouse) {
 // not using MMD_SA.get_bone_rotation_parent here as it includes the look-at-screen rotation from the previous frame
-  var p_rotation_inversed = (MMD_SA_options.look_at_screen_parent_rotation || (System._browser.camera.facemesh.enabled && mesh.bones_by_name["全ての親"].quaternion) || MMD_SA.get_bone_rotation_parent(mesh, head_name)).conjugate();
-  var r = MMD_SA.face_camera(_head_pos, p_rotation_inversed)
+  const p_rotation_inversed = (MMD_SA_options.look_at_screen_parent_rotation_by_model(this) || (System._browser.camera.facemesh.enabled && mesh.bones_by_name["全ての親"].quaternion) || MMD_SA.get_bone_rotation_parent(mesh, head_name)).conjugate();
+  let r = MMD_SA.face_camera(_head_pos, p_rotation_inversed);
 
-  var angle_x_limit = para_SA.look_at_screen_angle_x_limit || [Math.PI*0.5, -Math.PI*0.5]
-  var angle_y_limit = para_SA.look_at_screen_angle_y_limit || [Math.PI*0.5, -Math.PI*0.5]
+  const angle_x_limit = para_SA.look_at_screen_angle_x_limit || [Math.PI*0.5, -Math.PI*0.5];
+  const angle_y_limit = para_SA.look_at_screen_angle_y_limit || [Math.PI*0.5, -Math.PI*0.5];
 
-  var ratio = (look_at_screen_ratio != null) ? look_at_screen_ratio : MMD_SA_options.look_at_screen_ratio
+  const ratio = (look_at_screen_ratio != null) ? look_at_screen_ratio : MMD_SA_options.look_at_screen_ratio_by_model(this);
   r.x = Math.min(Math.max(MMD_SA.normalize_angle(r.x * ratio), angle_x_limit[1]), angle_x_limit[0])
   r.y = Math.min(Math.max(MMD_SA.normalize_angle(r.y * ratio), angle_y_limit[1]), angle_y_limit[0])
 /*
@@ -6720,7 +6774,7 @@ if (look_at_screen || look_at_mouse) {
   }
 */
 
-  var _cam = MMD_SA.TEMP_v3.copy(cam).sub(_head_pos)
+  const _cam = MMD_SA.TEMP_v3.copy(cam).sub(_head_pos);
   if (this._model_index == 0) {
     MMD_SA._rx = Math.atan2(-_cam.y, Math.sqrt(Math.pow(_cam.x,2) + Math.pow(_cam.z,2)))
     MMD_SA._ry = r.y
@@ -6785,7 +6839,7 @@ MMD_SA._mouse_pos_3D[that._model_index][axis] += diff
   ws_ratio_x = Math.abs(r.x/ws_max_x)
   ws_ratio_y = Math.abs(r.y/ws_max_y)
 
-  var bone_list = MMD_SA_options.look_at_screen_bone_list
+  var bone_list = MMD_SA_options.look_at_screen_bone_list_by_model(this);
   for (var i = 0, i_length = bone_list.length; i < i_length; i++) {
     let b = bone_list[i]
     let bone = mesh.bones_by_name[b.name]
