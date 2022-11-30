@@ -1,4 +1,4 @@
-// (2022-06-18)
+// (2022-11-30)
 
 /*!
  * jThree JavaScript Library v2.1.2
@@ -12218,6 +12218,7 @@ uniTexture_pars_fragment: [
   '#ifdef USE_UNI_TEXTURE',
   '  uniform int uniTexture_state;',
   '  uniform sampler2D uniTexture_map;',
+  '  uniform float uniTexture_MatrixRain_greenness;',
   '  uniform vec4 uniTexture_null_zone;',
   '  varying vec2 uniTexture_vUv;',
   '  varying float uniTexture_MatrixRain_opacity;',
@@ -12234,7 +12235,7 @@ uniTexture_fragment: [
   '  #ifdef USE_MATRIX_RAIN_GREEN',
   '    vec3 _color_org = gl_FragColor.rgb;',
   '    float _gray = 0.3 * gl_FragColor.r + 0.59 * gl_FragColor.g + 0.11 * gl_FragColor.b;',
-  '    gl_FragColor.rgb = vec3(_gray) * uni_texture.rgb;',// vec3(_gray*0.25 * uni_texture.g) + vec3(_gray*0.75) * uni_texture.rgb;',
+  '    gl_FragColor.rgb = vec3(0., _gray*uni_texture.g, 0.) * uniTexture_MatrixRain_greenness + uni_texture.rgb * (1.0-uniTexture_MatrixRain_greenness);',//vec3(_gray) * uni_texture.rgb;',// vec3(_gray*0.25 * uni_texture.g) + vec3(_gray*0.75) * uni_texture.rgb;',
   '    if (uniTexture_MatrixRain_opacity < 1.0) { gl_FragColor.rgb = mix(vec3(0.0, _gray, 0.0), gl_FragColor.rgb, uniTexture_MatrixRain_opacity); }',
   '    if (uniTexture_null_zone.w > 0.0) { gl_FragColor.rgb = mix(_color_org, gl_FragColor.rgb, clamp((distance(vWorldPosition, uniTexture_null_zone.xyz) / (uniTexture_null_zone.w * 1.5) - 0.6667) * 3.0, 0.0, 1.0) ); }',
 // * (0.75+uni_texture.g*0.25)
@@ -14141,6 +14142,7 @@ THREE.UniformsLib = {
   "uniTexture_scale": { type: "f", value: 1 },
   "uniTexture_null_zone": { type: "v4", value: new THREE.Vector4(0,0,0,0) },
   "uniTexture_MatrixRain_height_limit": { type: "v2", value: new THREE.Vector2(0,0) },
+  "uniTexture_MatrixRain_greenness": { type: "f", value: 1 },
 },
 
 
@@ -20029,6 +20031,8 @@ if (!scene._RAF_timestamp_ || (scene._RAF_timestamp_ != RAF_timestamp)) { if (sc
 // after updateMatrixWorld, to save some headaches
 if (self.MMD_SA && MMD_SA.THREEX.renderer.render( scene, camera )) return
 
+if (!System._browser.rendering_check()) return;
+
 		// update WebGL objects
 
 		if ( this.autoUpdateObjects ) this.initWebGLObjects( scene );
@@ -21436,10 +21440,13 @@ if (material.uniTexture) {
   }
   if (m_uniforms.uniTexture_null_zone && MMD_SA.MMD_started) {
     let c_pos = THREE.MMD.getModels()[0].mesh.position
-    m_uniforms.uniTexture_null_zone.value.set(c_pos.x, c_pos.y+10, c_pos.z, (object._model_index==0)?999:10)
+    m_uniforms.uniTexture_null_zone.value.set(c_pos.x, c_pos.y+10, c_pos.z, (object._model_index==0)?999:MMD_SA_options.model_para_obj.left_leg_length*1.2)
   }
   if (m_uniforms.uniTexture_MatrixRain_height_limit) {
     m_uniforms.uniTexture_MatrixRain_height_limit.value.set(object._uniTexture_fadeout||0, bs.center.y)
+  }
+  if (m_uniforms.uniTexture_MatrixRain_greenness) {
+    m_uniforms.uniTexture_MatrixRain_greenness.value = MMD_SA.matrix_rain.greenness;
   }
   if (m_uniforms.uniTexture_map) {
     m_uniforms.uniTexture_map.value = material.uniTexture.map || MMD_SA.matrix_rain.matrix_texture;
@@ -22848,7 +22855,7 @@ parameters.waveTexture ? "#define USE_WAVE_TEXTURE" : "",
 parameters.mirrorTexture ? "#define USE_MIRROR_TEXTURE" : "",
 
 // AT: uniTexture
-parameters.uniTexture ? "#define USE_UNI_TEXTURE" + ((use_MatrixRain) ? ((MMD_SA.matrix_rain.full_color) ? "\n#define USE_MATRIX_RAIN_COLOR" : "\n#define USE_MATRIX_RAIN_GREEN") : "") : "",
+parameters.uniTexture ? "#define USE_UNI_TEXTURE" + ((use_MatrixRain) ? ((!MMD_SA.matrix_rain.greenness) ? "\n#define USE_MATRIX_RAIN_COLOR" : "\n#define USE_MATRIX_RAIN_GREEN") : "") : "",
 
 			parameters.normalMap ? "#define USE_NORMALMAP" : "",
 			parameters.specularMap ? "#define USE_SPECULARMAP" : "",
