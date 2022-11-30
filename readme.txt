@@ -1,4 +1,4 @@
-﻿(Document version 3.0)
+﻿(Document version 3.1)
 
 System Animator Online - Overview:
 
@@ -123,6 +123,9 @@ Copyright/License/Credits:
 
   - three.js
     https://threejs.org/
+
+  - three-vrm
+    https://github.com/pixiv/three-vrm
 
   - jThree v2 (NOTE: jThree has been discontinued. Its successor is known as "Grimoire.js")
     https://github.com/GrimoireGL/GrimoireJS
