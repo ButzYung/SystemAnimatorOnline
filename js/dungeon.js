@@ -1,4 +1,4 @@
-// (2022-07-08)
+// (2022-11-30)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -2433,9 +2433,9 @@ if (fog) {
   }
 
   MMD_SA.scene.fog.color = new THREE.Color(fog.color||"#000")
-  if (use_MatrixRain && !MMD_SA.matrix_rain.full_color) {
+  if (use_MatrixRain && MMD_SA.matrix_rain.greenness) {
     let gray = 0.3 * MMD_SA.scene.fog.color.r + 0.59 * MMD_SA.scene.fog.color.g + 0.11 * MMD_SA.scene.fog.color.b;
-    MMD_SA.scene.fog.color.setRGB(0, gray, 0);
+    MMD_SA.scene.fog.color.setRGB(MMD_SA.scene.fog.color.r*(1-MMD_SA.matrix_rain.greenness), gray*MMD_SA.matrix_rain.greenness + MMD_SA.scene.fog.color.g*(1-MMD_SA.matrix_rain.greenness), MMD_SA.scene.fog.color.b*(1-MMD_SA.matrix_rain.greenness));
   }
 console.log("Fog:"+ ((MMD_SA.scene.fog instanceof THREE.Fog) ? MMD_SA.scene.fog.near+'/'+MMD_SA.scene.fog.far: 'EXP2') +'/'+MMD_SA.scene.fog.color.getHexString())
 
@@ -2620,6 +2620,8 @@ _object_list.forEach(function (obj_list) {
 this.accessory_list = []
 this.object_id_translated = {}
 
+this.object_id_translated[(MMD_SA_options.model_para_obj.character && MMD_SA_options.model_para_obj.character.name) || 'PC'] = 'PC';
+
 this.object_list.forEach(function (obj, idx) {
   obj._index = idx
   var obj_index = obj.object_index
@@ -2642,6 +2644,12 @@ this.object_list.forEach(function (obj, idx) {
 
   obj.path = obj_base.path
   obj.character_index = obj_base.character_index
+
+  if (obj.character_index) {
+    const c = MMD_SA_options.model_para_obj_all[obj.character_index].character;
+    if (c && c.name)
+      that.object_id_translated[c.name] = id;
+  }
 
   if (obj._clone_index == null)
     obj._clone_index = -1
@@ -2828,9 +2836,9 @@ return !occupied
 
 // this seems to fix a glitch when collision detection is done on the top-most point of the boundingBox, which may override mesh collision
   if (obj.collision_by_mesh) {
-    if (!obj_base.cache.list[0].children[0].geometry._boundingBox)
-      obj_base.cache.list[0].children[0].geometry._boundingBox = obj_base.cache.list[0].children[0].geometry.boundingBox.clone()
-    obj_base.cache.list[0].children[0].geometry.boundingBox.max.y = obj_base.cache.list[0].children[0].geometry._boundingBox.max.y + 1
+    const geo = obj_base.cache.list[0].geometry || obj_base.cache.list[0].children[0].geometry;
+    if (!geo._boundingBox) geo._boundingBox = geo.boundingBox.clone();
+    geo.boundingBox.max.y = geo._boundingBox.max.y + 1;
   }
 
   obj.oncreate = obj.oncreate || obj_base.oncreate
@@ -2986,7 +2994,7 @@ if (MMD_SA_options.model_para_obj._icon_canvas) {
 */
 }
 else {
-  SL_Host.style.visibility = "hidden"
+//  SL_Host.style.visibility = "hidden"
 
   let dir_light = jThree("#MMD_DirLight").three(0)
   let _dir_light_pos = dir_light.position.clone()
@@ -3110,9 +3118,11 @@ MMD_SA_options.look_at_mouse  = _look_at_mouse
 
 MMD_SA.reset_camera()
 
-System._browser.on_animation_update.add(function () { SL_Host.style.visibility = "inherit"; }, 0, 0);
+//System._browser.on_animation_update.add(function () { SL_Host.style.visibility = "inherit"; }, 0, 0);
   }, (frame_to_skip-1), 1);
 }
+
+SL_Host.style.visibility = "hidden";
 
 MMD_SA_options.Dungeon.event_mode = true
 System._browser.on_animation_update.add(function () {
@@ -3126,6 +3136,8 @@ System._browser.on_animation_update.add(function () {
 
   MMD_SA_options.Dungeon.event_mode = false
   MMD_SA_options.Dungeon.run_event("onstart")
+
+  SL_Host.style.visibility = "inherit";
 }, frame_to_skip+3, 0);
     };
   })()
@@ -3239,7 +3251,7 @@ window.addEventListener("jThree_ready", function () {
     const para_SAX = MMD_SA.THREEX.get_model(idx).model_para;
     if (!para_SAX.icon_path)
       return
-//System.Gadget.path + '\\icon_teto_512x512.png'
+//System.Gadget.path + '\\icon_SA_512x512.png'
 
     if (!/^\w+\:/.test(para_SAX.icon_path))
       para_SAX.icon_path = MMD_SA.THREEX.get_model(idx).model_path.replace(/[^\/\\]+$/, "") + para_SAX.icon_path
@@ -3893,7 +3905,7 @@ this.item_base._backpack_ = Object.assign({
  ,info_short: "Backpack"
  ,index_default: MMD_SA_options.Dungeon.inventory.max_base-1
  ,is_base_inventory: true
- ,is_always_visible: true
+// ,is_always_visible: true
  ,stock_max: 1
  ,sound: [
     {
@@ -3916,7 +3928,7 @@ else {
   Ldungeon_inventory_backpack.style.visibility = (Ldungeon_inventory_backpack.style.visibility != "hidden") ? "hidden" : "inherit"
 }
 
-Ldungeon_inventory.style.posLeft = Ldungeon_inventory_backpack.style.posLeft = (B_content_width - (MMD_SA_options.Dungeon.inventory.max_base)*64) * ((System._browser.overlay_mode && (Ldungeon_inventory.style.visibility == "hidden")) ? 1 : 0.5);
+//Ldungeon_inventory.style.posLeft = Ldungeon_inventory_backpack.style.posLeft = (B_content_width - (MMD_SA_options.Dungeon.inventory.max_base)*64) * ((System._browser.overlay_mode && (Ldungeon_inventory.style.visibility == "hidden")) ? 1 : 0.5);
 
 if (MMD_SA_options.Dungeon.nipplejs_manager)
   Ljoystick.style.visibility = ((Ldungeon_inventory_backpack.style.visibility != "hidden") || options.joystick_disabled) ? "hidden" : "inherit"
@@ -4167,11 +4179,11 @@ ss.sheet.insertRule([
  ,'color: #fff;'
  ,'padding: 5px 5px;'
  ,'position: absolute;'
- ,'top:  -' + (5+5+12*5) + 'px;'
+ ,'top:  -' + (5+5+12*7) + 'px;'
  ,'left: -16px;'
  ,'z-index: 999;'
  ,'width: 280px;'
- ,'height: ' + (5+5+12*5) + 'px;'
+ ,'height: ' + (5+5+12*7) + 'px;'
  ,'font-size: 10px;'
  ,'content: attr(data-info);'//"' + this.item.info + '";'//
 // https://www.digitalocean.com/community/tutorials/css-line-break-content-property
@@ -7803,6 +7815,9 @@ Math.max(a.z, b.z, c.z)
   d.mesh_sorting_worker.tree[idx] = new d.mesh_sorting_worker.BoxIntersect(_array)
 */
 
+// compute face normal when necessary (mainly for PMX model)
+  if (!geo.faces[0].normal.lengthSq()) geo.computeFaceNormals();
+
 // https://github.com/mourner/rbush
   let tree = rbush()
 
@@ -8058,16 +8073,16 @@ mesh_obj.material.needsUpdate = true;
     if (obj.character_index != null) {
 //      updated0 = true
 
-      var material_para = MMD_SA_options.model_para_obj_all[obj.character_index].material_para || {}
-      material_para = material_para._default_ || {}
+      const model_para = MMD_SA_options.model_para_obj_all[obj.character_index];
+      const material_para = (model_para.material_para && model_para.material_para._default_) || {};
 
       castShadow =    enabled && ((material_para.castShadow != null)    ? !!material_para.castShadow : ((construction && (construction.castShadow != null)) ? construction.castShadow : true));
-      receiveShadow = enabled && ((material_para.receiveShadow != null) ? !!material_para.receiveShadow : !MMD_SA_options.ground_shadow_only);
+      receiveShadow = enabled && ((material_para.receiveShadow != null) ? !!material_para.receiveShadow : model_para.is_object || !MMD_SA_options.ground_shadow_only);
     }
     else {
       updated0 = !!obj.path
 
-      var x_obj = (obj.path) ? MMD_SA_options.x_object_by_name[obj.path.replace(/^.+[\/\\]/, "").replace(/\.x$/i, "")] : MMD_SA_options.mesh_obj_by_id[construction.mesh_obj.id]
+      const x_obj = (obj.path) ? MMD_SA_options.x_object_by_name[obj.path.replace(/^.+[\/\\]/, "").replace(/\.x$/i, "")] : MMD_SA_options.mesh_obj_by_id[construction.mesh_obj.id];
       castShadow =    enabled && !!x_obj.castShadow;
       receiveShadow = enabled && !!x_obj.receiveShadow;
     }
@@ -8388,7 +8403,8 @@ else {
 }
 // cannot use MMD_SA._force_motion_shuffle here
 // will trigger .onended afterwards
-model.skin.time = mm.lastFrame_/30;
+if (!this._freeze_onended)
+  model.skin.time = mm.lastFrame_/30;
   }
 
  ,adjustment_per_model: {
@@ -8464,7 +8480,8 @@ else {
 }
 // cannot use MMD_SA._force_motion_shuffle here
 // will trigger .onended afterwards
-model.skin.time = mm.lastFrame_/30;
+if (!this._freeze_onended)
+  model.skin.time = mm.lastFrame_/30;
   }
 
      ,adjustment_per_model: {
@@ -8473,7 +8490,16 @@ model.skin.time = mm.lastFrame_/30;
   "全ての親": { keys:[{ time:0/30, pos:{x:0, y:0, z:0} }, { time:19/30, pos:{x:0, y:1.5, z:-8}, rot:{x:-5, y:0, z:0} }] }
       }
      ,morph_default: {"瞳小": { weight_scale:0.75 }}
-        }
+        },
+
+        'Amelia Watson_MMD_ver 1.0.pmx': {
+      skin_default: {
+  "全ての親": { keys:[{ time:0/30, pos:{x:0, y:0, z:0} }, { time:19/30, pos:{x:0, y:1.5, z:-8}, rot:{x:-5, y:0, z:0} }] },
+  "センター": { keys_mod:[{ frame:23, pos:{x:-0.65, y:-6.06-1.5, z:0.67} }, { frame:30,  pos:{x:-1.19, y:-5.02-1.5, z:-0.13-1} }, { frame:39,  pos:{x:-1.19, y:-5.17-1.5, z:0.28-2} }, { frame:68,  pos:{x:-1.19, y:-5.17-1.5, z:0.28-2} }] },
+      },
+      morph_default: {"瞳小": { weight_scale:0.75 }},
+        },
+
       }
     }
   };
@@ -10597,14 +10623,24 @@ this.PC_follower_list_default = this.PC_follower_list.slice()
 if (!MMD_SA_options.x_object)
   MMD_SA_options.x_object = []
 
+if (!MMD_SA_options.model_path_extra)
+  MMD_SA_options.model_path_extra = []
+
 this.object_base_index_by_id = {}
 this.object_base_list.forEach(function (obj, idx) {
   if (obj.is_dummy) return
+
+  var c = obj.construction
 
   obj.index = idx
 
   if (obj.id)
     MMD_SA_options.Dungeon.object_base_index_by_id[obj.id] = idx
+
+  if (obj.path && /\.pmx[^\/\\]*$/i.test(obj.path)) {
+    MMD_SA_options.model_path_extra.push(obj.path);
+    obj.character_index = MMD_SA_options.model_path_extra.length;
+  }
 
   if (obj.character_index) {
     if (obj.model_scale) {
@@ -10612,10 +10648,16 @@ this.object_base_list.forEach(function (obj, idx) {
         MMD_SA_options.model_para_obj_all[obj.character_index].model_scale = obj.model_scale
       });
     }
+    if (obj.path) {
+      if (c && c.model_para) {
+        const model_filename_cleaned = obj.path.replace(/^.+[\/\\]/, "").replace(/\#clone(\d+)\.pmx$/, ".pmx").replace(/[\-\_]copy\d+\.pmx$/, ".pmx").replace(/[\-\_]v\d+\.pmx$/, ".pmx");
+        MMD_SA_options.model_para[model_filename_cleaned] = c.model_para;
+      }
+      delete obj.path;
+    }
     return
   }
 
-  var c = obj.construction
   if (c && !obj.path) {
     if (c.GOML_head)
       MMD_SA_options.GOML_head  += c.GOML_head
@@ -13432,7 +13474,7 @@ if (self._js_min_mode_ || (browser_native_mode && !webkit_window && !localhost_m
 }
 else {
   document.write('<script language="JavaScript" src="js/mersenne-twister.js"></scr'+'ipt>');
-  document.write('<script language="JavaScript" src="node_modules/dungeon-generator.js"></scr'+'ipt>');
+  document.write('<script language="JavaScript" src="js/dungeon-generator.js"></scr'+'ipt>');
   document.write('<script language="JavaScript" src="js/terrain.js"></scr'+'ipt>');
 
   document.write('<script language="JavaScript" src="js/rbush.min.js"></scr'+'ipt>');
