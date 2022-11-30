@@ -1,4 +1,4 @@
-// (2022-05-28)
+// (2022-11-30)
 
 MMD_SA.fn = {
 /*
@@ -271,6 +271,8 @@ this._firstFrame_ = v
 MMD_SA.motion = []
 
 var motion_default = (MMD_SA_options.motion_shuffle_list_default && MMD_SA_options.motion_shuffle_list_default[0]) || 0
+
+window.dispatchEvent(new CustomEvent("SA_MMD_before_motion_init"));
 
 for (var i = 0, len = MMD_SA_options.motion.length; i < len; i++) {
   var motion = MMD_SA_options.motion[i]
@@ -1366,6 +1368,7 @@ var plane_pts = []
 var plane_pts_by_face_index = {}
 var ground_face_index = -1
 
+//DEBUG_show([ini, index_list.length, Date.now()].join('\n')); console.log(object_d, object_d.mesh_sorted);
 			for ( var _f = ini, fl = index_list.length; _f < fl; _f ++ ) {
 
 var f;
@@ -1768,8 +1771,8 @@ if (_bb == bb) {
 
 			}
 
-  var hit = 0;
-  for (var i in face_hit) hit++;
+  var hit = Object.keys(face_hit).length;//0;
+//  for (var i in face_hit) hit++;
 
   var ground_face_connected = []
 
