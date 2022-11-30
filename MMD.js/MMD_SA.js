@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2022-09-10)
+// (2022-11-30)
 
 var use_full_spectrum = true
 
@@ -182,7 +182,7 @@ getUserMedia({'video': true},
     }
   }
   else if (use_MatrixRain) {
-    this.matrix_rain = new MatrixRain(1024,1024)
+    this.matrix_rain = new MatrixRain(1024,1024, MMD_SA_options.MatrixRain_options);
     this.matrix_rain.matrixCreate()
 
     this.matrix_rain._SA_draw = function(skip_matrix) {
@@ -193,6 +193,8 @@ if (use_full_fps && !skip_matrix)
   skip_matrix = !EV_sync_update.frame_changed("matrixDraw")
 
 this.matrixDraw(skip_matrix)
+if (MMD_SA_options.MatrixRain_options && MMD_SA_options.MatrixRain_options.draw_bg)
+  this.draw(MMD_SA_options.MatrixRain_options.draw_bg());
     };
 
     window.addEventListener("MMDStarted", function () {
@@ -294,7 +296,7 @@ SL._media_player = {
     SL_MC_video_obj = SL._media_player
   }
 
-  if (SL_MC_video_obj && (MMD_SA.music_mode || System._browser.camera.media_control_enabled)) {
+  if (SL_MC_video_obj && (MMD_SA.music_mode || System._browser.camera.media_control_enabled) || MMD_SA.motion_player_control.enabled) {
     if (SL._mouseout_timerID) {
       clearTimeout(SL._mouseout_timerID)
       SL._mouseout_timerID = null
@@ -359,15 +361,17 @@ var sender = {
 Object.defineProperty(sender, "playbackRate",
 {
   get: function () {
-var vo = Audio_BPM.vo
+var vo = Audio_BPM.vo;
 if (vo.BPM_mode) {
-  var img = (this._EQP_obj || {})
-  var ao = vo.audio_obj
-  var bpm = ao.BPM || 120
-  this.defaultPlaybackRate = this._playbackRate = img._playbackRate = bpm/vo.BPM * (vo.playbackRate_scale || 1)
+  const img = (this._EQP_obj || {});
+  const ao = vo.audio_obj;
+  const bpm = ao.BPM || 120;
+  let speed = bpm/vo.BPM;
+//  if (speed < 0.75) speed *= 2;
+  this.defaultPlaybackRate = this._playbackRate = img._playbackRate = speed * (vo.playbackRate_scale || 1);
 }
 
-return this._playbackRate
+return this._playbackRate;
   }
  ,set: function (v) {
 this._playbackRate = v
@@ -426,7 +430,7 @@ vo.audio_onended = function (e) {
 
 Audio_BPM.checkWinamp(vo)
 
-DragDrop_RE = eval('/\\.(' + DragDrop_RE_default_array.concat(["vmd", "bvh", "mp3", "wav", "aac", "zip", "vrm"]).join("|") + ')$/i')
+DragDrop_RE = eval('/\\.(' + DragDrop_RE_default_array.concat(["vmd", "bvh", "mp3", "wav", "aac", "zip", "vrm", "json"]).join("|") + ')$/i')
 
 DragDrop.onDrop_finish = function (item) {
   var src = item.path
@@ -838,7 +842,7 @@ if (!ao.ontimeupdate)
 
     return false
   }
-  else if (item.isFileSystem && /([^\/\\]+)\.(png|jpg|jpeg|bmp|mp4|mkv)$/i.test(src)) {
+  else if (item.isFileSystem && /([^\/\\]+)\.(png|jpg|jpeg|bmp|webp|mp4|mkv)$/i.test(src)) {
 //console.log(toFileProtocol(item.path), item)
     if (MMD_SA_options.user_camera.enabled || System._browser.camera.ML_enabled) {
       if (System._browser.camera.initialized && !System._browser.camera.stream) {
@@ -853,6 +857,7 @@ if (!ao.ontimeupdate)
       DEBUG_show('(motion tracking required)', 3)
     }
   }
+  else if (item.isFileSystem && /([^\/\\]+)\.(json)$/i.test(src)) {}
   else {
     if (!item._winamp_JSON)
       DragDrop_install(item)
@@ -1513,37 +1518,7 @@ this.fading = fading && (!xr.session || (xr.use_dummy_webgl && (!xr.user_camera.
 if (!fading)
   return motion_changed
 
-
-//return motion_changed
-
-this.fadeout_texture_uploaded = false
-
-var w = SL.width;
-var h = SL.height;
-//var ini = parseInt((w * h) * Math.random()) * 4
-/*
-var gl = MMD_SA.MMD.gl;
-if (!MMD_SA.fadeout_image)
-  MMD_SA.fadeout_image = new Uint8Array(w * h * 4);
-gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, MMD_SA.fadeout_image);
-for (var i = 0; i < 8; i++)
-  DEBUG_show(MMD_SA.fadeout_image[ini + i],0,1)
-*/
-// for desktop and mobile
-MMD_SA.fadeout_canvas.width  = SL.width
-MMD_SA.fadeout_canvas.height = SL.height
-var context = MMD_SA.fadeout_canvas.getContext("2d")
-context.globalCompositeOperation = 'copy'
-context.drawImage(MMD_SA.THREEX.SL, 0,0)
-/*
-var imagedata = context.getImageData(0,0,w,h).data
-for (var i = 0; i < 8; i++)
-  DEBUG_show(imagedata[ini + i],0,1)
-*/
-//DEBUG_show("(pixels read)",0,1)
-
-this.fadeout_opacity = 0.95
-
+this.fadeout_opacity = 1;
 return motion_changed
   }
 
@@ -1579,6 +1554,8 @@ function _finalize() {
     MMD_SA_options.motion_shuffle = [index]
     MMD_SA_options.motion_shuffle_list_default = null
     MMD_SA._force_motion_shuffle = true
+
+    System._browser.on_animation_update.add(()=>{MMD_SA.motion_player_control.enabled = true;}, 1,1);
   }
 }
 
@@ -1634,6 +1611,58 @@ if (this.use_jThree) {
   if (must_update) jThree.MMD.pause()
 }
   }
+
+ ,motion_player_control: (function () {
+    function time_update() {
+if (motion_index != THREE.MMD.getModels()[0].skin._motion_index) {
+  MMD_SA.motion_player_control.enabled = false;
+  return;
+}
+
+SL_MC_Timeupdate(SL_MC_video_obj);
+    }
+
+    var motion_index = -1;
+    var enabled = false;
+
+    return {
+      get enabled() { return enabled; },
+      set enabled(v) {
+motion_index = (v) ? THREE.MMD.getModels()[0].skin._motion_index : -1;
+
+if (enabled == !!v) return;
+enabled = !!v;
+
+if (enabled) {
+  SL_MC_simple_mode = true;
+  SL_MC_video_obj = this;
+  SL_MC_Place(1, 0,-64);
+  System._browser.on_animation_update.add(time_update, 0,1,-1);
+}
+else {
+  SL_MC_Place(-1);
+  System._browser.on_animation_update.remove(time_update, 1);
+}
+      },
+
+      play: function () {
+jThree.MMD.play(true);
+this.paused = false;
+      },
+
+      pause: function () {
+jThree.MMD.pause();
+this.paused = true;
+      },
+
+      get currentTime() { return THREE.MMD.getModels()[0].skin.time; },
+      set currentTime(v) {
+MMD_SA.seek_motion(v);
+      },
+
+      get duration() { return THREE.MMD.getModels()[0].skin.duration; }
+    };
+  })()
 
 // getter/setter on MMD_SA.meter_motion_disabled instead of MMD_SA_options.meter_motion_disabled for backward compatibility (PMD version)
  ,get meter_motion_disabled()  {
@@ -2373,6 +2402,9 @@ const material = new THREE.SpriteMaterial({
 if (!MMD_SA.THREEX.enabled) {
   material.useScreenCoordinates = false;
   material.scaleByViewport = false;
+}
+else {
+  material.map.encoding = THREE.sRGBEncoding;
 }
 
 return new THREE.Sprite( material );
@@ -4004,6 +4036,17 @@ switch (para[0]) {
     System.Gadget.Settings.writeString('MMDRandomCamera', ((!parseInt(para[1]))?"non_default":""))
     MMD_SA.reset_camera()
     break
+
+  case "OSC_VMC_CLIENT":
+    switch (para[1]) {
+      case "enabled":
+        MMD_SA.OSC.VMC.enabled = !!parseInt(para[2]);
+        break;
+      case "hide_3D_avatar":
+        THREE.MMD.getModels()[0].mesh.visible = !parseInt(para[2]);
+        break;
+    }
+    break
 }
 
 if (linux_mode)
@@ -4174,13 +4217,13 @@ for (var i = 1, i_max = MMD_SA.light_list.length; i < i_max; i++) {
 THREE.MMD.getModels().forEach(function (model, idx) {
   var mesh = model.mesh
 
-  var material_para = MMD_SA_options.model_para_obj_all[idx].material_para || {}
-  material_para = material_para._default_ || {}
+  var model_para = MMD_SA_options.model_para_obj_all[idx];
+  var material_para = (model_para.material_para && model_para.material_para._default_) || {};
 
   var cs = !!mesh.castShadow
   var rs = !!mesh.receiveShadow
   mesh.castShadow    = enabled && ((material_para.castShadow != null)    ? !!material_para.castShadow : true);
-  mesh.receiveShadow = enabled && ((material_para.receiveShadow != null) ? !!material_para.receiveShadow : !MMD_SA_options.ground_shadow_only);
+  mesh.receiveShadow = enabled && ((material_para.receiveShadow != null) ? !!material_para.receiveShadow : model_para.is_object || !MMD_SA_options.ground_shadow_only);
 
   if (/*(cs != mesh.castShadow) || */(rs != mesh.receiveShadow)) {
     mesh.material.materials.forEach(function(m) {
@@ -5290,17 +5333,17 @@ if (navigator.xr) {
  ,get_bone_axis_rotation: (function () {
     var RE_arm = new RegExp("^(" + toRegExp(["左","右"],"|") + ")(" + toRegExp(["肩","腕","ひじ","手首"],"|") + "|." + toRegExp("指") + ".)");
 
-    return function (name_full, enforced) {
+    return function (mesh, name_full, enforced) {
 var d = name_full.charAt(0)
 var sign_LR = (d=="左") ? 1 : -1
 
-var model = THREE.MMD.getModels()[0]
-var bones_by_name = model.mesh.bones_by_name
+var bones_by_name = mesh.bones_by_name
 
 var x_axis, y_axis, z_axis;
 
-// not using .localCoordinate for now, as some models have broken .localCoordinate values, and the calculated ones are just accurate enough in most cases
-if (0&& bones_by_name[name_full].pmxBone.localCoordinate) {
+var model_para = MMD_SA_options.model_para_obj_all[mesh._model_index];
+// Not using .localCoordinate by default as it can be screwed up for some models
+if (model_para.use_bone_localCoordinate && bones_by_name[name_full].pmxBone.localCoordinate) {
 // z from .localCoordinate is already inverted
   x_axis = MMD_SA._v3a.fromArray(bones_by_name[name_full].pmxBone.localCoordinate[0]);
 // z-axis inverted
@@ -5311,7 +5354,7 @@ if (0&& bones_by_name[name_full].pmxBone.localCoordinate) {
 }
 else {
   const axis_end = bones_by_name[name_full].pmxBone.end;
-  const axis = (typeof axis_end == 'number') ? ((axis_end == -1) ? MMD_SA._v3a.fromArray(bones_by_name[name_full].pmxBone.origin).sub(bones_by_name[name_full].parent.pmxBone.origin) : MMD_SA._v3a.fromArray(model.mesh.bones[axis_end].pmxBone.origin).sub(MMD_SA._v3a_.fromArray(bones_by_name[name_full].pmxBone.origin))).normalize() : MMD_SA._v3a.fromArray(axis_end).normalize();
+  const axis = (typeof axis_end == 'number') ? ((axis_end == -1) ? MMD_SA._v3a.fromArray(bones_by_name[name_full].pmxBone.origin).sub(MMD_SA._v3a_.fromArray(bones_by_name[name_full].parent.pmxBone.origin)) : MMD_SA._v3a.fromArray(mesh.bones[axis_end].pmxBone.origin).sub(MMD_SA._v3a_.fromArray(bones_by_name[name_full].pmxBone.origin))).normalize() : MMD_SA._v3a.fromArray(axis_end).normalize();
 
   if (RE_arm.test(name_full)) {
     x_axis = axis;
@@ -5320,7 +5363,7 @@ else {
     z_axis = MMD_SA._v3b.set(0,0,1).applyQuaternion(MMD_SA._q1.setFromUnitVectors(MMD_SA._v3b_.set(1,0,0), x_axis));
 
     y_axis = MMD_SA.TEMP_v3.crossVectors(x_axis, z_axis).normalize().negate();
- } 
+  } 
   else {
     y_axis = axis.negate();
     y_axis.z *= -1
@@ -5353,7 +5396,7 @@ r.setFromEuler(a, 'ZYX')
 //console.log(name_full, new THREE.Vector3().setEulerFromQuaternion(r, 'ZYX').multiplyScalar(180/Math.PI));
 
 if (MMD_SA.THREEX.enabled && !enforced) {
-  if (name.indexOf('指') != -1) {
+  if (name_full.indexOf('指') != -1) {
     const r_v3 = MMD_SA.TEMP_v3.setEulerFromQuaternion(r, 'ZYX');
     r_v3.z -= Math.sign(r_v3.z) * 37.4224/180*Math.PI;
     r.setFromEuler(r_v3, 'ZYX');
@@ -7128,6 +7171,82 @@ data.renderer = new THREE.WebGLRenderer({
 
 data.renderer.setPixelRatio(window.devicePixelRatio);
 
+GLTF_loader = new THREE.GLTFLoader();
+
+
+// three-vrm 1.0
+if (use_VRM1) {
+// https://github.com/pixiv/three-vrm/blob/dev/docs/migration-guide-1.0.md
+// In VRM1.0, linear workflow is explicitly recommended, as GLTFLoader recommends.
+  data.renderer.outputEncoding = THREEX.sRGBEncoding;
+
+// Install GLTFLoader plugin
+  GLTF_loader.register((parser) => {
+    return new THREEX.VRMLoaderPlugin(parser);
+  });
+
+// backward compatibility
+// /three-vrm-core/types/humanoid/VRMHumanBoneName.d.ts
+  THREE.VRMSchema = { HumanoidBoneName: {
+Hips: "hips",
+Spine: "spine",
+Chest: "chest",
+UpperChest: "upperChest",
+Neck: "neck",
+Head: "head",
+LeftEye: "leftEye",
+RightEye: "rightEye",
+Jaw: "jaw",
+LeftUpperLeg: "leftUpperLeg",
+LeftLowerLeg: "leftLowerLeg",
+LeftFoot: "leftFoot",
+LeftToes: "leftToes",
+RightUpperLeg: "rightUpperLeg",
+RightLowerLeg: "rightLowerLeg",
+RightFoot: "rightFoot",
+RightToes: "rightToes",
+LeftShoulder: "leftShoulder",
+LeftUpperArm: "leftUpperArm",
+LeftLowerArm: "leftLowerArm",
+LeftHand: "leftHand",
+RightShoulder: "rightShoulder",
+RightUpperArm: "rightUpperArm",
+RightLowerArm: "rightLowerArm",
+RightHand: "rightHand",
+LeftThumbMetacarpal: "leftThumbMetacarpal",
+LeftThumbProximal: "leftThumbProximal",
+LeftThumbDistal: "leftThumbDistal",
+LeftIndexProximal: "leftIndexProximal",
+LeftIndexIntermediate: "leftIndexIntermediate",
+LeftIndexDistal: "leftIndexDistal",
+LeftMiddleProximal: "leftMiddleProximal",
+LeftMiddleIntermediate: "leftMiddleIntermediate",
+LeftMiddleDistal: "leftMiddleDistal",
+LeftRingProximal: "leftRingProximal",
+LeftRingIntermediate: "leftRingIntermediate",
+LeftRingDistal: "leftRingDistal",
+LeftLittleProximal: "leftLittleProximal",
+LeftLittleIntermediate: "leftLittleIntermediate",
+LeftLittleDistal: "leftLittleDistal",
+RightThumbMetacarpal: "rightThumbMetacarpal",
+RightThumbProximal: "rightThumbProximal",
+RightThumbDistal: "rightThumbDistal",
+RightIndexProximal: "rightIndexProximal",
+RightIndexIntermediate: "rightIndexIntermediate",
+RightIndexDistal: "rightIndexDistal",
+RightMiddleProximal: "rightMiddleProximal",
+RightMiddleIntermediate: "rightMiddleIntermediate",
+RightMiddleDistal: "rightMiddleDistal",
+RightRingProximal: "rightRingProximal",
+RightRingIntermediate: "rightRingIntermediate",
+RightRingDistal: "rightRingDistal",
+RightLittleProximal: "rightLittleProximal",
+RightLittleIntermediate: "rightLittleIntermediate",
+RightLittleDistal: "rightLittleDistal",
+  }};
+}
+
+
 if (MMD_SA_options.use_shadowMap) {
   data.renderer.shadowMap.enabled = true;
   data.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -7181,7 +7300,6 @@ window.addEventListener("MMDStarted", ()=>{
     model_para._hip_offset['センター'] = v1.fromArray(model_para._hip_pos).sub(v2.fromArray(bones_by_name['センター'].pmxBone.origin)).toArray();
     model_para._hip_offset['グルーブ'] = v1.fromArray(model_para._hip_pos).sub(v2.fromArray(bones_by_name['グルーブ'].pmxBone.origin)).toArray();
     model_para._hip_offset['腰'] = v1.fromArray(model_para._hip_pos).sub(v2.fromArray(bones_by_name['腰'].pmxBone.origin)).toArray();
-    model_para.left_leg_length = MMD_SA._v3a.fromArray(bones_by_name["左足"].pmxBone.origin).distanceTo(MMD_SA._v3b.fromArray(bones_by_name["左ひざ"].pmxBone.origin)) + MMD_SA._v3b.distanceTo(MMD_SA._v3a.fromArray(bones_by_name["左足首"].pmxBone.origin));
   });
 });
 
@@ -7247,6 +7365,11 @@ models[index] = this
   function MMD_dummy_obj(index) {
 model_obj.call(this, index);
   }
+
+// three-vrm 1.0
+  const use_VRM1 = true;
+
+  var GLTF_loader;
 
   model_obj.prototype = {
     constructor: model_obj,
@@ -7316,6 +7439,8 @@ else {
 return rot;
       };
     })(),
+
+    resetPhysics: function () {},
 
     update_model: function () {}
   };
@@ -7481,18 +7606,6 @@ MMD_SA.fn.setupUI()
 
 // VRM START
   var VRM = (function () {
-    function process_rotation(rot) {
-rot.x *= -1
-rot.z *= -1
-return rot
-    }
-
-    function process_position(pos) {
-pos.x *= -1
-pos.z *= -1
-return pos
-    }
-
     function init() {
       window.addEventListener("MMDStarted", ()=>{
 //        vrm_list.sort((a,b)=>a.index-b.index);
@@ -7538,7 +7651,11 @@ if ((starting_char.indexOf('左') != -1) || (starting_char.indexOf('右') != -1)
   dir = (starting_char.indexOf('左') != -1) ? 'Left' : 'Right'
 }
 
-let vrm_name = ''
+let vrm_name = '';
+const finger_joint_name = [
+  ['Metacarpal','Proximal','Distal'],
+  ['Proximal','Intermediate','Distal'],
+];
 switch (name_short) {
   case "上半身":
     if (ending_number == 2)
@@ -7575,7 +7692,7 @@ switch (name_short) {
   case "小指":
     const finger_name = name_short.charAt(0)
     const finger_index = ending_number - ((finger_name == '親') ? 0 : 1)
-    const finger_name_full = dir + finger_list_en[finger_list[finger_name]] + ((finger_index==0) ? 'Proximal' : ((finger_index==1) ? 'Intermediate' : 'Distal'))
+    const finger_name_full = dir + finger_list_en[finger_list[finger_name]] + ((finger_name=='親') ? finger_joint_name[0] : finger_joint_name[1])[finger_index];
 //console.log(finger_name_full)
     vrm_name = VRMSchema.HumanoidBoneName[finger_name_full]
     break
@@ -7605,23 +7722,57 @@ return v.fromArray(mesh.geometry.bones[bone._index].pos).negate().add(bone.posit
     }
 
     function VRM_object(index, vrm, para) {
-var para = Object.assign({ pos0:{} }, para);
-var humanBones = vrm.humanoid.humanBones
-for (const name in humanBones) {
-//console.log(name, vrm.humanoid.humanBones[name])
-  const bone_array = vrm.humanoid.humanBones[name]
-  if (!bone_array.length) continue
+this.is_VRM1 = (parseInt(vrm.meta.metaVersion) > 0);
+// three-vrm 1.0 normalized
+vrm.humanoid.autoUpdateHumanBones = use_VRM1 && this.is_VRM1;
 
-  const pos = v1.set(0,0,0)
-  let bone = bone_array[0].node
+var para = Object.assign({ pos0:{}, q0:{}, name_parent0:{} }, para);
+var humanBones = vrm.humanoid.humanBones;
+var bone_three_to_vrm_name = {};
+for (const name in humanBones) {
+  let bone_array = vrm.humanoid.humanBones[name];
+// three-vrm 1.0
+  if (!use_VRM1) bone_array = bone_array[0];
+
+  if (!bone_array) continue;
+
+  let bone =  bone_array.node;
+  bone_three_to_vrm_name[bone.name] = name;
+  const pos = v1.set(0,0,0);
+  const q = q1.set(0,0,0,1);
+
   while (bone.type == 'Bone') {
-    pos.add(bone.position)
-    bone = bone.parent
+    pos.add(bone.position);
+// three-vrm 1.0 normalized
+//    if (use_VRM1 && this.is_VRM1) q.premultiply(bone.quaternion);
+    bone = bone.parent;
   }
-  para.pos0[name] = pos.toArray()
+
+  para.pos0[name] = this.process_position(pos).toArray();
+  para.q0[name] = q.toArray();
 }
 
-para.left_leg_length = (v1.fromArray(para.pos0['leftUpperLeg']).distanceTo(v2.fromArray(para.pos0['leftLowerLeg'])) + v2.distanceTo(v1.fromArray(para.pos0['leftFoot']))) * vrm_scale;
+for (const name in humanBones) {
+  let bone_array = vrm.humanoid.humanBones[name];
+// three-vrm 1.0
+  if (!use_VRM1) bone_array = bone_array[0];
+
+  if (!bone_array) continue;
+
+  let bone =  bone_array.node;
+  while (bone.type == 'Bone') {
+    const name_parent = bone_three_to_vrm_name[bone.parent.name];
+    if (!name_parent) {
+      bone = bone.parent;
+    }
+    else {
+      para.name_parent0[name] = name_parent;
+      break
+    }
+  }
+}
+
+para.left_leg_length = ((para.pos0['leftUpperLeg'][1] - para.pos0['leftLowerLeg'][1]) + (para.pos0['leftLowerLeg'][1] - para.pos0['leftFoot'][1])) * vrm_scale;
 
 model_obj.call(this, index, vrm, para);
 this.mesh = vrm.scene;
@@ -7637,21 +7788,85 @@ if (!MMD_SA.MMD_started)
         value: 'VRM'
       },
 
+      bone_map_by_MMD_name: {
+        get: ()=>{ return bone_map_by_MMD_name; }
+      },
+
       get_bone_by_MMD_name : {
         value: function (name) {
-return (!bone_map_by_MMD_name[name]) ? null : this.model.humanoid.getBoneNode(bone_map_by_MMD_name[name]);
+name = bone_map_by_MMD_name[name];
+return (!name) ? null : this.getBoneNode(name);
+        }
+      },
+
+// three-vrm
+      getBoneNode: {
+        value: function (name) {
+// three-vrm 1.0 normalized
+return (!use_VRM1) ? this.model.humanoid.getBoneNode(name) : ((this.is_VRM1) ? this.model.humanoid.getNormalizedBoneNode(name) : this.model.humanoid.getRawBoneNode(name));//this.model.humanoid.getRawBoneNode(name);//
+        }
+      },
+
+      resetPhysics: {
+        value: function () {
+// three-vrm 1.0 (TEST)
+if (!use_VRM1) return;
+
+this.model.springBoneManager.reset();
+//this.model.springBoneManager.setCenter(this.mesh);
+this.model.springBoneManager.setInitState();
+//this.model.springBoneManager.setCenter(this.mesh);
+
+//console.log(this.model.springBoneManager)
+        }
+      },
+
+      process_rotation: (function () {
+// three-vrm 1.0 normalized
+/*
+        var _q;
+        window.addEventListener('jThree_ready', ()=>{
+const THREE = MMD_SA.THREEX.THREE;
+_q = new THREE.Quaternion();
+        });
+*/
+        return {
+          value: function (rot, name) {
+if (!this.is_VRM1) {
+  rot.x *= -1;
+  rot.z *= -1;
+}
+else if (use_VRM1) {
+// three-vrm 1.0 normalized
+//  rot.premultiply(_q.fromArray(this.para.q0[name]));
+}
+return rot;
+          }
+        };
+      })(),
+
+      process_position: {
+        value: function (pos) {
+if (!this.is_VRM1) {
+  pos.x *= -1;
+  pos.z *= -1;
+}
+return pos
         }
       },
 
       update_model: {
         value: function () {
-var mesh = this.mesh
+const that = this;
+
+const is_VRM1 = this.is_VRM1; 
+const mesh = this.mesh
 mesh.matrixAutoUpdate = false
 
 var vrm = this.model
 var VRMSchema = THREE.VRMSchema
 
-mesh.quaternion.multiplyQuaternions(q1.set(0,1,0,0), mesh.quaternion)
+if (!is_VRM1) mesh.quaternion.multiplyQuaternions(q1.set(0,1,0,0), mesh.quaternion);
 
 
 // bone START
@@ -7665,8 +7880,9 @@ MMD_bone_list.forEach(name=>{
   const bone_MMD = bones_by_name[name]
 //let r = MMD_SA.TEMP_v3.setEulerFromQuaternion(bone_MMD.quaternion); r.x*=-1; let q = MMD_SA.TEMP_q.setFromEuler(r);
 //  const aa = bone_MMD.quaternion.toAxisAngle(); bone.quaternion.copy(q1.setFromAxisAngle(aa[0].applyQuaternion(q2.set(0,1,0,0)), aa[1]))
-  bone.quaternion.copy(bone_MMD.quaternion)
-  process_rotation(bone.quaternion)
+//if (name=='頭'||name=='首') console.log(name,bone.quaternion.toArray())
+  bone.quaternion.copy(bone_MMD.quaternion);
+  that.process_rotation(bone.quaternion, bone_map_by_MMD_name[name]);
 });
 
 var MMD_model_para = MMD_SA_options.model_para_obj_all[this.index];
@@ -7689,7 +7905,7 @@ var root_bone_pos = get_MMD_bone_pos(mesh_MMD, root_bone, v2);
 center_bone_pos.add(root_bone_pos);
 
 center_bone_pos.multiplyScalar(model_scale);
-vrm.humanoid.getBoneNode('hips').position.fromArray(this.para.pos0['hips']).add(process_position(center_bone_pos))
+this.getBoneNode('hips').position.fromArray(this.para.pos0['hips']).add(this.process_position(center_bone_pos));
 
 var upper_body_bone = bones_by_name['上半身']
 var lower_body_bone = bones_by_name['下半身']
@@ -7697,8 +7913,8 @@ var lower_body_bone = bones_by_name['下半身']
 hips_rot.multiply(lower_body_bone.quaternion);
 var spine_rot = q2.copy(lower_body_bone.quaternion).conjugate().multiply(upper_body_bone.quaternion)
 
-vrm.humanoid.getBoneNode('hips').quaternion.copy(process_rotation(hips_rot));
-vrm.humanoid.getBoneNode('spine').quaternion.copy(process_rotation(spine_rot));
+this.getBoneNode('hips').quaternion.copy(this.process_rotation(hips_rot, 'hips'));
+this.getBoneNode('spine').quaternion.copy(this.process_rotation(spine_rot, 'spine'));
 
 ['左','右'].forEach((LR,d)=>{['腕','手'].forEach((b_name,b_i)=>{
   const bone = bones_by_name[LR + b_name + '捩']
@@ -7708,18 +7924,19 @@ vrm.humanoid.getBoneNode('spine').quaternion.copy(process_rotation(spine_rot));
   if (angle) {
     const dir = (d == 0) ? 1 : -1;
     const sign = (Math.sign(axis.x) == dir) ? 1 : -1;
-    vrm.humanoid.getBoneNode(((dir==1)?'left':'right') + ((b_i==0)?'Upper':'Lower') + 'Arm').quaternion.multiply(process_rotation(q1.setFromAxisAngle(v1.set(dir*sign,0,0), angle)));
+    const name = ((dir==1)?'left':'right') + ((b_i==0)?'Upper':'Lower') + 'Arm';
+    that.getBoneNode(name).quaternion.multiply(that.process_rotation(q1.setFromAxisAngle(v1.set(dir*sign,0,0), angle), name));
 //DEBUG_show(Date.now()+'/'+angle)
   }
 })});
 
 //両目
 const eye_bone = bones_by_name['両目']
-const eyeL = vrm.humanoid.getBoneNode('leftEye')
-const eyeR = vrm.humanoid.getBoneNode('rightEye')
+const eyeL = that.getBoneNode('leftEye')
+const eyeR = that.getBoneNode('rightEye')
 if (eyeL && eyeR) {
-  eyeL.quaternion.premultiply(process_rotation(q1.copy(eye_bone.quaternion)));
-  eyeR.quaternion.premultiply(process_rotation(q1.copy(eye_bone.quaternion)));
+  eyeL.quaternion.premultiply(this.process_rotation(q1.copy(eye_bone.quaternion), 'leftEye'));
+  eyeR.quaternion.premultiply(this.process_rotation(q1.copy(eye_bone.quaternion), 'rightEye'));
 }
 
 // bone END
@@ -7737,33 +7954,44 @@ MMD_morph_list.forEach(name => {
   blendshape_weight[blendshape_name] = Math.max(blendshape_weight[blendshape_name]||0, w)
 });
 
-const blink = blendshape_weight['blink'] || 0;
-const blink_factor = 1 - (blendshape_weight['fun']||0) * 0.25;
-blendshape_weight['blink_l'] = Math.max(blendshape_weight['blink_l']||0, blink) * blink_factor;
-blendshape_weight['blink_r'] = Math.max(blendshape_weight['blink_r']||0, blink) * blink_factor;
-blendshape_weight['blink'] = 0;
+const name_blink = blendshape_map_name('blink', use_VRM1);
+const name_blink_l = blendshape_map_name('blink_l', use_VRM1);
+const name_blink_r = blendshape_map_name('blink_r', use_VRM1);
+
+const blink = blendshape_weight[name_blink] || 0;
+const blink_factor = 1 - (blendshape_weight[blendshape_map_name('fun', use_VRM1)]||0) * 0.25;
+blendshape_weight[name_blink_l] = Math.max(blendshape_weight[name_blink_l]||0, blink) * blink_factor;
+blendshape_weight[name_blink_r] = Math.max(blendshape_weight[name_blink_r]||0, blink) * blink_factor;
+blendshape_weight[name_blink] = 0;
 
 //じと目
 if (MMD_morph_weight['じと目']) {
-  let w = MMD_morph_weight['じと目'] * (1 - Math.max(blendshape_weight['blink_l'], blendshape_weight['blink_r'])) * 0.3;
-  blendshape_weight['blink'] = w;
+  const w = MMD_morph_weight['じと目'] * (1 - Math.max(blendshape_weight[name_blink_l], blendshape_weight[name_blink_r])) * 0.3;
+  blendshape_weight[name_blink] = w;
 }
 
 // びっくり
 if (MMD_morph_weight['びっくり']) {
   const w = 1 + MMD_morph_weight['びっくり'] * 2;
-  blendshape_weight['blink_l'] = Math.pow(blendshape_weight['blink_l'], 2);
-  blendshape_weight['blink_r'] = Math.pow(blendshape_weight['blink_r'], 2);
-  blendshape_weight['blink'] = Math.pow(blendshape_weight['blink'], 2);
+  blendshape_weight[name_blink_l] = Math.pow(blendshape_weight[name_blink_l], w);
+  blendshape_weight[name_blink_r] = Math.pow(blendshape_weight[name_blink_r], w);
+  blendshape_weight[name_blink] = Math.pow(blendshape_weight[name_blink], w);
 }
 
 // にやり, ω
-const mouth_open = Math.max(blendshape_weight['a']||0, blendshape_weight['i']||0, blendshape_weight['u']||0, blendshape_weight['e']||0, blendshape_weight['o']||0);
+const mouth_open = Math.max(
+  blendshape_weight[blendshape_map_name('a', use_VRM1)]||0,
+  blendshape_weight[blendshape_map_name('i', use_VRM1)]||0,
+  blendshape_weight[blendshape_map_name('u', use_VRM1)]||0,
+  blendshape_weight[blendshape_map_name('e', use_VRM1)]||0,
+  blendshape_weight[blendshape_map_name('o', use_VRM1)]||0
+);
 [{n:'u', w:MMD_morph_weight['にやり']}, {n:'e', w:MMD_morph_weight['ω']}].forEach(obj => {
   if (!obj.w) return
 
-  const w = blendshape_weight[obj.n] || 0;
-  blendshape_weight[obj.n] = w + (1-w) * obj.w * (mouth_open*0.8 + (1-mouth_open)*0.2);
+  const name = blendshape_map_name(obj.n, use_VRM1);
+  const w = blendshape_weight[name] || 0;
+  blendshape_weight[name] = w + (1-w) * obj.w * (mouth_open*0.8 + (1-mouth_open)*0.2);
 });
 
 // should be safe to reset geometry.morphs_weight_by_name after blendshape update, when MMD is not used
@@ -7771,12 +7999,78 @@ for (const name in MMD_morph_weight) {
   MMD_morph_weight[name] = 0
 }
 
+// three-vrm
+const expressionManager = (use_VRM1) ? vrm.expressionManager : vrm.blendShapeProxy;
 for (const name in blendshape_weight) {
-  vrm.blendShapeProxy.setValue(name, blendshape_weight[name])
+//if (name == name_blink) {DEBUG_show(Date.now())} else
+  expressionManager.setValue(name, blendshape_weight[name])
 }
 
 // morph END
 
+
+if (MMD_SA.OSC.VMC.ready) {
+  MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/Root/Pos",
+    [
+'root',
+...((System._browser.camera.poseNet.enabled && MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only && MMD_SA.MMD.motionManager.para_SA.center_view_enforced) ? [0,-3/10,-5/10] : [0, 1/10, -60/10]),
+-0, -0, 0, 1,
+    ],
+    'sfffffff'
+  ));
+
+  const model_pos_scale = 1/model_scale/10;
+
+  const bone_msgs = [];
+  for (const name_VMC in VRMSchema.HumanoidBoneName) {
+    const name = VRMSchema.HumanoidBoneName[name_VMC];
+    const bone = this.getBoneNode(name);
+    bone_msgs.push(MMD_SA.OSC.VMC.Message("/VMC/Ext/Bone/Pos",
+      [
+name_VMC,
+bone.position.x*model_pos_scale, bone.position.y*model_pos_scale, -bone.position.z*model_pos_scale,
+-bone.quaternion.x, -bone.quaternion.y, bone.quaternion.z, bone.quaternion.w,
+      ],
+      'sfffffff'
+    ));
+  }
+  MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Bundle(...bone_msgs));
+
+  const morph_msgs = [];
+  for (const name in blendshape_weight) {
+    morph_msgs.push(MMD_SA.OSC.VMC.Message("/VMC/Ext/Blend/Val",
+      [
+// three-vrm 1.0
+// use VRM0 name
+blendshape_map_name(name, false),
+
+blendshape_weight[name],
+      ],
+      'sf'
+    ));
+  }
+  morph_msgs.push(MMD_SA.OSC.VMC.Message("/VMC/Ext/Blend/Apply"));
+  MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Bundle(...morph_msgs));
+
+/*
+  const camera = MMD_SA.THREEX.camera.obj;
+  const camera_pos = v1.copy(camera.position).sub(mesh.position);
+  MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/Cam",
+    [
+'camera',
+camera_pos.x, camera_pos.y, camera_pos.z,
+camera.quaternion.x, camera.quaternion.y, camera.quaternion.z, camera.quaternion.w,
+camera.fov,
+    ],
+    'sffffffff'
+  ));
+*/
+
+  MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/OK", [1], 'i'));
+
+//  MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/T", [Date.now()], 't'));
+
+}
 
 vrm.update(RAF_timestamp_delta/1000)
 //  vrm.springBoneManager.lateUpdate(RAF_timestamp_delta/1000)
@@ -7796,7 +8090,42 @@ if (!mesh.matrixAutoUpdate) {
     const bone_map_by_MMD_name = {};
     const MMD_bone_list = [];
 
-    const blendshape_map_by_MMD_name = {
+
+// three-vrm 1.0
+// https://pixiv.github.io/three-vrm/packages/three-vrm/docs/classes/VRMExpressionManager.html#presetExpressionMap
+// https://protocol.vmc.info/english (VRM0 vs VRM1 Incompatibility Warning)
+    const blendshape_map_by_MMD_name_VRM1 = {
+"あ": "aa",
+"あ２": "aa",
+
+"い": "ih",
+
+"う": "ou",
+//"ω"
+
+"え": "ee",
+//"にやり"
+
+"お": "oh",
+
+"まばたき": "blink",
+
+"まばたきL": "blinkLeft",
+"ウィンク": "blinkLeft",
+"ウィンク２": "blinkLeft",
+
+"まばたきR": "blinkRight",
+"ウィンク右": "blinkRight",
+"ｳｨﾝｸ２右": "blinkRight",
+
+"照れ": "relaxed",
+
+"困る": "sad",
+
+"怒り": "angry",
+    };
+
+    const blendshape_map_by_MMD_name_VRM0 = {
 "あ": "a",
 "あ２": "a",
 
@@ -7826,7 +8155,23 @@ if (!mesh.matrixAutoUpdate) {
 
 "怒り": "angry",
     };
+
+    const blendshape_map_by_MMD_name = (use_VRM1) ? blendshape_map_by_MMD_name_VRM1 : blendshape_map_by_MMD_name_VRM0;
     const MMD_morph_list = Object.keys(blendshape_map_by_MMD_name);
+
+    const blendshape_map_name = (function () {
+const map_to_v = [{}, {}];
+for (const name in blendshape_map_by_MMD_name) {
+  map_to_v[1][blendshape_map_by_MMD_name_VRM0[name]] = blendshape_map_by_MMD_name_VRM1[name];
+  map_to_v[0][blendshape_map_by_MMD_name_VRM1[name]] = blendshape_map_by_MMD_name_VRM0[name];
+}
+
+return function (name, is_VRM1) {
+  const v = (is_VRM1) ? 1 : 0;
+  return map_to_v[v][name] || name;
+};
+    })();
+
 
     const finger_list = {"親":0, "人":1, "中":2, "薬":3, "小":4};
     const finger_list_en = ["Thumb", "Index", "Middle", "Ring", "Little"];
@@ -7869,19 +8214,15 @@ await new Promise((resolve) => {
   }, 'blob', true);
 });
 
-const GLTF_loader = new THREE.GLTFLoader();
-
 GLTF_loader.load(
 
   // URL of the VRM you want to load
   url,
 
   // called when the resource is loaded
-  (gltf) => {
-    // generate a VRM instance from gltf
-    THREEX.VRM.from(gltf).then((vrm) => {
-
-      console.log(vrm);
+  (function () {
+    function main(vrm) {
+console.log(vrm);
 
 const mesh_obj = vrm.scene
 if (MMD_SA_options.use_shadowMap) {
@@ -7901,8 +8242,19 @@ if (data.OutlineEffect) {
   });
 }
 
+// three.vrm 1.0
+if (use_VRM1 && !vrm.springBoneManager.setCenter) {
+// https://github.com/pixiv/three-vrm/issues/1112
+// https://pixiv.github.io/three-vrm/packages/three-vrm/docs/classes/VRMSpringBoneManager.html#joints
+  vrm.springBoneManager.constructor.prototype.setCenter = function (obj3d) {
+//console.log(this.joints)
+    this.joints.forEach(joint=>{
+      joint.center = obj3d;
+    });
+  };
+}
 // reduce physics glitches by ignoring the world space
-vrm.springBoneManager.setCenter(mesh_obj)
+vrm.springBoneManager.setCenter(mesh_obj);
 
 var vrm_obj = new VRM_object(para.vrm_index, vrm, { url:url_raw });
 
@@ -7921,8 +8273,21 @@ if (object_url) {
 }
 
 MMD_SA.fn.setupUI()
-    });
-  },
+    }
+
+    return function (gltf) {
+// three-vrm 1.0
+if (use_VRM1) {
+  // retrieve a VRM instance from gltf
+  const vrm = gltf.userData.vrm;
+  main(vrm);
+}
+else {
+  // generate a VRM instance from gltf
+  THREEX.VRM.from(gltf).then(main);
+}
+    };
+  })(),
 
   // called while loading is progressing
   (progress) => {},//console.log('Loading model...', 100.0 * (progress.loaded / progress.total), '%'),
@@ -7999,7 +8364,7 @@ if (loaded) {
   return Promise.resolve()
 }
 
-if (!MMD_SA_options.THREEX_options.model_path && !MMD_SA_options.THREEX_options.enabled_by_default) {
+if ((MMD_SA_options.model_path != MMD_SA_options.model_path_default) || (!MMD_SA_options.THREEX_options.model_path && !MMD_SA_options.THREEX_options.enabled_by_default)) {
   this.enabled = false
   return Promise.resolve()
 }
@@ -8055,8 +8420,15 @@ if (MMD_SA_options.THREEX_options.use_MMD) {
 }
 
 await System._browser.load_script('./three.js/GLTFLoader.js');
+
+// three-vrm 1.0
+if (use_VRM1) {
+  await System._browser.load_script('./three.js/three-vrm.min_v1.0.5.js');
+}
+else {
 // min version doesn't work for some reasons
-await System._browser.load_script('./three.js/three-vrm_v0.6.11.js');
+  await System._browser.load_script('./three.js/three-vrm_v0.6.11.js');
+}
 
 THREE = self.THREEX = self.THREE
 self.THREE = _THREE
@@ -8333,6 +8705,8 @@ if (MMD_SA.MMD_started) {
   });
 }
 
+if (!System._browser.rendering_check()) return true;
+
 if (data.OutlineEffect) {
 //  data.renderer.autoClear = true
   data.OutlineEffect.render( data.scene, data.camera );
@@ -8416,16 +8790,17 @@ data.scene.add(l)
       update: function (light) {
 if (!threeX.enabled) return
 
-var c = light._THREEX_child
-c.position.copy(light.position)
-c.color.copy(light.color)
-if (c.type == 'DirectionalLight') {
-  c.intensity = light.intensity
+var c, c_max;
+c = light._THREEX_child;
+c.position.copy(light.position);
+c.color.copy(light.color);
+c_max = Math.max(c.color.r, c.color.g, c.color.b);
 
-  c_max = Math.max(c.color.r, c.color.g, c.color.b)
-  const c_scale = Math.min(1/c_max)//, 2.5)
-  c.color.multiplyScalar(c_scale)
-//  c.intensity /= c_max
+if (c.type == 'DirectionalLight') {
+  c.intensity = light.intensity * c_max;// * 0.5;
+
+  const c_scale = Math.min(1/c_max);
+  c.color.multiplyScalar(c_scale);
 
   c.target.position.copy(light.target.position)
 
@@ -8447,6 +8822,11 @@ data.scene.add(helper)
 */
       console.log('(THREEX shadow camera enabled)')
     }
+  }
+}
+else if (c.type == 'AmbientLight') {
+  if (use_VRM1) {
+    c.intensity = c_max * 0.5;
   }
 }
       }
@@ -8512,6 +8892,104 @@ this.convert_A_pose_rotation_to_T_pose(name, rot, true);
 })();
 
 
+// https://protocol.vmc.info/english
+// https://ccrma.stanford.edu/groups/osc/spec-1_0.html
+// https://github.com/adzialocha/osc-js
+
+MMD_SA.OSC = (function () {
+
+  function init() {
+if (initialized) return;
+initialized = true;
+
+OSC = require('node_modules.asar/OSC-js/node_modules/osc-js');
+//console.log(OSC)
+
+ready = true;
+  }
+
+  var OSC;
+  var enabled, initialized, ready;
+  var VMC_enabled, VMC_initialized, VMC_ready;
+
+  var _OSC = {
+    get enabled() { return enabled; },
+    set enabled(v) {
+enabled = !!v;
+
+if (enabled) {
+  init();
+}
+    },
+
+    get ready() { return enabled && ready; },
+
+    VMC: (function () {
+      function VMC_init() {
+if (VMC_initialized) return;
+VMC_initialized = true;
+
+init();
+
+const plugin = new OSC.DatagramPlugin({
+  open: MMD_SA_options.OSC.VMC.open,
+  send: MMD_SA_options.OSC.VMC.send,
+});
+vmc = new OSC({ plugin: plugin })
+
+vmc.on('open', () => {
+  VMC_ready = true;
+//  console.log(vmc);
+});
+
+vmc.on('*', (msg) => {
+  console.log(39540);
+});
+
+vmc.open();
+      }
+
+      var vmc
+
+      return  {
+        get enabled() { return VMC_enabled; },
+        set enabled(v) {
+VMC_enabled = !!v;
+
+if (VMC_enabled) {
+  _OSC.enabled = true;
+  VMC_init();
+  DEBUG_show('(OSC/VMC client:ON)', 3)
+}
+else {
+  DEBUG_show('(OSC/VMC client:OFF)', 3)
+}
+        },
+
+        get ready() { return VMC_enabled && VMC_ready; },
+
+        Message: function (address, args=[], types) {
+const msg = new OSC.Message(address, ...args);
+if (types) msg.types = types;
+return msg;
+        },
+
+        Bundle: function (...args) {
+return new OSC.Bundle(...args);
+        },
+
+        send: function (...args) {
+vmc.send(...args);
+        },
+      };
+    })(),
+  };
+
+  return _OSC;
+
+})();
+
+
 (function () {
 // defaults START
   use_full_fps_registered = true
@@ -8551,7 +9029,7 @@ MMD_SA_options.texture_resolution_limit=2048
 // model selection START
   if (!MMD_SA_options.model_path)
     MMD_SA_options.model_path = System.Gadget.path + "\\jThree\\model\\Appearance Miku\\Appearance Miku_BDEF_mod-v04.pmx"
-  MMD_SA.use_jThree = /\.pmx$/i.test(MMD_SA_options.model_path)
+  MMD_SA.use_jThree = true;// /\.pmx$/i.test(MMD_SA_options.model_path);
 
 
 // use absolute path
@@ -8603,6 +9081,16 @@ MMD_SA_options.texture_resolution_limit=2048
   MMD_SA_options.model_para_obj._filename_raw = model_filename
   MMD_SA_options.model_para_obj._filename = model_filename
   MMD_SA_options.model_para_obj._filename_cleaned = model_filename_cleaned
+
+  window.addEventListener("MMDStarted", ()=>{
+    THREE.MMD.getModels().forEach((model,i)=>{
+      var bones_by_name = model.mesh.bones_by_name
+      var model_para = MMD_SA_options.model_para_obj_all[i]
+
+      if (bones_by_name["左足"] && bones_by_name["左ひざ"] && bones_by_name["左足首"])
+        model_para.left_leg_length = (bones_by_name["左足"].pmxBone.origin[1] - bones_by_name["左ひざ"].pmxBone.origin[1]) + (bones_by_name["左ひざ"].pmxBone.origin[1] - bones_by_name["左足首"].pmxBone.origin[1]);
+    });
+  });
 
   if (!MMD_SA_options.model_para_obj.skin_default)
     MMD_SA_options.model_para_obj.skin_default = { _is_empty:true }
@@ -8679,7 +9167,7 @@ MMD_SA_options.texture_resolution_limit=2048
   if (!MMD_SA_options.user_camera.pixel_limit)
     MMD_SA_options.user_camera.pixel_limit = {}
   if (!MMD_SA_options.user_camera.pixel_limit._default_)
-    MMD_SA_options.user_camera.pixel_limit._default_ = [1280,720]
+    MMD_SA_options.user_camera.pixel_limit._default_ = (is_mobile) ? [960,540] : [1280,720];
 
   if (!MMD_SA_options.user_camera.display)
     MMD_SA_options.user_camera.display = {}
@@ -8709,6 +9197,15 @@ MMD_SA_options.texture_resolution_limit=2048
     System._browser.camera.facemesh.use_mediapipe = true
   if (typeof MMD_SA_options.user_camera.ML_models.use_holistic == 'boolean')
     System._browser.camera.poseNet._use_holistic_ = MMD_SA_options.user_camera.ML_models.use_holistic
+
+  if (!MMD_SA_options.OSC)
+    MMD_SA_options.OSC = {};
+  if (!MMD_SA_options.OSC.VMC)
+    MMD_SA_options.OSC.VMC = {};
+  if (!MMD_SA_options.OSC.VMC.send)
+    MMD_SA_options.OSC.VMC.send = { port:39539 };
+  if (!MMD_SA_options.OSC.VMC.open)
+    MMD_SA_options.OSC.VMC.open = { port:39540 };
 
   var _trackball_camera_limit_adjust = function () {}
   if (MMD_SA_options.trackball_camera_limit) {
@@ -9195,11 +9692,10 @@ return light_pos
 //    ]
 
   }
-  Object.defineProperty(MMD_SA_options, "look_at_screen_bone_list",
-{
-  get: function () {
-var mm = MMD_SA.MMD.motionManager
-var para_SA = mm.para_SA
+
+  MMD_SA_options.look_at_screen_bone_list_by_model = function (model) {
+const mm = (model && (model._model_index > 0)) ? MMD_SA.motion[model.skin._motion_index] : MMD_SA.MMD.motionManager;
+const para_SA = mm.para_SA;
 
 // cache the return value for better performance in case of getter functions
 var v
@@ -9218,6 +9714,13 @@ if (v[0] instanceof Array) {
 }
 
 return v;
+  };
+
+// somewhat obsolete
+  Object.defineProperty(MMD_SA_options, "look_at_screen_bone_list",
+{
+  get: function () {
+return this.look_at_screen_bone_list_by_model();
   }
 
  ,set: function (list) {
@@ -9227,11 +9730,10 @@ this._look_at_screen_bone_list = list;
 
   if (MMD_SA_options.look_at_screen_parent_rotation)
     MMD_SA_options._look_at_screen_parent_rotation = MMD_SA_options.look_at_screen_parent_rotation
-  Object.defineProperty(MMD_SA_options, "look_at_screen_parent_rotation",
-{
-  get: function () {
-var mm = MMD_SA.MMD.motionManager
-var para_SA = mm.para_SA
+
+  MMD_SA_options.look_at_screen_parent_rotation_by_model = function (model) {
+const mm = (model && (model._model_index > 0)) ? MMD_SA.motion[model.skin._motion_index] : MMD_SA.MMD.motionManager;
+const para_SA = mm.para_SA;
 
 // cache the return value for better performance in case of getter functions
 var v
@@ -9247,6 +9749,13 @@ if (v == null) {
 
 // clone it to avoid unexpected modification
 return v && v.clone();
+  };
+
+// somewhat obsolete
+  Object.defineProperty(MMD_SA_options, "look_at_screen_parent_rotation",
+{
+  get: function () {
+return this.look_at_screen_parent_rotation_by_model();
   }
 
  ,set: function (v) {
@@ -9284,7 +9793,7 @@ if (v == null) {
   }
 }
 
-return v && (this.look_at_screen_ratio > 0);
+return v && (this.look_at_screen_ratio_by_model(model) > 0);
   };
   Object.defineProperty(MMD_SA_options, "look_at_screen",
 {
@@ -9334,13 +9843,12 @@ this._look_at_mouse = v
     MMD_SA_options.look_at_screen_ratio = 1
 
   MMD_SA_options._look_at_screen_ratio = MMD_SA_options.look_at_screen_ratio;
-  Object.defineProperty(MMD_SA_options, "look_at_screen_ratio",
-{
-  get: function () {
+
+  MMD_SA_options.look_at_screen_ratio_by_model = function (model) {
 if (System._browser.camera.ML_enabled && !MMD_SA.WebXR.session) return 0;
 
-var mm = MMD_SA.MMD.motionManager
-var para_SA = mm.para_SA
+const mm = (model && (model._model_index > 0)) ? MMD_SA.motion[model.skin._motion_index] : MMD_SA.MMD.motionManager;
+const para_SA = mm.para_SA;
 
 // cache the return value for better performance in case of getter functions
 var v
@@ -9355,6 +9863,13 @@ if (v == null) {
 }
 
 return v;
+  };
+
+// somewhat obsolete
+  Object.defineProperty(MMD_SA_options, "look_at_screen_ratio",
+{
+  get: function () {
+return this.look_at_screen_ratio_by_model();
   }
 
  ,set: function (v) {
@@ -9369,8 +9884,6 @@ this._look_at_screen_ratio = v
 MMD_SA_options.model_para_obj_all.forEach(function (model_para_obj) {
   model_para_obj.use_default_boundingBox = true
 });
-
-var morph_default = MMD_SA_options.model_para_obj.morph_default = MMD_SA_options.model_para_obj.morph_default || {};
 
 var facemesh_morph = {}
 if (MMD_SA_options.model_para_obj.facemesh_morph) {
@@ -9388,6 +9901,13 @@ if (MMD_SA_options.model_para_obj.facemesh_morph) {
 }
 MMD_SA_options.model_para_obj.facemesh_morph = facemesh_morph
 //console.log(facemesh_morph)
+    });
+
+    window.addEventListener("SA_MMD_before_motion_init", function () {
+var morph_default = MMD_SA_options.model_para_obj.morph_default = MMD_SA_options.model_para_obj.morph_default || {};
+
+var facemesh_morph = MMD_SA_options.model_para_obj.facemesh_morph;
+var morphs_index_by_name = THREE.MMD.getModels()[0].pmx.morphs_index_by_name;
 
 // "まばたきL", "まばたきR"
 // お <==> ∧
@@ -9397,12 +9917,34 @@ var _morph = [
   "まばたき","笑い","びっくり","まばたきL","まばたきR"
 ];
 _morph.forEach(function (m) {
-  if (!facemesh_morph[m])
-    facemesh_morph[m] = {name:m}
+  if (!facemesh_morph[m]) {
+    const morph_alt = [];
+    switch (m) {
+case "にやり":
+  morph_alt.push('横伸ばし', '口幅大', m);
+  break;
+case "ω":
+  morph_alt.push('横潰し', '口幅小', m);
+  break;
+case "上":
+case "下":
+  morph_alt.push(m, 'まゆ'+m);
+  break
+default:
+  morph_alt.push(m);
+    }
+    morph_alt.some(ma=>{
+if (morphs_index_by_name[ma] != null) {
+  facemesh_morph[m] = { name:ma, weight:(morph_default[ma] && morph_default[ma].weight_scale)||1 };
+  return true;
+}
+    });
+  }
 
-  var mm = facemesh_morph[m].name
-  if (!morph_default[mm])
-    morph_default[mm] = { weight:0 }
+  if (facemesh_morph[m]) {
+    const mm = facemesh_morph[m].name;
+    if (!morph_default[mm]) morph_default[mm] = { weight:0 };
+  }
 });
     });
   }
