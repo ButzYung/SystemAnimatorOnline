@@ -1,4 +1,4 @@
-// (2022-05-28)
+// (2022-11-30)
 
 var IPC
 
@@ -482,6 +482,10 @@ ipcRenderer.on('capturePage', function (event, message) {
 
 ipcRenderer.on('tray_menu', function (event, message) {
   IPC.active_IPC.ipcRenderer_tray_menu(event, message)
+});
+
+ipcRenderer.on('window_hidden', function (event, message) {
+  System._browser.hidden = message;
 });
       }
 
