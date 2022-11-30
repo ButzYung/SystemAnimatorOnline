@@ -1,5 +1,5 @@
 // System Animator core basics
-// (2022-04-26)
+// (2022-11-30)
 
 var use_SA_browser_mode
 
@@ -89,6 +89,7 @@ var Settings_default = {
   ,DisableWallpaperMask: false
   ,XULTransparentBG: false
   ,DisableTransparency: false
+  ,DisableBackgroundThrottling: false
   ,MoveWithinPrimaryScreen: false
 
   ,CSSTransformScale: "1"
@@ -557,7 +558,7 @@ else {
     WallpaperEngine_mode = !browser_native_mode
 // TEST mode for Electron
 if (("process" in window) && process.versions['electron']) {
-  webkit_electron_remote = SA_topmost_window.require('electron').remote || SA_topmost_window.require('@electron/remote');
+  webkit_electron_remote = SA_topmost_window.require('electron').remote || SA_topmost_window.require('node_modules.asar/@electron/remote');
   webkit_window = webkit_electron_remote.getCurrentWindow()
   webkit_electron_screen = SA_topmost_window.require('electron').screen
 }
@@ -623,7 +624,7 @@ if (!browser_native_mode) {
     else {
       webkit_electron_mode = true
       webkit_version = process.versions['electron']
-      webkit_electron_remote = SA_topmost_window.require('electron').remote || SA_topmost_window.require('@electron/remote');
+      webkit_electron_remote = SA_topmost_window.require('electron').remote || SA_topmost_window.require('node_modules.asar/@electron/remote');
       webkit_electron_screen = SA_topmost_window.require('electron').screen
       webkit_electron_dialog = {
   showOpenDialog: function (browserWindow, options, callback) {
