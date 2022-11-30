@@ -1,5 +1,5 @@
 // CANVAS Matrix Rain Effect
-// (2021-11-23)
+// (2022-11-20)
 
 function random(num) {
   return Math.floor(Math.random() * num)
@@ -20,8 +20,19 @@ function MatrixRain(width,height, para) {
     this.mask_divider = 0
   if (this.mask_always_redraw == null)
     this.mask_always_redraw = true
-  if (this.full_color == null)
-    this.full_color = returnBoolean("MatrixRainColor")
+
+// .greenness is now the best choce to determine Matrix color (.full_color is obsolete for this purpose), especially in 3D mode in which .full_color is always true
+  if (this.full_color == null) {
+    const full_color = returnBoolean("MatrixRainColor");
+    this.full_color = (self.MMD_SA) ? true : full_color;
+    if (this.greenness == null)
+      this.greenness = (full_color) ? 0 : 1;
+  }
+  else {
+    if (this.greenness == null)
+      this.greenness = (this.full_color) ? 0 : 1;
+  }
+
   if (this.play_on_idle == null)
     this.play_on_idle = returnBoolean("MatrixRainPlayOnIdle")
   if (this.use_AudioFFT == null)
@@ -35,7 +46,9 @@ function MatrixRain(width,height, para) {
   if (this.tail_end == null)
     this.tail_end = (self.MMD_SA) ? 0.25 : 0.25
   if (this.transparent_bg == null)
-    this.transparent_bg = (self.MMD_SA) ? false : this.full_color
+    this.transparent_bg = (self.MMD_SA) ? this.draw_bg : this.full_color;
+  if (this.no_clipping == null)
+    this.no_clipping = !!self.MMD_SA;
 
   this.rain_canvas = []
   this.rain = []
@@ -171,7 +184,7 @@ return null
   }
 
   if (self.MMD_SA) {
-    let tex = this.matrix_texture = new THREE.Texture(this.canvas_matrix)
+    let tex = this.matrix_texture = new THREE.Texture((this.draw_bg) ? this.canvas : this.canvas_matrix);
     tex.needsUpdate = true
 //    tex.repeat.x = 10
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
@@ -551,7 +564,7 @@ context.drawImage(obj, 0,0,w,h)
       context.drawImage(obj, 0,0,w,h)
   }
 
-  if (this.matrix_entered)
+  if (this.matrix_entered || this.no_clipping)
     return
 
   var grid_size = this.grid_size
