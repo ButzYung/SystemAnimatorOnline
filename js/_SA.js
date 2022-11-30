@@ -1,6 +1,6 @@
 /*
 
-_SA.js (2022-04-26)
+_SA.js (2022-11-30)
 
 System Animator
 (c) Butz Yung / Anime Theme. All rights reserved.
@@ -718,6 +718,9 @@ function SA_OnKeyDown(event, enforced) {
   var k = event.keyCode
   if (k > 249) return
 
+  const is_altKey = event.altKey;
+  const is_safe_key = is_altKey || !self.MMD_SA || !MMD_SA_options.Dungeon_options;
+
   var p_win = (is_SA_child_animation) ? parent : self
   if (!enforced && webkit_electron_mode && p_win.returnBoolean("AutoItStayOnDesktop") && !p_win.webkit_IgnoreMouseEvents_disabled) {
     return
@@ -744,7 +747,8 @@ function SA_OnKeyDown(event, enforced) {
   }
   else if (browser_native_mode && !webkit_window) { _browser_onkeydown=true }
   else if (k == 73) {}
-  else if (k == 65) {
+  else if (k == 65 && is_safe_key) {
+// a
     if (is_SA_child_animation) {
       parent.SA_AnimationAppend_Switch(event)
       parent.focus()
@@ -752,21 +756,21 @@ function SA_OnKeyDown(event, enforced) {
     else
       SA_AnimationAppend_Switch(event)
   }
-  else if (k == 68) {
+  else if (k == 68 && is_safe_key) {
 // d
     SA_OnDocument()
   }
-  else if (k == 70) {
+  else if (k == 70 && is_safe_key) {
 // f
     SA_OnFolder()
   }
-  else if ((k == 71) && self.use_EQP_core && use_Silverlight) {
+  else if ((k == 71) && self.use_EQP_core && use_Silverlight && is_safe_key) {
 // g
     SA_animation_append_mode = false
     EQP_gallery_append_mode = !EQP_gallery_append_mode
     DEBUG_show('Gallery Append Mode:' + ((EQP_gallery_append_mode) ? 'ON' : 'OFF'), 2)
   }
-  else if (k == 72) {
+  else if (k == 72 && is_safe_key) {
 // h
     if (is_SA_child_animation) {
       parent.SA_OnKeyDown(event)
@@ -779,7 +783,7 @@ function SA_OnKeyDown(event, enforced) {
         HeadTrackerAR.start()
     }
   }
-  else if (k == 77) {
+  else if (k == 77 && is_safe_key) {
 // m
     if (use_HTML5 && self.WMP_mask) {
       CANVAS_must_redraw = true
@@ -795,7 +799,7 @@ function SA_OnKeyDown(event, enforced) {
       }
     }
   }
-  else if (k == 84) {
+  else if (k == 84 && is_safe_key) {
 // t
     if (Lbody3D_navigation._transformOrigin) {
       var t = Lbody3D_navigation._3d_navigation_mode = !Lbody3D_navigation._3d_navigation_mode
@@ -810,12 +814,12 @@ function SA_OnKeyDown(event, enforced) {
     var p = (is_SA_child_animation) ? parent : self
     p.System._browser._child_drag_disabled = p.document.getElementById("Lbody3D_navigation")._3d_navigation_mode
   }
-  else if (k == 86) {
+  else if (k == 86 && is_safe_key) {
 // v
     if (self.HeadTrackerAR && HeadTrackerAR.running)
       HeadTrackerAR.canvas_camera.style.display = (HeadTrackerAR.canvas_camera.style.display == "none") ? "block" : "none"
   }
-  else if ((k >= 37) && (k <= 40)) {
+  else if ((k >= 37) && (k <= 40) && is_safe_key) {
 //left top right bottom
     if (Lbody3D_navigation._3d_navigation_mode) {
       if ((k == 38) || (k == 40)) {
@@ -832,7 +836,7 @@ function SA_OnKeyDown(event, enforced) {
   else { _browser_onkeydown=true }
 
   if (_browser_onkeydown && !System._browser.onkeydown(event)) {
-    if (!event.shiftKey)
+    if (!event.shiftKey && !is_altKey)
       DEBUG_show(k, 2)
     System._browser.showFocus(false)
     return
@@ -946,7 +950,7 @@ function SA_CreateHTA() {
   }
 }
 
-var DragDrop_RE_default_array = ["bmp","gif","jpg","jpeg","png","wmv","webm","mp4","mkv"]
+var DragDrop_RE_default_array = ["bmp","gif","jpg","jpeg","png","webp","wmv","webm","mp4","mkv"]
 if (w3c_mode) {
   DragDrop_RE_default_array.push("pmd")
   DragDrop_RE_default_array.push("pmx")
@@ -959,6 +963,15 @@ function DragDrop_install(item) {
   var path_folder = (item.isFolder) ? path : path.replace(/[\/\\][^\/\\]+$/, "");
 
   if (/\.(pmd|pmx)$/i.test(path) && self.MMD_SA) {
+    if (/\.pmd$/i.test(path)) {
+      DEBUG_show('(PMD model is no longer supported. Use PMX instead.)', 3);
+      return;
+    }
+    if (MMD_SA_options.Dungeon_options) {
+      DEBUG_show('(Drop a zipped MMD model instead.)', 3);
+      return;
+    }
+
     System.Gadget.Settings.writeString("LABEL_MMD_model_path", path)
 
     Settings.f_path = Settings.f_path_original
