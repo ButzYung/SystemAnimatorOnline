@@ -5416,7 +5416,7 @@ if (MMD_SA.THREEX.enabled && !enforced) {
     r_v3.z -= Math.sign(r_v3.z) * 37.4224/180*Math.PI;
     r.setFromEuler(r_v3, 'ZYX');
   }
-  else {
+  else if (name_full.indexOf('足首') == -1) {
     r.set(0,0,0,1)
   }
 }
