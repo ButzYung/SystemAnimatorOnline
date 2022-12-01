@@ -2911,13 +2911,27 @@ return r
     });
 
     return function (mesh, name, parent_to_stop) {
-var pos = new THREE.Vector3()
-var bone = (typeof name == "string") ? mesh.bones_by_name[name] : mesh.bones[name]
-if (!bone)
-  return pos
+var pos = new THREE.Vector3();
 
-if (parent_to_stop && (typeof parent_to_stop == "string"))
-  parent_to_stop = mesh.bones_by_name[parent_to_stop]
+const mesh_by_number = typeof mesh == 'number';
+const is_THREEX = (mesh_by_number) ? MMD_SA.THREEX.enabled : !!mesh.model;
+
+var model, bone;
+if (is_THREEX) {
+  model = (mesh_by_number) ? MMD_SA.THREEX.get_model(mesh) : mesh;
+  mesh = model.mesh;
+  bone = model.get_bone_by_MMD_name(name);
+}
+else {
+  if (mesh_by_number) mesh = THREE.MMD.getModels()[mesh].mesh;
+  bone = (typeof name == "string") ? mesh.bones_by_name[name] : mesh.bones[name];
+}
+
+if (!bone) return pos;
+
+if (parent_to_stop && (typeof parent_to_stop == "string")) {
+  parent_to_stop = (is_THREEX) ? model.get_bone_by_MMD_name(parent_to_stop) : mesh.bones_by_name[parent_to_stop];
+}
 
 pos.copy(bone.position);
 var _bone = bone;
@@ -2925,6 +2939,7 @@ while ((_bone.parent !== mesh) && (_bone.parent !== parent_to_stop)) {
   _bone = _bone.parent;
   pos.applyMatrix4(TEMP_m4.makeRotationFromQuaternion(_bone.quaternion).setPosition(_bone.position));
 }
+if (is_THREEX) pos.multiply(mesh.scale);
 if (!parent_to_stop)
   pos.applyMatrix4(TEMP_m4.makeRotationFromQuaternion(mesh.quaternion).setPosition(mesh.position));
 

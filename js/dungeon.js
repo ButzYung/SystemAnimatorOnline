@@ -3019,7 +3019,8 @@ var mesh = THREE.MMD.getModels()[0].mesh
 mesh.geometry.boundingBox.expandByScalar(20)
 mesh.geometry.boundingSphere.radius += 20
 
-var head_pos_absolute = MMD_SA.get_bone_position(mesh, "頭");
+// .get_bone_position_by_MMD_name() not working (bone.matrixWorld not updated with mesh position yet?)
+var head_pos_absolute = MMD_SA.get_bone_position(0, "頭");//MMD_SA.THREEX.get_model(0).get_bone_position_by_MMD_name("頭");//
 var head_pos = MMD_SA._v3a.copy(head_pos_absolute).sub(mesh.position);
 //DEBUG_show(head_pos.toArray())
 
