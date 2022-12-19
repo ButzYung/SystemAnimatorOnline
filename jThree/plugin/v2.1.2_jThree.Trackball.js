@@ -30,7 +30,7 @@
  * Date: 2015-02-25
  */
 // AT: customizations
-// (2022-04-26)
+// (2022-12-20)
 
 THREE.TrackballControls = function ( object, domElement ) {
 
@@ -515,9 +515,9 @@ this.target.set(model_pos.x+center_view_lookAt[0], model_pos.y+10+center_view_lo
 		event.stopPropagation();
 
 		if ( _state === STATE.NONE ) {
+// AT: pan
+			_state = (event.ctrlKey) ? STATE.PAN : event.button;
 
-			_state = event.button;
-//if (_state === STATE.ROTATE) _state = STATE.PAN
 		}
 
 		if ( _state === STATE.ROTATE && !_this.noRotate ) {
