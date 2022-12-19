@@ -1913,7 +1913,8 @@ wireframe:{
   if (is_SA_child_animation)
     parent.DragDrop.relay_id = SA_child_animation_id
 
-  self.SA_wallpaper_src = System.Gadget.path + "/images/wood_wallpaper_flip-h.jpg"
+  if (!webkit_electron_mode)
+    self.SA_wallpaper_src = System.Gadget.path + "/images/wood_wallpaper_flip-h.jpg";
 
   MMD_SA_options.WebXR.AR._adult_mode = !!System._browser.url_search_params.adult_mode || webkit_electron_mode;
 
