@@ -8341,7 +8341,7 @@ if (MMD_SA_options.use_shadowMap) {
 
 // Disable frustum culling
 mesh_obj.traverse( ( obj ) => {
-//  obj.frustumCulled = false;
+  obj.frustumCulled = false;
 } );
 
 data.scene.add(mesh_obj);
