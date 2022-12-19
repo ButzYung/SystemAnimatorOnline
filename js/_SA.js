@@ -1,6 +1,6 @@
 /*
 
-_SA.js (2022-11-30)
+_SA.js (2022-12-20)
 
 System Animator
 (c) Butz Yung / Anime Theme. All rights reserved.
@@ -719,7 +719,7 @@ function SA_OnKeyDown(event, enforced) {
   if (k > 249) return
 
   const is_altKey = event.altKey;
-  const is_safe_key = is_altKey || !self.MMD_SA || !MMD_SA_options.Dungeon_options;
+  const is_safe_key = is_altKey || !self.MMD_SA || !MMD_SA_options.Dungeon_options || !event.preventDefault;
 
   var p_win = (is_SA_child_animation) ? parent : self
   if (!enforced && webkit_electron_mode && p_win.returnBoolean("AutoItStayOnDesktop") && !p_win.webkit_IgnoreMouseEvents_disabled) {
@@ -836,7 +836,7 @@ function SA_OnKeyDown(event, enforced) {
   else { _browser_onkeydown=true }
 
   if (_browser_onkeydown && !System._browser.onkeydown(event)) {
-    if (!event.shiftKey && !is_altKey)
+    if (!event.ctrlKey && !event.shiftKey && !is_altKey)
       DEBUG_show(k, 2)
     System._browser.showFocus(false)
     return
@@ -2158,9 +2158,9 @@ if (fullscreen) {
       transform.push("rotate(" + r + "rad)")
     }
     if ((SA_zoom != 1) || Settings.CSSTransformFlipH || Settings.CSSTransformFlipV) {
-      var mod = SA_zoom - 1
-      transform.unshift("translate(" + (bw*mod/2) + "px," + (bh*mod/2) + "px)")
-      transform.push("scale(" + (SA_zoom * ((Settings.CSSTransformFlipH)?-1:1)) + "," + (SA_zoom * ((Settings.CSSTransformFlipV)?-1:1)) + ")")
+      const mod = SA_zoom - 1;
+      transform.unshift("translate(" + (bw*mod/2) + "px," + (bh*mod/2) + "px)");
+      transform.push("scale(" + (SA_zoom * ((Settings.CSSTransformFlipH)?-1:1)) + "," + (SA_zoom * ((Settings.CSSTransformFlipV)?-1:1)) + ")");
     }
 
     x_shift *= SA_zoom
