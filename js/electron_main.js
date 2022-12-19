@@ -1,5 +1,5 @@
 // SA Electron - Main EXTENDED
-// (2022-07-08)
+// (2022-12-20)
 
 /*
 eval on Electron v1.6.x has some scope issues/bugs which makes the global variables on this script inaccessible inside functions.
@@ -17,7 +17,7 @@ if (windows_mode == undefined) {
   };
 }
 
-const icon_name = (windows_mode) ? "icon_teto.ico" : "icon_teto_512x512.png";
+const icon_name = (windows_mode) ? "icon_SA.ico" : "icon_SA_512x512.png";
 
 // Module to control application life.
 const app = electron.app
@@ -25,7 +25,7 @@ const app = electron.app
 // https://stackoverflow.com/questions/55898000/blocked-a-frame-with-origin-file-from-accessing-a-cross-origin-frame
 app.commandLine.appendSwitch('disable-site-isolation-trials');
 
-app.commandLine.appendSwitch('js-flags', '--experimental-wasm-simd');
+//app.commandLine.appendSwitch('js-flags', '--experimental-wasm-simd');
 
 
 // https://github.com/electron/electron/issues/2170
@@ -55,7 +55,7 @@ let mainWindow
 
 let webContents
 let tray, contextMenuHost, contextMenu, contextMenu_opacity, contextMenu_size, contextMenu_active_window, contextMenu_media_control
-let contextMenu_MMD, contextMenu_MMD_visual_effects, contextMenu_MMD_model, contextMenu_MMD_model_list
+let contextMenu_MMD, contextMenu_MMD_visual_effects, contextMenu_MMD_model, contextMenu_MMD_model_list, contextMenu_MMD_OSC_VMC, contextMenu_MMD_OSC_VMC_client;
 let contextMenu_MMD_visual_effects_SelfOverlay, contextMenu_MMD_visual_effects_SelfOverlay_color_adjust, contextMenu_MMD_visual_effects_SelfOverlay_color_adjust_RGB, contextMenu_MMD_visual_effects_SelfOverlay_brightness
 let contextMenu_MMD_visual_effects_HDR
 let contextMenu_MMD_visual_effects_SeriousShader, contextMenu_MMD_visual_effects_SeriousShader_shadow_opacity, contextMenu_MMD_visual_effects_SeriousShader_shadow_opacity_material_x050
@@ -76,7 +76,6 @@ const webPreferences_default = {
   contextIsolation: false,
 //  nodeIntegrationInWorker: true,
 //  preload: toLocalPath(SA_path + '\\' + 'js\\electron_preload.js'),
-//  backgroundThrottling: false,
 };
 
 
@@ -124,8 +123,20 @@ app.on('ready', function() {
     if (p[wsh_index] == "wsh") {
       hta_index -= 1
     }
-    if ((hta_index >= 0) && /^(\/|[\w\-]+\:|demo\d+$)/.test(p[hta_index])) {
-      var SA_HTA_folder = p[hta_index]
+
+    const _animation_path_default_ = toLocalPath(SA_path + '/TEMP/animation_path_default.txt');
+    let animation_path_default;
+    if (fs.existsSync(_animation_path_default_)) {
+      try {
+        animation_path_default = fs.readFileSync(_animation_path_default_, 'utf8').trim();
+        if (/^[\/\\]/.test(animation_path_default))
+          animation_path_default = SA_path + animation_path_default;
+      }
+      catch (err) {}
+    }
+
+    if (animation_path_default || ((hta_index >= 0) && /^(\/|[\w\-]+\:|demo\d+$)/.test(p[hta_index]))) {
+      let SA_HTA_folder = p[hta_index] || animation_path_default;
       if (/^system-animator\:\/+/.test(SA_HTA_folder)) {
         SA_HTA_folder = decodeURIComponent(SA_HTA_folder.replace(/^system-animator\:\/+/, "")).replace(/[\/\\]$/, "")
       }
@@ -188,9 +199,13 @@ if (!c_json)
   c_json = SA_project_JSON && SA_project_JSON.config_default
 
 if (c_json) {
-//electron.dialog.showMessageBox(null, {type:"question", buttons:["OK", "Cancel"], defaultId:1, message:'999' });
+//electron.dialog.showMessageBox(null, {type:"question", buttons:["OK", "Cancel"], defaultId:1, message:SA_HTA_folder+'\n\n'+c_js+'|'+!!c_js+'\n'+JSON.stringify(c_json)+'\n'+JSON.stringify(SA_project_JSON) });
   if (c_json.DisableTransparency || c_json.AutoItStayOnDesktop) {
     global.is_transparent = false
+  }
+  if (c_json.DisableBackgroundThrottling) {
+    global.is_backgroundThrottling_disabled = true;
+    webPreferences_default.backgroundThrottling = false;
   }
 }
     }
@@ -221,6 +236,20 @@ webPreferences: webPreferences_default,
 
   mainWindow.on("ready-to-show", function () {
     mainWindow.show()
+
+    mainWindow.on("hide", function () {
+      webContents.send('window_hidden', true);
+    });
+    mainWindow.on("minimize", function () {
+      webContents.send('window_hidden', true);
+    });
+
+    mainWindow.on("show", function () {
+      webContents.send('window_hidden', false);
+    });
+    mainWindow.on("restore", function () {
+      webContents.send('window_hidden', false);
+    });
   });
 
   // Open the DevTools.
@@ -232,8 +261,9 @@ webPreferences: webPreferences_default,
 // https://www.electronjs.org/docs/breaking-changes#removed-remote-module
 // https://www.npmjs.com/package/@electron/remote
 if (parseInt(process.versions.electron) >= 14) {
-  require('@electron/remote/main').initialize();
-  require("@electron/remote/main").enable(webContents);
+  const e_main = require('@electron/remote/main');
+  e_main.initialize();
+  e_main.enable(webContents);
 }
 
   webContents.on('new-window', function(event, url){
@@ -573,7 +603,17 @@ webContents.send('tray_menu', 'OPACITY:apply_to_child')
 
   contextMenu_MMD_model = Menu.buildFromTemplate([
     {label: 'List saved', submenu: contextMenu_MMD_model_list}
-   ,{label: 'Override default', type: 'checkbox',   click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'MMD:MODEL|override_default|' + ((menuItem.checked)?1:0)) }}
+   ,{label: 'Override default', type: 'checkbox', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'MMD:MODEL|override_default|' + ((menuItem.checked)?1:0)) }}
+  ]);
+
+  contextMenu_MMD_OSC_VMC_client = Menu.buildFromTemplate([
+    {label: 'Enabled', type: 'checkbox', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'MMD:OSC_VMC_CLIENT|enabled|' + ((menuItem.checked)?1:0)) }}
+   ,{type: 'separator'}
+   ,{label: 'Hide 3D avatar', type: 'checkbox', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'MMD:OSC_VMC_CLIENT|hide_3D_avatar|' + ((menuItem.checked)?1:0)) }}
+  ]);
+
+  contextMenu_MMD_OSC_VMC = Menu.buildFromTemplate([
+    {label: 'OSC Client (Sender)', submenu: contextMenu_MMD_OSC_VMC_client}
   ]);
 
   contextMenu_MMD = Menu.buildFromTemplate([
@@ -583,6 +623,9 @@ webContents.send('tray_menu', 'OPACITY:apply_to_child')
    ,{label: 'Random camera', type: 'checkbox', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'MMD:random_camera|' + ((menuItem.checked)?1:0)) }}
    ,{label: 'Visual effects', submenu: contextMenu_MMD_visual_effects}
    ,{label: 'Model', submenu: contextMenu_MMD_model}
+   ,{type: 'separator'}
+   ,{label: 'OSC/VMC Protocol', submenu: contextMenu_MMD_OSC_VMC}
+
   ]);
 
   _items = [{label: 'Top', type: 'radio', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'ACTIVE_WINDOW:-1') }}]
@@ -930,7 +973,14 @@ return function (menuItem, browserWindow) {
       contextMenu_MMD.items[2].checked = _MMD.trackball_camera
       contextMenu_MMD.items[3].checked = _MMD.random_camera && _MMD.random_camera_available
       contextMenu_MMD.items[3].enabled = _MMD.random_camera_available
+      contextMenu_MMD.items[5].enabled = !_MMD.use_dungeon;
       contextMenu_MMD_model.items[1].checked = _MMD.override_default_for_external_model
+
+      
+      for (const index of [0,1,2,3,4,5,6,9])
+        contextMenu_MMD_visual_effects.items[index].enabled = !_MMD.use_THREEX;
+
+      contextMenu_MMD_OSC_VMC.enabled = _MMD.use_THREEX;
 
       var MME = _MMD.MME
       var mme, opacity, index

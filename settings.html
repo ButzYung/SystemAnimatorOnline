@@ -300,13 +300,9 @@ System.Gadget.onSettingsClosing = SettingsClosing;
   else {
     toggleElement(L_IgnoreMouseEventsPartial, false)
   }
-/*
-  UseSilverlight.checked = returnBoolean("UseSilverlight")
-  UseSL_windowless.checked = returnBoolean("UseSL_windowless")
-  UseSilverlight.onclick()
-*/
-  HTAUseGPUAcceleration.checked = parent_window.HTA_use_GPU_acceleration
-  HTALoadSpectrumAnalyser.checked = returnBoolean("HTALoadSpectrumAnalyser")
+
+//  HTAUseGPUAcceleration.checked = parent_window.HTA_use_GPU_acceleration
+//  HTALoadSpectrumAnalyser.checked = returnBoolean("HTALoadSpectrumAnalyser")
   UseAudioFFT.checked = returnBoolean("UseAudioFFT")
   UseAudioFFT.onclick()
   UseAudioFFTLiveInput.checked = returnBoolean("UseAudioFFTLiveInput")
@@ -321,9 +317,10 @@ System.Gadget.onSettingsClosing = SettingsClosing;
   WallpaperAsBG.onclick()
   DisableWallpaperMask.checked = returnBoolean("DisableWallpaperMask")
   DisableTransparency.checked = returnBoolean("DisableTransparency")
+  DisableBackgroundThrottling.checked = returnBoolean("DisableBackgroundThrottling")
   MoveWithinPrimaryScreen.checked = returnBoolean("MoveWithinPrimaryScreen")
 //  XULSilverlightAuto.checked = returnBoolean("XULSilverlightAuto")
-  XULTransparentBG.checked = returnBoolean("XULTransparentBG")
+//  XULTransparentBG.checked = returnBoolean("XULTransparentBG")
   ChildDragDisabled.checked = returnBoolean("ChildDragDisabled")
 
   v = System.Gadget.Settings.readString("CSSTransformScale")
@@ -349,7 +346,7 @@ System.Gadget.onSettingsClosing = SettingsClosing;
   CSSTransform3DBillboard.checked = System.Gadget.Settings.readString("CSSTransform3DBillboard")
   CSSTransform3DDisabledForContent.checked = System.Gadget.Settings.readString("CSSTransform3DDisabledForContent")
   CSSTransform3DBoxAnimate.checked = System.Gadget.Settings.readString("CSSTransform3DBoxAnimate")
-  UseWebcamHeadtracking.checked = System.Gadget.Settings.readString("UseWebcamHeadtracking")
+//  UseWebcamHeadtracking.checked = System.Gadget.Settings.readString("UseWebcamHeadtracking")
 
   UseHTML5Canvas.checked = returnBoolean("UseHTML5Canvas")
   UseWebGLForCanvas2D.checked = returnBoolean("UseWebGLForCanvas2D")
@@ -447,7 +444,7 @@ System.Gadget.onSettingsClosing = SettingsClosing;
   }
 
   if (!xul_mode) {
-    toggleElement(L_XULTransparentBG)
+//    toggleElement(L_XULTransparentBG)
   }
   if (!webkit_mode && (xul_version < 26)) {
     toggleElement(L_UseAudioFFT)
@@ -465,6 +462,7 @@ System.Gadget.onSettingsClosing = SettingsClosing;
   if (!webkit_electron_mode) {
     toggleElement(L_IgnoreMouseEvents)
     toggleElement(L_DisableTransparency)
+    toggleElement(L_DisableBackgroundThrottling)
     toggleElement(L_MoveWithinPrimaryScreen)
     L_GPU_check.style.display = "none"
     toggleElement(L_electron_register)
@@ -473,8 +471,8 @@ System.Gadget.onSettingsClosing = SettingsClosing;
     toggleElement(L_Use32BandSpectrum, parent_window.is_SA_child_animation)
   }
   if (!use_SA_browser_mode || !ie9_native) {
-    toggleElement(L_HTAUseGPUAcceleration)
-    toggleElement(L_HTALoadSpectrumAnalyser)
+//    toggleElement(L_HTAUseGPUAcceleration)
+//    toggleElement(L_HTALoadSpectrumAnalyser)
 // Once for XUL, "XULSilverlightAuto" is actually a HTA option now, since HTML5 canvas mode is always on for XUL/Chromium mode.
 //    toggleElement(L_XULSilverlightAuto)
   }
@@ -541,7 +539,7 @@ System.Gadget.onSettingsClosing = SettingsClosing;
   startup_path += '\\Startup'
 
   var script_name = startup_path + '\\System Animator XUL - Host'
-  LoadXULAtStartup.checked = !!(w.ValidatePath(script_name + '.js') || w.ValidatePath(script_name + ' - WSH.lnk'))
+//  LoadXULAtStartup.checked = !!(w.ValidatePath(script_name + '.js') || w.ValidatePath(script_name + ' - WSH.lnk'))
 
   if (!use_SA_browser_mode)
     return
@@ -656,7 +654,7 @@ if (use_SA_system_emulation && (!v || /^demo/.test(v))) {
   System.Gadget.Settings.writeString("IgnoreMouseEvents", returnYesNo("IgnoreMouseEvents", IgnoreMouseEvents.checked && !IgnoreMouseEventsPartial.checked))
   System.Gadget.Settings.writeString("IgnoreMouseEventsPartial", returnYesNo("IgnoreMouseEvents", IgnoreMouseEvents.checked && IgnoreMouseEventsPartial.checked))
 
-  System.Gadget.Settings.writeString("HTALoadSpectrumAnalyser", returnYesNo("HTALoadSpectrumAnalyser", HTALoadSpectrumAnalyser.checked))
+//  System.Gadget.Settings.writeString("HTALoadSpectrumAnalyser", returnYesNo("HTALoadSpectrumAnalyser", HTALoadSpectrumAnalyser.checked))
   System.Gadget.Settings.writeString("UseAudioFFT", returnYesNo("UseAudioFFT", UseAudioFFT.checked))
   System.Gadget.Settings.writeString("UseAudioFFTLiveInput", returnYesNo("UseAudioFFTLiveInput", UseAudioFFTLiveInput.checked))
 
@@ -668,9 +666,10 @@ if (use_SA_system_emulation && (!v || /^demo/.test(v))) {
   System.Gadget.Settings.writeString("WallpaperAsBG", returnYesNo("WallpaperAsBG", WallpaperAsBG.checked))
   System.Gadget.Settings.writeString("DisableWallpaperMask", returnYesNo("DisableWallpaperMask", DisableWallpaperMask.checked))
   System.Gadget.Settings.writeString("DisableTransparency", returnYesNo("DisableTransparency", DisableTransparency.checked))
+  System.Gadget.Settings.writeString("DisableBackgroundThrottling", returnYesNo("DisableBackgroundThrottling", DisableBackgroundThrottling.checked))
   System.Gadget.Settings.writeString("MoveWithinPrimaryScreen", returnYesNo("MoveWithinPrimaryScreen", MoveWithinPrimaryScreen.checked))
 //  System.Gadget.Settings.writeString("XULSilverlightAuto", returnYesNo("XULSilverlightAuto", XULSilverlightAuto.checked))
-  System.Gadget.Settings.writeString("XULTransparentBG", returnYesNo("XULTransparentBG", XULTransparentBG.checked))
+//  System.Gadget.Settings.writeString("XULTransparentBG", returnYesNo("XULTransparentBG", XULTransparentBG.checked))
   System.Gadget.Settings.writeString("ChildDragDisabled", returnYesNo("ChildDragDisabled", ChildDragDisabled.checked))
 
   Box3D()
@@ -710,7 +709,7 @@ if (use_SA_system_emulation && (!v || /^demo/.test(v))) {
 
   System.Gadget.Settings.writeString("CSSTransform3DBillboard", returnYesNo("CSSTransform3DBillboard", CSSTransform3DBillboard.checked))
   System.Gadget.Settings.writeString("CSSTransform3DDisabledForContent", returnYesNo("CSSTransform3DDisabledForContent", CSSTransform3DDisabledForContent.checked))
-  System.Gadget.Settings.writeString("UseWebcamHeadtracking", returnYesNo("UseWebcamHeadtracking", UseWebcamHeadtracking.checked))
+//  System.Gadget.Settings.writeString("UseWebcamHeadtracking", returnYesNo("UseWebcamHeadtracking", UseWebcamHeadtracking.checked))
 
   if (CSSTransformed)
     UseHTML5Canvas.checked = true
@@ -825,6 +824,7 @@ if (use_SA_system_emulation && (!v || /^demo/.test(v))) {
 
 
 // XUL
+/*
 // LoadXULAtStartup is not used for now
   createXULStartupShortcut(true)//!LoadXULAtStartup.checked)
 
@@ -843,6 +843,7 @@ if (use_SA_system_emulation && (!v || /^demo/.test(v))) {
     }
   }
   catch (err) {}
+*/
 
 // WebKit
   try {
@@ -1095,6 +1096,17 @@ function resetLoadAtStartup() {
   SA_alert((deleted)?"All startup animation settings have been cleared.":"No existing animation has been scheduled to load at startup.")
 }
 
+function resetSettings() {
+  const settings = System.Gadget.Settings._settings;
+
+  System.Gadget.Settings._settings = Object.assign({}, System.Gadget.Settings._settings_default);
+  loadSettings();
+
+  System.Gadget.Settings._settings = SystemEXT._default._settings = settings;
+
+  DEBUG_show('Settings have been reset. To cancel the reset, press the CANCEL button.');
+}
+
 function createAnimationShortcut() {
   var f_path = parent_window.Settings.f_path
   f_path = System.Gadget.document.parentWindow.path_demo_by_url[f_path] || f_path
@@ -1117,7 +1129,7 @@ function createAnimationShortcut() {
  ,'Name=' + script_name
  ,'Comment=System Animator - animation shortcut'
  ,'Exec="' + webkit_shortcut + '/electron" "' + f_path + '"'
- ,'Icon='  + webkit_shortcut + '/resources/icon_teto_512x512.png'
+ ,'Icon='  + webkit_shortcut + '/resources/icon_SA_512x512.png'
  ,'Terminal=false'
  ,'Type=Application'
  ,'Categories=Utility;Application;'
@@ -1146,7 +1158,7 @@ function createAnimationShortcut() {
       shortcut.TargetPath = getWebKitPath(webkit_path);
       shortcut.Arguments = '"' + f_path + '"';
     }
-//getWebKitPath().replace(/[^\/\\]+$/, "") + 'icon_teto.ico, 0'
+//getWebKitPath().replace(/[^\/\\]+$/, "") + 'icon_SA.ico, 0'
   }
   else if (xul_mode) {
     shortcut = oShell.CreateShortcut(desktop_path + '\\' + script_name + ' - XUL.lnk')
@@ -1159,7 +1171,7 @@ function createAnimationShortcut() {
     shortcut.TargetPath = System.Gadget.path + '\\SystemAnimator_ie.hta'
     shortcut.Arguments = '"' + f_path + '"'
   }
-  shortcut.IconLocation = System.Gadget.path + '\\icon_teto.ico, 0'
+  shortcut.IconLocation = System.Gadget.path + '\\icon_SA.ico, 0'
 
   shortcut.WorkingDirectory = ""
   shortcut.Save()
@@ -1737,6 +1749,7 @@ writeCPUOptions()
 
 <select id="Folder" style="width:250px;font-size:12px;" onchange="hidemacface(); if (/^demo1\d/.test(this.value) && !(w3c_mode)) {SA_alert('NOTE: This animation is for XUL/Chromium mode only.'); setFolderValue();}">
 <option value="">(Browse)</option>
+<option value="demo20">⭐ XR Animator ⭐</option>
 <option value="demo1">Demo 01 - XPMCE Gal</option>
 <option value="demo2">Demo 02 - 2K Gal</option>
 <option value="demo3">Demo 03 - Flag (USA)</option>
@@ -1791,6 +1804,17 @@ writeCPUOptions()
 if (use_SA_browser_mode)
   document.write('<input type="button" value="Desktop shortcut" onclick="createAnimationShortcut()" title="Create a shortcut to this animation on your desktop." class="textBox" />')
 </script>
+
+<hr size=1 noshade style="position:relative; left:-10px; width:90%" />
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<div style="width:95%; text-align:right;">
+<input type="button" value="Reset settings" onclick="resetSettings()" title="Reset all settings to default." class="textBox" />
+</div>
 			</td>
 		</tr>
 
@@ -1900,10 +1924,10 @@ Number of meters for CPU monitor <a href="#" onclick="return false" title="This 
 			<td>&nbsp;</td>
 			<td style="padding-top:4px;">
 <span id="L_WallpaperAsBG">
-	<input name="WallpaperAsBG" type="checkbox" id="WallpaperAsBG" value="checkbox" onclick="if (this.checked) XULTransparentBG.checked = false; toggleElement(L_DisableWallpaperMask, this.checked);" />
+	<input name="WallpaperAsBG" type="checkbox" id="WallpaperAsBG" value="checkbox" onclick="if (0&& this.checked) XULTransparentBG.checked = false; toggleElement(L_DisableWallpaperMask, this.checked);" />
 	<label id="L_WallpaperAsBG_TEXT" for="WallpaperAsBG">Use wallpaper as BG <a href="#" onclick="return false" title="By default, animation in Linux/HTA/XUL mode has a solid background, which may not look good for animations designed for transparent background. Enable this option to emulate background transparency by filling the gadget background with the desktop wallpaper.\n\nNOTE: This option has no effect for animations with transparent background.">(?)</a></label>
 <span id="L_DisableWallpaperMask">
-	<input name="DisableWallpaperMask" type="checkbox" id="DisableWallpaperMask" value="checkbox" onclick="if (this.checked) XULTransparentBG.checked = false;" />
+	<input name="DisableWallpaperMask" type="checkbox" id="DisableWallpaperMask" value="checkbox" onclick="if (0&& this.checked) XULTransparentBG.checked = false;" />
 	<label id="L_DisableWallpaperMask_TEXT" for="DisableWallpaperMask">Disable mask <a href="#" onclick="return false" title="System Animator allows you to use a &quot;mask&quot; for any wallpaper. A wallpaper mask is a separate PNG image file of the same resolution as the wallpaper, using its alpha channel data (opacity) to define the opacity mask for any System Animator animations displayed over the wallpaper.\n\nBy default, wallpaper mask is used when availavle. Enable this option if you need to disable it for a specific animation.">(?)</a></label>
 </span>
 </span>
@@ -1916,6 +1940,16 @@ Number of meters for CPU monitor <a href="#" onclick="return false" title="This 
 <span id="L_DisableTransparency">
 	<input name="DisableTransparency" type="checkbox" id="DisableTransparency" value="checkbox" onclick="if (this.checked) IgnoreMouseEventsPartial.checked=false" />
 	<label id="L_DisableTransparency_TEXT" for="DisableTransparency">Disable transparency (Electron) <a href="#" onclick="return false" title="Background transparency is enabled by default for System Animator running on Electron, at the expense of extra CPU usage. If you really do not need transparency (e.g. your animation is fully opaque), disable transparency for a potential performance gain.\n\nNOTE: Transparency is automatically disabled for some animation types, or when &quot;Stay on desktop&quot; is on.">(?)</a></label>
+</span>
+			</td>
+		</tr>
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<span id="L_DisableBackgroundThrottling">
+	<input name="DisableBackgroundThrottling" type="checkbox" id="DisableBackgroundThrottling" value="checkbox" />
+	<label id="L_DisableBackgroundThrottling_TEXT" for="DisableBackgroundThrottling">Disable background throttling (Electron) <a href="#" onclick="return false" title="Background throttling is enabled by default for System Animator running on Electron, which throttles animations and timers when the page becomes background or hidden to save CPU/GPU usage. Disable background throttling if your animation requires timers to be running all the time.">(?)</a></label>
 </span>
 			</td>
 		</tr>
@@ -2021,33 +2055,6 @@ Number of meters for CPU monitor <a href="#" onclick="return false" title="This 
 				<label id="L_UseImgCache_TEXT" for="UseImgCache">Image caching <a href="#" onclick="return false" title="Enable this option for frame-based animation (.SEQ) to reduce HDD access. This option requires more memory at startup and the gadget display may flash while caching.">(?)</a></label>
 			</td>
 		</tr>
-<!--
-		<tr>
-			<td>&nbsp;</td>
-			<td style="padding-top:4px;">
-<span id="L_UseSL">
-	<input name="UseSilverlight" type="checkbox" id="UseSilverlight" onclick="toggleElement(L_UseSL_windowless, this.checked)" value="checkbox" />
-	<label id="L_UseSilverlight_TEXT" for="UseSilverlight">Use Silverlight</label>
-</span>
-<a href="#" onclick="System.Shell.execute(System.Gadget.path + '\\docs\\silverlight.txt'); return false" title="Enable &quot;Silverlight&quot; for FASTER rendering and more options (recommended). Click for details.">(?)</a>
-<span id="L_UseSL_windowless">
-	<input name="UseSL_windowless" type="checkbox" id="UseSL_windowless" value="checkbox" />
-	<label id="L_UseSL_windowless_TEXT" for="UseSL_windowless">Windowless mode <a href="#" onclick="System.Shell.execute(System.Gadget.path + '\\docs\\silverlight.txt'); return false" title="Enable &quot;Windowless&quot; mode for Silverlight (recommended). Click for details.">(?)</a></label>
-</span>
-			</td>
-		</tr>
--->
-<!--
-		<tr>
-			<td>&nbsp;</td>
-			<td style="padding-top:4px;">
-<span id="L_XULSilverlightAuto">
-	<input name="XULSilverlightAuto" type="checkbox" id="XULSilverlightAuto" value="checkbox" />
-	<label id="L_XULSilverlightAuto_TEXT" for="XULSilverlightAuto">Use Silverlight only when needed (HTA) <a href="#" onclick="return false" title="This option is left for backward compatibility and testing purpose, as &quot;HTML5 Canvas&quot; mode is recommended over Silverlight for animation rendering. In XUL/Chromium mode, HTML5 Canvas mode is always on as Silverlight is not supported on these platforms. Uncheck this option to allow HTA animation to render in Silverlight mode.">(?)</a></label>
-</span>
-			</td>
-		</tr>
--->
 	</table>
 </div>
 </div>
@@ -2337,7 +2344,7 @@ Brightness:
 <label id="L_CSSTransform3DBoxAnimate_TEXT" for="CSSTransform3DBoxAnimate">Animate</label>
 			</td>
 		</tr>
-
+<!--
 		<tr>
 			<td>&nbsp;</td>
 			<td style="padding-top:4px;">
@@ -2345,6 +2352,7 @@ Brightness:
 <label id="L_UseWebcamHeadtracking_TEXT" for="UseWebcamHeadtracking">Webcam headtracking (Chromium/XUL) <a href="#" onclick="return false" title="Enable this option to allow headtracking controls via your webcam. For those 3D animations that support this feature, press H to turn the camera on.">(?)</a></label>
 			</td>
 		</tr>
+-->
 	</table>
 </div>
 </div>
@@ -2560,13 +2568,15 @@ Edge scale <a href="#" onclick="return false" title="Change the edge scale for M
 <h2>Mode</h2>
 
 <div class="tabber">
-<div class="tabbertab" title="Chromium">
+<div class="tabbertab" title="Chromium (Electron)">
 	<table border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
 		<tr>
 			<td>&nbsp;</td>
 			<td style="padding-top:4px;">
-<h5>System Animator (Chromium mode)
+<h5>System Animator (Electron mode)
+<!--
 <a href="#" onclick="System.Shell.execute(System.Gadget.path + '\\docs\\webkit_info.txt'); return false" title="Click here for more info regarding the usage of System Animator in Chromium mode.">(info)</a>
+-->
 <span id="L_GPU_check">
 /
 <a href="#" onclick="webkit_window.setAlwaysOnTop(false); (new webkit_electron_remote.BrowserWindow({width:640, height:480, resizable:true, frame:true, transparent:false})).loadURL('chrome://gpu'); return false" title="Click to perform a GPU check on the current Electron, basically for debugging purpose.">(GPU check)</a>
@@ -2574,11 +2584,12 @@ Edge scale <a href="#" onclick="return false" title="Change the edge scale for M
 :</h5>
 
 <ul>
-<li><a href="https://www.animetheme.com/dl.htm?url=https%3A%2F%2Fwww.animetheme.com%2Fsidebar%2Felectron-v16.0.5-win32-x64_SA.zp" target="_blank">Download Electron v16.0.5</a> / <a href="http://electron.atom.io/" target="_blank">Homepage</a>
+<li><a href="https://www.animetheme.com/dl.htm?url=https%3A%2F%2Fwww.animetheme.com%2Fsidebar%2Felectron-v22.0.0-win32-x64_SA.zp" target="_blank">Download Electron v22.0.0</a><br/>
+(customized for System Animator)</li>
 </ul>
 
 <div style="font-size:10px;">
-<p>Enter the path of Electron/NW.js to enable launching<br/>System Animator in Chromium mode.</p>
+<p>Enter the path of Electron to enable launching<br/>System Animator in Chromium mode.</p>
 
 <script>
 // WebKit
@@ -2599,7 +2610,7 @@ document.write(html)
 <p><input class="textBox" style="width:220px" id="LWebKit_browse" type="file" /></p>
 
 <div>
-<input type="button" value="Launch Chromium" onclick="launchWebKit()" title="Click to run a new instance of System Animator as a standalone application (Chromium) WITHOUT the sidebar platform." class="textBox" />
+<input type="button" value="Launch System Animator" onclick="launchWebKit()" title="Click to open a new instance of System Animator (Electron)." class="textBox" />
 </div>
 
 <div id="L_electron_register">
@@ -2613,6 +2624,7 @@ document.write(html)
 	</table>
 </div>
 
+<!--
 <div class="tabbertab" title="XUL">
 	<table id="T_XUL" border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
 		<tr>
@@ -2661,9 +2673,9 @@ if (!SystemEXT.GetXULPath_USER() && SystemEXT.GetXULPath_DEFAULT())
 
 <div>
 <input type="button" value="Launch XUL" onclick="launchXUL()" title="Click to run a new instance of System Animator as a standalone application (XUL) WITHOUT the sidebar platform." class="textBox" />
-<!--
+
 <input type="button" value="Desktop shortcut" onclick="createXULDesktopShortcut()" title="Create a shortcut to System Animator XUL (Host) on your desktop." class="textBox" />
--->
+
 </div>
 
 </div>
@@ -2750,6 +2762,8 @@ document.write(html)
 
 	</table>
 </div>
+-->
+
 </div>
 
 </div>
@@ -2850,11 +2864,16 @@ function createAnimationHost() {
 </ul>
 
 <ul>
-<li><a href="http://electron.atom.io/" target="_blank">Electron</a></li>
+<li><a href="https://www.electronjs.org/" target="_blank">Electron</a></li>
 <li><a href="https://threejs.org/" target="_blank">three.js</a></li>
 <li><a href="https://github.com/GrimoireGL/GrimoireJS" target="_blank">jThree v2</a> (now known as "Grimoire.js")</li>
 <li><a href="https://github.com/kripken/ammo.js" target="_blank">ammo.js</a> (a port of Bullet Physics, zlib licensed)</li>
 <li><a href="https://stuk.github.io/jszip/" target="_blank">JSZip</a> (used under MIT license)</li>
+<li><a href="https://github.com/google/mediapipe" target="_blank">MediaPipe</a>
+<li><a href="https://github.com/tensorflow/tfjs" target="_blank">TensorFlow.js</a>
+<li><a href="https://github.com/adzialocha/osc-js" target="_blank">osc-js</a>
+<li><a href="https://peerjs.com/" target="_blank">PeerJS</a>
+<li><a href="http://3d.nicovideo.jp/alicia/" target="_blank">"ニコニ立体ちゃん" 3D Model</a>
 <li>"Appearance Miku" 3D Model <a href="#" onclick="System.Shell.execute(System.Gadget.path + '\\jThree\\model\\Appearance Miku\\Readme.txt'); return false">(readme/license)</a></li>
 <li>Various 3D background effects ported and modified from codes found on <a href="https://www.shadertoy.com/" target="_blank">Shadertoy</a></li>
 <li>For some third-party programming libraries/3D data/assets used in System Animator, please refer to the corresponding script/readme for license and terms.</li>

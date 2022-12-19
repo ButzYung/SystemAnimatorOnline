@@ -2,6 +2,24 @@ System Animator - Changelog
 
 -------------------------------
 
+v11.0.0.0
+
+- Major version update, years after version 10
+
+- System Animator can now run as online app on web browsers (basic demo - https://sao.animetheme.com/ )
+
+- System Animator is now not only a desktop gadget but also an engine for potential uses such as XR (extended reality) and metaverse
+
+- Add support for AI motion capture using a single webcam or media file
+
+- Add support for game-like interface and functions
+
+- Add support for latest three.js features such as VRM 3D model and BVH/FBX(Mixamo) motion
+
+- Add "XR Animator" as our first app based on System Animator (online version - https://sao.animetheme.com/XR_Animator.html )
+
+-------------------------------
+
 v10.9.5.1
 
 - Add the "Donate" tab to settings panel. Please consider making a donation and keep the System Animator project going!
