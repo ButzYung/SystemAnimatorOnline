@@ -1,4 +1,4 @@
-// System Animator core - EXTRA (2022-11-30)
+// System Animator core - EXTRA (2022-12-20)
 
 var use_SA_gimage_emulation
 
@@ -290,23 +290,23 @@ if (SA_project_JSON.readme_url)
 if (SA_project_JSON.wallpaper_url)
   self.SA_wallpaper_src = SA_project_JSON.wallpaper_url
 
+let c_js;
 if (!WallpaperEngine_CEF_mode) {
-  var c_js
-  if (path_demo_by_url[SA_HTA_folder]) {
-    c_js = System.Gadget.path + toLocalPath('\\TEMP\\_config_local\\' + SA_HTA_folder.replace(/^.+[\/\\]/, "") + '.js')
+  if (path_demo_by_url[SA_HTA_folder] || (SA_HTA_folder.indexOf(System.Gadget.path) != -1)) {
+    c_js = System.Gadget.path + toLocalPath('\\TEMP\\_config_local\\' + SA_HTA_folder.replace(/^.+[\/\\]/, "") + '.js');
     if (!FSO_OBJ.FileExists(c_js))
-      c_js = ""
+      c_js = "";
   }
   else if (webkit_mode && isFile) {
-    c_js = System.Gadget.path + toLocalPath('\\TEMP\\_config_local\\_SA_' + System._hash_sha256.hash(SA_HTA_folder_full) + '.js')
+    c_js = System.Gadget.path + toLocalPath('\\TEMP\\_config_local\\_SA_' + System._hash_sha256.hash(SA_HTA_folder_full) + '.js');
     if (!FSO_OBJ.FileExists(c_js))
-      c_js = ""
+      c_js = "";
   }
 
   if (!c_js) {
-    c_js = toLocalPath(SA_HTA_folder + '\\_config_local.js')
+    c_js = toLocalPath(SA_HTA_folder + '\\_config_local.js');
     if (!FSO_OBJ.FileExists(c_js))
-      c_js = ""
+      c_js = "";
   }
 }
 
