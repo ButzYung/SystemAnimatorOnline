@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2022-11-30)
+// (2022-12-20)
 
 var use_full_spectrum = true
 
@@ -107,81 +107,7 @@ if (this.use_jThree) {
   if (use_WebGL_2D)
     WebGL_2D.createObject(SL_2D_front)
 
-  if (MMD_SA_options.use_JSARToolKit) {
-    c = document.createElement("canvas")
-    c.id = "SL_webcam"
-    c.width  = MMD_SA_options.width
-    c.height =  MMD_SA_options.height
-    cs = c.style
-    cs.position = "absolute"
-    cs.left = cs.top = "0px"
-    cs.zIndex = 0
-    SL_Host.appendChild(c)
-
-    if (use_WebGL_2D)
-      WebGL_2D.createObject(SL_webcam)
-
-    var video
-    var AR_para = MMD_SA_options.AR_para
-
-    if (AR_para.marker_base_transform) {
-      var t = AR_para.marker_base_transform.translation || [0,0,0]
-      var r = AR_para.marker_base_transform.rotation || [0,0,0]
-      for (var i = 0; i < 3; i++)
-        r[i] *= Math.PI / 180
-      AR_para._marker_base_transform = new THREE.Matrix4().makeFromPositionQuaternionScale(MMD_SA.TEMP_v3.set(t[0],t[1],t[2]), MMD_SA.TEMP_q.setFromEuler(MMD_SA._v3a.set(r[0],r[1],r[2])), MMD_SA._v3b.set(1,1,1))
-    }
-
-    if (AR_para.IP_camera_url) {
-      this.AR_video = video = document.createElement('img');
-//video.width  = AR_para.video_width;
-//video.height = AR_para.video_height;
-
-      video.onerror = function () {
-MMD_SA.AR_video = null
-alert("(IP camera not found)")
-      }
-      video.src = AR_para.IP_camera_url
-    }
-    else {
-this.AR_video = video = document.createElement('video');
-video.autoplay = true;
-//video.width  = AR_para.video_width;
-//video.height = AR_para.video_height;
-
-var getUserMedia = function(t, onsuccess, onerror) {
-  if (navigator.getUserMedia) {
-    return navigator.getUserMedia(t, onsuccess, onerror);
-  } else if (navigator.webkitGetUserMedia) {
-    return navigator.webkitGetUserMedia(t, onsuccess, onerror);
-  } else if (navigator.mozGetUserMedia) {
-    return navigator.mozGetUserMedia(t, onsuccess, onerror);
-  } else if (navigator.msGetUserMedia) {
-    return navigator.msGetUserMedia(t, onsuccess, onerror);
-  } else {
-    onerror(new Error("No getUserMedia implementation found."));
-  }
-};
-
-var _URL = window.URL || window.webkitURL;
-var createObjectURL = _URL.createObjectURL;
-if (!createObjectURL) {
-  throw new Error("URL.createObjectURL not found.");
-}
-
-getUserMedia({'video': true},
-  function(stream) {
-    var url = createObjectURL(stream);
-    video.src = url;
-  },
-  function(error) {
-    alert("Couldn't access webcam.");
-  }
-);
-
-    }
-  }
-  else if (use_MatrixRain) {
+  if (use_MatrixRain) {
     this.matrix_rain = new MatrixRain(1024,1024, MMD_SA_options.MatrixRain_options);
     this.matrix_rain.matrixCreate()
 
@@ -228,7 +154,7 @@ for (var i = 0, len = MMD_SA_options.custom_action.length; i < len; i++) {
 
 MMD_SA_options.motion.forEach(function (motion) {
   if (motion.para_SA)
-    MMD_SA_options.motion_para[motion.path.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, "")] = motion.para_SA
+    MMD_SA_options.motion_para[motion.path.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh|fbx)$/i, "")] = motion.para_SA;
 });
 
 // media control START
@@ -324,32 +250,6 @@ Lbody_host.onmouseout = m.onmouseout = function () {
 }
 // END
 
-
-  if (MMD_SA_options.use_JSARToolKit && use_MatrixRain) {
-    this.matrix_rain = new MatrixRain(MMD_SA_options.width, MMD_SA_options.height)
-    this.matrix_rain.matrixCreate()
-
-    this.matrix_rain._SA_draw = function(skip_matrix) {
-if (!this._SA_active)
-  return
-
-if (use_full_fps && !skip_matrix)
-  skip_matrix = !EV_sync_update.frame_changed("matrixDraw")
-
-this.matrixDraw(skip_matrix)
-
-this.draw(SL_webcam)
-
-var context = SL_webcam.getContext("2d")
-context.globalAlpha = 1
-context.globalCompositeOperation = 'copy'
-context.drawImage(this.canvas, 0,0)
-    }
-
-    DEBUG_show("Use Matrix rain", 2)
-  }
-
-
 // audio START
 var sender = {
   _playbackRate: 1
@@ -430,7 +330,7 @@ vo.audio_onended = function (e) {
 
 Audio_BPM.checkWinamp(vo)
 
-DragDrop_RE = eval('/\\.(' + DragDrop_RE_default_array.concat(["vmd", "bvh", "mp3", "wav", "aac", "zip", "vrm", "json"]).join("|") + ')$/i')
+DragDrop_RE = eval('/\\.(' + DragDrop_RE_default_array.concat(["vmd", "bvh", "mp3", "wav", "aac", "zip", "vrm", "fbx", "json"]).join("|") + ')$/i')
 
 DragDrop.onDrop_finish = function (item) {
   var src = item.path
@@ -478,7 +378,7 @@ new self.JSZip().loadAsync(zip_file, {
     music_list.slice(0,keys_available.length).forEach(function (music) {
       var music_filename = music.name.replace(/^.+[\/\\]/, "").replace(/\.\w+$/, "")
 //DEBUG_show(music_filename,0,1)
-      var vmd = zip.file(new RegExp(toRegExp(music_filename)+"\\.(vmd|bvh)"))
+      var vmd = zip.file(new RegExp(toRegExp(music_filename)+"\\.(vmd|bvh|fbx)"))
       if (vmd.length) {
         files_added = true
         let k = keys_available.shift()
@@ -646,9 +546,9 @@ MMD_SA._click_to_reset = null;
       Ldebug.addEventListener("click", MMD_SA._click_to_reset);
     }
   }
-  else if (item.isFileSystem && /([^\/\\]+)\.(vmd|bvh)$/i.test(src)) {
+  else if (item.isFileSystem && /([^\/\\]+)\.(vmd|bvh)$/i.test(src) || (item.isFileSystem && /([^\/\\]+)\.(fbx)$/i.test(src) && !MMD_SA.THREEX.enabled)) {
     if (!MMD_SA.MMD_started) {
-      DEBUG_show("(no custom VMD/BVH motion before MMD loaded)", 2)
+      DEBUG_show("(no custom VMD/BVH/FBX motion before MMD loaded)", 3)
       return
     }
     if (MMD_SA.music_mode) {
@@ -661,19 +561,36 @@ MMD_SA._click_to_reset = null;
 
     var filename = RegExp.$1
 
-    var index = MMD_SA_options.motion_index_by_name[src.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, "")]
+    var index = MMD_SA_options.motion_index_by_name[src.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh|fbx)$/i, "")]
     if (index != null) {
-      if (MMD_SA.use_jThree) {
-        MMD_SA_options.motion_shuffle = [index]
-        MMD_SA_options.motion_shuffle_list_default = null
-        MMD_SA._force_motion_shuffle = true
-      }
-      return
+      MMD_SA_options.motion_shuffle = [index];
+      MMD_SA_options.motion_shuffle_list_default = null;
+      MMD_SA._force_motion_shuffle = true;
+      return;
     }
 
-    if (MMD_SA.use_jThree) {
-      MMD_SA.load_external_motion(src)
+    MMD_SA.load_external_motion(src);
+  }
+  else if (item.isFileSystem && /([^\/\\]+)\.(fbx)$/i.test(src)) {
+//    if (!MMD_SA.THREEX.enabled) return;
+
+    if (!MMD_SA.MMD_started) {
+      DEBUG_show("(no custom VMD/BVH/FBX motion before MMD loaded)", 3)
+      return;
     }
+
+    DEBUG_show('(FBX motion loading)', 2)
+
+    // Load animation
+    const model = MMD_SA.THREEX.get_model(0);
+    MMD_SA.THREEX.utils.loadMixamoAnimation( src, model ).then( ( clip ) => {
+      model.animation.clear();
+
+      model.animation.add_clip(clip);
+      model.animation.enabled = true;
+//console.log(clip)
+      DEBUG_show('(FBX motion ready)', 2)
+    } );
   }
   else if (item.isFolder) {
     Audio_BPM.play_list.drop_folder(item)
@@ -1170,20 +1087,7 @@ if (MMD_SA.use_jThree && this._kissing && motion_name && (motion_name != MMD_SA.
   this.onFinish()
 motion_name = MMD_SA.MMD.motionManager.filename
 
-if (MMD_SA.use_jThree && !busy && MMD_SA_options.use_JSARToolKit) {
-  var AR_obj = MMD_SA.AR_obj
-  if (AR_obj._m4) {
-    var AR_para = MMD_SA_options.AR_para
-    var marker = AR_obj.markers[AR_para.marker_base_id]
-    var position = marker._camera_position
-    var rotation = MMD_SA.TEMP_v3.setEulerFromQuaternion(marker.rotation)
-//MMD_SA._debug_msg = [Math.abs(rotation.z)+','+position.length()]
-    if ((Math.abs(rotation.z) < 45*Math.PI/180) && (position.y > 20) && (position.length() < 35)) {
-      is_kissing = true
-    }
-  }
-}
-else if (MMD_SA.use_jThree && !busy && (MMD_SA.camera_position.y > MMD_SA._head_pos.y-2) && (Math.abs(MMD_SA.camera_position.x - MMD_SA._head_pos.x) < 10) && (MMD_SA._head_pos.distanceTo(MMD_SA.camera_position) < 10)) {
+if (MMD_SA.use_jThree && !busy && (MMD_SA.camera_position.y > MMD_SA._head_pos.y-2) && (Math.abs(MMD_SA.camera_position.x - MMD_SA._head_pos.x) < 10) && (MMD_SA._head_pos.distanceTo(MMD_SA.camera_position) < 10)) {
   is_kissing = true
 }
 else {
@@ -1279,7 +1183,7 @@ this._kissing = MMD_SA.meter_motion_disabled = false
 if (objs._model_index) return false
 
 var busy = MMD_SA._busy_mode1_ || !MMD_SA_options.look_at_screen
-if (MMD_SA._hit_hip_ || ((MMD_SA_options.model_para_obj._cover_undies != false) && (MMD_SA.MMD.motionManager.para_SA._cover_undies != false) && !busy && !MMD_SA.custom_action_default.kissing.action._kissing && this._condition(is_bone_action, objs, (((MMD_SA._rx*180/Math.PI) % 360 > 45 * ((MMD_SA.use_jThree) ? 0.75 : 1)) || (MMD_SA.use_jThree && MMD_SA_options.use_JSARToolKit && MMD_SA.AR_obj._m4 && (MMD_SA.AR_obj.camera_position.y < 10)))/* && !Audio_BPM.vo.motion_by_song_name_mode*/) )) {
+if (MMD_SA._hit_hip_ || ((MMD_SA_options.model_para_obj._cover_undies != false) && (MMD_SA.MMD.motionManager.para_SA._cover_undies != false) && !busy && !MMD_SA.custom_action_default.kissing.action._kissing && this._condition(is_bone_action, objs, (((MMD_SA._rx*180/Math.PI) % 360 > 45 * ((MMD_SA.use_jThree) ? 0.75 : 1)) )/* && !Audio_BPM.vo.motion_by_song_name_mode*/) )) {
   this._undies_visible = true
 
   if (!this._adjust(is_bone_action, objs)) {
@@ -1523,12 +1427,12 @@ return motion_changed
   }
 
  ,load_external_motion: function (src, _onload) {
-var name_new = src.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, "")
+var name_new = src.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh|fbx)$/i, "")
 
 var index = MMD_SA.motion_index_for_external
 var m = MMD_SA_options.motion[index]
 var path_old = m.path
-var name_old = (path_old) ? m.path.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, "") : ""
+var name_old = (path_old) ? m.path.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh|fbx)$/i, "") : ""
 if (name_old) {
   MMD_SA_options.motion_index_by_name[name_old] = null
 //DEBUG_show(name_old,0,1)
@@ -1543,7 +1447,7 @@ function _finalize() {
 // assigning a new MotionManager() ensures that motion change can be detected in .motion_shuffle() even though the motion index remains the same
   var mm = MMD_SA.motion[index] = new MMD_SA.MMD.MotionManager()
   mm.filename = name_new
-  mm.para_SA = Object.assign(MMD_SA_options.motion_para[name_new]||{}, { look_at_screen:false, random_range_disabled:true });
+  mm.para_SA = Object.assign(MMD_SA_options.motion_para[name_new]||{}, { look_at_screen:false, random_range_disabled:true, motion_tracking_enabled:true, motion_tracking_upper_body_only:true });
   mm._index = mm.para_SA._index = index
   mm.para_SA._path = src
 
@@ -2994,7 +2898,7 @@ return rot_v3
  ,_camera_position_: null
  ,get camera_position() {
 //jThree("#MMD_camera").three(0)===MMD_SA._trackball_camera.object
-return this._camera_position_ || ((MMD_SA_options.use_JSARToolKit && MMD_SA.AR_obj._m4) ? MMD_SA.AR_obj.camera_position : MMD_SA._trackball_camera.object.position);
+return this._camera_position_ || MMD_SA._trackball_camera.object.position;
   }
 
  ,gravity: [0,-1,0]
@@ -5812,30 +5716,30 @@ MMD_SA.Sprite = (function () {
 MMD_SA_options.use_sprite=true
 var _hit_box_offset;
 window.addEventListener("jThree_ready",() => {
-  _hit_box_offset = new THREE.Vector3()
+  _hit_box_offset = new THREE.Vector3();
+  const p = 'thunder_particle';
   MMD_SA_options.model_para_obj.SFX = [
 /*
 {
 
       sprite:[
-  {bone_ref:"頭", sticky:true, name:"smoke_01", depth:3, scale:0.5},
-  {bone_ref:"上半身2", sticky:true, name:"smoke_01", depth:3},
-  {bone_ref:"上半身", sticky:true, name:"smoke_01", depth:3},
-  {bone_ref:"下半身", sticky:true, name:"smoke_01", depth:3},
-  {bone_ref:"左腕", sticky:true, name:"smoke_01", depth:3, scale:0.5},
-  {bone_ref:"左ひじ", sticky:true, name:"smoke_01", depth:3, scale:0.5},
-  {bone_ref:"左手首", sticky:true, name:"smoke_01", depth:3, scale:0.5},
-  {bone_ref:"右腕", sticky:true, name:"smoke_01", depth:3, scale:0.5},
-  {bone_ref:"右ひじ", sticky:true, name:"smoke_01", depth:3, scale:0.5},
-  {bone_ref:"右手首", sticky:true, name:"smoke_01", depth:3, scale:0.5},
-  {bone_ref:"左足", sticky:true, name:"smoke_01", depth:3, scale:0.5},
-  {bone_ref:"左ひざ", sticky:true, name:"smoke_01", depth:3, scale:0.5},
-  {bone_ref:"左足首", sticky:true, name:"smoke_01", depth:3, scale:0.5},
-  {bone_ref:"右足", sticky:true, name:"smoke_01", depth:3, scale:0.5},
-  {bone_ref:"右ひざ", sticky:true, name:"smoke_01", depth:3, scale:0.5},
-  {bone_ref:"右足首", sticky:true, name:"smoke_01", depth:3, scale:0.5},
+  {bone_ref:"頭", sticky:true, name:p, depth:3, scale:0.5},
+  {bone_ref:"上半身2", sticky:true, name:p, depth:3},
+  {bone_ref:"上半身", sticky:true, name:p, depth:3},
+  {bone_ref:"下半身", sticky:true, name:p, depth:3},
+  {bone_ref:"左腕", sticky:true, name:p, depth:3, scale:0.5},
+  {bone_ref:"左ひじ", sticky:true, name:p, depth:3, scale:0.5},
+  {bone_ref:"左手首", sticky:true, name:p, depth:3, scale:0.5},
+  {bone_ref:"右腕", sticky:true, name:p, depth:3, scale:0.5},
+  {bone_ref:"右ひじ", sticky:true, name:p, depth:3, scale:0.5},
+  {bone_ref:"右手首", sticky:true, name:p, depth:3, scale:0.5},
+  {bone_ref:"左足", sticky:true, name:p, depth:3, scale:0.5},
+  {bone_ref:"左ひざ", sticky:true, name:p, depth:3, scale:0.5},
+  {bone_ref:"左足首", sticky:true, name:p, depth:3, scale:0.5},
+  {bone_ref:"右足", sticky:true, name:p, depth:3, scale:0.5},
+  {bone_ref:"右ひざ", sticky:true, name:p, depth:3, scale:0.5},
+  {bone_ref:"右足首", sticky:true, name:p, depth:3, scale:0.5},
       ],
-
 }
 */
   ];
@@ -6007,7 +5911,7 @@ MMD_SA._force_motion_shuffle = true
 //var motion_para = MMD_SA.motion[motion_index].para_SA
 //console.log(motion_para)
     },
-    no_sound: true,
+    muted: true,
       }
     };
 
@@ -6332,7 +6236,7 @@ sprite_obj_list.concat(VFX.obj_list).forEach(function (ss) {
 });
     });
 
-// use SA_MMD_after_updateMotion even to make sure they are added LAST after all motion updates
+// use SA_MMD_after_updateMotion event to make sure they are added LAST after all motion updates
     window.addEventListener("MMDStarted", () => {
       window.addEventListener("SA_MMD_after_updateMotion", ()=>{
 THREE.MMD.getModels().forEach((model, idx) => {
@@ -6421,9 +6325,10 @@ const mesh_m4 = modelX.mesh.matrixWorld;//TEMP_m4.makeRotationFromQuaternion(mes
 for (let bone_name in bone_list) {
   const b = bone_list[bone_name]
   if (b.pos) {
-    bone_data[bone_name].pos = modelX.get_bone_position_by_MMD_name(bone_name, true);//MMD_SA.get_bone_position(mesh, bone_name, mesh);//
+    bone_data[bone_name].pos = modelX.get_bone_position_by_MMD_name(bone_name, true) || modelX.get_bone_position_by_MMD_name('上半身', true);//MMD_SA.get_bone_position(mesh, bone_name, mesh);//
 //    if (mesh._bone_to_position_last) bone_data[bone_name].pos.sub(mesh._bone_to_position_last.bone_pos_offset);
-    bone_data[bone_name].pos.applyMatrix4(mesh_m4)
+// ignore scale
+    bone_data[bone_name].pos.applyQuaternion(modelX.mesh.quaternion).add(modelX.mesh.position);//applyMatrix4(mesh_m4)
   }
   if (b.rot)
     bone_data[bone_name].rot = modelX.get_bone_rotation_by_MMD_name(bone_name);//MMD_SA.get_bone_rotation(mesh, bone_name);//
@@ -7174,6 +7079,52 @@ else
 
 MMD_SA.THREEX = (function () {
 
+  function init_on_jThree_ready() {
+const THREE = MMD_SA.THREEX.THREEX;
+
+v1 = new THREE.Vector3();
+v2 = new THREE.Vector3();
+v3 = new THREE.Vector3();
+v4 = new THREE.Vector3();
+
+q1 = new THREE.Quaternion();
+q2 = new THREE.Quaternion();
+q3 = new THREE.Quaternion();
+q4 = new THREE.Quaternion();
+
+e1 = new THREE.Euler();
+e2 = new THREE.Euler();
+e3 = new THREE.Euler();
+e4 = new THREE.Euler();
+
+m1 = new THREE.Matrix4();
+m2 = new THREE.Matrix4();
+m3 = new THREE.Matrix4();
+m4 = new THREE.Matrix4();
+
+// 37.4224, 35
+rot_arm_axis[ 1] = new THREE.Quaternion().setFromEuler(e1.set(0,0,37.4224/180*Math.PI));
+rot_arm_axis[-1] = rot_arm_axis[ 1].clone().conjugate();
+
+rot_shoulder_axis[ 1] = new THREE.Quaternion().setFromEuler(e1.set(0,0,5/180*Math.PI));
+rot_shoulder_axis[-1] = rot_shoulder_axis[ 1].clone().conjugate();
+  }
+
+  function init_on_MMDStarted() {
+const THREE = MMD_SA.THREEX.THREEX;
+
+_THREE.MMD.getModels().forEach((model,i)=>{
+  var bones_by_name = model.mesh.bones_by_name
+  var model_para = MMD_SA_options.model_para_obj_all[i]
+
+  model_para._hip_pos = v1.fromArray(bones_by_name['上半身'].pmxBone.origin).add(v2.fromArray(bones_by_name['下半身'].pmxBone.origin)).multiplyScalar(0.5).toArray();
+  model_para._hip_offset = {};
+  model_para._hip_offset['センター'] = v1.fromArray(model_para._hip_pos).sub(v2.fromArray(bones_by_name['センター'].pmxBone.origin)).toArray();
+  model_para._hip_offset['グルーブ'] = v1.fromArray(model_para._hip_pos).sub(v2.fromArray(bones_by_name['グルーブ'].pmxBone.origin)).toArray();
+  model_para._hip_offset['腰'] = v1.fromArray(model_para._hip_pos).sub(v2.fromArray(bones_by_name['腰'].pmxBone.origin)).toArray();
+});
+  }
+
   function init() {
 data.scene = new THREE.Scene();
 data.renderer = new THREE.WebGLRenderer({
@@ -7187,80 +7138,6 @@ data.renderer = new THREE.WebGLRenderer({
 data.renderer.setPixelRatio(window.devicePixelRatio);
 
 GLTF_loader = new THREE.GLTFLoader();
-
-
-// three-vrm 1.0
-if (use_VRM1) {
-// https://github.com/pixiv/three-vrm/blob/dev/docs/migration-guide-1.0.md
-// In VRM1.0, linear workflow is explicitly recommended, as GLTFLoader recommends.
-  data.renderer.outputEncoding = THREEX.sRGBEncoding;
-
-// Install GLTFLoader plugin
-  GLTF_loader.register((parser) => {
-    return new THREEX.VRMLoaderPlugin(parser);
-  });
-
-// backward compatibility
-// /three-vrm-core/types/humanoid/VRMHumanBoneName.d.ts
-  THREE.VRMSchema = { HumanoidBoneName: {
-Hips: "hips",
-Spine: "spine",
-Chest: "chest",
-UpperChest: "upperChest",
-Neck: "neck",
-Head: "head",
-LeftEye: "leftEye",
-RightEye: "rightEye",
-Jaw: "jaw",
-LeftUpperLeg: "leftUpperLeg",
-LeftLowerLeg: "leftLowerLeg",
-LeftFoot: "leftFoot",
-LeftToes: "leftToes",
-RightUpperLeg: "rightUpperLeg",
-RightLowerLeg: "rightLowerLeg",
-RightFoot: "rightFoot",
-RightToes: "rightToes",
-LeftShoulder: "leftShoulder",
-LeftUpperArm: "leftUpperArm",
-LeftLowerArm: "leftLowerArm",
-LeftHand: "leftHand",
-RightShoulder: "rightShoulder",
-RightUpperArm: "rightUpperArm",
-RightLowerArm: "rightLowerArm",
-RightHand: "rightHand",
-LeftThumbMetacarpal: "leftThumbMetacarpal",
-LeftThumbProximal: "leftThumbProximal",
-LeftThumbDistal: "leftThumbDistal",
-LeftIndexProximal: "leftIndexProximal",
-LeftIndexIntermediate: "leftIndexIntermediate",
-LeftIndexDistal: "leftIndexDistal",
-LeftMiddleProximal: "leftMiddleProximal",
-LeftMiddleIntermediate: "leftMiddleIntermediate",
-LeftMiddleDistal: "leftMiddleDistal",
-LeftRingProximal: "leftRingProximal",
-LeftRingIntermediate: "leftRingIntermediate",
-LeftRingDistal: "leftRingDistal",
-LeftLittleProximal: "leftLittleProximal",
-LeftLittleIntermediate: "leftLittleIntermediate",
-LeftLittleDistal: "leftLittleDistal",
-RightThumbMetacarpal: "rightThumbMetacarpal",
-RightThumbProximal: "rightThumbProximal",
-RightThumbDistal: "rightThumbDistal",
-RightIndexProximal: "rightIndexProximal",
-RightIndexIntermediate: "rightIndexIntermediate",
-RightIndexDistal: "rightIndexDistal",
-RightMiddleProximal: "rightMiddleProximal",
-RightMiddleIntermediate: "rightMiddleIntermediate",
-RightMiddleDistal: "rightMiddleDistal",
-RightRingProximal: "rightRingProximal",
-RightRingIntermediate: "rightRingIntermediate",
-RightRingDistal: "rightRingDistal",
-RightLittleProximal: "rightLittleProximal",
-RightLittleIntermediate: "rightLittleIntermediate",
-RightLittleDistal: "rightLittleDistal",
-  }};
-}
-
 
 if (MMD_SA_options.use_shadowMap) {
   data.renderer.shadowMap.enabled = true;
@@ -7277,45 +7154,11 @@ defaultAlpha: 0.5,
 }
 
 window.addEventListener("jThree_ready", ()=>{
-  v1 = new THREE.Vector3()
-  v2 = new THREE.Vector3()
-  v3 = new THREE.Vector3()
-  v4 = new THREE.Vector3()
-
-  q1 = new THREE.Quaternion()
-  q2 = new THREE.Quaternion()
-  q3 = new THREE.Quaternion()
-  q4 = new THREE.Quaternion()
-
-  e1 = new THREE.Euler()
-  e2 = new THREE.Euler()
-  e3 = new THREE.Euler()
-  e4 = new THREE.Euler()
-
-  m1 = new THREE.Matrix4()
-  m2 = new THREE.Matrix4()
-  m3 = new THREE.Matrix4()
-  m4 = new THREE.Matrix4()
-
-// 37.4224, 35
-  rot_arm_axis[ 1] = new THREE.Quaternion().setFromEuler(e1.set(0,0,37.4224/180*Math.PI))
-  rot_arm_axis[-1] = rot_arm_axis[ 1].clone().conjugate()
-
-  rot_shoulder_axis[ 1] = new THREE.Quaternion().setFromEuler(e1.set(0,0,5/180*Math.PI))
-  rot_shoulder_axis[-1] = rot_shoulder_axis[ 1].clone().conjugate()
+  init_on_jThree_ready();
 });
 
 window.addEventListener("MMDStarted", ()=>{
-  _THREE.MMD.getModels().forEach((model,i)=>{
-    var bones_by_name = model.mesh.bones_by_name
-    var model_para = MMD_SA_options.model_para_obj_all[i]
-
-    model_para._hip_pos = v1.fromArray(bones_by_name['上半身'].pmxBone.origin).add(v2.fromArray(bones_by_name['下半身'].pmxBone.origin)).multiplyScalar(0.5).toArray();
-    model_para._hip_offset = {};
-    model_para._hip_offset['センター'] = v1.fromArray(model_para._hip_pos).sub(v2.fromArray(bones_by_name['センター'].pmxBone.origin)).toArray();
-    model_para._hip_offset['グルーブ'] = v1.fromArray(model_para._hip_pos).sub(v2.fromArray(bones_by_name['グルーブ'].pmxBone.origin)).toArray();
-    model_para._hip_offset['腰'] = v1.fromArray(model_para._hip_pos).sub(v2.fromArray(bones_by_name['腰'].pmxBone.origin)).toArray();
-  });
+  init_on_MMDStarted();
 });
 
 if (1) {
@@ -7359,13 +7202,81 @@ else {
 }
   }
 
-  function model_obj(index, model, para) {
+  const model_obj = (function () {
+    class animation {
+      #_enabled = false;
+
+      #_mixer;
+
+      clips = [];
+      actions = [];
+
+      get enabled() {
+return this.#_enabled;
+      }
+
+      set enabled(v) {
+this.#_enabled = !!v;
+
+const THREE = MMD_SA.THREEX.THREE;
+
+if (v) {
+  this.play();
+}
+else {
+  this.stop();
+}
+      }
+
+      get mixer() {
+const THREE = MMD_SA.THREEX.THREE;
+
+if (!this.#_mixer) {
+  this.#_mixer = new THREE.AnimationMixer(this.model.mesh);
+}
+return this.#_mixer;
+      }
+
+      get has_clip() { return this.clips.length; }
+
+      add_clip(clip)  {
+var action = this.mixer.clipAction( clip );
+if (this.actions.indexOf(action) == -1) this.actions.push(action);
+if (this.clips.indexOf(clip) == -1) this.clips.push(clip);
+this.play();
+      }
+
+      play() {
+this.actions.forEach(action=>{ action.play(); });
+      }
+
+      stop() {
+this.mixer.stopAllAction();
+      }
+
+      clear() {
+var mixer = this.mixer;
+
+mixer.stopAllAction();
+this.clips.forEach(clip=>{ mixer.uncacheClip(clip); });
+this.clips = [];
+this.actions = [];
+      }
+
+      constructor(model) {
+this.model = model;
+      }
+    }
+
+    return function (index, model, para) {
 this.index = index
 
 if (model)
   this.model = model
 if (para)
   this.para = para
+
+this.animation = new animation(this);
 
 /*
  define the following properties on each inherited class
@@ -7375,14 +7286,15 @@ if (para)
 */
 
 models[index] = this
-  }
+    };
+  })();
 
-  function MMD_dummy_obj(index) {
+  const MMD_dummy_obj = function (index) {
 model_obj.call(this, index);
-  }
+  };
 
 // three-vrm 1.0
-  const use_VRM1 = true;
+  const use_VRM1 = !MMD_SA_options.THREEX_options || (MMD_SA_options.THREEX_options.use_VRM1 !== false);
 
   var GLTF_loader;
 
@@ -7482,7 +7394,7 @@ return rot;
 
 
 // MMD START
-  var MMD = (function () {
+  const MMD = (function () {
 
     function init() {
       if (THREE.MMDAnimationHelper) {
@@ -7620,8 +7532,31 @@ MMD_SA.fn.setupUI()
 
 
 // VRM START
-  var VRM = (function () {
+  const VRM = (function () {
     function init() {
+
+// three-vrm 1.0
+if (use_VRM1) {
+// https://github.com/pixiv/three-vrm/blob/dev/docs/migration-guide-1.0.md
+// In VRM1.0, linear workflow is explicitly recommended, as GLTFLoader recommends.
+  data.renderer.outputEncoding = THREEX.sRGBEncoding;
+
+// Install GLTFLoader plugin
+  GLTF_loader.register((parser) => {
+    return new THREEX.VRMLoaderPlugin(parser);
+//    const helperRoot = new THREE.Group(); helperRoot.renderOrder = 10000; data.scene.add(helperRoot); return new THREEX.VRMLoaderPlugin(parser, { helperRoot });
+  });
+
+// backward compatibility
+// /three-vrm-core/types/humanoid/VRMHumanBoneName.d.ts
+  THREE.VRMSchema = VRM.VRMSchema;
+}
+
+      window.addEventListener('jThree_ready', ()=>{
+rot_parent_upper_body_inv = new THREE.Quaternion();
+rot_parent_upper_body_offset = new THREE.Quaternion();
+      });
+
       window.addEventListener("MMDStarted", ()=>{
 //        vrm_list.sort((a,b)=>a.index-b.index);
 
@@ -7631,7 +7566,8 @@ vrm.boundingBox.min.multiplyScalar(vrm_scale);
 vrm.boundingBox.max.multiplyScalar(vrm_scale);
 
 vrm.boudningSphere = vrm.boundingBox.getBoundingSphere(new THREE.Sphere());
-MMD_SA_options.Dungeon.utils.adjust_boundingBox(vrm)
+if (MMD_SA_options.Dungeon)
+  MMD_SA_options.Dungeon.utils.adjust_boundingBox(vrm);
 
 const MMD_geo = _THREE.MMD.getModels()[vrm.index].mesh.geometry;
 MMD_geo.boundingBox = new _THREE.Box3().copy(vrm.boundingBox);
@@ -7643,92 +7579,6 @@ if (MMD_SA_options.Dungeon)
 
 //console.log(vrm, MMD_geo)
         });
-
-        _THREE.MMD.getModels().forEach((model,i)=>{
-          const VRMSchema = THREE.VRMSchema
-          const bones_by_name = model.mesh.bones_by_name
-          for (const name in bones_by_name) {
-if (bone_map_by_MMD_name[name] != null) continue
-
-let name_short = name
-const starting_char = name.charAt(0)
-const ending_char = name.charAt(name.length-1)
-
-let ending_number = parseInt(ending_char)
-if (isNaN(ending_number))
-  ending_number = nj_list.indexOf(ending_char)
-if (ending_number != -1)
-  name_short = name.substring(0, name.length-1)
-
-let dir
-if ((starting_char.indexOf('左') != -1) || (starting_char.indexOf('右') != -1)) {
-  name_short = name_short.substring(1)
-  dir = (starting_char.indexOf('左') != -1) ? 'Left' : 'Right'
-}
-
-let vrm_name = '';
-const finger_joint_name = [
-  ['Metacarpal','Proximal','Distal'],
-  ['Proximal','Intermediate','Distal'],
-];
-switch (name_short) {
-  case "上半身":
-    if (ending_number == 2)
-      vrm_name = VRMSchema.HumanoidBoneName.Chest
-    break
-
-  case "首":
-    vrm_name = VRMSchema.HumanoidBoneName.Neck
-    break
-  case "頭":
-    vrm_name = VRMSchema.HumanoidBoneName.Head
-    break
-  case "目":
-    vrm_name = VRMSchema.HumanoidBoneName[dir + 'Eye']
-    break
-
-  case "肩":
-    vrm_name = VRMSchema.HumanoidBoneName[dir + 'Shoulder']
-    break
-  case "腕":
-    vrm_name = VRMSchema.HumanoidBoneName[dir + 'UpperArm']
-    break
-  case "ひじ":
-    vrm_name = VRMSchema.HumanoidBoneName[dir + 'LowerArm']
-    break
-  case "手首":
-    vrm_name = VRMSchema.HumanoidBoneName[dir + 'Hand']
-    break
-
-  case "親指":
-  case "人指":
-  case "中指":
-  case "薬指":
-  case "小指":
-    const finger_name = name_short.charAt(0)
-    const finger_index = ending_number - ((finger_name == '親') ? 0 : 1)
-    const finger_name_full = dir + finger_list_en[finger_list[finger_name]] + ((finger_name=='親') ? finger_joint_name[0] : finger_joint_name[1])[finger_index];
-//console.log(finger_name_full)
-    vrm_name = VRMSchema.HumanoidBoneName[finger_name_full]
-    break
-
-  case "足":
-    vrm_name = VRMSchema.HumanoidBoneName[dir + 'UpperLeg']
-    break
-  case "ひざ":
-    vrm_name = VRMSchema.HumanoidBoneName[dir + 'LowerLeg']
-    break
-  case "足首":
-    vrm_name = VRMSchema.HumanoidBoneName[dir + 'Foot']
-    break
-  default:
-//console.log(name, name_short)
-}
-//if (vrm_name) console.log(name, vrm_name)
-bone_map_by_MMD_name[name] = vrm_name
-MMD_bone_list.push(name)
-          }
-        });
       });
     }
 
@@ -7738,8 +7588,6 @@ return v.fromArray(mesh.geometry.bones[bone._index].pos).negate().add(bone.posit
 
     function VRM_object(index, vrm, para) {
 this.is_VRM1 = (parseInt(vrm.meta.metaVersion) > 0);
-// three-vrm 1.0 normalized
-vrm.humanoid.autoUpdateHumanBones = use_VRM1 && this.is_VRM1;
 
 var para = Object.assign({ pos0:{}, q0:{}, name_parent0:{} }, para);
 var humanBones = vrm.humanoid.humanBones;
@@ -7803,13 +7651,13 @@ if (!MMD_SA.MMD_started)
         value: 'VRM'
       },
 
-      bone_map_by_MMD_name: {
-        get: ()=>{ return bone_map_by_MMD_name; }
+      bone_map_MMD_to_VRM: {
+        get: ()=>{ return bone_map_MMD_to_VRM; }
       },
 
       get_bone_by_MMD_name : {
         value: function (name) {
-name = bone_map_by_MMD_name[name];
+name = bone_map_MMD_to_VRM[name];
 return (!name) ? null : this.getBoneNode(name);
         }
       },
@@ -7818,21 +7666,19 @@ return (!name) ? null : this.getBoneNode(name);
       getBoneNode: {
         value: function (name) {
 // three-vrm 1.0 normalized
-return (!use_VRM1) ? this.model.humanoid.getBoneNode(name) : ((this.is_VRM1) ? this.model.humanoid.getNormalizedBoneNode(name) : this.model.humanoid.getRawBoneNode(name));//this.model.humanoid.getRawBoneNode(name);//
+return (!use_VRM1) ? this.model.humanoid.getBoneNode(name) : ((this.model.humanoid.autoUpdateHumanBones) ? this.model.humanoid.getNormalizedBoneNode(name) : this.model.humanoid.getRawBoneNode(name));//this.model.humanoid.getRawBoneNode(name);//
         }
       },
 
       resetPhysics: {
         value: function () {
+/*
 // three-vrm 1.0 (TEST)
 if (!use_VRM1) return;
 
 this.model.springBoneManager.reset();
-//this.model.springBoneManager.setCenter(this.mesh);
 this.model.springBoneManager.setInitState();
-//this.model.springBoneManager.setCenter(this.mesh);
-
-//console.log(this.model.springBoneManager)
+*/
         }
       },
 
@@ -7878,77 +7724,170 @@ const is_VRM1 = this.is_VRM1;
 const mesh = this.mesh
 mesh.matrixAutoUpdate = false
 
-var vrm = this.model
-var VRMSchema = THREE.VRMSchema
+const vrm = this.model
+const VRMSchema = THREE.VRMSchema
+
+const animation_enabled = this.animation.enabled;
+
+// three-vrm 1.0 normalized
+vrm.humanoid.autoUpdateHumanBones = use_VRM1 && (this.is_VRM1 || animation_enabled);
+
+if (vrm.humanoid.autoUpdateHumanBones) {
+  vrm.humanoid.resetNormalizedPose();
+}
+else {
+  if (use_VRM1) {
+    vrm.humanoid.resetRawPose();
+  }
+  else {
+    vrm.humanoid.resetPose();
+  }
+}
+
+//Object.values(VRMSchema.HumanoidBoneName).forEach(b=>{this.getBoneNode(b)?.quaternion.set(0,0,0,1)});
 
 if (!is_VRM1) mesh.quaternion.multiplyQuaternions(q1.set(0,1,0,0), mesh.quaternion);
 
+const time_delta = RAF_timestamp_delta/1000;
+
+if (animation_enabled) {
+  this.animation.mixer.update(time_delta);
+/*
+vrm.update(time_delta);
+if (!mesh.matrixAutoUpdate) {
+  mesh.updateMatrix()
+  mesh.updateMatrixWorld()
+}
+DEBUG_show(Date.now())
+return;
+*/
+  rot_parent_upper_body_inv.set(0,0,0,1);
+  for (const name of ["Hips", "Spine", "Chest", "UpperChest"]) {
+    const bone_name = VRMSchema.HumanoidBoneName[name];
+    if (!bone_name) continue;
+
+    const bone = this.getBoneNode(bone_name);
+    if (!bone) continue;
+
+    rot_parent_upper_body_inv.multiply(bone.quaternion);
+  }
+
+  rot_parent_upper_body_inv.conjugate();
+  System._browser.camera.poseNet.upper_body_rotation_limiter(rot_parent_upper_body_inv, rot_parent_upper_body_offset);
+}
 
 // bone START
 
 var mesh_MMD = _THREE.MMD.getModels()[0].mesh
 var bones_by_name = mesh_MMD.bones_by_name
-MMD_bone_list.forEach(name=>{
-  const bone = this.get_bone_by_MMD_name(name)
-  if (!bone) return
+MMD_bone_list.forEach(MMD_name=>{
+  const bone = this.get_bone_by_MMD_name(MMD_name);
+  if (!bone) return;
 
-  const bone_MMD = bones_by_name[name]
-//let r = MMD_SA.TEMP_v3.setEulerFromQuaternion(bone_MMD.quaternion); r.x*=-1; let q = MMD_SA.TEMP_q.setFromEuler(r);
-//  const aa = bone_MMD.quaternion.toAxisAngle(); bone.quaternion.copy(q1.setFromAxisAngle(aa[0].applyQuaternion(q2.set(0,1,0,0)), aa[1]))
-//if (name=='頭'||name=='首') console.log(name,bone.quaternion.toArray())
-  bone.quaternion.copy(bone_MMD.quaternion);
-  that.process_rotation(bone.quaternion, bone_map_by_MMD_name[name]);
+  const bone_MMD = bones_by_name[MMD_name];
+  const vrm_bone_name = bone_map_MMD_to_VRM[MMD_name];
+  q1.copy(bone_MMD.quaternion);
+  this.process_rotation(q1, vrm_bone_name);
+
+  if (!animation_enabled || (System._browser.camera.ML_enabled && !is_MMD_bone_motion_skipped.test(MMD_name))) {
+    if (animation_enabled && System._browser.camera.poseNet.enabled && is_MMD_bone_motion_mixed.test(MMD_name)) {
+      if (this.animation._single_frame && this.animation._single_frame[vrm_bone_name]) bone.quaternion.fromArray(this.animation._single_frame[vrm_bone_name]);
+      bone.quaternion.multiply(q1);
+    }
+    else {
+      if (animation_enabled && System._browser.camera.ML_enabled && is_MMD_bone_motion_parent_limited.test(MMD_name)) {
+        if (/(left|right)/.test(vrm_bone_name)) {
+          if (!System._browser.camera.poseNet.enabled) return;
+
+          const d = RegExp.$1;
+          q2.copy(rot_parent_upper_body_inv).conjugate();
+          const shoulder_name = VRMSchema.HumanoidBoneName[d.charAt(0).toUpperCase() + d.substring(1) + 'Shoulder'];
+          if (shoulder_name) {
+            const shoulder = this.getBoneNode(shoulder_name);
+            if (shoulder)
+              q2.multiply(shoulder.quaternion);
+          }
+          bone.quaternion.copy(q2.conjugate()).multiply(q1);
+        }
+        else {
+          bone.quaternion.copy(rot_parent_upper_body_inv).multiply(q1);
+        }
+      }
+      else {
+        if (!animation_enabled || !System._browser.camera.ML_enabled || System._browser.camera.poseNet.enabled || is_MMD_bone_motion_face.test(MMD_name))
+          bone.quaternion.copy(q1);
+      }
+    }
+  }
 });
 
 var MMD_model_para = MMD_SA_options.model_para_obj_all[this.index];
 var model_scale = 1/vrm_scale * this.para.left_leg_length / MMD_model_para.left_leg_length;
 
-var center_bone_pos = v1.set(0,0,0);
-var hips_rot = q1.set(0,0,0,1);
-['センター', 'グルーブ', '腰'].forEach(hip_name => {
-  const hip_bone = bones_by_name[hip_name]
-  const hip_bone_pos = get_MMD_bone_pos(mesh_MMD, hip_bone, v4);
-  const hip_bone_offset = v2.fromArray(MMD_model_para._hip_offset[hip_name]);
-  hip_bone_pos.add(v3.copy(hip_bone_offset).applyQuaternion(hip_bone.quaternion).sub(hip_bone_offset).applyQuaternion(hips_rot));
-  center_bone_pos.add(hip_bone_pos);
+const center_bone_pos = v1.set(0,0,0);
+const hips_rot = q1.set(0,0,0,1);
 
-  hips_rot.multiply(hip_bone.quaternion);
-});
+if (!animation_enabled) {
+  ['センター', 'グルーブ', '腰'].forEach(hip_name => {
+    const hip_bone = bones_by_name[hip_name];
+    const hip_bone_pos = get_MMD_bone_pos(mesh_MMD, hip_bone, v4);
+    const hip_bone_offset = v2.fromArray(MMD_model_para._hip_offset[hip_name]);
+    hip_bone_pos.add(v3.copy(hip_bone_offset).applyQuaternion(hip_bone.quaternion).sub(hip_bone_offset).applyQuaternion(hips_rot));
+    center_bone_pos.add(hip_bone_pos);
 
-var root_bone = bones_by_name['全ての親']
-var root_bone_pos = get_MMD_bone_pos(mesh_MMD, root_bone, v2);
-center_bone_pos.add(root_bone_pos);
+    hips_rot.multiply(hip_bone.quaternion);
+  });
+}
 
-center_bone_pos.multiplyScalar(model_scale);
-this.getBoneNode('hips').position.fromArray(this.para.pos0['hips']).add(this.process_position(center_bone_pos));
+if (!animation_enabled) {
+  const root_bone = bones_by_name['全ての親'];
+  const root_bone_pos = get_MMD_bone_pos(mesh_MMD, root_bone, v2);
+  center_bone_pos.add(root_bone_pos);
 
-var upper_body_bone = bones_by_name['上半身']
-var lower_body_bone = bones_by_name['下半身']
+  center_bone_pos.multiplyScalar(model_scale);
+  this.getBoneNode('hips').position.fromArray(this.para.pos0['hips']).add(this.process_position(center_bone_pos));
+}
 
-hips_rot.multiply(lower_body_bone.quaternion);
-var spine_rot = q2.copy(lower_body_bone.quaternion).conjugate().multiply(upper_body_bone.quaternion)
+if (!animation_enabled) {
+  const upper_body_bone = bones_by_name['上半身'];
+  const lower_body_bone = bones_by_name['下半身'];
 
-this.getBoneNode('hips').quaternion.copy(this.process_rotation(hips_rot, 'hips'));
-this.getBoneNode('spine').quaternion.copy(this.process_rotation(spine_rot, 'spine'));
+  hips_rot.multiply(lower_body_bone.quaternion);
 
-['左','右'].forEach((LR,d)=>{['腕','手'].forEach((b_name,b_i)=>{
-  const bone = bones_by_name[LR + b_name + '捩']
-  if (!bone) return
+  const spine_rot = q2.set(0,0,0,1);
+  spine_rot.copy(lower_body_bone.quaternion).conjugate();
+  spine_rot.multiply(upper_body_bone.quaternion);
 
-  const [axis, angle] = bone.quaternion.toAxisAngle();
-  if (angle) {
-    const dir = (d == 0) ? 1 : -1;
-    const sign = (Math.sign(axis.x) == dir) ? 1 : -1;
-    const name = ((dir==1)?'left':'right') + ((b_i==0)?'Upper':'Lower') + 'Arm';
-    that.getBoneNode(name).quaternion.multiply(that.process_rotation(q1.setFromAxisAngle(v1.set(dir*sign,0,0), angle), name));
+  this.getBoneNode('spine').quaternion.copy(this.process_rotation(spine_rot, 'spine'));
+}
+
+if (!animation_enabled) {
+  this.getBoneNode('hips').quaternion.copy(this.process_rotation(hips_rot, 'hips'));
+}
+else {
+  this.getBoneNode('hips').quaternion.multiply(this.process_rotation(hips_rot, 'hips'));
+}
+
+if (!animation_enabled || System._browser.camera.poseNet.enabled) {
+  ['左','右'].forEach((LR,d)=>{['腕','手'].forEach((b_name,b_i)=>{
+    const bone = bones_by_name[LR + b_name + '捩']
+    if (!bone) return
+
+    const [axis, angle] = bone.quaternion.toAxisAngle();
+    if (angle) {
+      const dir = (d == 0) ? 1 : -1;
+      const sign = (Math.sign(axis.x) == dir) ? 1 : -1;
+      const name = ((dir==1)?'left':'right') + ((b_i==0)?'Upper':'Lower') + 'Arm';
+      that.getBoneNode(name).quaternion.multiply(that.process_rotation(q1.setFromAxisAngle(v1.set(dir*sign,0,0), angle), name));
 //DEBUG_show(Date.now()+'/'+angle)
-  }
-})});
+    }
+  })});
+}
 
 //両目
 const eye_bone = bones_by_name['両目']
-const eyeL = that.getBoneNode('leftEye')
-const eyeR = that.getBoneNode('rightEye')
+const eyeL = this.getBoneNode('leftEye')
+const eyeR = this.getBoneNode('rightEye')
 if (eyeL && eyeR) {
   eyeL.quaternion.premultiply(this.process_rotation(q1.copy(eye_bone.quaternion), 'leftEye'));
   eyeR.quaternion.premultiply(this.process_rotation(q1.copy(eye_bone.quaternion), 'rightEye'));
@@ -8067,19 +8006,19 @@ blendshape_weight[name],
   morph_msgs.push(MMD_SA.OSC.VMC.Message("/VMC/Ext/Blend/Apply"));
   MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Bundle(...morph_msgs));
 
-/*
+
   const camera = MMD_SA.THREEX.camera.obj;
   const camera_pos = v1.copy(camera.position).sub(mesh.position);
   MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/Cam",
     [
 'camera',
-camera_pos.x, camera_pos.y, camera_pos.z,
-camera.quaternion.x, camera.quaternion.y, camera.quaternion.z, camera.quaternion.w,
+camera_pos.x*model_pos_scale, camera_pos.y*model_pos_scale, -camera_pos.z*model_pos_scale,
+-camera.quaternion.x, -camera.quaternion.y, camera.quaternion.z, camera.quaternion.w,
 camera.fov,
     ],
     'sffffffff'
   ));
-*/
+
 
   MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/OK", [1], 'i'));
 
@@ -8087,8 +8026,8 @@ camera.fov,
 
 }
 
-vrm.update(RAF_timestamp_delta/1000)
-//  vrm.springBoneManager.lateUpdate(RAF_timestamp_delta/1000)
+
+vrm.update(time_delta);
 
 if (!mesh.matrixAutoUpdate) {
   mesh.updateMatrix()
@@ -8102,9 +8041,75 @@ if (!mesh.matrixAutoUpdate) {
 
     let vrm_list = [];
 
-    const bone_map_by_MMD_name = {};
-    const MMD_bone_list = [];
+    let rot_parent_upper_body_inv, rot_parent_upper_body_offset;
 
+    const is_MMD_bone_motion_mixed = new RegExp(toRegExp(['上半身','肩'],'|'));
+    const is_MMD_bone_motion_skipped = new RegExp(toRegExp(['センター','下半身','足','ひざ'],'|'));
+    const is_MMD_bone_motion_parent_limited = new RegExp('^'+toRegExp(['首','腕'],'|'));
+    const is_MMD_bone_motion_face = new RegExp(toRegExp(['頭','目'],'|'));
+
+    let bone_map_MMD_to_VRM, bone_map_VRM_to_MMD;
+
+    let MMD_bone_list = [];
+    window.addEventListener('jThree_ready', ()=>{
+      bone_map_MMD_to_VRM = VRM.fix_rig_map({
+上半身:"spine",
+上半身2:"chest",
+首:"neck",
+頭:"head",
+右肩:"rightShoulder",
+右腕:"rightUpperArm",
+右ひじ:"rightLowerArm",
+右手首:"rightHand",
+右親指０:"rightThumbMetacarpal",
+右親指１:"rightThumbProximal",
+右親指２:"rightThumbDistal",
+右小指１:"rightLittleProximal",
+右小指２:"rightLittleIntermediate",
+右小指３:"rightLittleDistal",
+右薬指１:"rightRingProximal",
+右薬指２:"rightRingIntermediate",
+右薬指３:"rightRingDistal",
+右中指１:"rightMiddleProximal",
+右中指２:"rightMiddleIntermediate",
+右中指３:"rightMiddleDistal",
+右人指１:"rightIndexProximal",
+右人指２:"rightIndexIntermediate",
+右人指３:"rightIndexDistal",
+左肩:"leftShoulder",
+左腕:"leftUpperArm",
+左ひじ:"leftLowerArm",
+左手首:"leftHand",
+左親指０:"leftThumbMetacarpal",
+左親指１:"leftThumbProximal",
+左親指２:"leftThumbDistal",
+左小指１:"leftLittleProximal",
+左小指２:"leftLittleIntermediate",
+左小指３:"leftLittleDistal",
+左薬指１:"leftRingProximal",
+左薬指２:"leftRingIntermediate",
+左薬指３:"leftRingDistal",
+左中指１:"leftMiddleProximal",
+左中指２:"leftMiddleIntermediate",
+左中指３:"leftMiddleDistal",
+左人指１:"leftIndexProximal",
+左人指２:"leftIndexIntermediate",
+左人指３:"leftIndexDistal",
+右目:"rightEye",
+左目:"leftEye",
+右足:"rightUpperLeg",
+右ひざ:"rightLowerLeg",
+右足首:"rightFoot",
+左足:"leftUpperLeg",
+左ひざ:"leftLowerLeg",
+左足首:"leftFoot",
+      });
+
+      bone_map_VRM_to_MMD = {};
+      Object.entries(bone_map_MMD_to_VRM).forEach(([MMD_name, VRM_name])=>{ bone_map_VRM_to_MMD[VRM_name] = MMD_name; });
+
+      MMD_bone_list = Object.keys(bone_map_MMD_to_VRM);
+    });
 
 // three-vrm 1.0
 // https://pixiv.github.io/three-vrm/packages/three-vrm/docs/classes/VRMExpressionManager.html#presetExpressionMap
@@ -8196,7 +8201,95 @@ return function (name, is_VRM1) {
       get list() { return vrm_list; },
       set list(v) { vrm_list = v; },
 
+      get vrm_scale() { return vrm_scale; },
+
+      get bone_map_MMD_to_VRM() { return bone_map_MMD_to_VRM; },
+      get bone_map_VRM_to_MMD() { return bone_map_VRM_to_MMD; },
+
+      get is_MMD_bone_motion_mixed() { return is_MMD_bone_motion_mixed; },
+
+      VRMSchema: { HumanoidBoneName:{
+Hips: "hips",
+Spine: "spine",
+Chest: "chest",
+UpperChest: "upperChest",
+Neck: "neck",
+Head: "head",
+LeftEye: "leftEye",
+RightEye: "rightEye",
+Jaw: "jaw",
+LeftUpperLeg: "leftUpperLeg",
+LeftLowerLeg: "leftLowerLeg",
+LeftFoot: "leftFoot",
+LeftToes: "leftToes",
+RightUpperLeg: "rightUpperLeg",
+RightLowerLeg: "rightLowerLeg",
+RightFoot: "rightFoot",
+RightToes: "rightToes",
+LeftShoulder: "leftShoulder",
+LeftUpperArm: "leftUpperArm",
+LeftLowerArm: "leftLowerArm",
+LeftHand: "leftHand",
+RightShoulder: "rightShoulder",
+RightUpperArm: "rightUpperArm",
+RightLowerArm: "rightLowerArm",
+RightHand: "rightHand",
+LeftThumbMetacarpal: "leftThumbMetacarpal",
+LeftThumbProximal: "leftThumbProximal",
+LeftThumbDistal: "leftThumbDistal",
+LeftIndexProximal: "leftIndexProximal",
+LeftIndexIntermediate: "leftIndexIntermediate",
+LeftIndexDistal: "leftIndexDistal",
+LeftMiddleProximal: "leftMiddleProximal",
+LeftMiddleIntermediate: "leftMiddleIntermediate",
+LeftMiddleDistal: "leftMiddleDistal",
+LeftRingProximal: "leftRingProximal",
+LeftRingIntermediate: "leftRingIntermediate",
+LeftRingDistal: "leftRingDistal",
+LeftLittleProximal: "leftLittleProximal",
+LeftLittleIntermediate: "leftLittleIntermediate",
+LeftLittleDistal: "leftLittleDistal",
+RightThumbMetacarpal: "rightThumbMetacarpal",
+RightThumbProximal: "rightThumbProximal",
+RightThumbDistal: "rightThumbDistal",
+RightIndexProximal: "rightIndexProximal",
+RightIndexIntermediate: "rightIndexIntermediate",
+RightIndexDistal: "rightIndexDistal",
+RightMiddleProximal: "rightMiddleProximal",
+RightMiddleIntermediate: "rightMiddleIntermediate",
+RightMiddleDistal: "rightMiddleDistal",
+RightRingProximal: "rightRingProximal",
+RightRingIntermediate: "rightRingIntermediate",
+RightRingDistal: "rightRingDistal",
+RightLittleProximal: "rightLittleProximal",
+RightLittleIntermediate: "rightLittleIntermediate",
+RightLittleDistal: "rightLittleDistal",
+      }},
+
       init: init,
+
+      fix_rig_map: function (rig_map) {
+if (use_VRM1) rig_map;
+
+Object.keys(rig_map).forEach(name=>{
+  switch (rig_map[name]) {
+    case "rightThumbMetacarpal":
+      rig_map[name] = "rightThumbProximal";
+      break;
+    case "rightThumbProximal":
+      rig_map[name] = "rightThumbIntermediate";
+      break;
+    case "leftThumbMetacarpal":
+      rig_map[name] = "leftThumbProximal";
+      break;
+    case "leftThumbProximal":
+      rig_map[name] = "leftThumbIntermediate";
+      break;
+  }
+});
+
+return rig_map;
+      },
 
       computeBoundingBox: function (obj) {
 const bb = new THREE.Box3();
@@ -8246,10 +8339,16 @@ if (MMD_SA_options.use_shadowMap) {
   });
 }
 
+// Disable frustum culling
+mesh_obj.traverse( ( obj ) => {
+//  obj.frustumCulled = false;
+} );
+
 data.scene.add(mesh_obj);
 
-mesh_obj.quaternion.set(0,1,0,0)
-mesh_obj.scale.set(vrm_scale, vrm_scale, vrm_scale)
+var vrm_obj = new VRM_object(para.vrm_index, vrm, { url:url_raw });
+
+if (!vrm_obj.is_VRM1) mesh_obj.quaternion.set(0,1,0,0);
 
 if (data.OutlineEffect) {
   mesh_obj.traverseVisible(obj=>{
@@ -8257,21 +8356,12 @@ if (data.OutlineEffect) {
   });
 }
 
-// three.vrm 1.0
-if (use_VRM1 && !vrm.springBoneManager.setCenter) {
-// https://github.com/pixiv/three-vrm/issues/1112
-// https://pixiv.github.io/three-vrm/packages/three-vrm/docs/classes/VRMSpringBoneManager.html#joints
-  vrm.springBoneManager.constructor.prototype.setCenter = function (obj3d) {
-//console.log(this.joints)
-    this.joints.forEach(joint=>{
-      joint.center = obj3d;
-    });
-  };
-}
-// reduce physics glitches by ignoring the world space
-vrm.springBoneManager.setCenter(mesh_obj);
+// fix a bug in VRM physics when the mesh is scaled
+if (vrm_scale != 1) vrm.springBoneManager.setCenter(mesh_obj);
 
-var vrm_obj = new VRM_object(para.vrm_index, vrm, { url:url_raw });
+mesh_obj.scale.set(vrm_scale, vrm_scale, vrm_scale);
+//vrm.springBoneManager.reset();
+//vrm.springBoneManager.setInitState();
 
 var obj = Object.assign({
   data: vrm_obj,
@@ -8291,6 +8381,11 @@ MMD_SA.fn.setupUI()
     }
 
     return function (gltf) {
+// https://pixiv.github.io/three-vrm/packages/three-vrm/examples/basic.html
+// calling these functions greatly improves the performance
+THREE.VRMUtils.removeUnnecessaryVertices( gltf.scene );
+THREE.VRMUtils.removeUnnecessaryJoints( gltf.scene );
+
 // three-vrm 1.0
 if (use_VRM1) {
   // retrieve a VRM instance from gltf
@@ -8354,12 +8449,16 @@ SLX.style.visibility = ( enabled) ? 'inherit' : 'hidden';
 
     get THREE() { return (this.enabled) ? THREE : self.THREE; },
 
+    get THREEX() { return THREE; },
+
     get obj_list() { return obj_list; },
     set obj_list(v) { obj_list = v; },
 
     get SL() { return document.getElementById((this.enabled) ? "SLX" : "SL"); },
 
     get scene() { return (this.enabled) ? data.scene : MMD_SA.scene; },
+
+    get use_VRM1() { return use_VRM1; },
 
     get_model: function (index) { return models[index]; },
 
@@ -8391,7 +8490,7 @@ if (!MMD_SA_options.THREEX_options.model_path) {
   }
 }
 
-DEBUG_show('Loading three.js...')
+DEBUG_show('Loading THREEX...')
 
 if (!loading) {
   MMD_SA.THREEX.load_scripts()
@@ -8438,15 +8537,29 @@ await System._browser.load_script('./three.js/GLTFLoader.js');
 
 // three-vrm 1.0
 if (use_VRM1) {
-  await System._browser.load_script('./three.js/three-vrm.min_v1.0.5.js');
+  await System._browser.load_script('./three.js/three-vrm.min_v1.0.7-alpha.0.js');//_v1.0.5.js');//_TEST.js');//
 }
 else {
-// min version doesn't work for some reasons
-  await System._browser.load_script('./three.js/three-vrm_v0.6.11.js');
+  await System._browser.load_script('./three.js/three-vrm.min_v0.6.11.js');
 }
 
 THREE = self.THREEX = self.THREE
 self.THREE = _THREE
+
+
+// extend three-vrm START
+// three.vrm 1.0
+if (use_VRM1 && !THREE.VRMSpringBoneManager.prototype.setCenter) {
+// https://github.com/pixiv/three-vrm/issues/1112
+// https://pixiv.github.io/three-vrm/packages/three-vrm/docs/classes/VRMSpringBoneManager.html#joints
+  THREE.VRMSpringBoneManager.prototype.setCenter = function (obj3d) {
+    this.joints.forEach(joint=>{
+//console.log(joint.center)
+      joint.center = obj3d;
+    });
+  };
+}
+// extend three-vrm END
 
 
 // extend three.js START
@@ -8812,7 +8925,8 @@ c.color.copy(light.color);
 c_max = Math.max(c.color.r, c.color.g, c.color.b);
 
 if (c.type == 'DirectionalLight') {
-  c.intensity = light.intensity * c_max;// * 0.5;
+  if (use_VRM1)
+    c.intensity = light.intensity * c_max;
 
   const c_scale = Math.min(1/c_max);
   c.color.multiplyScalar(c_scale);
@@ -8856,8 +8970,6 @@ else if (c.type == 'AmbientLight') {
         var RE = new RegExp("^(" + toRegExp(["左","右"],"|") + ")(" + toRegExp(["腕","ひじ","手"],"|") + "|." + toRegExp("指") + ")(.*)$");
 
         return function (name, rot, sign_inverted) {
-if (!threeX.enabled) return
-
 if (!RE.test(name)) return
 
 var dir = (RegExp.$1 == '左') ? 1 : -1;
@@ -8865,11 +8977,10 @@ if (sign_inverted) dir *= -1;
 
 q1.fromArray(rot)
 
-const aa = q1.toAxisAngle()
-
 if (RegExp.$3.indexOf('捩') != -1) {
 // It seems that 捩 bone rotation is always screwed for any modified T-pose MMD model. Just ignore it for now (you don't really need to modify it to transfer this rotation to other non-MMD model anyways).
 /*
+  const aa = q1.toAxisAngle();
   if (!aa[1]) return
   const sign = (Math.sign(aa[0].x) == dir) ? 1 : -1;
   q1.setFromAxisAngle(v1.set(dir*sign,0,0), aa[1]);
@@ -8878,15 +8989,14 @@ if (RegExp.$3.indexOf('捩') != -1) {
 */
 }
 else {
-  const rot_axis = rot_arm_axis;//(RegExp.$2 == '肩') ? rot_shoulder_axis : rot_arm_axis;
-  q1.setFromAxisAngle(aa[0].applyQuaternion(rot_axis[dir]), aa[1])
-  if ((RegExp.$2 == '腕')) {// || (RegExp.$2 == '肩')) {
-    q1.multiplyQuaternions(rot_axis[-dir], q1)
+  const rot_axis = rot_arm_axis;//(RegExp.$2 == '肩') ? rot_shoulder_axis : rot_arm_axis;//
 
-// curious to know how these VMD-to-VRM can be done simply by multiplying without rotating axis (seems so?)
-// https://github.com/JLChnToZ/vrm-dance-viewer/blob/master/src/worker/loaders/vmd2vrmanim.ts
-// https://github.com/reminjp/three-vrm/blob/master/src/data/VMD.ts
-//q1.multiply(rot_axis[-dir])
+// NOTE: It seems rotating the axis of rot by q is the same as (q x rot x -q)
+//  const aa = q1.toAxisAngle(); q1.setFromAxisAngle(aa[0].applyQuaternion(rot_axis[dir]), aa[1])
+  q1.premultiply(rot_axis[dir]).multiply(rot_axis[-dir]);
+
+  if ((RegExp.$2.charAt(0) == '腕') && (RegExp.$3 != '+')) {// || (RegExp.$2 == '肩')) {
+    q1.multiplyQuaternions(rot_axis[-dir], q1)
   }
 }
 
@@ -8896,7 +9006,468 @@ q1.toArray().forEach((v,i)=>{ rot[i]=v });
 
       convert_T_pose_rotation_to_A_pose: function (name, rot) {
 this.convert_A_pose_rotation_to_T_pose(name, rot, true);
+      },
+
+// https://pixiv.github.io/three-vrm/packages/three-vrm/examples/humanoidAnimation/index.html
+// https://pixiv.github.io/three-vrm/packages/three-vrm/examples/humanoidAnimation/loadMixamoAnimation.js
+
+      mixamoVRMRigMap: {
+mixamorigHips:'hips',
+mixamorigSpine:'spine',
+mixamorigSpine1:'chest',
+mixamorigSpine2:'upperChest',
+mixamorigNeck:'neck',
+mixamorigHead:'head',
+mixamorigLeftShoulder:'leftShoulder',
+mixamorigLeftArm:'leftUpperArm',
+mixamorigLeftForeArm:'leftLowerArm',
+mixamorigLeftHand:'leftHand',
+mixamorigLeftHandThumb1:'leftThumbMetacarpal',
+mixamorigLeftHandThumb2:'leftThumbProximal',
+mixamorigLeftHandThumb3:'leftThumbDistal',
+mixamorigLeftHandIndex1:'leftIndexProximal',
+mixamorigLeftHandIndex2:'leftIndexIntermediate',
+mixamorigLeftHandIndex3:'leftIndexDistal',
+mixamorigLeftHandMiddle1:'leftMiddleProximal',
+mixamorigLeftHandMiddle2:'leftMiddleIntermediate',
+mixamorigLeftHandMiddle3:'leftMiddleDistal',
+mixamorigLeftHandRing1:'leftRingProximal',
+mixamorigLeftHandRing2:'leftRingIntermediate',
+mixamorigLeftHandRing3:'leftRingDistal',
+mixamorigLeftHandPinky1:'leftLittleProximal',
+mixamorigLeftHandPinky2:'leftLittleIntermediate',
+mixamorigLeftHandPinky3:'leftLittleDistal',
+mixamorigRightShoulder:'rightShoulder',
+mixamorigRightArm:'rightUpperArm',
+mixamorigRightForeArm:'rightLowerArm',
+mixamorigRightHand:'rightHand',
+mixamorigRightHandPinky1:'rightLittleProximal',
+mixamorigRightHandPinky2:'rightLittleIntermediate',
+mixamorigRightHandPinky3:'rightLittleDistal',
+mixamorigRightHandRing1:'rightRingProximal',
+mixamorigRightHandRing2:'rightRingIntermediate',
+mixamorigRightHandRing3:'rightRingDistal',
+mixamorigRightHandMiddle1:'rightMiddleProximal',
+mixamorigRightHandMiddle2:'rightMiddleIntermediate',
+mixamorigRightHandMiddle3:'rightMiddleDistal',
+mixamorigRightHandIndex1:'rightIndexProximal',
+mixamorigRightHandIndex2:'rightIndexIntermediate',
+mixamorigRightHandIndex3:'rightIndexDistal',
+mixamorigRightHandThumb1:'rightThumbMetacarpal',
+mixamorigRightHandThumb2:'rightThumbProximal',
+mixamorigRightHandThumb3:'rightThumbDistal',
+mixamorigLeftUpLeg:'leftUpperLeg',
+mixamorigLeftLeg:'leftLowerLeg',
+mixamorigLeftFoot:'leftFoot',
+mixamorigLeftToeBase:'leftToes',
+mixamorigRightUpLeg:'rightUpperLeg',
+mixamorigRightLeg:'rightLowerLeg',
+mixamorigRightFoot:'rightFoot',
+mixamorigRightToeBase:'rightToes',
+      },
+
+      mixamoMMDRigMap: {
+mixamorigHips:"センター",
+mixamorigSpine:"上半身",
+mixamorigSpine1:"上半身2",
+mixamorigSpine2:"上半身3",
+mixamorigNeck:"首",
+mixamorigHead:"頭",
+mixamorigLeftShoulder:"左肩",
+mixamorigLeftArm:"左腕",
+mixamorigLeftForeArm:"左ひじ",
+mixamorigLeftHand:"左手首",
+mixamorigLeftHandThumb1:"左親指０",
+mixamorigLeftHandThumb2:"左親指１",
+mixamorigLeftHandThumb3:"左親指２",
+mixamorigLeftHandIndex1:"左人指１",
+mixamorigLeftHandIndex2:"左人指２",
+mixamorigLeftHandIndex3:"左人指３",
+mixamorigLeftHandMiddle1:"左中指１",
+mixamorigLeftHandMiddle2:"左中指２",
+mixamorigLeftHandMiddle3:"左中指３",
+mixamorigLeftHandRing1:"左薬指１",
+mixamorigLeftHandRing2:"左薬指２",
+mixamorigLeftHandRing3:"左薬指３",
+mixamorigLeftHandPinky1:"左小指１",
+mixamorigLeftHandPinky2:"左小指２",
+mixamorigLeftHandPinky3:"左小指３",
+mixamorigRightShoulder:"右肩",
+mixamorigRightArm:"右腕",
+mixamorigRightForeArm:"右ひじ",
+mixamorigRightHand:"右手首",
+mixamorigRightHandPinky1:"右小指１",
+mixamorigRightHandPinky2:"右小指２",
+mixamorigRightHandPinky3:"右小指３",
+mixamorigRightHandRing1:"右薬指１",
+mixamorigRightHandRing2:"右薬指２",
+mixamorigRightHandRing3:"右薬指３",
+mixamorigRightHandMiddle1:"右中指１",
+mixamorigRightHandMiddle2:"右中指２",
+mixamorigRightHandMiddle3:"右中指３",
+mixamorigRightHandIndex1:"右人指１",
+mixamorigRightHandIndex2:"右人指２",
+mixamorigRightHandIndex3:"右人指３",
+mixamorigRightHandThumb1:"右親指０",
+mixamorigRightHandThumb2:"右親指１",
+mixamorigRightHandThumb3:"右親指２",
+mixamorigLeftUpLeg:"左足",
+mixamorigLeftLeg:"左ひざ",
+mixamorigLeftFoot:"左足首",
+mixamorigRightUpLeg:"右足",
+mixamorigRightLeg:"右ひざ",
+mixamorigRightFoot:"右足首",
+      },
+
+      loadMixamoAnimation: (function () {
+        var loader;
+        var _interp;
+
+        async function load_FBX_scripts() {
+if (!self.THREEX) {
+  DEBUG_show('Loading THREEX...', 2)
+
+  THREE = _THREE = self.THREE;
+
+  const THREE_module = await System._browser.load_script(System.Gadget.path + '/three.js/three.module.min.js', true);
+  self.THREE = {};
+  for (const name in THREE_module) self.THREE[name] = THREE_module[name];
+
+  THREE = self.THREEX = self.THREE;
+  self.THREE = _THREE;
+
+  init_on_jThree_ready();
+  init_on_MMDStarted();
+}
+
+await System._browser.load_script('./three.js/FBXLoader.js');
+self.fflate = await System._browser.load_script(System.Gadget.path + '/three.js/libs/fflate.module.js', true);
+        }
+
+        function BoneKey(name, time, pos, rot) {
+this.name = name
+this.time = time
+this.pos = pos
+this.rot = rot
+// not using .prototype as keys will be "cloned" in .generateSkinAnimation()
+this.interp = _interp
+        }
+
+        function FBX_VMD(boneKeys, timeMax) {
+this.boneKeys = boneKeys
+this.timeMax = timeMax
+        }
+
+        function init(VMD) {
+if (initialized) return;
+initialized = true;
+
+if (!use_VRM1) {
+  VRM.fix_rig_map(threeX.utils.mixamoVRMRigMap);
+}
+
+_interp = new Uint8Array([20,20,20,20,20,20,20,20, 107,107,107,107,107,107,107,107]);
+
+if (VMD) {
+  FBX_VMD.prototype = Object.create(VMD.prototype);
+  FBX_VMD.prototype.cameraKeys = [];
+  FBX_VMD.prototype.lightKeys = [];
+  FBX_VMD.prototype.morphKeys = [];
+}
+        }
+
+        var initialized;
+
+        return async function ( url, model, VMD ) {
+          await load_FBX_scripts();
+
+          init(VMD);
+
+          const THREEX_enabled = MMD_SA.THREEX.enabled;
+
+          loader = loader || new THREE.FBXLoader(); // A loader which loads FBX
+
+          return loader.loadAsync( toFileProtocol(url) ).then( ( asset ) => {
+const MMD_started = MMD_SA.MMD_started;
+let VRM_mode;
+
+let vrm;
+let bones_by_name;
+
+if (MMD_started) {
+  if (THREEX_enabled) {
+    VRM_mode = true;
+    vrm = model.model;
+  }
+  else {
+    bones_by_name = model.mesh.bones_by_name;
+  }
+}
+
+if (VRM_mode) delete model.animation._single_frame;
+
+const clip = THREE.AnimationClip.findByName( asset.animations, 'mixamo.com' ); // extract the AnimationClip
+
+const tracks = []; // KeyframeTracks compatible with VRM will be added here
+
+const restRotationInverse = new THREE.Quaternion();
+const parentRestWorldRotation = new THREE.Quaternion();
+const _quatA = new THREE.Quaternion();
+const _vec3 = new THREE.Vector3();
+
+// Adjust with reference to hips height.
+const motionHipsHeight = asset.getObjectByName( 'mixamorigHips' ).position.y;
+
+let hips_height, hipsPositionScale;
+if (!MMD_started) {
+  hips_height = 11.36464;
+}
+else if (THREEX_enabled) {
+  const vrmHipsY = model.para.pos0['hips'][1];//((!use_VRM1) ? vrm.humanoid.getBoneNode('hips') : vrm.humanoid?.getNormalizedBoneNode( 'hips' )).getWorldPosition( _vec3 ).y;
+  const vrmRootY = 0;//vrm.scene.getWorldPosition( _vec3 ).y;
+
+  hips_height = Math.abs( vrmHipsY - vrmRootY );// / VRM.vrm_scale;
+}
+else {
+  hips_height = bones_by_name["左足"].pmxBone.origin[1];
+}
+hipsPositionScale = hips_height / motionHipsHeight;
+//console.log(vrmHipsY, vrmRootY, hipsPositionScale)
+
+clip.tracks.forEach( ( track ) => {
+
+  // Convert each tracks for VRM use, and push to `tracks`
+  const trackSplitted = track.name.split( '.' );
+  const mixamoRigName = trackSplitted[ 0 ];
+
+  let vrmNodeName, vrmBoneName;
+  if (VRM_mode) {
+    vrmBoneName = this.mixamoVRMRigMap[ mixamoRigName ];
+// AT: in three-vrm v0.6, vrm.humanoid.getBoneNode returns error when the bone of name doesn't exist
+    vrmNodeName = (!use_VRM1) ? (THREE.VRMSchema.HumanoidBoneName[vrmBoneName.charAt(0).toUpperCase()+vrmBoneName.substring(1)] && vrm.humanoid.getBoneNode(vrmBoneName).name) : vrm.humanoid?.getNormalizedBoneNode( vrmBoneName )?.name;
+  }
+  else {
+    vrmNodeName = this.mixamoMMDRigMap[ mixamoRigName ];
+  }
+
+  if ( vrmNodeName != null ) {
+
+    const mixamoRigNode = asset.getObjectByName( mixamoRigName );
+
+    const propertyName = trackSplitted[ 1 ];
+
+    // Store rotations of rest-pose.
+    mixamoRigNode.getWorldQuaternion( restRotationInverse ).invert();
+    mixamoRigNode.parent.getWorldQuaternion( parentRestWorldRotation );
+
+    if ( track instanceof THREE.QuaternionKeyframeTrack ) {
+
+      // Retarget rotation of mixamoRig to NormalizedBone.
+      for ( let i = 0; i < track.values.length; i += 4 ) {
+
+        const flatQuaternion = track.values.slice( i, i + 4 );
+
+        _quatA.fromArray( flatQuaternion );
+
+        // 親のレスト時ワールド回転 * トラックの回転 * レスト時ワールド回転の逆
+        _quatA
+          .premultiply( parentRestWorldRotation )
+          .multiply( restRotationInverse );
+
+        _quatA.toArray( flatQuaternion );
+
+        flatQuaternion.forEach( ( v, index ) => {
+
+          track.values[ index + i ] = v;
+
+        } );
+
       }
+
+      tracks.push(
+        new THREE.QuaternionKeyframeTrack(
+(!VRM_mode)?vrmNodeName:`${vrmNodeName}.${propertyName}`,
+track.times,
+track.values.map( ( v, i ) => ( (VRM_mode && (!use_VRM1 || vrm.meta?.metaVersion === '0') && (i % 2 === 0)) ? - v : v ) ),
+        ),
+      );
+
+// a trick to fix animation mixing issue when the FBX animation has only one frame
+if (VRM_mode && (track.times.length == 1) && VRM.is_MMD_bone_motion_mixed.test(VRM.bone_map_VRM_to_MMD[vrmBoneName])) {
+  if (!model.animation._single_frame) model.animation._single_frame = {};
+  model.animation._single_frame[vrmBoneName] = tracks[tracks.length-1].values.slice();
+}
+    } else if ( track instanceof THREE.VectorKeyframeTrack ) {
+
+      const value = track.values.map( ( v, i ) => ( (VRM_mode && (!use_VRM1 || vrm.meta?.metaVersion === '0') && (i % 3 !== 1)) ? - v : v ) * hipsPositionScale );
+      tracks.push( new THREE.VectorKeyframeTrack( (!VRM_mode)?vrmNodeName:`${vrmNodeName}.${propertyName}`, track.times, value ) );
+
+    }
+
+  }
+
+} );
+
+if (!VRM_mode) {
+  const boneKeys = {};
+  for (const name in this.mixamoMMDRigMap) {
+    let name_MMD = this.mixamoMMDRigMap[name];
+    if (!name_MMD) continue;
+
+    const tracks_by_name = tracks.filter(t=>t.name==name_MMD);
+    if (!tracks_by_name.length) continue;
+
+    let track_pos, track_rot;
+    tracks_by_name.forEach(t=>{
+      if (t instanceof THREE.QuaternionKeyframeTrack) {
+        track_rot = t;
+      }
+      else {
+        track_pos = t;
+      }
+    });
+
+    let pos_index = 0;
+    let rot_index = 0;
+    let f_last = -1;
+    let keys;
+
+    if (name_MMD == 'センター') {
+      pos_index = 0;
+      f_last = -1;
+      keys = [];
+      while (track_pos && (pos_index < track_pos.times.length)) {
+        const f = Math.round(track_pos.times[pos_index]*30);
+        if (f > f_last) {
+          const pos = [track_pos.values[pos_index*3], track_pos.values[pos_index*3+1]-hips_height, track_pos.values[pos_index*3+2]];
+          const key = new BoneKey('センター', f/30, pos, [0,0,0,1]);
+          keys.push(key);
+          f_last = f;
+        }
+        pos_index++;
+      }
+      if (keys.length) boneKeys['センター'] = keys;
+
+      name_MMD = '下半身';
+    }
+
+    rot_index = 0;
+    f_last = -1;
+    keys = [];
+    while (track_rot && (rot_index < track_rot.times.length)) {
+      const f = Math.round(track_rot.times[rot_index]*30);
+      if (f > f_last) {
+        const rot = [track_rot.values[rot_index*4], track_rot.values[rot_index*4+1], track_rot.values[rot_index*4+2], track_rot.values[rot_index*4+3]];
+        const key = new BoneKey(name_MMD, f/30, [0,0,0], rot);
+        keys.push(key);
+        f_last = f;
+      }
+      rot_index++;
+    }
+    if (keys.length) boneKeys[name_MMD] = keys;
+  }
+
+  for (const _combo of [['上半身', '下半身','上半身'], ['上半身2', '上半身2','上半身3']]) {
+    const bone_name = _combo[0];
+    const combo = _combo.slice(1);
+
+    const tracks_combo = combo.map(name=>boneKeys[name]);
+    const rot_index = combo.map(name=>0);
+
+    let f_last = -1;
+    const keys = [];
+    while (tracks_combo.some((t,i)=>t && (rot_index[i] < t.length))) {
+      const f_rot = tracks_combo.map((t,i)=>(t) ? Math.round(t[rot_index[i]].time*30) : Infinity);
+
+      let key;
+// nearest next key
+      const f = Math.min(...f_rot);
+      if (f > f_last) {
+        key = new BoneKey(bone_name, f/30, [0,0,0]);
+        key._rot = {};
+        keys.push(key);
+        f_last = f;
+      }
+      else {
+        key = keys[keys.length-1];
+      }
+
+// add rot if only there is no existing rot and the frame index is the same as the current key
+      tracks_combo.forEach((t,i)=>{
+        if (t && (f == f_rot[i])) {
+          if (!key._rot[i])
+            key._rot[i] = t[rot_index[i]].rot.slice();
+          rot_index[i]++;
+        }
+      });
+    }
+
+    const key_next = combo.map(name=>null);
+    keys.forEach((k, idx)=>{
+      const rots = [];
+      for (let i = 0, i_max = combo.length; i < i_max; i++) {
+        if (!tracks_combo[i]) continue;
+
+        if (k._rot[i]) {
+          rots[i] = k._rot[i];
+          continue;
+        }
+
+        const k_last = keys[idx-1];
+
+        k_next = key_next[i];
+        if (!k_next) {
+          for (let n = idx+1, n_max = keys.length; n < n_max; n++) {
+            if (keys[n]._rot[i]) {
+              k_next = key_next[i] = keys[n];
+              break;
+            }
+          }
+        }
+        if (!k_next) {
+          rots[i] = k_last._rot[i];
+          continue
+        }
+
+        const q_last = q1.fromArray(k_last._rot[i]);
+        const q_next = q2.fromArray(k_next._rot[i]);
+        rots[i] = q_last.slerp(q_next, (k.time-k_last.time)/(k_next.time-k_last.time)).toArray();
+      }
+
+      const rot_final = q1.set(0,0,0,1);
+      for (let i = 0, i_max = combo.length; i < i_max; i++) {
+        if (rots[i])
+          rot_final.multiply(q2.fromArray(rots[i]));
+      }
+      k.rot = rot_final.toArray();
+
+      delete k._rot;
+    });
+
+    if (keys.length) boneKeys[bone_name] = keys;
+  }
+
+  delete boneKeys['上半身3'];
+//console.log(boneKeys);
+
+  const key_names = Object.keys(boneKeys);
+  const vmd = new FBX_VMD(
+[].concat(...key_names.map(name=>boneKeys[name])),
+Math.max(...key_names.map(name=>boneKeys[name][boneKeys[name].length-1].time))
+  );
+
+  vmd.url = url;
+  MMD_SA.vmd_by_filename[decodeURIComponent(vmd.url.replace(/^.+[\/\\]/, "").replace(/\.fbx$/i, ""))] = vmd;
+
+console.log(vmd);
+  return vmd;
+}
+
+return new THREE.AnimationClip( 'vrmAnimation', clip.duration, tracks );
+
+          } );
+        };
+      })(),
 
     }
 
@@ -8958,7 +9529,7 @@ vmc.on('open', () => {
 });
 
 vmc.on('*', (msg) => {
-  console.log(39540);
+//  console.log(39540);
 });
 
 vmc.open();
@@ -9021,13 +9592,15 @@ vmc.send(...args);
 
 // THREEX_options START
 
-if (!MMD_SA_options.THREEX_options)
-  MMD_SA_options.THREEX_options = {}
+if (MMD_SA_options.use_THREEX !== false) MMD_SA_options.use_THREEX = true;
 
-MMD_SA_options.THREEX_options.model_path_default = MMD_SA_options.THREEX_options.model_path || ''
+if (!MMD_SA_options.THREEX_options)
+  MMD_SA_options.THREEX_options = {};
+
+MMD_SA_options.THREEX_options.model_path_default = MMD_SA_options.THREEX_options.model_path || '';
 
 if (!MMD_SA_options.THREEX_options.model_para)
-  MMD_SA_options.THREEX_options.model_para = {}
+  MMD_SA_options.THREEX_options.model_para = {};
 
 // THREEX_options END
 
@@ -9614,7 +10187,10 @@ MMD_SA.MME_set_renderToScreen()
   Object.defineProperty(MMD_SA_options, "light_color",
 {
   get: function () {
-return System.Gadget.Settings.readString("MMDLightColor") || MMD_SA_options.model_para_obj.light_color || MMD_SA_options._light_color
+return System.Gadget.Settings.readString("MMDLightColor") || MMD_SA_options._light_color;
+  },
+  set: function (v) {
+MMD_SA_options._light_color = v;
   }
 });
 
@@ -10121,20 +10697,6 @@ MMD_SA.GOML_head +=
     }
   }
 
-  var AR_para = MMD_SA_options.AR_para = (MMD_SA_options.AR_para || {})
-  if (MMD_SA_options.use_JSARToolKit) {
-    if (!AR_para.marker_width)
-      AR_para.marker_width = 10
-    if (AR_para.marker_base_id == null)
-      AR_para.marker_base_id = 64
-    if (!AR_para.video_width)
-      AR_para.video_width  = 640
-    if (!AR_para.video_height)
-      AR_para.video_height = 480
-    if (!AR_para.marker_base_id_spare_list)
-      AR_para.marker_base_id_spare_list = []
-  }
-
   if (!MMD_SA_options.width)
     MMD_SA_options.width  = AR_para.video_width  || 512
   if (!MMD_SA_options.height)
@@ -10260,7 +10822,7 @@ m.resetPhysics(30)
 
   MMD_SA_options.motion_index_by_name = []
   for (var i = 0, i_max = MMD_SA_options.motion.length; i < i_max; i++) {
-    MMD_SA_options.motion_index_by_name[MMD_SA_options.motion[i].path.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, "")] = i
+    MMD_SA_options.motion_index_by_name[MMD_SA_options.motion[i].path.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh|fbx)$/i, "")] = i;
   }
 
   // backup these lists for default use, just in case they are modified later
@@ -10295,15 +10857,17 @@ m.resetPhysics(30)
 if (MMD_SA.initialized) {
 // resize
 //use_solid_bg
-  var fullscreen = (!is_SA_child_animation || is_SA_child_animation_host) && Settings.CSSTransformFullscreen && (SA_fullscreen_stretch_to_cover || returnBoolean("AutoItStayOnDesktop"))
-  var w, h
+  const fullscreen = (!is_SA_child_animation || is_SA_child_animation_host) && Settings.CSSTransformFullscreen && (SA_fullscreen_stretch_to_cover || returnBoolean("AutoItStayOnDesktop"));
+  let w, h;
   if (fullscreen) {
     w = EV_width  = screen.availWidth
     h = EV_height = screen.availHeight
   }
   else {
-    w = EV_width  = Math.round(MMD_SA_options.width  * SA_zoom)
-    h = EV_height = Math.round(MMD_SA_options.height * SA_zoom)
+// a trick to allow custom zoom
+    const zoom = (SA_zoom != 1) ? SA_zoom : (parseFloat(Settings.CSSTransformScale) || 1);//SA_zoom;//
+    w = EV_width  = Math.round(MMD_SA_options.width  * zoom)
+    h = EV_height = Math.round(MMD_SA_options.height * zoom)
   }
 
 // MMD_SA.jThree_ready finished already
@@ -10315,11 +10879,8 @@ if (MMD_SA.initialized) {
     document.getElementById("CB_Lwindow0").style.transform = (zoom >= 1) ? "" : "scale(" + zoom + ")";
   }
 */
-  SA_zoom = 1
-  if (MMD_SA_options.use_JSARToolKit) {
-    SL_webcam.width  = w
-    SL_webcam.height = h
-  }
+//DEBUG_show(SA_zoom,0,1)
+  SA_zoom = 1;
 }
 
 if (MMD_SA_options.init)
@@ -10438,10 +10999,6 @@ js.push("jThree/plugin/three_" + effect.name + ".js")
     MMD_SA_options.shadow_darkness = parseFloat(System.Gadget.Settings.readString('MMDShadow') || ((MMD_SA_options.use_shadowMap && 0.5)||0))
   if (MMD_SA_options.use_shadowMap == null)
     MMD_SA_options.use_shadowMap = !!MMD_SA_options.shadow_darkness
-
-  if (MMD_SA_options.use_JSARToolKit) {
-    js.push("js/JSARToolKit.js")
-  }
 }
 
   var html = ""
