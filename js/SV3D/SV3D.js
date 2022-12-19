@@ -86,13 +86,13 @@ Lbody_host.onmouseout = m.onmouseout = function () {
 // END
 
 
-DragDrop_RE = eval('/\\.(' + DragDrop_RE_default_array.concat(["mp3", "wav", "mp4"]).join("|") + ')$/i')
+DragDrop_RE = eval('/\\.(' + DragDrop_RE_default_array.concat(["mp3", "wav", "aac", "mp4"]).join("|") + ')$/i')
 
 DragDrop.onDrop_finish = function (item) {
   var src = item.path
 
-  if (item.isFileSystem && /\.(mp3|wav|mp4)$/i.test(src)) {
-    var is_audio = /\.(mp3|wav)$/i.test(src)
+  if (item.isFileSystem && /\.(mp3|wav|aac|mp4)$/i.test(src)) {
+    var is_audio = /\.(mp3|wav|aac)$/i.test(src)
     var ao = (is_audio) ? SV3D.audio_obj : SV3D.video_obj
     if (!ao) {
       if (is_audio) {
