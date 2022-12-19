@@ -1,9 +1,9 @@
 // XR Animator
-// (12-17-2022)
+// (12-20-2022)
 
 var MMD_SA_options = {
 
-  model_path: System.Gadget.path + "/TEMP/DEMO/models/alicia.min.zip#/Alicia_solid_v02.pmx"  //Appearance Miku.zip#/Appearance Miku_BDEF_mod-v04.pmx"//
+  model_path: System.Gadget.path + "/jThree/model/alicia.min.zip#/Alicia_solid_v02.pmx"  //Appearance Miku.zip#/Appearance Miku_BDEF_mod-v04.pmx"//
 
  ,motion: [
 
@@ -138,7 +138,7 @@ var MMD_SA_options = {
 // must-load list
 //  ,{ must_load:true, no_shuffle:true, path:'C:\\Users\\User\\Downloads\\MikuMikuDanceE_v739\\MikuMikuDanceE_v739\\UserFile\\Motion\\Muuubu Rin -Append-\\motion_BAL3.vmd'}
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/model/gal_model_motion_with_legs-2_loop_v01.vmd' }
-   ,{ must_load:true, no_shuffle:true, path:System.Gadget.path + '/TEMP/DEMO/motion/motion_misc.zip#/壁穴モーション/壁穴_モデルモーション_loop.vmd'}
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/motion_misc.zip#/壁穴モーション/壁穴_モデルモーション_loop.vmd'}
 
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_お辞儀1.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_お辞儀2.vmd' }
@@ -1913,7 +1913,7 @@ wireframe:{
   if (is_SA_child_animation)
     parent.DragDrop.relay_id = SA_child_animation_id
 
-  self.SA_wallpaper_src = "TEMP/DEMO/wood_wallpaper_flip-h.jpg"
+  self.SA_wallpaper_src = System.Gadget.path + "/images/wood_wallpaper_flip-h.jpg"
 
   MMD_SA_options.WebXR.AR._adult_mode = !!System._browser.url_search_params.adult_mode || webkit_electron_mode;
 
