@@ -1,3 +1,6 @@
+// XR Animator
+// (12-17-2022)
+
 var MMD_SA_options = {
 
   model_path: System.Gadget.path + "/TEMP/DEMO/models/alicia.min.zip#/Alicia_solid_v02.pmx"  //Appearance Miku.zip#/Appearance Miku_BDEF_mod-v04.pmx"//
@@ -1739,6 +1742,7 @@ cam_pos.copy(MMD_SA._trackball_camera.object.position)
     MMD_SA.SpeechBubble.message(0, "Enable motion capture to control the avatar with your body!", 4*1000, {group:{name:"onstart"}})
     MMD_SA.SpeechBubble.message(0, "Use your webcam, or drop a local pic/video instead.", 4*1000, {group:{name:"onstart"}})
     MMD_SA.SpeechBubble.message(0, "You can enable AR mode if you are on an Android mobile!", 4*1000, {group:{name:"onstart"}})
+    MMD_SA.SpeechBubble.message(0, "Drag the mouse to rotate the camera. Press and hold Ctrl key to pan.", 4*1000, {group:{name:"onstart"}})
 
   }
 
@@ -1818,7 +1822,7 @@ if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle
 video:{
 //  hidden:true,
 //  hidden_on_webcam: true,
-  scale:0.4,//1,//
+  scale:0.4,
   top:-0.5//0//
 //,left:-3
 },
@@ -1867,13 +1871,20 @@ wireframe:{
 //    confirm_keydown:true,
     RE: /^(\d)\.\s/
   }
- ,SpeechBubble_scale: 1.25
+
+ ,_SpeechBubble_scale_: 0
+ ,get SpeechBubble_scale() { return this._SpeechBubble_scale_ || (MMD_SA.THREEX.enabled && (window.innerHeight < 720)) ? 2 : 1.5; }
+ ,set SpeechBubble_scale(v) { this._SpeechBubble_scale_ = v; }
 
  ,use_THREEX: true
  ,THREEX_options: {
     enabled_by_default: true,
+
 //    use_MMD: true,
     use_MMDAnimationHelper: true,
+
+//    use_VRM1: false,
+
 //    model_path: 'C:\\Users\\user\\Downloads\\iroha+kazama+v1.0\\iroha kazama v1.0\\model\\iroha kazama ver1.0.pmx'//System.Gadget.path + '/TEMP/DEMO/models/AvatarSample_A.vrm'
   }
 
@@ -1886,8 +1897,8 @@ wireframe:{
     MMD_SA_options.height = screen.height
   }
   else {
-    MMD_SA_options.width  = 640//800
-    MMD_SA_options.height = 480//600
+    MMD_SA_options.width  = 960
+    MMD_SA_options.height = 540
   }
 
 //  RAF_animation_frame_unlimited = true
@@ -2295,9 +2306,9 @@ _motion_list[0] = [
 //{name:"gura_sit_01"},
 
   {name:"i-shaped_balance_TDA_f0-50", info:"I-shaped balance (U)"},
-  ((1||MMD_SA_options.WebXR.AR._adult_mode) ? {name:"leg_hold", info:"???"} : null),
+  ((!MMD_SA.THREEX.enabled/* && MMD_SA_options.WebXR.AR._adult_mode*/) ? {name:"leg_hold", info:"???"} : null),
   {name:"gal_model_motion_with_legs-2_loop_v01", info:"Sit 01 (U)"},
-  {name:"chair_sit01_armIK", info:"Sit 02 (U)"}
+  {name:"chair_sit01_armIK", info:"Sit 02 (U)"},
 ].filter(m=>m!=null);
 
 _motion_list[1] = _motion_list[0].filter((m)=>MMD_SA_options.motion_para[m.name].motion_tracking_enabled);
@@ -2307,11 +2318,11 @@ MMD_SA_options.Dungeon_options.events_default["_MAGIC_WAND_"] = [
       [
         {
           message: {
-  get content() { const index = (System._browser.camera.poseNet.enabled) ? 1 : 0; return _motion_list[index].map((m,i) => (i+1)+'. ' + (m.info||m.name)).join('\n') + '\n' + (_motion_list[index].length+1) + '. Done'; }
+  get content() { const index = (System._browser.camera.poseNet.enabled) ? 1 : 0; this._has_custom_animation_ = (MMD_SA.THREEX.enabled && MMD_SA.THREEX.get_model(0).animation.has_clip); return _motion_list[index].map((m,i) => (i+1)+'. ' + (m.info||m.name)).join('\n') + ((this._has_custom_animation_) ? ('\n' + (_motion_list[index].length+1) + '. (Custom Motion:' + ((MMD_SA.THREEX.get_model(0).animation.enabled)?'ON':'OFF') + ') (U)') : '') + '\n' + (_motion_list[index].length+1+((this._has_custom_animation_)?1:0)) + '. Done'; }
  ,bubble_index: 3
  ,get branch_list() {
 const index = (System._browser.camera.poseNet.enabled) ? 1 : 0;
-return _motion_list[index].map((m,i) => { return { key:i+1, event_id:{ func:()=>{change_motion(i)}, goto_event:{id:'_MAGIC_WAND_',branch_index:0} } }; }).concat([{ key:_motion_list[index].length+1 }]);
+return _motion_list[index].map((m,i) => { return { key:i+1, event_id:{ func:()=>{change_motion(i)}, goto_event:{id:'_MAGIC_WAND_',branch_index:0} } }; }).concat((this._has_custom_animation_)?[{ key:_motion_list[index].length+1, event_id:{ func:()=>{MMD_SA.THREEX.get_model(0).animation.enabled=!MMD_SA.THREEX.get_model(0).animation.enabled;}, goto_event:{id:'_MAGIC_WAND_',branch_index:0} } }]:[], [{ key:_motion_list[index].length+1+((this._has_custom_animation_)?1:0) }]);
   }
           }
         }
@@ -2329,7 +2340,7 @@ return _motion_list[index].map((m,i) => { return { key:i+1, event_id:{ func:()=>
  ,action: {
     set _motion_list_index(v) { _motion_list_index = v; },
     func: function () { change_motion() }
-//    ,no_sound: true
+//    ,muted: true
    ,anytime: true
   }
  ,reset: function () {
@@ -2709,8 +2720,19 @@ if (!initialized) {
 loading = true
 
 script_list = [];
-script_list.push('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs');
-script_list.push('https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix');
+if (MMD_SA.WebXR.user_camera.bodyPix.use_bodySegmentation) {
+  script_list.push(
+    'https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation',
+    'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs',
+    'https://cdn.jsdelivr.net/npm/@tensorflow-models/body-segmentation'
+  );
+}
+else {
+  script_list.push(
+    'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs',
+    'https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix'
+  );
+}
 
 load_script(0, ()=>{
   loading = false
@@ -2732,7 +2754,7 @@ else {
 
       return function (item) {
 if (!MMD_SA.WebXR.user_camera.visible) {
-  DEBUG_show("(You need to activate selfie AR first.)", 3)
+  DEBUG_show("(You need to activate selfie camera first.)", 3)
   return true
 }
 if (MMD_SA.WebXR.user_camera.ML_enabled) {
@@ -2963,15 +2985,16 @@ else {
     }
 
   }
-/*
+
  ,inventory: {
     UI: {
       info: {
-        scale: 3
-      }
+//        scale: 3
+      },
+//      muted: true,
     }
   }
-*/
+
  ,events_default: {
     "_SELFIE_": [
 //0
@@ -3086,7 +3109,7 @@ MMD_SA.WebXR.enter_AR()
       [
         {
           message: {
-  get content() { return 'Enable face and body tracking?\n1. Face only\n2. Body only\n3. Body + Hands\n4. Face + Body' + ((System._browser.camera.poseNet._use_holistic_) ? '\n5. Full body (Holistic)' : '\n5. Face + Body + Hands') + '\n6. Options\n7. Cancel'; }
+  get content() { return 'Enable face and body tracking?\n1. Face only\n2. Body only\n3. Body + Hands\n4. Face + Body' + ((System._browser.camera.poseNet._use_holistic_) ? '\n5. Full body (Holistic)' : '\n5. Face + Body + Hands') + '\n6. Options/Tools\n7. Cancel'; }
  ,bubble_index: 3
  ,get branch_list() {
 if (System._browser.camera.poseNet._use_holistic_) {
@@ -3444,10 +3467,10 @@ return [
       [
         {
           message: {
-  get content() { return (!show_other_options && System._browser.camera.ML_enabled) ? ((System._browser.camera.motion_recorder.vmd) ? '1. Export motion to file\n2. Record motion\n3. Mocap options\n4. Mocap OFF' : '1. Record motion\n2. Mocap options\n3. Mocap OFF\n4. Enable motion control') + '\n5. Other options\n6. Cancel' : '1. Overlay & UI\n2. BG/Scene/3D' + ((/\.bvh$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd) ? '\n3. Export motion to file\n4. About\n5. Cancel' : '\n3. About\n4. Cancel'); }
+  get content() { this._motion_for_export_ = /\.(bvh|fbx)$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd; return (!show_other_options && System._browser.camera.ML_enabled) ? ((this._motion_for_export_) ? '1. Export motion to file\n2. Record motion\n3. Mocap options\n4. Mocap OFF' : '1. Record motion\n2. Mocap options\n3. Mocap OFF\n4. Enable motion control') + '\n5. Other options\n6. Cancel' : '1. Overlay & UI\n2. BG/Scene/3D\n3. Export motion to file\n4. About\n5. Cancel'; }
  ,bubble_index: 3
  ,get branch_list() {
-return (!show_other_options && System._browser.camera.ML_enabled) ? ((System._browser.camera.motion_recorder.vmd) ? [
+return (!show_other_options && System._browser.camera.ML_enabled) ? ((this._motion_for_export_) ? [
   { key:1, branch_index:export_motion_branch },
   { key:2, branch_index:record_motion_branch },
   { key:3, branch_index:mocap_options_branch },
@@ -3463,15 +3486,11 @@ return (!show_other_options && System._browser.camera.ML_enabled) ? ((System._br
   { key:6 }
 ]) : [
   { key:1, branch_index:1 },
-  { key:2, branch_index:3 }
-].concat((/\.bvh$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd) ? [
+  { key:2, branch_index:3 },
   { key:3, branch_index:export_motion_branch },
   { key:4, branch_index:about_branch },
   { key:5 }
-] :[
-  { key:3, branch_index:about_branch },
-  { key:4 }
-]);
+];
   }
           }
         }
@@ -3722,12 +3741,23 @@ DragDrop.onDrop_finish = onDrop_change_object3D;
      ,[
         {
           message: {
-  content: '1. Video demo\n2. Readme\n3. Cancel'
+  content: '1. Video demo\n2. Readme\n3. Download app version\n4. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:about_branch+1 }
    ,{ key:2, branch_index:about_branch+2 }
-   ,{ key:3 }
+   ,{ key:3, event_id:{
+        func:()=>{
+var url = 'https://github.com/ButzYung/SystemAnimatorOnline/releases'
+if (webkit_electron_mode)
+  webkit_electron_remote.shell.openExternal(url)
+else
+  window.open(url)
+        }
+       ,ended: true
+      }
+    }
+   ,{ key:4 }
   ]
           }
         }
@@ -3736,7 +3766,7 @@ DragDrop.onDrop_finish = onDrop_change_object3D;
      ,[
         {
           func: function () {
-var url = 'https://www.youtube.com/watch?v=_4B4gwdKGYw'
+var url = 'https://youtube.com/playlist?list=PLLpwhHMvOCSt3i7NQcyJq1fFhoMiSmm5H'
 if (webkit_electron_mode)
   webkit_electron_remote.shell.openExternal(url)
 else
@@ -3762,9 +3792,19 @@ else
      ,[
         {
           func: function () {
+if (/\.(bvh|fbx)$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd) return true;
           }
          ,message: {
-  get content() { return 'Choose a motion file format to export.\n1. VMD' + ((0) ? '\n2. BVH\n3.Cancel' : '\n2. Cancel'); } 
+  content: 'There is no motion to export. Enable motion capture and record the motion, or drop a BVH/FBX motion file.',
+  duration: 5
+          }
+         ,ended: true
+        }
+       ,{
+          func: function () {
+          }
+         ,message: {
+  get content() { return 'Choose a motion format to export.\n1. VMD\n2. Cancel'; } 
  ,bubble_index: 3
  ,get branch_list() {
 return [
@@ -3891,7 +3931,7 @@ DEBUG_show('(Motion recording STARTED / x0.25 speed)', 3)
 System._browser.camera._info =
   '- Enable "Leg IK" to record motion in VMD with leg IK output.\n'
 + '- "Leg scale adjustment" adjust rotations by adapting the leg length difference between source and 3D model.\n'
-+ '- Turn auto-grounding on if the person in the video is always grounding with a fixed horizontal camera angle.'
++ '- Turn auto-grounding on if the target person is always grounding with a fixed horizontal camera angle.'
           }
          ,message: {
   get content() { return '1. Leg IK:' + ((MMD_SA_options.user_camera.ML_models.pose.use_legIK)?'ON':'OFF') + '\n2. Leg scale adjustment:' + ((!System._browser.camera.poseNet.leg_scale_adjustment)?'OFF':((System._browser.camera.poseNet.leg_scale_adjustment>0 && '+')||'')+System._browser.camera.poseNet.leg_scale_adjustment) + '\n3. Auto-grounding:' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON') + '\n4. Clear bounding box\n5. Facemesh options\n6. Done'; }
@@ -4054,7 +4094,11 @@ MMD_SA_options.Dungeon.run_event(null,done_branch,0);
      ,[
         {
           func: function () {
-if (!webkit_electron_mode) {
+if (1) {
+  MMD_SA.SpeechBubble.message(0, '(🚧 Work in progress 🚧)', 3*1000)
+  MMD_SA_options.Dungeon.run_event(null,done_branch,0)
+}
+else if (!webkit_electron_mode) {
   MMD_SA.SpeechBubble.message(0, 'This option is for native app mode only.', 3*1000)
   MMD_SA_options.Dungeon.run_event(null,done_branch,0)
 }
@@ -4466,6 +4510,8 @@ window.addEventListener("SA_AR_onARFrame", (function () {
 
 })();
 
+
+if (webkit_electron_mode) document.write('<script language="JavaScript" src="' + toFileProtocol(Settings.f_path + '/animate_customized.js') + '"></scr'+'ipt>');;
 
 // main js
 if (MMD_SA_options.Dungeon_options)
