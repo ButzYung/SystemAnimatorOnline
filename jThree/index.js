@@ -1,4 +1,4 @@
-// (2022-11-30)
+// (2022-12-20)
 
 MMD_SA.fn = {
 /*
@@ -282,7 +282,7 @@ for (var i = 0, len = MMD_SA_options.motion.length; i < len; i++) {
     continue
   }
 
-  var filename = decodeURIComponent(motion.path.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, ""))
+  var filename = decodeURIComponent(motion.path.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh|fbx)$/i, ""))
   var para_SA = MMD_SA_options.motion_para[filename] || {}
 
   var vmd = MMD_SA.vmd_by_filename[filename]//(jThree.getReferent) ? jThree.getReferent("#vmd" + i).three(0) : MMD_SA.vmd_by_filename[filename]
@@ -349,6 +349,8 @@ for (var i = 0, len = MMD_SA_options.motion.length; i < len; i++) {
       }
 
       obj = model.setupMotion_MMD_SA(vmd, motion.match, para)
+// new para_SA could have been generated after setupMotion_MMD_SA if it didn't exist beforehand
+      para_SA = MMD_SA_options.motion_para[filename] || para_SA;
 
       skin = obj.skin
       morph = obj.morph
@@ -413,27 +415,6 @@ for (var i = 0, len = MMD_SA_options.motion.length; i < len; i++) {
 
 MMD_SA.MMD.motionManager = MMD_SA.motion[0]
 //console.log(MMD_SA_options.motion);console.log(MMD_SA.motion);
-/*
-// Using WebGL to speeed up the "doFilter" function in JSARToolKit
-if (MMD_SA_options.use_JSARToolKit && use_WebGL_2D) {
-  var AR_obj = MMD_SA.AR_obj
-  var raster = AR_obj.raster._canvas
-  WebGL_2D.createObject(raster)
-
-  raster._WebGL_2D.fshader_2d_var +=
-  '// AT custom\n'
-+ 'uniform float _threshold;\n'
-
-  raster._WebGL_2D.fshader_2d_main +=
-  'float c = gl_FragColor.r*255.0 *0.2989 + gl_FragColor.g*255.0 *0.5866 + gl_FragColor.b*255.0 *0.1145;'
-//(c <= th3) ? 0xffffffff : 0xff000000;
-+ 'gl_FragColor = (c <= _threshold) ? vec4(1.0,1.0,1.0,1.0) : vec4(0.0,0.0,0.0,1.0);\n'
-
-  var canvas_buffer = raster._WebGL_2D._AR_canvas_buffer = document.createElement("canvas")
-  canvas_buffer.width =  AR_obj.canvas.width
-  canvas_buffer.height = AR_obj.canvas.height
-}
-*/
 
 // speech bubble
 if (MMD_SA_options.use_speech_bubble) {
@@ -823,7 +804,7 @@ MMD_SA.reset_camera = function (check_event) {
 
   this._camera_y_offset_ = 0
 
-  var center_view = /*(MMD_SA_options.use_JSARToolKit && MMD_SA.AR_obj._m4) ? [0,0,0] :*/ this.center_view;
+  var center_view = this.center_view;
   var center_view_lookAt = this.center_view_lookAt
 //MMD_SA._debug_msg = [center_view]
 //DEBUG_show(center_view,0,1)
@@ -2010,68 +1991,6 @@ MMD_SA.bone_to_position = (function () {
     return mesh._bone_to_position_last.pos_delta
   };
 })();
-
-
-// use_JSARToolKit START
-
-if (MMD_SA_options.use_JSARToolKit) {
-  var AR_obj
-  AR_obj = MMD_SA.AR_obj = {
-  startup_countdown: 1
-
- ,TEMP_v3: new THREE.Vector3()
- ,_v3a: new THREE.Vector3()
-
- ,TEMP_q: new THREE.Quaternion()
- ,_q1: new THREE.Quaternion()
- ,_q2: new THREE.Quaternion()
- ,_q3: new THREE.Quaternion()
-
- ,TEMP_m4: new THREE.Matrix4()
- ,_m4a: new THREE.Matrix4()
- ,_m4b: new THREE.Matrix4()
-  }
-
-  var AR_para = MMD_SA_options.AR_para
-
-// http://ianreah.com/2013/05/26/Augmented-Reality-with-JavaScript-Part-1.html
-THREE.Camera.prototype.setJsArMatrix = function (jsArParameters) {
-    var matrixArray = new Float32Array(16);
-    jsArParameters.copyCameraMatrix(matrixArray, 10, 10000);
-
-    return this.projectionMatrix.set(
-        matrixArray[0], matrixArray[4], matrixArray[8],  matrixArray[12],
-        matrixArray[1], matrixArray[5], matrixArray[9],  matrixArray[13],
-        matrixArray[2], matrixArray[6], matrixArray[10], matrixArray[14],
-        matrixArray[3], matrixArray[7], matrixArray[11], matrixArray[15]);
-};
-
-THREE.Matrix4.prototype.setJsArMatrix = function (jsArMatrix) {
-    return this.set(
-         jsArMatrix.m00,  jsArMatrix.m01, -jsArMatrix.m02,  jsArMatrix.m03,
-        -jsArMatrix.m10, -jsArMatrix.m11,  jsArMatrix.m12, -jsArMatrix.m13,
-         jsArMatrix.m20,  jsArMatrix.m21, -jsArMatrix.m22,  jsArMatrix.m23,
-                      0,               0,               0,               1
-    );
-};
-
-  AR_obj.canvas = document.createElement("canvas")
-  AR_obj.canvas.width  = AR_para.video_width
-  AR_obj.canvas.height = AR_para.video_height
-
-  AR_obj.raster = new NyARRgbRaster_Canvas2D(AR_obj.canvas);
-  AR_obj.param = new FLARParam(AR_obj.canvas.width, AR_obj.canvas.height, 49);
-  AR_obj.detector = new FLARMultiIdMarkerDetector(AR_obj.param, AR_para.marker_width);
-  AR_obj.detector.setContinueMode(true);
-
-//  AR_obj.resultMat = new NyARTransMatResult();
-  AR_obj.markers = {};
-
-  AR_obj.compensationMatrix = new THREE.Matrix4().makeScale(1, 1, -1);  //scale in -z to swap from LH-coord to RH-coord
-  AR_obj.compensationMatrix.multiply(new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(90)));  //rotate 90deg in X to get Y-up;
-}
-
-// END
 
 
 if (MMD_SA.use_jThree_v1)
