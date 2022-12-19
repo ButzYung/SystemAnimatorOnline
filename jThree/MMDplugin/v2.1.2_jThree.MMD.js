@@ -1,4 +1,4 @@
-// (2022-11-30)
+// (2022-12-20)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -161,212 +161,6 @@ if (self.MMD_SA && !MMD_SA_options.MMD_disabled) {
 
     THREE.MMD.setGravity( gravity[0]*9.8*10, gravity[1]*9.8*10, gravity[2]*9.8*10 )
 //DEBUG_show(MMD_SA._gravity_+'/'+MMD_SA._gravity_factor+'\n'+gravity)
-  }
-
-  if (MMD_SA_options.use_JSARToolKit) {
-    var AR_obj = MMD_SA.AR_obj
-    if (AR_obj.startup_countdown > 0) {
-      AR_obj.startup_countdown -= delta
-      AR_obj.canvas.getContext("2d").fillRect(0, 0, AR_obj.canvas.width, AR_obj.canvas.height)
-    }
-    else if (MMD_SA.AR_video) {
-      var AR_para = MMD_SA_options.AR_para
-      var base_id = AR_para.marker_base_id
-      var threshold = 128// -16*4
-      var debug_msg = []
-
-      if (!AR_obj._skip_AR_frame) {
-        var context
-
-        context = SL_webcam.getContext("2d")
-        context.globalCompositeOperation = 'copy'
-        context.drawImage(MMD_SA.AR_video, 0,0,SL_webcam.width,SL_webcam.height)
-
-        if (MMD_SA.matrix_rain)
-          MMD_SA.matrix_rain._SA_draw()
-
-        if (SL_webcam._WebGL_2D)
-          SL_webcam._WebGL_2D.draw()
-
-        var canvas = AR_obj.canvas
-        context = canvas.getContext('2d')
-        context.globalCompositeOperation = 'copy'
-        context.drawImage(MMD_SA.AR_video, 0, 0, AR_obj.canvas.width, AR_obj.canvas.height)
-        canvas.changed = true;
-
-        var markerCount = AR_obj.markerCount = AR_obj.detector.detectMarkerLite(AR_obj.raster, threshold);
-
-// Go through the detected markers and get their IDs and transformation matrices.
-for (var idx = 0; idx < markerCount; idx++) {
-  // Get the ID marker data for the current marker.
-  // ID markers are special kind of markers that encode a number.
-  // The bytes for the number are in the ID marker data.
-  var id = AR_obj.detector.getIdMarkerData(idx);
-
-  // Read bytes from the id packet.
-  var currId = -1;
-  // This code handles only 32-bit numbers or shorter.
-  var len = id.packetLength;
-  if (len <= 4) {
-    currId = 0;
-    for (var i = 0; i < len; i++) {
-      currId = (currId << 8) | id.getPacketData(i);
-    }
-  }
-
-  // If this is a new id, let's start tracking it.
-  var marker = AR_obj.markers[currId]
-  if (!marker) {
-    marker = AR_obj.markers[currId] = { m4:new THREE.Matrix4() };
-    marker.transform = new NyARTransMatResult();
-  }
-
-// Instead of using a universal NyARTransMatResult, a unique one has to created for every marker, to avoid unexpected "interference" when 2 markers are 180 degree opposite to each other on a certain axis
-AR_obj.resultMat = marker.transform;//new NyARTransMatResult();
-
-  // Get the transformation matrix for the detected marker.
-  AR_obj.detector.getTransformMatrix(idx, AR_obj.resultMat);
-
-  // Copy the result matrix into our marker tracker object.
-//  marker.transform = Object.asCopy(AR_obj.resultMat);
-
-  marker.m4.setJsArMatrix(AR_obj.resultMat)
-
-  if (currId == base_id) {
-    marker.active_counter = 20*2
-    AR_obj._m4 = marker.m4
-    if (AR_para._marker_base_transform) {
-      marker.m4.multiply(AR_para._marker_base_transform)
-    }
-  }
-  else {
-    marker.active_counter = 10*2
-  }
-}
-      }
-
-      if (AR_para.skip_alternate_AR_frame) {
-        AR_obj._skip_AR_frame = !AR_obj._skip_AR_frame
-      }
-
-Object.keys(AR_obj.markers).forEach(function (id) {
-  var marker = AR_obj.markers[id]
-  marker.active_counter--
-});
-
-var base_marker_projected
-if (AR_obj._m4 && (AR_obj.markers[base_id].active_counter <= 0)) {
-  AR_obj._m4 = null
-
-  var marker_base_id_spare_list = AR_para.marker_base_id_spare_list
-  for (var i = 0, i_max = marker_base_id_spare_list.length; i < i_max; i++) {
-    var marker = AR_obj.markers[marker_base_id_spare_list[i]]
-    if (marker && (marker.active_counter > 0) && marker.m4_to_base) {
-      AR_obj._m4 = marker.m4.clone().multiply(marker.m4_to_base)
-      base_marker_projected = true
-      break
-    }
-  }
-}
-
-if (AR_obj._m4 && !base_marker_projected) {
-  var marker_base_id_spare_list = AR_para.marker_base_id_spare_list
-  for (var i = 0, i_max = marker_base_id_spare_list.length; i < i_max; i++) {
-    var marker = AR_obj.markers[marker_base_id_spare_list[i]]
-// http://www.euclideanspace.com/maths/geometry/affine/matrix4x4/
-// http://ncalculators.com/matrix/4x4-matrix-multiplication-calculator.htm
-    if (marker && (marker.active_counter > 0)) {
-// inverting the matrix TWICE solves the strange flickering problem
-      marker.m4_to_base = AR_obj._m4a.getInverse(AR_obj._m4b.getInverse( AR_obj.TEMP_m4.getInverse(marker.m4).multiply(AR_obj._m4) ))
-//marker.m4.clone().multiply(AR_obj.TEMP_m4.getInverse(AR_obj._m4))
-//AR_obj.TEMP_m4.getInverse(AR_obj._m4).multiply(marker.m4)
-//AR_obj._m4.clone().multiply(AR_obj.TEMP_m4.getInverse(marker.m4))
-//AR_obj.TEMP_m4.getInverse(marker.m4).multiply(AR_obj._m4)
-    }
-  }
-}
-
-
-if (AR_obj._m4) {
-  var r, cp, cr
-  var camera = MMD_SA._trackball_camera.object
-
-  var _m4 = AR_obj._m4
-
-  r = _m4.decompose()
-  cp = r[0]
-  cr = AR_obj.TEMP_v3.setEulerFromQuaternion(r[1].normalize())
-  var _x = cr.x, _y = cr.y, _z = cr.z;
-
-  cp.x = -cp.x
-  cp.y = -cp.y
-  //cp.z = -cp.z
-/*
-  var qx = AR_obj._q1.setFromEuler(AR_obj.TEMP_v3.set(_x - Math.PI/2,0,0))
-  var qy = AR_obj._q2.setFromEuler(AR_obj.TEMP_v3.set(0,-_z,0))
-  var qz = AR_obj._q3.setFromEuler(AR_obj.TEMP_v3.set(0,0,-_y))
-  var qq = qy.multiply(qz).multiply(qx)
-*/
-  var qq = AR_obj._q1.setFromEuler(AR_obj.TEMP_v3.set(_x-Math.PI/2, -_z, -_y), "YZX")
-//qq = new THREE.Vector3().setEulerFromQuaternion(qq)
-
-  r[1] = qq.normalize()
-  r[0].applyQuaternion(r[1])
-//var cp2 = new THREE.Vector3().copy(r[0])
-//r[0].applyQuaternion(AR_obj.TEMP_q.setFromEuler(new THREE.Vector3(0, -_z, 0)))
-
-  camera.matrix.identity();
-  camera.matrix.makeRotationFromQuaternion(r[1]);
-  AR_obj.camera_position = r[0];
-  camera.matrix.setPosition(r[0]);
-
-
-  camera.matrixWorldNeedsUpdate = true;
-
-
-  var marker_base = AR_obj.markers[base_id]
-  marker_base.position = new THREE.Vector3(0,0,0)
-  marker_base.rotation = new THREE.Quaternion().setFromEuler(AR_obj.TEMP_v3.set(-_x + 90/180*Math.PI, _y, _z))
-  marker_base._camera_position = cp.clone()
-
-  if (r) {
-    debug_msg.push(
-  'camera('+AR_obj.markerCount+')' + ((base_marker_projected)?'(P)':'') + ':' + parseInt(cp.x)+','+parseInt(cp.y)+','+parseInt(cp.z) + '/' + parseInt(-_x*180/Math.PI+90)+','+parseInt(_y*180/Math.PI)+','+parseInt(_z*180/Math.PI)
-    );
-  }
-
-
-  Object.keys(AR_obj.markers).forEach(function (id) {
-    if (id == base_id)
-      return
-    var marker = AR_obj.markers[id]
-    if (marker.active_counter <= 0)
-      return
-
-    var rr = AR_obj.TEMP_m4.getInverse(AR_obj._m4).multiply(marker.m4).decompose()
-//    var rr = marker.m4.clone().multiply(AR_obj.TEMP_m4.getInverse(AR_obj._m4)).decompose()
-    var cp = rr[0]
-
-    marker.position = new THREE.Vector3(cp.x, -cp.z, -cp.y)
-    marker.rotation = rr[1].normalize()
-
-    debug_msg.push(
-  id + ':' + parseInt(marker.position.x)+','+parseInt(marker.position.y)+','+parseInt(marker.position.z) + '/' + parseInt(AR_obj.TEMP_v3.setEulerFromQuaternion(marker.rotation).z*180/Math.PI)
-    );
-  });
-}
-else {
-  debug_msg.push('(base marker not found)')
-}
-
-debug_msg = debug_msg.concat(MMD_SA._debug_msg)
-if (debug_msg.length) {
-  DEBUG_show(debug_msg.join('\n'))
-  MMD_SA._debug_msg = []
-}
-
-    }
-    else DEBUG_show("(video not available)")
   }
 
   var _delta = delta
@@ -2646,11 +2440,17 @@ if (this.boneKeys.length || this.morphKeys.length) {
 VMD.prototype.load = function( url_raw, onload ) {
 // AT: VMD by filename
 // NOTE: url_raw is the raw path WITHOUT toFileProtocol (because this will turn the url to blob url in browser, which makes info like file type and such unrecognizable)
-MMD_SA.vmd_by_filename[decodeURIComponent(url_raw.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, ""))] = this;
-
+MMD_SA.vmd_by_filename[decodeURIComponent(url_raw.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh|fbx)$/i, ""))] = this;
+//console.log(url_raw)
 // AT: BVH
 if (/\.bvh$/i.test(url_raw)) {
   MMD_SA.BVHLoader().then(()=>{ BVHLoader.VMD = VMD; BVHLoader.load(url_raw).then((bones)=>{ onload(BVHLoader.toVMD(bones)); }); });
+  return
+}
+
+// AT: FBX
+if (/\.fbx$/i.test(url_raw)) {
+  MMD_SA.THREEX.utils.loadMixamoAnimation( url_raw, (MMD_SA.MMD_started)?THREE.MMD.getModels()[0]:null, VMD ).then(vmd=>{ onload(vmd); });
   return
 }
 
@@ -2664,8 +2464,12 @@ if (/\.bvh$/i.test(url_raw)) {
 // AT: Use regular expression to filter frames (RE), that = this, stuff
 VMD.prototype.generateSkinAnimation = function( pmx, RE ) {
 var model_para_obj = self.MMD_SA && MMD_SA_options.model_para_obj_all[pmx._model_index];
-var is_A_pose = /\.vmd$/i.test(this.url);
-var motion_para = self.MMD_SA && MMD_SA_options.motion_para[decodeURIComponent(this.url.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, ""))];
+
+const to_T_pose = /\.vmd$/i.test(this.url) && MMD_SA.THREEX.enabled;
+const to_A_pose = !to_T_pose && /\.fbx$/i.test(this.url) && !MMD_SA.THREEX.enabled;;
+const need_pose_conversion = to_A_pose || to_T_pose;
+
+var motion_para = self.MMD_SA && MMD_SA_options.motion_para[decodeURIComponent(this.url.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh|fbx)$/i, ""))];
 var motion_sd = motion_para && motion_para.adjustment_per_model && (motion_para.adjustment_per_model[model_para_obj._filename] || motion_para.adjustment_per_model[model_para_obj._filename_cleaned] || motion_para.adjustment_per_model._default_);
 motion_sd = (motion_sd && motion_sd.skin_default) || {};
 var multi_model_motion = (MMD_SA_options.model_para_obj_all.length > 1) && motion_para && (motion_para.model_index_list || motion_para.model_name_RegExp)
@@ -2685,7 +2489,7 @@ if (motion_para && motion_para.freeze_onended) {
 }
 	timeMax = (motion_para && motion_para.duration)||this.timeMax;
 	targets = [];
-	pmx.bones.forEach( function( v ) {
+	pmx.bones.forEach( function( v, bone_idx ) {
 // AT: Use regular expression to filter frames (RE), skin default
 if (RE) {
   if (!RE.test(v.name)) {
@@ -2728,7 +2532,7 @@ var model_scale = (model_para_obj.model_scale||1) * ((MMD_SA_options.WebXR) ? (M
 		boneKeys.forEach( function( w ) {
 			if ( v.name === w.name ) {
 // AT: rot for T-pose
-is_A_pose && MMD_SA.THREEX.utils.convert_A_pose_rotation_to_T_pose(v.name, w.rot);
+need_pose_conversion && ((to_T_pose) ? MMD_SA.THREEX.utils.convert_A_pose_rotation_to_T_pose(v.name, w.rot) : MMD_SA.THREEX.utils.convert_T_pose_rotation_to_A_pose(v.name, w.rot));
 if ((multi_model && sd) || (model_scale != 1)) {
   w = Object.assign({}, w)
   w.rot = w.rot.slice()
@@ -2816,7 +2620,7 @@ keys.push({
 });
 
 // AT: rot for T-pose
-is_A_pose && MMD_SA.THREEX.utils.convert_A_pose_rotation_to_T_pose(v.name, keys[keys.length-1].rot);
+need_pose_conversion && ((to_T_pose) ? MMD_SA.THREEX.utils.convert_A_pose_rotation_to_T_pose(v.name, keys[keys.length-1].rot) : MMD_SA.THREEX.utils.convert_T_pose_rotation_to_A_pose(v.name, keys[keys.length-1].rot));
     });
 //if (sd.keys && (v.name.indexOf("ＩＫ")!=-1)) {DEBUG_show(JSON.stringify(keys),0,1);DEBUG_show(JSON.stringify(sd),0,1);}
     last = keys[keys.length-1];
@@ -2835,7 +2639,7 @@ if (_pos)
 if (_rot) {
   key.rot = MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.fromArray([-_rot.x, _rot.y, -_rot.z].map((n,i) => n*Math.PI/180+rot_add[xyz[i]]*((i==1)?1:-1))), 'YXZ').toArray()
 // AT: rot for T-pose
-  is_A_pose && MMD_SA.THREEX.utils.convert_A_pose_rotation_to_T_pose(v.name, key.rot);
+  need_pose_conversion && ((to_T_pose) ? MMD_SA.THREEX.utils.convert_A_pose_rotation_to_T_pose(v.name, key.rot) : MMD_SA.THREEX.utils.convert_T_pose_rotation_to_A_pose(v.name, key.rot));
 }
 if (key_mod.interp)
   key.interp = new Uint8Array(key_mod.interp)
@@ -2865,10 +2669,9 @@ if ((!motion_para || !motion_para.IK_disabled || motion_para.IK_disabled._IK_nam
     if (p[0]==0 && p[1]==0 && p[2]==0 && r[0]==0 && r[1]==0 && r[2]==0)
       IK_disabled = true
   }
-//let _filename = decodeURIComponent(that.url.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, ""))
-//if (/IA_HIGHER_light_version/.test(_filename)) console.log(_filename, keys)
+
   if (IK_disabled) {
-    let filename = decodeURIComponent(that.url.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, ""))
+    let filename = decodeURIComponent(that.url.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh|fbx)$/i, ""))
 //console.log(filename, keys)
     motion_para = MMD_SA_options.motion_para[filename] = MMD_SA_options.motion_para[filename] || {};
     motion_para.IK_disabled = motion_para.IK_disabled || {
@@ -2881,7 +2684,9 @@ return (this._IK_name_list.indexOf(IK_name) != -1);
   }
 }
 
-		targets.push( { keys:keys } );
+// AT: skip empty keys (i:bone_idx required)
+if (keys.length)
+		targets.push( { keys:keys, i:bone_idx } );
 	});
 
 // AT: IK disabled
@@ -2892,7 +2697,7 @@ if (motion_para && motion_para.IK_disabled && motion_para.IK_disabled._IK_name_l
   if (motion_para.IK_disabled._IK_name_list.length == 0)
     delete motion_para.IK_disabled
   else
-    console.log("IK disabled auto:", decodeURIComponent(that.url.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, "")))
+    console.log("IK disabled auto:", decodeURIComponent(that.url.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh|fbx)$/i, "")))
 }
 
 // AT: _timeMax
@@ -2915,7 +2720,7 @@ if (!self.MMD_SA || model_para_obj.morph_default._is_empty) {
 var _RE = self.MMD_SA && model_para_obj.morph_filter
 var that = this
 var targets_extra = [];
-var motion_para = self.MMD_SA && MMD_SA_options.motion_para[decodeURIComponent(this.url.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh)$/i, ""))];
+var motion_para = self.MMD_SA && MMD_SA_options.motion_para[decodeURIComponent(this.url.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh|fbx)$/i, ""))];
 var motion_md = motion_para && motion_para.adjustment_per_model && (motion_para.adjustment_per_model[model_para_obj._filename] || motion_para.adjustment_per_model[model_para_obj._filename_cleaned] || motion_para.adjustment_per_model._default_);
 motion_md = (motion_md && motion_md.morph_default) || {};
 
@@ -4015,6 +3820,39 @@ if (mm) {
     let _vmd = MMD_SA.vmd_by_filename[mm.filename]
     if (!System._browser.camera.use_armIK && _vmd && !_vmd.use_armIK && !para_SA.use_armIK) { continue }
 //DEBUG_show( THREE.MMD.getModels()[0].mesh.bones_by_name["左腕ＩＫ"].position.toArray() )
+
+if (MMD_SA.THREEX.enabled) {
+// For some reasons there are duplicated updates on IKs (model.updateMotion()?) when the motion loops. Avoid duplicated calculations in such case
+// also provide a mechanism to cancel the possibly duplicated calculation from outer functions (e.g. when mocap is active)
+  const u = model._update_timestamp_ = model._update_timestamp_ || {};
+
+  const t = target.name;
+  const d = t.charAt(0);
+  const bones_by_name = mesh.bones_by_name;
+
+  for (const name of [d+'腕',d+'ひじ']) {
+    const q = bones_by_name[name].quaternion;
+// assuming that if the quaternion is zero, it means there is no key frame for 腕/ひじ in the current motion, and thus there is no need for adjustment
+    if (!q.x && !q.y && !q.z) continue;
+
+    const rot = q.toArray();
+    MMD_SA.THREEX.utils.convert_T_pose_rotation_to_A_pose(name, rot);
+    q.fromArray(rot);
+  }
+
+  window.addEventListener('SA_MMD_model' + mesh._model_index + '_process_bones_after_IK', (e)=>{
+    if (u[t] == RAF_timestamp) return;
+    u[t] = RAF_timestamp;
+
+    for (const name of [d+'腕',d+'ひじ']) {
+      const q = bones_by_name[name].quaternion;
+      const rot = q.toArray();
+      MMD_SA.THREEX.utils.convert_A_pose_rotation_to_T_pose(name, rot);
+      q.fromArray(rot);
+    }
+  }, {once:true});
+}
+
   }
 }
 		effector = bones[ik.effector];
@@ -5090,6 +4928,9 @@ var MMDmorphs = THREE.MMD.getModels()[this._model_index].pmx.morphs
 var ca_index = (this._motion_index_MMD_SA_extra != null) ? this._motion_index_MMD_SA_extra : this._motion_index-MMD_SA.custom_action_index;
 
 	this.targets.forEach( function( v, idx ) {
+// AT: bone index
+if (v.i != null) idx = v.i;
+
 		var currKey, nextKey, ratio;
 		if ( v.keys.length < 2 ) {
 // AT: Special case for single-frame animation
@@ -6734,7 +6575,7 @@ var look_at_screen
 if (self.MMD_SA && _head_pos && (mesh.bones_by_name[head_name]) && (look_at_screen_ratio != 0) && MMD_SA_options.look_at_screen_by_model(this) && (model_para.look_at_screen != false)) {
   var cam = MMD_SA.camera_position
 
-  if (((para_SA && para_SA.center_view_lookAt) || MMD_SA_options.center_view_lookAt) || (MMD_SA_options.use_JSARToolKit && MMD_SA.AR_obj._m4))
+  if ((para_SA && para_SA.center_view_lookAt) || MMD_SA_options.center_view_lookAt)
     look_at_screen = true
   else {
     var cp = MMD_SA_options.camera_position.slice(0)
