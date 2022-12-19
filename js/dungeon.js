@@ -1,4 +1,4 @@
-// (2022-11-30)
+// (2022-12-20)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -706,6 +706,8 @@ System._browser.load_file(System.Gadget.path + '/images/_dungeon/item_icon.zip#/
 item_border.normal = new Image()
 System._browser.load_file(System.Gadget.path + '/images/_dungeon/item_icon.zip#/inventory/RarityBorders/monoV11.png', item_border.normal)
 
+var UI_muted;
+
 inventory = {
   max_row: 4
  ,max_base: 8
@@ -714,7 +716,10 @@ inventory = {
  ,UI: {
     info: {
       scale: 1.5
-    }
+    },
+
+    get muted() { return UI_muted || System._browser.overlay_mode; },
+    set muted(v) { UI_muted = v; },
   }
 
 // for mobile
@@ -2395,10 +2400,12 @@ window.dispatchEvent(new CustomEvent("SA_Dungeon_after_map_generation", { detail
 
 this.PC_light_max = Math.min((options.PC_light_max || options_base.PC_light_max || 3), MMD_SA.light_list.length)
 
-jThree("#MMD_AmbLight").three(0).color = new THREE.Color(options.ambient_light_color || MMD_SA_options.ambient_light_color)
+MMD_SA_options.ambient_light_color = options.ambient_light_color || MMD_SA_options.ambient_light_color;
+jThree("#MMD_AmbLight").three(0).color = new THREE.Color(MMD_SA_options.ambient_light_color);
 
 var dir_light = jThree("#MMD_DirLight").three(0)
-dir_light.color = new THREE.Color(options.light_color || MMD_SA_options.light_color)
+MMD_SA_options.light_color = options.light_color || MMD_SA_options.light_color;
+dir_light.color = new THREE.Color(MMD_SA_options.light_color);
 MMD_SA_options.light_position = options.light_position || options_base.light_position || MMD_SA_options._light_position
 dir_light.position.fromArray(MMD_SA_options.light_position)
 MMD_SA.light_list.find(function (light) { return (light.obj == dir_light); })._pos_base = null
@@ -2993,6 +3000,22 @@ if (MMD_SA_options.model_para_obj._icon_canvas) {
   MMD_SA_options.Dungeon.update_status_bar(true)
 */
 }
+else if (MMD_SA.THREEX.enabled && (MMD_SA.THREEX.get_model(0).type == 'VRM')) {
+  const model = MMD_SA.THREEX.get_model(0);
+  const para_SAX = model.model_para;
+  const para_SA = MMD_SA_options.model_para_obj;
+
+  const canvas = MMD_SA_options.Dungeon.character.icon;
+  const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage((model.is_VRM1)?model.model.meta.thumbnailImage:model.model.meta.texture.source.data, 0,0,64,64);
+
+  const icon_canvas = para_SA._icon_canvas = para_SAX._icon_canvas = document.createElement("canvas");
+  icon_canvas.width = icon_canvas.height = 64;
+  icon_canvas.getContext("2d").drawImage(canvas, 0,0);
+
+  MMD_SA_options.Dungeon.update_status_bar(true);
+}
 else {
 //  SL_Host.style.visibility = "hidden"
 
@@ -3099,10 +3122,10 @@ MMD_SA_options.model_para_obj._icon_canvas.getContext("2d").drawImage(canvas, 0,
 
 MMD_SA_options.Dungeon.update_status_bar(true)
 
-jThree("#MMD_AmbLight").three(0).color = new THREE.Color(options.ambient_light_color || MMD_SA_options.ambient_light_color)
+jThree("#MMD_AmbLight").three(0).color = new THREE.Color(MMD_SA_options.ambient_light_color);
 
 var dir_light = jThree("#MMD_DirLight").three(0)
-dir_light.color = new THREE.Color(options.light_color || MMD_SA_options.light_color)
+dir_light.color = new THREE.Color(MMD_SA_options.light_color);
 dir_light.position.copy(_dir_light_pos)
 
 var point_light = jThree("#pointlight_main").three(0)
@@ -3775,7 +3798,10 @@ parseInt(result[3], 16)
     ] : [0,0,0];
 }
       return function () {
+const THREE = MMD_SA.THREEX.THREE;
+
 var dome_tex = MMD_SA.THREEX.mesh_obj.get_three('DomeMESH').material.map;
+if (MMD_SA.THREEX.enabled && MMD_SA.THREEX.use_VRM1) dome_tex.encoding = THREE.sRGBEncoding;
 dome_tex.needsUpdate = true
 
 var img = MMD_SA_options.Dungeon_options.skydome.texture_cache_list[this.texture_index||0]
@@ -3888,7 +3914,8 @@ if (options.inventory) {
     this.inventory.max_row  = options.inventory.max_row
   if (options.inventory.UI) {
     if (options.inventory.UI.info)
-      Object.assign(this.inventory.UI.info, options.inventory.UI.info)
+      Object.assign(this.inventory.UI.info, options.inventory.UI.info);
+    this.inventory.UI.muted = options.inventory.UI.muted;
   }
 }
 this.inventory.initialize()
@@ -4287,15 +4314,18 @@ var drop_item = function (index_source, index) {
 
   var inv_source = inv.list[index_source]
   if (inv_source.item.is_base_inventory && (index >= inv.max_base)) {
-    MMD_SA_options.Dungeon.sound.audio_object_by_name["interface_item_deny"].play()
+    if (!MMD_SA_options.Dungeon.inventory.UI.muted)
+      MMD_SA_options.Dungeon.sound.audio_object_by_name["interface_item_deny"].play();
     return
   }
   var inv_target = inv.list[index]
   if (inv_target.item.is_base_inventory && (index_source >= inv.max_base)) {
-    MMD_SA_options.Dungeon.sound.audio_object_by_name["interface_item_deny"].play()
+    if (!MMD_SA_options.Dungeon.inventory.UI.muted)
+      MMD_SA_options.Dungeon.sound.audio_object_by_name["interface_item_deny"].play();
     return
   }
-  MMD_SA_options.Dungeon.sound.audio_object_by_name[((inv_source.item.sound && inv_source.item.sound.find(function(i){return i.is_drag})) || {name:"interface_item_drop"}).name].play()
+  if (!MMD_SA_options.Dungeon.inventory.UI.muted)
+    MMD_SA_options.Dungeon.sound.audio_object_by_name[((inv_source.item.sound && inv_source.item.sound.find(function(i){return i.is_drag})) || {name:"interface_item_drop"}).name].play();
   inv.swap(index_source, index)
 };
 
@@ -4357,12 +4387,13 @@ if (!inv_item.action_check()) {
 }
 
 if (inv_item.item.action.func(inv_item.item)) {
-  MMD_SA_options.Dungeon.sound.audio_object_by_name["interface_item_deny"].play()
-  return
+  if (!MMD_SA_options.Dungeon.inventory.UI.muted)
+    MMD_SA_options.Dungeon.sound.audio_object_by_name["interface_item_deny"].play();
+  return;
 }
 
-if (!inv_item.item.action.no_sound)
-  MMD_SA_options.Dungeon.sound.audio_object_by_name[((inv_item.item.sound && inv_item.item.sound[0]) || {name:"interface_item_access"}).name].play()
+if (!MMD_SA_options.Dungeon.inventory.UI.muted && !inv_item.item.action.muted)
+  MMD_SA_options.Dungeon.sound.audio_object_by_name[((inv_item.item.sound && inv_item.item.sound[0]) || {name:"interface_item_access"}).name].play();
 
 if (inv_item.item.stock_max != 1) {
   if (--inv_item.stock == 0)
