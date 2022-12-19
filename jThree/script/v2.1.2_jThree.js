@@ -1,4 +1,4 @@
-// (2022-11-30)
+// (2022-12-20)
 
 /*!
  * jThree JavaScript Library v2.1.2
@@ -37888,17 +37888,6 @@ if (self.MMD_SA && !MMD_SA.scene) {
 			tmp = that.getAttribute( "param" );
 			tmp = /:/.test( tmp ) ? getHash( tmp ) : getArr( tmp );
 
-// AT: AR camera
-if (self.MMD_SA && MMD_SA_options.use_JSARToolKit) {
-  obj = new THREE.PerspectiveCamera(49, MMD_SA_options.width/MMD_SA_options.height, 0.1, 10000);
-  obj.matrixAutoUpdate = false;
-  obj.setJsArMatrix(MMD_SA.AR_obj.param)
-
-  MMD_SA.AR_obj.camera_position = new THREE.Vector3(MMD_SA_options.camera_position[0],MMD_SA_options.camera_position[1],MMD_SA_options.camera_position[2])
-  obj.matrix.identity();
-  obj.matrix.setPosition(MMD_SA.AR_obj.camera_position);
-}
-else
 			if ( that.getAttribute( "type" ) === "Ort" ) {
 
 				if ( tmp.length > 0 ) {
@@ -38421,7 +38410,11 @@ function getArr( string ) {
 }
 
 function urlToExtension( url ) {
-	return !/^\.[^\/^\.]/.test( url ) && url.split( "." ).pop().split( "?" )[ 0 ].toLowerCase();
+// AT: BVH/FBX
+  let type = !/^\.[^\/^\.]/.test( url ) && url.split( "." ).pop().split( "?" )[ 0 ].toLowerCase();
+  if (/bvh|fbx/.test(type)) type = 'vmd';
+  return type;
+//	return !/^\.[^\/^\.]/.test( url ) && url.split( "." ).pop().split( "?" )[ 0 ].toLowerCase();
 }
 
 function getHtmlObj( selector ) {
