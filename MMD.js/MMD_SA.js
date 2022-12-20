@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2022-12-20)
+// (2022-12-21)
 
 var use_full_spectrum = true
 
@@ -3959,10 +3959,13 @@ switch (para[0]) {
   case "OSC_VMC_CLIENT":
     switch (para[1]) {
       case "enabled":
-        MMD_SA.OSC.VMC.enabled = !!parseInt(para[2]);
+        MMD_SA.OSC.VMC.sender_enabled = !!parseInt(para[2]);
+        break;
+      case "VSeeFace_mode":
+        MMD_SA.OSC.VMC.VSeeFace_mode = !!parseInt(para[2]);
         break;
       case "hide_3D_avatar":
-        THREE.MMD.getModels()[0].mesh.visible = !parseInt(para[2]);
+        MMD_SA.hide_3D_avatar = !!parseInt(para[2]);
         break;
     }
     break
@@ -7889,8 +7892,9 @@ const eye_bone = bones_by_name['両目']
 const eyeL = this.getBoneNode('leftEye')
 const eyeR = this.getBoneNode('rightEye')
 if (eyeL && eyeR) {
-  eyeL.quaternion.premultiply(this.process_rotation(q1.copy(eye_bone.quaternion), 'leftEye'));
-  eyeR.quaternion.premultiply(this.process_rotation(q1.copy(eye_bone.quaternion), 'rightEye'));
+  q1.set(0,0,0,1).slerp(eye_bone.quaternion, 0.5);
+  eyeL.quaternion.premultiply(this.process_rotation(q2.copy(q1), 'leftEye'));
+  eyeR.quaternion.premultiply(this.process_rotation(q2.copy(q1), 'rightEye'));
 }
 
 // bone END
@@ -7963,17 +7967,17 @@ for (const name in blendshape_weight) {
 // morph END
 
 
-if (MMD_SA.OSC.VMC.ready) {
+if (MMD_SA.OSC.VMC.sender_enabled && MMD_SA.OSC.VMC.ready) {
   MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/Root/Pos",
     [
 'root',
-...((System._browser.camera.poseNet.enabled && MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only && MMD_SA.MMD.motionManager.para_SA.center_view_enforced) ? [0,-3/10,-5/10] : [0, 1/10, -60/10]),
+...((MMD_SA.OSC.VMC.VSeeFace_mode) ? ((System._browser.camera.poseNet.enabled && MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only && MMD_SA.MMD.motionManager.para_SA.center_view_enforced) ? [0,0,-5/10] : [0, 5/10, -60/10]) : [0,0,0]),
 -0, -0, 0, 1,
     ],
     'sfffffff'
   ));
 
-  const model_pos_scale = 1/model_scale/10;
+  const model_pos_scale = 1/vrm_scale;
 
   const bone_msgs = [];
   for (const name_VMC in VRMSchema.HumanoidBoneName) {
@@ -7983,7 +7987,7 @@ if (MMD_SA.OSC.VMC.ready) {
     bone_msgs.push(MMD_SA.OSC.VMC.Message("/VMC/Ext/Bone/Pos",
       [
 name_VMC,
-bone.position.x*model_pos_scale, bone.position.y*model_pos_scale, -bone.position.z*model_pos_scale,
+bone.position.x, bone.position.y, -bone.position.z,
 -bone.quaternion.x, -bone.quaternion.y, bone.quaternion.z, bone.quaternion.w,
       ],
       'sfffffff'
@@ -8007,7 +8011,7 @@ blendshape_weight[name],
   morph_msgs.push(MMD_SA.OSC.VMC.Message("/VMC/Ext/Blend/Apply"));
   MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Bundle(...morph_msgs));
 
-
+/*
   const camera = MMD_SA.THREEX.camera.obj;
   const camera_pos = v1.copy(camera.position).sub(mesh.position);
   MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/Cam",
@@ -8019,7 +8023,7 @@ camera.fov,
     ],
     'sffffffff'
   ));
-
+*/
 
   MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/OK", [1], 'i'));
 
@@ -8270,7 +8274,7 @@ RightLittleDistal: "rightLittleDistal",
       init: init,
 
       fix_rig_map: function (rig_map) {
-if (use_VRM1) rig_map;
+if (use_VRM1) return rig_map;
 
 Object.keys(rig_map).forEach(name=>{
   switch (rig_map[name]) {
@@ -8706,7 +8710,7 @@ threeX.mesh_obj.set("x_object" + idx, mesh)
 
 mesh.scale.set(0,0,0)
 
-console.log(mesh)
+//console.log(mesh)
 MMD_SA.fn.setupUI()
   }, function() {
   });
@@ -8836,6 +8840,22 @@ if (MMD_SA.MMD_started) {
 
 if (!System._browser.rendering_check()) return true;
 
+let obj_hidden_list = [];
+if (MMD_SA.hide_3D_avatar) {
+  const obj_check_list = [models[0].mesh];
+  if (MMD_SA_options.Dungeon) {
+    obj_check_list.push(MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj);
+    if (MMD_SA.THREEX._object3d_list_)
+      obj_check_list.push(...MMD_SA.THREEX._object3d_list_.map(obj=>obj._obj));
+  }
+  obj_check_list.forEach(obj=>{
+    if (obj.visible) {
+      obj.visible = false;
+      obj_hidden_list.push(obj);
+    }
+  });
+}
+
 if (data.OutlineEffect) {
 //  data.renderer.autoClear = true
   data.OutlineEffect.render( data.scene, data.camera );
@@ -8845,6 +8865,9 @@ else {
   data.renderer.render(data.scene, data.camera);
 }
 
+obj_hidden_list.forEach(obj=>{
+  obj.visible = true;
+});
 
 //DEBUG_show(Date.now())
 return true
@@ -9496,12 +9519,15 @@ ready = true;
   }
 
   var OSC;
-  var enabled, initialized, ready;
-  var VMC_enabled, VMC_initialized, VMC_ready;
+  var enabled=false, initialized, ready;
+  var VMC_enabled=false, VMC_initialized, VMC_ready;
+  var VMC_sender_enabled=false, VMC_receiver_enabled=false;
 
   var _OSC = {
     get enabled() { return enabled; },
     set enabled(v) {
+if (enabled == !!v) return;
+
 enabled = !!v;
 
 if (enabled) {
@@ -9530,6 +9556,7 @@ vmc.on('open', () => {
 });
 
 vmc.on('*', (msg) => {
+  if (!VMC_receiver_enabled) return;
 //  console.log(39540);
 });
 
@@ -9541,6 +9568,8 @@ vmc.open();
       return  {
         get enabled() { return VMC_enabled; },
         set enabled(v) {
+if (VMC_enabled == !!v) return;
+
 VMC_enabled = !!v;
 
 if (VMC_enabled) {
@@ -9549,7 +9578,22 @@ if (VMC_enabled) {
   DEBUG_show('(OSC/VMC client:ON)', 3)
 }
 else {
+  VMC_sender_enabled = VMC_receiver_enabled = false;
   DEBUG_show('(OSC/VMC client:OFF)', 3)
+}
+        },
+
+        get sender_enabled() { return VMC_sender_enabled; },
+        set sender_enabled(v) {
+if (VMC_sender_enabled == !!v) return;
+
+VMC_sender_enabled = !!v;
+
+if (VMC_sender_enabled) {
+  this.enabled = true;
+}
+else {
+  if (!VMC_receiver_enabled) this.enabled = false;
 }
         },
 
