@@ -1,5 +1,5 @@
 // SA Electron - Main EXTENDED
-// (2022-12-20)
+// (2022-12-21)
 
 /*
 eval on Electron v1.6.x has some scope issues/bugs which makes the global variables on this script inaccessible inside functions.
@@ -320,6 +320,11 @@ if (parseInt(process.versions.electron) >= 14) {
 // 2nd level
  ,'50% on hover': 4
  ,'Apply to child': 5
+
+ ,'OSC/VMC Protocol': 7
+
+ ,'VSeeFace mode': 2
+ ,'Hide 3D Avatar': 4
   };
 
   var _items;
@@ -608,6 +613,8 @@ webContents.send('tray_menu', 'OPACITY:apply_to_child')
 
   contextMenu_MMD_OSC_VMC_client = Menu.buildFromTemplate([
     {label: 'Enabled', type: 'checkbox', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'MMD:OSC_VMC_CLIENT|enabled|' + ((menuItem.checked)?1:0)) }}
+   ,{type: 'separator'}
+   ,{label: 'VSeeFace mode', type: 'checkbox', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'MMD:OSC_VMC_CLIENT|VSeeFace_mode|' + ((menuItem.checked)?1:0)) }}
    ,{type: 'separator'}
    ,{label: 'Hide 3D avatar', type: 'checkbox', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'MMD:OSC_VMC_CLIENT|hide_3D_avatar|' + ((menuItem.checked)?1:0)) }}
   ]);
@@ -976,11 +983,15 @@ return function (menuItem, browserWindow) {
       contextMenu_MMD.items[5].enabled = !_MMD.use_dungeon;
       contextMenu_MMD_model.items[1].checked = _MMD.override_default_for_external_model
 
-      
       for (const index of [0,1,2,3,4,5,6,9])
         contextMenu_MMD_visual_effects.items[index].enabled = !_MMD.use_THREEX;
 
-      contextMenu_MMD_OSC_VMC.enabled = _MMD.use_THREEX;
+      contextMenu_MMD.items[menu_item_index['OSC/VMC Protocol']].enabled = _MMD.use_THREEX;
+      if (_MMD.use_THREEX) {
+        contextMenu_MMD_OSC_VMC_client.items[0].checked = _MMD.VMC_sender_enabled;
+        contextMenu_MMD_OSC_VMC_client.items[menu_item_index['VSeeFace mode']].checked = _MMD.VMC_VSeeFace_mode;
+        contextMenu_MMD_OSC_VMC_client.items[menu_item_index['Hide 3D Avatar']].checked = _MMD.VMC_hide_3D_avatar;
+      }
 
       var MME = _MMD.MME
       var mme, opacity, index
