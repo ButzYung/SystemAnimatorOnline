@@ -24,6 +24,9 @@ XR Animator:
 
   The Windows app version (powered by Electron) is also availabe for download, which provides a few extra features (e.g. VMC-protocol, transparent background) available only in a native-OS environment.
 
+  XR Animator - Windows app version
+  https://github.com/ButzYung/SystemAnimatorOnline/releases
+
 ----------------------------
 
 XR Animator - Features:
