@@ -1,5 +1,5 @@
 // XR Animator
-// (12-20-2022)
+// (12-21-2022)
 
 var MMD_SA_options = {
 
@@ -3366,6 +3366,7 @@ if (!object3d.user_data) object3d.user_data = {}
 object3d._obj = mesh
 object3d._obj_proxy = new obj_proxy(object3d)
 
+MMD_SA.THREEX._object3d_list_ = object3d_list;
 object3d_list.push(object3d)
 if (object3d.parent_bone)
   MMD_SA_options.Dungeon.accessory_list.push(object3d)
@@ -3549,7 +3550,9 @@ object3d_list.forEach(object3d => {
   if (object3d.parent_bone)
     MMD_SA_options.Dungeon.accessory_list.filter(a => a !== object3d);
 });
-object3d_list = []
+object3d_list = [];
+delete MMD_SA.THREEX._object3d_list_;
+
 System._browser.camera.display_floating = false
           }
          ,ended: true
