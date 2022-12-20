@@ -7979,6 +7979,7 @@ if (MMD_SA.OSC.VMC.ready) {
   for (const name_VMC in VRMSchema.HumanoidBoneName) {
     const name = VRMSchema.HumanoidBoneName[name_VMC];
     const bone = this.getBoneNode(name);
+    if (!bone) continue;
     bone_msgs.push(MMD_SA.OSC.VMC.Message("/VMC/Ext/Bone/Pos",
       [
 name_VMC,
