@@ -108,14 +108,6 @@ Donation:
 
 ----------------------------
 
-XR Animator - Version history:
-
-v0.0.1
-
-  - Initial release
-
-----------------------------
-
 Other demos based on System Animator Online:
 
 - 3D Miku The Dancer (drop any MP3 and she will dance for you)
