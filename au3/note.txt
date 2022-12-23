@@ -1,0 +1,8 @@
+  Since XR Animator v0.0.4, all AutoIt-related executables in this directory have been removed, because a few virus scanners keep giving false positive alarms to these files. These files inherit from System Animator, which provides some desktop gadget features which are mostly irrevelant to XR Animator, such as "Stay on desktop".
+
+  However, if you really want to use the "Stay on desktop" feature, you need to install AutoIt, and turn ON the "Run script (.au3) instead of executable" option in the settings panel of XR Animator.
+
+AutoIt Homepage:
+https://www.autoitscript.com/site/
+
+ 
