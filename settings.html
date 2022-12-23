@@ -437,6 +437,11 @@ System.Gadget.onSettingsClosing = SettingsClosing;
     toggleElement(AutoItAutoPause)
   }
 
+  if (!webkit_electron_mode || !windows_mode || (!FSO_OBJ.FileExists(System.Gadget.path + '\\au3\\on_desktop.exe') && !returnBoolean("AutoItRunAsAU3"))) {
+    toggleElement(TD_AutoItBPMByBASS);
+    toggleElement(TD_AutoItWinampMode);
+  }
+
   // Silverlight is obsolete for non-gadget mode
   if (use_SA_browser_mode || ie_64bit) {
 //    toggleElement(L_UseSL)
@@ -2016,7 +2021,7 @@ Number of meters for CPU monitor <a href="#" onclick="return false" title="This 
 
 		<tr>
 			<td>&nbsp;</td>
-			<td style="padding-top:4px;">
+			<td style="padding-top:4px;" id="TD_AutoItBPMByBASS">
 	<input name="AutoItBPMByBASS" type="checkbox" id="AutoItBPMByBASS" value="checkbox" />
 	<label id="L_AutoItBPMByBASS_TEXT" for="AutoItBPMByBASS">BPM detection using BASS <a href="#" onclick="return false" title="Some animations (such as SEQ Video and MMD animations) require the detection of BPM (beats per minute) of the music file used. By default, System Animator (Chromium/XUL) uses the internal Web Audio API to detect BPM. Enable this option to use external BASS audio library instead, which may yield different/better results in some cases.">(?)</a></label>
 			</td>
@@ -2024,7 +2029,7 @@ Number of meters for CPU monitor <a href="#" onclick="return false" title="This 
 
 		<tr>
 			<td>&nbsp;</td>
-			<td style="padding-top:4px;">
+			<td style="padding-top:4px;" id="TD_AutoItWinampMode">
 	<input name="AutoItWinampMode" type="checkbox" id="AutoItWinampMode" value="checkbox" />
 	<label id="L_AutoItWinampMode_TEXT" for="AutoItWinampMode">Winamp mode <a href="#" onclick="return false" title="Enable this option to allow &quot;SEQ Video&quot; animation to respond to any MP3 music playing on your Winamp player.">(?)</a></label>
 <a href="http://www.winamp.com/" target="_blank">(Winamp homepage)</a>

@@ -880,6 +880,12 @@ this.path = path
   }
 
  ,stay_on_desktop: function (stay, onended) {
+if (!FSO_OBJ.FileExists(System.Gadget.path + '\\au3\\on_desktop.exe') && !returnBoolean("AutoItRunAsAU3")) {
+  alert('This feature is not available for XR Animator. For details, please refer to the following file.\n\nAT_SystemAnimator_v' + System.Gadget.version.replace(/\./g, '') + '.gadget/au3/note.txt');
+  System.Gadget.Settings.writeString("AutoItStayOnDesktop", "");
+  return;
+}
+
 var handle = webkit_electron_remote.getGlobal("mainWindow_handle")
 if (!handle) {
   console.error('"Stay on desktop" feature requires the latest version of Electron.')
