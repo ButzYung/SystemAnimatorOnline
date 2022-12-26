@@ -1,4 +1,4 @@
-// (2022-11-30)
+// (2022-12-27)
 
 var IPC
 
@@ -27,7 +27,7 @@ else
    ,get active_window() {
 var id = this.active_window_id
 if (id == -1)
-  return top
+  return SA_topmost_window;
 return SA_topmost_window.document.getElementById("Ichild_animation" + id).contentWindow
     }
 
@@ -189,7 +189,7 @@ if (returnBoolean("DisableTransparency") || webkit_electron_remote.getGlobal("is
 
 if (!confirm("NOTE: This will restart the gadget.")) {
   System._browser.update_tray()
-  break
+  return;
 }
 
 System.Gadget.Settings.writeString("AutoItStayOnDesktop", ((returnBoolean("AutoItStayOnDesktop"))?"":"non_default"))
