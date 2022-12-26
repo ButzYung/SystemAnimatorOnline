@@ -2004,7 +2004,7 @@ Number of meters for CPU monitor <a href="#" onclick="return false" title="This 
 		<tr>
 			<td>&nbsp;</td>
 			<td style="padding-top:4px;">
-	<input name="AutoItStayOnDesktop" type="checkbox" id="AutoItStayOnDesktop" value="checkbox" onclick="AutoItAutoPause.disabled=!this.checked; if (this.checked) {WallpaperAsBG.checked=true;IgnoreMouseEventsPartial.checked=false;} else {AutoItAutoPause.checked=false}" />
+	<input name="AutoItStayOnDesktop" type="checkbox" id="AutoItStayOnDesktop" value="checkbox" onclick="AutoItAutoPause.disabled=!this.checked || parentWindow.SA_topmost_window.WebKit_object.use_electron_as_wallpaper; if (this.checked) {WallpaperAsBG.checked=true;IgnoreMouseEventsPartial.checked=false;} else {AutoItAutoPause.checked=false}" />
 	<label id="L_AutoItStayOnDesktop_TEXT" for="AutoItStayOnDesktop">Stay on desktop (Electron) <a href="#" onclick="return false" title="System Animator can be configured to &quot;stay on desktop&quot; (wallpaper mode), covering the desktop wallpaper but behind the desktop icons. This feature resembles the once famous &quot;DreamScene&quot; and the recently popular &quot;Wallpaper Engine&quot; which allows videos and other types of 2D/3D animations as your ANIMATED wallpaper.\n\nNOTE: This features works on Electron and Windows only.">(?)</a></label>
 			</td>
 		</tr>
