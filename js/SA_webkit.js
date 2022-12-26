@@ -1,4 +1,4 @@
-// Webkit-to-IE emulation (2021-08-06)
+// Webkit-to-IE emulation (2022-12-27)
 
 var webkit_mode = true
 
@@ -629,6 +629,9 @@ this.xmlDoc = null
 
  ,"WScript.Shell": {
     ExpandEnvironmentStrings: function (name) {
+// fix an issue in opening settings on child animation as accessing process on that frame would crash the app
+if (is_SA_child_animation) return SA_topmost_window.System.Environment.getEnvironmentVariable(name);
+
 name = name.replace(/\%/g, "");
 return process.env[name];
     }
@@ -879,7 +882,14 @@ this.path = path
     }
   }
 
+ ,use_electron_as_wallpaper: true
  ,stay_on_desktop: function (stay, onended) {
+if (SA_topmost_window.WebKit_object.use_electron_as_wallpaper) {
+  webkit_electron_remote.getGlobal("electron_as_wallpaper")(!!stay);
+  if (onended) setTimeout(()=>{onended()}, 500);
+  return;
+}
+
 if (!FSO_OBJ.FileExists(System.Gadget.path + '\\au3\\on_desktop.exe') && !returnBoolean("AutoItRunAsAU3")) {
   alert('This feature is not available for XR Animator. For details, please refer to the following file.\n\nAT_SystemAnimator_v' + System.Gadget.version.replace(/\./g, '') + '.gadget/au3/note.txt');
   System.Gadget.Settings.writeString("AutoItStayOnDesktop", "");
@@ -934,6 +944,8 @@ if (onended)
     enabled: false
    ,process: null
    ,init: function () {
+if (SA_topmost_window.WebKit_object.use_electron_as_wallpaper) return;
+
 if ((self.MMD_SA && MMD_SA.MMD_started) || (!self.MMD_SA && loaded)) {
   this.run()
 }
