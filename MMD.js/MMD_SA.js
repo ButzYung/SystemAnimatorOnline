@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2022-12-21)
+// (2022-12-27)
 
 var use_full_spectrum = true
 
@@ -2401,7 +2401,7 @@ if (font_scale != 1) {
 }
 
 var context = canvas.getContext('2d');
-context.globalAlpha = MMD_SA_options.SpeechBubble_opacity || ((MMD_SA_options.WebXR && 0.75) || 1)
+context.globalAlpha = MMD_SA_options.SpeechBubble_opacity || ((MMD_SA_options.WebXR && (System._browser.overlay_mode > 1) && 0.75) || 1);
 context.font = "bold " + font_size + 'px ' + font
 context.textBaseline = 'top'
 
@@ -5716,7 +5716,26 @@ MMD_SA.Sprite = (function () {
     var sprite_obj_list = []
 
 
-MMD_SA_options.use_sprite=true
+MMD_SA_options.use_sprite=true;
+
+(function () {
+
+function thunder_onloop(animator) {
+// .numberOfTiles_extended is a trick to delay the start of the next loop by freezing the last frame
+  animator.numberOfTiles_extended = animator.numberOfTiles + 4 + random(12);
+// animator.speed (undefined by default) is a trick to adjust the individual animator speed at any time (onloop)
+  animator.speed = 0.5 + Math.random() * 1;
+
+  const rot = (((Math.random() > 0.5) ? 0 : 180) + (Math.random()-0.5) * 60) * Math.PI/180;
+  if (MMD_SA.THREEX.enabled) {
+    animator.parent.sprite.material.rotation = rot;
+  }
+  else {
+    animator.parent.sprite.rotation = rot;
+  }
+//console.log(animator.sprite.material.map.sourceFile)
+}
+
 var _hit_box_offset;
 window.addEventListener("jThree_ready",() => {
   _hit_box_offset = new THREE.Vector3();
@@ -5724,6 +5743,8 @@ window.addEventListener("jThree_ready",() => {
   MMD_SA_options.model_para_obj.SFX = [
 /*
 {
+
+      onloop: thunder_onloop,
 
       sprite:[
   {bone_ref:"頭", sticky:true, name:p, depth:3, scale:0.5},
@@ -5760,11 +5781,7 @@ MMD_SA_options.Dungeon.sound.audio_object_by_name["gura_reflect_op"].play()//THR
     var power_SFX = {
       id: "this_is_power",
 //      frame_range:[0,999],
-      onloop: function (animator) {
-animator.numberOfTiles_extended = animator.numberOfTiles + 4 + random(12)
-animator.parent.sprite.rotation = (((Math.random() > 0.5) ? 0 : 180) + (Math.random()-0.5) * 60) * Math.PI/180
-//console.log(animator.sprite.material.map.sourceFile)
-      },
+      onloop: thunder_onloop,
       sprite:[
   {bone_ref:"頭", sticky:true, name:"thunder_particle", depth:3, scale:0.5},
   {bone_ref:"上半身2", sticky:true, name:"thunder_particle", depth:3},
@@ -5925,6 +5942,8 @@ MMD_SA._force_motion_shuffle = true
     });
   }
 }
+
+})();
 
 
 // sprite animator START
@@ -6183,6 +6202,7 @@ function TextureObject(texture_obj) {
 
   this.texture = new THREE.Texture(this.canvas)
 //  if (use_THREEX) this.texture.wrapS = this.texture.wrapT = THREE.RepeatWrapping;
+  if (use_THREEX && MMD_SA.THREEX.use_VRM1) this.texture.encoding = THREE.sRGBEncoding;
   this.texture.needsUpdate = true
 }
 
@@ -6915,7 +6935,22 @@ obj_free.para = para
 // clear it, just in case it was a HP bar or something that didn't animate
 obj_free.texture_obj = null
 
-obj_free.sprite.material.blending = (ss.blending) ? THREE[ss.blending.charAt(0).toUpperCase() + ss.blending.substring(1).toLowerCase() + 'Blending'] : THREE.NormalBlending
+if (ss.blending) {
+  if ((ss.blending == 'additive') && MMD_SA.THREEX.enabled) {
+// https://threejs.org/docs/index.html#api/en/constants/CustomBlendingEquations
+    obj_free.sprite.material.blending = THREE.CustomBlending;
+    obj_free.sprite.material.blendEquation = THREE.MaxEquation;
+//obj_free.sprite.material.blendSrc = THREE.SrcAlphaFactor;
+//obj_free.sprite.material.blendDst = THREE.OneMinusSrcAlphaFactor;
+  }
+  else {
+    obj_free.sprite.material.blending = THREE[ss.blending.charAt(0).toUpperCase() + ss.blending.substring(1).toLowerCase() + 'Blending'];
+  }
+}
+else {
+  obj_free.sprite.material.blending = THREE.NormalBlending;
+}
+
 obj_free.sprite.material.depthTest = (para.depth != null)
 obj_free.sprite.material.map = texture
 
@@ -6931,7 +6966,7 @@ if (obj_needs_reset) {
     obj_free.animator = new SpriteAnimator(obj_free)
   obj_free.animator.reset(ss)
 }
-obj_free.animator.tileDisplayDuration = para.frame_interval || (ss.frame_interval / (para.speed || 1))
+obj_free.animator.tileDisplayDuration = para.frame_interval || (ss.frame_interval / (obj_free.animator.speed || para.speed || 1));
 
 return obj_free
   }
@@ -7329,11 +7364,11 @@ const pos = new THREE.Vector3().setFromMatrixPosition(bone_matrix);
 
 if (local_only) {
   if (!is_MMD_dummy)
-    pos.sub(this.mesh.position)
+    pos.sub(this.mesh.position).applyQuaternion(q1.copy(this.mesh.quaternion).conjugate());
 }
 else {
   if (is_MMD_dummy)
-    pos.add(this.mesh.position)
+    pos.applyQuaternion(this.mesh.quaternion).add(this.mesh.position);
 }
 
 return pos;
@@ -7543,6 +7578,9 @@ if (use_VRM1) {
 // https://github.com/pixiv/three-vrm/blob/dev/docs/migration-guide-1.0.md
 // In VRM1.0, linear workflow is explicitly recommended, as GLTFLoader recommends.
   data.renderer.outputEncoding = THREEX.sRGBEncoding;
+
+// https://threejs.org/docs/#manual/en/introduction/Color-management
+  THREEX.ColorManagement.legacyMode = false;
 
 // Install GLTFLoader plugin
   GLTF_loader.register((parser) => {
@@ -7891,11 +7929,9 @@ if (!animation_enabled || System._browser.camera.poseNet.enabled) {
 const eye_bone = bones_by_name['両目']
 const eyeL = this.getBoneNode('leftEye')
 const eyeR = this.getBoneNode('rightEye')
-if (eyeL && eyeR) {
-  q1.set(0,0,0,1).slerp(eye_bone.quaternion, 0.5);
-  eyeL.quaternion.premultiply(this.process_rotation(q2.copy(q1), 'leftEye'));
-  eyeR.quaternion.premultiply(this.process_rotation(q2.copy(q1), 'rightEye'));
-}
+q1.set(0,0,0,1).slerp(eye_bone.quaternion, 0.5);
+if (eyeL) eyeL.quaternion.premultiply(this.process_rotation(q2.copy(q1), 'leftEye')).slerp(q2.set(0,0,0,1), 0.5);
+if (eyeR) eyeR.quaternion.premultiply(this.process_rotation(q2.copy(q1), 'rightEye')).slerp(q2.set(0,0,0,1), 0.5);
 
 // bone END
 
@@ -10989,15 +11025,10 @@ console.log("three.core.min.js")
 
  ,"jThree/index.js"
 
-// ,"jThree/plugin/TypedArrayUtils.js"
-
-// ,"jThree/plugin/jThree.Stats.min.js"
-
-// ,"jThree/plugin/three_BufferGeometryUtils.js"
-// ,"jThree/plugin/three_ArrowHelper.js"
-
 // ,"jThree/three.ShaderParticles.js"
 // ,"jThree/three.SPE.js"
+
+  ,"js/one_euro_filter.js"
     );
   }
 
