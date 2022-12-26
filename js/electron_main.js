@@ -1,5 +1,5 @@
 // SA Electron - Main EXTENDED
-// (2022-12-21)
+// (2022-12-27)
 
 /*
 eval on Electron v1.6.x has some scope issues/bugs which makes the global variables on this script inaccessible inside functions.
@@ -200,6 +200,7 @@ if (!c_json)
 
 if (c_json) {
 //electron.dialog.showMessageBox(null, {type:"question", buttons:["OK", "Cancel"], defaultId:1, message:SA_HTA_folder+'\n\n'+c_js+'|'+!!c_js+'\n'+JSON.stringify(c_json)+'\n'+JSON.stringify(SA_project_JSON) });
+// NOTE: .is_transparent should always be false for "Stay on desktop" mode, even when electron-as-wallpaper is used (.transparent doesn't help as the background is still black)
   if (c_json.DisableTransparency || c_json.AutoItStayOnDesktop) {
     global.is_transparent = false
   }
@@ -250,6 +251,10 @@ webPreferences: webPreferences_default,
     mainWindow.on("restore", function () {
       webContents.send('window_hidden', false);
     });
+  });
+
+  mainWindow.on("close", function () {
+    global.electron_as_wallpaper();
   });
 
   // Open the DevTools.
@@ -764,9 +769,51 @@ ipcMain.on('getGlobal', (event, name, arg1) => {
   }
 })
 
-global.is_transparent = true
-global.is_natural_opaque = false
-global.WallpaperEngine_mode = false
+global.is_transparent = true;
+global.is_natural_opaque = false;
+global.WallpaperEngine_mode = false;
+
+global.electron_as_wallpaper = (function () {
+  const e = {};
+
+  let attached;
+
+  let initialized;
+  function init() {
+    if (initialized) return;
+    initialized = true;
+
+    const {attach, detach, refresh} = require('electron-as-wallpaper/node_modules/electron-as-wallpaper/dist/index');
+    e.attach = attach;
+    e.detach = detach;
+    e.refresh = refresh;
+  }
+
+  return function (attach) {
+    if (!attach && !attached) return;
+
+try {
+    init();
+
+    if (attach === true) {
+      if (!attached) {
+        attached = true;
+        e.attach(mainWindow, { transparent:global.is_transparent });
+      }
+    }
+    else if (attach === false) {
+      if (attached) {
+        attached = false;
+        e.detach(mainWindow);
+        e.refresh();
+      }
+    }
+    else {
+      e.refresh();
+    }
+} catch (err) {};
+  }
+})();
 
 global.path_demo = (function () {
   var path_demo, path_demo_by_url
@@ -846,7 +893,12 @@ global.update_tray = function (para) {
     contextMenu.items[menu_item_index['Stay on desktop']].checked = para.stay_on_desktop
     contextMenu.items[menu_item_index['Click-thru']].enabled = !para.stay_on_desktop// || global.WallpaperEngine_mode
     contextMenu.items[menu_item_index['Always on top']].enabled = !para.stay_on_desktop
-    contextMenu.items[menu_item_index['Auto pause']].enabled = para.stay_on_desktop
+    if (para.use_electron_as_wallpaper) {
+      contextMenu.items[menu_item_index['Auto pause']].visible = false;
+    }
+    else {
+      contextMenu.items[menu_item_index['Auto pause']].enabled = para.stay_on_desktop;
+    }
     contextMenu_opacity.items[menu_item_index['50% on hover']].enabled = !para.stay_on_desktop
   }
   if ("auto_pause" in para)
