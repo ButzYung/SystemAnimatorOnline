@@ -64,7 +64,7 @@ After the page has been fully loaded, click on the little phone button on the to
 
 # AR Selfie
 
-XR　Animator also supports the AR selfie feature, using both the frond camera (for AR) and the "selfie" camera, allowing you to take a selfie with the 3D avatar in AR mode.
+XR Animator also supports the AR selfie feature, using both the frond camera (for AR) and the "selfie" camera, allowing you to take a selfie with the 3D avatar in AR mode.
 
 Before you enter the AR mode, you need to click the Selfie icon and enable the Selfie mode first. Then you can toggle the Selfie mode at any time during the AR session. By default, Miku is always displayed in front of you in Selfie mode. Click the "BodyPix AI" icon to enable the AI mode, which detects your shape inside the camera, allowing Miku to blend into the background and appear to be behind you. Note that the AI mode is SLOW. You will probably need the latest Android phone to get a smooth frame rate.
 
@@ -80,8 +80,7 @@ Lastly, click the Snapshot icon and a still photo will be generated. This can be
 
 - [Donate via PayPal.Me](https://www.paypal.me/AnimeThemeGadgets)
 
-- Donate via Bitcoin
-  1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p
+- Donate via Bitcoin ( 1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p )
 
 # About System Animator
 
