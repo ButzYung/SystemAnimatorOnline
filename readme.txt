@@ -74,13 +74,13 @@ Lastly, click the Snapshot icon and a still photo will be generated. This can be
 
 [Check out the following YouTube video](https://youtu.be/TIMPqV9lVH8) for demonstration.
 
-# Donation:
+# Donation
 
   XR Animator inherits from System Animator, a project in which I have been working on for many years. While both XR Animator and System Animator is free, lots of time, efforts and money have been spent to keep this project running. If you like our works, please consider making a donation. Your financial support is needed to keep us going!🙏
 
-- [Donate via PayPal.Me](https://www.paypal.me/AnimeThemeGadgets)
+### 🙏 [Donate via PayPal.Me](https://www.paypal.me/AnimeThemeGadgets) 🙏
 
-- Donate via Bitcoin ( 1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p )
+### 🪙 Donate via Bitcoin ( 1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p ) 🪙
 
 # About System Animator
 
