@@ -12,11 +12,11 @@ It has a variety of motion tracking options. You can choose to track the face, f
 
 The online version works on all major web browsers both on desktop and smartphone. On browsers supporting both web worker and OffscreenCanvas (e.g. Chrome), it can achieve 60fps visual rendering and 30fps body pose detection on a medicore PC. On smartphones with limited processing power, you may want to use limit its usage on face tracking.
 
-### 🌐 [XR Animator - Online version](https://sao.animetheme.com/XR_Animator.html) 🌐
+### 🌐[XR Animator - Online version](https://sao.animetheme.com/XR_Animator.html)
 
 The Windows app version (powered by [Electron](https://www.electronjs.org/)) is also availabe for download, which provides a few extra features (e.g. VMC-protocol, transparent background) available only in a native-OS environment.
 
-### 🖥️ [XR Animator - Windows app version](https://github.com/ButzYung/SystemAnimatorOnline/releases) 🖥️
+### 🖥️[XR Animator - Windows app version](https://github.com/ButzYung/SystemAnimatorOnline/releases)
 
 # Features
 
@@ -74,13 +74,13 @@ Lastly, click the Snapshot icon and a still photo will be generated. This can be
 
 [Check out the following YouTube video](https://youtu.be/TIMPqV9lVH8) for demonstration.
 
-# Donation
+# ❤️Donation
 
-  XR Animator inherits from System Animator, a project in which I have been working on for many years. While both XR Animator and System Animator is free, lots of time, efforts and money have been spent to keep this project running. If you like our works, please consider making a donation. Your financial support is needed to keep us going!🙏
+XR Animator inherits from System Animator, my desktop gadget project which have been active for many years. Lots of time, efforts and money have been spent to keep these projects free and running. If you like our works, please consider making a donation. Your financial support is needed to keep us going!🙏
 
-### 🙏 [Donate via PayPal.Me](https://www.paypal.me/AnimeThemeGadgets) 🙏
+### 🙏[Donate via PayPal.Me](https://www.paypal.me/AnimeThemeGadgets)
 
-### 🪙 Donate via Bitcoin ( 1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p ) 🪙
+### 🟡Donate via Bitcoin ( 1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p )
 
 # About System Animator
 
