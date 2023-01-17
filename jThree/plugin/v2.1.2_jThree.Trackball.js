@@ -30,7 +30,7 @@
  * Date: 2015-02-25
  */
 // AT: customizations
-// (2022-12-20)
+// (2023-01-17)
 
 THREE.TrackballControls = function ( object, domElement ) {
 
@@ -786,8 +786,8 @@ THREE.TrackballControls.prototype = {
 	},
 
 	resize: function () {
-
-		if ( this.domElement === document ) {
+// AT: save some headache for browser mode, assuming that 3D is always using the full window
+		if (true) {// this.domElement === document ) {
 
 			this.screen.left = 
 			this.screen.top = 0;

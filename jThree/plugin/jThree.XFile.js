@@ -1,4 +1,4 @@
-// (2022-12-20)
+// (2023-01-17)
 
 /*!
  * jThree.XFile.js JavaScript Library v1.1
@@ -104,7 +104,7 @@ TextureLoader: function ( url, mapping, onLoad, onError ,para ) {
 // AT: texture_resolution_limit
 if (para && para.texture_resolution_limit) image._texture_resolution_limit = para.texture_resolution_limit;
 		var texture = new THREE.Texture( image, mapping );
-if (MMD_SA.THREEX.enabled && MMD_SA.THREEX.use_VRM1) texture.encoding = THREE.sRGBEncoding;
+if (MMD_SA.THREEX.enabled && MMD_SA.THREEX.use_sRGBEncoding) texture.encoding = THREE.sRGBEncoding;
 
 // always use the old THREE version loader to take advantage of the zip loading and other SA-specific feature
 		var loader = new self.THREE.ImageLoader();

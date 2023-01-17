@@ -1,4 +1,4 @@
-// (2022-12-20)
+// (2023-01-17)
 
 /*!
  * jThree JavaScript Library v2.1.2
@@ -2247,6 +2247,12 @@ window.addEventListener("jThree_ready", function () {matrix = new THREE.Matrix4(
 };
 
 THREE.Vector3.prototype.setFromMatrixPosition = THREE.Vector3.prototype.getPositionFromMatrix;
+THREE.Vector3.prototype.setScalar = function (v) {
+  this.x = v;
+  this.y = v;
+  this.z = v;
+  return this;
+};
 
 THREE.Euler = THREE.Vector3;
 THREE.Euler.prototype._order = 'XYZ';
@@ -11069,6 +11075,9 @@ THREE.Mesh = function ( geometry, material ) {
 };
 
 THREE.Mesh.prototype = Object.create( THREE.Object3D.prototype );
+
+// AT: THREEX
+THREE.Mesh.prototype.isMesh = true;
 
 THREE.Mesh.prototype.setGeometry = function ( geometry ) {
 
@@ -38918,7 +38927,8 @@ if (self.MMD_SA && that.id) { MMD_SA._j3_obj_by_id[that.id] = obj; }
 
 					var mesh = getObj( this );
 					mesh.material.dispose();
-					mesh.material = getObj( mtlDom[ 0 ] ).clone();
+//console.log(this, mesh, mtlDom, mtlDom[ 0 ], mtlDom.selector)
+					mesh.material = (getObj( mtlDom[ 0 ] ) || MMD_SA.THREEX.mesh_obj.get_three(mtlDom.selector)).clone();
 
 					if ( mesh instanceof THREE.Sprite ) {
 						mesh.material.useScreenCoordinates = false;

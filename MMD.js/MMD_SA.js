@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2022-12-27)
+// (2023-01-17)
 
 var use_full_spectrum = true
 
@@ -330,7 +330,7 @@ vo.audio_onended = function (e) {
 
 Audio_BPM.checkWinamp(vo)
 
-DragDrop_RE = eval('/\\.(' + DragDrop_RE_default_array.concat(["vmd", "bvh", "mp3", "wav", "aac", "zip", "vrm", "fbx", "json"]).join("|") + ')$/i')
+DragDrop_RE = eval('/\\.(' + DragDrop_RE_default_array.concat(["vmd", "bvh", "mp3", "wav", "aac", "zip", "json", "vrm", "fbx", "gltf", "glb"]).join("|") + ')$/i')
 
 DragDrop.onDrop_finish = function (item) {
   var src = item.path
@@ -352,8 +352,13 @@ new self.JSZip().loadAsync(zip_file, {
 // will be called, even if content is corrupted
 //console.log(999,src)
 
-  SA_topmost_window.DragDrop._zip_by_url = SA_topmost_window.DragDrop._zip_by_url || {}
-  SA_topmost_window.DragDrop._zip_by_url[src] = zip
+  if (!MMD_SA.MMD_started) {
+    SA_topmost_window.DragDrop._zip_by_url = SA_topmost_window.DragDrop._zip_by_url || {};
+    SA_topmost_window.DragDrop._zip_by_url[src] = zip;
+  }
+  else {
+    XMLHttpRequestZIP.zip_by_url(src, zip);
+  }
 
   var files_added
   var music_list = zip.file(/[^\/\\]+.(mp3|wav|aac)$/i)
@@ -591,6 +596,9 @@ MMD_SA._click_to_reset = null;
 //console.log(clip)
       DEBUG_show('(FBX motion ready)', 2)
     } );
+  }
+  else if (item.isFileSystem && /([^\/\\]+)\.(gltf|glb)$/i.test(src)) {
+    return;
   }
   else if (item.isFolder) {
     Audio_BPM.play_list.drop_folder(item)
@@ -1518,7 +1526,7 @@ if (this.use_jThree) {
 
  ,motion_player_control: (function () {
     function time_update() {
-if (motion_index != THREE.MMD.getModels()[0].skin._motion_index) {
+if (MMD_SA._force_motion_shuffle || (motion_index != THREE.MMD.getModels()[0].skin._motion_index)) {
   MMD_SA.motion_player_control.enabled = false;
   return;
 }
@@ -1541,9 +1549,10 @@ if (enabled) {
   SL_MC_simple_mode = true;
   SL_MC_video_obj = this;
   SL_MC_Place(1, 0,-64);
-  System._browser.on_animation_update.add(time_update, 0,1,-1);
+  System._browser.on_animation_update.add(time_update, 1,1,-1);
 }
 else {
+  if (this.paused) this.play();
   SL_MC_Place(-1);
   System._browser.on_animation_update.remove(time_update, 1);
 }
@@ -2180,6 +2189,9 @@ return this.MME_shader_fshader[name]
  ,GOML_head: ""
  ,GOML_scene: ""
 
+ ,GOML_head_list: []
+ ,GOML_scene_list: []
+
 // speech bubble START
  ,SpeechBubble: (function () {
     var bb_cache = {}
@@ -2362,8 +2374,22 @@ var b = this.bubbles[bubble_index]
 
 msg = this.msg.replace(/\{\{(.+?)\}\}/g, function (match, p1) { return eval(p1) })
 
-var canvas = this._canvas
-canvas.width = canvas.height = b.image.width;
+var canvas = this._canvas;
+var context = this._context;
+if (!context) {
+  context = this._context = canvas.getContext('2d');
+// NOTE: In THREEX, texture's dimension has to be fixed once initialized
+  let w_max = 0, h_max = 0;
+  this.bubbles.forEach(b=>{
+    w_max = Math.max(b.image.width);
+    h_max = Math.max(b.image.height);
+  });
+  canvas.width = w_max;
+  canvas.height = h_max;
+}
+else {
+  context.clearRect(0,0,canvas.width,canvas.height);
+}
 
 // CJK detection
 // http://stackoverflow.com/questions/1366068/whats-the-complete-range-for-chinese-characters-in-unicode
@@ -2400,7 +2426,6 @@ if (font_scale != 1) {
   column_max = parseInt(column_max/font_scale)
 }
 
-var context = canvas.getContext('2d');
 context.globalAlpha = MMD_SA_options.SpeechBubble_opacity || ((MMD_SA_options.WebXR && (System._browser.overlay_mode > 1) && 0.75) || 1);
 context.font = "bold " + font_size + 'px ' + font
 context.textBaseline = 'top'
@@ -2452,23 +2477,29 @@ if ((msg.length > column_max) && ((para.auto_wrap || b.auto_wrap) || (msg.indexO
     end = Math.min(msg.length-ini, char_count)
     var line = msg.substr(ini, end).replace(/^\n+/, function (match) { ini += match.length; end -= match.length; return ""; })
     if (/(\n+)/.test(line)) {
-      var break_index = line.indexOf(RegExp.$1)
+      const break_index = line.indexOf(RegExp.$1);
 //DEBUG_show(break_index,0,1)
       msg_line[i] = msg.substr(ini, break_index)
       ini += break_index + RegExp.$1.length
       continue
     }
     if (/^(\s)/.test(line)) {
-      var s_length = RegExp.$1.length
+      const s_length = RegExp.$1.length
       ini += s_length
       end -= s_length
     }
 
-    var tail_length = 5
+    if (para.no_word_break && (ini+end < msg.length)) {
+      if (/^([^\s]+)/.test(msg.substring(ini+end-1))) {
+        end += RegExp.$1.length;
+      }
+    }
+
+    var tail_length = 5;
     if ((ini+end < msg.length) && (end > tail_length*2)) {
-      var msg_tail = msg.substr(ini+end-tail_length, tail_length)
+      let msg_tail = msg.substr(ini+end-tail_length, tail_length);
       if (/(\s+)/.test(msg_tail)) {
-        var break_index = msg_tail.indexOf(RegExp.$1) + (end-tail_length)
+        const break_index = msg_tail.indexOf(RegExp.$1) + (end-tail_length);
         msg_line[i] = msg.substr(ini, break_index)
         ini += break_index + RegExp.$1.length
         continue
@@ -2520,8 +2551,8 @@ for (var i = 0, i_length = msg_line.length; i < i_length; i++) {
     if (MMD_SA_options.SpeechBubble_branch.RE.test(msg_line[i]))
       branch_index = RegExp.$1
     let fillStyle = (branch_index > -1) ? MMD_SA_options.SpeechBubble_branch.fillStyle || 'Navy' : 'black';
-    if (MMD_SA_options.SpeechBubble_branch.confirm_keydown && (MMD_SA.SpeechBubble._branch_key_ != null)) {
-      if ((branch_index > -1) && (branch_index == MMD_SA.SpeechBubble._branch_key_)) {
+    if (MMD_SA_options.SpeechBubble_branch.confirm_keydown && (this._branch_key_ != null)) {
+      if ((branch_index > -1) && (branch_index == this._branch_key_)) {
         fillStyle = 'red'
       }
     }
@@ -4156,7 +4187,7 @@ THREE.MMD.getModels().forEach(function (model, idx) {
 
 MMD_SA_options.x_object.forEach(function (x_object, idx) {
   var obj = x_object._obj
-  var mesh = obj.children[0]
+  var mesh = ((obj.children.length==1) && (obj.children[0].children.length==0) && obj.children[0]) || obj;
 
   var cs = !!mesh.castShadow
   var rs = !!mesh.receiveShadow
@@ -4164,7 +4195,6 @@ MMD_SA_options.x_object.forEach(function (x_object, idx) {
   obj.receiveShadow = mesh.receiveShadow = enabled && !!x_object.receiveShadow;
 
   if (/*(cs != mesh.castShadow) || */(rs != mesh.receiveShadow)) {
-//DEBUG_show(idx,0,1)
     mesh.material.materials.forEach(function (m) {
       m.needsUpdate = true;
     });
@@ -5363,6 +5393,47 @@ return Promise.all([
 ]);
   }
 
+ ,adjust_camera: (function () {
+    var c_pos, c_target;
+    var pos_last, target_last;
+
+    window.addEventListener('jThree_ready', ()=>{
+      c_pos = new THREE.Vector3();
+      c_target = new THREE.Vector3();
+      pos_last = new THREE.Vector3();
+      target_last = new THREE.Vector3();
+
+      window.addEventListener('MMDCameraReset', ()=>{
+        pos_last.set(0,0,0);
+        target_last.set(0,0,0);
+      });
+    });
+
+    return function (pos, target) {
+if (!MMD_SA.MMD_started) return;
+
+var obj = MMD_SA._trackball_camera;
+c_pos.copy(obj.object.position).sub(pos_last);
+c_target.copy(obj.target).sub(target_last);
+
+if (pos) {
+  obj.object.position.copy(c_pos).add(pos);
+  pos_last.copy(pos);
+}
+if (target) {
+  obj.target.copy(c_target).add(target);
+  target_last.copy(target);
+}
+
+return [c_pos, c_target];
+    };
+  })()
+
+ ,get_bounding_host: function (obj) {
+// MMD model || X || THREEX model
+return obj.geometry || ((obj.children.length==1) && (obj.children[0].children.length==0) && obj.children[0].geometry) || obj;
+  }
+
 // temp stuff
  ,_readVector_scale: 1
  ,_mouse_pos_3D: []
@@ -6202,7 +6273,7 @@ function TextureObject(texture_obj) {
 
   this.texture = new THREE.Texture(this.canvas)
 //  if (use_THREEX) this.texture.wrapS = this.texture.wrapT = THREE.RepeatWrapping;
-  if (use_THREEX && MMD_SA.THREEX.use_VRM1) this.texture.encoding = THREE.sRGBEncoding;
+  if (use_THREEX && MMD_SA.THREEX.use_sRGBEncoding) this.texture.encoding = THREE.sRGBEncoding;
   this.texture.needsUpdate = true
 }
 
@@ -7117,52 +7188,6 @@ else
 
 MMD_SA.THREEX = (function () {
 
-  function init_on_jThree_ready() {
-const THREE = MMD_SA.THREEX.THREEX;
-
-v1 = new THREE.Vector3();
-v2 = new THREE.Vector3();
-v3 = new THREE.Vector3();
-v4 = new THREE.Vector3();
-
-q1 = new THREE.Quaternion();
-q2 = new THREE.Quaternion();
-q3 = new THREE.Quaternion();
-q4 = new THREE.Quaternion();
-
-e1 = new THREE.Euler();
-e2 = new THREE.Euler();
-e3 = new THREE.Euler();
-e4 = new THREE.Euler();
-
-m1 = new THREE.Matrix4();
-m2 = new THREE.Matrix4();
-m3 = new THREE.Matrix4();
-m4 = new THREE.Matrix4();
-
-// 37.4224, 35
-rot_arm_axis[ 1] = new THREE.Quaternion().setFromEuler(e1.set(0,0,37.4224/180*Math.PI));
-rot_arm_axis[-1] = rot_arm_axis[ 1].clone().conjugate();
-
-rot_shoulder_axis[ 1] = new THREE.Quaternion().setFromEuler(e1.set(0,0,5/180*Math.PI));
-rot_shoulder_axis[-1] = rot_shoulder_axis[ 1].clone().conjugate();
-  }
-
-  function init_on_MMDStarted() {
-const THREE = MMD_SA.THREEX.THREEX;
-
-_THREE.MMD.getModels().forEach((model,i)=>{
-  var bones_by_name = model.mesh.bones_by_name
-  var model_para = MMD_SA_options.model_para_obj_all[i]
-
-  model_para._hip_pos = v1.fromArray(bones_by_name['上半身'].pmxBone.origin).add(v2.fromArray(bones_by_name['下半身'].pmxBone.origin)).multiplyScalar(0.5).toArray();
-  model_para._hip_offset = {};
-  model_para._hip_offset['センター'] = v1.fromArray(model_para._hip_pos).sub(v2.fromArray(bones_by_name['センター'].pmxBone.origin)).toArray();
-  model_para._hip_offset['グルーブ'] = v1.fromArray(model_para._hip_pos).sub(v2.fromArray(bones_by_name['グルーブ'].pmxBone.origin)).toArray();
-  model_para._hip_offset['腰'] = v1.fromArray(model_para._hip_pos).sub(v2.fromArray(bones_by_name['腰'].pmxBone.origin)).toArray();
-});
-  }
-
   function init() {
 data.scene = new THREE.Scene();
 data.renderer = new THREE.WebGLRenderer({
@@ -7240,6 +7265,64 @@ else {
 }
   }
 
+  const init_on_jThree_ready = (function () {
+    var initialized;
+    return function () {
+if (initialized) return;
+initialized = true;
+
+const THREE = MMD_SA.THREEX.THREEX;
+
+v1 = new THREE.Vector3();
+v2 = new THREE.Vector3();
+v3 = new THREE.Vector3();
+v4 = new THREE.Vector3();
+
+q1 = new THREE.Quaternion();
+q2 = new THREE.Quaternion();
+q3 = new THREE.Quaternion();
+q4 = new THREE.Quaternion();
+
+e1 = new THREE.Euler();
+e2 = new THREE.Euler();
+e3 = new THREE.Euler();
+e4 = new THREE.Euler();
+
+m1 = new THREE.Matrix4();
+m2 = new THREE.Matrix4();
+m3 = new THREE.Matrix4();
+m4 = new THREE.Matrix4();
+
+// 37.4224, 35
+rot_arm_axis[ 1] = new THREE.Quaternion().setFromEuler(e1.set(0,0,37.4224/180*Math.PI));
+rot_arm_axis[-1] = rot_arm_axis[ 1].clone().conjugate();
+
+rot_shoulder_axis[ 1] = new THREE.Quaternion().setFromEuler(e1.set(0,0,5/180*Math.PI));
+rot_shoulder_axis[-1] = rot_shoulder_axis[ 1].clone().conjugate();
+    };
+  })();
+
+  const init_on_MMDStarted = (function () {
+    var initialized;
+    return function () {
+if (initialized) return;
+initialized = true;
+
+const THREE = MMD_SA.THREEX.THREEX;
+
+_THREE.MMD.getModels().forEach((model,i)=>{
+  var bones_by_name = model.mesh.bones_by_name
+  var model_para = MMD_SA_options.model_para_obj_all[i]
+
+  model_para._hip_pos = v1.fromArray(bones_by_name['上半身'].pmxBone.origin).add(v2.fromArray(bones_by_name['下半身'].pmxBone.origin)).multiplyScalar(0.5).toArray();
+  model_para._hip_offset = {};
+  model_para._hip_offset['センター'] = v1.fromArray(model_para._hip_pos).sub(v2.fromArray(bones_by_name['センター'].pmxBone.origin)).toArray();
+  model_para._hip_offset['グルーブ'] = v1.fromArray(model_para._hip_pos).sub(v2.fromArray(bones_by_name['グルーブ'].pmxBone.origin)).toArray();
+  model_para._hip_offset['腰'] = v1.fromArray(model_para._hip_pos).sub(v2.fromArray(bones_by_name['腰'].pmxBone.origin)).toArray();
+});
+    };
+  })();
+
   const model_obj = (function () {
     class animation {
       #_enabled = false;
@@ -7259,6 +7342,7 @@ this.#_enabled = !!v;
 const THREE = MMD_SA.THREEX.THREE;
 
 if (v) {
+  this._motion_index = _THREE.MMD.getModels()[this.model.index].skin._motion_index;
   this.play();
 }
 else {
@@ -7602,18 +7686,18 @@ rot_parent_upper_body_offset = new THREE.Quaternion();
 //        vrm_list.sort((a,b)=>a.index-b.index);
 
         vrm_list.forEach(vrm=>{
-vrm.boundingBox = VRM.computeBoundingBox(vrm.model.scene);
+vrm.boundingBox = threeX.utils.computeBoundingBox(vrm.model.scene);
 vrm.boundingBox.min.multiplyScalar(vrm_scale);
 vrm.boundingBox.max.multiplyScalar(vrm_scale);
 
-vrm.boudningSphere = vrm.boundingBox.getBoundingSphere(new THREE.Sphere());
+vrm.boundingSphere = vrm.boundingBox.getBoundingSphere(new THREE.Sphere());
 if (MMD_SA_options.Dungeon)
   MMD_SA_options.Dungeon.utils.adjust_boundingBox(vrm);
 
 const MMD_geo = _THREE.MMD.getModels()[vrm.index].mesh.geometry;
 MMD_geo.boundingBox = new _THREE.Box3().copy(vrm.boundingBox);
 MMD_geo.boundingBox_list = [MMD_geo.boundingBox];
-MMD_geo.boundingSphere = new _THREE.Sphere().copy(vrm.boudningSphere);
+MMD_geo.boundingSphere = new _THREE.Sphere().copy(vrm.boundingSphere);
 
 if (MMD_SA_options.Dungeon)
   MMD_SA_options.Dungeon.character.boundingBox = MMD_geo.boundingBox.clone();
@@ -7767,6 +7851,17 @@ mesh.matrixAutoUpdate = false
 
 const vrm = this.model
 const VRMSchema = THREE.VRMSchema
+
+if (this.animation._motion_index != null) {
+  if (this.animation.enabled) {
+    if (this.animation._motion_index != _THREE.MMD.getModels()[this.index].skin._motion_index)
+      this.animation.enabled = false;
+  }
+  else {
+    if (this.animation._motion_index == _THREE.MMD.getModels()[this.index].skin._motion_index)
+      this.animation.enabled = true;
+  }
+}
 
 const animation_enabled = this.animation.enabled;
 
@@ -8332,17 +8427,6 @@ Object.keys(rig_map).forEach(name=>{
 return rig_map;
       },
 
-      computeBoundingBox: function (obj) {
-const bb = new THREE.Box3();
-
-obj.traverse(c => {
-  if (c.isMesh && c.geometry)
-    c.geometry.boundingBox && bb.union(c.geometry.boundingBox);
-});
-
-return bb;
-      },
-
       load: async function (url, para) {
 MMD_SA.fn.load_length_extra++
 
@@ -8391,18 +8475,39 @@ var vrm_obj = new VRM_object(para.vrm_index, vrm, { url:url_raw });
 
 if (!vrm_obj.is_VRM1) mesh_obj.quaternion.set(0,1,0,0);
 
-if (data.OutlineEffect) {
+if (data.OutlineEffect && VRM.use_OutlineEffect) {
   mesh_obj.traverseVisible(obj=>{
     if (obj.isMesh) obj.userData.outlineParameters = { visible: true };
   });
 }
 
 // fix a bug in VRM physics when the mesh is scaled
-if (vrm_scale != 1) vrm.springBoneManager.setCenter(mesh_obj);
+if (vrm_scale != 1) {
+  mesh_obj.scale.set(vrm_scale, vrm_scale, vrm_scale);
 
-mesh_obj.scale.set(vrm_scale, vrm_scale, vrm_scale);
-//vrm.springBoneManager.reset();
-//vrm.springBoneManager.setInitState();
+  if (!use_VRM1) {
+    vrm.springBoneManager.setCenter(mesh_obj);
+  }
+  else {
+// scale joints
+    for ( const joint of vrm.springBoneManager.joints ) {
+      joint.settings.stiffness *= vrm_scale;
+      joint.settings.hitRadius *= vrm_scale;
+    }
+
+// scale colliders
+    for ( const collider of vrm.springBoneManager.colliders ) {
+      const shape = collider.shape;
+      if ( shape instanceof THREE.VRMSpringBoneColliderShapeCapsule ) {
+        shape.radius *= vrm_scale;
+        shape.tail.multiplyScalar( vrm_scale );
+      } else if ( shape instanceof THREE.VRMSpringBoneColliderShapeSphere ) {
+        shape.radius *= vrm_scale;
+      }
+    }
+  }
+}
+
 
 var obj = Object.assign({
   data: vrm_obj,
@@ -8470,6 +8575,8 @@ else {
   var rot_arm_axis = {};
   var rot_shoulder_axis = {};
 
+  var use_OutlineEffect;
+
   var threeX  = {
 
     data: data,
@@ -8490,6 +8597,8 @@ SLX.style.visibility = ( enabled) ? 'inherit' : 'hidden';
 
     get THREE() { return (this.enabled) ? THREE : self.THREE; },
 
+    get _THREE() { return (this.enabled) ? _THREE : self.THREE; },
+
     get THREEX() { return THREE; },
 
     get obj_list() { return obj_list; },
@@ -8500,6 +8609,13 @@ SLX.style.visibility = ( enabled) ? 'inherit' : 'hidden';
     get scene() { return (this.enabled) ? data.scene : MMD_SA.scene; },
 
     get use_VRM1() { return use_VRM1; },
+
+    get use_sRGBEncoding() { return use_VRM1; },
+
+    get use_OutlineEffect() { return data.OutlineEffect && (use_OutlineEffect || VRM.use_OutlineEffect); },
+    set use_OutlineEffect(v) { use_OutlineEffect = v; },
+
+    get models() { return models; },
 
     get_model: function (index) { return models[index]; },
 
@@ -8512,16 +8628,17 @@ for (let i = 0; i < MMD_SA_options.model_path_extra.length+1; i++) {
 }
 // common init END
 
-if (!this.enabled) return Promise.resolve()
-
 if (loaded) {
-  init()
-  return Promise.resolve()
+  init();
+  return Promise.resolve();
 }
 
 if ((MMD_SA_options.model_path != MMD_SA_options.model_path_default) || (!MMD_SA_options.THREEX_options.model_path && !MMD_SA_options.THREEX_options.enabled_by_default)) {
-  this.enabled = false
-  return Promise.resolve()
+  this.enabled = false;
+}
+
+if (!this.enabled) {
+  return (MMD_SA_options.Dungeon_options && MMD_SA_options.Dungeon.use_octree) ? this.utils.load_octree() : Promise.resolve();
 }
 
 if (!MMD_SA_options.THREEX_options.model_path) {
@@ -8587,6 +8704,8 @@ else {
 THREE = self.THREEX = self.THREE
 self.THREE = _THREE
 
+if (MMD_SA_options.Dungeon_options && MMD_SA_options.Dungeon.use_octree) await this.utils.load_octree();
+
 
 // extend three-vrm START
 // three.vrm 1.0
@@ -8630,6 +8749,22 @@ THREE.Quaternion.prototype.toAxisAngle = function () {
 THREE.Euler.prototype.multiplyScalar = THREE.Vector3.prototype.multiplyScalar;
 THREE.Euler.prototype.add = THREE.Vector3.prototype.add;
 THREE.Euler.prototype.setEulerFromQuaternion = THREE.Euler.prototype.setFromQuaternion;
+THREE.Euler.prototype.copy = function ( euler ) {
+  if (euler._order === undefined) {
+    this._x = euler.x;
+    this._y = euler.y;
+    this._z = euler.z;
+  }
+  else {
+    this._x = euler._x;
+    this._y = euler._y;
+    this._z = euler._z;
+    this._order = euler._order;
+  }
+
+  this._onChangeCallback();
+  return this;
+};
 
 THREE.Box3.prototype.size = function (size_v3=new THREE.Vector3()) {
   return this.getSize(size_v3);
@@ -8683,8 +8818,6 @@ loaded = true
 resolve_loading && resolve_loading()
     },
 
-    get models() { return models; },
-
     mesh_obj: (function () {
       function mesh_obj(id, obj) {
 this.id = id
@@ -8711,6 +8844,9 @@ this._obj.visible = false;
 
       window.addEventListener("jThree_ready", () => {
 const THREE = threeX.THREE;
+
+const img_dummy = (MMD_SA.THREEX.enabled) ? null : document.createElement('canvas');
+if (!MMD_SA.THREEX.enabled) img_dummy.width = img_dummy.height = 1;
 
 MMD_SA_options.x_object.forEach((x_obj, idx) => {
   if (!x_obj.path) return
@@ -8751,9 +8887,146 @@ MMD_SA.fn.setupUI()
   }, function() {
   });
 });
+
+MMD_SA.GOML_head_list.sort((...ab)=>{
+  const score = [];
+  ab.forEach((obj,i)=>{
+    switch (obj.tag) {
+      case 'txr':
+        score[i] = -3;
+        break;
+      case 'geo':
+        score[i] = -2;
+        break;
+      default:
+        score[1] = 0;
+    }
+  });
+
+  return score[0] - score[1];
+});
+
+var mtl_id_used = {};
+
+MMD_SA.GOML_head_list.forEach(obj=>{
+  if (obj.tag == 'txr') {
+// { tag:'txr', id:'DungeonPlane'+i+'TXR', src:p_obj.map, para:{ repeat:[1,1] } }
+    const tex = new THREE.Texture(img_dummy);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    if (obj.para.repeat) tex.repeat.set(...obj.para.repeat);
+    if (MMD_SA.THREEX.enabled) tex.encoding = THREE.sRGBEncoding;
+
+    const img = new Image();
+    img.onload = ()=>{
+      tex.image = img;
+      tex.needsUpdate = true;
+      MMD_SA.fn.setupUI();
+    };
+    img.src = toFileProtocol(obj.src);
+
+    threeX.mesh_obj.set(obj.id, tex, true);
+  }
+  else if (obj.tag == 'geo') {
+// { tag:'geo', id:'DungeonGEO_' + (geo), type:'Plane', para:[1,1, parseInt(RegExp.$1),parseInt(RegExp.$2)] }
+    const geo = new THREE[obj.type + 'Geometry'](...obj.para);
+    threeX.mesh_obj.set(obj.id, geo, true);
+    MMD_SA.fn.setupUI();
+  }
+  else if (obj.tag == 'mtl') {
+// { tag:'mtl', id:'DungeonPlane'+i+'MTL', type:'MeshPhong', para:mtl_param_common, para_extra:mtl_param_common_extra }
+/*
+  var mtl_param_common = {};
+  if (p_obj.opacity == null) mtl_param_common.transparent = false;
+//'renderOrder' : 'renderDepth'
+  if (p_obj.renderDepth != null) mtl_param_common.renderDepth = p_obj.renderDepth;
+  if (p_obj.side) mtl_param_common.side = p_obj.side;
+  if (p_obj.map) mtl_param_common.map = 'DungeonPlane'+p_obj.map_id+'TXR';
+  if (p_obj.normalMap) mtl_param_common.normalMap = 'DungeonPlane'+p_obj.normalMap_id+'TXR_N';
+//'color' : 'ambient'
+  if (p_obj.ambient) mtl_param_common.ambient = p_obj.ambient;
+  if (p_obj.specularMap) {
+    mtl_param_common.specularMap = 'DungeonPlane'+p_obj.specularMap_id+'TXR_S';
+    mtl_param_common.specular = '#FFFFFF';
+  }
+  else {
+    if (p_obj.specular) mtl_param_common.specular = p_obj.specular;
+  }
+  if (p_obj.emissive) mtl_param_common.emissive = p_obj.emissive;
+*/
+    const mtl = new THREE[obj.type + 'Material']();
+
+    if (MMD_SA.THREEX.enabled) {
+      if (obj.renderDepth) {
+        obj.renderOrder = obj.renderDepth;
+        delete obj.renderDepth;
+      }
+      if (obj.ambient) {
+        obj.color = obj.ambient;
+        delete obj.ambient;
+      }
+    }
+
+    const mtl_id_used_count = mtl_id_used[obj.id]||0;
+    mtl_id_used[obj.id] = mtl_id_used_count + 1;
+
+    for (const map of ['map', 'normalMap', 'specularMap', 'displacementMap']) {
+      if (obj.para[map])
+        obj.para[map] = threeX.mesh_obj.get_three(obj.para[map]);
+// a workaround for material.repeat trick in old THREE
+      if (!MMD_SA.THREEX.enabled && (map == 'map') && (mtl_id_used_count > 0)) {
+console.log('THREEX: Texture cloned (' + obj.id + '.' + map + ')');
+        obj.para[map] = obj.para[map].clone();
+      }
+//if (map != 'map') delete obj.para[map];
+    }
+
+    for (const color of ['color', 'ambient', 'specular', 'emissive']) {
+      if (obj.para[color]) {
+        if (mtl[color] != null) {
+          obj.para[color] = mtl[color].set(obj.para[color]);
+        }
+        else {
+console.error('THREEX error: No .' + color + ' in material');
+          delete obj.para[color];
+        }
+      }
+    }
+
+    Object.assign(mtl, obj.para, obj.para_extra);
+
+    threeX.mesh_obj.set(obj.id, mtl, true);
+    MMD_SA.fn.setupUI();
+  }
+});
+
+MMD_SA.GOML_scene_list.forEach(obj=>{
+  if (obj.tag == 'mesh') {
+// { tag:'mesh', id:'DungeonPlane'+i+'MESH_LV'+lvl, geo:'DungeonGEO_'+geo_id, mtl:'DungeonPlane'+i+'MTL' + ((p_obj.displacementMap && (geo_id != "1x1"))?'_D':''), instanced_drawing:instanced_drawing||null, style:{ scale:0, opacity:p_obj.opacity||null } }
+    const mesh = new THREE.Mesh();
+    mesh.geometry = threeX.mesh_obj.get_three(obj.geo);
+    mesh.material = threeX.mesh_obj.get_three(obj.mtl);
+    if (obj.instanced_drawing && !MMD_SA.THREEX.enabled)
+      mesh.instanced_drawing = obj.instanced_drawing;
+    if (obj.style.scale != null)
+      mesh.scale.setScalar(obj.style.scale);
+    if (obj.style.opacity != null)
+      mesh.opacity = obj.style.opacity;
+
+    threeX.mesh_obj.set(obj.id, mesh);
+  }
+});
       });
 
+      let scene_obj_waiting_list = [];
+
       window.addEventListener("GOML_ready", () => {
+scene_obj_waiting_list.forEach(obj=>{
+  threeX.scene.add(obj);
+  obj.visible = false;
+});
+scene_obj_waiting_list.length = 0;
+
 MMD_SA_options.mesh_obj_preload_list.forEach(obj => {
   threeX.mesh_obj.set(obj.id, obj.create())
 });
@@ -8773,8 +9046,13 @@ set: function (id, obj, skip_scene) {
   new mesh_obj(id, obj)
 
   if (!skip_scene) {
-    threeX.scene.add(obj)
-    obj.visible = false
+    if (threeX.scene) {
+      threeX.scene.add(obj)
+      obj.visible = false
+    }
+    else {
+      scene_obj_waiting_list.push(obj);
+    }
   }
 
   return obj
@@ -8892,7 +9170,7 @@ if (MMD_SA.hide_3D_avatar) {
   });
 }
 
-if (data.OutlineEffect) {
+if (threeX.use_OutlineEffect) {
 //  data.renderer.autoClear = true
   data.OutlineEffect.render( data.scene, data.camera );
 //  data.renderer.autoClear = false
@@ -8984,6 +9262,9 @@ c.position.copy(light.position);
 c.color.copy(light.color);
 c_max = Math.max(c.color.r, c.color.g, c.color.b);
 
+threeX.renderer.obj.physicallyCorrectLights=true;
+if (threeX.renderer.obj.physicallyCorrectLights) c_max *= 5;
+
 if (c.type == 'DirectionalLight') {
   if (use_VRM1)
     c.intensity = light.intensity * c_max;
@@ -9024,6 +9305,54 @@ else if (c.type == 'AmbientLight') {
     VRM: VRM,
 
     utils: {
+
+      load_THREEX: async function () {
+if (!self.THREEX) {
+  DEBUG_show('Loading THREEX...', 2)
+
+  THREE = _THREE = self.THREE;
+
+  const THREE_module = await System._browser.load_script(System.Gadget.path + '/three.js/three.module.min.js', true);
+  self.THREE = {};
+  for (const name in THREE_module) self.THREE[name] = THREE_module[name];
+
+  THREE = self.THREEX = self.THREE;
+  self.THREE = _THREE;
+
+  init_on_jThree_ready();
+}
+      },
+
+      computeBoundingBox: function (obj) {
+const bb = new THREE.Box3();
+
+const _pos = obj.position.clone();
+const _rot = obj.quaternion.clone();
+const _scale = obj.scale.clone();
+
+obj.position.set(0,0,0);
+obj.quaternion.set(0,0,0,1);
+obj.scale.set(1,1,1);
+obj.updateMatrixWorld(true);
+
+obj.traverse(c => {
+  if (c.isMesh && c.geometry) {
+    if (!c.geometry.boundingBox)
+      c.geometry.computeBoundingBox();
+
+    c.geometry.boundingBox.applyMatrix4(c.matrixWorld);
+
+    bb.union(c.geometry.boundingBox);
+  }
+});
+
+obj.position.copy(_pos);
+obj.quaternion.copy(_rot);
+obj.scale.copy(_scale);
+obj.updateMatrixWorld(true);
+
+return bb;
+      },
 
       convert_A_pose_rotation_to_T_pose: (function () {
 //"肩",
@@ -9184,20 +9513,15 @@ mixamorigRightFoot:"右足首",
         var _interp;
 
         async function load_FBX_scripts() {
-if (!self.THREEX) {
-  DEBUG_show('Loading THREEX...', 2)
+await threeX.utils.load_THREEX();
 
-  THREE = _THREE = self.THREE;
-
-  const THREE_module = await System._browser.load_script(System.Gadget.path + '/three.js/three.module.min.js', true);
-  self.THREE = {};
-  for (const name in THREE_module) self.THREE[name] = THREE_module[name];
-
-  THREE = self.THREEX = self.THREE;
-  self.THREE = _THREE;
-
-  init_on_jThree_ready();
+if (MMD_SA.MMD_started) {
   init_on_MMDStarted();
+}
+else {
+  window.addEventListener("MMDStarted", ()=>{
+    init_on_MMDStarted();
+  });
 }
 
 await System._browser.load_script('./three.js/FBXLoader.js');
@@ -9286,7 +9610,7 @@ else if (THREEX_enabled) {
   const vrmHipsY = model.para.pos0['hips'][1];//((!use_VRM1) ? vrm.humanoid.getBoneNode('hips') : vrm.humanoid?.getNormalizedBoneNode( 'hips' )).getWorldPosition( _vec3 ).y;
   const vrmRootY = 0;//vrm.scene.getWorldPosition( _vec3 ).y;
 
-  hips_height = Math.abs( vrmHipsY - vrmRootY );// / VRM.vrm_scale;
+  hips_height = Math.abs( vrmHipsY - vrmRootY );
 }
 else {
   hips_height = bones_by_name["左足"].pmxBone.origin[1];
@@ -9528,6 +9852,163 @@ return new THREE.AnimationClip( 'vrmAnimation', clip.duration, tracks );
           } );
         };
       })(),
+
+      load_GLTF: (function () {
+        var GLTF_loader;
+
+        window.addEventListener('jThree_ready', ()=>{
+if (!threeX.enabled) return;
+
+GLTF_loader = new THREE.GLTFLoader();
+        });
+
+        return function (url, onload) {
+GLTF_loader.load(
+	// resource URL
+	toFileProtocol(url),
+	// called when the resource is loaded
+	function ( gltf ) {
+/*
+scene.add( gltf.scene );
+
+gltf.animations; // Array<THREE.AnimationClip>
+gltf.scene; // THREE.Group
+gltf.scenes; // Array<THREE.Group>
+gltf.cameras; // Array<THREE.Camera>
+gltf.asset; // Object
+*/
+onload(gltf);
+	},
+	// called while loading is progressing
+	function ( xhr ) {
+
+//		console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+
+	},
+	// called when loading has errors
+	function ( error ) {
+
+		console.log( 'ERROR: GLTF loading failed', url );
+
+	}
+);
+        };
+      })(),
+
+      camera_auto_targeting: (function () {
+        function targeting() {
+if (!target_current.enabled && ((target_current.enabled === false) || !target_current.condition || !target_current.condition())) {
+  MMD_SA.adjust_camera(null, v1.set(0,0,0));
+  return;
+}
+
+var target_pos = v4.fromArray(target_data.filter(target_current.get_target_position().toArray()));//target_current.get_target_position();//
+//DEBUG_show(target_pos.toArray().join('\n') + '\n' + Date.now());
+MMD_SA.adjust_camera(null, target_pos);
+        }
+
+        var target_current;
+
+        var target_face = {
+  id: 'face',
+  get_target_position: ()=>{
+var model = threeX.get_model(0);
+
+var head_pos;
+var pos = v3.set(0,0,0);
+const head_pos_ref = (threeX.enabled) ? v1.fromArray(model.para.pos0['head']).sub(v2.fromArray(model.para.pos0['hips'])).multiplyScalar(VRM.vrm_scale) : v1.fromArray(model.mesh.bones_by_name["頭"].pmxBone.origin).sub(v2.fromArray(model.mesh.bones_by_name["上半身"].pmxBone.origin));
+head_pos_ref.y += 0.8;
+const camera_lookAt = v4.fromArray(MMD_SA_options.camera_lookAt).add(v2.fromArray(MMD_SA.center_view_lookAt));
+if (1) {
+  pos.add(MMD_SA.THREEX._THREE.MMD.getModels()[0].mesh.position);
+  pos.add(camera_lookAt);
+  pos.add((MMD_SA.THREEX.enabled) ? model.process_position(v2.copy(model.getBoneNode('hips').position).setY(0)).multiplyScalar(VRM.vrm_scale) : model.mesh.bones_by_name['センター'].skinMatrix.decompose()[0].setY(0));
+
+  head_pos = model.get_bone_position_by_MMD_name('頭').sub(model.get_bone_position_by_MMD_name('上半身')).add(v2.set(0,0.8,0).applyQuaternion(model.get_bone_rotation_by_MMD_name('頭')));
+  head_pos.sub(head_pos_ref);
+}
+else {
+  pos.sub(camera_lookAt);
+
+  head_pos = model.get_bone_position_by_MMD_name('頭').add(v3.set(0,0.8,0).applyQuaternion(model.get_bone_rotation_by_MMD_name('頭')));
+  head_pos.y -= head_pos_ref.y/2;
+}
+pos.sub(MMD_SA.adjust_camera()[1]);
+
+return head_pos.add(pos).multiplyScalar(0.75);
+  },
+        };
+
+        var target_data;
+        window.addEventListener('jThree_ready', ()=>{
+target_data = new System._browser.data_filter([{ type:'average', para:[200, 'vector3'] }]);
+        });
+
+//window.addEventListener('MMDStarted', ()=>{ System._browser.on_animation_update.add(()=>{DEBUG_show(MMD_SA.THREEX.get_model(0).get_bone_position_by_MMD_name('上半身').toArray().join('\n')+'\n'+Date.now())},0,1,-1) });
+
+        return function (target) {
+if (!target) {
+  if (!target_current) return;
+  target_current = null;
+  System._browser.on_animation_update.remove(targeting, 1);
+  MMD_SA.adjust_camera(null, v1.set(0,0,0));
+  return;
+}
+
+if (target_current && (target.id == target_current.id)) {
+  target_current = Object.assign(target_current, target);
+  return;
+}
+
+if (!target_current)
+  System._browser.on_animation_update.add(targeting, 0,1,-1);
+
+if (target.id == 'face')
+  target = Object.assign(target_face, target);;
+
+target_current = target;
+        };
+      })(),
+
+
+      load_octree: async function () {
+await threeX.utils.load_THREEX();
+
+const Capsule_module = await System._browser.load_script(System.Gadget.path + '/three.js/Capsule.js', true);
+for (const name in Capsule_module) THREE[name] = Capsule_module[name];
+
+const Octree_module = await System._browser.load_script(System.Gadget.path + '/three.js/Octree.js', true);
+for (const name in Octree_module) THREE[name] = Octree_module[name];
+      },
+
+      dispose: function (obj) {
+let geo_disposed = 0, map_disposed = 0, mtrl_disposed = 0;
+obj.traverse(node => {
+  if (!node.isMesh && !node.geometry) return;
+
+  if (node.geometry) {
+    node.geometry.dispose();
+    geo_disposed++;
+  }
+
+  if (node.material) {
+    const materials = node.material.materials || (Array.isArray(node.material) && node.material) || [node.material];
+    materials.forEach(mtrl => {
+      if (mtrl.map)         { mtrl.map.dispose(); map_disposed++; }
+      if (mtrl.lightMap)    { mtrl.lightMap.dispose(); map_disposed++; }
+      if (mtrl.bumpMap)     { mtrl.bumpMap.dispose(); map_disposed++; }
+      if (mtrl.normalMap)   { mtrl.normalMap.dispose(); map_disposed++; }
+      if (mtrl.specularMap) { mtrl.specularMap.dispose(); map_disposed++; }
+      if (mtrl.envMap)      { mtrl.envMap.dispose(); map_disposed++; }
+
+      mtrl.dispose();
+      mtrl_disposed++;
+    });
+  }
+});
+
+console.log('geo_disposed:' + geo_disposed, 'map_disposed:' + map_disposed, 'mtrl_disposed:' + mtrl_disposed);
+      },
 
     }
 
@@ -9806,7 +10287,8 @@ MMD_SA_options.texture_resolution_limit=2048
     MMD_SA_options.auto_blink = true
 
   if (!MMD_SA_options.camera_position)
-    MMD_SA_options.camera_position = [0,10,30]
+    MMD_SA_options.camera_position = [0,10,30];
+  MMD_SA_options.camera_position_base = MMD_SA_options.camera_position.slice();
   if (!MMD_SA_options.camera_lookAt)
     MMD_SA_options.camera_lookAt = [0,MMD_SA_options.camera_position[1],0]
   if (!MMD_SA_options.camera_rotation)
@@ -9924,6 +10406,11 @@ return _trackball_camera_limit_adjust(eye)
   if (MMD_SA_options.GOML_scene)
     MMD_SA.GOML_scene  += MMD_SA_options.GOML_scene
 
+  if (MMD_SA_options.GOML_head_list)
+    MMD_SA.GOML_head_list = MMD_SA.GOML_head_list.concat(MMD_SA_options.GOML_head_list);
+  if (MMD_SA_options.GOML_scene_list)
+    MMD_SA.GOML_scene_list = MMD_SA.GOML_scene_list.concat(MMD_SA_options.GOML_scene_list);
+
   if (MMD_SA_options.reset_rigid_body_physics_step == null)
     MMD_SA_options.reset_rigid_body_physics_step = 10
 
@@ -9972,9 +10459,31 @@ return this.model_para_obj.MME || this._MME
 
 // adjust Dungeon options
   if (MMD_SA_options.Dungeon) {
-    MMD_SA_options.Dungeon.character.camera_position_base_default = MMD_SA_options.camera_position.slice()
-    if (!MMD_SA_options.WebXR || !MMD_SA_options.WebXR.AR)
-      MMD_SA_options.Dungeon.character.camera_position_base_default[2] *= -1
+    if (!MMD_SA_options.Dungeon_options.camera_position_z_sign)
+      MMD_SA_options.Dungeon_options.camera_position_z_sign = (!MMD_SA_options.WebXR || !MMD_SA_options.WebXR.AR) ? -1 : 1;
+
+    Object.defineProperty(MMD_SA_options.Dungeon.character, 'camera_position_base_default', (function () {
+      function get_camera_default() {
+return MMD_SA_options.camera_position_base.map((n,i)=>n*((i==2)?MMD_SA_options.Dungeon_options.camera_position_z_sign:1));
+      }
+
+      let _camera_position_base_default;
+      return {
+        get: ()=>{
+return _camera_position_base_default || get_camera_default();
+        },
+        set: (v)=>{
+const dc = get_camera_default();
+if (v.every((n,i)=>n==dc[i])) {
+  _camera_position_base_default = null;
+}
+else {
+  console.log('camera_position_base_default', v.slice());
+  _camera_position_base_default = v;
+}
+        },
+      };
+    })());
   }
 
 

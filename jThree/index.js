@@ -1,4 +1,4 @@
-// (2022-12-20)
+// (2023-01-17)
 
 MMD_SA.fn = {
 /*
@@ -15,7 +15,7 @@ MMD_SA.fn = {
 	setupUI: function(para) {
 this.length++;
 
-var load_length = MMD_SA_options.motion.length + MMD_SA_options.x_object.length +1 + this.load_length_extra;
+var load_length = MMD_SA_options.motion.length + (MMD_SA_options.x_object.length + MMD_SA.GOML_head_list.length) +1 + this.load_length_extra;
 //console.log(MMD_SA_options.motion.length,MMD_SA_options.x_object.length +1,this.load_length_extra)
 // extra model
 load_length += MMD_SA_options.model_path_extra.length
@@ -98,23 +98,23 @@ if (x_object.receiveShadow) {
 }
 */
 if (x_object.boundingBox_list != null) {
-  var geo = x_object._obj.children[0].geometry
-  geo.boundingBox_list = []
+  const bb_host = MMD_SA.get_bounding_host(x_object._obj);
+  bb_host.boundingBox_list = []
   x_object.boundingBox_list.forEach(function (bb) {
     if (bb == null) {
-      geo.boundingBox_list.push(geo.boundingBox)
+      bb_host.boundingBox_list.push(bb_host.boundingBox)
     }
     else {
       var b3 = new THREE.Box3().set(bb.min, bb.max)
       b3.oncollide = bb.oncollide
       b3.onaway = bb.onaway
-      geo.boundingBox_list.push(b3)
+      bb_host.boundingBox_list.push(b3)
     }
   });
 
 // mainly to allow low-angle camera for mesh that needs collision enforced, to make sure that camera is within bounding box
   if (x_object.bb_adjust) {
-    geo.boundingBox_list.forEach(function (bb) {
+    bb_host.boundingBox_list.forEach(function (bb) {
       if (x_object.bb_adjust.min)
         bb.min.add(x_object.bb_adjust.min)
     });
@@ -481,39 +481,64 @@ x_para = x_para && x_para.accessory_default && x_para.accessory_default[x_object
 if (x_para)
   p_bone = x_para.parent_bone
 
-var bone = mesh.bones_by_name[p_bone.name]
-if (!bone)
-  return
+var is_root = p_bone.name == 'ROOT';
+
+var bone;
+if (!is_root) {
+  bone = mesh.bones_by_name[p_bone.name];
+  if (!bone)
+    return;
+}
 
 var obj = x_object._obj
 
 var pos, rot;
-var modelX;
+var model_mesh, modelX;
+if (is_root) {
+  model_mesh = MMD_SA.THREEX._THREE.MMD.getModels()[model_index].mesh;
+  rot = model_mesh.quaternion;
+}
+
 if (MMD_SA.THREEX.enabled) {
   modelX = MMD_SA.THREEX.get_model(model_index)
-  const boneX = modelX.get_bone_by_MMD_name(p_bone.name);
-  if (!boneX) return;
-//console.log(boneX)
-//MMD_SA.THREEX.m1.copy(modelX.mesh.matrixWorld).invert()
-  boneX.matrixWorld.decompose(MMD_SA.THREEX.v1, MMD_SA.THREEX.q1, MMD_SA.THREEX.v2);
-  pos = MMD_SA.THREEX.v1.sub(modelX.mesh.position);
-//console.log(pos)
-  rot = MMD_SA.THREEX.q1;
-  if (modelX.type == 'VRM') {
-    rot.premultiply(MMD_SA.THREEX.q2.set(0,1,0,0));
-    rot.x *= -1;
-    rot.z *= -1;
+
+  if (is_root) {
+    pos = modelX.process_position(MMD_SA.THREEX.v1.copy(modelX.getBoneNode('hips').position).setY(0)).multiplyScalar(MMD_SA.THREEX.VRM.vrm_scale);
   }
+  else {
+    const boneX = modelX.get_bone_by_MMD_name(p_bone.name);
+    if (!boneX) return;
+//console.log(boneX)
+
+    pos = MMD_SA.THREEX.v1;
+    rot = MMD_SA.THREEX.q1;
+    boneX.matrixWorld.decompose(MMD_SA.THREEX.v1, MMD_SA.THREEX.q1, MMD_SA.THREEX.v2);
+
+// to local
+    const mesh_rot_inv = MMD_SA.THREEX.q2.copy(modelX.mesh.quaternion).conjugate();
+    pos.sub(modelX.mesh.position).applyQuaternion(mesh_rot_inv);
+    rot.premultiply(mesh_rot_inv);
+
+    if ((modelX.type == 'VRM') && !modelX.is_VRM1) {
+      rot.premultiply(MMD_SA.THREEX.q2.set(0,1,0,0));
+      rot.x *= -1;
+      rot.z *= -1;
+    }
 //console.log(MMD_SA.THREEX.e1.setFromQuaternion(rot, 'ZYX').multiplyScalar(180/Math.PI).toArray(), MMD_SA.THREEX.e2.setFromQuaternion(boneX.quaternion, 'ZYX').multiplyScalar(180/Math.PI).toArray(), new THREE.Vector3().setFromQuaternion(bone.skinMatrix.decompose()[1], 'ZYX').multiplyScalar(180/Math.PI).toArray())
+  }
 }
 else {
   obj.useQuaternion = true
 
+  if (is_root) {
+    bone = mesh.bones_by_name['センター'];
+  }
 // This is after updateMatrixWorld. The skinMatrix should be the latest.
-  const bone_objs = bone.skinMatrix.decompose()
-  pos = bone_objs[0]
-  rot = bone_objs[1]
-
+  bone_objs = bone.skinMatrix.decompose();
+  pos = bone_objs[0];
+  if (is_root) pos.y = 0;
+  if (!rot)
+    rot = bone_objs[1];
 /*
   pos = MMD_SA.get_bone_position(mesh, p_bone.name, mesh)
   rot = MMD_SA.get_bone_rotation(mesh, p_bone.name, mesh)
@@ -521,20 +546,16 @@ else {
 */
 }
 
-obj.position.copy(pos)
+obj.position.copy(pos);
 if (p_bone.position) {
   const pos_offset = MMD_SA.TEMP_v3.set(p_bone.position.x, p_bone.position.y, -p_bone.position.z);
 //console.log(pos_offset.toArray().join(','))
-  obj.position.add(pos_offset.applyQuaternion(rot))
+  obj.position.add(pos_offset.applyQuaternion(rot));
 }
 
-obj.quaternion.copy(rot)
+obj.quaternion.copy(rot);
 if (p_bone.rotation) {
-  if (!p_bone.rotation._quaternion) {
-//--+
-    p_bone.rotation._quaternion = new THREE.Quaternion().setFromEuler(MMD_SA.TEMP_v3.set(-p_bone.rotation.x, -p_bone.rotation.y, p_bone.rotation.z).multiplyScalar(Math.PI/180), 'YXZ')
-  }
-  obj.quaternion.multiply(p_bone.rotation._quaternion)
+  obj.quaternion.multiply(MMD_SA._q1.setFromEuler(MMD_SA.TEMP_v3.set(-p_bone.rotation.x, -p_bone.rotation.y, p_bone.rotation.z).multiplyScalar(Math.PI/180), 'YXZ'));
 }
 
 var m4_objs = MMD_SA.TEMP_m4.makeFromPositionQuaternionScale( obj.position, obj.quaternion, obj.scale ).multiplyMatrices(mesh.matrixWorld, MMD_SA.TEMP_m4).decompose()
@@ -545,6 +566,7 @@ obj.matrixAutoUpdate = false
 obj.updateMatrix()
   });
 };
+
 THREE.MMD.getModels().forEach(function (_model, idx) {
   _model.simulateCallback = simulateCallback
 });
@@ -798,9 +820,7 @@ MMD_SA.reset_morph = function (model_index) {
 
 MMD_SA._camera_y_offset_ = 0
 MMD_SA.reset_camera = function (check_event) {
-  if (check_event) {
-    window.dispatchEvent(new CustomEvent("MMDCameraReset", { detail:{} }));
-  }
+  window.dispatchEvent(new CustomEvent("MMDCameraReset", { detail:{ enforced:check_event } }));
 
   this._camera_y_offset_ = 0
 
@@ -853,947 +873,7 @@ MMD_SA.Animation_dummy.reset = MMD_SA.Animation_dummy.seek = MMD_SA.Animation_du
 
 
 // AT: Box3.intersectObject
-THREE.Box3.prototype.intersectObject = function () {
 
-// https://gist.github.com/yomotsu/d845f21e2e1eb49f647f
-// collision START
-var collision = {};
-
-  var center = new THREE.Vector3();
-  var extents = new THREE.Vector3();
-
-  var v0 = new THREE.Vector3(),
-      v1 = new THREE.Vector3(),
-      v2 = new THREE.Vector3();
-
-  // Compute edge vectors for triangle
-  var f0 = new THREE.Vector3(),
-      f1 = new THREE.Vector3(),
-      f2 = new THREE.Vector3();
-
-  // Test axes a00..a22 (category 3)
-  var a00 = new THREE.Vector3(),
-      a01 = new THREE.Vector3(),
-      a02 = new THREE.Vector3(),
-      a10 = new THREE.Vector3(),
-      a11 = new THREE.Vector3(),
-      a12 = new THREE.Vector3(),
-      a20 = new THREE.Vector3(),
-      a21 = new THREE.Vector3(),
-      a22 = new THREE.Vector3();
-
-  var plane = new THREE.Plane();
-
-// aabb: <THREE.Box3>
-// Plane: <THREE.Plane>
-collision.isIntersectionAABBPlane = function ( aabb, Plane ) {
-
-  center.addVectors( aabb.max, aabb.min ).multiplyScalar( 0.5 );
-  extents.subVectors( aabb.max, center );
-
-  var r = extents.x * Math.abs( Plane.normal.x ) + extents.y * Math.abs( Plane.normal.y ) + extents.z * Math.abs( Plane.normal.z );
-  var s = Plane.normal.dot( center ) - Plane.constant;
-
-  return Math.abs( s ) <= r;
-
-}
-
-// based on http://www.gamedev.net/topic/534655-aabb-triangleplane-intersection--distance-to-plane-is-incorrect-i-have-solved-it/
-//
-// a: <THREE.Vector3>, // vertex of a triangle
-// b: <THREE.Vector3>, // vertex of a triangle
-// c: <THREE.Vector3>, // vertex of a triangle
-// aabb: <THREE.Box3>
-collision.isIntersectionTriangleAABB = function ( a, b, c, aabb ) {
-
-  var p0, p1, p2, r;
-  
-  // Compute box center and extents of AABoundingBox (if not already given in that format)
-  center.addVectors( aabb.max, aabb.min ).multiplyScalar( 0.5 );
-  extents.subVectors( aabb.max, center );
-
-  // Translate triangle as conceptually moving AABB to origin
-  v0.subVectors( a, center );
-  v1.subVectors( b, center );
-  v2.subVectors( c, center );
-
-  // Compute edge vectors for triangle
-  f0.subVectors( v1, v0 );
-  f1.subVectors( v2, v1 );
-  f2.subVectors( v0, v2 );
-
-  // Test axes a00..a22 (category 3)
-  a00.set( 0, -f0.z, f0.y );
-  a01.set( 0, -f1.z, f1.y );
-  a02.set( 0, -f2.z, f2.y );
-  a10.set( f0.z, 0, -f0.x );
-  a11.set( f1.z, 0, -f1.x );
-  a12.set( f2.z, 0, -f2.x );
-  a20.set( -f0.y, f0.x, 0 );
-  a21.set( -f1.y, f1.x, 0 );
-  a22.set( -f2.y, f2.x, 0 );
-
-  // Test axis a00
-  p0 = v0.dot( a00 );
-  p1 = v1.dot( a00 );
-  p2 = v2.dot( a00 );
-  r = extents.y * Math.abs( f0.z ) + extents.z * Math.abs( f0.y );
-
-  if ( Math.max( -Math.max( p0, p1, p2 ), Math.min( p0, p1, p2 ) ) > r ) {
-
-    return false; // Axis is a separating axis
-
-  }
-
-  // Test axis a01
-  p0 = v0.dot( a01 );
-  p1 = v1.dot( a01 );
-  p2 = v2.dot( a01 );
-  r = extents.y * Math.abs( f1.z ) + extents.z * Math.abs( f1.y );
-
-  if ( Math.max( -Math.max( p0, p1, p2 ), Math.min( p0, p1, p2 ) ) > r ) {
-
-    return false; // Axis is a separating axis
-
-  }
-
-  // Test axis a02
-  p0 = v0.dot( a02 );
-  p1 = v1.dot( a02 );
-  p2 = v2.dot( a02 );
-  r = extents.y * Math.abs( f2.z ) + extents.z * Math.abs( f2.y );
-
-  if ( Math.max( -Math.max( p0, p1, p2 ), Math.min( p0, p1, p2 ) ) > r ) {
-
-    return false; // Axis is a separating axis
-
-  }
-
-  // Test axis a10
-  p0 = v0.dot( a10 );
-  p1 = v1.dot( a10 );
-  p2 = v2.dot( a10 );
-  r = extents.x * Math.abs( f0.z ) + extents.z * Math.abs( f0.x );
-  if ( Math.max( -Math.max( p0, p1, p2 ), Math.min( p0, p1, p2 ) ) > r ) {
-
-    return false; // Axis is a separating axis
-
-  }
-
-  // Test axis a11
-  p0 = v0.dot( a11 );
-  p1 = v1.dot( a11 );
-  p2 = v2.dot( a11 );
-  r = extents.x * Math.abs( f1.z ) + extents.z * Math.abs( f1.x );
-
-  if ( Math.max( -Math.max( p0, p1, p2 ), Math.min( p0, p1, p2 ) ) > r ) {
-
-    return false; // Axis is a separating axis
-
-  }
-
-  // Test axis a12
-  p0 = v0.dot( a12 );
-  p1 = v1.dot( a12 );
-  p2 = v2.dot( a12 );
-  r = extents.x * Math.abs( f2.z ) + extents.z * Math.abs( f2.x );
-
-  if ( Math.max( -Math.max( p0, p1, p2 ), Math.min( p0, p1, p2 ) ) > r ) {
-
-    return false; // Axis is a separating axis
-
-  }
-
-  // Test axis a20
-  p0 = v0.dot( a20 );
-  p1 = v1.dot( a20 );
-  p2 = v2.dot( a20 );
-  r = extents.x * Math.abs( f0.y ) + extents.y * Math.abs( f0.x );
-
-  if ( Math.max( -Math.max( p0, p1, p2 ), Math.min( p0, p1, p2 ) ) > r ) {
-
-    return false; // Axis is a separating axis
-
-  }
-
-  // Test axis a21
-  p0 = v0.dot( a21 );
-  p1 = v1.dot( a21 );
-  p2 = v2.dot( a21 );
-  r = extents.x * Math.abs( f1.y ) + extents.y * Math.abs( f1.x );
-
-  if ( Math.max( -Math.max( p0, p1, p2 ), Math.min( p0, p1, p2 ) ) > r ) {
-
-    return false; // Axis is a separating axis
-
-  }
-
-  // Test axis a22
-  p0 = v0.dot( a22 );
-  p1 = v1.dot( a22 );
-  p2 = v2.dot( a22 );
-  r = extents.x * Math.abs( f2.y ) + extents.y * Math.abs( f2.x );
-
-  if ( Math.max( -Math.max( p0, p1, p2 ), Math.min( p0, p1, p2 ) ) > r ) {
-
-    return false; // Axis is a separating axis
-
-  }
-
-  // Test the three axes corresponding to the face normals of AABB b (category 1).
-  // Exit if...
-  // ... [-extents.x, extents.x] and [min(v0.x,v1.x,v2.x), max(v0.x,v1.x,v2.x)] do not overlap
-  if ( Math.max( v0.x, v1.x, v2.x ) < -extents.x || Math.min( v0.x, v1.x, v2.x ) > extents.x ) {
-
-    return false;
-
-  }
-  // ... [-extents.y, extents.y] and [min(v0.y,v1.y,v2.y), max(v0.y,v1.y,v2.y)] do not overlap
-  if ( Math.max( v0.y, v1.y, v2.y ) < -extents.y || Math.min( v0.y, v1.y, v2.y ) > extents.y ) {
-
-    return false;
-
-  }
-  // ... [-extents.z, extents.z] and [min(v0.z,v1.z,v2.z), max(v0.z,v1.z,v2.z)] do not overlap
-  if ( Math.max( v0.z, v1.z, v2.z ) < -extents.z || Math.min( v0.z, v1.z, v2.z ) > extents.z ) {
-
-    return false;
-
-  }
-
-
-  // Test separating axis corresponding to triangle face normal (category 2)
-  // Face Normal is -ve as Triangle is clockwise winding (and XNA uses -z for into screen)
-  plane.normal.copy( f1 ).cross( f0 ).normalize();
-//plane.normal.subVectors(v2,v1).cross(v0.sub(v1)).normalize()
-  plane.constant = plane.normal.dot( a );
-  
-  return collision.isIntersectionAABBPlane( aabb, plane );
-}
-// collision END
-
-var blocked_side = {
-  _updated: false
-
- ,reset: function (obj) {
-this.x_min =   { state:0, depth:[0,0], info:["",""] }
-this.x_max =   { state:0, depth:[0,0], info:["",""] }
-this.z_min =   { state:0, depth:[0,0], info:["",""] }
-this.z_max =   { state:0, depth:[0,0], info:["",""] }
-this.y_min =   { state:0, depth:[0,0], info:["",""] }
-this.y_max =   { state:0, depth:[0,0], info:["",""] }
-this.blocked = { state:0, depth:[0,0], info:["",""] }
-this.depth_min = 0.1 / obj._obj.scale.length()
-this._updated = false
-  }
-
- ,set_state: function (state, depth, info) {
-if ((depth > blocked_side.depth_min) && (this.depth[state-1] < depth)) {
-  this.depth[state-1] = depth
-  if (this.state < state)
-    this.state = state
-  this.info = info
-  if ((this != blocked_side.y_min))// && (this != blocked_side.y_max))
-    blocked_side._updated = true
-}
-  }
-};
-
-var inverseMatrix = new THREE.Matrix4();
-var facePlane = new THREE.Plane();
-var ray = new THREE.Ray();
-var bb_static = new THREE.Box3();
-var bb_moved = new THREE.Box3();
-var bb_static0 = new THREE.Box3();
-var bb_moved0 = new THREE.Box3();
-var bb_core_static = new THREE.Box3();
-var bb_core_moved = new THREE.Box3();
-var bb_hit_static = new THREE.Box3();
-var bb_hit_moved = new THREE.Box3();
-var bb_contained = new THREE.Box3();
-var bb_contained0 = new THREE.Box3();
-
-var bb_static_center = new THREE.Vector3();
-var bb_moved_center = new THREE.Vector3();
-var bb_static_size = new THREE.Vector3();
-var bb_moved_size = new THREE.Vector3();
-
-var bb_plane_static = {
-  x_min: new THREE.Plane()
- ,x_max: new THREE.Plane()
- ,z_min: new THREE.Plane()
- ,z_max: new THREE.Plane()
- ,y_min: new THREE.Plane()
- ,y_max: new THREE.Plane()
-};
-
-var bb_plane_moved = {
-  x_min: new THREE.Plane()
- ,x_max: new THREE.Plane()
- ,z_min: new THREE.Plane()
- ,z_max: new THREE.Plane()
- ,y_min: new THREE.Plane()
- ,y_max: new THREE.Plane()
-};
-
-var bb_plane_static0 = {
-  x_min: new THREE.Plane()
- ,x_max: new THREE.Plane()
- ,z_min: new THREE.Plane()
- ,z_max: new THREE.Plane()
- ,y_min: new THREE.Plane()
- ,y_max: new THREE.Plane()
-};
-
-var bb_plane_moved0 = {
-  x_min: new THREE.Plane()
- ,x_max: new THREE.Plane()
- ,z_min: new THREE.Plane()
- ,z_max: new THREE.Plane()
- ,y_min: new THREE.Plane()
- ,y_max: new THREE.Plane()
-};
-
-var _v3a = new THREE.Vector3();
-var _v3b = new THREE.Vector3();
-var _v3c = new THREE.Vector3();
-
-var _p0 = new THREE.Plane();
-
-var faces;
-
-function face_grounded(face, y) {
-//  return (Math.abs(face.normal.y) > y)
-  return (face.normal.y > y)
-}
-
-// https://stackoverflow.com/questions/563198/whats-the-most-efficent-way-to-calculate-where-two-line-segments-intersect
-function get_line_intersection(p0_x,p0_y, p1_x,p1_y, p2_x,p2_y, p3_x,p3_y)
-{
-    var s02_x, s02_y, s10_x, s10_y, s32_x, s32_y, s_numer, t_numer, denom, t;
-    s10_x = p1_x - p0_x;
-    s10_y = p1_y - p0_y;
-    s32_x = p3_x - p2_x;
-    s32_y = p3_y - p2_y;
-
-    denom = s10_x * s32_y - s32_x * s10_y;
-    if (denom == 0)
-        return 0; // Collinear
-    var denomPositive = denom > 0;
-
-    s02_x = p0_x - p2_x;
-    s02_y = p0_y - p2_y;
-    s_numer = s10_x * s02_y - s10_y * s02_x;
-    if ((s_numer < 0) == denomPositive)
-        return 0; // No collision
-
-    t_numer = s32_x * s02_y - s32_y * s02_x;
-    if ((t_numer < 0) == denomPositive)
-        return 0; // No collision
-
-    if (((s_numer > denom) == denomPositive) || ((t_numer > denom) == denomPositive))
-        return 0; // No collision
-    // Collision detected
-    t = t_numer / denom;
-    var i_x = p0_x + (t * s10_x);
-    var i_y = p0_y + (t * s10_y);
-
-    return [i_x, i_y];
-}
-
-return function (object_d, _bb_static) {
-
-  var _face_grounded = object_d.collision_by_mesh_face_grounded || face_grounded
-
-  var object_host = object_d._obj
-  var object = (object_host.geometry) ? object_host : object_host.children[0];
-
-			// Checking faces
-
-			var geometry = object.geometry;
-			var vertices = geometry.vertices;
-
-			var isFaceMaterial = object.material instanceof THREE.MeshFaceMaterial;
-			var objectMaterials = isFaceMaterial === true ? object.material.materials : null;
-
-			var side = object.material.side;
-
-			var a, b, c, d;
-
-			inverseMatrix.getInverse( object_host.matrixWorld );
-/*
-var pqs = inverseMatrix.decompose()
-//pqs[1].x = -pqs[1].x
-//pqs[1].conjugate()
-//pqs[1].set(0,0,0,1)
-inverseMatrix.makeFromPositionQuaternionScale(pqs[0], pqs[1], pqs[2])
-*/
-bb_static.copy(_bb_static).applyMatrix4(inverseMatrix);
-bb_moved.copy(this).applyMatrix4(inverseMatrix);
-
-var bb_list = ((this == _bb_static) ? [bb_static] : [bb_moved, bb_static])
-
-var bb_ground = (bb_static.min.y > bb_moved.min.y) ? bb_static : bb_moved;
-var ground_y_threshold = bb_ground.min.y + (bb_ground.max.y - bb_ground.min.y) * 0.25;
-var ground_y_threshold_upper = bb_ground.center(center).y;
-var ground_plane_y_threshold = ((bb_static.min.y > bb_moved.min.y) ? bb_moved.min.y : bb_static.min.y) - Math.max(bb_static.max.x-bb_static.min.x, bb_static.max.z-bb_static.min.z) * 2
-
-//var _bb_moved_center = bb_moved.center(bb_moved_center)
-bb_moved.union(bb_static);
-
-bb_static.center(bb_static_center);
-bb_moved.center(bb_moved_center)
-
-// ray from top
-//ray.set(_v3a.copy(_bb_moved_center).setY(bb_moved.max.y), new THREE.Vector3(0,-1,0));
-ray.set(_v3a.copy(bb_moved_center).setY(bb_moved.max.y), new THREE.Vector3(0,-1,0));
-
-bb_core_static.copy(bb_static);
-bb_core_static.expandByVector(_v3a.copy(bb_core_static.size(bb_static_size)).multiplyScalar(-0.25));
-bb_core_static.min.y = ground_y_threshold;
-
-bb_core_moved.copy(bb_moved);
-bb_core_moved.expandByVector(_v3a.copy(bb_core_moved.size(bb_moved_size)).multiplyScalar(-0.25));
-bb_core_moved.min.y = ground_y_threshold;
-
-bb_hit_static.copy(bb_static);
-bb_hit_static.expandByVector(_v3a.copy(bb_hit_static.size(bb_static_size)).multiplyScalar(-0.125));
-bb_hit_static.min.y = ground_y_threshold;
-
-bb_hit_moved.copy(bb_moved);
-bb_hit_moved.expandByVector(_v3a.copy(bb_hit_moved.size(bb_moved_size)).multiplyScalar(-0.125));
-bb_hit_moved.min.y = ground_y_threshold;
-
-var bb_static_collided = false
-var ground_y = -999;
-//var ground_pos = new THREE.Vector3(bb_static_center.x,-999,bb_static_center.z);
-bb_static0.copy(bb_static)
-bb_moved0.copy(bb_moved0)
-//if (object_d.collision_by_mesh_enforced) {
-  bb_static.min.y = Math.min(geometry.boundingBox.min.y, bb_static.min.y)
-  bb_moved.min.y  = Math.min(geometry.boundingBox.min.y, bb_moved.min.y)
-//}
-
-// TRBL
-var bb_side_static = {}
-var bb_side_moved = {}
-var bb_side_static0 = {}
-var bb_side_moved0 = {}
-var _bb = [bb_static, bb_moved, bb_static0, bb_moved0]
-var _bb_side = [bb_side_static, bb_side_moved, bb_side_static0, bb_side_moved0]
-for (var p in bb_plane_static) {
-  switch (p) {
-    case "x_min":
-    case "x_max":
-      _bb.forEach(function (bb, idx) {
-        _bb_side[idx][p] = [
-  [[bb.min.z,bb.max.y], [bb.max.z,bb.max.y]]
- ,[[bb.max.z,bb.max.y], [bb.max.z,bb.min.y]]
- ,[[bb.min.z,bb.min.y], [bb.max.z,bb.min.y]]
- ,[[bb.min.z,bb.max.y], [bb.min.z,bb.min.y]]
-        ];
-      });
-      break
-    case "z_min":
-    case "z_max":
-      _bb.forEach(function (bb, idx) {
-        _bb_side[idx][p] = [
-  [[bb.min.x,bb.max.y], [bb.max.x,bb.max.y]]
- ,[[bb.max.x,bb.max.y], [bb.max.x,bb.min.y]]
- ,[[bb.min.x,bb.min.y], [bb.max.x,bb.min.y]]
- ,[[bb.min.x,bb.max.y], [bb.min.x,bb.min.y]]
-        ];
-      });
-      break
-    case "y_min":
-    case "y_max":
-      _bb.forEach(function (bb, idx) {
-        _bb_side[idx][p] = [
-  [[bb.min.x,bb.max.z], [bb.max.x,bb.max.z]]
- ,[[bb.max.x,bb.max.z], [bb.max.x,bb.min.z]]
- ,[[bb.min.x,bb.min.z], [bb.max.x,bb.min.z]]
- ,[[bb.min.x,bb.max.z], [bb.min.x,bb.min.z]]
-        ];
-      });
-      break
-  }
-}
-
-var _bb = [bb_static, bb_moved, bb_static0, bb_moved0];
-[bb_plane_static, bb_plane_moved, bb_plane_static0, bb_plane_moved0].forEach(function (bb_plane, idx) {
-  var bb = _bb[idx]
-  bb_plane.x_min.setFromNormalAndCoplanarPoint(_v3a.set(-1,0,0), _v3b.set(bb.min.x,0,0));
-  bb_plane.x_max.setFromNormalAndCoplanarPoint(_v3a.set( 1,0,0), _v3b.set(bb.max.x,0,0));
-  bb_plane.z_min.setFromNormalAndCoplanarPoint(_v3a.set(0,0,-1), _v3b.set(0,0,bb.min.z));
-  bb_plane.z_max.setFromNormalAndCoplanarPoint(_v3a.set(0,0, 1), _v3b.set(0,0,bb.max.z));
-  bb_plane.y_min.setFromNormalAndCoplanarPoint(_v3a.set(0,-1,0), _v3b.set(0,bb.min.y,0));
-  bb_plane.y_max.setFromNormalAndCoplanarPoint(_v3a.set(0, 1,0), _v3b.set(0,bb.max.y,0));
-});
-
-blocked_side.reset(object_d);
-
-var collision_by_mesh_material_index_max = object_d.collision_by_mesh_material_index_max || 999
-var collision_by_mesh_sort_range, index_list, ini
-if (object_d.collision_by_mesh_sort_range) {
-  collision_by_mesh_sort_range = object_d.collision_by_mesh_sort_range
-  index_list = object_d.mesh_sorted.index_list
-  ini = 0
-} else {
-  collision_by_mesh_sort_range = 0
-  index_list = geometry.faces
-  ini = 0
-}
-
-var face_hit = {}
-var plane_pts = []
-var plane_pts_by_face_index = {}
-var ground_face_index = -1
-
-//DEBUG_show([ini, index_list.length, Date.now()].join('\n')); console.log(object_d, object_d.mesh_sorted);
-			for ( var _f = ini, fl = index_list.length; _f < fl; _f ++ ) {
-
-var f;
-if (collision_by_mesh_sort_range === 0) {
-  f = _f
-}
-else {
-  f = index_list[_f]
-}
-
-				var face = geometry.faces[ f ];
-
-if (face.materialIndex >= collision_by_mesh_material_index_max) break;
-
-				var material = isFaceMaterial === true ? objectMaterials[ face.materialIndex ] : object.material;
-
-				if ( material === undefined ) continue;
-
-				a = vertices[ face.a ];
-				b = vertices[ face.b ];
-				c = vertices[ face.c ];
-
-				// check if we hit the wrong side of a single sided face
-				var side = material.side;
-				if ( side !== THREE.DoubleSide ) {
-//if (f==173784) face.normal.subVectors(b,a).cross(_v3b.subVectors(c,a)).normalize()
-					var planeSign = _v3a.addVectors(a,b).add(c).multiplyScalar(1/3).sub(bb_moved_center).normalize().dot( face.normal );
-//if (f==173784) DEBUG_show((planeSign>0 ? 1 : -1)+":"+_v3a.addVectors(a,b).add(c).multiplyScalar(1/3).sub(bb_moved_center).normalize().toArray()+'/'+_v3a.subVectors(b,a).cross(_v3b.subVectors(c,a)).normalize().toArray())//face.normal.toArray())
-					if ( ! ( side === THREE.FrontSide ? planeSign < 0 : planeSign > 0 ) ) continue;
-
-				}
-
-				faces = []
-				if ( face instanceof THREE.Face3 ) {
-
-					faces.push([a,b,c]);
-
-				} else if ( face instanceof THREE.Face4 ) {
-
-					d = vertices[ face.d ];
-
-					faces.push([a,b,d], [b,c,d]);
-				}
-				else continue
-
-faces.forEach(function (tri) {
-
-var grounded_priority = 0
-
-bb_list.some(function (bb) {
-  if (!collision.isIntersectionTriangleAABB( tri[0], tri[1], tri[2], bb )) {
-//if (face.materialIndex==1 && (collision.isIntersectionTriangleAABB(tri[0],tri[2],tri[1], bb) || collision.isIntersectionTriangleAABB(tri[1],tri[0],tri[2], bb) || collision.isIntersectionTriangleAABB(tri[1],tri[2],tri[0], bb) || collision.isIntersectionTriangleAABB(tri[2],tri[0],tri[1], bb) || collision.isIntersectionTriangleAABB(tri[2],tri[1],tri[0], bb))) DEBUG_show(Date.now())
-    return true
-  }
-//if (face.materialIndex==1) { DEBUG_show(f+'/'+Date.now()); console.log(face.normal); }
-  face_hit[f] = {}
-
-  var bb0, bb_core, bb_hit, bb_side, bb_side0, bb_plane, bb_plane0, bb_center, bb_size, bb_priority
-  if (bb == bb_static) {
-    bb0 = bb_static0
-    bb_core = bb_core_static
-    bb_hit = bb_hit_static
-    bb_side  = bb_side_static
-    bb_side0 = bb_side_static0
-    bb_plane  = bb_plane_static
-    bb_plane0 = bb_plane_static0
-    bb_center = bb_static_center
-    bb_size = bb_static_size
-    bb_priority = 1
-    bb_static_collided = true
-  }
-  else {
-    bb0 = bb_moved0
-    bb_core = bb_core_moved
-    bb_hit = bb_hit_moved
-    bb_side  = bb_side_moved
-    bb_side0 = bb_side_moved0
-    bb_plane  = bb_plane_moved
-    bb_plane0 = bb_plane_moved0
-    bb_center = bb_moved_center
-    bb_size = bb_moved_size
-    bb_priority = 2
-  }
-
-  var blocked
-
-// comparison between grounded_priority and grounded is used to make sure that ground_y from bb_moved has a prority higher than bb_static, which avoids pass-thru glitches in some cases.
-  var grounded = 0
-
-  var is_flat = _face_grounded(face, 0.5)//0.75)//
-// c, a, b (correct face normal?)
-  if (ray.intersectTriangle( tri[2], tri[0], tri[1], false, _v3a )) {
-    if (_v3a.y > ground_y_threshold_upper) {
-      if (_v3a.y > bb_core.max.y) {
-        blocked_side.set_state.call(blocked_side.y_max, bb_priority, bb.max.y-_v3a.y);
-      }
-      else blocked = true
-    }
-    else if (grounded >= grounded_priority) {
-      grounded = grounded_priority = bb_priority
-      ground_y = Math.max(ground_y, _v3a.y)
-      if (ground_y == _v3a.y) {
-//        ground_pos.copy(_v3a)
-        ground_face_index = f
-      }
-    }
-//console.log("A:"+f)
-//if (f==173940 || f==173941 || f==173936 || f==173937) console.log("A:"+_v3a.y+','+ground_y+'/'+f)
-  }
-
-
-for (var i_side = 0; i_side < 2; i_side++) {
-  var _bb, _bb_plane, _bb_side, _bb_contained
-  if (i_side == 1) {
-    _bb = bb
-    _bb_plane = bb_plane
-    _bb_side = bb_side
-    _bb_contained = bb_contained
-  }
-  else {
-    _bb = bb0
-    _bb_plane = bb_plane0
-    _bb_side = bb_side0
-    _bb_contained = bb_contained0
-  }
-
-  var pts = []
-  var v_outside = []
-  if (!blocked) {
-    tri.some(function (v, idx) {
-      if (_bb.containsPoint(v)) {
-
-        if (bb_core.containsPoint(v)) {
-          blocked = true
-          return true
-        }
-
-        pts.push(v.clone())
-      }
-      else
-        v_outside[idx] = true
-    });
-  }
-
-  if (blocked) {
-    blocked_side.set_state.call(blocked_side.blocked, bb_priority, 1, f);
-    return
-  }
-
-// for simplicity
-//  if (grounded) return
-
-  var lines = []
-  if (v_outside[0] || v_outside[1])
-    lines.push(new THREE.Line3(tri[0], tri[1]))
-  if (v_outside[1] || v_outside[2])
-    lines.push(new THREE.Line3(tri[1], tri[2]))
-  if (v_outside[2] || v_outside[0])
-    lines.push(new THREE.Line3(tri[2], tri[0]))
-
-  var side = {
-    x_min: []
-   ,x_max: []
-   ,z_min: []
-   ,z_max: []
-   ,y_min: []
-   ,y_max: []
-  };
-
-  lines.forEach(function (line) {
-    for (var p in _bb_plane) {
-      var v = _bb_plane[p].intersectLine(line)
-      if (v)
-        side[p].push(v)
-    }
-  });
-
-  for (var p in side) {
-    var sp = side[p]
-    if (sp.length < 2) {
-      continue
-    }
-
-    var hit = 0
-    var p2 = []
-    sp.forEach(function (v) {
-      var _hit
-      switch (p) {
-        case "x_min":
-        case "x_max":
-          _hit = (v.y >= _bb.min.y) && (v.y <= _bb.max.y) && (v.z >= _bb.min.z) && (v.z <= _bb.max.z)
-          break
-        case "z_min":
-        case "z_max":
-          _hit = (v.y >= _bb.min.y) && (v.y <= _bb.max.y) && (v.x >= _bb.min.x) && (v.x <= _bb.max.x)
-          break
-        case "y_min":
-        case "y_max":
-          _hit = (v.z >= _bb.min.z) && (v.z <= _bb.max.z) && (v.x >= _bb.min.x) && (v.x <= _bb.max.x)
-          break
-      }
-      if (_hit) {
-        hit++
-        p2.push(v)
-      }
-    });
-
-    if (hit < 2) {
-      var xyxy
-      switch (p) {
-        case "x_min":
-        case "x_max":
-          xyxy = [sp[0].z,sp[0].y, sp[1].z,sp[1].y]
-          break
-        case "z_min":
-        case "z_max":
-          xyxy = [sp[0].x,sp[0].y, sp[1].x,sp[1].y]
-          break
-        case "y_min":
-        case "y_max":
-          xyxy = [sp[0].x,sp[0].z, sp[1].x,sp[1].z]
-          break
-      }
-
-      _bb_side[p].some(function (s) {
-        var xy = get_line_intersection(s[0][0],s[0][1], s[1][0],s[1][1], xyxy[0],xyxy[1], xyxy[2],xyxy[3])
-        if (!xy)
-          return
-
-        var v_new
-        switch (p) {
-          case "x_min":
-            v_new = new THREE.Vector3(_bb.min.x, xy[1], xy[0])
-            break
-          case "x_max":
-            v_new = new THREE.Vector3(_bb.max.x, xy[1], xy[0])
-            break
-          case "z_min":
-            v_new = new THREE.Vector3(xy[0], xy[1], _bb.min.z)
-            break
-          case "z_max":
-            v_new = new THREE.Vector3(xy[0], xy[1], _bb.max.z)
-            break
-          case "y_min":
-            v_new = new THREE.Vector3(xy[0], _bb.min.y, xy[1])
-            break
-          case "y_max":
-            v_new = new THREE.Vector3(xy[0], _bb.max.y, xy[1])
-            break
-        }
-
-        p2.push(v_new)
-        return (++hit == 2)
-      });
-    }
-
-    if (hit == 2)
-      pts.push(p2[0], p2[1])
-  }
-
-  if (!pts.length) {
-/*
-    if (is_flat && !grounded) {
-      ray.intersectPlane(_p0.setFromNormalAndCoplanarPoint(face.normal, tri[0]), _v3a)
-      if (_v3a && (_v3a.y < _bb.min.y)) {
-        ground_y = Math.max(ground_y, _v3a.y)
-        if (ground_y == _v3a.y)
-          ground_face_index = f
-      }
-    }
-*/
-//console.error(f+'/'+hit+'\n'+JSON.stringify(side))
-//console.log(JSON.stringify(bb))
-//console.log(tri.map(function (v) { return v.toArray().join(",") }).join("/"))
-    continue
-//    return
-  }
-
-  var min = _v3a.copy(pts[0])
-  var max = _v3b.copy(pts[0])
-  pts.forEach(function (v) {
-    min.min(v)
-    max.max(v)
-  });
-  _bb_contained.set(min, max);
-
-// only check ground_y for extended-y bb
-if (_bb == bb) {
-  if (is_flat && (!grounded && (bb_priority >= grounded_priority))) {
-    if (_bb_contained.max.y < ground_y_threshold) {
-      grounded = grounded_priority = bb_priority
-      ground_y = Math.max(ground_y, _bb_contained.max.y)
-      if (ground_y == _bb_contained.max.y) {
-//        ground_pos.y = ground_y
-        ground_face_index = f
-      }
-    }
-    else if (_bb_contained.min.y < ground_y_threshold) {
-      grounded = grounded_priority = bb_priority
-      ground_y = Math.max(ground_y, ground_y_threshold)
-      if (ground_y == ground_y_threshold)
-        ground_face_index = f
-    }
-  }
-
-  if (bb_priority == 1) {
-    pts.forEach(function (v) {
-      if ((v.y > ground_plane_y_threshold) && (is_flat || grounded)) {
-        var _v = v.clone()
-        plane_pts.push(_v)
-
-        if (!plane_pts_by_face_index[f])
-          plane_pts_by_face_index[f] = []
-        plane_pts_by_face_index[f].push(_v)
-      }
-    });
-  }
-}
-
-  var normal_inv = _v3c.copy(face.normal).multiplyScalar(Math.max(bb_size.x, bb_size.z)).negate()
-  pts.forEach(function (v) {
-    v.add(normal_inv)
-    min.min(v)
-    max.max(v)
-  });
-  _bb_contained.set(min, max).intersect(_bb);
-
-  var fh = face_hit[f]
-  fh.abc = [face.a, face.b, face.c]
-  fh.bb_priority = {}
-  fh.bb_priority[bb_priority] = {
-    _bb_contained: _bb_contained.clone()
-  }
-
-  if (grounded)
-    return
-  if (_bb_contained.max.y < ground_y)
-    return
-
-  var cc
-  var info = ""
-  var x_contained,  y_contained,  z_contained
-  var x_contained2, y_contained2, z_contained2
-  var x_edge, y_edge, z_edge
-
-  for (var k = 0; k < 2; k++) {
-    if (k == 1) {
-//break
-      var face_connected = 0
-      for (var i in face_hit) {
-        fh = face_hit[i]
-        var abc = fh.abc
-        if (!abc || (i == f) || !fh.bb_priority[bb_priority])
-          continue
-
-        if ((abc.indexOf(face.a) == -1) && (abc.indexOf(face.b) == -1) && (abc.indexOf(face.c) == -1))
-          continue
-
-        face_connected++
-        _bb_contained.union(fh.bb_priority[bb_priority]._bb_contained)
-      }
-//if (f==173784) console.log(face_connected)
-      if (!face_connected)
-        break
-//      info = f + "/" + face_connected
-    }
-    else {
-//      info = f
-    }
-
-    cc = _bb_contained.center(_v3a)
-    x_contained = ((cc.x > bb_core.min.x) && (cc.x < bb_core.max.x));
-    y_contained = ((cc.y > bb_core.min.y) && (cc.y < bb_core.max.y));
-    z_contained = ((cc.z > bb_core.min.z) && (cc.z < bb_core.max.z));
-
-    x_contained2 = x_contained || ((_bb_contained.min.x > bb_hit.min.x) && (_bb_contained.min.x < bb_hit.max.x)) || ((_bb_contained.max.x > bb_hit.min.x) && (_bb_contained.max.x < bb_hit.max.x));
-    y_contained2 = (_bb_contained.max.y > ground_y_threshold)// && (y_contained || ((bb_contained.min.y > bb_hit.min.y) && (bb_contained.min.y < bb_hit.max.y)) || ((bb_contained.max.y > bb_hit.min.y) && (bb_contained.max.y < bb_hit.max.y)));
-    z_contained2 = z_contained || ((_bb_contained.min.z > bb_hit.min.z) && (_bb_contained.min.z < bb_hit.max.z)) || ((_bb_contained.max.z > bb_hit.min.z) && (_bb_contained.max.z < bb_hit.max.z));
-
-//x_contained2 = y_contained2 = z_contained2 = true
-//x_contained2 = z_contained2 = true;
-
-    x_edge = !x_contained// || (((bb_contained.min.x < bb_core.min.x) || (bb_contained.max.x > bb_core.max.x)) )//&& (Math.abs(face.normal.x) > 0.5))
-    y_edge = !y_contained// || (((bb_contained.min.y < bb_core.min.y) || (bb_contained.max.y > bb_core.max.y)) )//&& (Math.abs(face.normal.y) > 0.5))
-    z_edge = !z_contained// || (((bb_contained.min.z < bb_core.min.z) || (bb_contained.max.z > bb_core.max.z)) )//&& (Math.abs(face.normal.z) > 0.5))
-
-    if (x_edge && y_contained2/* && z_contained2*/)
-      blocked_side.set_state.call(blocked_side["x_" + ((cc.x > bb_center.x) ? "max" : "min")], bb_priority, (_bb_contained.max.x-_bb_contained.min.x), info);
-    if (x_contained2 && y_edge && z_contained2)
-      blocked_side.set_state.call(blocked_side["y_" + ((cc.y > bb_center.y) ? "max" : "min")], bb_priority, (_bb_contained.max.y-_bb_contained.min.y), info);
-    if (/*x_contained2 && */y_contained2 && z_edge)
-      blocked_side.set_state.call(blocked_side["z_" + ((cc.z > bb_center.z) ? "max" : "min")], bb_priority, (_bb_contained.max.z-_bb_contained.min.z), info);
-//if (k==0 && f==3761) info += '\n' + [x_edge,y_edge,z_edge]+'\ncc:\n'+cc.toArray()+'\nbb_core:\n'+bb_core.min.toArray()+'\n'+bb_core.max.toArray()+'\nbb0:\n'+bb0.min.toArray()+'\n'+bb0.max.toArray()+'\nbb_contained0:\n'+bb_contained0.min.toArray()+'\n'+bb_contained0.max.toArray()+'\nrotation:\n'+new THREE.Vector3().setEulerFromQuaternion(THREE.MMD.getModels()[0].mesh.quaternion).multiplyScalar(180/Math.PI).toArray()+'\npts:\n'+pts.map(function(pt){return pt.toArray()}).join("\n")
-  }
-}
-//if (f==3761) DEBUG_show(info + '\n' + Date.now())
-});
-
-});
-
-			}
-
-  var hit = Object.keys(face_hit).length;//0;
-//  for (var i in face_hit) hit++;
-
-  var ground_face_connected = []
-
-  if ((ground_face_index != -1) && plane_pts_by_face_index[ground_face_index]) {
-    var ground_face = geometry.faces[ground_face_index]
-    plane_pts = plane_pts_by_face_index[ground_face_index].slice()
-
-    for (var i in plane_pts_by_face_index) {
-      fh = face_hit[i]
-      var abc = fh.abc
-      if (!abc || (i==ground_face_index))
-        continue
-
-      if ((abc.indexOf(ground_face.a) == -1) && (abc.indexOf(ground_face.b) == -1) && (abc.indexOf(ground_face.c) == -1))
-        continue
-
-      ground_face_connected.push(i)
-      plane_pts = plane_pts.concat(plane_pts_by_face_index[i])
-    }
-
-    ground_face_connected.push(ground_face_index)
-//ground_face_connected = []
-  }
-
-// functionality replaced by .collision_by_mesh_drop_limit
-// ground_y below -499 for real is unlikely, passing for now
-//  if (ground_y < -499) { ground_y = -999; bb_static_collided = false; }
-
-//blocked_side.info=bb_core_static.max.y+'/'+bb_core_moved.max.y
-  return {
-    hit:[hit,index_list.length]
-   ,updated:(blocked_side._updated || (ground_y > -999) || bb_static_collided)
-   ,blocked_side:blocked_side
-   ,ground_y:ground_y, ground_face_index:ground_face_index, ground_face_connected:ground_face_connected
-   ,bb_static_collided:bb_static_collided
-   ,plane_pts:plane_pts
-  };
-
-};
-  }();
 
 // AT: backported
 THREE.Ray.prototype.intersectTriangle = function () {

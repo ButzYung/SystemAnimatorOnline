@@ -1,10 +1,9 @@
-﻿# XR Animator
+﻿(https://github.com/ButzYung/SystemAnimatorOnline)
+
+# XR Animator
 
 ### Full-body, real-time motion tracking using just a single webcam, right on your browser!
 
-<p align="center">
-  <img width="640" height="360" title="XR Animator" src="https://github.com/ButzYung/SystemAnimatorOnline/raw/master/images/XR_Animator_thumbnail01.png">
-</p>
 
 "XR Animator" is our featured web app based on our System Animator Online. It uses the machine learning (ML) solution from [MediaPipe](https://github.com/google/mediapipe) and [TensorFlow.js](https://github.com/tensorflow/tfjs-models) to detect the 3D poses from a live webcam video, which is then used to drive the 3D avatar (MMD/VRM model) as if you are controlling it with your body. It can be used for whatever XR purpose, and even for VTubing.
 
@@ -42,11 +41,8 @@ Check out these [YouTube video demos](https://youtube.com/playlist?list=PLLpwhHM
 
 (*) - To capture the online version of XR Animator on OBS without the browser UI, you have to open XR Animator on OBS browser. A few extra command line parameters on OBS are required to allow camera access. [Details](https://twitter.com/yeemachine/status/1461908260638785540)
 
-# Augmented Reality (AR)
 
-<p align="center">
-  <img width="720" height="440" title="XR Animator in AR" src="https://github.com/ButzYung/SystemAnimatorOnline/raw/master/images/XR_Animator_thumbnail02.png">
-</p>
+# Augmented Reality (AR)
 
 XR Animator and some other demos of System Animator Online support the "Augmented Reality" (AR) mode on mobile phones, which renders the 3D models that appear as if they exist in the real world. The AR mode requires mobile phones that support Google's ARCore technology, Chrome browser and the new WebXR API. Follow the steps below.
 
@@ -62,6 +58,7 @@ After the page has been fully loaded, click on the little phone button on the to
 
 [Check out these YouTube videos](https://www.youtube.com/playlist?list=PLLpwhHMvOCSt_9k1zDMKHc7X1nBUwnU8l) for demonstration.
 
+
 # AR Selfie
 
 XR Animator also supports the AR selfie feature, using both the frond camera (for AR) and the "selfie" camera, allowing you to take a selfie with the 3D avatar in AR mode.
@@ -74,19 +71,17 @@ Lastly, click the Snapshot icon and a still photo will be generated. This can be
 
 [Check out the following YouTube video](https://youtu.be/TIMPqV9lVH8) for demonstration.
 
-# Donation
 
-  XR Animator inherits from System Animator, a project in which I have been working on for many years. While both XR Animator and System Animator is free, lots of time, efforts and money have been spent to keep this project running. If you like our works, please consider making a donation. Your financial support is needed to keep us going!🙏
+# ❤️Donation
 
-### 🙏 [Donate via PayPal.Me](https://www.paypal.me/AnimeThemeGadgets) 🙏
+XR Animator inherits from System Animator, my desktop gadget project which have been active for many years. Lots of time, efforts and money have been spent to keep these projects free and running. If you like our works, please consider making a donation. Your financial support is needed to keep us going!🙏
 
-### 🪙 Donate via Bitcoin ( 1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p ) 🪙
+### 🙏[Donate via PayPal.Me](https://www.paypal.me/AnimeThemeGadgets)
+
+### 🟡Donate via Bitcoin ( 1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p )
+
 
 # About System Animator
-
-<p align="center">
-  <img width="720" height="450" title="System Animator" src="https://www.animetheme.com/sidebar/sc_sidebar_04.jpg">
-</p>
 
 System Animator was originally a desktop gadget project, born more than 10 years ago. The latest version, System Animator Online, is a major version advancement with focus on working as a web app instead of being just a desktop gadget. It fully supports MikuMikuDance (MMD) models and motions, as well as the latest VRM models and FBX/BVH motions, to create an immersive 3D environment.
 
@@ -94,6 +89,7 @@ It's hard to describe what System Animator Online can do in a few words. From a 
 
 For more information about the desktop gadget version of System Animator, please visit the following page.
 https://www.animetheme.com/sidebar/
+
 
 # Other demos based on System Animator Online
 
@@ -106,6 +102,7 @@ https://www.animetheme.com/sidebar/
 - [3D Multiplayer RPG](https://sao.animetheme.com/SystemAnimator_online_multiplayer.html) (up to 3 players)
 
 All demos support the use of custom MMD (MikuMikuDance) model. Drop a zip of your favorite MMD model at the beginning, press the START button, and the demo will proceed with your model instead of the default one.
+
 
 # Copyright/License/Credits
 
@@ -190,6 +187,7 @@ All demos support the use of custom MMD (MikuMikuDance) model. Drop a zip of you
     https://www.youtube.com/watch?v=KJ71dY4mkNo
 
 - Credits are given to the authors of any other image/media files used in System Animator.
+
 
 # Contacts
 

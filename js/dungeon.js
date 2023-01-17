@@ -1,6 +1,28 @@
-// (2022-12-20)
+// (2023-01-17)
 
 MMD_SA_options.Dungeon = (function () {
+
+class Object3D_proxy_base {
+  constructor(_parent) {
+    this._parent = _parent;
+  }
+
+  get #bounding_host() {
+return MMD_SA.get_bounding_host(this._parent._obj);
+  }
+
+  get boundingSphere() {
+return this.#bounding_host.boundingSphere;
+  }
+
+  get boundingBox() {
+return this.#bounding_host.boundingBox;
+  }
+
+  get boundingBox_list() {
+return this.#bounding_host.boundingBox_list;
+  }
+}
 
 function CombatStats(stats) {
   Object.assign(this, stats)
@@ -42,6 +64,10 @@ var _bb_xz_factor_ = 0.5
 
 return {
   _bb_xz_factor_:_bb_xz_factor_
+
+ ,Object3D_proxy_base: Object3D_proxy_base
+
+ ,get use_octree() { return true; }//MMD_SA_options.Dungeon_options.use_octree; }
 
 //https://github.com/Matthew-Burfield/random-dungeon-generator
  ,RDG: (function () {
@@ -220,6 +246,8 @@ var model_mesh = THREE.MMD.getModels()[0].mesh
 var moved = !model_mesh.position.equals(this.pos)
 model_mesh.position.copy(this.pos)
 
+this.rot.set(this.rot.x % (Math.PI*2), this.rot.y % (Math.PI*2), this.rot.z % (Math.PI*2));
+
 for (var i = 1, i_max = d.PC_light_max; i < i_max; i++) {
   var light = MMD_SA.light_list[i]
   light.obj.position.copy(light._pos_base).add(this.pos)
@@ -287,6 +315,8 @@ c.camera_TPS_rot = new THREE.Vector3()
       });
 
       window.addEventListener("MMDCameraReset", function (e) {
+if (!e.detail.enforced) return;
+
 c.camera_TPS_rot.set(0, c.rot.y, 0)
 c.camera_update()
       });
@@ -481,7 +511,7 @@ if (para_SA.is_PC_candidate) {
 
   this.states = {}
 
-  this.assign_combat_keys()
+  this.assign_keys()
 }
 
 if (para_SA._icon_canvas)
@@ -491,22 +521,22 @@ MMD_SA_options.Dungeon.update_status_bar(true)
 this.update_boundingBox()
     }
 
-   ,assign_combat_keys: function () {
-if (!MMD_SA_options.Dungeon_options.combat_mode_enabled) return
+   ,assign_keys: function () {
+var d = MMD_SA_options.Dungeon;
 
-var d = MMD_SA_options.Dungeon
+if (MMD_SA_options.Dungeon_options.combat_mode_enabled) {
+  const key_map_new = {};
+  Object.keys(d.key_map).filter((k)=>k<10000).forEach((k)=>{key_map_new[k]=d.key_map[k]});
+  d.key_map = key_map_new;
 
-var key_map_new = {}
-Object.keys(d.key_map).filter((k)=>k<10000).forEach((k)=>{key_map_new[k]=d.key_map[k]});
-d.key_map = key_map_new
-
-MMD_SA_options.Dungeon_options.attack_combo_list.forEach(function (combo) {
-  combo._RE = new RegExp("(^|\\,)" + combo.combo_RE.replace(/\,/g, "\\,") + "(\\,|$)")
-  combo._RE_simple = new RegExp("(^|\\,)" + ((/^(123|456|789)$/.test(combo.combo_RE)) ? combo.combo_RE.replace(/123/, "3\\,3").replace(/456/, "6\\,6").replace(/789/, "9\\,9") : combo.combo_RE.replace(/\,/g, "\\,").replace(/[123]+/g, "[123]").replace(/[456]+/g, "[456]").replace(/[789]+/g, "[789]")) + "(\\,|$)")
-  d.key_map[combo.keyCode] = { order:combo.keyCode, id:"combo-"+combo.keyCode, type_combat:true, keyCode:combo.keyCode
-   ,motion_id: combo.motion_id
-  };
-});
+  MMD_SA_options.Dungeon_options.attack_combo_list.forEach(function (combo) {
+    combo._RE = new RegExp("(^|\\,)" + combo.combo_RE.replace(/\,/g, "\\,") + "(\\,|$)");
+    combo._RE_simple = new RegExp("(^|\\,)" + ((/^(123|456|789)$/.test(combo.combo_RE)) ? combo.combo_RE.replace(/123/, "3\\,3").replace(/456/, "6\\,6").replace(/789/, "9\\,9") : combo.combo_RE.replace(/\,/g, "\\,").replace(/[123]+/g, "[123]").replace(/[456]+/g, "[456]").replace(/[789]+/g, "[789]")) + "(\\,|$)");
+    d.key_map[combo.keyCode] = { order:combo.keyCode, id:"combo-"+combo.keyCode, type_combat:true, keyCode:combo.keyCode
+     ,motion_id: combo.motion_id
+    };
+  });
+}
 
 Object.keys(d.key_map).map((key)=>d.key_map[key]).concat(d.key_map_combat||[]).concat(d.key_map_parry||[]).forEach((function () {
   var p_to_sync = ["combat_para", "mov_speed", "keyCode", "motion_duration"];
@@ -550,6 +580,8 @@ d.key_map_reset()
     }
 
    ,reset: function () {
+if (!this._obj_proxy) this._obj_proxy = new Object3D_proxy_base(this);
+
 this.dismount()
 
 this.ground_obj = null
@@ -890,6 +922,11 @@ var tex_head = ""
 var mtl_head = ""
 var mesh_scene = ""
 
+var tex_list = [];
+var mtl_list = [];
+var mesh_scene_list = [];
+var geo_list = [];
+
 var use_waveNoiseTexture
 
 var txr_map_id = {}
@@ -908,32 +945,65 @@ for (var i = 0, i_max = p.length; i < i_max; i++) {
   if (p_obj.waveBaseSpeed!=null)
     use_waveNoiseTexture = true
 
-  var repeat = "1 1";//(p_obj.repeat || [1,1]).join(" ");//
+//  var repeat = "1 1";//(p_obj.repeat || [1,1]).join(" ");//
   p_obj.map_id = p_obj.map && txr_map_id[p_obj.map]
   if (p_obj.map && (p_obj.map_id == null)) {
     p_obj.map_id = txr_map_id[p_obj.map] = i
-    tex_head +=
-  '<txr id="DungeonPlane'+i+'TXR" src="' + toFileProtocol(p_obj.map) + '" param="repeat:' + repeat + ';" />\n';
+//    tex_head +=
+//  '<txr id="DungeonPlane'+i+'TXR" src="' + toFileProtocol(p_obj.map) + '" param="repeat:' + repeat + ';" />\n';
+
+    tex_list.push({ tag:'txr', id:'DungeonPlane'+i+'TXR', src:p_obj.map, para:{ repeat:[1,1] } });
   }
-  p_obj.normalMap_id = p_obj.normalMap && txr_normalMap_id[p_obj.normalMap]
+  p_obj.normalMap_id = p_obj.normalMap && txr_normalMap_id[p_obj.normalMap];
   if (p_obj.normalMap && (txr_normalMap_id[p_obj.normalMap] == null)) {
     p_obj.normalMap_id = txr_normalMap_id[p_obj.normalMap] = i
-    tex_head +=
-  '<txr id="DungeonPlane'+i+'TXR_N" src="' + toFileProtocol(p_obj.normalMap) + '" param="repeat:' + repeat + ';" />\n';
+//    tex_head +=
+//  '<txr id="DungeonPlane'+i+'TXR_N" src="' + toFileProtocol(p_obj.normalMap) + '" param="repeat:' + repeat + ';" />\n';
+
+    tex_list.push({ tag:'txr', id:'DungeonPlane'+i+'TXR_N', src:p_obj.normalMap, para:{ repeat:[1,1] } });
   }
-  p_obj.specularMap_id = p_obj.specularMap && txr_specularMap_id[p_obj.specularMap]
+  p_obj.specularMap_id = p_obj.specularMap && txr_specularMap_id[p_obj.specularMap];
   if (p_obj.specularMap && (txr_specularMap_id[p_obj.specularMap] == null)) {
     p_obj.specularMap_id = txr_specularMap_id[p_obj.specularMap] = i
-    tex_head +=
-  '<txr id="DungeonPlane'+i+'TXR_S" src="' + toFileProtocol(p_obj.specularMap) + '" param="repeat:' + repeat + ';" />\n';
+//    tex_head +=
+//  '<txr id="DungeonPlane'+i+'TXR_S" src="' + toFileProtocol(p_obj.specularMap) + '" param="repeat:' + repeat + ';" />\n';
+
+    tex_list.push({ tag:'txr', id:'DungeonPlane'+i+'TXR_S', src:p_obj.specularMap, para:{ repeat:[1,1] } });
   }
 
   if ((p_obj.mirrorTextureIndex!=null) && (!MMD_SA_options.mirror_obj || !MMD_SA_options.mirror_obj[p_obj.mirrorTextureIndex])) {
     console.log("(Mirror-" + p_obj.mirrorTextureIndex + " not found)")
     p_obj.mirrorTextureIndex = null
   }
+/*
+  var mtl_param_common = ((p_obj.opacity == null)?'transparent:false;':'') + ((p_obj.renderDepth != null)?'renderDepth:'+p_obj.renderDepth+';':'') + ((p_obj.side)?'side:'+p_obj.side+';':'')
++ ((p_obj.map)?'map:#DungeonPlane'+p_obj.map_id+'TXR;':'') + ((p_obj.normalMap)?'normalMap:#DungeonPlane'+p_obj.normalMap_id+'TXR_N;':'') + ((p_obj.ambient)?'ambient:'+p_obj.ambient+';':'')
++ ((p_obj.specularMap)?'specularMap:#DungeonPlane'+p_obj.specularMap_id+'TXR_S;specular:#FFFFFF;':((p_obj.specular)?'specular:'+p_obj.specular+';':'')) + ((p_obj.emissive)?'emissive:'+p_obj.emissive+';':'')
++ ((p_obj.mirrorTextureIndex!=null)?'mirrorTextureIndex:'+(p_obj.mirrorTextureIndex)+';':'') + ((p_obj.waveBaseSpeed!=null)?'waveBaseSpeed:'+(p_obj.waveBaseSpeed)+';':'')
++ ((typeof p_obj.uniTexture=='object')?'uniTexture:{'+encodeURIComponent(JSON.stringify(p_obj.uniTexture).replace(/^\{/,'').replace(/\}$/,''))+'};':'');
+*/
+  var mtl_param_common = {};
+  if (p_obj.opacity == null) mtl_param_common.transparent = false;
+//'renderOrder' : 'renderDepth'
+  if (p_obj.renderDepth != null) mtl_param_common.renderDepth = p_obj.renderDepth;
+  if (p_obj.side) mtl_param_common.side = p_obj.side;
+  if (p_obj.map) mtl_param_common.map = 'DungeonPlane'+p_obj.map_id+'TXR';
+  if (p_obj.normalMap) mtl_param_common.normalMap = 'DungeonPlane'+p_obj.normalMap_id+'TXR_N';
+//'color' : 'ambient'
+  if (p_obj.ambient) mtl_param_common.ambient = p_obj.ambient;
+  if (p_obj.specularMap) {
+    mtl_param_common.specularMap = 'DungeonPlane'+p_obj.specularMap_id+'TXR_S';
+    mtl_param_common.specular = '#FFFFFF';
+  }
+  else {
+    if (p_obj.specular) mtl_param_common.specular = p_obj.specular;
+  }
+  if (p_obj.emissive) mtl_param_common.emissive = p_obj.emissive;
 
-  var mtl_param_common = /*'wireframe:true;'+*/((p_obj.opacity == null)?'transparent:false;':'') + ((p_obj.renderDepth != null)?'renderDepth:'+p_obj.renderDepth+';':'') + ((p_obj.side)?'side:'+p_obj.side+';':'') + ((p_obj.map)?'map:#DungeonPlane'+p_obj.map_id+'TXR;':'') + ((p_obj.normalMap)?'normalMap:#DungeonPlane'+p_obj.normalMap_id+'TXR_N;':'') + ((p_obj.ambient)?'ambient:'+p_obj.ambient+';':'') + ((p_obj.specularMap)?'specularMap:#DungeonPlane'+p_obj.specularMap_id+'TXR_S;specular:#FFFFFF;':((p_obj.specular)?'specular:'+p_obj.specular+';':'')) + ((p_obj.emissive)?'emissive:'+p_obj.emissive+';':'') + ((p_obj.mirrorTextureIndex!=null)?'mirrorTextureIndex:'+(p_obj.mirrorTextureIndex)+';':'') + ((p_obj.waveBaseSpeed!=null)?'waveBaseSpeed:'+(p_obj.waveBaseSpeed)+';':'') + ((typeof p_obj.uniTexture=='object')?'uniTexture:{'+encodeURIComponent(JSON.stringify(p_obj.uniTexture).replace(/^\{/,'').replace(/\}$/,''))+'};':'');
+  var mtl_param_common_extra = {};
+  if (p_obj.mirrorTextureIndex!=null) mtl_param_common_extra.mirrorTextureIndex = p_obj.mirrorTextureIndex;
+  if (p_obj.waveBaseSpeed!=null) mtl_param_common_extra.waveBaseSpeed = p_obj.waveBaseSpeed;
+  if (typeof p_obj.uniTexture=='object') mtl_param_common_extra.uniTexture = p_obj.uniTexture;
 
   if (p_obj.displacementMap || p_obj.random_terrain) {
     var d_map_id, d_map_draw
@@ -1020,36 +1090,46 @@ p_obj.displacementMap = canvas_d.toDataURL()
 
     p_obj.displacementMap_id = d_map_id
     if (d_map_draw) {
-      tex_head +=
-  '<txr id="DungeonPlane'+d_map_id+'TXR_D" src="' + toFileProtocol(p_obj.displacementMap) + '" param="repeat:' + repeat + ';" />\n';
+//      tex_head +=
+//  '<txr id="DungeonPlane'+d_map_id+'TXR_D" src="' + toFileProtocol(p_obj.displacementMap) + '" param="repeat:' + repeat + ';" />\n';
+      tex_list.push({ tag:'txr', id:'DungeonPlane'+d_map_id+'TXR_D', src:p_obj.displacementMap, para:{ repeat:[1,1] } });
     }
-    mtl_head +=
-  '<mtl id="DungeonPlane'+i+'MTL_D" type="MeshPhong" param="' + mtl_param_common + ('displacementMap:#DungeonPlane'+d_map_id+'TXR_D;uDisplacementScale:'+(p_obj.uDisplacementScale||1)+';uDisplacementBias:'+(p_obj.uDisplacementBias||0)+';uDisplacementCustomUVScale:'+(p_obj.uDisplacementCustomUVScale||0)+';')+ '" />\n';
+//    mtl_head +=
+//  '<mtl id="DungeonPlane'+i+'MTL_D" type="MeshPhong" param="'
+// + mtl_param_common + ('displacementMap:#DungeonPlane'+d_map_id+'TXR_D;uDisplacementScale:'+(p_obj.uDisplacementScale||1)+';uDisplacementBias:'+(p_obj.uDisplacementBias||0)+';uDisplacementCustomUVScale:'+(p_obj.uDisplacementCustomUVScale||0)+';')+ '" />\n';
+    const mtl_para = Object.assign({ displacementMap:'DungeonPlane'+d_map_id+'TXR_D', uDisplacementScale:p_obj.uDisplacementScale||1, uDisplacementBias:p_obj.uDisplacementBias||0 }, mtl_param_common);
+    const mtl_para_extra = Object.assign({ uDisplacementCustomUVScale:p_obj.uDisplacementCustomUVScale||0 }, mtl_param_common_extra);
+    mtl_list.push({ tag:'mtl', id:'DungeonPlane'+i+'MTL_D', type:'MeshPhong', para:mtl_para, para_extra:mtl_para_extra });
   }
 
-  mtl_head +=
-  '<mtl id="DungeonPlane'+i+'MTL" type="MeshPhong" param="' + mtl_param_common + '" />\n';
+//  mtl_head +=
+//  '<mtl id="DungeonPlane'+i+'MTL" type="MeshPhong" param="' + mtl_param_common + '" />\n';
+  mtl_list.push({ tag:'mtl', id:'DungeonPlane'+i+'MTL', type:'MeshPhong', para:mtl_param_common, para_extra:mtl_param_common_extra });
 
   for (var lvl = 0, lvl_max = p_obj.geo_by_lvl.length; lvl < lvl_max; lvl++) {
     var geo = p_obj.geo_by_lvl[lvl]
     var geo_id = geo[0]+"x"+geo[1]
     geo_dim[geo_id] = true
     var instanced_drawing = (p_obj.instanced_drawing_by_lvl && p_obj.instanced_drawing_by_lvl[lvl]) || 0;
-    mesh_scene +=
-  '<mesh id="DungeonPlane'+i+'MESH_LV'+lvl+'" geo="#DungeonGEO_'+geo_id+'" mtl="#DungeonPlane'+i+'MTL' + ((p_obj.displacementMap && (geo_id != "1x1"))?'_D':'') + '" ' + ((instanced_drawing)?'instanced_drawing="'+instanced_drawing+'" ':'') + 'style="scale:0;' + ((p_obj.opacity != null)?'opacity:'+p_obj.opacity+';':'') + '" />\n';
+//    mesh_scene +=
+//  '<mesh id="DungeonPlane'+i+'MESH_LV'+lvl+'" geo="#DungeonGEO_'+geo_id+'" mtl="#DungeonPlane'+i+'MTL' + ((p_obj.displacementMap && (geo_id != "1x1"))?'_D':'') + '" '
+//+ ((instanced_drawing)?'instanced_drawing="'+instanced_drawing+'" ':'') + 'style="scale:0;' + ((p_obj.opacity != null)?'opacity:'+p_obj.opacity+';':'') + '" />\n';
+    mesh_scene_list.push({ tag:'mesh', id:'DungeonPlane'+i+'MESH_LV'+lvl, geo:'DungeonGEO_'+geo_id, mtl:'DungeonPlane'+i+'MTL' + ((p_obj.displacementMap && (geo_id != "1x1"))?'_D':''), instanced_drawing:instanced_drawing||null, style:{ scale:0, opacity:p_obj.opacity||null } });
     MMD_SA_options.mesh_obj.push( { id:'DungeonPlane'+i+'MESH_LV'+lvl } );
   }
 }
 
 if (use_waveNoiseTexture) {
-    tex_head +=
-  '<txr id="waveNoiseTexture" src="' + toFileProtocol(System.Gadget.path + "/images/watershader_cloud.png") + '" />\n';
+//    tex_head +=
+//  '<txr id="waveNoiseTexture" src="' + toFileProtocol(System.Gadget.path + "/images/watershader_cloud.png") + '" />\n';
+    tex_list.push({ tag:'txr', id:'waveNoiseTexture', src:System.Gadget.path + "/images/watershader_cloud.png", para:{} });
 }
 
 for (var geo in geo_dim) {
   if (/^(\d+)x(\d+)$/.test(geo)) {
-    MMD_SA_options.GOML_head +=
-  '<geo id="DungeonGEO_' + (geo) + '" type="Plane" param="' + [1,1, parseInt(RegExp.$1),parseInt(RegExp.$2)].join(" ") + '" />\n';
+//    MMD_SA_options.GOML_head +=
+//  '<geo id="DungeonGEO_' + (geo) + '" type="Plane" param="' + [1,1, parseInt(RegExp.$1),parseInt(RegExp.$2)].join(" ") + '" />\n';
+    geo_list.push({ tag:'geo', id:'DungeonGEO_' + (geo), type:'Plane', para:[1,1, parseInt(RegExp.$1),parseInt(RegExp.$2)] });
   }
 }
 
@@ -1060,6 +1140,9 @@ MMD_SA_options.GOML_head +=
 MMD_SA_options.GOML_scene +=
   ((MMD_SA_options.Dungeon_options.use_point_light==false) ? '' : '<light id="pointlight_main" type="Poi" style="lightIntensity: 1.0; lightDistance: ' + (0) + '; position: ' + ([0,0,0].join(" ")) + '; lightColor:#ffffff;" />\n')
 + mesh_scene;
+
+MMD_SA_options.GOML_head_list = (MMD_SA_options.GOML_head_list||[]).concat(tex_list, geo_list, mtl_list);
+MMD_SA_options.GOML_scene_list = (MMD_SA_options.GOML_scene_list||[]).concat(mesh_scene_list);
 
 //console.log(MMD_SA_options.GOML_head)
 //console.log(MMD_SA_options.GOML_scene)
@@ -1778,8 +1861,10 @@ return obj._obj.visible
 // GOML_dungeon_blocks END
 
  ,restart: (function () {
-    function Object3D_proxy(_parent, _cache) {
-this._parent = _parent
+    class Object3D_proxy extends Object3D_proxy_base {
+      constructor (_parent, _cache) {
+super(_parent);
+
 this._cache = _cache
 this._cache_index = -1
 this._obj_name = (!_cache.is_LOD_far) ? "_obj" : "_obj_LOD_far"
@@ -1797,27 +1882,24 @@ this.quaternion = new THREE.Quaternion()
 this.scale = new THREE.Vector3()
     }
 
-    Object3D_proxy.prototype = {
-  constructor: Object3D_proxy
+      is_Object3D_proxy = true;
 
- ,is_Object3D_proxy: true
-
- ,get hidden() {
+      get hidden() {
 return this._hidden;
-  }
- ,set hidden(v) {
+      }
+      set hidden(v) {
 this._hidden = v;
 if (v) {
   MMD_SA_options.Dungeon.sound.detach_positional_audio(this._parent._obj);
 }
-  }
+      }
 
- ,get useQuaternion() {
+      get useQuaternion() {
 return this._cache.list[0].useQuaternion;
-  }
+      }
 
- ,visible: false
- ,set visible(v) {
+      get visible() { return false; }
+      set visible(v) {
 var p = this._parent
 var cache = this._cache
 var cache0 = cache.list[0]
@@ -1855,16 +1937,17 @@ return function () {
       }
 
       if (!cache.is_LOD_far) {
-        (obj_mesh.geometry||obj_mesh.children[0].geometry).boundingBox_list = (cache0.geometry||cache0.children[0].geometry).boundingBox_list
+        MMD_SA.get_bounding_host(obj_mesh).boundingBox_list = MMD_SA.get_bounding_host(cache0).boundingBox_list;
       }
 
-      MMD_SA.scene.add(obj_mesh)
+      MMD_SA.THREEX.scene.add(obj_mesh)
     }
   }
 
   if (!cache.is_LOD_far) {
     p.cache_index = this._cache_index
-    p._mesh = (obj_mesh.geometry) ? obj_mesh : obj_mesh.children[0]
+// .mesh is obsolete. In most cases, just use ._obj instead if you need to get the 3D object
+    p._mesh = (obj_mesh.geometry || obj_mesh.isObject3D) ? obj_mesh : obj_mesh.children[0];
     if (p.cache_index == 0)
       MMD_SA_options.Dungeon.object_base_list[p.object_index]._obj.scale = obj_source.scale.x
   }
@@ -1904,9 +1987,9 @@ else {
 }
 
 obj_mesh.visible = v;
-obj_mesh.children.forEach(function (c) { c.visible = v; });
+if (!MMD_SA.THREEX.enabled) obj_mesh.children.forEach(function (c) { c.visible = v; });
   }
-    };
+    }
 
     var animate_combat_default = function () {
 var that = this
@@ -2268,8 +2351,13 @@ this.grid_material_list.forEach(function (m, idx) {
 // save tons of headaches by using material.repeat hack
   m.lvl.forEach(function (m2) {
     var mtl = m2.list[0].material//jThree("#DungeonPlane" + idx + "MTL").three(0)//
-    mtl.offset = mtl.map.offset.clone()
-    mtl.repeat = mtl.map.repeat.clone().set(x,y)
+    if (MMD_SA.THREEX.enabled) {
+      mtl.map.repeat.set(x,y);
+    }
+    else {
+      mtl.offset = mtl.map.offset.clone()
+      mtl.repeat = mtl.map.repeat.clone().set(x,y)
+    }
   });
 });
 
@@ -2434,23 +2522,26 @@ this.object_list = (options.object_list && Object.clone(options.object_list)) ||
 
 var fog = this.fog = options.fog || MMD_SA_options.fog
 if (fog) {
-  if (MMD_SA.scene.fog instanceof THREE.Fog) {
-    MMD_SA.scene.fog.near = fog.near || this.grid_size * this.view_radius * (MMD_SA.scene.fog.near_ratio||0.5)
-    MMD_SA.scene.fog.far  = fog.far  || this.grid_size * this.view_radius * (MMD_SA.scene.fog.far_ratio ||0.9)
+// update the old THREE scene fog (THREEX version will copy it)
+  const scene = MMD_SA.scene;
+
+  if (scene.fog instanceof THREE.Fog) {
+    scene.fog.near = fog.near || this.grid_size * this.view_radius * (fog.near_ratio||0.5)
+    scene.fog.far  = fog.far  || this.grid_size * this.view_radius * (fog.far_ratio ||0.9)
   }
 
-  MMD_SA.scene.fog.color = new THREE.Color(fog.color||"#000")
+  scene.fog.color = new THREE.Color(fog.color||"#000")
   if (use_MatrixRain && MMD_SA.matrix_rain.greenness) {
-    let gray = 0.3 * MMD_SA.scene.fog.color.r + 0.59 * MMD_SA.scene.fog.color.g + 0.11 * MMD_SA.scene.fog.color.b;
-    MMD_SA.scene.fog.color.setRGB(MMD_SA.scene.fog.color.r*(1-MMD_SA.matrix_rain.greenness), gray*MMD_SA.matrix_rain.greenness + MMD_SA.scene.fog.color.g*(1-MMD_SA.matrix_rain.greenness), MMD_SA.scene.fog.color.b*(1-MMD_SA.matrix_rain.greenness));
+    let gray = 0.3 * scene.fog.color.r + 0.59 * scene.fog.color.g + 0.11 * scene.fog.color.b;
+    scene.fog.color.setRGB(scene.fog.color.r*(1-MMD_SA.matrix_rain.greenness), gray*MMD_SA.matrix_rain.greenness + scene.fog.color.g*(1-MMD_SA.matrix_rain.greenness), scene.fog.color.b*(1-MMD_SA.matrix_rain.greenness));
   }
-console.log("Fog:"+ ((MMD_SA.scene.fog instanceof THREE.Fog) ? MMD_SA.scene.fog.near+'/'+MMD_SA.scene.fog.far: 'EXP2') +'/'+MMD_SA.scene.fog.color.getHexString())
+console.log("Fog:"+ ((scene.fog instanceof THREE.Fog) ? scene.fog.near+'/'+scene.fog.far : 'EXP2') +'/'+scene.fog.color.getHexString())
 
   this.object_base_list.forEach(function (obj) {
     if (obj.is_dummy) return
 
     if (obj.cache_LOD_far.list.length)
-      obj.cache_LOD_far.list[0].material.color.copy(MMD_SA.scene.fog.color)
+      obj.cache_LOD_far.list[0].material.color.copy(scene.fog.color)
   });
 }
 
@@ -2481,6 +2572,8 @@ if (options_base.skydome) {
 }
   
 if (this.ceil_material_index_default != -1) {
+  const THREE = MMD_SA.THREEX.THREE;
+
   var p = this.grid_material_list
   var ceil = p[this.ceil_material_index_default].lvl[0].list[1]
   if (ceil) {
@@ -2496,8 +2589,13 @@ if (this.ceil_material_index_default != -1) {
 
     var ceil0 = p[this.ceil_material_index_default].lvl[0].list[0]//MMD_SA_options.mesh_obj_by_id['DungeonPlane'+this.ceil_material_index_default+'MESH_LV'+0]._obj
     var ceil  = p[this.ceil_material_index_default].lvl[0].list[1] = ceil0.clone(new THREE.Mesh(ceil0.geometry, ceil0.material.clone()));
-    ceil.material.offset = ceil.material.map.offset.clone();
-    ceil.material.repeat = ceil.material.map.repeat.clone().set(w,h);
+    if (MMD_SA.THREEX.enabled) {
+      ceil.material.map.repeat.set(w,h);
+    }
+    else {
+      ceil.material.offset = ceil.material.map.offset.clone();
+      ceil.material.repeat = ceil.material.map.repeat.clone().set(w,h);
+    }
 /*
     ["map", "normalMap", "displacementMap"].forEach(function (tex) {
       texture = ceil.material[tex]
@@ -2511,7 +2609,7 @@ if (this.ceil_material_index_default != -1) {
 //    ceil.rotation.x = Math.PI/2
     ceil.quaternion.set(Math.sin((Math.PI/2)/2),0,0,Math.cos((Math.PI/2)/2))
     ceil.scale.set(w*grid_size, h*grid_size, 1)
-    MMD_SA.scene.add(ceil)
+    MMD_SA.THREEX.scene.add(ceil)
     ceil.visible = true
 //    console.log(ceil)
 
@@ -2675,9 +2773,6 @@ this.object_list.forEach(function (obj, idx) {
   obj_mesh.scale.x = obj_mesh.scale.y = obj_mesh.scale.z = obj.placement.scale = obj_base._obj.scale = placement.scale || ((obj_base.path) ? 10 : 1)
 
 //console.log(obj_mesh)
-//DEBUG_show(obj.placement.scale,0,1)
-//console.log(obj._mesh.geometry.boundingBox)
-//console.log(obj._mesh.geometry.boundingSphere)
 
   obj.view_distance = obj_base.view_distance || obj.view_distance || 1
   obj.view_distance_sq = obj.view_distance * obj.view_distance
@@ -2843,9 +2938,9 @@ return !occupied
 
 // this seems to fix a glitch when collision detection is done on the top-most point of the boundingBox, which may override mesh collision
   if (obj.collision_by_mesh) {
-    const geo = obj_base.cache.list[0].geometry || obj_base.cache.list[0].children[0].geometry;
-    if (!geo._boundingBox) geo._boundingBox = geo.boundingBox.clone();
-    geo.boundingBox.max.y = geo._boundingBox.max.y + 1;
+    const bb_host = MMD_SA.get_bounding_host(obj_base.cache.list[0]);
+    if (!bb_host._boundingBox) bb_host._boundingBox = bb_host.boundingBox.clone();
+    bb_host.boundingBox.max.y = bb_host._boundingBox.max.y + 1;
   }
 
   obj.oncreate = obj.oncreate || obj_base.oncreate
@@ -3801,7 +3896,7 @@ parseInt(result[3], 16)
 const THREE = MMD_SA.THREEX.THREE;
 
 var dome_tex = MMD_SA.THREEX.mesh_obj.get_three('DomeMESH').material.map;
-if (MMD_SA.THREEX.enabled && MMD_SA.THREEX.use_VRM1) dome_tex.encoding = THREE.sRGBEncoding;
+if (MMD_SA.THREEX.enabled && MMD_SA.THREEX.use_sRGBEncoding) dome_tex.encoding = THREE.sRGBEncoding;
 dome_tex.needsUpdate = true
 
 var img = MMD_SA_options.Dungeon_options.skydome.texture_cache_list[this.texture_index||0]
@@ -4164,7 +4259,9 @@ var eye = e.detail.eye
 var d = MMD_SA_options.Dungeon
 var camera_limit_scale = MMD_SA_options.Dungeon_options.options_by_area_id[d.area_id].camera_limit_scale || 1
 
-var rv = ((d.ceil_material_index_default != -1) && (eye.y > d.ceil_height*camera_limit_scale*0.8)) || d.check_grid_blocking(MMD_SA.TEMP_v3.copy(eye).add(d.character.pos), d.grid_blocking_camera_offset) || (!d.no_camera_collision && d.check_ray_intersection(d.character.pos, eye, para));
+// feel less glitchy than using MMD_SA.camera_position
+var camera_pos = MMD_SA._v3a_.copy(d.character.pos); camera_pos.y += 10;//MMD_SA.camera_position;
+var rv = ((d.ceil_material_index_default != -1) && (eye.y > d.ceil_height*camera_limit_scale*0.8)) || d.check_grid_blocking(MMD_SA.TEMP_v3.copy(eye).add(d.character.pos), d.grid_blocking_camera_offset) || (!d.no_camera_collision && d.check_ray_intersection(camera_pos, eye, para));
 if (rv) {
 //DEBUG_show(d.check_grid_blocking(MMD_SA.TEMP_v3.copy(eye).add(d.character.pos), d.grid_blocking_camera_offset)+'/'+Date.now())
   e.detail.result.return_value = rv
@@ -4530,19 +4627,22 @@ if (!always_update && (hp_width == _hp_width))
   return
 hp_width = _hp_width
 
-var hp_bar_color
-if (c.hp > 75)
-  hp_bar_color = "rgb(0,255,0)"
-else {
-  var g = (c.hp > 50) ? 255 : Math.round(64 + (c.hp/50)*(255-64))
-  var r = Math.round(Math.pow((75-c.hp)/75,0.5)*255)
-  hp_bar_color = "rgb("+r+","+g+",0)"
-}
-
 var ctx = Cdungeon_status_bar.getContext("2d")
 
 ctx.globalCompositeOperation = "copy";
-ctx.drawImage(canvas_status_bar, 0,0)
+ctx.drawImage(canvas_status_bar, 0,0);
+
+if (!MMD_SA_options.Dungeon_options.combat_mode_enabled) return;
+
+let hp_bar_color;
+if (c.hp > 75) {
+  hp_bar_color = "rgb(0,255,0)";
+}
+else {
+  const g = (c.hp > 50) ? 255 : Math.round(64 + (c.hp/50)*(255-64));
+  const r = Math.round(Math.pow((75-c.hp)/75,0.5)*255);
+  hp_bar_color = "rgb("+r+","+g+",0)";
+}
 
 ctx.globalCompositeOperation = "destination-over";
 ctx.fillStyle = hp_bar_color;
@@ -4578,19 +4678,21 @@ ctx.beginPath();
 ctx.arc(36,36, 36, 0, 2*Math.PI);
 ctx.fill();
 
-var gradient = ctx.createLinearGradient(0,0,(256-36),0);
-gradient.addColorStop(0,"white");
-gradient.addColorStop(0.5,"white");
-gradient.addColorStop(1,"rgba(255,255,255,0)");
+if (MMD_SA_options.Dungeon_options.combat_mode_enabled) {
+  const gradient = ctx.createLinearGradient(0,0,(256-36),0);
+  gradient.addColorStop(0,"white");
+  gradient.addColorStop(0.5,"white");
+  gradient.addColorStop(1,"rgba(255,255,255,0)");
 
-ctx.fillStyle = gradient;
-ctx.fillRect(36,68,(256-36),4);
-ctx.fillRect(36,48,(256-36),4);
+  ctx.fillStyle = gradient; 
+  ctx.fillRect(36,68,(256-36),4);
+  ctx.fillRect(36,48,(256-36),4);
 
-ctx.fillStyle = "rgba(0,0,0, 0.75)";
-ctx.fillRect(56,64, (256-56),2);
-ctx.fillRect(56,54, (256-56),2);
-ctx.fillRect((256-2),56, 2,8);
+  ctx.fillStyle = "rgba(0,0,0, 0.75)";
+  ctx.fillRect(56,64, (256-56),2);
+  ctx.fillRect(56,54, (256-56),2);
+  ctx.fillRect((256-2),56, 2,8);
+}
 
 update_status_bar(true)
   };
@@ -4945,6 +5047,10 @@ return function (_subject, mov_delta, skip_ground_obj_check, para={}) {
   moved_final.copy(mov_delta).applyQuaternion(center_rotate(subject.quaternion, true))
 
   subject_bb.copy(subject.geometry.boundingBox)
+
+// save some headache for octree intersect
+  if (subject_bb.min.y < 0) subject_bb.min.y = 0;
+
 /*
 // save some headaches by setting xz center as (0,0), with equal xz size
   subject_bb.size(_v3)
@@ -4995,6 +5101,9 @@ return function (_subject, mov_delta, skip_ground_obj_check, para={}) {
   if (para.object_list) {
     obj_list = para.object_list
   }
+  if (MMD_SA.THREEX._object3d_list_) {
+    obj_list = (obj_list||[]).concat(MMD_SA.THREEX._object3d_list_);
+  }
   if (!obj_list || para.check_grid_blocks) {
     obj_list = (obj_list && obj_list.concat(this.grid_blocks.objs)) || this.object_list_in_view
     this.grid_blocks.update(subject.position)
@@ -5023,9 +5132,9 @@ if (subject_is_PC && (cache.id != null) && followed[cache.id])
 if (obj.oncollisioncheck && obj.oncollisioncheck(subject))
   return
 
-var obj_base = obj._obj_base || that.object_base_list[obj.object_index] || obj_base_dummy
+var obj_base = obj._obj_base || that.object_base_list[obj.object_index] || obj_base_dummy;
 
-object_bs.copy(obj._mesh.geometry.boundingSphere)
+object_bs.copy(obj._obj_proxy.boundingSphere)
 object_bs.center.add(cache.position)
 
 var object_scale = Math.max(cache.scale.x, cache.scale.y, cache.scale.z)
@@ -5050,7 +5159,7 @@ var _dis = 0
 var _collision_by_mesh_sort_range = 0
 if (dis < (moved_dis_max + r) + ((that.use_local_mesh_sorting && local_mesh_sorting_range_buffer) || Math.min((obj.collision_by_mesh_sort_range||64)*0.5, r))) {
   cache.updateMatrixWorld()
-  if (obj.collision_by_mesh_sort_range && !para.collision_by_mesh_disabled) {
+  if (!that.use_octree && obj.collision_by_mesh_sort_range && !para.collision_by_mesh_disabled) {
     _v3.copy(s_bb).applyMatrix4(_m4.getInverse(cache.matrixWorld))
     let _index = (_subject.obj._index != null) ? _subject.obj._index+1 : 0;
     let mesh_sorted = obj.mesh_sorted = obj.mesh_sorted_list[_index] = obj.mesh_sorted_list[_index] || {};
@@ -5060,48 +5169,22 @@ if (that.use_local_mesh_sorting) {
     _collision_by_mesh_sort_range = Math.max(Math.min(Math.ceil(subject_bs.radius||10 + Math.sqrt(moved_final.x*moved_final.x+moved_final.z*moved_final.z)), obj.collision_by_mesh_sort_range) + local_mesh_sorting_range_buffer, 8) / object_scale
     mesh_sorted.position = _v3.clone()
 
-    let _t = performance.now()
-/*
-    let tree = that.mesh_sorting_worker.tree[obj.object_index];
-    tree.boxIntersect([[
-_v3.x-_collision_by_mesh_sort_range,
-_v3.z-_collision_by_mesh_sort_range,
-_v3.x+_collision_by_mesh_sort_range,
-_v3.z+_collision_by_mesh_sort_range
-    ]]);
-    mesh_sorted.index_list = tree.result;
-*/
+    if (that.use_octree) {}
+    else {
+//    let _t = performance.now()
 
-    mesh_sorted.index_list = that.mesh_sorting_worker.tree[obj.object_index].search({
+      mesh_sorted.index_list = that.mesh_sorting_worker.tree[obj.object_index].search({
 minX: _v3.x-_collision_by_mesh_sort_range,
 minY: _v3.z-_collision_by_mesh_sort_range,
 maxX: _v3.x+_collision_by_mesh_sort_range,
 maxY: _v3.z+_collision_by_mesh_sort_range
-    }).map(function (a) { return a.index; });
-
-//    mesh_sorted.index_list = [0].concat(that.mesh_sorting_worker.tree[obj.object_index].nearest( [_v3.x,_v3.y,_v3.z,0,0], 1000, _collision_by_mesh_sort_range, THREE.TypedArrayUtils._result_func))
-//console.log(mesh_sorted.index_list)
+      }).map(function (a) { return a.index; });
 
 //    console.log("Mesh sorted:" + obj._index + "," + mesh_sorted.index_list.length + "/" + (_collision_by_mesh_sort_range) + "-" + Math.round(performance.now()-_t) + "ms/" + Date.now())
+    }
   }
 }
 else {
-    _dis = (mesh_sorted.position) ? mesh_sorted.position.distanceTo(_v3) + mov_delta_length/object_scale : 9999
-    _collision_by_mesh_sort_range = obj.collision_by_mesh_sort_range / object_scale
-    if (!mesh_sorted._pos_waiting_for_result && (_dis > _collision_by_mesh_sort_range/4)) {
-      mesh_sorted._t_ini = performance.now()
-      mesh_sorted._pos_waiting_for_result = _v3.clone()
-// subject pos(0-2) + sort range(3) + object_base_index(4) + object index(5)
-      var worker_para = _v3.toArray()
-      worker_para.push(_collision_by_mesh_sort_range, obj.object_index, obj._index)
-      that.mesh_sorting_worker.postMessage(worker_para)
-// threeoctree.min.js
-/*
-var t0 = performance.now()
-console.log(that.octree.search( s_bb, _collision_by_mesh_sort_range ))
-console.log(performance.now()-t0)
-*/
-    }
 }
   }
 }
@@ -5112,14 +5195,8 @@ if (dis > moved_dis_max+r) {
   return
 }
 
-if (obj.collision_by_mesh_sort_range && !para.collision_by_mesh_disabled && !that.use_local_mesh_sorting && (_dis > _collision_by_mesh_sort_range/2)) {
-  collision_by_mesh_failed = true
-  console.log("Waiting for mesh-sorting result:" + obj._index)
-  return
-}
 
-
-if (obj._mesh.geometry.boundingBox) {
+if (obj._obj_proxy.boundingBox) {
 
   let move_blocked
   moved_before_bb_check.copy(moved_final)
@@ -5127,8 +5204,8 @@ if (obj._mesh.geometry.boundingBox) {
   let hit_moved_once
   let collision_by_mesh = !para.collision_by_mesh_disabled && obj.collision_by_mesh
 
-var skip_bb_index_list = []
-obj._mesh.geometry.boundingBox_list.some(function (bb, bb_idx) {
+let skip_bb_index_list = []
+obj._obj_proxy.boundingBox_list.some(function (bb, bb_idx) {
   if (skip_bb_index_list.indexOf(bb_idx) != -1)
     return
 
@@ -5149,12 +5226,8 @@ obj._mesh.geometry.boundingBox_list.some(function (bb, bb_idx) {
 
   var hit_moved = subject_bb_moved.isIntersectionBox(object_bb)
   if (hit_moved) {
-//if (obj._mesh._model_index==0) DEBUG_show(Date.now(),0,1)
-    _bb.copy(subject_bb_moved).intersect(object_bb).size(_v3)
-    if (0) {//((_v3.x<0.1 || _v3.y<0.1 || _v3.z<0.1)) {// || (_bb.min.y==subject_bb.min.y && subject.geometry.boundingBox.min.y<0 && _v3.y<0.5-subject.geometry.boundingBox.min.y)) {
-      hit_moved = false
-    }
-    else if (_subject.mass && !null_move && obj.mass) {
+    _bb.copy(subject_bb_moved).intersect(object_bb).size(_v3);
+     if (_subject.mass && !null_move && obj.mass) {
       let feedback = 1 - obj.mass / (obj.mass + _subject.mass)
 //feedback = 0.1
 //if (subject._model_index > 0) DEBUG_show(feedback+'/'+Date.now())
@@ -5316,26 +5389,107 @@ if (collision_by_mesh) {// && hit_moved_once) {
   collision_by_mesh_checked = true
 
 // NOTE: I give up changing the mesh collision system to work with x/z rotation of the object (for now at least). It requires too many changes on existing codes, especially the part to get ground_y.
-  var _t_ = performance.now();
-  var result
+  let _t_ = performance.now();
+  let result
 
-  var subject_bb_MS = subject_bb
-  var moved_before_bb_check_MS = moved_before_bb_check
+  let subject_bb_MS = subject_bb
+  let moved_before_bb_check_MS = moved_before_bb_check
   if (use_bb_translate_offset) {
     subject_bb_MS = subject_bb.clone().translate(bb_translate_offset)
     moved_before_bb_check_MS = moved_before_bb_check.clone().sub(bb_translate_offset)
   }
 
-  null_move = !moved_before_bb_check_MS.x && !moved_before_bb_check_MS.y && !moved_before_bb_check_MS.z
-  result = ((null_move)?subject_bb_MS:subject_bb_moved).intersectObject(obj, subject_bb_MS)
 
-  var pos_in_obj = new THREE.Vector3().copy(subject.position).applyMatrix4(_m4.getInverse(cache.matrixWorld))
+  null_move = !moved_before_bb_check_MS.x && !moved_before_bb_check_MS.y && !moved_before_bb_check_MS.z;
+  const subject_bb_to_collide = (null_move) ? subject_bb_MS : subject_bb_moved;
+  let mov_octree, result_octree, ground_octree;
+  if (that.use_octree) {
+// https://github.com/mrdoob/three.js/blob/master/examples/games_fps.html
+    const THREEX = MMD_SA.THREEX.THREEX;
 
-  var ground_y
+    const obj_m4_inv = _m4.getInverse(cache.matrixWorld);
+
+    const height = subject_bb_to_collide.max.y - subject_bb_to_collide.min.y;
+    const radius = height/8;
+
+    const pos = new THREE.Vector3();
+    subject_bb_to_collide.center(pos);
+    pos.y = subject_bb_to_collide.min.y;
+
+    const c = new THREEX.Capsule( new THREEX.Vector3( 0, radius, 0 ), new THREEX.Vector3( 0, Math.max(height-radius*2, radius), 0 ), radius );
+    c.translate(pos);
+
+    c.start.applyMatrix4(obj_m4_inv);
+    c.end.applyMatrix4(obj_m4_inv);
+    c.radius /= object_scale;
+
+    const mov_extended = _v3.copy(moved_before_bb_check_MS).add(cache.position).applyMatrix4(obj_m4_inv).setY(0).normalize();
+
+    const octree = obj_base.octree;
+
+    const ray_origin = _v3a.copy(pos);
+    ray_origin.y += height;
+    const ray = new THREEX.Ray(ray_origin, new THREEX.Vector3(0,-1,0)).applyMatrix4(obj_m4_inv);
+
+    const grounds = [];
+    ground_octree = octree.rayIntersect(ray);
+    grounds.push(ground_octree);
+
+    ray_origin.copy(pos).add(mov_extended.multiplyScalar(radius));
+    ray_origin.y += height;
+    grounds.push(octree.rayIntersect(ray));
+
+    pos.applyMatrix4(obj_m4_inv).applyQuaternion(cache.quaternion);
+
+    let ground_y = -9999;
+    grounds.forEach(g=>{
+      if (!g) return;
+
+      g.position.applyQuaternion(cache.quaternion);
+
+      const y = g.position.y//+0.1;
+      if (y < pos.y) return;
+      if (y - pos.y > height/2) return;
+
+      g.triangle.getNormal(_v3).applyQuaternion(cache.quaternion);
+      if (_v3.y < 0.5) return;
+
+      ground_y = Math.max(y, ground_y);
+    });
+
+    const mov_offset = _v3b.set(0,0,0);
+    if (ground_y > -9999) {
+//DEBUG_show((ground_y - pos.y)+'/'+Date.now())
+      mov_offset.y += ground_y - pos.y;
+      c.translate(mov_offset);
+      moved_before_bb_check.add(mov_offset.multiply(cache.scale));
+    }
+
+    result_octree = octree.capsuleIntersect(c);
+
+    mov_octree = _v3a.set(0,0,0);
+    if (result_octree) {
+      mov_octree.add( result_octree.normal.multiplyScalar( result_octree.depth ) );
+	}
+
+    result = {
+      updated: !!result_octree,
+      ground_y: (ground_octree) ? ground_octree.position.y : -9999,
+    };
+//DEBUG_show(result.updated+'/'+(result_octree.depth||0)+'/'+result.ground_y+'\n'+pos.toArray().join('\n'))
+  }
+  else {
+    result = subject_bb_to_collide.intersectObject(obj, subject_bb_MS);
+  }
+
+
+  let pos_in_obj = new THREE.Vector3().copy(subject.position).applyMatrix4(_m4.getInverse(cache.matrixWorld));
+
+  let ground_y;
   if (result.ground_y > -999) {
-    ground_y = _v3.set(0,result.ground_y,0).applyMatrix4(cache.matrixWorld).y
+    ground_y = result.ground_y * object_scale + cache.position.y;
 
-    var ground_y_current = ground_obj || character.ground_obj
+    let ground_y_current = ground_obj || character.ground_obj
     ground_y_current = ground_y_current && ground_y_current.bb_y_scale.mesh
 //DEBUG_show(ground_y_current+'/'+Date.now())
 
@@ -5359,289 +5513,29 @@ if (collision_by_mesh) {// && hit_moved_once) {
     }
   }
 
-// state: 1 = block static, 2 = block move
-  var bs = result.blocked_side
+  if (that.use_octree) {
+    if (result_octree && result.updated) {
+      collision = true;
+      obj_hit = obj;
 
-  var blocked
-  if (bs.blocked.state == 1) {
-    blocked = true
-  }
-  else if (bs._updated) {
-    var mov = _v3.copy(moved_before_bb_check_MS).applyQuaternion(_q.copy(cache.quaternion).conjugate())
+      mov_octree.applyQuaternion(cache.quaternion).multiply(cache.scale);
+      moved_final.copy(moved_before_bb_check).add(mov_octree);
 
-    var side = {}
-    if (bs.x_min.state || bs.x_max.state) {
-      if (bs.x_min.state == bs.x_max.state) {
-        if (mov.x > 0)
-          bs.x_min.state = 0
-        else if (mov.x < 0)
-          bs.x_max.state = 0
-        else
-          side.x = { v3:new THREE.Vector3(1,0,0), state:-Math.max(bs.x_min.state, bs.x_max.state) }
+      if (ground_y) {
+        that.character.ground_normal = (that.character.ground_normal || new THREE.Vector3(0,1,0)).lerp(ground_octree.triangle.getNormal(_v3).applyQuaternion(cache.quaternion), 0.5);
       }
-      if (bs.x_min.state > bs.x_max.state)
-        side.x = { v3:new THREE.Vector3(-bs.x_min.depth[bs.x_min.state-1],0,0), state: bs.x_min.state }
-      else if (bs.x_min.state < bs.x_max.state)
-        side.x = { v3:new THREE.Vector3( bs.x_max.depth[bs.x_max.state-1],0,0), state: bs.x_max.state }
-    }
-    if (bs.z_min.state || bs.z_max.state) {
-      if (bs.z_min.state == bs.z_max.state) {
-        if (mov.z > 0)
-          bs.z_min.state = 0
-        else if (mov.z < 0)
-          bs.z_max.state = 0
-        else
-          side.z = { v3:new THREE.Vector3(0,0,1), state:-Math.max(bs.z_min.state, bs.z_max.state) }
-      }
-      if (bs.z_min.state > bs.z_max.state)
-        side.z = { v3:new THREE.Vector3(0,0,-bs.z_min.depth[bs.z_min.state-1]), state: bs.z_min.state }
-      else if (bs.z_min.state < bs.z_max.state)
-        side.z = { v3:new THREE.Vector3(0,0, bs.z_max.depth[bs.z_max.state-1]), state: bs.z_max.state }
-    }
-    if (bs.y_max.state) {
-      side.y = { v3:new THREE.Vector3(0,bs.y_max.depth[bs.y_max.state-1],0), state:bs.y_max.state }
-    }
-
-    var v3, v3n
-    var mov_pushed = _v3a.set(0,0,0)
-    var mov_n = (null_move) ? _v3e.set(0,0,0) : _v3e.copy(mov).normalize()//_v3e.set(1,1,1)//
-//DEBUG_show((side.x?"x":"")+(side.y?"y":"")+(side.z?"z":"")+'/'+[bs.z_min.state,bs.z_max.state]+'/'+Date.now())
-    for (var a in side) {
-      var p = side[a]
-
-      v3  = _v3b.copy(p.v3)//.applyQuaternion(cache.quaternion)
-      v3n = _v3c.copy(v3).normalize()
-//if (!v3n.x && !v3n.y && !v3n.z) DEBUG_show(a,0,1)
-      if (p.state > 0) {
-        if ((mov.x>0 && v3n.x>0) || (mov.x<0 && v3n.x<0))
-          mov.x *= Math.max(Math.abs(mov_n.x) - Math.abs(v3n.x), 0)
-        if ((mov.y>0 && v3n.y>0) || (mov.y<0 && v3n.y<0))
-          mov.y *= Math.max(Math.abs(mov_n.y) - Math.abs(v3n.y), 0)
-        if ((mov.z>0 && v3n.z>0) || (mov.z<0 && v3n.z<0))
-          mov.z *= Math.max(Math.abs(mov_n.z) - Math.abs(v3n.z), 0)
-        if (p.state == 1) {
-          mov_pushed.add(v3)
-        }
-        else mov_pushed.add(_v3d.copy(v3).multiplyScalar(0.1))
-      }
-      else if (p.state == 0) {
-        mov.x *= Math.max(Math.abs(mov_n.x) - Math.abs(v3n.x), 0)
-        mov.y *= Math.max(Math.abs(mov_n.y) - Math.abs(v3n.y), 0)
-        mov.z *= Math.max(Math.abs(mov_n.z) - Math.abs(v3n.z), 0)
-      }
-      else {
-        blocked = true
-        break
-      }
-    }
-/*
-//DEBUG_show(Date.now());console.log(Date.now(),"x",mov.clone(),mov_pushed.clone(),ground_y,Object.clone(result)); 
-if ((mov.x>0 && mov_pushed.x<0) || (mov.x<0 && mov_pushed.x>0)) {mov.x=-mov.x*1;mov_pushed.x=0;}
-if ((mov.y>0 && mov_pushed.y<0) || (mov.y<0 && mov_pushed.y>0)) {mov.y=-mov.y*1;mov_pushed.y=0;}
-if ((mov.z>0 && mov_pushed.z<0) || (mov.z<0 && mov_pushed.z>0)) {mov.z=-mov.z*1;mov_pushed.z=0;}
-*/
-//blocked=true
-    if (!blocked) {
-      if (mov_pushed.x || mov_pushed.y || mov_pushed.z) {
-        mov.add(mov_pushed.negate().multiply(cache.scale))
-      }
-      collision = true
-      obj_hit = obj
-      moved_final.copy(mov.applyQuaternion(cache.quaternion))
-
-      if (!obj.collision_by_mesh_enforced || result.bb_static_collided)
-        obj._collided_ = { pos:pos_in_obj, ground_y:ground_y }
-    }
-  }
-  else if (obj.collision_by_mesh_enforced && !result.updated) {
-    blocked = true
-  }
-
-  if (blocked) {
-    if (obj._collided_) {
-      collision = true
-      obj_hit = obj
-      moved_final.copy(obj._collided_.pos).sub(pos_in_obj).multiply(cache.scale)
-
-      if (obj._collided_.ground_y != null)
-        ground_obj = { obj:obj, bb_y_scale:{ mesh:obj._collided_.ground_y } }
     }
     else {
-// use boundingBox result, for simplicity
+      moved_final.copy(moved_before_bb_check);
     }
-    return
+    return;
   }
 
-  if (!bs._updated) {
-    if (obj_hit == obj) {
-      if (!move_blocked)
-        obj_hit = null
-      moved_final.copy(moved_before_bb_check)
-    }
-    if (!obj.collision_by_mesh_enforced || result.bb_static_collided)
-      obj._collided_ = { pos:pos_in_obj, ground_y:ground_y }
-  }
-
-// ground normal
-var ground_normal
-if (ground_y == null) {
-//DEBUG_show(~~(performance.now()-_t_)+'/'+Date.now())
-//    return
-}
-else if (result.ground_face_connected.length) {
-  result.ground_face_connected.forEach(function (f) {
-    normal = obj._mesh.geometry.faces[f].normal.clone()
-    if (!ground_normal)
-      ground_normal = normal
-    else
-      ground_normal.lerp(normal, 0.5)
-  });
-  that.character.ground_normal = ground_normal
-//DEBUG_show(~~(performance.now()-_t_)+'/'+Date.now())
-//DEBUG_show(~~(performance.now()-_t_)+result.ground_face_connected.length+'/'+ground_normal.toArray()+'/'+result.ground_y+'\n'+JSON.stringify(result.blocked_side))
-}
-else {
-  var bb = subject_bb_MS.clone().applyMatrix4(_m4.getInverse(cache.matrixWorld))
-  var center = bb.center(_v3)
-  var size = bb.size(_v3a)
-  var plane_side = { x_min:[], x_max:[], z_min:[], z_max:[] }
-  result.plane_pts.forEach(function (v) {
-    if (v.x < center.x)
-      plane_side.x_min.push(v)
-    else if (v.x > center.x)
-      plane_side.x_max.push(v)
-    if (v.z < center.z)
-      plane_side.z_min.push(v)
-    else if (v.z > center.z)
-      plane_side.z_max.push(v)
-  });
-
-  for (var side in plane_side) {
-    var dir, limit
-    if (/^(\w)_(\w+)$/.test(side)) {
-      dir = RegExp.$1
-      limit = RegExp.$2
-    }
-
-    var limit_lower = center[dir]
-    var limit_upper
-    var sorted = []
-    plane_side[side].forEach(function (v) {
-      if ((limit=="min")?(v[dir] > limit_lower):(v[dir] < limit_lower))
-        return
-
-      limit_upper = bb[limit][dir] + ((limit=="min")?1:-1) * size[dir]*0.25
-      if ((limit=="min")?(v[dir] < limit_upper):(v[dir] > limit_upper)) {
-        if (limit_lower != limit_upper)
-          sorted = []
-        sorted.push(v)
-        limit_lower = limit_upper
-      }
-      else {
-        sorted[0] = v
-        limit_lower = v[dir]
-      }
-    });
-    plane_side[side] = sorted
-  }
-
-  for (var side in plane_side) {
-    var dir, limit
-    if (/^(\w)_(\w+)$/.test(side)) {
-      dir = RegExp.$1
-      limit = RegExp.$2
-    }
-    var dir_to_test = (dir=="x") ? "z" : "x"
-
-    var limit_min = center[dir_to_test]
-    var limit_max = center[dir_to_test]
-    var sorted = { min:null, max:null }
-    plane_side[side].forEach(function (v) {
-      var limit_to_test, limit_lower
-      if (v[dir_to_test] < center[dir_to_test]) {
-        limit_to_test =  "min"
-        limit_lower = limit_min
-      }
-      else {
-        limit_to_test =  "max"
-        limit_lower = limit_max
-      }
-      if ((limit_to_test=="min")?(v[dir_to_test] > limit_lower):(v[dir_to_test] < limit_lower))
-        return
-
-      var limit_upper = bb[limit_to_test][dir_to_test] + ((limit_to_test=="min")?1:-1) * size[dir_to_test]*0.25
-      if (((limit_to_test=="min")?(v[dir_to_test] < limit_upper):(v[dir_to_test] > limit_upper)) && (limit_lower != limit_upper)) {
-        if ((sorted[limit_to_test]==null) || (v.y > sorted[limit_to_test].y))
-          sorted[limit_to_test] = v
-        if (limit_to_test=="min")
-          limit_min = limit_upper
-        else
-          limit_max = limit_upper
-      }
-      else {
-        sorted[limit_to_test] = v
-        if (limit_to_test=="min")
-          limit_min = v[dir_to_test]
-        else
-          limit_max = v[dir_to_test]
-      }
-    });
-    plane_side[side] = sorted
-  }
-
-  var side_count = 0
-  for (var side in plane_side) {
-    var dir, limit
-    if (/^(\w)_(\w+)$/.test(side)) {
-      dir = RegExp.$1
-      limit = RegExp.$2
-    }
-
-    var p = plane_side[side]
-    if ((p.min != null) || (p.max != null)) {
-      plane_side[side] = new THREE.Vector3().setY((p.min == null) ? p.max.y : ((p.max == null) ? p.min.y : (p.min.y+p.max.y)/2))
-      if (dir == "x") {
-        plane_side[side].x = bb[limit][dir]
-        plane_side[side].z = center.z
-      }
-      else {
-        plane_side[side].x = center.x
-        plane_side[side].z = bb[limit][dir]
-      }
-      side_count++
-    }
-    else
-      plane_side[side] = null
-  }
-
-  if (side_count == 4) {
-    ground_normal = new THREE.Triangle(plane_side.x_min, plane_side.z_max, plane_side.x_max).normal().lerp(new THREE.Triangle(plane_side.x_min, plane_side.x_max, plane_side.z_min).normal(), 0.5).normalize()
-  }
-  else if (side_count == 3) {
-    var _tri = new THREE.Triangle();
-    var _abc = ["a","b","c"];
-    ["x_min","z_max","x_max","z_min"].forEach(function (side) {
-      if (plane_side[side])
-        _tri[_abc.shift()] = plane_side[side]
-    });
-    ground_normal = _tri.normal()
-  }
-  else if (result.ground_face_index != -1) {
-    ground_normal = obj._mesh.geometry.faces[result.ground_face_index].normal.clone()
-  }
-
-  that.character.ground_normal = ground_normal
-}
-
-//DEBUG_show(~~(performance.now()-_t_))
-//DEBUG_show(~~(performance.now()-_t_)+'/'+Date.now()+'\n'+JSON.stringify(result.blocked_side))
-//if (self._TEST_) console.log(~~(performance.now()-_t_)+'/'+Date.now()+'\n'+JSON.stringify(result.blocked_side)+'\n'+MMD_SA_options.Dungeon.character.pos.toArray()+'\n'+MMD_SA.MMD.motionManager.filename+'/'+THREE.MMD.getModels()[0].skin.time+'\n'+moved_final.toArray()+'/'+mov_delta.toArray())//moved_before_bb_check.toArray())
-//DEBUG_show(~~(performance.now()-_t_)+'/'+result.plane_pts.length + '/' + side_count + '/' + ((ground_normal && ground_normal.toArray())||"(no ground)") + '/'+result.ground_y+ '\n' + JSON.stringify(plane_side)+'\n'+JSON.stringify(result.blocked_side))
-//DEBUG_show(~~(performance.now()-_t_)+'\n'+JSON.stringify(result))
+// old collision 01
 
 }
 
-return
+  return;
 }
 
 
@@ -5725,15 +5619,20 @@ moved_final.copy(intersection.sub(s))
   })();
 
   d.check_ray_intersection = (function () {
-var object_bs  = new THREE.Sphere()
-var object_bb  = new THREE.Box3()
+const THREEX = MMD_SA.THREEX.THREEX;
 
-var c = new THREE.Vector3()
+var object_bs  = new THREE.Sphere();
+var object_bb  = new THREE.Box3();
 
-var ray = new THREE.Ray()
-var intersection = new THREE.Vector3()
+var c = new THREE.Vector3();
 
-var _v3 = new THREE.Vector3()
+var ray = new THREE.Ray();
+var intersection = new THREE.Vector3();
+
+var rayX = new THREEX.Ray();
+var _m4 = new THREEX.Matrix4()
+
+var _v3 = new THREE.Vector3();
 
 return function (s, dir, para) {
   if (!para)
@@ -5747,7 +5646,7 @@ return function (s, dir, para) {
   var intersected = []
   var nearest = { distance:999999 }
 
-  this.object_list.forEach(function (obj, idx) {
+  this.object_list.concat(MMD_SA.THREEX._object3d_list_||[]).forEach(function (obj, idx) {
 if (obj.is_dummy)
   return
 
@@ -5761,9 +5660,9 @@ if (obj.no_collision)
 if (para.filter && para.filter(obj))
   return
 
-var obj_base = MMD_SA_options.Dungeon.object_base_list[obj.object_index]
+var obj_base = obj._obj_base || MMD_SA_options.Dungeon.object_base_list[obj.object_index];
 
-object_bs.copy(obj._mesh.geometry.boundingSphere)
+object_bs.copy(obj._obj_proxy.boundingSphere)
 object_bs.center.add(cache.position)
 object_bs.radius *= Math.max(cache.scale.x, cache.scale.y, cache.scale.z) * ((obj_base.construction && obj_base.construction.boundingSphere_radius_scale) || ((obj_base.character_index) ? 0.5 : 1))
 
@@ -5775,11 +5674,11 @@ var r = object_bs.radius
 if (s.distanceTo(c) > dis+r)
   return
 
-if (!obj._mesh.geometry.boundingBox)
+if (!obj._obj_proxy.boundingBox)
   return
 
-var skip_bb_index_list = []
-obj._mesh.geometry.boundingBox_list.forEach(function (bb, bb_idx) {
+var skip_bb_index_list = [];
+obj._obj_proxy.boundingBox_list.forEach(function (bb, bb_idx) {
   if (obj_base.construction && obj_base.construction.boundingBox_list && obj_base.construction.boundingBox_list[bb_idx] && obj_base.construction.boundingBox_list[bb_idx].no_camera_collision)
     return
 
@@ -5797,11 +5696,27 @@ obj._mesh.geometry.boundingBox_list.forEach(function (bb, bb_idx) {
   if (bb.skip_bb_index_list)
     skip_bb_index_list = skip_bb_index_list.concat(bb.skip_bb_index_list)
 
-  var i_obj = { distance:i_dis, obj:obj, bb_index:bb_idx, oncollide:!!bb.oncollide }
+  const i_obj = { distance:i_dis, obj:obj, bb_index:bb_idx, oncollide:!!bb.oncollide }
   intersected.push(i_obj)
   if (nearest.distance > i_dis)
     nearest = i_obj
 });
+
+if (!obj_base.octree) return;
+
+rayX.copy(ray);
+rayX.applyMatrix4(_m4.copy(cache.matrixWorld).invert());
+const octree_result = obj_base.octree.rayIntersect(rayX, true);
+if (octree_result) {
+  const i_dis = s.distanceTo(octree_result.position.applyMatrix4(cache.matrixWorld));
+  if (i_dis > dis)
+    return;
+
+  const i_obj = { distance:i_dis, obj:obj };
+  intersected.push(i_obj);
+  if (nearest.distance > i_dis)
+    nearest = i_obj;
+}
   });
 
   return ((intersected.length && !nearest.oncollide) ? { nearest:nearest, intersected:intersected } : null)
@@ -5875,11 +5790,11 @@ if (!cache.visible)
 
 var click_range = []
 obj.onclick.forEach(function (click) {
-  click_range.push((!list_all_clickable && (is_dblclick != !!click.is_dblclick)) ? 0 : (click.click_range || click_range_default) + ((click.boundingSphere_included) ? obj._mesh.geometry.boundingSphere.radius*Math.max(cache.scale.x,cache.scale.y,cache.scale.z) : 0))
+  click_range.push((!list_all_clickable && (is_dblclick != !!click.is_dblclick)) ? 0 : (click.click_range || click_range_default) + ((click.boundingSphere_included) ? obj._obj_proxy.boundingSphere.radius*Math.max(cache.scale.x,cache.scale.y,cache.scale.z) : 0))
 });
 
 obj._click_index = -1
-var dis = PC_pos.distanceToSquared(_v3.copy(obj._mesh.geometry.boundingSphere.center).multiply(cache.scale).add(cache.position))
+var dis = PC_pos.distanceToSquared(_v3.copy(obj._obj_proxy.boundingSphere.center).multiply(cache.scale).add(cache.position))
 for (var i = 0, i_max = click_range.length; i < i_max; i++) {
   if (dis <= click_range[i]*click_range[i]) {
     obj._click_index = i
@@ -5918,8 +5833,8 @@ let obj = obj_sorted[k]
 let cache = obj._obj
 
 intersection.set(0,0,0)
-if (obj._mesh.geometry.boundingBox) {
-  let bb_list = obj._mesh.geometry.boundingBox_list || [obj._mesh.geometry.boundingBox]
+if (obj._obj_proxy.boundingBox) {
+  let bb_list = obj._obj_proxy.boundingBox_list || [obj._obj_proxy.boundingBox];
 
   let click = obj.onclick[obj._click_index]
   bb_list.some(function (b3, bb_idx) {
@@ -5971,7 +5886,7 @@ else if (list_all_clickable) {
   obj_clicked_list.push({obj:obj})
 }
 else {
-  bs.copy(obj._mesh.geometry.boundingSphere)
+  bs.copy(obj._obj_proxy.boundingSphere)
   bs.center.add(cache.position)
   bs.radius *= Math.max(cache.scale.x, cache.scale.y, cache.scale.z)
 
@@ -6073,6 +5988,7 @@ var obj_character = {
       window.dispatchEvent(new CustomEvent('SA_Dungeon_character_clicked', { detail:{ target:e.target, intersected:intersected } }));
   }}]
 };
+obj_character._obj_proxy = new Object3D_proxy_base(obj_character);
 
 var _boundingBox_expand
 var _v3 = new THREE.Vector3()
@@ -6088,9 +6004,9 @@ var e_func = function (e) {
   if ((is_dblclick == obj_character.onclick[0].is_dblclick) && !MMD_SA.MMD.motionManager.para_SA.click_disabled) {
     obj_list = d.object_list_click.slice()
 
-    var c_mesh = THREE.MMD.getModels()[0].mesh
-    obj_character._obj = obj_character._mesh = c_mesh
-    obj_list.push(obj_character)
+    const c_mesh = THREE.MMD.getModels()[0].mesh;
+    obj_character._obj = obj_character._mesh = c_mesh;
+    obj_list.push(obj_character);
   }
   else {
     obj_list = d.object_list_click
@@ -6277,39 +6193,45 @@ if (key_map.type_combat && d.character_combat_locked) {
 key_map.down = 0
   });
 
-  window.addEventListener("SA_keydown", function (e) {
+  d.SA_keydown = function (e) {
 var k = e.detail.keyCode
 // use RAF_timestamp instead, making it easier to track if a key is pressed in the same frame
 var t = RAF_timestamp//performance.now()
 // Raw key press data. Avoid altering it besides keyboard events.
 if (!d._key_pressed[k]) d._key_pressed[k] = t
 
-var msg_branch_list = d._states.dialogue_branch_mode
+var msg_branch_list = d.dialogue_branch_mode
 if (msg_branch_list) {
+  if (!d._states.action_allowed_in_event_mode || ((k >= 96) && (k <= 96+9)) || ((k >= 48) && (k <= 48+9)))
+    e.detail.result.return_value = true;
+
   for (var i = 0, i_max = msg_branch_list.length; i < i_max; i++) {
-    var branch = msg_branch_list[i]
+    const branch = msg_branch_list[i]
+    const sb_index = branch.sb_index || 0;
+    const sb = MMD_SA.SpeechBubble.list[sb_index];
     if ((k == 96+branch.key) || (k == 48+branch.key)) {
-      if (MMD_SA_options.SpeechBubble_branch && MMD_SA_options.SpeechBubble_branch.confirm_keydown && (branch.key != MMD_SA.SpeechBubble._branch_key_) && (MMD_SA.SpeechBubble.msg_line.some(msg=>MMD_SA_options.SpeechBubble_branch.RE.test(msg)&&(RegExp.$1==branch.key)))) {
-        MMD_SA.SpeechBubble._branch_key_ = branch.key
-        MMD_SA.SpeechBubble._update_placement(true)
+      if (MMD_SA_options.SpeechBubble_branch && MMD_SA_options.SpeechBubble_branch.confirm_keydown && (branch.key != sb._branch_key_) && (sb.msg_line.some(msg=>MMD_SA_options.SpeechBubble_branch.RE.test(msg)&&(RegExp.$1==branch.key)))) {
+        sb._branch_key_ = branch.key
+        sb._update_placement(true)
       }
       else {
-        MMD_SA.SpeechBubble._branch_key_ = null
-        d._states.dialogue_branch_mode = null
-        if ((branch.event_id != null) || (branch.branch_index != null))
-          d.run_event(branch.event_id, branch.branch_index, 0)
+        sb._branch_key_ = null;
+        d.dialogue_branch_mode = sb_index;
+        if ((branch.event_id != null) || (branch.branch_index != null) || (branch.event_index != null))
+          d.run_event(branch.event_id, branch.branch_index, branch.event_index||0)
         else
           d.run_event()
       }
       break
     }
   }
-  e.detail.result.return_value = true
-  return
+
+  if (e.detail.result.return_value)
+    return;
 }
 
 var key_map = d.key_map[k]
-if (d._states.dialogue_mode && (!key_map || !/^(up|left|down|right)$/.test(key_map.id))) {
+if (d._states.dialogue_mode && !msg_branch_list && (!key_map || !/^(up|left|down|right)$/.test(key_map.id))) {
   d.run_event()
   e.detail.result.return_value = true
   return
@@ -6321,7 +6243,9 @@ if (!key_map) {
 }
 
 _keydown(e, key_map, t)
-  });
+  };
+
+  window.addEventListener("SA_keydown", d.SA_keydown);
 
   var _keydown = (function () {
     var e_dummy = {detail:{result:{}}};
@@ -7070,10 +6994,10 @@ MMD_SA.reset_camera()
 // check ground movement START
   var ground_y = d.get_ground_y(c.pos)
   if (c.ground_obj) {
-    var g_obj = c.ground_obj.obj._obj
-    var g_geo = c.ground_obj.obj._mesh.geometry
+    const g = c.ground_obj.obj;
+    const g_obj = g._obj;
     for (var index in c.ground_obj.bb_y_scale) {
-      ground_y = (index == "mesh") ? Math.max(((c.ground_obj.obj.collision_by_mesh_enforced)?-999:ground_y), c.ground_obj.bb_y_scale.mesh) : Math.max(ground_y, g_geo.boundingBox_list[index].max.y * g_obj.scale.y * c.ground_obj.bb_y_scale[index] + g_obj.position.y)
+      ground_y = (index == "mesh") ? Math.max(((c.ground_obj.obj.collision_by_mesh_enforced)?-999:ground_y), c.ground_obj.bb_y_scale.mesh) : Math.max(ground_y, g._obj_proxy.boundingBox_list[index].max.y * g_obj.scale.y * c.ground_obj.bb_y_scale[index] + g_obj.position.y)
     }
   }
   var ground_y_delta = 0
@@ -7365,10 +7289,10 @@ MMD_SA._force_motion_shuffle = true
 // check ground movement START
   ground_y = (collision_by_mesh_failed) ? c.pos.y : d.get_ground_y(c.pos)
   if (c.ground_obj) {
-    var g_obj = c.ground_obj.obj._obj
-    var g_geo = c.ground_obj.obj._mesh.geometry
+    const g = c.ground_obj.obj;
+    const g_obj = g._obj
     for (var index in c.ground_obj.bb_y_scale) {
-      ground_y = (index == "mesh") ? Math.max(((c.ground_obj.obj.collision_by_mesh_enforced)?-999:ground_y), c.ground_obj.bb_y_scale.mesh) : Math.max(ground_y, g_geo.boundingBox_list[index].max.y * g_obj.scale.y * c.ground_obj.bb_y_scale[index] + g_obj.position.y)
+      ground_y = (index == "mesh") ? Math.max(((c.ground_obj.obj.collision_by_mesh_enforced)?-999:ground_y), c.ground_obj.bb_y_scale.mesh) : Math.max(ground_y, g._obj_proxy.boundingBox_list[index].max.y * g_obj.scale.y * c.ground_obj.bb_y_scale[index] + g_obj.position.y)
     }
   }
   var reset_camera// = (d.camera_y_default_non_negative && (c.ground_y != ground_y) && ((c.ground_y < 0) || (ground_y < 0)))
@@ -7565,7 +7489,7 @@ for (var lvl = 0, lvl_max = this.geo_by_lvl.length; lvl < lvl_max; lvl++) {
   lvl_obj.index_material_cloned = -1
   lvl_obj.list.concat(lvl_obj.list_material_cloned).forEach(function (obj) {
     obj.visible = false
-    MMD_SA.scene.remove(obj)
+    MMD_SA.THREEX.scene.remove(obj)
   });
 
   var i, i_max
@@ -7583,6 +7507,8 @@ for (var lvl = 0, lvl_max = this.geo_by_lvl.length; lvl < lvl_max; lvl++) {
   }
 
   var _get_obj = function (list) {
+const THREE = MMD_SA.THREEX.THREE;
+
 var plane0 = this.list[0]
 
 var index, reusable_list
@@ -7606,7 +7532,7 @@ else {
   if (!plane) {
     plane = list[index_used] = (list == this.list) ? plane0.clone() : plane0.clone(new THREE.Mesh(plane0.geometry, plane0.material.clone()))
     plane.matrixAutoUpdate = false
-    MMD_SA.scene.add(plane)
+    MMD_SA.THREEX.scene.add(plane)
   }
 }
 
@@ -7622,7 +7548,7 @@ for (var lvl = 0, lvl_max = this.geo_by_lvl.length; lvl < lvl_max; lvl++) {
   var lvl_obj = this.lvl[lvl]
   lvl_obj.list.concat(lvl_obj.list_material_cloned).forEach(function (obj) {
 // NOTE: scene.add must come first, or .visible will always be reset to true.
-    MMD_SA.scene.add(obj)
+    MMD_SA.THREEX.scene.add(obj)
     obj.visible = false
 //    obj.renderDepth = 999999
   });
@@ -7667,9 +7593,9 @@ var that = this
 this.list.forEach(function (cache) {
 // NOTE: scene.add must come first, or .visible will always be reset to true.
   if (!cache.parent)
-    MMD_SA.scene.add(cache)
+    MMD_SA.THREEX.scene.add(cache)
   cache.visible = false;
-  cache.children.forEach(function (c) { c.visible=false; });
+  if (!MMD_SA.THREEX.enabled) cache.children.forEach(function (c) { c.visible=false; });
 });
   }
 
@@ -7683,9 +7609,9 @@ this.reusable_list = []
 this.list.forEach(function (cache, idx) {
   that.reusable_list.push(idx)
   cache.visible = false;
-  cache.children.forEach(function (c) { c.visible=false; });
+  if (!MMD_SA.THREEX.enabled) cache.children.forEach(function (c) { c.visible=false; });
   if (!stay_on_scene)
-    MMD_SA.scene.remove(cache)
+    MMD_SA.THREEX.scene.remove(cache)
 });
   }
 
@@ -7753,160 +7679,67 @@ else {
     });
 
     var geo = mesh.geometry || mesh.children[0].geometry
+    if (obj.collision_by_mesh && !obj.collision_by_mesh_sort_range && MMD_SA_options.Dungeon.use_octree) {
+      obj.collision_by_mesh_sort_range = 1;
+    }
+
     if (obj.collision_by_mesh_sort_range) {
       if (!d.mesh_sorting_worker) {
-d.use_local_mesh_sorting = true
+d.use_local_mesh_sorting = true;
 if (d.use_local_mesh_sorting) {
   d.mesh_sorting_worker = {
     tree: {}
   };
-/*
-  d.mesh_sorting_worker.BoxIntersect = function (boxes) {
-this.boxes = boxes
-this.result = []
-  };
-  d.mesh_sorting_worker.BoxIntersect.prototype = (function () {
-    var that;
-
-    function visit (i, j) {
-that.result.push(j)
-    }
-
-    return {
-      constructor: d.mesh_sorting_worker.BoxIntersect
-     ,boxIntersect: function (subjectBoxes) {
-that = this
-that.result = []
-BoxIntersect(subjectBoxes, that.boxes, visit)
-      }
-    };
-  })();
-*/
 }
 else {
-
-        d.mesh_sorting_worker = new Worker(
-  'data:text/javascript;base64,'
-+ 'dmFyIG1lc2hfYnlfaW5kZXg9W107b25tZXNzYWdlPWZ1bmN0aW9uKGEpe3ZhciBiLGMsZDtpZihhLmRhdGEgaW5zdGFuY2VvZiBBcnJheUJ1ZmZlcil7bGV0IHE9bmV3IEZsb2F0MzJBcnJheShhLmRhdGEpO3JldHVybiBtZXNoX2J5X2luZGV4W3FbMF1dPXEsdm9pZCBwb3N0TWVzc2FnZSgiQXJyYXlCdWZmZXIgcmVjZWl2ZWQoIitxWzBdKyIsIitxLmxlbmd0aCsiKSIpfXZhciBmPXBlcmZvcm1hbmNlLm5vdygpLGc9YS5kYXRhLGg9bWVzaF9ieV9pbmRleFtnWzRdXTtpZighaClyZXR1cm4gdm9pZCBwb3N0TWVzc2FnZSgiRVJST1IgKHdvcmtlcik6IE1lc2gtIitnWzRdKyIgZG9lcyBub3QgZXhpc3QuIik7Yz1bXTtmb3IodmFyIGssbCxtLG4saj0tMSxvPTEscD1oLmxlbmd0aDtvPHA7bys9NClqKyssaz1nWzBdLWhbb10sbD1NYXRoLm1pbihnWzFdLWhbbysxXSwwKSxtPWdbMl0taFtvKzJdLG49Z1szXStoW28rM10sayprK2wqbCttKm08bipuJiZjLnB1c2goaik7Yj1uZXcgVWludDMyQXJyYXkoYyksZD17YnVmZmVyOmIuYnVmZmVyLHQ6cGVyZm9ybWFuY2Uubm93KCktZixvYmpfaW5kZXg6Z1s1XX0scG9zdE1lc3NhZ2UoZCxbZC5idWZmZXJdKSxiPXZvaWQgMCxjPXZvaWQgMCxkLmJ1ZmZlcj12b2lkIDAsZD12b2lkIDB9Ow=='
-        );
-
-//        d.mesh_sorting_worker = new Worker("js/dungeon_mesh_sorting.js")
-
-        d.mesh_sorting_worker.onmessage = function(e) {
-//DEBUG_show(e.data)
-if (typeof e.data == "string") {
-  console.log(e.data)// + "/" + (performance.now()-d._t_)/1000)
-}
-else {
-  var result = e.data
-  var buf = new Uint32Array(result.buffer)
-  var mesh_sorted = d.object_list[result.obj_index].mesh_sorted
-  mesh_sorted.position = mesh_sorted._pos_waiting_for_result
-  mesh_sorted._pos_waiting_for_result = null
-  mesh_sorted.index_list = buf
-  console.log("Mesh sorted:" + result.obj_index + "," + buf.length + "/" + Math.round(result.t) + "-" + Math.round(performance.now()-mesh_sorted._t_ini) + "ms/" + Date.now())
-//  console.log(buf)
-  buf = undefined
-}
-        };
-//threeoctree.min.js
-/*
-d.octree = new THREE.Octree({ undeferred:true, objectsThreshold:500 });
-var octree_obj = (mesh.geometry) ? mesh : mesh.children[0]
-d.octree.add( octree_obj, { useFaces: true } );
-//d.octree.update()
-console.log("threeoctree.min.js")
-*/
 }
       }
 
-      var a, b, c, index, _array
-      var vertices = geo.vertices
-      var collision_by_mesh_material_index_max = obj.collision_by_mesh_material_index_max || 999
+      let a, b, c, index, _array;
+      let vertices = geo.vertices;
+      let collision_by_mesh_material_index_max = obj.collision_by_mesh_material_index_max || 999;
 // https://0fps.net/2015/01/23/collision-detection-part-3-benchmarks/
 if (d.use_local_mesh_sorting) {
-/*
-// https://github.com/mikolalysenko/box-intersect
-  _array = []
-  for (var f = 0, fl = geo.faces.length; f < fl; f++) {
-    var face = geo.faces[f]
-    if (face.materialIndex >= collision_by_mesh_material_index_max) break;
+  if (MMD_SA_options.Dungeon.use_octree) {
+    const THREEX = MMD_SA.THREEX.THREEX;
+    const octree = new THREEX.Octree();
+    octree.fromGraphNode( mesh );
+    obj.octree = octree;
+    console.log('octree', obj);
 
-    a = vertices[face.a]
-    b = vertices[face.b]
-    c = vertices[face.c]
-
-    _array.push([
-Math.min(a.x, b.x, c.x),
-Math.min(a.z, b.z, c.z),
-Math.max(a.x, b.x, c.x),
-Math.max(a.z, b.z, c.z)
-    ]);
+    d.mesh_sorting_worker.tree[idx] = {};
   }
 
-  d.mesh_sorting_worker.tree[idx] = new d.mesh_sorting_worker.BoxIntersect(_array)
-*/
-
+  if (!d.use_octree) {
 // compute face normal when necessary (mainly for PMX model)
-  if (!geo.faces[0].normal.lengthSq()) geo.computeFaceNormals();
+    if (!geo.faces[0].normal.lengthSq()) geo.computeFaceNormals();
 
 // https://github.com/mourner/rbush
-  let tree = rbush()
+    let tree = rbush();
 
-  _array = []
-  for (var f = 0, fl = geo.faces.length; f < fl; f++) {
-    var face = geo.faces[f]
-    if (face.materialIndex >= collision_by_mesh_material_index_max) break;
+    _array = [];
+    for (let f = 0, fl = geo.faces.length; f < fl; f++) {
+      const face = geo.faces[f];
+      if (face.materialIndex >= collision_by_mesh_material_index_max) break;
 
-    a = vertices[face.a]
-    b = vertices[face.b]
-    c = vertices[face.c]
+      a = vertices[face.a];
+      b = vertices[face.b];
+      c = vertices[face.c];
 
-    _array.push({
+      _array.push({
 minX: Math.min(a.x, b.x, c.x),
 minY: Math.min(a.z, b.z, c.z),
 maxX: Math.max(a.x, b.x, c.x),
 maxY: Math.max(a.z, b.z, c.z),
 index: f
-    });
+      });
+    }
+
+    tree.load(_array);
+    d.mesh_sorting_worker.tree[idx] = tree;
   }
-
-  tree.load(_array)
-  d.mesh_sorting_worker.tree[idx] = tree
-
 }
 else {
-      var center = new THREE.Vector3()
-// assuming Face3 for now
-// object base index(1) + geo.faces(*4)
-      _array = [idx]
-//var d_max = 0
-      for (var f = 0, fl = geo.faces.length; f < fl; f++) {
-        var face = geo.faces[f]
-        if (face.materialIndex >= collision_by_mesh_material_index_max) break;
-
-        index = 1+f*4//5//
-        a = vertices[face.a]
-        b = vertices[face.b]
-        c = vertices[face.c]
-        center.addVectors(a, b).add(c).multiplyScalar(1/3)
-
-        _array[index]   = center.x
-        _array[index+1] = center.y
-        _array[index+2] = center.z
-        _array[index+3] = Math.max(a.distanceTo(center), b.distanceTo(center), c.distanceTo(center))
-//d_max = Math.max(d_max, _array[index+3])
-//_array[index+4] = f
-      }
-//console.log("d_max:"+d_max)
-      var _buffer = new Float32Array(_array)
-
-//Passing data by transferring ownership (transferable objects)
-//https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers
-//  d._t_ = performance.now()
-      d.mesh_sorting_worker.postMessage(_buffer.buffer, [_buffer.buffer])
-
-      _buffer = undefined
 }
 
       _array = undefined
@@ -7950,12 +7783,14 @@ Object.defineProperty(obj.cache.list, "0", {
     };
 
     if (obj.LOD_far) {
+      const THREE = MMD_SA.THREEX.THREE;
+
       obj.LOD_far.boundingBox = geo.boundingBox
       obj.LOD_far.center = geo.boundingBox.center()
       obj.LOD_far.size = geo.boundingBox.size()
-      let mesh_far = new THREE.Mesh(new THREE.CubeGeometry(obj.LOD_far.size.x, obj.LOD_far.size.y, obj.LOD_far.size.z), new THREE.MeshBasicMaterial( { color:'#'+MMD_SA.scene.fog.color.getHexString() } ));
+      let mesh_far = new THREE.Mesh(new THREE.CubeGeometry(obj.LOD_far.size.x, obj.LOD_far.size.y, obj.LOD_far.size.z), new THREE.MeshBasicMaterial( { color:'#'+MMD_SA.THREEX.scene.fog.color.getHexString() } ));
       mesh_far.visible = false
-      MMD_SA.scene.add(mesh_far)
+      MMD_SA.THREEX.scene.add(mesh_far)
 
       mesh_far.useQuaternion = true
 
@@ -8064,6 +7899,7 @@ return function (pos) {
 // dummy
      ,_obj_base: {}
     };
+    obj._obj_proxy = new Object3D_proxy_base(obj);
 
     d.grid_blocks.objs[i] = obj
   }
@@ -10117,64 +9953,73 @@ ULDR_id.forEach(function (id, idx) {
 if (!this.key_map[38]) {
   this.key_map[38] = { order:838, id:"camera_preset_switch", keyCode:38
    ,onfirstpress: (function () {
-var d = MMD_SA_options.Dungeon
-var c = d.character
+var d = MMD_SA_options.Dungeon;
+var c = d.character;
 
-var camera_position_preset = []
+let v3a;
+const camera_position_preset_length = 3;
+function camera_position_preset(index) {
+  const dc = MMD_SA_options.camera_position_base;
+  switch (index) {
+    case 1:
+      return v3a.set(dc[0]*2, dc[1]*2+10, dc[2]*2*MMD_SA_options.Dungeon_options.camera_position_z_sign).toArray();
+    case 2:
+      return v3a.set(dc[0]*3, dc[1]*3+15, dc[2]*4*MMD_SA_options.Dungeon_options.camera_position_z_sign).toArray();
+    default:
+      return v3a.set(dc[0], dc[1], dc[2]*MMD_SA_options.Dungeon_options.camera_position_z_sign).toArray();;
+  }
+}
+
+d.update_camera_position_base = function (pos) {
+  if (pos) MMD_SA_options.camera_position_base = pos;
+
+  d.key_map[38].camera_position_preset_index = 0;
+  c.camera_position_base_default = camera_position_preset(0);
+  c.camera_position_base = c.camera_position_base_default.slice();
+
+  MMD_SA.reset_camera(true);
+};
 
 window.addEventListener("jThree_ready", function () {
-  d.key_map[38].camera_position_preset_index = 0
+  v3a = new THREE.Vector3();
 
-  camera_position_preset.push(c.camera_position_base_default.slice())
-  var z_sign = Math.sign(camera_position_preset[0][2])
-  var v3 = new THREE.Vector3(0,30,60*z_sign)
-  for (var a = 0; a < 1; a++) {
-    camera_position_preset.push(v3.clone().applyEuler(new THREE.Vector3(0,a*90*Math.PI/180,0)).toArray())
-  }
+  d.key_map[38].camera_position_preset_index = 0;
 
-  var v3 = new THREE.Vector3(0,45,120*z_sign)
-  for (var a = 0; a < 1; a++) {
-    camera_position_preset.push(v3.clone().applyEuler(new THREE.Vector3(0,a*90*Math.PI/180,0)).toArray())
-  }
-
-  c.camera_rotation_from_preset = new THREE.Vector3()
+  c.camera_rotation_from_preset = new THREE.Vector3();
 });
 
 window.addEventListener("SA_Dungeon_onrestart", function () {
-  if (c.mount_para)
-    return
+  if (c.mount_para) return;
 
-  camera_position_preset[0] = c.camera_position_base_default.slice()
-
-  c.camera_position_base_default = camera_position_preset[d.key_map[38].camera_position_preset_index]
-  c.camera_position_base = c.camera_position_base_default.slice()
+  c.camera_position_base_default = camera_position_preset(d.key_map[38].camera_position_preset_index);
+  c.camera_position_base = c.camera_position_base_default.slice();
 });
 
 return function () {
-  if (c.mount_para)
-    return
+  if (d.event_mode) return;
+  if (c.mout_para) return;
 
-  if (++this.camera_position_preset_index >= camera_position_preset.length)
-    this.camera_position_preset_index = 0
+  if (++this.camera_position_preset_index >= camera_position_preset_length)
+    this.camera_position_preset_index = 0;
 
-  c.camera_position_base_default = camera_position_preset[this.camera_position_preset_index]
-  c.camera_position_base = c.camera_position_base_default.slice()
+  c.camera_position_base_default = camera_position_preset(this.camera_position_preset_index);
+  c.camera_position_base = c.camera_position_base_default.slice();
 
-  c.rot.set(0,0,0)
-  THREE.MMD.getModels()[0].mesh.quaternion.set(0,0,0,1)
+  c.rot.set(0,0,0);
+  THREE.MMD.getModels()[0].mesh.quaternion.set(0,0,0,1);
 
-  c.about_turn = false
-  c.camera_TPS_rot.set(0,0,0)
-  c.camera_update()
+  c.about_turn = false;
+  c.camera_TPS_rot.set(0,0,0);
+  c.camera_update();
 
 //  if (c.TPS_camera_lookAt_) d._rot_camera.v3.set(0,0,0);
 
-  MMD_SA.reset_camera()
+  MMD_SA.reset_camera();
 
-  var tc = MMD_SA._trackball_camera
-  c.camera_rotation_from_preset.y = Math.PI/2 - Math.atan2((tc.target.z-tc.object.position.z), (tc.target.x-tc.object.position.x))
+  var tc = MMD_SA._trackball_camera;
+  c.camera_rotation_from_preset.y = Math.PI/2 - Math.atan2((tc.target.z-tc.object.position.z), (tc.target.x-tc.object.position.x));
 
-  DEBUG_show("Camera preset:" + (this.camera_position_preset_index+1)+'/'+camera_position_preset.length, 2)
+  DEBUG_show("Camera preset:" + (this.camera_position_preset_index+1)+'/'+camera_position_preset_length, 2);
 };
     })()
   };
@@ -10182,6 +10027,7 @@ return function () {
 if (!this.key_map[40]) {
   this.key_map[40] = { order:840, id:"TPS_mode_toggle", keyCode:40
    ,onfirstpress: function () {
+if (MMD_SA_options.Dungeon.event_mode) return;
 /*
 var look_at_screen = MMD_SA_options._look_at_screen
 MMD_SA_options.look_at_screen = MMD_SA_options.look_at_mouse = !look_at_screen
@@ -10362,6 +10208,11 @@ if (c.mount_para && !c.mount_para.can_jump)
 this.key_map_default = {}
 Object.assign(this.key_map_default, this.key_map)
 
+// initialize to assign .duration for all necessary motions (BEFORE .generateSkinAnimation()) to prevent looping
+window.addEventListener("SA_MMD_init", ()=>{
+  MMD_SA_options.Dungeon.character.assign_keys()
+});
+
 if (options.combat_mode_enabled) {
   (function () {
     var d = MMD_SA_options.Dungeon
@@ -10420,11 +10271,6 @@ if (options.combat_mode_enabled) {
         c.combo_type = c.combo_type || "bare-handed"
         d.motion[c.motion_id].para.attack_combo_para = c
       });
-    });
-
-// initialize to assign .duration for all necessary combat motions (BEFORE .generateSkinAnimation()) to prevent looping
-    window.addEventListener("SA_MMD_init", ()=>{
-      MMD_SA_options.Dungeon.character.assign_combat_keys()
     });
 
     var combo_onfirstpress = function (e) {
@@ -10729,7 +10575,36 @@ this.object_base_list.forEach(function (obj, idx) {
  ,get event_mode() { return (this._states.event_mode_locked || this._states.event_mode || this._states.dialogue_mode); }
  ,set event_mode(v) { this._states.event_mode = v; }
 
- ,get character_movement_disabled() { return (this._states.character_movement_disabled || this.event_mode || this.character_combat_locked || MMD_SA_options.Dungeon_options.character_movement_disabled); }
+ ,get dialogue_branch_mode() { return this._states.dialogue_branch_mode; }
+ ,set dialogue_branch_mode(v) {
+    var v_current = this._states.dialogue_branch_mode;
+    if (Array.isArray(v_current) && Array.isArray(v)) {
+      const v_append = [];
+      v.forEach(k=>{
+        const index = v_current.findIndex(k_current=>k_current.key==k.key);
+        if (index > -1) {
+          v_current[index] = k;
+        }
+        else {
+          v_append.push(k);
+        }
+      });
+      v = v_current.concat(v_append);
+    }
+    else if (typeof v == 'number') {
+      if (Array.isArray(v_current)) {
+        v = v_current.filter(k=>(k.sb_index||0) != v);
+        if (!v.length)
+          v = null;
+      }
+      else {
+        v = null;
+      }
+    }
+    this._states.dialogue_branch_mode = v;
+  }
+
+ ,get character_movement_disabled() { return (this._states.character_movement_disabled || (this.event_mode && !this._states.action_allowed_in_event_mode) || this.character_combat_locked || MMD_SA_options.Dungeon_options.character_movement_disabled); }
  ,set character_movement_disabled(v) { this._states.character_movement_disabled = v; }
 
  ,get can_parry() {
@@ -10743,7 +10618,7 @@ return (!para_SA.super_armor && (!para_SA.motion_command_disabled));
   }
 
  ,get character_combat_locked()  {
-if (this.event_mode)
+if (this.event_mode && !this._states.action_allowed_in_event_mode)
   return "<ALL>"
 
 return (this._states.character_combat_locked);
@@ -10821,9 +10696,9 @@ for (let name in this.character.states) {
         }
        ,{
           message: {
-  content: "Mouse Control:\n* Camera:\n - Drag/Wheel to rotate/zoom.\n - Double-click to reset.\n* Item:\n - Double-click to use.\n - Drag to re-position.\n* PC/NPC/Object:\n  - Single/Double-click to interact."
+  content: "Mouse Control:\n* Camera:\n - Drag/Wheel to rotate/zoom\n - Ctrl+Drag to pan\n - Double-click to reset\n* Item:\n - Double-click to use\n - Drag to re-position\n* PC/NPC/Object:\n  - Single/Double-click to interact"
  ,bubble_index: 3
- ,para: { scale:1.5, row_max:9, text_offset:{y:-10} }
+ ,para: { scale:1.5, row_max:10, text_offset:{y:-10} }
           }
         }
       ]
@@ -11616,9 +11491,12 @@ return defeated
 var that = this
 var obj = this._event_active.obj
 
-if (MMD_SA.SpeechBubble.visible && !MMD_SA.SpeechBubble.msg_timerID && this._states.dialogue_mode) {
-  MMD_SA.SpeechBubble.hide()
-  that._states.dialogue_mode = false
+var sb_index = e.sb_index || 0;
+var sb = MMD_SA.SpeechBubble.list[sb_index];
+if (sb.visible && sb.msg_timerID && this._states.dialogue_mode) {
+  sb.hide();
+  if (sb_index == 0)
+    that._states.dialogue_mode = false;
 }
 
 if (e.func && e.func()) {
@@ -11630,21 +11508,23 @@ var c = this.character
 
 if (e.message) {
   (function () {
-var msg = e.message
-var _obj = obj
+const msg = e.message;
+const _obj = obj;
 
-var func = function () {
+const index = msg.index || 0;
+
+const func = function () {
   if (msg.content) {
-    var bubble_index = msg.bubble_index || 0
-    var para = msg.para || {}
+    const bubble_index = msg.bubble_index || 0;
+    const para = msg.para || {};
     if (System._browser.camera.initialized)
-      para.always_update = true
-    var duration = (msg.duration) ? msg.duration * 1000 : 0
+      para.always_update = true;
+    const duration = (msg.duration) ? msg.duration * 1000 : 0
 
     if (c.mount_para && c.mount_para.msg_para) {
       para = Object.clone(para)
       para.scale = (c.mount_para.msg_para.scale || 1) * (para.scale || 1);
-      var _pos_mod = (c.mount_para.msg_para.pos_mod || [0,0,0])
+      const _pos_mod = (c.mount_para.msg_para.pos_mod || [0,0,0])
       para.pos_mod = (para.pos_mod) ? para.pos_mod.map(function(v,idx){return v+_pos_mod[idx]}) : _pos_mod
     }
 
@@ -11654,29 +11534,31 @@ var func = function () {
     }
 
     if (msg.branch_list) {
-      that._states.dialogue_branch_mode = msg.branch_list
+      msg.branch_list.forEach(b=>{b.sb_index=index});
+      that.dialogue_branch_mode = msg.branch_list;
     }
 
-    MMD_SA.SpeechBubble.message(bubble_index, msg.content, duration, para)
+    MMD_SA.SpeechBubble.list[index].message(bubble_index, msg.content, duration, para)
 
-    if (!duration) {
+    if ((index == 0) && !duration) {
       if (Lnumpad.style.visibility != "hidden")
         System._browser.virtual_numpad_toggle(true)
       that._states.dialogue_mode = true
     }
   }
   else {
-    MMD_SA.SpeechBubble.hide()
-    that._states.dialogue_mode = false
+    MMD_SA.SpeechBubble.list[index].hide();
+    if (index == 0)
+      that._states.dialogue_mode = false;
   }
 };
 
-var delay = (msg.delay) ? msg.delay * 1000 : 0
+const delay = (msg.delay) ? msg.delay * 1000 : 0;
 if (delay) {
-  setTimeout(function () { func() }, delay)
+  setTimeout(function () { func() }, delay);
 }
 else {
-  func()
+  func();
 }
   })();
 }
@@ -11914,7 +11796,7 @@ if (mesh.useQuaternion && center_mesh && center_mesh.useQuaternion) mesh.quatern
 // update mesh reference after .visible update
       if (id != "PC")
         mesh = _obj._obj
-      mesh.children.forEach(function (c) { c.visible=vis; });
+      if (!MMD_SA.THREEX.enabled) mesh.children.forEach(function (c) { c.visible=vis; });
       if (character_index == 0) {
         c.pos_update()
         MMD_SA.reset_camera()
@@ -12132,7 +12014,7 @@ if (e.goto_branch) {
 }
 
 if (e.goto_event) {
-  this.run_event(e.goto_event.id, e.goto_event.branch_index, 0)
+  this.run_event(e.goto_event.id, e.goto_event.branch_index, e.goto_event.step||0)
 }
 
 // backward compatibility
@@ -12150,20 +12032,30 @@ if (e.next_step) {
 if (e.ended) {
   if ((typeof e.ended == 'string') && (e.ended != this._event_active.id)) return;
 
-  if (MMD_SA.SpeechBubble.visible && !MMD_SA.SpeechBubble.msg_timerID)
-    MMD_SA.SpeechBubble.hide()
+  const sb_index = e.sb_index || 0;
+  if (sb_index == 0) {
+    MMD_SA.SpeechBubble.list.forEach(sb=>{
+      if (sb.visible && !sb.msg_timerID)
+        sb.hide();
+    });
 
-  if (this._event_active._NPC_turns_back)
-    this._event_active._NPC_turns_back.npc.quaternion.copy(this._event_active._NPC_turns_back.quat)
+    if (this._event_active._NPC_turns_back)
+      this._event_active._NPC_turns_back.npc.quaternion.copy(this._event_active._NPC_turns_back.quat)
 
-  this._states.event_mode = this._states.dialogue_mode = this._states.dialogue_branch_mode = false
-  this._event_active = {}
+    this._states.event_mode = this._states.dialogue_mode = this.dialogue_branch_mode = false
+    this._event_active = {}
 
-  MMD_SA._mouse_pos_3D = []
-  MMD_SA_options.model_para_obj_all[0].look_at_character = null
-  MMD_SA_options.model_para_obj_all[0].look_at_target = null
+    MMD_SA._mouse_pos_3D = []
+    MMD_SA_options.model_para_obj_all[0].look_at_character = null
+    MMD_SA_options.model_para_obj_all[0].look_at_target = null
 
-  MMD_SA.reset_camera()
+    MMD_SA.reset_camera()
+  }
+  else {
+    const sb = MMD_SA.SpeechBubble.list[sb_index];
+    if (sb.visible && !sb.msg_timerID)
+      sb.hide();
+  }
 }
     }
 
@@ -13430,7 +13322,7 @@ var d = MMD_SA_options.Dungeon
 
 var obj_base = d.object_base_list[para.object_index]
 var mesh = obj_base._obj._obj
-var bb = (mesh.geometry || mesh.children[0].geometry).boundingBox
+var bb = obj_base._obj._obj_proxy.boundingBox;
 var scale = para.scale || (obj_base.placement && obj_base.placement.scale) || 10
 
 var w = Math.max(Math.abs(bb.min.x), Math.abs(bb.max.x)) * scale * 2

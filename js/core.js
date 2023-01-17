@@ -1,5 +1,5 @@
 // System Animator core basics
-// (2022-11-30)
+// (2023-01-17)
 
 var use_SA_browser_mode
 
@@ -398,7 +398,7 @@ function DEBUG_show(msg, hide_sec, always_visible) {
 //DEBUG_always_visible = true
   if (hide_sec < 0)
     hide_sec = 0
-  else if (DEBUG_timerID || DEBUG_always_visible)
+  else if ((DEBUG_timerID || DEBUG_always_visible) && (msg != null))
     msg = Ldebug.innerText + " | " + msg// + '(' + DEBUG_hide_sec + ')'
 
   var time = Date.now()
@@ -425,8 +425,7 @@ function DEBUG_show(msg, hide_sec, always_visible) {
   if (msg != null) {
     Ldebug.innerText = msg
 //console.log(msg)
-    if (!self.use_Silverlight || !self.SL_DEBUG_show || self.SL_windowless || !self.SL_loaded)
-      Ldebug.style.visibility = "inherit"
+    Ldebug.style.visibility = "inherit"
 
     if (hide_sec && !DEBUG_always_visible) {
       DEBUG_timerID = setTimeout('DEBUG_timerID=null; DEBUG_show()', hide_sec*1000)
@@ -436,10 +435,6 @@ function DEBUG_show(msg, hide_sec, always_visible) {
     DEBUG_always_visible = false
     Ldebug.style.visibility = "hidden"
   }
-
-// Silverlight START
-  if (self.SL_DEBUG_show)
-    SL_DEBUG_show(msg)
 }
 // For debug END
 
