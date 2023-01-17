@@ -6216,7 +6216,8 @@ if (msg_branch_list) {
       }
       else {
         sb._branch_key_ = null;
-        d.dialogue_branch_mode = sb_index;
+        if (!branch.keep_dialogue_branch_list)
+          d.dialogue_branch_mode = sb_index;
         if ((branch.event_id != null) || (branch.branch_index != null) || (branch.event_index != null))
           d.run_event(branch.event_id, branch.branch_index, branch.event_index||0)
         else
@@ -11534,7 +11535,7 @@ const func = function () {
     }
 
     if (msg.branch_list) {
-      msg.branch_list.forEach(b=>{b.sb_index=index});
+      msg.branch_list.forEach(b=>{ if (b.sb_index==null) b.sb_index=index; });
       that.dialogue_branch_mode = msg.branch_list;
     }
 
