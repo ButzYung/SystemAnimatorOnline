@@ -1822,15 +1822,14 @@ if (MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle
 video:{
 //  hidden:true,
 //  hidden_on_webcam: true,
-  scale:0.4,
-  top:-0.5//0//
-//,left:-3
+  scale:0.4, top:-0.5,
+//scale:0.4*2*2,top:0,left:-3,
 },
 wireframe:{
 //  hidden:true,
 //  align_with_video:true,
-  top:0.5
-//,left:3
+  top:0.5,
+//top:0,left:3,
 }
     },
     preference: {
@@ -4337,6 +4336,8 @@ const onDrop_scene_JSON = (function () {
   var msg_duration = 0;
 
   return async function (item) {
+    MMD_SA_options.Dungeon.run_event({ ended:true });
+
     msg_log.length = 0;
     msg_duration = 0;
 
@@ -4647,7 +4648,7 @@ window.addEventListener('SA_MMD_before_render', animate_object3D);
        ,goto_event: { id:"_FACEMESH_OPTIONS_", branch_index:done_branch }
       }
     }
-   ,{ key:5, branch_index:4 }
+   ,{ key:5, branch_index:4 }//keep_dialogue_branch_list:true, 
    ,{ key:6 }
   ]
           }
@@ -4655,6 +4656,20 @@ window.addEventListener('SA_MMD_before_render', animate_object3D);
       ]
 
      ,[
+        {
+          message: {
+//  index: 1,
+//  para: { scale:0.75 },
+  content: 'Are you sure you want to reset the whole scene back to the default status?\n1. Yes\n2. Cancel',
+  para: { no_word_break:true },
+  branch_list: [
+//    { key:8, event_index:1 },
+//    { key:9, event_id:{ sb_index:1, ended:true } },
+    { key:1, event_index:1 },
+    { key:2, event_index:999 },
+  ]
+          }
+        },
         {
           func: function () {
 const v_bg = document.getElementById("VdesktopBG");
