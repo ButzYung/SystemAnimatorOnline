@@ -1,5 +1,5 @@
 // XR Animator
-// (12-21-2022)
+// (2023-01-17)
 
 var MMD_SA_options = {
 
@@ -2205,7 +2205,8 @@ return [
  ,info_short: "AR reticle"
 
  ,is_base_inventory: is_mobile
- ,get index_default() { return (is_mobile) ? null : MMD_SA_options.Dungeon.inventory.max_base+1; }
+// NOTE: use undefined for index_default ((null >= 0) is true...)
+ ,get index_default() { return (is_mobile) ? undefined : MMD_SA_options.Dungeon.inventory.max_base+1; }
 
  ,stock_max: 1
  ,stock_default: 1
@@ -2573,7 +2574,7 @@ v3b = new THREE.Vector3()
  ,info_short: "Baseball catcher"
 // ,is_base_inventory: true
 
- ,get index_default() { return (is_mobile) ? null : MMD_SA_options.Dungeon.inventory.max_base+2; }
+ ,get index_default() { return (is_mobile) ? undefined : MMD_SA_options.Dungeon.inventory.max_base+2; }
 
  ,stock_max: 1
  ,stock_default: 1
@@ -2765,7 +2766,7 @@ MMD_SA._force_motion_shuffle = true
  ,info_short: "BodyPix AI"
 // ,is_base_inventory: true
 
- ,index_default: (is_mobile) ? null : 5
+ ,index_default: (is_mobile) ? undefined : 5
 
  ,stock_max: 1
  ,stock_default: 1
@@ -2864,7 +2865,7 @@ init()
  ,info_short: "Snapshot"
 // ,is_base_inventory: true
 
- ,index_default: (is_mobile) ? null : 6
+ ,index_default: (is_mobile) ? undefined : 6
 
  ,stock_max: 1
  ,stock_default: 1
@@ -2881,7 +2882,7 @@ return System._browser.camera.snapshot.init();
  ,info_short: "UI settings and other options"
 // ,is_base_inventory: true
 
- ,index_default: (is_mobile) ? null : 4
+ ,index_default: (is_mobile) ? undefined : 4
  ,stock_default: (is_mobile) ? 0 : 1
 
  ,stock_max: 1
@@ -2904,7 +2905,7 @@ MMD_SA_options.Dungeon.run_event("_FACEMESH_OPTIONS_",0);
  ,info_short: "VMC-protocol"
 // ,is_base_inventory: true
 
- ,index_default: (is_mobile) ? null : 3
+ ,index_default: (is_mobile) ? undefined : 3
  ,stock_default: (is_mobile) ? 0 : 1
 
  ,stock_max: 1
@@ -2942,7 +2943,7 @@ THREE.MMD.setGravity( gravity[0]*9.8*10, gravity[1]*9.8*10, gravity[2]*9.8*10 )
  ,info_short: "Air blower"
 // ,is_base_inventory: true
 
- ,get index_default() { return (is_mobile) ? null : MMD_SA_options.Dungeon.inventory.max_base+3; }
+ ,get index_default() { return (is_mobile) ? undefined : MMD_SA_options.Dungeon.inventory.max_base+3; }
 
  ,stock_max: 1
  ,stock_default: 1
@@ -2992,7 +2993,7 @@ v3b = new THREE.Vector3()
  ,info_short: "Social meter"
 // ,is_base_inventory: true
 
- ,get index_default() { return (is_mobile) ? null : MMD_SA_options.Dungeon.inventory.max_base+4; }
+ ,get index_default() { return (is_mobile) ? undefined : MMD_SA_options.Dungeon.inventory.max_base+4; }
 
  ,stock_max: 1
  ,stock_default: 1
