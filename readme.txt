@@ -29,11 +29,11 @@ The Windows app version (powered by [Electron](https://www.electronjs.org/)) is 
 
 - Export BVH/FBX motions to VMD format
 
-- Customize the background with still image, 3D panorama, 3D object (.x format), or a plain simple green screen for VTubing and video recording with a transparent background
+- Customize the background and 3D scene with 2D image/video , 3D panorama, 3D objects (.x/.glb format), or a plain simple green screen for VTubing and video recording with a transparent background
 
 - Support VMC-protocol to animate a 3D model elsewhere in other VMC-enabled applications such as VSeeFace, Unity and Unreal Engine (Electron mode only)
 
-- Support frameless window with transparent background (via green screen) on video capture apps such as OBS (Electron mode only) (*)
+- Support frameless window with transparent background on video capture apps such as OBS (Electron mode only) (*)
 
 - Support AR (Augmented Reality) on Android Chrome browser
 
