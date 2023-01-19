@@ -5403,9 +5403,10 @@ return Promise.all([
       pos_last = new THREE.Vector3();
       target_last = new THREE.Vector3();
 
-      window.addEventListener('MMDCameraReset', ()=>{
-        pos_last.set(0,0,0);
-        target_last.set(0,0,0);
+      window.addEventListener('MMDCameraReset_after', ()=>{
+        var obj = MMD_SA._trackball_camera;
+        obj.object.position.add(pos_last);
+        obj.target.add(target_last);
       });
     });
 
@@ -8579,6 +8580,8 @@ else {
 
   var threeX  = {
 
+    three_filename: (webkit_electron_mode) ? 'three.module.js' : 'three.module.min.js',
+
     data: data,
 
     get v1(){return v1},get v2(){return v2},get v3(){return v3},get v4(){return v4},
@@ -8667,14 +8670,17 @@ loading = true
 
 //await System._browser.load_script('./three.js/three.min.js');
 
-const THREE_module = await import(System.Gadget.path + '/three.js/three.module.min.js');
+const THREE_module = await import(System.Gadget.path + '/three.js/' + threeX.three_filename);
 self.THREE = {};
 for (const name in THREE_module) self.THREE[name] = THREE_module[name];
+
 const Geometry_module = await import(System.Gadget.path + '/three.js/Geometry.js');
 for (const name in Geometry_module) self.THREE[name] = Geometry_module[name];
+
 self.THREE.XLoader = _THREE.XLoader;
 
 if (MMD_SA_options.THREEX_options.use_OutlineEffect) {
+// 2023-01-19
   const OutlineEffect_module = await import(System.Gadget.path + '/three.js/OutlineEffect.js');
   for (const name in OutlineEffect_module) self.THREE[name] = OutlineEffect_module[name];
   console.log('OutlineEffect.js loaded')
@@ -8691,7 +8697,9 @@ if (MMD_SA_options.THREEX_options.use_MMD) {
   }
 }
 
-await System._browser.load_script('./three.js/GLTFLoader.js');
+// 2023-01-19
+const GLTFLoader_module = await import(System.Gadget.path + '/three.js/GLTFLoader.js');
+for (const name in GLTFLoader_module) self.THREE[name] = GLTFLoader_module[name];
 
 // three-vrm 1.0
 if (use_VRM1) {
@@ -8800,6 +8808,83 @@ THREE.Matrix4.decompose = (function () {
 })();
 
 THREEX.BufferGeometry.prototype.applyMatrix = THREEX.BufferGeometry.prototype.applyMatrix4;
+
+// the following functions have been removed since r144 (mainly needed by XLoader)
+// https://raw.githubusercontent.com/mrdoob/three.js/r143/build/three.module.js
+THREEX.BufferAttribute.prototype.copyVector3sArray = function ( vectors ) {
+
+		const array = this.array;
+		let offset = 0;
+
+		for ( let i = 0, l = vectors.length; i < l; i ++ ) {
+
+			let vector = vectors[ i ];
+
+			if ( vector === undefined ) {
+
+				console.warn( 'THREE.BufferAttribute.copyVector3sArray(): vector is undefined', i );
+				vector = new Vector3();
+
+			}
+
+			array[ offset ++ ] = vector.x;
+			array[ offset ++ ] = vector.y;
+			array[ offset ++ ] = vector.z;
+
+		}
+
+		return this;
+
+	};
+THREEX.BufferAttribute.prototype.copyVector2sArray = function ( vectors ) {
+
+		const array = this.array;
+		let offset = 0;
+
+		for ( let i = 0, l = vectors.length; i < l; i ++ ) {
+
+			let vector = vectors[ i ];
+
+			if ( vector === undefined ) {
+
+				console.warn( 'THREE.BufferAttribute.copyVector2sArray(): vector is undefined', i );
+				vector = new Vector2();
+
+			}
+
+			array[ offset ++ ] = vector.x;
+			array[ offset ++ ] = vector.y;
+
+		}
+
+		return this;
+
+	};
+THREEX.BufferAttribute.prototype.copyColorsArray = function ( colors ) {
+
+		const array = this.array;
+		let offset = 0;
+
+		for ( let i = 0, l = colors.length; i < l; i ++ ) {
+
+			let color = colors[ i ];
+
+			if ( color === undefined ) {
+
+				console.warn( 'THREE.BufferAttribute.copyColorsArray(): color is undefined', i );
+				color = new Color();
+
+			}
+
+			array[ offset ++ ] = color.r;
+			array[ offset ++ ] = color.g;
+			array[ offset ++ ] = color.b;
+
+		}
+
+		return this;
+
+	};
 
 THREE.Math = THREE.MathUtils;
 
@@ -9312,7 +9397,7 @@ if (!self.THREEX) {
 
   THREE = _THREE = self.THREE;
 
-  const THREE_module = await System._browser.load_script(System.Gadget.path + '/three.js/three.module.min.js', true);
+  const THREE_module = await System._browser.load_script(System.Gadget.path + '/three.js/' + threeX.three_filename, true);
   self.THREE = {};
   for (const name in THREE_module) self.THREE[name] = THREE_module[name];
 
@@ -9524,8 +9609,9 @@ else {
   });
 }
 
-await System._browser.load_script('./three.js/FBXLoader.js');
-self.fflate = await System._browser.load_script(System.Gadget.path + '/three.js/libs/fflate.module.js', true);
+// 2023-01-19
+const FBXLoader_module = await System._browser.load_script(System.Gadget.path + '/three.js/FBXLoader.js', true);
+for (const name in FBXLoader_module) THREE[name] = FBXLoader_module[name];
         }
 
         function BoneKey(name, time, pos, rot) {
@@ -9974,10 +10060,7 @@ target_current = target;
       load_octree: async function () {
 await threeX.utils.load_THREEX();
 
-const Capsule_module = await System._browser.load_script(System.Gadget.path + '/three.js/Capsule.js', true);
-for (const name in Capsule_module) THREE[name] = Capsule_module[name];
-
-const Octree_module = await System._browser.load_script(System.Gadget.path + '/three.js/Octree.js', true);
+const Octree_module = await System._browser.load_script(System.Gadget.path + '/three.js/math/Octree.js', true);
 for (const name in Octree_module) THREE[name] = Octree_module[name];
       },
 
@@ -11586,11 +11669,6 @@ js.push("jThree/plugin/three_" + effect.name + ".js")
     MMD_SA_options.use_shadowMap = !!MMD_SA_options.shadow_darkness
 }
 
-  var html = ""
-  js.forEach(function (str) {
-    html += (/\;/.test(str)) ? '<script>' + str + '</scr'+'ipt>\n' : '<script language="JavaScript" src="' + str + '"></scr'+'ipt>\n';
-  });
-
   if (!Array.prototype.shuffle) {
 Array.prototype.shuffle = function () {
   var i = this.length, j, temp;
@@ -11605,6 +11683,26 @@ Array.prototype.shuffle = function () {
   return this;
 };
   }
+
+// https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap
+  const import_map = {
+    'imports': {
+      'three': './three.js/' + MMD_SA.THREEX.three_filename,
+      './libs/': './three.js/libs/',
+      './curves/': './three.js/curves/',
+      './math/': './three.js/',
+    }
+  };
+
+  var html = [
+'<script type="importmap">',
+JSON.stringify(import_map),
+'</scr'+'ipt>\n',
+  ].join('');
+
+  js.forEach(function (str) {
+    html += (/\;/.test(str)) ? '<script>' + str + '</scr'+'ipt>\n' : '<script language="JavaScript" src="' + str + '"></scr'+'ipt>\n';
+  });
 
   document.write(html);
 
