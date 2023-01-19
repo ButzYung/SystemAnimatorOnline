@@ -5,10 +5,8 @@ import {
 	Sphere,
 	Triangle,
 	Vector3
-// AT: 'three' => './three.module.min.js'
-} from './three.module.min.js';
-// AT: '../math/Capsule.js' => './Capsule.js'
-import { Capsule } from './Capsule.js';
+} from 'three';
+import { Capsule } from '../math/Capsule.js';
 
 
 const _v1 = new Vector3();
@@ -497,5 +495,5 @@ group.updateMatrixWorld(true);
 	}
 
 }
-
-export { Octree };
+// AT: add Capsule
+export { Octree, Capsule };

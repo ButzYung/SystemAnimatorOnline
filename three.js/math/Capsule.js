@@ -1,7 +1,6 @@
 import {
 	Vector3
-// AT: 'three' => './three.module.min.js'
-} from './three.module.min.js';
+} from 'three';
 
 const _v1 = new Vector3();
 const _v2 = new Vector3();
