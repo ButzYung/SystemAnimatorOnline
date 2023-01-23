@@ -110,11 +110,11 @@ All demos support the use of custom MMD (MikuMikuDance) model. Drop a zip of you
 
 - System Animator © Butz Yung/Anime Theme
     http://www.animetheme.com/sidebar/
-    - License (CC BY-NC-SA 4.0) ( * ):
-      http://creativecommons.org/licenses/by-nc-sa/4.0/
-      ( * ) - System Animator's license does NOT cover any third-party assets which may have incompatible licenses of their own.
-    - Disclaimer:
-      http://www.animetheme.com/system_animator_online/docs/disclaimer.txt
+    - License (CC BY-NC-SA 4.0): http://creativecommons.org/licenses/by-nc-sa/4.0/
+      - This license does NOT cover any third-party assets which may have incompatible licenses of their own.
+      - This license applies if you are adapting System Animator's source code for your own purpose, such as building another software or service.
+      - This license does not apply to content generated from the functionality of System Animator, such as video content generated from the motion capture feature of System Animator using your own assets. System Animator claims no right or responsibility over such content.
+    - Disclaimer: http://www.animetheme.com/system_animator_online/docs/disclaimer.txt
 
 - [Electron](https://www.electronjs.org/)
 
@@ -125,7 +125,6 @@ All demos support the use of custom MMD (MikuMikuDance) model. Drop a zip of you
 - [jThree v2](https://github.com/GrimoireGL/GrimoireJS) (NOTE: jThree has been discontinued. Its successor is known as "Grimoire.js")
 
 - [ammo.js](https://github.com/kripken/ammo.js), a port of Bullet Physics to JavaScript, zlib licensed
-    
 
 - [JSZip](https://stuk.github.io/jszip/) (used under MIT license)
 
