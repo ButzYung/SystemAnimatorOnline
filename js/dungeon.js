@@ -7672,6 +7672,9 @@ else {
       mesh = obj._obj._obj
     }
 
+// to get bounding host
+    obj._obj._obj_proxy = new Object3D_proxy_base(obj._obj);
+
     if (!mesh.useQuaternion) mesh.quaternion.setFromEuler(mesh.rotation)
     mesh.useQuaternion = true
     mesh.children.forEach(function (mesh_child) {
