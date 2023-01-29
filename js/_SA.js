@@ -869,7 +869,7 @@ function SA_OnKeyDown(event, enforced) {
   System._browser.showFocus(false)
 }
 
-function SA_DragDropEMU(file) {
+async function SA_DragDropEMU(file) {
 //if (file) DEBUG_show(file.constructor,0,1)
 //DEBUG_show(self.URL.createObjectURL(file),0,1)
   var is_file = (typeof file != "string")
@@ -893,7 +893,7 @@ console.log("File input:", file)
 //console.log(item)
   DragDrop._no_relay = true
   if (DragDrop.validate_func(item, true)) {
-    DragDrop.onDrop_finish(item, true)
+    await DragDrop.onDrop_finish(item, true);
   }
   else
     DEBUG_show("(Invalid input type)")
