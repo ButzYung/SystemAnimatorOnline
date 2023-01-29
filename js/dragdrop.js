@@ -1,4 +1,4 @@
-// Drag drop (v1.5.0)
+// Drag drop (2023-01-30)
 
 var xul_mode, webkit_mode
 
@@ -29,7 +29,7 @@ var DragDrop = {
       return
 
     this._ondrop_finish = ondrop_finish
-    this._ondrop_finish_process = function (item, para1) { DragDrop.drop_target(item.isFolder)._ondrop_finish(item, para1); }
+    this._ondrop_finish_process = async function (item, para1) { await DragDrop.drop_target(item.isFolder)._ondrop_finish(item, para1); }
 
     Object.defineProperty(this, "onDrop_finish",
 {
