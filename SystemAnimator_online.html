@@ -14,21 +14,26 @@
 
 <link rel="stylesheet" href="css/main.css" type="text/css" />
 
-<!-- Google Analytics -->
 <script>
-if (/animetheme\.com/.test(self.location.hostname)) {
+<!-- Google Analytics -->
+if (/^http.+animetheme\.com/.test(self.location.href)) {
+  (()=>{
+    const g_tag = 'G-6T8E0GJF5K';
 
-(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = 'https://www.googletagmanager.com/gtag/js?id=' + g_tag;
+    document.head.appendChild(script);
 
-ga('create', ((/^sao\.animetheme\.com/.test(self.location.hostname))?'UA-4863414-2':'UA-4863414-1'), 'auto');
-ga('send', 'pageview');
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
 
+    gtag('config', g_tag);
+  })();
 }
-</script>
 <!-- End Google Analytics -->
+</script>
 
 <script language="javascript">
 var use_SA_browser_mode = true
