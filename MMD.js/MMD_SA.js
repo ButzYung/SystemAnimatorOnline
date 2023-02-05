@@ -9952,11 +9952,6 @@ bone_map.forEach(name=>{
         rig(dir+arm_name, name);
     }
   }
-  else if (/(thumb|index|mid|ring|pinky).*(\d+)/i.test(name)) {
-    const name_MMD = MMD_finger(name);
-    if (!/twist|share/i.test(name))
-      rig(name_MMD, name);
-  }
   else if (/leg|thigh|calf|foot|toe/i.test(name)) {
     if (!/twist|share/i.test(name)) {
       const dir = MMD_LR(name);
@@ -9964,6 +9959,11 @@ bone_map.forEach(name=>{
       if (leg_name)
         rig(dir+leg_name, name);
     }
+  }
+  else if (/(thumb|index|mid|ring|pinky).*(\d+)/i.test(name)) {
+    const name_MMD = MMD_finger(name);
+    if (!/twist|share/i.test(name))
+      rig(name_MMD, name);
   }
 });
 
@@ -10119,7 +10119,7 @@ else {
 }
 
 hipsPositionScale = hips_height / motionHipsHeight;
-console.log('hipsPositionScale', hipsPositionScale, motion_hips.position.toArray(), motion_hips.getWorldQuaternion(new THREE.Quaternion()).toArray());
+console.log('hipsPositionScale', hipsPositionScale);
 
 clip.tracks.forEach( ( track ) => {
 
@@ -10156,7 +10156,7 @@ if (b) {
     b_intermediate.push(rig_parent.name);
     rig_parent = rig_parent.parent;
   }
-  if (b_intermediate.length) console.log(track, vrmBoneName, b_intermediate, b_parent_name);
+  if (b_intermediate.length) console.log('b_intermediate', vrmBoneName, b_intermediate, b_parent_name);
 }
 
 
@@ -10360,12 +10360,12 @@ tracks = tracks.map(track=>{
         track_main.values[ index + i ] = v;
       });
     }
-console.log(track_main._rig_name, track)
+//console.log(track_main._rig_name, track)
   }
 
   return track_main;
 });
-console.log(tracks)
+//console.log(tracks)
 
 if (!VRM_mode) {
   const boneKeys = {};
