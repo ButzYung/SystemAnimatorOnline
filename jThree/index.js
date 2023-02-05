@@ -1,4 +1,4 @@
-// (2023-01-19)
+// (2023-02-06)
 
 MMD_SA.fn = {
 /*
@@ -282,7 +282,7 @@ for (var i = 0, len = MMD_SA_options.motion.length; i < len; i++) {
     continue
   }
 
-  var filename = decodeURIComponent(motion.path.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh|fbx)$/i, ""))
+  var filename = decodeURIComponent(motion.path.replace(/^.+[\/\\]/, "").replace(/\.([a-z0-9]{1,4})$/i, ""))
   var para_SA = MMD_SA_options.motion_para[filename] || {}
 
   var vmd = MMD_SA.vmd_by_filename[filename]//(jThree.getReferent) ? jThree.getReferent("#vmd" + i).three(0) : MMD_SA.vmd_by_filename[filename]
@@ -412,6 +412,8 @@ for (var i = 0, len = MMD_SA_options.motion.length; i < len; i++) {
     }
   });
 }
+
+MMD_SA.motion_max_default = MMD_SA_options.motion.length;
 
 MMD_SA.MMD.motionManager = MMD_SA.motion[0]
 //console.log(MMD_SA_options.motion);console.log(MMD_SA.motion);
@@ -555,7 +557,8 @@ if (p_bone.position) {
 
 obj.quaternion.copy(rot);
 if (p_bone.rotation) {
-  obj.quaternion.multiply(MMD_SA._q1.setFromEuler(MMD_SA.TEMP_v3.set(-p_bone.rotation.x, -p_bone.rotation.y, p_bone.rotation.z).multiplyScalar(Math.PI/180), 'YXZ'));
+  const obj_rot = MMD_SA._q1.setFromEuler(MMD_SA.TEMP_v3.set(-p_bone.rotation.x, -p_bone.rotation.y, p_bone.rotation.z).multiplyScalar(Math.PI/180), 'YXZ');
+  obj.quaternion.multiply(obj_rot);
 }
 
 var m4_objs = MMD_SA.TEMP_m4.makeFromPositionQuaternionScale( obj.position, obj.quaternion, obj.scale ).multiplyMatrices(mesh.matrixWorld, MMD_SA.TEMP_m4).decompose()
@@ -737,7 +740,8 @@ MMD_SA._v3a_ = new THREE.Vector3()
 MMD_SA._v3b_ = new THREE.Vector3()
 
 MMD_SA.process_bone = function (bone, rotation, mod) {
-  var bone_rotation = MMD_SA._v3a_.setEulerFromQuaternion(bone.quaternion)//.clone.normalize())
+  const euler_order = MMD_SA.MMD.motionManager.para_SA.look_at_screen_euler_order || 'XYZ';//'YXZ';//'ZXY';//
+  const bone_rotation = MMD_SA._v3a_.setEulerFromQuaternion(bone.quaternion, euler_order)//.clone.normalize())
   if (mod) {
     bone_rotation.x *= mod[0]
     bone_rotation.y *= mod[1]
@@ -745,10 +749,10 @@ MMD_SA.process_bone = function (bone, rotation, mod) {
   }
 
   if (rotation instanceof THREE.Quaternion)
-    rotation = MMD_SA._v3b_.setEulerFromQuaternion(rotation)
+    rotation = MMD_SA._v3b_.setEulerFromQuaternion(rotation, euler_order)
 
   bone_rotation.add(rotation)
-  bone.quaternion.setFromEuler(bone_rotation)
+  bone.quaternion.setFromEuler(bone_rotation, euler_order)
 }
 
 MMD_SA.copy_first_bone_frame = function (index, skin, match) {

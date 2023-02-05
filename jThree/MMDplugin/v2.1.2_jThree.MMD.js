@@ -1,4 +1,4 @@
-// (2022-12-20)
+// (2023-02-06)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -383,7 +383,7 @@ MMD_SA.fadeout_opacity = 0.95;
     _delta0_from_last_loop = 0
   }
 
-  for (var i = 1, i_max = MMD_SA_options.model_para_obj_all.length; i < i_max; i++) {
+  for (var i = 1, i_max = THREE.MMD.getModels().length; i < i_max; i++) {
     if (!multi_model_motion_reset_check[i])
       continue
 
@@ -1577,7 +1577,7 @@ if (!cloned) {
 		this.bones.push( new Bone( bin ) );
 	}
 // AT: add armIK
-let make_armIK = self.MMD_SA && (model_para_obj.make_armIK || MMD_SA_options.make_armIK) && (this.bones.findIndex((b)=>(b.name=="左腕ＩＫ")) == -1);
+const make_armIK = self.MMD_SA && !model_para_obj.is_object && (model_para_obj.make_armIK || MMD_SA_options.make_armIK) && (this.bones.findIndex((b)=>(b.name=="左腕ＩＫ")) == -1);
 if (make_armIK) {
 //bone = f
   let bone_index = this.bones.length;
@@ -1597,12 +1597,12 @@ if (make_armIK) {
     bone = that.bones.find((b)=>(b.name==LR+"腕"));
     bone_plus = Object.assign({}, bone);
     bone_plus.name = bone_plus.nameEn = LR+"腕+";
-    bone_plus._index_IKAT = bone_index_ini-1+0.1 -32768;
+    bone_plus._index_IKAT = bone_index_ini-1+0.2 -32768;
     that.bones.push(bone_plus);
     bone.flags |= mask;
     bone.additionalTransform = [ bone_index, 1 ];
 // to ensure it is processed BEFORE certain IK for some complicated bone systems
-    bone._index_IKAT = bone_index_ini+0 -32768;
+    bone._index_IKAT = bone_index_ini+1 -32768;
     IK_link.unshift(bone_index);
     bone_index++;
 
@@ -1610,11 +1610,11 @@ if (make_armIK) {
     bone_plus = Object.assign({}, bone);
     bone_plus.name = bone_plus.nameEn = LR+"ひじ+";
     bone_plus.parent = bone_index-1;
-    bone_plus._index_IKAT = bone_index_ini-1+0.2 -32768;
+    bone_plus._index_IKAT = bone_index_ini-1+0.3 -32768;
     that.bones.push(bone_plus);
     bone.flags |= mask;
     bone.additionalTransform = [ bone_index, 1 ];
-    bone._index_IKAT = bone_index_ini+1 -32768;
+    bone._index_IKAT = bone_index_ini+2 -32768;
     IK_link.unshift(bone_index);
     bone_index++;
 
@@ -1622,13 +1622,13 @@ if (make_armIK) {
     bone_plus = Object.assign({}, bone);
     bone_plus.name = bone_plus.nameEn = LR+"手首+";
     bone_plus.parent = bone_index-1;
-    bone_plus._index_IKAT = bone_index_ini-1+0.3 -32768;
+    bone_plus._index_IKAT = bone_index_ini-1+0.4 -32768;
     that.bones.push(bone_plus);
 
     bone_plus = Object.assign({}, bone);
     bone_plus.name = bone_plus.nameEn = LR+"腕ＩＫ";
     bone_plus.parent = that.bones.findIndex((b)=>(b.name=="上半身2"));
-    bone_plus._index_IKAT = bone_index_ini-1+0.4 -32768;
+    bone_plus._index_IKAT = bone_index_ini-1+0.5 -32768;
     bone_plus.IK = {
   control: 57.29578/180*Math.PI
  ,effector: bone_index
@@ -1642,7 +1642,7 @@ if (make_armIK) {
     mask = 0x300 | 0x100;
     bone.flags |= mask;
     bone.additionalTransform = [ bone_index, 1 ];
-    bone._index_IKAT = bone_index_ini+2 -32768;
+    bone._index_IKAT = bone_index_ini+3 -32768;
     bone_index+=2;
 
     for (let i = bone_index_ini; i < bones_length; i++) {
@@ -2256,8 +2256,7 @@ if (/\#clone(\d+)\.pmx$/.test(url)) {
 }
 	loadBuffer( url, function( xhr ) {
 		that.url = url;
-		//add by jThree
-		that.texturePath = /\//.test( url ) ? url.slice( 0, url.lastIndexOf( "/" ) + 1 ) : '';
+		that.texturePath = /[\/\\]/.test( url ) ? url.replace(/[^\/\\]+$/, '') : '';
 		that.parse( xhr.response );
 		onload( that );
 	});
@@ -2440,7 +2439,7 @@ if (this.boneKeys.length || this.morphKeys.length) {
 VMD.prototype.load = function( url_raw, onload ) {
 // AT: VMD by filename
 // NOTE: url_raw is the raw path WITHOUT toFileProtocol (because this will turn the url to blob url in browser, which makes info like file type and such unrecognizable)
-MMD_SA.vmd_by_filename[decodeURIComponent(url_raw.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh|fbx)$/i, ""))] = this;
+MMD_SA.vmd_by_filename[decodeURIComponent(url_raw.replace(/^.+[\/\\]/, "").replace(/\.([a-z0-9]{1,4})$/i, ""))] = this;
 //console.log(url_raw)
 // AT: BVH
 if (/\.bvh$/i.test(url_raw)) {
@@ -2450,7 +2449,7 @@ if (/\.bvh$/i.test(url_raw)) {
 
 // AT: FBX
 if (/\.fbx$/i.test(url_raw)) {
-  MMD_SA.THREEX.utils.loadMixamoAnimation( url_raw, (MMD_SA.MMD_started)?THREE.MMD.getModels()[0]:null, VMD ).then(vmd=>{ onload(vmd); });
+  MMD_SA.THREEX.utils.load_FBX_motion( url_raw, (MMD_SA.MMD_started)?THREE.MMD.getModels()[0]:null, VMD ).then(vmd=>{ onload(vmd); });
   return
 }
 
@@ -2465,11 +2464,11 @@ if (/\.fbx$/i.test(url_raw)) {
 VMD.prototype.generateSkinAnimation = function( pmx, RE ) {
 var model_para_obj = self.MMD_SA && MMD_SA_options.model_para_obj_all[pmx._model_index];
 
-const to_T_pose = /\.vmd$/i.test(this.url) && MMD_SA.THREEX.enabled;
-const to_A_pose = !to_T_pose && /\.fbx$/i.test(this.url) && !MMD_SA.THREEX.enabled;;
+const to_T_pose = /\.vmd$/i.test(this.url) && MMD_SA.THREEX.get_model(pmx._model_index).is_T_pose;
+const to_A_pose = !to_T_pose && /\.fbx$/i.test(this.url) && !MMD_SA.THREEX.get_model(pmx._model_index).is_T_pose;
 const need_pose_conversion = to_A_pose || to_T_pose;
 
-var motion_para = self.MMD_SA && MMD_SA_options.motion_para[decodeURIComponent(this.url.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh|fbx)$/i, ""))];
+var motion_para = self.MMD_SA && MMD_SA_options.motion_para[decodeURIComponent(this.url.replace(/^.+[\/\\]/, "").replace(/\.([a-z0-9]{1,4})$/i, ""))];
 var motion_sd = motion_para && motion_para.adjustment_per_model && (motion_para.adjustment_per_model[model_para_obj._filename] || motion_para.adjustment_per_model[model_para_obj._filename_cleaned] || motion_para.adjustment_per_model._default_);
 motion_sd = (motion_sd && motion_sd.skin_default) || {};
 var multi_model_motion = (MMD_SA_options.model_para_obj_all.length > 1) && motion_para && (motion_para.model_index_list || motion_para.model_name_RegExp)
@@ -2503,8 +2502,13 @@ var sd = self.MMD_SA && (motion_sd[v.name] || model_sd)
 if (sd && ((sd.motion_filter && !sd.motion_filter.test(decodeURIComponent(that.url))) || (sd.model_filter && !sd.model_filter.test(model_para_obj._filename)))) {
   sd = null
 }
+if (need_pose_conversion) {
+  if (!sd && (v.name.indexOf('肩') == v.name.length-1)) {
+    sd = { pos_add:{x:0,y:0,z:0} };
+  }
+}
 if (sd) {
-  var pos_add_absolute
+  let pos_add_absolute
 // (compatibility) "pos_add" of "全ての親" in multi-model para_SA is considered absolute
   if (multi_model_motion && (v.name == "全ての親") && (!model_sd || (sd != model_sd)) && sd.pos_add) {
     pos_add_absolute = sd.pos_add_absolute = sd.pos_add
@@ -2671,7 +2675,7 @@ if ((!motion_para || !motion_para.IK_disabled || motion_para.IK_disabled._IK_nam
   }
 
   if (IK_disabled) {
-    let filename = decodeURIComponent(that.url.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh|fbx)$/i, ""))
+    let filename = decodeURIComponent(that.url.replace(/^.+[\/\\]/, "").replace(/\.([a-z0-9]{1,4})$/i, ""))
 //console.log(filename, keys)
     motion_para = MMD_SA_options.motion_para[filename] = MMD_SA_options.motion_para[filename] || {};
     motion_para.IK_disabled = motion_para.IK_disabled || {
@@ -2697,7 +2701,7 @@ if (motion_para && motion_para.IK_disabled && motion_para.IK_disabled._IK_name_l
   if (motion_para.IK_disabled._IK_name_list.length == 0)
     delete motion_para.IK_disabled
   else
-    console.log("IK disabled auto:", decodeURIComponent(that.url.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh|fbx)$/i, "")))
+    console.log("IK disabled auto:", decodeURIComponent(that.url.replace(/^.+[\/\\]/, "").replace(/\.([a-z0-9]{1,4})$/i, "")))
 }
 
 // AT: _timeMax
@@ -2720,7 +2724,7 @@ if (!self.MMD_SA || model_para_obj.morph_default._is_empty) {
 var _RE = self.MMD_SA && model_para_obj.morph_filter
 var that = this
 var targets_extra = [];
-var motion_para = self.MMD_SA && MMD_SA_options.motion_para[decodeURIComponent(this.url.replace(/^.+[\/\\]/, "").replace(/\.(vmd|bvh|fbx)$/i, ""))];
+var motion_para = self.MMD_SA && MMD_SA_options.motion_para[decodeURIComponent(this.url.replace(/^.+[\/\\]/, "").replace(/\.([a-z0-9]{1,4})$/i, ""))];
 var motion_md = motion_para && motion_para.adjustment_per_model && (motion_para.adjustment_per_model[model_para_obj._filename] || motion_para.adjustment_per_model[model_para_obj._filename_cleaned] || motion_para.adjustment_per_model._default_);
 motion_md = (motion_md && motion_md.morph_default) || {};
 
@@ -3679,9 +3683,10 @@ else {
 	}
 	//uniforms.mmdEdgeThick.value = this.mmdEdgeThick;
 // AT: uniforms
+const model_index = mesh._model_index;
+const model = THREE.MMD.getModels()[model_index];
+const shadow_darkness = MMD_SA_options.model_para_obj_all[model_index].shadow_darkness || MMD_SA_options.shadow_darkness;
 if (self.MMD_SA) {
-  var model_index = mesh._model_index
-  var model = THREE.MMD.getModels()[model_index]
   if (!this._MME_uniforms_updated_ || ((model_index == 0) && (MMD_SA._MME_uniforms_updated_ && (MMD_SA._MME_uniforms_updated_ > this._MME_uniforms_updated_)))) {
 var MME = (model_index == 0) ? MMD_SA_options.MME : MMD_SA_options.model_para_obj_all[model_index].MME
 
@@ -3697,7 +3702,7 @@ mme = MME.HDR
 uniforms.HDR_opacity.value = mme.opacity || 0.5
 
 mme = MME.serious_shader
-uniforms.serious_shader_shadow_opacity.value = (mme.shadow_opacity || 0.5) * Math.min(1, ((mme.material && mme.material[this.name] && mme.material[this.name].shadow_opacity_scale) || 1) * ((MMD_SA_options.use_shadowMap)?1+MMD_SA_options.shadow_darkness:1))
+uniforms.serious_shader_shadow_opacity.value = (mme.shadow_opacity || 0.5) * Math.min(1, ((mme.material && mme.material[this.name] && mme.material[this.name].shadow_opacity_scale) || 1) * ((MMD_SA_options.use_shadowMap)?1+shadow_darkness:1))
 uniforms.OverBright.value = (mme.OverBright || ((mme.type == "AdultShaderS2") ? 1.15 : 1.2)) + MMD_SA_options.SeriousShader_OverBright_adjust
 uniforms.ShadowDarkness.value = mme.ShadowDarkness || ((mme.type == "SeriousShader") ? 0.6 : 1)// セルフシャドウの最大暗さ
 uniforms.ToonPower.value = mme.ToonPower || ((mme.type == "SeriousShader") ? 1.5 : ((mme.type == "AdultShaderS2") ? 1.1 : 1))// 影の暗さ
@@ -3729,7 +3734,7 @@ this._MME_uniforms_updated_ = Date.now()
       uniforms.xray_center.value.set(999, 999, 999)
   }
 }
-uniforms.MMDShadow.value = MMD_SA_options.shadow_darkness;
+uniforms.MMDShadow.value = shadow_darkness;
 	uniforms.mmdEdgeColor.value = this.mmdEdgeColor;
 	uniforms.mmdShadowDark.value = this.mmdShadowDark;
 };
@@ -3830,7 +3835,7 @@ if (MMD_SA.THREEX.enabled) {
   const d = t.charAt(0);
   const bones_by_name = mesh.bones_by_name;
 
-  for (const name of [d+'腕',d+'ひじ']) {
+  for (const name of [d+'肩',d+'腕',d+'ひじ']) {
     const q = bones_by_name[name].quaternion;
 // assuming that if the quaternion is zero, it means there is no key frame for 腕/ひじ in the current motion, and thus there is no need for adjustment
     if (!q.x && !q.y && !q.z) continue;
@@ -3844,7 +3849,7 @@ if (MMD_SA.THREEX.enabled) {
     if (u[t] == RAF_timestamp) return;
     u[t] = RAF_timestamp;
 
-    for (const name of [d+'腕',d+'ひじ']) {
+    for (const name of [d+'肩',d+'腕',d+'ひじ']) {
       const q = bones_by_name[name].quaternion;
       const rot = q.toArray();
       MMD_SA.THREEX.utils.convert_A_pose_rotation_to_T_pose(name, rot);
@@ -4054,6 +4059,8 @@ function bitwise(L, R, op) {
   }
 }
 
+// AT: for simplicity, physics are skipped for external models
+if (MMD_SA.MMD_started) { mesh.MMDrigids.length = 0; mesh.geometry.MMDjoints.length = 0; }
 	var rigids = mesh.MMDrigids,
 		joints = mesh.geometry.MMDjoints;
 
@@ -6593,7 +6600,7 @@ if (self.MMD_SA && _head_pos && (mesh.bones_by_name[head_name]) && (look_at_scre
     }
   }
 
-  var look_at_mouse = (!look_at_mouse_disabled && MMD_SA_options.look_at_mouse) || (model_para.look_at_character != null) || model_para.look_at_target
+  let look_at_mouse = (!look_at_mouse_disabled && MMD_SA_options.look_at_mouse) || (model_para.look_at_character != null) || model_para.look_at_target || para_SA.look_at_target || para_SA.look_at_mouse;
 
 if (look_at_screen || look_at_mouse) {
 // not using MMD_SA.get_bone_rotation_parent here as it includes the look-at-screen rotation from the previous frame
@@ -6624,8 +6631,11 @@ if (look_at_screen || look_at_mouse) {
   }
 
 if (look_at_mouse) {
-  let _pos
-  if (model_para.look_at_character!= null) {
+  let _pos;
+  if (para_SA.look_at_target) {
+    _pos = para_SA.look_at_target();
+  }
+  else if (model_para.look_at_character!= null) {
     _pos = THREE.MMD.getModels()[model_para.look_at_character].mesh.position.clone()
     _pos.y += 15
   }
@@ -6633,35 +6643,18 @@ if (look_at_mouse) {
     _pos = model_para.look_at_target()
   }
   else {
-    let _cursor = (webkit_electron_mode) ? System._browser._electron_cursor_pos : { x:System._browser._WE_mouse_x, y:System._browser._WE_mouse_y }
-    let _window = (webkit_electron_mode) ? System._browser._electron_window_pos.slice(0) : [Lbody_host.style.posLeft, Lbody_host.style.posTop]
-    if (is_SA_child_animation) {
-      var ani = parent.SA_child_animation[SA_child_animation_id]
-      _window[0] += ani.x
-      _window[1] += ani.y
-    }
-
-    let y = (_cursor.y-_window[1])/B_content_height-0.5 - ((MMD_SA_options.camera_type == 'Ort')?0.5:0);
-    _pos = (new THREE.Vector3(((_cursor.x-_window[0])/B_content_width-0.5)*640, -(y)*480, (para_SA.look_at_mouse_z||0))).unproject(MMD_SA._trackball_camera.object)//.sub(_head_pos)
-    if (MMD_SA_options.camera_type == 'Ort') {
-//DEBUG_show([((_cursor.x-_window[0])/B_content_width-0.5), -(y)])
-      _pos.multiplyScalar(1/100)
-    }
-
-    let position0 = MMD_SA._trackball_camera.position0//object.position//
-    let cv = MMD_SA.center_view_lookAt
-    _pos.x += (position0.x - mesh.position.x) + cv[0]//position0.x + cv[0]//
-    _pos.z -= cv[2]
+    _pos = MMD_SA.mouse_to_ray(true);
+    _pos.y += MMD_SA._trackball_camera.position0.y - _head_pos.y;
   }
 
   if (!MMD_SA._mouse_pos_3D[this._model_index])
     MMD_SA._mouse_pos_3D[this._model_index] = _pos
   else {
+    const limit = 500 * RAF_timestamp_delta/1000;
     ["x", "y", "z"].forEach(function (axis) {
-var diff = _pos[axis] - MMD_SA._mouse_pos_3D[that._model_index][axis]
-var limit = 5
+let diff = _pos[axis] - MMD_SA._mouse_pos_3D[that._model_index][axis];
 if (Math.abs(diff) > limit)  diff = Math.sign(diff) * limit;
-MMD_SA._mouse_pos_3D[that._model_index][axis] += diff
+MMD_SA._mouse_pos_3D[that._model_index][axis] += diff;
     });
 //DEBUG_show(_pos.toArray()+'\n'+MMD_SA._mouse_pos_3D[0].toArray())
   }
@@ -6669,9 +6662,11 @@ MMD_SA._mouse_pos_3D[that._model_index][axis] += diff
   MMD_SA._camera_position_ = MMD_SA._mouse_pos_3D[this._model_index]
   r = MMD_SA.face_camera(_head_pos, p_rotation_inversed)
   MMD_SA._camera_position_ = null
+
 //DEBUG_show([r.x,r.y]+'\n'+MMD_SA._mouse_pos_3D[this._model_index].toArray()+'\n'+_head_pos.toArray())
   r.x = Math.min(Math.max(MMD_SA.normalize_angle(r.x * ratio), angle_x_limit[1]), angle_x_limit[0])
   r.y = Math.min(Math.max(MMD_SA.normalize_angle(r.y * ratio), angle_y_limit[1]), angle_y_limit[0])
+//DEBUG_show(r.x*180/Math.PI+'\n'+r.y*180/Math.PI)
 }
 
   var ws_ratio_x, ws_ratio_y, ws_max_x, ws_max_y
@@ -7040,7 +7035,15 @@ model._model_index = model.pmx._model_index
 		var idx;
 		idx = models.indexOf( model );
 		if ( idx >= 0 ) {
-			models.splice( idx, 1 );
+if (idx < models.length-1) {
+  this.swapModels(idx, models.length-1, null, true);
+}
+models.length--;
+MMD_SA_options.model_para_obj_all.length--;
+for (const c of ["cache_by_model", "cache_by_model_next", "cache_by_model_temp"])
+  MMD_SA.ammo_proxy[c].list.length--;
+MMD_SA.THREEX.models.length--;
+//			models.splice( idx, 1 );
 		}
 	},
 	getModels: function() {
@@ -7048,7 +7051,7 @@ model._model_index = model.pmx._model_index
 	},
 
 // AT: swap model
-swapModels: function (i0, i1, func) {
+swapModels: function (i0, i1, func, no_transform) {
 /*
 Model
   _model_index
@@ -7145,17 +7148,21 @@ MMD_SA.ammo_proxy
   var loc0 = {}
   var loc1 = {}
   var p_list = ["position", "rotation", "quaternion"]
-  p_list.forEach(function (p) {
-    loc0[p] = models[i0].mesh[p].clone()
-    loc1[p] = models[i1].mesh[p].clone()
-  });
+  if (!no_transform) {
+    p_list.forEach(function (p) {
+      loc0[p] = models[i0].mesh[p].clone()
+      loc1[p] = models[i1].mesh[p].clone()
+    });
+  }
 
   func && func(i0, i1);
 
-  p_list.forEach(function (p) {
-    models[i0].mesh[p].copy(loc1[p])
-    models[i1].mesh[p].copy(loc0[p])
-  });
+  if (!no_transform) {
+    p_list.forEach(function (p) {
+      models[i0].mesh[p].copy(loc1[p])
+      models[i1].mesh[p].copy(loc0[p])
+    });
+  }
 
   if (i0 == 0) {
     MMD_SA_options.model_para_obj = MMD_SA_options.model_para_obj_all[0]

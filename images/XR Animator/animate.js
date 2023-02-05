@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-01-17)
+// (2023-02-06)
 
 var MMD_SA_options = {
 
@@ -440,7 +440,7 @@ return (System._browser.camera.facemesh.enabled) ? [
 ];
   }
 
- ,look_at_mouse_z: -1
+// ,look_at_mouse_z: -1
 
 // ,look_at_screen_bone_list: [{ name:"両目", weight_screen:0.2, weight_motion:0}]
 // ,get look_at_screen_parent_rotation() { return THREE.MMD.getModels()[0].skin.mesh.bones_by_name["頭"].quaternion.clone(); }
@@ -1886,7 +1886,7 @@ wireframe:{
 
     use_OutlineEffect: true,
 
-//    model_path: 'C:\\Users\\user\\Downloads\\iroha+kazama+v1.0\\iroha kazama v1.0\\model\\iroha kazama ver1.0.pmx'//System.Gadget.path + '/TEMP/DEMO/models/AvatarSample_A.vrm'
+//    model_path: 'C:\\Users\\user\\Downloads\\EL-Pr213-BosaHair\\EL-Pr213-BosaHair\\ボサ髪_v01.pmx'//'C:\\Users\\user\\Downloads\\iroha+kazama+v1.0\\iroha kazama v1.0\\model\\iroha kazama ver1.0.pmx'//System.Gadget.path + '/TEMP/DEMO/models/AvatarSample_A.vrm'
   }
 
 // END
@@ -2340,10 +2340,10 @@ MMD_SA_options.Dungeon_options.events_default["_MAGIC_WAND_"] = [
           message: {
   get content() {
 const index = (System._browser.camera.poseNet.enabled) ? 1 : 0;
-this._has_custom_animation_ = (MMD_SA.THREEX.enabled && MMD_SA.THREEX.get_model(0).animation.has_clip) || MMD_SA_options.motion[MMD_SA.motion_index_for_external].path;
+this._has_custom_animation_ = (MMD_SA.THREEX.enabled && MMD_SA.THREEX.get_model(0).animation.has_clip) || (MMD_SA_options.motion.length > MMD_SA.motion_max_default);
 
 const content =  _motion_list[index].map((m,i) => (i+1)+'. ' + (m.info||m.name)).slice(0,(this._has_custom_animation_)?7:8).join('\n')
-+ ((this._has_custom_animation_) ? ('\n' + Math.min(_motion_list[index].length+1,8) + '. (Custom Motion: ' + (((this._animation_on_ != null) ? this._animation_on_ : (MMD_SA.THREEX.enabled && MMD_SA.THREEX.get_model(0).animation.enabled) || (THREE.MMD.getModels()[0].skin._motion_index == MMD_SA.motion_index_for_external))?'ON':'OFF') + ') (U)') : '')
++ ((this._has_custom_animation_) ? ('\n' + Math.min(_motion_list[index].length+1,8) + '. (Custom Motion: ' + (((this._animation_on_ != null) ? this._animation_on_ : (MMD_SA.THREEX.enabled && MMD_SA.THREEX.get_model(0).animation.enabled) || (THREE.MMD.getModels()[0].skin._motion_index >= MMD_SA.motion_max_default))?'ON':'OFF') + ') (U)') : '')
 + '\n' + Math.min(_motion_list[index].length+1+((this._has_custom_animation_)?1:0),9) + '. Done';
 //DEBUG_show(''+this._animation_on_,0,1)
 //MMD_SA_options.SpeechBubble_branch.confirm_keydown=false
@@ -2358,8 +2358,8 @@ const index = (System._browser.camera.poseNet.enabled) ? 1 : 0;
 return _motion_list[index].map((m,i) => { return { key:i+1, event_id:{ func:()=>{change_motion(i)}, goto_event:{id:'_MAGIC_WAND_',branch_index:0} } }; }).slice(0,(this._has_custom_animation_)?7:8)
   .concat((this._has_custom_animation_)?[{ key:Math.min(_motion_list[index].length+1,8), event_id:{ func:()=>{
 const animation = MMD_SA.THREEX.get_model(0).animation;
-const MMD_animation_customized = MMD_SA_options.motion[MMD_SA.motion_index_for_external].path;
-const MMD_animation_on = THREE.MMD.getModels()[0].skin._motion_index == MMD_SA.motion_index_for_external;
+const MMD_animation_customized = MMD_SA_options.motion.length > MMD_SA.motion_max_default;
+const MMD_animation_on = THREE.MMD.getModels()[0].skin._motion_index >= MMD_SA.motion_max_default;
 
 let animation_on;
 
@@ -2383,7 +2383,7 @@ else if (MMD_animation_customized) {
     MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice();
   }
   else {
-    MMD_SA_options.motion_shuffle = [MMD_SA.motion_index_for_external];
+    MMD_SA_options.motion_shuffle = [MMD_SA_options.motion.length-1];
     MMD_SA_options.motion_shuffle_list_default = null;
   }
   MMD_SA._force_motion_shuffle = true;
@@ -3449,12 +3449,14 @@ var object3d_list = [];
 var object3d_index = 0;
 var object3d_cache = new Map();
 
-async function update_obj_url(src) {
+async function update_obj_url(src, type) {
   if (/^(.+\.zip)\#[\/\\](.+)$/i.test(src)) {
     const src_local = SA_topmost_window.DragDrop._obj_url[src];
     if (!src_local || (src == src_local)) {
       const zip = XMLHttpRequestZIP.zip_by_url(RegExp.$1);
-      const blob = await zip.file(RegExp.$2.replace(/\\/g, '/')).async('blob');
+      let blob = await zip.file(RegExp.$2.replace(/\\/g, '/')).async('blob');
+      if (type)
+        blob = new Blob([blob], { type:type });
 // update toFileProtocol()
       console.log('Object URL (inside zip) updated', src);
       SA_topmost_window.DragDrop._obj_url[src] = SA_topmost_window.URL.createObjectURL(blob);
@@ -3507,14 +3509,17 @@ xhr.send();
 
     XMLHttpRequestZIP.zip_by_url(src, zip);
 
-    const object_x_list = zip.file(/\.x$/i);
-    if (!object_x_list.length) {
-      System._browser.DEBUG_show("(No .x model found)");
-      return;
+    let model_list = (!MMD_SA.THREEX.enabled) ? zip.file(/\.pmx$/i) : [];
+    if (!model_list.length) {
+      model_list = zip.file(/\.x$/i);
+      if (!model_list.length) {
+        System._browser.DEBUG_show("(No PMX/X model found)");
+        return;
+      }
     }
 
-    const model_filename = object_x_list[0].name.replace(/^.+[\/\\]/, "");
-    const model_path = src + "#/" + object_x_list[0].name;
+    const model_filename = model_list[0].name.replace(/^.+[\/\\]/, "");
+    const model_path = src + "#/" + model_list[0].name;
     console.log(src, model_filename, model_path);
 
     object3d_cache.set(model_path, null);
@@ -3537,7 +3542,7 @@ xhr.send();
 
     await add_object3D(model_path);
 
-    System._browser.DEBUG_show('✅X model (' + model_filename + ')');
+    System._browser.DEBUG_show('✅PMX/X model (' + model_filename + ')');
   }
   else if (item.isFileSystem && /([^\/\\]+)\.(gltf|glb)$/i.test(src)) {
     if (!MMD_SA.THREEX.enabled) {
@@ -3685,6 +3690,112 @@ console.log('object3D cloned', url);
 
 onload_common(url, obj_cloned);
 resolve();
+      }
+      else if (/\.pmx$/i.test(url)) {
+
+(()=>{
+
+const model_index = THREE.MMD.getModels().length;
+
+const model_filename_raw = url.replace(/^.+[\/\\]/, "");
+const model_filename = model_filename_raw;
+const model_filename_cleaned = model_filename.replace(/[\-\_]copy\d+\.pmx$/, ".pmx").replace(/[\-\_]v\d+\.pmx$/, ".pmx");
+
+const model_para_obj = Object.assign({}, MMD_SA_options.model_para[model_filename_raw] || MMD_SA_options.model_para[model_filename] || MMD_SA_options.model_para[model_filename_cleaned] || {});
+model_para_obj._filename_raw = model_filename_raw;
+model_para_obj._filename = model_filename;
+model_para_obj._filename_cleaned = model_filename_cleaned;
+
+    if (!model_para_obj.skin_default)
+      model_para_obj.skin_default = { _is_empty:true }
+// save some headaches and make sure that every VMD has morph (at least a dummy) in "Dungeon" mode
+  if (!model_para_obj.morph_default) model_para_obj.morph_default = {}//{ _is_empty:!MMD_SA_options.Dungeon }//
+
+    if (!model_para_obj.MME)
+      model_para_obj.MME = {}
+    var MME_saved = MMD_SA_options.MME_saved[model_filename] || MMD_SA_options.MME_saved[model_filename_cleaned]
+    if (MME_saved) {
+      model_para_obj.MME.self_overlay = Object.clone(MME_saved.self_overlay)
+      model_para_obj.MME.HDR = Object.clone(MME_saved.HDR)
+      model_para_obj.MME.serious_shader = Object.clone(MME_saved.serious_shader)
+    }
+    else {
+      model_para_obj.MME.self_overlay = model_para_obj.MME.self_overlay || { enabled:false }
+      model_para_obj.MME.HDR = model_para_obj.MME.HDR || { enabled:false }
+      model_para_obj.MME.serious_shader = model_para_obj.MME.serious_shader || { enabled:false }
+    }
+
+model_para_obj._model_index = model_para_obj._model_index_default = model_index;
+model_para_obj.is_object = true;
+model_para_obj.shadow_darkness = 1;
+MMD_SA_options.model_para_obj_by_filename[model_filename_raw] = model_para_obj;
+
+MMD_SA_options.model_para_obj_all.push(model_para_obj);
+
+new THREE.MMD.PMX().load(url, (pmx)=>{
+new THREE.MMD.Model( pmx ).create( {}, function( model ) {
+
+			var mesh = model.mesh;
+			mesh.material.materials.forEach( function(v) {
+				v.fog = true; // use scene fog
+				v.lights = true; // use scene light
+			});
+			THREE.MMD.addModel( model );
+
+new MMD_SA.THREEX.MMD_dummy_obj(model_index);
+
+const mesh_obj_id = 'mikuPmx' + model_index;
+const mesh_obj = MMD_SA_options.mesh_obj_by_id['#'+mesh_obj_id] = MMD_SA_options.mesh_obj_by_id[mesh_obj_id] = {
+  id: '#'+mesh_obj_id,
+  scale: 1,
+  _obj: mesh,
+  hide: MMD_SA_options.mesh_obj_by_id['#mikuPmx0'].hide,
+  show: MMD_SA_options.mesh_obj_by_id['#mikuPmx0'].show,
+};
+Object.defineProperty(mesh_obj, "visible", {
+  get: function () {
+return this._obj.visible
+  }
+ ,set: function (v) {
+this._obj.visible = v
+  }
+});
+
+const AP = MMD_SA.ammo_proxy;
+if (AP) {
+  const c_list = [AP.cache_by_model, AP.cache_by_model_next, AP.cache_by_model_temp];
+  c_list.forEach(function (cache, idx) {
+    var obj = cache.list[model_index] = { skin:{}, _skin:{} }
+    obj.matrixWorld = new THREE.Matrix4()
+    obj.matrixWorld_inv = new THREE.Matrix4()
+    obj.q_matrixWorld_inv = new THREE.Quaternion()
+  });
+}
+
+const _mesh = mesh;
+mesh = new THREE.Object3D();
+mesh.add(_mesh);
+
+onload_common(url, {scene:mesh});
+resolve();
+
+System._browser.on_animation_update.add((()=>{
+  const pos = mesh.position.clone();
+  const rot = mesh.quaternion.clone();
+  const scale = mesh.scale.clone();
+//console.log(pos, rot, scale)
+  return ()=>{
+    mesh.position.copy(pos);
+    mesh.quaternion.copy(rot);
+    mesh.scale.copy(scale);
+    _mesh.scale.setScalar(1);
+  };
+})(),0,0);
+
+});});
+
+})();
+
       }
       else if (/\.x$/i.test(url)) {
         new THREE.XLoader( url, function( mesh ) {
@@ -3993,7 +4104,7 @@ message: {
       MMD_SA_options.Dungeon.run_event({
 message: {
   index: 1,
-  content: 'Are you sure you want to reset this 3D object from the scene?\n8. Yes\n9. Cancel',
+  content: 'Are you sure you want to remove this 3D object from the scene?\n8. Yes\n9. Cancel',
   para: { scale:0.75 },
   branch_list: [
     { key:8, event_id:{ sb_index:1, func:()=>{setTimeout(()=>{adjust_object3D({detail:{remove_confirmed:true,keyCode:88,ev:{},result:{}}})},0)}, ended:true } },
@@ -4072,9 +4183,7 @@ var explorer_mode = false;
 function build_octree(object3d) {
   object3d.no_collision = !explorer_mode || !!object3d.parent_bone;
 
-  if (!explorer_mode) return;
-
-  if (object3d.parent_bone) return;
+  if (!object3d.use_octree && (!explorer_mode || object3d.parent_bone)) return;
 
   const obj_cached = object3d_cache.get(object3d.user_data.path);
   const mesh_parent = obj_cached._obj;
@@ -4217,15 +4326,22 @@ function change_panorama(index, src) {
 
   if (!src) src = panorama_list[index];
 
+  let resolve_func;
+  const promise = new Promise((resolve)=>{ resolve_func=resolve; });
+
   panorama_loading = true;
   var image = sd.texture_cache_list[index] = sd.texture_cache_list[index] || new Image();
   image.onload = ()=>{
     show();
+    resolve_func();
   };
   image.onerror = ()=>{
     panorama_loading = false;
+    resolve_func();
   };
   image.src = toFileProtocol(src);
+
+  return promise;
 }
 
 var dome_axis_angle = 0
@@ -4241,8 +4357,38 @@ function rotate_dome() {
 }
 
 const onDrop_scene_JSON = (function () {
+  const RE_arm = new RegExp("^(" + toRegExp(["左","右"],"|") + ")(" + toRegExp(["腕","ひじ","手"],"|") + ")(.*)$");
+
+  function adjust_parent_bone(p_bone, is_T_pose) {
+if (RE_arm.test(p_bone.name)) {
+  const pos_vector = MMD_SA.TEMP_v3.set(p_bone.position.x, p_bone.position.y, -p_bone.position.z);
+  const dir = (RegExp.$1 == '左') ? 1 : -1;
+  const rot_axis = MMD_SA.THREEX.rot_arm_axis[dir * ((is_T_pose) ? 1 : -1)];
+  pos_vector.applyQuaternion(rot_axis);
+  p_bone.position.x =  pos_vector.x;
+  p_bone.position.y =  pos_vector.y;
+  p_bone.position.z = -pos_vector.z;
+}
+
+const obj_rot = MMD_SA._q1.setFromEuler(MMD_SA.TEMP_v3.set(-p_bone.rotation.x, -p_bone.rotation.y, p_bone.rotation.z).multiplyScalar(Math.PI/180), 'YXZ');
+if (is_T_pose) {
+  obj_rot.fromArray(MMD_SA.THREEX.utils.convert_A_pose_rotation_to_T_pose(p_bone.name, obj_rot.toArray()));
+}
+else {
+  obj_rot.fromArray(MMD_SA.THREEX.utils.convert_T_pose_rotation_to_A_pose(p_bone.name, obj_rot.toArray()));
+}
+const obj_rot_euler = MMD_SA.TEMP_v3.setEulerFromQuaternion(obj_rot, 'YXZ').multiplyScalar(180/Math.PI);
+p_bone.rotation.x = -obj_rot_euler.x;
+p_bone.rotation.y = -obj_rot_euler.y;
+p_bone.rotation.z =  obj_rot_euler.z;
+
+p_bone.is_T_pose = is_T_pose;
+  }
+
   async function parse_scene(json, zip_path) {
-    async function locate_file(zip, obj) {
+    async function locate_file(zip, obj, type) {
+      if (!obj || !obj.path) return false;
+
       if (!zip) {
         if (FSO_OBJ.FileExists(obj.path)) return true;
         show_status('❎"' + filename + '"');
@@ -4256,8 +4402,61 @@ const onDrop_scene_JSON = (function () {
         return false;
       }
       obj.path = zip_path + '#\\' + obj_list[0].name.replace(/\//g, '\\');
-      await update_obj_url(obj.path);
+      await update_obj_url(obj.path, type);
       return true;
+    }
+
+    async function parse_motion(motion_list) {
+      if (!motion_list) return;
+
+      let load_count = 0
+      const _motion_list = [];
+      for (const motion of motion_list) {
+        if (await locate_file(zip, motion))
+          _motion_list.push(motion);
+      }
+
+      const promise_list = [];
+      _motion_list.forEach((motion)=>{
+        const filename = motion.path.replace(/^.+[\/\\]/, "").replace(/\.([a-z0-9]{1,4})$/i, "");
+        if (motion.para)
+          MMD_SA_options.motion_para[filename] = Object.assign(MMD_SA_options.motion_para||{}, motion.para);
+
+        promise_list.push(MMD_SA.load_external_motion(motion.path, false));
+      });
+      return Promise.all(promise_list);
+    }
+
+    async function parse_event(ev, event_name) {
+      if (!ev) return;
+
+      const e = ev[event_name];
+      if (await locate_file(zip, e, 'text/javascript')) {
+        const filename = e.path.replace(/^.+[\/\\]/, '');
+        const module = await import(toFileProtocol(e.path));
+        await module[event_name](event_para);
+        show_status('✅Event: ' + event_name);
+      }
+
+      if (!e) return;
+
+      if (e.motion) {
+        await parse_motion(e.motion);
+
+        MMD_SA_options._motion_shuffle_list_default = e.motion.map(motion=>MMD_SA_options.motion_index_by_name[motion.path.replace(/^.+[\/\\]/, "").replace(/\.([a-z0-9]{1,4})$/i, "")]);
+        MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice();
+        MMD_SA._force_motion_shuffle = true;
+      }
+    }
+
+    async function check_loaded(count=0) {
+      loaded_count += count;
+      if (loaded_counting || (loaded_count < loaded_count_max)) return;
+
+      await parse_event(json.XR_Animator_scene.on, 'load');
+
+      show_status('✅Scene loaded (' + (loaded_count + '/' + loaded_count_max) + ')', 5);
+      resolve_func();
     }
 
     if (!json.XR_Animator_scene) {
@@ -4265,20 +4464,21 @@ const onDrop_scene_JSON = (function () {
       return;
     }
 
-    show_status('Loading scene...', 10);
+    show_status('Loading scene...', 99);
 
     const zip = (zip_path) ? XMLHttpRequestZIP.zip_by_url(zip_path) : null;
 
-    for (const obj of json.XR_Animator_scene.object3D_list) {
-      if (obj.type == 'object3D') {
-        const filename = obj.path.replace(/^.+[\/\\]/, '');
-        if (!await locate_file(zip, obj)) continue;
+    let loaded_count = 0;
+    let loaded_count_max = 0;
+    let loaded_counting = true;
+    let resolve_func;
+    const promise = new Promise((resolve)=>{ resolve_func=resolve; });
 
-        onDrop_add_object3D({ isFileSystem:true, path:obj.path, _obj_json:obj }).then(()=>{
-          show_status('✅"' + filename + '"');
-        });
-      }
-    }
+    if (!json.XR_Animator_scene.on) json.XR_Animator_scene.on = {};
+
+    const event_para = { json:json, zip:zip, zip_path:zip_path, locate_file:locate_file };
+
+    await parse_event(json.XR_Animator_scene.on, 'init');
 
     const wallpaper = json.XR_Animator_scene.wallpaper;
     if (wallpaper) {
@@ -4299,6 +4499,8 @@ const onDrop_scene_JSON = (function () {
       }
 
       show_status('✅Wallpaper');
+      loaded_count++;
+      loaded_count_max++;
     }
 
     const panorama = json.XR_Animator_scene.panorama;
@@ -4308,7 +4510,11 @@ const onDrop_scene_JSON = (function () {
           panorama.index = -1;
       }
       if (panorama.index >= 0) {
-        change_panorama(panorama.index, panorama.path);
+        loaded_count_max++;
+        change_panorama(panorama.index, panorama.path).then(()=>{
+          show_status('✅Panorama');
+          check_loaded(1);
+        });
 
         if (panorama.rotation_speed) {
           dome_axis_angle = panorama.axis_angle;
@@ -4317,14 +4523,46 @@ const onDrop_scene_JSON = (function () {
           System._browser.on_animation_update.add(rotate_dome,0,1,-1);
         }
       }
-
-      show_status('✅Panorama');
     }
+
+    const object3D_list = json.XR_Animator_scene.object3D_list;
+    if (object3D_list) {
+      const is_T_pose = MMD_SA.THREEX.get_model(0).is_T_pose;
+      for (const obj of object3D_list) {
+        if (obj.type == 'object3D') {
+          if (!await locate_file(zip, obj)) continue;
+
+          const filename = obj.path.replace(/^.+[\/\\]/, '');
+          const p_bone = obj.model_para.parent_bone;
+          if (p_bone && (p_bone.is_T_pose != null) && ((p_bone.is_T_pose) ? !is_T_pose : is_T_pose))
+            adjust_parent_bone(p_bone, is_T_pose);
+
+          loaded_count_max++;
+          onDrop_add_object3D({ isFileSystem:true, path:obj.path, _obj_json:obj }).then(()=>{
+            show_status('✅"' + filename + '"');
+            check_loaded(1);
+          });
+        }
+      }
+    }
+
+    const motion_list = json.XR_Animator_scene.motion_list;
+    if (motion_list) {
+      loaded_count_max++;
+      await parse_motion(motion_list);
+      show_status('✅Motion');
+      check_loaded(1);
+    }
+
+    loaded_counting = false;
+    check_loaded();
+
+    return promise;
   }
 
-  function show_status(msg, duration=5) {
-    msg_log.push(msg);
-    msg_duration = Math.max(duration, msg_duration);
+  function show_status(msg, duration=msg_duration) {
+    msg_log.push(msg.toString().substring(0,30));
+    msg_duration = duration;
     if (msg_log.length > 8) {
       const ini = msg_log.length - 8;
       msg_log = msg_log.slice(ini, ini+8);
@@ -4333,7 +4571,7 @@ const onDrop_scene_JSON = (function () {
   };
 
   var msg_log = [];
-  var msg_duration = 0;
+  var msg_duration = 5;
 
   return async function (item) {
     MMD_SA_options.Dungeon.run_event({ ended:true });
@@ -4391,7 +4629,7 @@ function export_scene_JSON() {
     const model_para = obj_json.model_para = {};
     const placement = model_para.placement = { scale:mesh.scale.x };
     if (obj.parent_bone) {
-      model_para.parent_bone = { model_index:0, name:obj.parent_bone.name, position:obj.parent_bone.position, rotation:obj.parent_bone.rotation };
+      model_para.parent_bone = { model_index:0, is_T_pose:MMD_SA.THREEX.get_model(0).is_T_pose, name:obj.parent_bone.name, position:obj.parent_bone.position, rotation:obj.parent_bone.rotation };
     }
     else {
       const c_pos = MMD_SA.THREEX._THREE.MMD.getModels()[0].mesh.position;
@@ -4422,7 +4660,7 @@ function export_scene_JSON() {
       scene_json.panorama.path = panorama_src;
   }
 
-  System._browser.save_file('scene.json', JSON.stringify({ XR_Animator_scene:scene_json }), 'application/json');
+  System._browser.save_file('scene.json', JSON.stringify({ XR_Animator_scene:scene_json }, null, '\t'), 'application/json');
 }
 
 var v3a, v3b;
@@ -5071,7 +5309,7 @@ MMD_SA_options.Dungeon.update_camera_position_base();
      ,[
         {
           message: {
-  content: 'XR Animator (v0.2.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Cancel'
+  content: 'XR Animator (v0.2.5)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -5114,7 +5352,7 @@ else
         },
         {
           message: {
-  get content() { return 'XR Animator inherits from System Animator, my desktop gadget project active for years. Lots of efforts and money have been spent to keep these projects free and running. Please support us and consider making a donation🙏\n1. 🤝PayPal.Me' + ((webkit_electron_mode) ? '\n2. 🟡Bitcoin\n3. Cancel' : '\n2. Cancel'); }
+  get content() { return 'If you like XR Animator, please consider making a donation and help keep this project running🙏\n1. 🤝PayPal.Me' + ((webkit_electron_mode) ? '\n2. 🟡Bitcoin\n3. Cancel' : '\n2. Cancel'); }
  ,bubble_index: 3
  ,get branch_list() { return [
     { key:1, event_id: {
@@ -5573,7 +5811,7 @@ MMD_SA.SpeechBubble.message(0, 'Hold an index-up gesture for 1 second to start, 
   }
 
 // ,no_camera_collision: true
-// ,camera_y_default_non_negative: false
+ ,camera_y_default_non_negative: false
 
  ,object_list: [
     {object_index:0},

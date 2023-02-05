@@ -1,5 +1,5 @@
 // audio player with BPM support
-// (2022-05-28)
+// (2023-02-06)
 
 var Audio_BPM = {
   audio_obj: null
@@ -586,7 +586,7 @@ if (vo.motion_by_song_name_mode) {
     _onload_song_name_mode()
   }
   else {
-    motion_index = MMD_SA.motion_index_for_external
+    motion_index = MMD_SA_options.motion.length;
     MMD_SA.load_external_motion(motion_by_song_name.motion_path, _onload_song_name_mode)
   }
 

@@ -1,4 +1,4 @@
-// (2023-01-17)
+// (2023-02-06)
 
 /*!
  * jThree JavaScript Library v2.1.2
@@ -11208,6 +11208,9 @@ THREE.Bone.prototype.update = function ( parentSkinMatrix, forceUpdate ) {
 	}
 
 };
+
+// AT: THREEX
+THREE.Bone.prototype.isBone = true;
 
 /**
  * @author mikael emtinger / http://gomo.se/
