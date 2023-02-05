@@ -413,7 +413,8 @@ const _scale = group.scale.clone();
 group.position.set(0,0,0);
 group.quaternion.set(0,0,0,1);
 group.scale.set(1,1,1);
-group.updateMatrixWorld(true);
+group.updateMatrix();
+group.updateMatrixWorld();
 
 //		group.updateWorldMatrix( true, true );
 
@@ -486,7 +487,8 @@ else
 group.position.copy(_pos);
 group.quaternion.copy(_rot);
 group.scale.copy(_scale);
-group.updateMatrixWorld(true);
+group.updateMatrix();
+group.updateMatrixWorld();
 
 		this.build();
 

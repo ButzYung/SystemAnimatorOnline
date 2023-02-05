@@ -286,7 +286,6 @@ class GLTFLoader extends Loader {
 		let json;
 		const extensions = {};
 		const plugins = {};
-		const textDecoder = new TextDecoder();
 
 		if ( typeof data === 'string' ) {
 
@@ -294,7 +293,7 @@ class GLTFLoader extends Loader {
 
 		} else if ( data instanceof ArrayBuffer ) {
 
-			const magic = textDecoder.decode( new Uint8Array( data, 0, 4 ) );
+			const magic = LoaderUtils.decodeText( new Uint8Array( data, 0, 4 ) );
 
 			if ( magic === BINARY_EXTENSION_HEADER_MAGIC ) {
 
@@ -313,7 +312,7 @@ class GLTFLoader extends Loader {
 
 			} else {
 
-				json = JSON.parse( textDecoder.decode( data ) );
+				json = JSON.parse( LoaderUtils.decodeText( new Uint8Array( data ) ) );
 
 			}
 
@@ -585,7 +584,7 @@ class GLTFLightsExtension {
 
 	}
 
-	getDependency( type, index ) {
+	getDependency( type, index ) {	
 
 		if ( type !== 'light' ) return;
 
@@ -1567,10 +1566,9 @@ class GLTFBinaryExtension {
 		this.body = null;
 
 		const headerView = new DataView( data, 0, BINARY_EXTENSION_HEADER_LENGTH );
-		const textDecoder = new TextDecoder();
 
 		this.header = {
-			magic: textDecoder.decode( new Uint8Array( data.slice( 0, 4 ) ) ),
+			magic: LoaderUtils.decodeText( new Uint8Array( data.slice( 0, 4 ) ) ),
 			version: headerView.getUint32( 4, true ),
 			length: headerView.getUint32( 8, true )
 		};
@@ -1600,7 +1598,7 @@ class GLTFBinaryExtension {
 			if ( chunkType === BINARY_EXTENSION_CHUNK_TYPES.JSON ) {
 
 				const contentArray = new Uint8Array( data, BINARY_EXTENSION_HEADER_LENGTH + chunkIndex, chunkLength );
-				this.content = textDecoder.decode( contentArray );
+				this.content = LoaderUtils.decodeText( contentArray );
 
 			} else if ( chunkType === BINARY_EXTENSION_CHUNK_TYPES.BIN ) {
 
@@ -2266,7 +2264,7 @@ class GLTFParser {
 
 		// Use an ImageBitmapLoader if imageBitmaps are supported. Moves much of the
 		// expensive work of uploading a texture to the GPU off the main thread.
-
+		
 		let isSafari = false;
 		let isFirefox = false;
 		let firefoxVersion = - 1;
