@@ -26,7 +26,7 @@ The Windows app version (powered by [Electron](https://www.electronjs.org/)) is 
 
 - Record mocap motion and export it to VMD motion format
 
-- Support loading VMD/BVH/FBX(Mixamo) format 3D motions
+- Support loading VMD/BVH/FBX format 3D motions
 
 - Export BVH/FBX motions to VMD format
 
