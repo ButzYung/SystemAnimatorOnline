@@ -10057,15 +10057,15 @@ let hipsPositionScale;
 const motion_hips = asset.getObjectByName( Object.entries(rig_map.VRM).find(kv=>kv[1]=='hips')[0] );
 //let hips_q = motion_hips.quaternion.clone();//motion_hips.getWorldQuaternion(new THREE.Quaternion());
 
-const axis_vector = [new THREE.Vector3(), new THREE.Vector3()];
-[['上半身','上半身2','上半身3','首'], []].forEach((axis_list,idx)=>{
-  const axis = axis_vector[idx];
-  if (idx == 0) {
-    axis_list.forEach(name=>{
+const axis_vector = { y:new THREE.Vector3(), x:new THREE.Vector3() };
+Object.keys(axis_vector).forEach(dir=>{
+  const axis = axis_vector[dir];
+  if (dir == 'y') {
+    for (const name of ['上半身','上半身2','上半身3','首']) {
       const bone = asset.getObjectByName( Object.entries(rig_map.MMD).find(kv=>kv[1]==name)[0] );
       if (bone)
         axis.add(bone.position);
-    });
+    }
   }
   else {
     axis.copy(asset.getObjectByName( Object.entries(rig_map.MMD).find(kv=>kv[1]=='左肩')[0] ).position).sub(asset.getObjectByName( Object.entries(rig_map.MMD).find(kv=>kv[1]=='右肩')[0] ).position);
@@ -10082,8 +10082,8 @@ const axis_vector = [new THREE.Vector3(), new THREE.Vector3()];
     axis.set(0,0,Math.sign(axis.z))
   }
 });
-const x_axis = axis_vector[1];
-const y_axis = axis_vector[0];
+const x_axis = axis_vector.x;
+const y_axis = axis_vector.y;
 const z_axis = v1.crossVectors(x_axis, y_axis);
 m1.set(
   x_axis.x, x_axis.y, x_axis.z, 0,
@@ -10091,18 +10091,18 @@ m1.set(
   z_axis.x, z_axis.y, z_axis.z, 0,
   0,0,0,1
 );
-const rig_rot = MMD_SA._q1.setFromBasis(m1);
+const rig_rot = new THREE.Quaternion().copy(MMD_SA._q1.setFromBasis(m1));
 
 hips_q = motion_hips.getWorldQuaternion(new THREE.Quaternion());
 //console.log(hips_q.toArray())
 
-hips_q.conjugate()
-const motionHipsHeight = v1.copy(motion_hips.position).applyQuaternion(hips_q).y;
-
-hips_q.multiply(rig_rot);
+hips_q.conjugate().premultiply(rig_rot);
 //console.log(rig_rot.toArray())
 
 const hips_q_inv = hips_q.clone().conjugate();
+
+// can be negative
+const motionHipsHeight = v1.copy(motion_hips.position).applyQuaternion(q1.copy(motion_hips.quaternion).conjugate().premultiply(rig_rot)).y;
 
 let hips_height;
 if (!MMD_started) {
@@ -10272,15 +10272,13 @@ if (VRM_mode && (track.times.length == 1) && VRM.is_MMD_bone_motion_mixed.test(V
       if (MMD_node_name != 'センター') return;
 
 
-const vq = _quatA.copy(restRotationInverse);
-const bone_pos = v4.copy(mixamoRigNode.position).applyQuaternion(vq);
+const vq = _quatA.copy(mixamoRigNode.quaternion).conjugate().premultiply(rig_rot);//_quatA.copy(restRotationInverse);
 
 for ( let i = 0, i_max = track.values.length; i < i_max; i += 3 ) {
   const v_flat = track.values.slice( i, i + 3 );
   _vec3.fromArray(v_flat)
 
   if (propertyName == 'position') {
-    _vec3.applyQuaternion(vq);
 
 
 if (b_intermediate.length) {
@@ -10292,13 +10290,14 @@ if (b_intermediate.length) {
     const v_flat = get_sub_track_value(track, v_track, i/3, q);
 
     const b = asset.getObjectByName(name);
-    v1.fromArray(v_flat).applyQuaternion(b.getWorldQuaternion(q1).conjugate());
-
-    _vec3.sub(v1);
+    v1.fromArray(v_flat).applyQuaternion(q1.copy(b.quaternion).conjugate());
+    _vec3.add(v1);
   });
 }
 
 
+    _vec3.applyQuaternion(vq);
+//_vec3.set(0,0,0)
   }
 
 
