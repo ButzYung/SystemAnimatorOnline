@@ -10282,6 +10282,7 @@ for ( let i = 0, i_max = track.values.length; i < i_max; i += 3 ) {
 
 
 if (b_intermediate.length) {
+  const v_offset = v4.set(0,0,0);
   b_intermediate.forEach((name, idx)=>{
     const q = q_list[idx];
     if (!q || !q.tracks || !q.tracks.position) return;
@@ -10290,9 +10291,9 @@ if (b_intermediate.length) {
     const v_flat = get_sub_track_value(track, v_track, i/3, q);
 
     const b = asset.getObjectByName(name);
-    v1.fromArray(v_flat).applyQuaternion(q1.copy(b.quaternion).conjugate());
-    _vec3.add(v1);
+    v_offset.add(v1.fromArray(v_flat)).applyQuaternion(q1.copy(b.quaternion).conjugate());
   });
+  _vec3.add(v_offset);
 }
 
 
