@@ -95,6 +95,10 @@ It's hard to describe what System Animator Online can do in a few words. From a 
 For more information about the desktop gadget version of System Animator, please visit the following page.
 https://www.animetheme.com/sidebar/
 
+### 📖Background Story
+
+System Animator was born more than 10 years ago as a personal and tiny 100-line-ish JavaScript desktop gadget project for Windows Vista which shows an animated rocket Anime girl as a CPU meter (the animation is still in XR Animator). As time goes by, I decided to add more features, multi-purpose system meter, music visualizer, 3D/MMD support, animated wallpaper engine, RPG engine and eventually what you see in XR Animator. The codebase has grown exponentially while the core is still an Internet-Explorer-based JavaScript gadget, and things were becoming more and more clumsy, to a point when I had to decide whether to rewrite everything from scratch to match the modern coding standard (open source, module based, etc). However, I gave up and decided to carry on with what I have written, as a total restart would require too much time and efforts, probably not worthy as a personal project. Besides, as the rule of programming says, "If it works, don't touch it" LOL. Eventually, I decided to put the project on Github so technically speaking it is still open source, though I have to admit that some of the codes are outdated, clumsy and confusing. Everything is fine if you are just an end-user of XR Animator/System Animator as an app, but if you want to build your own things from my codes, be warned that they can be pretty incomprehensible LOL
+
 # Other demos based on System Animator Online
 
 - [3D Miku The Dancer](https://sao.animetheme.com/) (drop any MP3 and she will dance for you)
