@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-02-06)
+// (2023-02-18)
 
 var MMD_SA_options = {
 
@@ -1736,15 +1736,43 @@ cam_pos.copy(MMD_SA._trackball_camera.object.position)
 */
 
  ,use_speech_bubble: true
- ,onstart: function () {
+ ,onstart: (()=>{
+    var initialized;
+    function cancel_intro() {
+if (initialized) return;
+initialized = true;
 
-    MMD_SA.SpeechBubble.message(0, "Welcome to XR Animator~!", 3*1000, {group_index:0, group:{name:"onstart", loop:2}})
-    MMD_SA.SpeechBubble.message(0, "Enable motion capture to control the avatar with your body!", 4*1000, {group:{name:"onstart"}})
-    MMD_SA.SpeechBubble.message(0, "Use your webcam, or drop a local pic/video instead.", 4*1000, {group:{name:"onstart"}})
-    MMD_SA.SpeechBubble.message(0, "You can enable AR mode if you are on an Android mobile!", 4*1000, {group:{name:"onstart"}})
-    MMD_SA.SpeechBubble.message(0, "Drag the mouse to rotate the camera. Press and hold Ctrl key to pan.", 4*1000, {group:{name:"onstart"}})
+if (MMD_SA_options.Dungeon.event_mode) return;
 
-  }
+var msg_group = MMD_SA.SpeechBubble.msg_group
+var group_name_current = msg_group.group_name_current
+if (group_name_current) {
+  delete msg_group.group_by_name[group_name_current]
+  msg_group.group_name_current = ""
+}
+
+MMD_SA.SpeechBubble.hide();
+    }
+
+    return ()=>{
+MMD_SA.SpeechBubble.message(0, "Welcome to XR Animator~!", 3*1000, {group_index:0, group:{name:"onstart", loop:2}});
+MMD_SA.SpeechBubble.message(0, "Drag the mouse to rotate the camera. Press and hold Ctrl key to pan.", 4*1000, {group:{name:"onstart"}});
+MMD_SA.SpeechBubble.message(0, "Enable motion capture to control the avatar with your body!", 4*1000, {group:{name:"onstart"}});
+MMD_SA.SpeechBubble.message(0, "Use your webcam, or drop a local pic/video instead.", 4*1000, {no_word_break:true, group:{name:"onstart"}});
+MMD_SA.SpeechBubble.message(0, "Drop a VMD/FBX motion, and animate your avatar!", 4*1000, {group:{name:"onstart"}});
+MMD_SA.SpeechBubble.message(0, "You can enable AR mode if you are on an Android mobile!", 4*1000, {group:{name:"onstart"}});
+
+document.body.addEventListener('drop', cancel_intro, {once:true});
+document.addEventListener('dblclick', cancel_intro, {once:true});
+document.addEventListener('keydown', cancel_intro, {once:true});
+
+window.addEventListener('SA_Dungeon_onstart', ()=>{
+  System._browser.on_animation_update.add(()=>{
+    window.addEventListener('MMDCameraReset_after', cancel_intro, {once:true});
+  },1,0);
+});
+    };
+  })()
 
  ,WebXR: {
     model_scale: (is_mobile) ? 0.9 : 1,
@@ -1823,7 +1851,7 @@ video:{
 //  hidden:true,
 //  hidden_on_webcam: true,
   scale:0.4, top:-0.5,
-//scale:0.4*2*2,top:0,left:-3,
+//scale:0.4*2*1,top:0,left:-3,
 },
 wireframe:{
 //  hidden:true,
@@ -2061,6 +2089,8 @@ tex.needsUpdate = true;
     })(), 0,0,-1)
   });
 
+  System._browser.video_capture.trigger_on_startup_motion = true;
+
 
 // dungeon options START
 MMD_SA_options.Dungeon_options = {
@@ -2205,10 +2235,11 @@ return [
 
  ,is_base_inventory: is_mobile
 // NOTE: use undefined for index_default ((null >= 0) is true...)
- ,get index_default() { return (is_mobile) ? undefined : MMD_SA_options.Dungeon.inventory.max_base+1; }
+ ,index_default: undefined
+// ,get index_default() { return (is_mobile) ? undefined : MMD_SA_options.Dungeon.inventory.max_base+1; }
 
+ ,stock_default: (is_mobile) ? 1 : 0
  ,stock_max: 1
- ,stock_default: 1
  ,action: {
     func: function (item) {
 if (!MMD_SA.WebXR.session) {
@@ -2224,7 +2255,7 @@ else {
   }
     }
 
-   ,"magic_wand": (function () {
+   ,"pose": (function () {
       function morph_event(e) {
 var mf = morph_form[morph_form_index]
 if (mf) {
@@ -2240,10 +2271,10 @@ if (mf) {
 
       function change_motion(motion_index_absolute) {
 if (!MMD_SA_options.Dungeon.event_mode) {
-  MMD_SA_options.Dungeon.run_event("_MAGIC_WAND_",0)
+  MMD_SA_options.Dungeon.run_event("_POSE_",0)
   return
 }
-else if ((motion_index_absolute != null) && (MMD_SA_options.Dungeon._event_active.id != "_MAGIC_WAND_"))
+else if ((motion_index_absolute != null) && (MMD_SA_options.Dungeon._event_active.id != "_POSE_"))
   return true
 
 var model_mesh = THREE.MMD.getModels()[0].mesh
@@ -2333,7 +2364,7 @@ _motion_list[0] = [
 
 _motion_list[1] = _motion_list[0].filter((m)=>MMD_SA_options.motion_para[m.name].motion_tracking_enabled);
 
-MMD_SA_options.Dungeon_options.events_default["_MAGIC_WAND_"] = [
+MMD_SA_options.Dungeon_options.events_default["_POSE_"] = [
 //0
       [
         {
@@ -2355,7 +2386,7 @@ return content;
  ,bubble_index: 3
  ,get branch_list() {
 const index = (System._browser.camera.poseNet.enabled) ? 1 : 0;
-return _motion_list[index].map((m,i) => { return { key:i+1, event_id:{ func:()=>{change_motion(i)}, goto_event:{id:'_MAGIC_WAND_',branch_index:0} } }; }).slice(0,(this._has_custom_animation_)?7:8)
+return _motion_list[index].map((m,i) => { return { key:i+1, event_id:{ func:()=>{change_motion(i)}, goto_event:{id:'_POSE_',branch_index:0} } }; }).slice(0,(this._has_custom_animation_)?7:8)
   .concat((this._has_custom_animation_)?[{ key:Math.min(_motion_list[index].length+1,8), event_id:{ func:()=>{
 const animation = MMD_SA.THREEX.get_model(0).animation;
 const MMD_animation_customized = MMD_SA_options.motion.length > MMD_SA.motion_max_default;
@@ -2390,7 +2421,7 @@ else if (MMD_animation_customized) {
 }
 
 this._animation_on_ = animation_on;
-  }, goto_event:{id:'_MAGIC_WAND_',branch_index:0} } }]:[], [{ key:Math.min(_motion_list[index].length+1+((this._has_custom_animation_)?1:0),9) }]
+  }, goto_event:{id:'_POSE_',branch_index:0} } }]:[], [{ key:Math.min(_motion_list[index].length+1+((this._has_custom_animation_)?1:0),9) }]
   );
   }
           }
@@ -2400,12 +2431,13 @@ this._animation_on_ = animation_on;
 
       });
 
-      var magic_wand = {
-  icon_path: Settings.f_path + '/assets/assets.zip#/icon/magic-wand_64x64.png'
- ,info_short: "Magic wand"
+      var pose = {
+  icon_path: Settings.f_path + '/assets/assets.zip#/icon/tap-dance_64x64.png'
+ ,info_short: "Pose"
 // ,is_base_inventory: true
  ,stock_max: 1
  ,stock_default: 1
+
  ,action: {
     set _motion_list_index(v) { _motion_list_index = v; },
     func: function () { change_motion() }
@@ -2442,15 +2474,16 @@ return info;
   }
       };
 
-      return magic_wand;
+      return pose;
     })()
 
    ,"selfie" : {
-  icon_path: Settings.f_path + '/assets/assets.zip#/icon/selfie_64x64.png'
- ,info_short: "Selfie camera"
+  icon_path: Settings.f_path + '/assets/assets.zip#/icon/' + ((is_mobile) ? 'selfie_64x64.png' : 'webcamera_64x64.png')
+ ,info_short: (is_mobile) ? 'Selfie camera' : 'Webcam/Video input'
 // ,is_base_inventory: true
  ,stock_max: 1
  ,stock_default: 1
+
  ,action: {
     func: function (item) {
 if (MMD_SA.WebXR.session && !MMD_SA.WebXR.user_camera.initialized) {
@@ -2486,7 +2519,7 @@ if (System._browser.camera.visible) {
 else {
   info +=
   '- Double-click to choose a video input.\n'
-+ '- You can use a webcam, or drop a local video/picture file.\n'
++ '- You can use ' + ((is_mobile) ? 'selfie camera' : 'webcam') + ', or drop a local video/picture file.\n'
 + '- Use numeric keys to pick a numbered option.';
 }
 
@@ -2500,10 +2533,11 @@ return info;
 // ,is_base_inventory: true
  ,stock_max: 1
  ,stock_default: 1
+
  ,action: {
     func: function (item) {
 if (MMD_SA.WebXR.user_camera.bodyPix.enabled) {
-  DEBUG_show("(You can't enable motion capture and BodyPix at the same time.)", 3)
+  DEBUG_show("(You can't enable motion capture and Selfie Segmentation AI at the same time.)", 5)
   return true
 }
 
@@ -2573,10 +2607,12 @@ v3b = new THREE.Vector3()
  ,info_short: "Baseball catcher"
 // ,is_base_inventory: true
 
- ,get index_default() { return (is_mobile) ? undefined : MMD_SA_options.Dungeon.inventory.max_base+2; }
+ ,index_default: undefined
+// ,get index_default() { return (is_mobile) ? undefined : MMD_SA_options.Dungeon.inventory.max_base+1; }
 
  ,stock_max: 1
  ,stock_default: 1
+
  ,action: {
     func: function (item) {
 var model_mesh = THREE.MMD.getModels()[0].mesh
@@ -2761,14 +2797,16 @@ MMD_SA._force_motion_shuffle = true
     })()
 
    ,"body_pix" : {
-  icon_path: Settings.f_path + '/assets/assets.zip#/icon/people_64x64.png'
- ,info_short: "BodyPix AI"
+  icon_path: Settings.f_path + '/assets/assets.zip#/icon/selfie_segmentation_64x64.png'
+ ,info_short: "Selfie Segmentation AI"
 // ,is_base_inventory: true
 
  ,index_default: (is_mobile) ? undefined : 5
+// ,get index_default() { return (is_mobile) ? undefined : (browser_native_mode) ? 4 : 6;}//MMD_SA_options.Dungeon.inventory.max_base+4; }
 
  ,stock_max: 1
  ,stock_default: 1
+
  ,action: {
     func: (function () {
       var initialized, loading;
@@ -2826,11 +2864,11 @@ load_script(0, ()=>{
 
 if (MMD_SA.WebXR.user_camera.bodyPix.enabled) {
   MMD_SA.WebXR.user_camera.bodyPix.enabled = false
-  DEBUG_show("BodyPix AI:OFF", 2)
+  DEBUG_show("Selfie Segmentation AI:OFF", 2)
 }
 else {
   MMD_SA.WebXR.user_camera.bodyPix.enabled = true
-  DEBUG_show("BodyPix AI:ON", 2)
+  DEBUG_show("Selfie Segmentation AI:ON", 2)
 }
       }
 
@@ -2840,11 +2878,11 @@ if (!MMD_SA.WebXR.user_camera.visible) {
   return true
 }
 if (MMD_SA.WebXR.user_camera.ML_enabled) {
-  MMD_SA.SpeechBubble.message(0, 'You can\'t enable BodyPix and motion capture at the same time.', 3*1000);
+  MMD_SA.SpeechBubble.message(0, 'You can\'t enable Selfie Segmentation AI and motion capture at the same time.', 3*1000);
   return true
 }
 if (loading) {
-  DEBUG_show("(BodyPix still loading)", 2)
+  DEBUG_show("(Selfie Segmentation AI still loading)", 2)
   return true
 }
 
@@ -2855,7 +2893,7 @@ init()
   }
 
  ,get info() {
-    return 'Double-click to ' + ((MMD_SA.WebXR.user_camera.bodyPix.enabled) ? 'disable' : 'enable') + ' BodyPix AI. When using with a camera or video input, the 3D avatar will be displayed behind the person in the video, allowing some interesting usage such as talking a selfie with your 3D avatar.';
+    return 'Double-click to ' + ((MMD_SA.WebXR.user_camera.bodyPix.enabled) ? 'disable' : 'enable') + ' Selfie Segmentation AI. When using with a camera or video input, the 3D avatar will be displayed behind the person in the video, allowing some interesting usage such as talking a selfie with your 3D avatar.';
   }
     }
 
@@ -2864,17 +2902,80 @@ init()
  ,info_short: "Snapshot"
 // ,is_base_inventory: true
 
- ,index_default: (is_mobile) ? undefined : 6
+ ,index_default: undefined
 
  ,stock_max: 1
- ,stock_default: 1
+ ,stock_default: (is_mobile) ? 1 : 0
  ,action: {
     func: function (item) {
-return System._browser.camera.snapshot.init();
+return System._browser.snapshot.init();
     }
    ,anytime: true
   }
     }
+
+   ,"rec" : (()=>{
+      function snapshot(e) {
+const ev = e.detail.e;
+switch (ev.code) {
+  case 'F12':
+    System._browser.snapshot.init();
+    break
+  case 'F9':
+    System._browser.video_capture.start();
+    break
+  case 'F10':
+    System._browser.video_capture.stop();
+    break
+  default:
+    return;
+}
+
+e.detail.result.return_value = true;
+      }
+
+      window.addEventListener('MMDStarted', ()=>{
+        window.addEventListener('SA_keydown', snapshot);
+      });
+
+      const rec = {
+  icon_path: Settings.f_path + '/assets/assets.zip#/icon/rec_64x64.png'
+ ,info_short: "Media recorder"
+// ,is_base_inventory: true
+
+ ,index_default: (is_mobile) ? undefined : 6
+
+ ,stock_max: 1
+ ,stock_default: 1
+
+ ,action: {
+    func: function (item) {
+MMD_SA_options.Dungeon.run_event('_MEDIA_RECORDER_OPTIONS_', 0);
+    }
+//   ,anytime: true
+  }
+
+ ,get info() {
+var info = ''
+
+if (System._browser.camera._info) {
+  info += System._browser.camera._info;
+}
+else {
+  info = [
+  '- Press F12 to capture a still shot of the 3D content.',
+  '- Press F9 to capture a video of the 3D content. Press F10 to stop and return the recorded MP4 file.',
+  '- Double-click for options.',
+  '- Use numeric keys to pick a numbered option.',
+  ].join('\n');
+}
+
+return info;
+  }
+      };
+
+      return rec;
+    })()
 
    ,"XR_Animator_options" : {
   icon_path: Settings.f_path + '/assets/assets.zip#/icon/user-experience_64x64.png'
@@ -2882,9 +2983,10 @@ return System._browser.camera.snapshot.init();
 // ,is_base_inventory: true
 
  ,index_default: (is_mobile) ? undefined : 4
- ,stock_default: (is_mobile) ? 0 : 1
 
  ,stock_max: 1
+ ,stock_default: (is_mobile) ? 0 : 1
+
  ,action: {
     func: function (item) {
 MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_=true;setTimeout(()=>{MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_=false},0);
@@ -2930,8 +3032,12 @@ MMD_SA_options.Dungeon.run_event("_VMC_PROTOCOL_",0);
       function air_blower_frame() {
 if (MMD_SA.ammo_proxy && MMD_SA.ammo_proxy._timeStep) return// {DEBUG_show(Date.now()); return; }
 
+const t = Date.now();
+let windPower = ( Math.sin( t * Math.PI / 3 ) + 1 ) / 2;
+windPower = 0.5 + windPower*0.5;
+
 var camera = MMD_SA._trackball_camera.object
-var gravity = MMD_SA.TEMP_v3.copy(camera.position).sub(camera._lookAt).normalize().multiplyScalar((state==2) ? 2 : -2).toArray()
+var gravity = MMD_SA.TEMP_v3.copy(camera.position).sub(camera._lookAt).normalize().multiplyScalar((state==2) ? 2 : -2).multiplyScalar(windPower).toArray()
 //DEBUG_show(gravity)
 THREE.MMD.setGravity( gravity[0]*9.8*10, gravity[1]*9.8*10, gravity[2]*9.8*10 )
       }
@@ -2942,7 +3048,8 @@ THREE.MMD.setGravity( gravity[0]*9.8*10, gravity[1]*9.8*10, gravity[2]*9.8*10 )
  ,info_short: "Air blower"
 // ,is_base_inventory: true
 
- ,get index_default() { return (is_mobile) ? undefined : MMD_SA_options.Dungeon.inventory.max_base+3; }
+ ,index_default: undefined
+// ,get index_default() { return (is_mobile) ? undefined : MMD_SA_options.Dungeon.inventory.max_base+2; }
 
  ,stock_max: 1
  ,stock_default: 1
@@ -2992,10 +3099,11 @@ v3b = new THREE.Vector3()
  ,info_short: "Social meter"
 // ,is_base_inventory: true
 
- ,get index_default() { return (is_mobile) ? undefined : MMD_SA_options.Dungeon.inventory.max_base+4; }
+ ,index_default: undefined
+// ,get index_default() { return (is_mobile) ? undefined : MMD_SA_options.Dungeon.inventory.max_base+3; }
 
  ,stock_max: 1
- ,stock_default: 1
+ ,stock_default: 1//(is_mobile) ? 1 : 0
  ,action: {
     func: function (item) {
 var model_mesh = THREE.MMD.getModels()[0].mesh
@@ -3304,7 +3412,7 @@ MMD_SA.WebXR.user_camera.poseNet.use_holistic = false
 MMD_SA.WebXR.user_camera.poseNet.enabled = true
 MMD_SA.WebXR.user_camera.handpose.enabled = false
 MMD_SA.WebXR.user_camera.facemesh.enabled = false
-MMD_SA_options.Dungeon_options.item_base['magic_wand'].action.func()
+MMD_SA_options.Dungeon_options.item_base['pose'].action.func()
 DEBUG_show("Pose AI:ON", 3)
           }
          ,ended: true
@@ -3319,7 +3427,7 @@ MMD_SA.WebXR.user_camera.poseNet.use_holistic = false
 MMD_SA.WebXR.user_camera.poseNet.enabled = true
 MMD_SA.WebXR.user_camera.handpose.enabled = true
 MMD_SA.WebXR.user_camera.facemesh.enabled = false
-MMD_SA_options.Dungeon_options.item_base['magic_wand'].action.func()
+MMD_SA_options.Dungeon_options.item_base['pose'].action.func()
 DEBUG_show("Pose/Hands AI:ON", 3)
           }
          ,ended: true
@@ -3334,7 +3442,7 @@ MMD_SA.WebXR.user_camera.poseNet.use_holistic = false
 MMD_SA.WebXR.user_camera.facemesh.enabled = true
 MMD_SA.WebXR.user_camera.poseNet.enabled = true
 MMD_SA.WebXR.user_camera.handpose.enabled = false
-MMD_SA_options.Dungeon_options.item_base['magic_wand'].action.func()
+MMD_SA_options.Dungeon_options.item_base['pose'].action.func()
 DEBUG_show("Facemesh/Pose AI:ON", 3)
           }
          ,ended: true
@@ -3349,7 +3457,7 @@ MMD_SA.WebXR.user_camera.poseNet.use_holistic = false
 MMD_SA.WebXR.user_camera.facemesh.enabled = true
 MMD_SA.WebXR.user_camera.poseNet.enabled = true
 MMD_SA.WebXR.user_camera.handpose.enabled = true
-MMD_SA_options.Dungeon_options.item_base['magic_wand'].action.func()
+MMD_SA_options.Dungeon_options.item_base['pose'].action.func()
 DEBUG_show("Facemesh/Pose/Hands AI:ON", 4)
           }
          ,ended: true
@@ -3364,7 +3472,7 @@ MMD_SA.WebXR.user_camera.poseNet.use_holistic = true
 MMD_SA.WebXR.user_camera.facemesh.enabled = true
 MMD_SA.WebXR.user_camera.poseNet.enabled = true
 MMD_SA.WebXR.user_camera.handpose.enabled = true
-MMD_SA_options.Dungeon_options.item_base['magic_wand'].action.func()
+MMD_SA_options.Dungeon_options.item_base['pose'].action.func()
 DEBUG_show("Facemesh/Pose/Hands AI:ON", 4)
           }
          ,ended: true
@@ -3397,6 +3505,99 @@ return 'VMC-protocol parameters\n- port: ' + MMD_SA_options.OSC.VMC.send.port + 
         }
       ]
     ]
+
+   ,"_MEDIA_RECORDER_OPTIONS_": (()=>{
+
+      return [
+//0
+  [
+    {
+       message: {
+  get content() {
+const vc = System._browser.video_capture;
+
+const specs = vc.get_specs();
+
+let type = specs.mime_type;
+if (System._browser.video_capture.FFmpeg.enabled && /h264/.test(type))
+  type = 'video/mp4';
+console.log(specs)
+type = type.replace(/\;.+$/, '');
+
+return 'Video capture options\n(' + (specs.width+'x'+specs.height + '/' + ((specs.fps==-1)?'unlimited':specs.fps) + ' fps') + '/' + (vc.target_mime_type||type).replace(/video\//, '') + ')\n1. Target resolution: ' + ((!vc.target_width) ? 'AUTO' : vc.target_width+'x'+vc.target_height) + '\n2. Target FPS: ' + ((!vc.fps) ? 'AUTO' : (vc.fps == -1) ? 'UNLIMITED' : vc.fps) + ((webkit_electron_mode) ? '\n3. Output format: ' + (vc.target_mime_type||'AUTO') + '\n4. Done' : '\n3. Done' );
+  },
+  bubble_index: 3,
+  get branch_list() { return [
+    { key:1, branch_index:1 },
+    { key:2, branch_index:2 },
+  ].concat((System._browser.video_capture.FFmpeg.enabled) ? [
+    { key:3, branch_index:3 },
+    { key:4 },
+  ] : [
+    { key:3 },
+  ])},
+       }
+    }
+  ],
+//1
+  [
+    {
+      func: ()=>{
+const vc = System._browser.video_capture;
+
+let w, h;
+if (!vc.target_width) {
+  w = 1280;
+  h = 720;
+}
+else if (vc.target_width == 1280) {
+  w = 1920;
+  h = 1080;
+}
+
+vc.target_width = w;
+vc.target_height = h;
+      },
+      goto_branch: 0
+    }
+  ],
+//2
+  [
+    {
+      func: ()=>{
+const vc = System._browser.video_capture;
+
+if (!vc.fps) {
+  vc.fps = -1;
+}
+else if (vc.fps == -1) {
+  vc.fps = 30;
+}
+else {
+  vc.fps = undefined;
+}
+      },
+      goto_branch: 0
+    }
+  ],
+//3
+  [
+    {
+      func: ()=>{
+const vc = System._browser.video_capture;
+
+if (!vc.target_mime_type) {
+  vc.target_mime_type = 'video/webm';
+}
+else {
+  vc.target_mime_type = undefined;
+}
+      },
+      goto_branch: 0
+    }
+  ],
+      ];
+    })()
 
    ,"_FACEMESH_OPTIONS_": (function () {
 function speech_bubble2(msg, duration, para={}) {
@@ -3448,21 +3649,6 @@ MMD_SA_options.Dungeon.run_event(null,done_branch,0);
 var object3d_list = [];
 var object3d_index = 0;
 var object3d_cache = new Map();
-
-async function update_obj_url(src, type) {
-  if (/^(.+\.zip)\#[\/\\](.+)$/i.test(src)) {
-    const src_local = SA_topmost_window.DragDrop._obj_url[src];
-    if (!src_local || (src == src_local)) {
-      const zip = XMLHttpRequestZIP.zip_by_url(RegExp.$1);
-      let blob = await zip.file(RegExp.$2.replace(/\\/g, '/')).async('blob');
-      if (type)
-        blob = new Blob([blob], { type:type });
-// update toFileProtocol()
-      console.log('Object URL (inside zip) updated', src);
-      SA_topmost_window.DragDrop._obj_url[src] = SA_topmost_window.URL.createObjectURL(blob);
-    }
-  }
-}
 
 async function onDrop_add_object3D(item) {
   function update_model_para(url) {
@@ -4402,7 +4588,7 @@ p_bone.is_T_pose = is_T_pose;
         return false;
       }
       obj.path = zip_path + '#\\' + obj_list[0].name.replace(/\//g, '\\');
-      await update_obj_url(obj.path, type);
+      await System._browser.update_obj_url(obj.path, type);
       return true;
     }
 
@@ -4679,7 +4865,7 @@ window.addEventListener('jThree_ready', ()=>{
     id:'face',
     enabled: MMD_SA_options.camera_face_locking,
     condition: ()=>{
-return !explorer_mode && MMD_SA_options.Dungeon.started && (MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.visible || object3d_list.some(obj=>!obj.parent_bone));
+return !explorer_mode && MMD_SA_options.Dungeon.started && (MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.visible || object3d_list.some(obj=>!obj.parent_bone)) && !MMD_SA.THREEX._THREE.MMD.getCameraMotion().length;
     },
   });
 });
@@ -4689,8 +4875,8 @@ function ML_off() {
   MMD_SA.WebXR.user_camera.facemesh.enabled = false
   MMD_SA.WebXR.user_camera.poseNet.enabled = false
   MMD_SA.WebXR.user_camera.handpose.enabled = false
-  MMD_SA_options.Dungeon_options.item_base['magic_wand'].action._motion_list_index = -1
-  MMD_SA_options.Dungeon_options.item_base['magic_wand'].action.func()
+  MMD_SA_options.Dungeon_options.item_base['pose'].action._motion_list_index = -1
+  MMD_SA_options.Dungeon_options.item_base['pose'].action.func()
 }
 
 function mirror_3D_off() {
@@ -5444,11 +5630,12 @@ setTimeout(()=>{
      ,[
         {
           message: {
-  get content() { return 'Miscellaneous Options\n1. Camera face-locking:' + ((MMD_SA_options.camera_face_locking==null)?'Auto':(MMD_SA_options.camera_face_locking)?'ON':'OFF') + '\n2. Done'; },
+  get content() { return 'Miscellaneous Options\n1. Camera face-locking:' + ((MMD_SA_options.camera_face_locking==null)?'Auto':(MMD_SA_options.camera_face_locking)?'ON':'OFF') + '\n2. Audio visualizer:' + ((MMD_SA_options.use_CircularSpectrum) ? 'ON' : 'OFF') + '\n3. Done'; },
   bubble_index: 3,
   branch_list: [
     { key:1, event_index:1 },
-    { key:2, event_index:99 },
+    { key:2, event_index:2 },
+    { key:3, event_index:99 },
   ],
           }
         },
@@ -5464,6 +5651,12 @@ else {
   MMD_SA_options.camera_face_locking = null;
 }
 MMD_SA.THREEX.utils.camera_auto_targeting({ id:'face', enabled:MMD_SA_options.camera_face_locking });
+          },
+          goto_event: { event_index:0 },
+        },
+        {
+          func: ()=>{
+MMD_SA_options.use_CircularSpectrum = !MMD_SA_options.use_CircularSpectrum;
           },
           goto_event: { event_index:0 },
         }
@@ -6079,7 +6272,8 @@ window.addEventListener("SA_MMD_model0_onmotionplaying", function (e) {
   d.sound.audio_object_by_name["hit-3"].play(model_mesh)
 });
 
-document.getElementById("Ldungeon_inventory_item" + MMD_SA.WebXR._item_reticle.index + "_icon").style.opacity = 1
+if (MMD_SA.WebXR._item_reticle)
+  document.getElementById("Ldungeon_inventory_item" + MMD_SA.WebXR._item_reticle.index + "_icon").style.opacity = 1;
 
 window.addEventListener("SA_AR_onSessionStarted", function (e) {
   let item_reticle = MMD_SA.WebXR._item_reticle

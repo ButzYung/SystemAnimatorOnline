@@ -1,4 +1,4 @@
-// (2023-02-06)
+// (2023-02-18)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -86,7 +86,7 @@ else
 // CircularSpectrumMESH
   let obj = MMD_SA_options.mesh_obj_by_id["CircularSpectrumMESH"]
   if (obj) {
-    if (MMD_SA.music_mode || (WallpaperEngine_CEF_mode && MMD_SA.AudioFFT && MMD_SA.AudioFFT._has_audio)) {
+    if (MMD_SA_options.use_CircularSpectrum && (MMD_SA.music_mode || (WallpaperEngine_CEF_mode && MMD_SA.AudioFFT && MMD_SA.AudioFFT._has_audio))) {
       if (MMD_SA.AudioFFT && MMD_SA.AudioFFT._fft128) {
         let pos_spectrum = MMD_SA_options.CircularSpectrum_position
         if (!pos_spectrum) {
@@ -145,7 +145,7 @@ else
 
 if (self.MMD_SA && !MMD_SA_options.MMD_disabled) {
   if (MMD_SA._gravity_) {
-    var gravity
+    let gravity
     if (MMD_SA._gravity_factor <= 0) {
       MMD_SA._gravity_factor = null
       MMD_SA._gravity_ = null
@@ -299,6 +299,8 @@ para_SA.motion_blending = {
       let obj = model._MMD_SA_cache_current = model._MMD_SA_cache[motion.path]
       model.skin  = obj.skin
       model.morph = obj.morph
+      model.camera = obj.camera
+      THREE.MMD.setupCameraMotion(model.camera)
 
       model.resetMotion((mm.para_SA.initial_physics_reset != null) ? !mm.para_SA.initial_physics_reset : MMD_SA._ignore_physics_reset)
 
@@ -713,10 +715,16 @@ catch (err) { DEBUG_show(err.description) }
 if ( loop !== undefined ) this.loop = loop;
 		THREE.MMD.playMotion( loop );
 		jThree.update( jThree.MMD._animate );
+if (MMD_SA.THREEX.enabled) {
+  MMD_SA.THREEX.models.forEach(model=>{ model.animation.play(); });
+}
 	},
 	pause: function() {
 		THREE.MMD.pauseMotion();
 		jThree.update( jThree.MMD._animate, false );
+if (MMD_SA.THREEX.enabled) {
+  MMD_SA.THREEX.models.forEach(model=>{ model.animation.pause(); });
+}
 	},
 	reset: function() {
 
@@ -2449,7 +2457,16 @@ if (/\.bvh$/i.test(url_raw)) {
 
 // AT: FBX
 if (/\.fbx$/i.test(url_raw)) {
-  MMD_SA.THREEX.utils.load_FBX_motion( url_raw, (MMD_SA.MMD_started)?THREE.MMD.getModels()[0]:null, VMD ).then(vmd=>{ onload(vmd); });
+  new Promise((resolve)=>{
+    if (THREE.MMD.getModels().length) {
+      resolve();
+    }
+    else {
+      window.addEventListener('SA_MMD_model0_onload', ()=>{ resolve(); }, {once:true});
+    }
+  }).then(()=>{
+    MMD_SA.THREEX.utils.load_FBX_motion( url_raw, THREE.MMD.getModels()[0], VMD ).then(vmd=>{ onload(vmd); });
+  });
   return
 }
 
@@ -4929,9 +4946,9 @@ Animation.prototype.update = function( dt, force ) {
 	if ( this.time < 0 ) return;//add by jThree
 
 // AT: freeze_onended_finished, morph_to_skip, MMDmorphs
-var freeze_onended_finished
-var morph_to_skip = {}
-var MMDmorphs = THREE.MMD.getModels()[this._model_index].pmx.morphs
+var freeze_onended_finished;
+var morph_to_skip = {};
+var MMDmorphs = (this._model_index != null) && THREE.MMD.getModels()[this._model_index].pmx.morphs;
 var ca_index = (this._motion_index_MMD_SA_extra != null) ? this._motion_index_MMD_SA_extra : this._motion_index-MMD_SA.custom_action_index;
 
 	this.targets.forEach( function( v, idx ) {
@@ -4956,6 +4973,7 @@ if (morph_to_skip[nextKey.name]) {
   return
 }
 if (nextKey.morph_type == 0) {
+if (!MMDmorphs[nextKey.morph_index]) console.log(nextKey,MMDmorphs)
   MMDmorphs[nextKey.morph_index].items.forEach(function (m) {
     morph_to_skip[MMDmorphs[m.target].name] = true
   });
@@ -5580,6 +5598,11 @@ MMDCamera = function( persepectiveCamera, animation ) { // extend Animation
 	this.offset = new THREE.Vector3(); // モデルによる身長差とかに対応。
 	this.target = new THREE.Vector3(); // for trackball control
 	//this.update(0);
+
+// AT: height reference
+const model = MMD_SA.THREEX.get_model(0);
+this.head_y = (MMD_SA.THREEX.enabled) ? model.para.pos0['head'][1] * model.model_scale : model.mesh.bones_by_name["頭"].pmxBone.origin[1];
+
 };
 MMDCamera.prototype = Object.create( Animation.prototype );
 MMDCamera.prototype.constructor = MMDCamera;
@@ -5588,44 +5611,82 @@ MMDCamera.prototype.play = function( loop ) {
 	Animation.prototype.play.call( this, loop );
 	// matrix の更新は自前でやるので autoUpdate は無効にする。
 	// そのため trackball control とかで影響でるので要注意！
-	this.persepectiveCamera.rotationAutoUpdate = false;
-	this.persepectiveCamera.matrixAutoUpdate = false;
+// AT: not needed for MMD_SA.adjust_camera()
+//	this.persepectiveCamera.rotationAutoUpdate = false;
+//	this.persepectiveCamera.matrixAutoUpdate = false;
 };
 
 MMDCamera.prototype.pause = function() {
 	Animation.prototype.pause.call( this );
-	this.persepectiveCamera.rotationAutoUpdate = true;
-	this.persepectiveCamera.matrixAutoUpdate = true;
+// AT: not needed for MMD_SA.adjust_camera()
+//	this.persepectiveCamera.rotationAutoUpdate = true;
+//	this.persepectiveCamera.matrixAutoUpdate = true;
 };
 
 MMDCamera.prototype.onupdate = function( currKey, nextKey, ratio ) {
 	var persepectiveCamera = this.persepectiveCamera,
 		interp = nextKey.interp,
 		t, pos, rot, distance, prevFov, mtx;
-	pos = persepectiveCamera.position;
+//	pos = persepectiveCamera.position;
+pos = MMD_SA._v3a_.set(0,0,0);
 	pos.x = currKey.target[0] + ( nextKey.target[0] - currKey.target[0] ) * bezierp( ratio, interp, 0 );
 	pos.y = currKey.target[1] + ( nextKey.target[1] - currKey.target[1] ) * bezierp( ratio, interp, 1 );
 	pos.z = currKey.target[2] + ( nextKey.target[2] - currKey.target[2] ) * bezierp( ratio, interp, 2 );
 	pos.addVectors( pos, this.offset );
+//pos.add(THREE.MMD.getModels()[0].mesh.position); persepectiveCamera.rotationAutoUpdate = persepectiveCamera.matrixAutoUpdate = false;
 	this.target.copy( pos );
+
+const c_target = MMD_SA._v3a.copy(pos);
+
 	t = bezierp( ratio, interp, 3 );
-	rot = persepectiveCamera.rotation;
+//	rot = persepectiveCamera.rotation;
+rot = MMD_SA._v3b_.set(0,0,0);
 	rot.x = currKey.rot[0] + ( nextKey.rot[0] - currKey.rot[0] ) * t;
 	rot.y = currKey.rot[1] + ( nextKey.rot[1] - currKey.rot[1] ) * t;
 	rot.z = currKey.rot[2] + ( nextKey.rot[2] - currKey.rot[2] ) * t;
 	distance = currKey.distance + ( nextKey.distance - currKey.distance ) * bezierp( ratio, interp, 4 );
+
 	prevFov = persepectiveCamera.fov;
 	persepectiveCamera.fov = currKey.fov + ( nextKey.fov - currKey.fov ) * bezierp( ratio, interp, 5 );
 	if ( persepectiveCamera.fov !== prevFov ) {
 		persepectiveCamera.updateProjectionMatrix();
 	}
+
 	mtx = persepectiveCamera.matrix;
 	//mtx.identity();
 	mtx.makeRotationFromEuler( rot );
+
 	pos.add( _v.getColumnFromMatrix(2,mtx).multiplyScalar( distance ) );
 	mtx.setPosition( pos );
+
+const c_pos = MMD_SA._v3b.copy(pos);
+
+if (1) {
+  const head_y_ref = 17.19686;
+  let ratio = THREE.Math.clamp((1 - Math.abs(head_y_ref - c_pos.y)/head_y_ref), 0,1);
+  ratio = (1-ratio) + ratio * this.head_y/head_y_ref;
+  if (c_pos.y < head_y_ref) {
+    c_pos.y *= ratio;
+  }
+  else {
+    c_pos.y = this.head_y + (c_pos.y - head_y_ref) * ratio;
+  }
+}
+
+const c_base = MMD_SA.TEMP_v3.fromArray(MMD_SA_options.camera_position_base)
+c_pos.sub(c_base);
+// Calculate the target directly from rotation, as the usual camera update routine (.lookAt) can't get the rotation if distance is 0. Also this gives better flexibility for mouse control
+const c_distance = MMD_SA._trackball_camera.position0.distanceTo(MMD_SA._trackball_camera.target0);
+c_target.set(0,0,-1).applyEuler(rot).multiplyScalar((Math.abs(distance)) ? Math.sign(distance) * Math.max(Math.abs(distance), c_distance) : c_distance);
+c_target.add(c_pos).add(c_base.setY(0));
+
+MMD_SA.adjust_camera('MMDCamera_onupdate', c_pos,c_target);
+
+
 	persepectiveCamera.up.copy( _v.getColumnFromMatrix(1,mtx) ); // for trackball control
 	persepectiveCamera.matrixWorldNeedsUpdate = true; // 自前でやったのでワールド更新要求も自前で出す。
+
+//DEBUG_show(persepectiveCamera.fov+'/'+distance+'\n\n'+rot.toArray().concat(c_pos.toArray()).concat(c_target.toArray()).join('\n'))
 };
 
 }()); // MMDCamera
@@ -6117,6 +6178,10 @@ else if (self.MMD_SA) { mesh.updateMatrixWorld = skinnedMesh_updateMatrixWorld; 
 				that.addTrans = null;
 			}
 			oncreate( that );
+
+// AT: event
+window.dispatchEvent(new CustomEvent('SA_MMD_model' + that.pmx._model_index + '_onload'));
+
 // AT: hidden during loading
 if (self.MMD_SA) {
   if (model_para.hidden_before_start || model_para.hidden_on_start || MMD_SA_options.hidden_before_start || MMD_SA_options.hidden_on_start)
@@ -6166,7 +6231,9 @@ Model.prototype.setupMotion_MMD_SA = function( vmd, match, use_dummy ) {
     morph._motion_index = vmd._index
   }
 
-  var obj = { skin:skin, morph:morph }
+  var camera = vmd._camera_component && new MMDCamera(MMD_SA._trackball_camera.object, vmd._camera_component.generateCameraAnimation());
+
+  var obj = { skin:skin, morph:morph, camera:camera }
 
   if (morph && !use_dummy) {
     morph.target_index_by_name = {}
@@ -6240,12 +6307,12 @@ Model.prototype.resetPhysics = function (f) {
   }
 
   if (f == null) {
-    let para_SA = ((this._model_index > 0) ? MMD_SA.motion[this.skin._motion_index] : MMD_SA.MMD.motionManager).para_SA
-    f = para_SA.reset_rigid_body_physics_step||MMD_SA_options.reset_rigid_body_physics_step
+    const para_SA = ((this._model_index > 0) ? ((this.skin && MMD_SA.motion[this.skin._motion_index]) || {}) : MMD_SA.MMD.motionManager).para_SA || {};
+    f = para_SA.reset_rigid_body_physics_step || MMD_SA_options.reset_rigid_body_physics_step;
   }
   this.mesh._reset_rigid_body_physics_ = Math.max(this.mesh._reset_rigid_body_physics_||0, f);
 
-  if (MMD_SA.THREEX.enabled) MMD_SA.THREEX.models[this._model_index].resetPhysics();
+  if (MMD_SA.THREEX.enabled && this.mesh._reset_rigid_body_physics_) MMD_SA.THREEX.models[this._model_index].resetPhysics();
 };
 
 // AT: check model visibility
@@ -6926,7 +6993,7 @@ Model.prototype.playMotion = function( loop ) {
 if (this.morph_MMD_SA_extra) {
   this.morph_MMD_SA_extra.forEach(function (morph) {
 if (!morph._MMD_SA_disabled) morph.play( loop );
-  })
+  });
 }
 	}
 	if ( this.skin ) {
@@ -6935,10 +7002,11 @@ if (!morph._MMD_SA_disabled) morph.play( loop );
 if (this.skin_MMD_SA_extra) {
   this.skin_MMD_SA_extra.forEach(function (skin) {
 if (!skin._MMD_SA_disabled) skin.play( loop );
-    }
-  )
+  });
 }
 	}
+// AT: System Animator
+if (this.camera) this.camera.play(loop);
 };
 Model.prototype.pauseMotion = function() {
 	if ( this.morph ) {
@@ -6947,7 +7015,7 @@ Model.prototype.pauseMotion = function() {
 if (this.morph_MMD_SA_extra) {
   this.morph_MMD_SA_extra.forEach(function (morph) {
 if (!morph._MMD_SA_disabled) morph.pause();
-  })
+  });
 }
 	}
 	if ( this.skin ) {
@@ -6956,10 +7024,11 @@ if (!morph._MMD_SA_disabled) morph.pause();
 if (this.skin_MMD_SA_extra) {
   this.skin_MMD_SA_extra.forEach(function (skin) {
 if (!skin._MMD_SA_disabled) skin.pause();
-    }
-  )
+  });
 }
 	}
+// AT: System Animator
+if (this.camera) this.camera.pause();
 };
 Model.prototype.preSimulate = function() {
 	if ( this.physi ) {
@@ -7173,6 +7242,30 @@ MMD_SA.ammo_proxy
 },
 
 	setupCameraMotion: function( vmd, camera ) {
+
+// AT: vmd is MMDCamera
+if (cameraMotion.length) {
+  cameraMotion[0].reset();
+}
+
+if (vmd) {
+  cameraMotion = [vmd];
+}
+else {
+  if (cameraMotion.length) {
+    const c = cameraMotion[0].persepectiveCamera
+    if (c.fov != MMD_SA_options.camera_fov) {
+      c.fov = MMD_SA_options.camera_fov;
+      c.updateProjectionMatrix();
+    }
+    MMD_SA.adjust_camera('MMDCamera_onupdate', MMD_SA._v3a_.set(0,0,0), MMD_SA._v3b_.set(0,0,0));
+	c.rotationAutoUpdate = true;
+	c.matrixAutoUpdate = true;
+  }
+  cameraMotion.length = 0;
+}
+
+/*
 		var animation = vmd.generateCameraAnimation(),motion,index;
 
 		cameraMotion.forEach( function( m, i ) {
@@ -7187,6 +7280,7 @@ MMD_SA.ammo_proxy
 			cameraMotion.push( motion );
 			motion.vmd = vmd;//for jThree attrChange
 		}
+*/
 	},
 	getCameraMotion: function() {
 		return cameraMotion;
@@ -7372,6 +7466,21 @@ window.dispatchEvent(new CustomEvent("SA_MMD_after_updateMotion"));
 	},
 	setGravity: function( x,y,z ) {
 		btWorld.setGravity( tmpBV( x,y,z ) );
+
+if (!MMD_SA.MMD_started || !MMD_SA.THREEX.enabled) return;
+
+const gravity = MMD_SA.THREEX.v1.set(x,y,z);
+const gravityPower = gravity.length()/10;
+const gravityDir = gravity.normalize();
+
+MMD_SA.THREEX.models.forEach(model=>{
+  if ((model.type == 'VRM') && model.model.springBoneManager) {
+    model.model.springBoneManager.joints.forEach( e => {
+      e.settings.gravityDir.copy(gravityDir);
+      e.settings.gravityPower = gravityPower;
+    });
+  }
+});
 	},
 	simulate: function( timeStep, maxSubSteps ) {
 // AT: ammo proxy

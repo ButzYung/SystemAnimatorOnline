@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-02-06)
+// (2023-02-18)
 
 var use_full_spectrum = true
 
@@ -325,6 +325,8 @@ vo.audio_onended = function (e) {
   }
   MMD_SA_options.audio_onended && MMD_SA_options.audio_onended()
 
+  window.dispatchEvent(new CustomEvent("SA_audio_onended"));
+
   DEBUG_show("Audio:END", 2)
 }
 
@@ -333,6 +335,38 @@ Audio_BPM.checkWinamp(vo)
 DragDrop_RE = eval('/\\.(' + DragDrop_RE_default_array.concat(["vmd", "bvh", "mp3", "wav", "aac", "zip", "json", "vrm", "fbx", "gltf", "glb"]).join("|") + ')$/i')
 
 DragDrop.onDrop_finish = async function (item) {
+  function load_motion(func) {
+if (MMD_SA.MMD_started) {
+  func();
+  return;
+}
+
+if (!System._browser.video_capture.trigger_on_startup_motion) {
+  DEBUG_show('(No custom motion before start)', 2);
+  return;
+}
+
+const ev = (MMD_SA_options.Dungeon_options) ? 'SA_Dungeon_onstart' : 'MMDStarted';
+if (typeof System._browser.video_capture.trigger_on_startup_motion == 'function')
+  window.removeEventListener(ev, System._browser.video_capture.trigger_on_startup_motion);
+
+System._browser.video_capture.trigger_on_startup_motion = ()=>{
+  System._browser.on_animation_update.add(async ()=>{
+    await func();
+
+    System._browser.on_animation_update.add(async ()=>{
+      MMD_SA.seek_motion(0);
+      MMD_SA.motion_player_control.pause();
+      await System._browser.video_capture.start();
+    }, 0,1);
+  }, 10,0);
+};
+
+window.addEventListener(ev, System._browser.video_capture.trigger_on_startup_motion);
+
+DEBUG_show('(Startup motion added)', 2);
+  }
+
   var src = item.path
   if (item.isFileSystem && /([^\/\\]+)\.zip$/i.test(src)) {
 //DEBUG_show(toFileProtocol(src))
@@ -360,6 +394,31 @@ else {
   XMLHttpRequestZIP.zip_by_url(src, zip);
 }
 
+const motion_list = zip.file(/[^\/\\]+.vmd$/i);
+const motion_set_list = motion_list.filter(motion=>{
+  const motion_filename = motion.name.replace(/^.+[\/\\]/, "").replace(/\.\w+$/, "");
+
+  let is_motion_set;
+
+  const morph_vmd = motion_filename + '_morph';
+  if (motion_list.some(m=>m.name.indexOf(morph_vmd)!=-1)) {
+    is_motion_set = true;
+    const para_SA = MMD_SA_options.motion_para[motion_filename] = MMD_SA_options.motion_para[motion_filename] || {};
+    if (!para_SA.morph_component_by_filename)
+      para_SA.morph_component_by_filename = morph_vmd;
+  }
+
+  const camera_vmd = motion_filename + '_camera';
+  if (motion_list.some(m=>m.name.indexOf(camera_vmd)!=-1)) {
+    is_motion_set = true;
+    const para_SA = MMD_SA_options.motion_para[motion_filename] = MMD_SA_options.motion_para[motion_filename] || {};
+    if (!para_SA.camera_component_by_filename)
+      para_SA.camera_component_by_filename = camera_vmd;
+  }
+
+  return is_motion_set;
+});
+
 let files_added
 let music_list = zip.file(/[^\/\\]+.(mp3|wav|aac)$/i)
 if (music_list.length) {
@@ -383,37 +442,61 @@ if (music_list.length) {
   music_list.slice(0,keys_available.length).forEach(function (music) {
     var music_filename = music.name.replace(/^.+[\/\\]/, "").replace(/\.\w+$/, "")
 //DEBUG_show(music_filename,0,1)
-    var vmd = zip.file(new RegExp(toRegExp(music_filename)+"\\.(vmd|bvh|fbx)"))
-    if (vmd.length) {
+    var vmd = motion_list.find(m=>m.name.indexOf(music_filename+'.')!=-1);
+    if (vmd) {
       files_added = true
       let k = keys_available.shift()
       keys_used.push(k)
 
-      let morph_vmd = zip.file(new RegExp(toRegExp(music_filename)+"_morph\\.vmd"))
-      if (morph_vmd.length) {
-        let para_SA = MMD_SA_options.motion_para[music_filename] = MMD_SA_options.motion_para[music_filename] || {}
-        if (!para_SA.morph_component_by_filename)
-          para_SA.morph_component_by_filename = music_filename + "_morph"
-      }
+      const video = zip.file(new RegExp(toRegExp(music_filename) + '_video\\.(mp4|mkv|webm)$', 'i'));
 
       MMD_SA_options.motion_by_song_name[music_filename] = {
-  motion_path: (src + "#/" + vmd[0].name)
+  motion_path: (src + "#/" + vmd.name)
  ,song_path: (src + "#/" + music.name)
+ ,video_path: video.length && (src + "#/" + video[0].name)
  ,key: k
       };
-//console.log(toFileProtocol(src + "#/" + vmd[0].name))
-//      MMD_SA_options.motion.push({ must_load:true, no_shuffle:true, path:toFileProtocol(src + "#/" + vmd[0].name) })
+
+      if (!MMD_SA.MMD_started && System._browser.video_capture.trigger_on_startup_motion) {
+        const ev = (MMD_SA_options.Dungeon_options) ? 'SA_Dungeon_onstart' : 'MMDStarted';
+        if (typeof System._browser.video_capture.trigger_on_startup_motion == 'function')
+          window.removeEventListener(ev, System._browser.video_capture.trigger_on_startup_motion);
+
+        System._browser.video_capture.trigger_on_startup_motion = ()=>{
+          System._browser.on_animation_update.add(()=>{
+MMD_SA_options.use_CircularSpectrum = false;
+
+window.addEventListener('SA_motion_by_song_name_mode_onstart', (e)=>{
+  const promise = new Promise((resolve)=>{
+    System._browser.on_animation_update.add(async ()=>{
+      await System._browser.video_capture.start();
+      resolve();
+    }, 0,0);
+  });
+
+  e.detail.result.promise = promise;
+}, {once:true});
+
+document.dispatchEvent(new KeyboardEvent('keydown', { keyCode:96+k }));
+          }, 10,0);
+        };
+
+        window.addEventListener(ev, System._browser.video_capture.trigger_on_startup_motion);
+      }
     }
   });
 
   if (files_added)
-    DEBUG_show("Music/Motion list updated (" + keys_used.join(",") + ")", 2)
+    DEBUG_show("Music/Motion list updated (key:" + keys_used.join(",") + ")", 3)
+}
+else if (motion_set_list.length) {
+  System._browser.on_animation_update.add(()=>{ DragDrop.onDrop_finish({ isFileSystem:true, path:src + '#/' + motion_set_list[0].name }); }, 0,0);
 }
 
 if (!MMD_SA.jThree_ready) return;
 
 const pmx_list = zip.file(/\.pmx$/i);
-const vrm_list = [];
+let vrm_list = [];
 if (!pmx_list.length) {
   if (MMD_SA_options.use_THREEX)
     vrm_list = zip.file(/\.vrm$/i);
@@ -553,17 +636,14 @@ MMD_SA._click_to_reset = null;
       Ldebug.addEventListener("click", MMD_SA._click_to_reset);
     }
 
-    SystemAnimator_caches.put("/user-defined-local/my_model.vrm", new Response(SA_topmost_window.DragDrop._path_to_obj[model_filename], {status:200, statusText:"custom_PC_model|"+model_filename}));
+    if (browser_native_mode)
+      SystemAnimator_caches.put("/user-defined-local/my_model.vrm", new Response(SA_topmost_window.DragDrop._path_to_obj[model_filename], {status:200, statusText:"custom_PC_model|"+model_filename}));
     if (webkit_electron_mode)
       System.Gadget.Settings.writeString("LABEL_3D_model_path", src);
   }
   else if (item.isFileSystem && /([^\/\\]+)\.(vmd|bvh)$/i.test(src) || (item.isFileSystem && /([^\/\\]+)\.(fbx)$/i.test(src) && !MMD_SA.THREEX.enabled)) {
     const filename = RegExp.$1;
 
-    if (!MMD_SA.MMD_started) {
-      DEBUG_show("(no custom VMD/BVH/FBX motion before MMD loaded)", 3)
-      return
-    }
     if (MMD_SA.music_mode) {
       DEBUG_show("(no external motion while music is still playing)", 2)
       return
@@ -572,43 +652,39 @@ MMD_SA._click_to_reset = null;
       return
     }
 
-    const index = MMD_SA_options.motion_index_by_name[filename];
-    if (index != null) {
-      MMD_SA_options.motion_shuffle = [index];
-      MMD_SA_options.motion_shuffle_list_default = null;
-      MMD_SA._force_motion_shuffle = true;
-      return;
-    }
+    load_motion(async ()=>{
+      const index = MMD_SA_options.motion_index_by_name[filename];
+      if (index != null) {
+        MMD_SA_options.motion_shuffle = [index];
+        MMD_SA_options.motion_shuffle_list_default = null;
+        MMD_SA._force_motion_shuffle = true;
+        return;
+      }
 
-    MMD_SA.load_external_motion(src);
+      await MMD_SA.load_external_motion(src);
+    });
   }
   else if (item.isFileSystem && /([^\/\\]+)\.(fbx)$/i.test(src)) {
-//    if (!MMD_SA.THREEX.enabled) return;
+    load_motion(async ()=>{
+      const model = MMD_SA.THREEX.get_model(0);
+      const action_index = model.animation.find_action_index(src.replace(/^.+[\/\\]/, "").replace(/\.fbx$/i, ""));
+      if (action_index != -1) {
+        model.animation.play(action_index);
+        model.animation.enabled = true;
+      }
+      else {
+        DEBUG_show('(FBX motion loading)', 2)
 
-    if (!MMD_SA.MMD_started) {
-      DEBUG_show("(no custom VMD/BVH/FBX motion before MMD loaded)", 3)
-      return;
-    }
-
-    const model = MMD_SA.THREEX.get_model(0);
-    const action_index = model.animation.find_action_index(src.replace(/^.+[\/\\]/, "").replace(/\.fbx$/i, ""));
-    if (action_index != -1) {
-      model.animation.play(action_index);
-      model.animation.enabled = true;
-    }
-    else {
-      DEBUG_show('(FBX motion loading)', 2)
-
-      // Load animation
-      MMD_SA.THREEX.utils.load_FBX_motion( src, model ).then( ( clip ) => {
-//        model.animation.clear();
+        // Load animation
+        const clip = await MMD_SA.THREEX.utils.load_FBX_motion( src, model );
 
         model.animation.add_clip(clip);
         model.animation.enabled = true;
 //console.log(clip)
+        MMD_SA.reset_camera();
         DEBUG_show('(FBX motion ready)', 2)
-      } );
-    }
+      }
+    });
   }
   else if (item.isFileSystem && /([^\/\\]+)\.(gltf|glb)$/i.test(src)) {
     return;
@@ -669,9 +745,43 @@ else
     }
     var motion_by_song_name = MMD_SA_options.motion_by_song_name && MMD_SA_options.motion_by_song_name[filename]
 
+    let load_promise;
     if (motion_by_song_name) {
       vo.motion_by_song_name_mode = true
       MMD_SA.playbackRate = 0
+
+      if (motion_by_song_name.video_path) {
+        if (!vo.media_linked) vo.media_linked = [];
+        let video = vo.media_linked.find(m=>m.id=='motion_bg_video');
+        if (!video) {
+          video = document.createElement('video');
+          vo.media_linked.push(video);
+          video.id = 'motion_bg_video';
+          video.muted = true;
+          video.autoplay = false;
+          video.style.position = 'absolute';
+          video.style.left = video.style.top = '0px';
+          video.style.zIndex = 0;
+          video.style.objectFit = "cover";
+          video.style.visibility = 'hidden';
+          const SL = MMD_SA.THREEX.SL;
+          MMD_SA.THREEX.SL.parentElement.appendChild(video);
+
+          video.style.width = SL.width + 'px';
+          video.style.height = SL.height + 'px';
+          window.addEventListener('SA_MMD_SL_resize', ()=>{
+            video.style.width = SL.width + 'px';
+            video.style.height = SL.height + 'px';
+          });
+        }
+        load_promise = new Promise((resolve)=>{
+          System._browser.update_obj_url(motion_by_song_name.video_path).then(()=>{
+            video._src_raw = motion_by_song_name.video_path;
+            video.src = toFileProtocol(motion_by_song_name.video_path);
+            resolve();
+          });
+        });
+      }
     }
     else {
       vo.motion_by_song_name_mode = false
@@ -713,17 +823,72 @@ else
       else {
         ao = vo.audio_obj = vo.audio_obj_HTML5 = Audio_BPM.createPlayer(vo)
 
-        ao.ontimeupdate = function (e) {
-if (ao._timed || !this.currentTime)
-  return
-//DEBUG_show(!!MMD_SA._force_motion_shuffle,0,1)
-ao._timed = true
+        ao.addEventListener('play', ()=>{
+vo.media_linked && vo.media_linked.forEach(m=>{
+  const active = m._src_raw.indexOf(filename) != -1;
+  if (active) {
+    if (m.currentTime)
+      m.currentTime = 0;
+    m.play();
+    m.style.visibility = 'inherit';
+  }
+});
+        });
+        ao.addEventListener('pause', ()=>{
+vo.media_linked && vo.media_linked.forEach(m=>{
+  const active = m._src_raw.indexOf(filename) != -1;
+  if (active) {
+    m.pause();
+  }
+});
+        });
+        ao.addEventListener('seeking', ()=>{
+vo.media_linked && vo.media_linked.forEach(m=>{
+  const active = m._src_raw.indexOf(filename) != -1;
+  if (active) {
+    m.currentTime = ao.currentTime;
+  }
+});
+        });
+        window.addEventListener('SA_audio_onended', ()=>{
+vo.media_linked && vo.media_linked.forEach(m=>{
+  const active = (m._src_raw.indexOf(filename) != -1) && (m.style.visibility != 'hidden');
+  if (active) {
+    m.pause();
+    m.currentTime = 0;
+    m.style.visibility = 'hidden';
+  }
+});
+        });
+
+        ao.onplaying = async function (e) {//ontimeupdate = function (e) {//
+if (ao._timed) return;
+ao._timed = true;
+//if (!this.currentTime) return;
+//if (this.currentTime) return;
+
 if (vo.motion_by_song_name_mode) {
-  MMD_SA.playbackRate = 1
-  MMD_SA.seek_motion(this.currentTime)
+  let duration = Math.max(THREE.MMD.getCameraMotion().length && THREE.MMD.getCameraMotion()[0].duration, THREE.MMD.getModels()[0].skin.duration);
+  if (vo.audio_obj.duration > duration) {
+    jThree.MMD.duration = duration = vo.audio_obj.duration + 0.1;
+// a must when duration is changed during playback (i.e. after MMD_SA.motion_shuffle())
+    MMD_SA.MMD.motionManager.lastFrame_ = null;
+  }
+
+  MMD_SA.seek_motion(this.currentTime);
+
+  MMD_SA.playbackRate = 1;
+
+  const result = {};
+  window.dispatchEvent(new CustomEvent("SA_motion_by_song_name_mode_onstart", { detail:{ result:result } }));
+  if (result.promise) {
+//    this.pause();
+    SL_MC_Play();
+    await result.promise;
+  }
 }
-//var _t = THREE.MMD.getModels()[0].skin.time; DEBUG_show(_t+'/'+this.currentTime,0,1);
-DEBUG_show('Audio:START(' + (parseInt(this.currentTime*1000)/1000) + 's)', 2)
+
+if (this.currentTime) DEBUG_show('Audio:START(' + (parseInt(this.currentTime*1000)/1000) + 's)', 2);
         }
       }
 
@@ -756,8 +921,8 @@ else {
 */
 }
 
-SL_MC_video_obj = sender
-SL_MC_Place()
+SL_MC_video_obj = sender;
+SL_MC_Place(1, 0,-64);
 
 if (MMD_SA_options.PPE_disabled_on_idle) {
   var PPE = MMD_SA_options.MME.PostProcessingEffects
@@ -775,8 +940,11 @@ if (!ao.ontimeupdate)
 
     ao.AV_init && ao.AV_init(item.obj.obj.file)
 
-    DragDrop._item = item
-    Audio_BPM.findBPM(vo)
+    DragDrop._item = item;
+
+    (load_promise || Promise.resolve()).then(()=>{
+      Audio_BPM.findBPM(vo)
+    });
 
     return false
   }
@@ -923,9 +1091,9 @@ const sb_func = async function () {
 
       await init();
     }, true);
-    sb._msg_mouseover = sb._msg_mouseover_default = 'Press START to begin loading.\n\n(Drop a MMD model zip' + ((MMD_SA_options.use_THREEX) ? '/VRM' : '') + ' to use your 3D model.)';
+    sb._msg_mouseover = sb._msg_mouseover_default = 'Press START to begin loading.\n\n- Drop a MMD model zip' + ((MMD_SA_options.use_THREEX) ? '/VRM' : '') + ' to use your 3D model.\n- Drop a VMD/FBX motion to convert 3D to video file.';
     sb.addEventListener("mouseover", function () {
-      DEBUG_show(this._msg_mouseover, -1)
+      DEBUG_show(this._msg_mouseover, -1);
     }, true);
     sb.style.zIndex = 601
     sb.textContent = "START"
@@ -1469,21 +1637,29 @@ function _finalize() {
     MMD_SA_options.motion_shuffle_list_default = null
     MMD_SA._force_motion_shuffle = true
 
-    System._browser.on_animation_update.add(()=>{MMD_SA.motion_player_control.enabled = true;}, 1,1);
+    System._browser.on_animation_update.add(()=>{MMD_SA.motion_player_control.enabled = true;}, 0,1);
   }
+
+THREE.MMD.setupCameraMotion(model._MMD_SA_cache[src].camera)
 
   resolve_func();
 }
 
-function _vmd(vmd_morph) {
+function _vmd(vmd_components) {
   function _vmd_loaded( vmd ) {
     index = MMD_SA_options.motion.length;
     vmd._index = index;
 
-    if (vmd_morph) {
-      vmd._morph_component = vmd_morph
-      vmd._morph_component.url = vmd.url
-    }
+    vmd_components && vmd_components.forEach(_vmd=>{
+      if (_vmd.morphKeys.length) {
+        vmd._morph_component = _vmd;
+        vmd._morph_component.url = vmd.url;
+      }
+      else if (_vmd.cameraKeys.length) {
+        vmd._camera_component = _vmd;
+        vmd._camera_component.url = vmd.url;
+      }
+    });
 
     model._MMD_SA_cache[src] = model.setupMotion_MMD_SA(vmd)
 
@@ -1507,9 +1683,21 @@ if (MMD_SA_options.motion_index_by_name[name_new] != null) {
 //else if (MMD_SA.vmd_by_filename[name_new]) { _finalize(); }
 else {
   const para_SA = MMD_SA_options.motion_para[name_new] = MMD_SA_options.motion_para[name_new] || {};
-  if (para_SA.morph_component_by_filename) {
-    model._VMD(src.replace(/[^\/\\]+$/, "") + para_SA.morph_component_by_filename + ".vmd", function( vmd ) {
-      _vmd(vmd);
+
+  const c_promise_list = [];
+  const vmd_components = [];
+  for (const c_name of ['morph_component_by_filename', 'camera_component_by_filename']) {
+    const c = para_SA[c_name];
+    if (c) {
+      c_promise_list.push(new Promise(resolve=>{
+        model._VMD(src.replace(/[^\/\\]+$/, "") + para_SA[c_name] + ".vmd", function( vmd ) { vmd_components.push(vmd); resolve(); });
+      }));
+    }
+  }
+
+  if (c_promise_list.length) {
+    Promise.all(c_promise_list).then(()=>{
+      _vmd(vmd_components);
     });
   }
   else {
@@ -1521,20 +1709,42 @@ return promise;
   }
 
  ,seek_motion: function (time, must_update) {
-if (this.use_jThree) {
-  must_update = must_update && !THREE.MMD.motionPlaying
-  if (must_update) jThree.MMD.play(true)
-  THREE.MMD.getModels().forEach(function (model) {
-    model.seekMotion(time)
-    model.resetPhysics()
-  });
-  if (must_update) jThree.MMD.pause()
+function model_seek_time(v, i) {
+  const modelX = MMD_SA.THREEX.get_model(i);
+  if (MMD_SA.THREEX.enabled && modelX.animation.enabled) {
+    modelX.animation.mixer.setTime(time);
+  }
+  else {
+    v.seekMotion( time );
+  }
+}
+
+must_update = must_update && !THREE.MMD.motionPlaying;
+
+if (must_update) jThree.MMD.play(true)
+
+THREE.MMD.getCameraMotion().forEach( function( m ) {
+  m.seek( time );
+});
+
+THREE.MMD.getModels().forEach( function( v, i ) {
+  model_seek_time(v, i);
+  MMD_SA.THREEX.get_model(i).resetPhysics();
+});
+
+if (must_update) {
+  System._browser.on_animation_update.add(()=>{
+    jThree.MMD.pause();
+    THREE.MMD.getModels().forEach( function( v, i ) {
+      model_seek_time(v, i);
+    });
+  }, 0,1);
 }
   }
 
  ,motion_player_control: (function () {
     function time_update() {
-if (MMD_SA._force_motion_shuffle || (motion_index != THREE.MMD.getModels()[0].skin._motion_index)) {
+if (MMD_SA._force_motion_shuffle || (animation_mixer_enabled != MMD_SA.THREEX.get_model(0).animation.enabled) || (motion_index != MMD_SA.THREEX.get_model(0).animation.motion_index)) {
   MMD_SA.motion_player_control.enabled = false;
   return;
 }
@@ -1544,16 +1754,20 @@ SL_MC_Timeupdate(SL_MC_video_obj);
 
     var motion_index = -1;
     var enabled = false;
+    var animation_mixer_enabled = false;
 
     return {
       get enabled() { return enabled; },
       set enabled(v) {
-motion_index = (v) ? THREE.MMD.getModels()[0].skin._motion_index : -1;
+motion_index = (v) ? MMD_SA.THREEX.get_model(0).animation.motion_index : -1;
 
 if (enabled == !!v) return;
 enabled = !!v;
 
+animation_mixer_enabled = MMD_SA.THREEX.get_model(0).animation.enabled;
+
 if (enabled) {
+  this.paused = false;
   SL_MC_simple_mode = true;
   SL_MC_video_obj = this;
   SL_MC_Place(1, 0,-64);
@@ -1576,12 +1790,12 @@ jThree.MMD.pause();
 this.paused = true;
       },
 
-      get currentTime() { return THREE.MMD.getModels()[0].skin.time; },
+      get currentTime() { return MMD_SA.THREEX.get_model(0).animation.time; },
       set currentTime(v) {
-MMD_SA.seek_motion(v);
+MMD_SA.seek_motion(v, true);
       },
 
-      get duration() { return THREE.MMD.getModels()[0].skin.duration; }
+      get duration() { return MMD_SA.THREEX.get_model(0).animation.duration; }
     };
   })()
 
@@ -2782,12 +2996,12 @@ return true
     };
 
     SB.prototype.hide = function () {
-if (this.visible) {
-  if (this.msg_timerID) {
-    clearTimeout(this.msg_timerID)
-    this.msg_timerID = null
-  }
+if (this.msg_timerID) {
+  clearTimeout(this.msg_timerID)
+  this.msg_timerID = null
+}
 
+if (this.visible) {
   this.msg = ""
   this._branch_key_ = null
 
@@ -2796,6 +3010,7 @@ if (this.visible) {
   this.visible = false
   window.dispatchEvent(new CustomEvent("SA_SpeechBubble_hide" + this.index));
 }
+
 MMD_SA.THREEX.mesh_obj.get( "SpeechBubbleMESH" + this.index ).hide();
     };
 
@@ -5404,9 +5619,6 @@ return Promise.all([
  ,adjust_camera: (function () {
     let camera_mod;
 
-    var c_pos, c_target;
-    var pos_last, target_last;
-
     window.addEventListener('jThree_ready', ()=>{
       camera_mod = class Camera_mod {
 constructor(id) {
@@ -7415,6 +7627,8 @@ const THREE = MMD_SA.THREEX.THREE;
 if (v) {
   this._motion_index = _THREE.MMD.getModels()[this.model.index].skin._motion_index;
   this.play();
+
+  System._browser.on_animation_update.add(()=>{MMD_SA.motion_player_control.enabled = true;}, 0,1);
 }
 else {
   this.stop();
@@ -7431,6 +7645,20 @@ return this.#_mixer;
       }
 
       get has_clip() { return this.clips.length; }
+
+      get action() { return this.actions[this.action_index]; }
+
+      get motion_index() {
+return (this.enabled) ? this.action_index : _THREE.MMD.getModels()[this.model.index].skin._motion_index;
+      }
+
+      get time() {
+return (this.enabled) ? this.action.time : _THREE.MMD.getModels()[this.model.index].skin.time;
+      }
+
+      get duration() {
+return (this.enabled) ? this.action.getClip().duration : _THREE.MMD.getModels()[this.model.index].skin.duration;
+      }
 
       add_clip(clip)  {
 this.stop();
@@ -7452,11 +7680,18 @@ return this.actions.findIndex(action=>action._clip.name==name);
       }
 
       play(index = this.action_index) {
+if (index > -1) {
+  this.action_index = index;
+  this.actions[index].paused = false;
+  this.actions[index].play();
+}
+      }
+
+      pause(index = this.action_index) {
 //  this.actions.forEach(action=>{ action.play(); });
 if (index > -1) {
-  this.stop();
   this.action_index = index;
-  this.actions[index].play();
+  this.actions[index].paused = true;
 }
       }
 
@@ -7517,6 +7752,10 @@ Model_obj.call(this, index);
 
   Model_obj.prototype = {
     constructor: Model_obj,
+
+    get model_scale() {
+return this.mesh.scale.y;
+    },
 
     get model_para() {
 if (!threeX.enabled) return MMD_SA_options.model_para_obj_all[this.index];
@@ -7688,7 +7927,14 @@ return bone_parent && (b[bone_parent.name] || b[dir+bone_parent.name]);
       };
     })(),
 
-    resetPhysics: function () {},
+    resetPhysics: function () {
+if (threeX.enabled) {
+//  if (this.type == 'VRM') this.model.springBoneManager.reset();//setInitState();//
+}
+else {
+  this.model.resetPhysics();
+}
+    },
 
     update_model: function () {}
   };
@@ -7945,14 +8191,22 @@ for (const name in humanBones) {
   const q = q1.set(0,0,0,1);
 
   while (bone.type == 'Bone') {
-    pos.add(bone.position);
+    q.premultiply(bone.quaternion);
 // three-vrm 1.0 normalized
 //    if (use_VRM1 && this.is_VRM1) q.premultiply(bone.quaternion);
     bone = bone.parent;
   }
+  para.q0[name] = para.q0[bone_array.node.name] = q.toArray();
 
+  bone =  bone_array.node;
+  while (bone.type == 'Bone') {
+    if (para.q0[bone.name]) q2.fromArray(para.q0[bone.name]);
+    pos.add(v2.copy(bone.position).applyQuaternion(q2));
+
+    bone = bone.parent;
+  }
   para.pos0[name] = this.process_position(pos).toArray();
-  para.q0[name] = q.toArray();
+
 }
 
 for (const name in humanBones) {
@@ -7976,6 +8230,9 @@ for (const name in humanBones) {
 }
 
 para.left_leg_length = ((para.pos0['leftUpperLeg'][1] - para.pos0['leftLowerLeg'][1]) + (para.pos0['leftLowerLeg'][1] - para.pos0['leftFoot'][1])) * vrm_scale;
+
+para.bone_dummy = {};
+para.spine_to_hips_ratio = (para.pos0['chest']) ? 0 : 1 - THREE.Math.clamp((para.pos0['neck'][1] - para.pos0['spine'][1]) / (para.pos0['neck'][1] - para.pos0['hips'][1]) * 2, 0,1);
 
 Model_obj.call(this, index, vrm, para);
 this.mesh = vrm.scene;
@@ -8137,8 +8394,23 @@ return;
 var mesh_MMD = _THREE.MMD.getModels()[0].mesh
 var bones_by_name = mesh_MMD.bones_by_name
 MMD_bone_list.forEach(MMD_name=>{
-  const bone = this.get_bone_by_MMD_name(MMD_name);
-  if (!bone) return;
+  let bone = this.get_bone_by_MMD_name(MMD_name);
+
+  let bone_linked, MMD_name_linked;
+  if (!bone) {
+// special and simplified case for 上半身2, need to be reworked for other missing bone cases
+    if (MMD_name == '上半身2') {
+      MMD_name_linked = '上半身';
+      bone_linked = this.get_bone_by_MMD_name(MMD_name_linked);
+      if (!bone_linked) return;
+
+      bone = this.para.bone_dummy[MMD_name];
+      if (!bone)
+        bone = this.para.bone_dummy[MMD_name] = { quaternion:new THREE.Quaternion() };
+    }
+    else
+      return;
+  }
 
   const bone_MMD = bones_by_name[MMD_name];
   if (!bone_MMD) return;
@@ -8176,6 +8448,10 @@ MMD_bone_list.forEach(MMD_name=>{
           bone.quaternion.copy(q1);
       }
     }
+  }
+
+  if (bone_linked) {
+    bone_linked.quaternion.multiply(bone.quaternion);
   }
 });
 
@@ -8224,6 +8500,20 @@ if (!animation_enabled) {
 }
 else {
   this.getBoneNode('hips').quaternion.multiply(this.process_rotation(hips_rot, 'hips'));
+}
+
+if (this.para.bone_dummy['上半身2'])
+  this.getBoneNode('spine').quaternion.multiply(this.para.bone_dummy['上半身2'].quaternion);
+
+if (this.para.spine_to_hips_ratio) {
+  const spine_rot = q2.set(0,0,0,1).slerp(this.getBoneNode('spine').quaternion, this.para.spine_to_hips_ratio);
+  const spine_rot_inv = q3.copy(spine_rot).conjugate();
+
+  this.getBoneNode('hips').quaternion.multiply(spine_rot);
+  this.getBoneNode('leftUpperLeg').quaternion.premultiply(spine_rot_inv);
+  this.getBoneNode('rightUpperLeg').quaternion.premultiply(spine_rot_inv);
+  this.getBoneNode('spine').quaternion.premultiply(spine_rot_inv);
+//DEBUG_show(this.para.spine_to_hips_ratio+'/'+Date.now())
 }
 
 if (!animation_enabled || System._browser.camera.poseNet.enabled) {
@@ -8711,24 +9001,26 @@ if (data.OutlineEffect && VRM.use_OutlineEffect) {
 if (vrm_scale != 1) {
   mesh_obj.scale.set(vrm_scale, vrm_scale, vrm_scale);
 
-  if (!use_VRM1) {
-    vrm.springBoneManager.setCenter(mesh_obj);
-  }
-  else {
-// scale joints
-    for ( const joint of vrm.springBoneManager.joints ) {
-      joint.settings.stiffness *= vrm_scale;
-      joint.settings.hitRadius *= vrm_scale;
+  if (vrm.springBoneManager) {
+    if (!use_VRM1) {
+      vrm.springBoneManager.setCenter(mesh_obj);
     }
+    else {
+// scale joints
+      for ( const joint of vrm.springBoneManager.joints ) {
+        joint.settings.stiffness *= vrm_scale;
+        joint.settings.hitRadius *= vrm_scale;
+      }
 
 // scale colliders
-    for ( const collider of vrm.springBoneManager.colliders ) {
-      const shape = collider.shape;
-      if ( shape instanceof THREE.VRMSpringBoneColliderShapeCapsule ) {
-        shape.radius *= vrm_scale;
-        shape.tail.multiplyScalar( vrm_scale );
-      } else if ( shape instanceof THREE.VRMSpringBoneColliderShapeSphere ) {
-        shape.radius *= vrm_scale;
+      for ( const collider of vrm.springBoneManager.colliders ) {
+        const shape = collider.shape;
+        if ( shape instanceof THREE.VRMSpringBoneColliderShapeCapsule ) {
+          shape.radius *= vrm_scale;
+          shape.tail.multiplyScalar( vrm_scale );
+        } else if ( shape instanceof THREE.VRMSpringBoneColliderShapeSphere ) {
+          shape.radius *= vrm_scale;
+        }
       }
     }
   }
@@ -8792,6 +9084,7 @@ else {
   var data = {};
   var obj_list = [];
   var models = [];
+  var models_dummy = [];
 
   var v1, v2, v3, v4;
   var q1, q2, q3, q4;
@@ -8844,6 +9137,7 @@ SLX.style.visibility = ( enabled) ? 'inherit' : 'hidden';
     set use_OutlineEffect(v) { use_OutlineEffect = v; },
 
     get models() { return models; },
+    get models_dummy() { return models_dummy; },
 
     get_model: function (index) { return models[index]; },
 
@@ -8856,7 +9150,7 @@ SLX.style.visibility = ( enabled) ? 'inherit' : 'hidden';
 THREE = _THREE = self.THREE;
 
 for (let i = 0; i < MMD_SA_options.model_path_extra.length+1; i++) {
-  models[i] = new MMD_dummy_obj(i);
+  models_dummy[i] = models[i] = new MMD_dummy_obj(i);
 }
 // common init END
 
@@ -9154,10 +9448,20 @@ return this._obj;
 
       mesh_obj.prototype.show = function () {
 this._obj.visible = true;
+if (!threeX.enabled) {
+  this._obj.traverse(c=>{
+    if (c.isMesh) c.visible = true;
+  });
+}
       };
 
       mesh_obj.prototype.hide = function () {
 this._obj.visible = false;
+if (!threeX.enabled) {
+  this._obj.traverse(c=>{
+    if (c.isMesh) c.visible = false;
+  });
+}
       };
 
       const mesh_obj_by_id = {};
@@ -9537,6 +9841,12 @@ if (!c.matrixAutoUpdate) {
   c.matrix.copy(camera.matrix)
   c.matrixWorld.copy(camera.matrixWorld)
   c.projectionMatrix.copy(camera.projectionMatrix)
+}
+else {
+  if (c.fov != camera.fov) {
+    c.fov = camera.fov;
+    c.updateProjectionMatrix();
+  }
 }
       },
 
@@ -9999,19 +10309,19 @@ let VRM_mode;
 
 let vrm;
 let bones_by_name;
+let model_type;
 
-if (MMD_started) {
-  if (THREEX_enabled) {
-    VRM_mode = true;
-    vrm = model.model;
-  }
-  else {
-    bones_by_name = model.mesh.bones_by_name;
-  }
+if (THREEX_enabled && MMD_started) {
+  VRM_mode = true;
+  vrm = model.model;
+  model_type = 'VRM';
+}
+else {
+  bones_by_name = model.mesh.bones_by_name;
+  model_type = 'MMD';
 }
 
-const modelX = (VRM_mode) ? model : MMD_SA.THREEX.get_model(model._model_index);
-const model_type = (VRM_mode) ? 'VRM' : 'MMD';
+const modelX = (VRM_mode) ? model : ((MMD_started || !THREEX_enabled) ? MMD_SA.THREEX.get_model(model._model_index) : MMD_SA.THREEX.models_dummy[0]);
 
 if (VRM_mode) delete model.animation._single_frame;
 
@@ -10105,11 +10415,9 @@ const hips_q_inv = hips_q.clone().conjugate();
 const motionHipsHeight = v1.copy(motion_hips.position).applyQuaternion(q1.copy(motion_hips.quaternion).conjugate().premultiply(rig_rot)).y;
 
 let hips_height;
-if (!MMD_started) {
-  hips_height = 11.36464;
-}
-else if (THREEX_enabled) {
-  const vrmHipsY = model.para.pos0['hips'][1];//((!use_VRM1) ? vrm.humanoid.getBoneNode('hips') : vrm.humanoid?.getNormalizedBoneNode( 'hips' )).getWorldPosition( _vec3 ).y;
+// always use native model bone measuremenet if even the motion is loaded in MMD mode (e.g. loading FBX on app start)
+if (THREEX_enabled) {
+  const vrmHipsY = MMD_SA.THREEX.get_model(modelX.index).para.pos0['hips'][1] * ((MMD_started) ? 1 : modelX.model_scale);
   const vrmRootY = 0;//vrm.scene.getWorldPosition( _vec3 ).y;
 
   hips_height = Math.abs( vrmHipsY - vrmRootY );
@@ -10572,7 +10880,7 @@ onload(gltf);
 
       camera_auto_targeting: (function () {
         function targeting() {
-if (!target_current.enabled && ((target_current.enabled === false) || !target_current.condition || !target_current.condition())) {
+if (!target_current.enabled && ((target_current.enabled === false) || (target_current.condition && !target_current.condition()))) {
   MMD_SA.adjust_camera(target_current.id, null, v1.set(0,0,0));
   return;
 }
@@ -10591,13 +10899,13 @@ var model = threeX.get_model(0);
 
 var head_pos;
 var pos = v3.set(0,0,0);
-const head_pos_ref = (threeX.enabled) ? v1.fromArray(model.para.pos0['head']).sub(v2.fromArray(model.para.pos0['hips'])).multiplyScalar(VRM.vrm_scale) : v1.fromArray(model.mesh.bones_by_name["頭"].pmxBone.origin).sub(v2.fromArray(model.mesh.bones_by_name["上半身"].pmxBone.origin));
+const head_pos_ref = (threeX.enabled) ? v1.fromArray(model.para.pos0['head']).sub(v2.fromArray(model.para.pos0['hips'])).multiplyScalar(model.model_scale) : v1.fromArray(model.mesh.bones_by_name["頭"].pmxBone.origin).sub(v2.fromArray(model.mesh.bones_by_name["上半身"].pmxBone.origin));
 head_pos_ref.y += 0.8;
 const camera_lookAt = v4.fromArray(MMD_SA_options.camera_lookAt).add(v2.fromArray(MMD_SA.center_view_lookAt));
 if (1) {
   pos.add(MMD_SA.THREEX._THREE.MMD.getModels()[0].mesh.position);
   pos.add(camera_lookAt);
-  pos.add((MMD_SA.THREEX.enabled) ? model.process_position(v2.copy(model.getBoneNode('hips').position).setY(0)).multiplyScalar(VRM.vrm_scale) : model.mesh.bones_by_name['センター'].skinMatrix.decompose()[0].setY(0));
+  pos.add((MMD_SA.THREEX.enabled) ? model.process_position(v2.copy(model.getBoneNode('hips').position).setY(0)).multiplyScalar(model.model_scale) : model.mesh.bones_by_name['センター'].skinMatrix.decompose()[0].setY(0));
 
   head_pos = model.get_bone_position_by_MMD_name('頭').sub(model.get_bone_position_by_MMD_name('上半身')).add(v2.set(0,0.8,0).applyQuaternion(model.get_bone_rotation_by_MMD_name('頭')));
   head_pos.sub(head_pos_ref);
@@ -10968,6 +11276,8 @@ MMD_SA_options.texture_resolution_limit=2048
     MMD_SA_options.camera_lookAt = [0,MMD_SA_options.camera_position[1],0]
   if (!MMD_SA_options.camera_rotation)
     MMD_SA_options.camera_rotation = [0,0,0]
+  if (!MMD_SA_options.camera_fov)
+    MMD_SA_options.camera_fov = 50;
 //MMD_SA_options.use_random_camera=true
   if (MMD_SA_options.use_random_camera) {
     if (!MMD_SA_options.random_camera)
@@ -11833,23 +12143,6 @@ THREE.MMD.getModels().forEach(function (model) {
     const _r = MMD_SA_options.CircularSpectrum_radius || 10
     const _divider = 128
     const _cube_size = _r * 2 * Math.PI / (_divider * 2)
-/*
-    MMD_SA.GOML_head +=
-  '<geo id="CircularSpectrumGEO" type="Cube" param="' + [_cube_size,_cube_size,_cube_size].join(" ") + '" />\n'
-+ '<mtl id="CircularSpectrumMTL" type="MeshBasic" param="color:' + (MMD_SA_options.CircularSpectrum_color || '#0f0') + ';" />\n';
-
-    MMD_SA.GOML_scene +=
-  '<obj id="CircularSpectrumMESH" style="position:' + (MMD_SA_options.CircularSpectrum_position || [0,10,0]).join(" ") + '; scale:0;">\n';
-
-    for (let i = 0; i < _divider; i++) {
-      const _a = (i / _divider) * Math.PI * 2
-      MMD_SA.GOML_scene +=
-  '<mesh id="CircularSpectrum' + i + 'MESH" geo="#CircularSpectrumGEO" mtl="#CircularSpectrumMTL" style="position:' + [_r*Math.sin(_a),_r*Math.cos(_a),0].join(" ") + '; rotate:' + [0,0,-_a].join(" ") + ';" />\n'
-    }
-
-    MMD_SA.GOML_scene +=
-  '</obj>\n';
-*/
 
     MMD_SA_options.mesh_obj_preload_list.push({ id:'CircularSpectrumMESH', create:function () {
 const THREE = MMD_SA.THREEX.THREE;

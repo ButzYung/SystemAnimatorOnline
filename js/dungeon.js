@@ -1,4 +1,4 @@
-// (2023-01-17)
+// (2023-02-18)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -3321,12 +3321,11 @@ if (browser_native_mode && !webkit_window) {
 SA_fullscreen_stretch_to_cover = true
 
 document.addEventListener("DOMContentLoaded", function(e) {
-  if (Settings_default._custom_.DisableTransparency == "non_default")
-    document.body.style.backgroundColor = "black"
+//  if (Settings_default._custom_.DisableTransparency == "non_default") document.body.style.backgroundColor = "black";
 
   var d = MMD_SA_options.Dungeon
   for (var item_name in d.item_base) {
-console.log(item_name)
+//console.log(item_name)
     var item = d.item_base[item_name]
     if (item.sound) {
       item.sound.forEach(function (sound) {
@@ -3730,6 +3729,8 @@ if (!_key_pressed_when_character_clicked[e.keyCode]) {
 
   var _cursor_timerID
   window.addEventListener('SA_Dungeon_character_clicked', function (e) {
+if (MMD_SA.music_mode) return false;
+
 var d = MMD_SA_options.Dungeon
 var intersected = e.detail.intersected.sub(d.character.pos)
 
@@ -10924,20 +10925,19 @@ DEBUG_show("3D Resolution:" + (((is_default_res) && (Math.round(MMD_SA._renderer
      ,[
         {
           message: {
-  get content() { return '1. Normal\n2. UI off\n3. UI off + chroma key' + ((MMD_SA_options.user_camera.ML_models.enabled && (System._browser.overlay_mode == 0)) ? '\n4. Toggle camera display\n5. Toggle wireframe display\n6. Toggle debug info\n7. Done' : '\n4. Done'); }
+  get content() { return '1. User interface: ' + ((System._browser.overlay_mode == 0) ? 'ON' : (System._browser.overlay_mode == 1) ? 'OFF' : 'OFF + chroma key') + ((MMD_SA_options.user_camera.ML_models.enabled && (System._browser.overlay_mode == 0)) ? '\n2. Camera display: ' + ((MMD_SA_options.user_camera.display.video.hidden) ? 'OFF' : 'ON') + '\n3. Wireframe display: ' + ((MMD_SA_options.user_camera.display.wireframe.hidden) ? 'OFF' : 'ON') + '\n4. Mocap debug display: ' + ((MMD_SA_options.user_camera.ML_models.debug_hidden) ? 'OFF' : 'ON') + '\n5. Done' : '\n2. Done'); }
+// ,para: { no_word_break:true }
  ,bubble_index: 3
  ,get branch_list() {
 return [
   { key:1, branch_index:12 },
+].concat((MMD_SA_options.user_camera.ML_models.enabled && (System._browser.overlay_mode == 0)) ? [
   { key:2, branch_index:13 },
   { key:3, branch_index:14 },
-].concat((MMD_SA_options.user_camera.ML_models.enabled && (System._browser.overlay_mode == 0)) ? [
   { key:4, branch_index:15 },
-  { key:5, branch_index:16 },
-  { key:6, branch_index:17 },
-  { key:7 }
+  { key:5 }
 ] : [
-  { key:4 }
+  { key:2 }
 ]);
   }
           }
@@ -10947,8 +10947,10 @@ return [
      ,[
         {
   func: function () {
-System._browser.overlay_mode = 0
-DEBUG_show('Overlay Mode:Normal', 3)
+let mode = System._browser.overlay_mode
+if (++mode > 2)
+  mode = 0;
+System._browser.overlay_mode = mode;
   }
  ,goto_branch: 11
         }
@@ -10957,8 +10959,7 @@ DEBUG_show('Overlay Mode:Normal', 3)
      ,[
         {
   func: function () {
-System._browser.overlay_mode = 1
-DEBUG_show('Overlay Mode:UI off', 3)
+MMD_SA_options.user_camera.display.video.hidden = !MMD_SA_options.user_camera.display.video.hidden;
   }
  ,goto_branch: 11
         }
@@ -10967,8 +10968,7 @@ DEBUG_show('Overlay Mode:UI off', 3)
      ,[
         {
   func: function () {
-System._browser.overlay_mode = 2
-DEBUG_show('Overlay Mode:UI off + chroma key', 3)
+MMD_SA_options.user_camera.display.wireframe.hidden = !MMD_SA_options.user_camera.display.wireframe.hidden;
   }
  ,goto_branch: 11
         }
@@ -10977,28 +10977,8 @@ DEBUG_show('Overlay Mode:UI off + chroma key', 3)
      ,[
         {
   func: function () {
-MMD_SA_options.user_camera.display.video.hidden = !MMD_SA_options.user_camera.display.video.hidden;
-DEBUG_show('Camera display:' + ((MMD_SA_options.user_camera.display.video.hidden) ? 'HIDDEN' : 'VISIBLE'), 3)
-  }
- ,goto_branch: 11
-        }
-      ]
-// 16
-     ,[
-        {
-  func: function () {
-MMD_SA_options.user_camera.display.wireframe.hidden = !MMD_SA_options.user_camera.display.wireframe.hidden;
-DEBUG_show('Wireframe display:' + ((MMD_SA_options.user_camera.display.wireframe.hidden) ? 'HIDDEN' : 'VISIBLE'), 3)
-  }
- ,goto_branch: 11
-        }
-      ]
-// 17
-     ,[
-        {
-  func: function () {
 MMD_SA_options.user_camera.ML_models.debug_hidden = !MMD_SA_options.user_camera.ML_models.debug_hidden;
-DEBUG_show('Debug info:' + ((MMD_SA_options.user_camera.ML_models.debug_hidden) ? 'HIDDEN' : 'VISIBLE'), 3)
+DEBUG_show();
   }
  ,goto_branch: 11
         }
@@ -12013,7 +11993,7 @@ if (e.load_area) {
   this.restart(e.load_area.id, ((e.load_area.refresh_state != null) ? e.load_area.refresh_state : 2))
 }
 
-if (e.goto_branch) {
+if (e.goto_branch != null) {
   this.run_event(null, e.goto_branch, 0)
 }
 
