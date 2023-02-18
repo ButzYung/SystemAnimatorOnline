@@ -1,4 +1,4 @@
-// System Animator core - EXTRA (2022-12-20)
+// System Animator core - EXTRA (2023-02-18)
 
 var use_SA_gimage_emulation
 
@@ -522,6 +522,8 @@ function SA_load_body() {
 + '<input style="font-family:Arial; font-size:12px" type="button" value="Cancel" onclick="Lbrowse_for_file.style.visibility=\'hidden\'">\n'
 + '</div>\n'
 
++ '<div id="Lmenu_host" style="position:absolute; top:0px; left:0px;">\n'
+
 + '<div id="C_media_control" onmousedown="event.stopPropagation();" style="position:absolute; width:150px; height:45px; border:1px solid black; font-family:Symbola; font-size:20px; color:black; background-color:rgba(255,255,255,0.5); z-index:498; visibility:hidden">\n'
 + '<div class="MC_button" style="left:0px"  ><span class="MC_button_s" id="MC_play"     onclick="SL_MC_Play()"     onmouseover="SL_MC_MouseEnter({Name:this.id})">&#x23EF;</span></div>\n'
 + '<div class="MC_button" style="left:30px" ><span class="MC_button_s" id="MC_stop"     onclick="SL_MC_Stop()"     onmouseover="SL_MC_MouseEnter({Name:this.id})">&#x25A0;</span></div>\n'
@@ -530,8 +532,6 @@ function SA_load_body() {
 + '<div class="MC_button" style="left:120px"><span class="MC_button_s" id="MC_sound"    onclick="SL_MC_Sound()"    onmouseover="SL_MC_MouseEnter({Name:this.id})">&#x1F50A;</span></div>\n'
 + '<div style="position:absolute; top:30px; left:0px;"><input id="MC_seek" class="MC_button_s" style="width:140px; height:20px;" type="range" min="0" max="100" step="1" value="0" onmouseover="SL_MC_MouseEnter({Name:this.id})" onmousedown="this._update_disabled=true" onmouseup="this._update_disabled=false" onchange="try { if (this._media_obj) { var t=parseInt(this.value)/100*this._media_obj.duration; var mod=(t-this._media_obj.currentTime)/30; if (mod) SL_MC_Seek(mod, true, true); } } catch (err) {}" /></div>\n'
 + '</div>\n'
-
-+ '<div id="Lmenu_host" style="position:absolute; top:0px; left:0px;">\n'
 
 + '<div id="Lquick_menu" style="position:absolute; visibility:hidden; background-color:rgba(68,79,91, 0.66); left:2px; width:' + (18*((is_mobile)?2:1)*5+2) + 'px; height:20px; z-index:499; border:1px solid gray; border-radius:5px; transform-origin:0% 50%;">\n'
 + ' <div style="position:absolute; top:1px; left:1px">\n'
