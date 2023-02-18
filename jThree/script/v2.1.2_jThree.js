@@ -1,4 +1,4 @@
-// (2023-02-06)
+// (2023-02-18)
 
 /*!
  * jThree JavaScript Library v2.1.2
@@ -39080,6 +39080,7 @@ MMD_SA._renderer = that;
 						height = h || MMD_SA_options.height;
 //						renderer.setSize( width, height );
 MMD_SA.THREEX.renderer.setSize( width, height );
+window.dispatchEvent(new CustomEvent('SA_MMD_SL_resize'));
 
 						if ( renderer.__camera ) {
 //							renderer.__camera.resize( width, height );
