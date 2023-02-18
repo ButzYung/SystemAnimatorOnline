@@ -1,4 +1,4 @@
-// (2023-02-06)
+// (2023-02-18)
 
 MMD_SA.fn = {
 /*
@@ -19,6 +19,10 @@ var load_length = MMD_SA_options.motion.length + (MMD_SA_options.x_object.length
 //console.log(MMD_SA_options.motion.length,MMD_SA_options.x_object.length +1,this.load_length_extra)
 // extra model
 load_length += MMD_SA_options.model_path_extra.length
+
+// FBX motions need to wait until model load
+if (!this._ready_for_model_creation[0])
+  load_length -= MMD_SA_options.motion.filter(m=>/\.fbx$/i.test(m.path)).length;
 
 if (this.length < load_length) {
   DEBUG_show('(' + parseInt(this.length/load_length*100) + '% loaded)')
@@ -842,20 +846,11 @@ MMD_SA.reset_camera = function (check_event) {
   }
 
   var tc = this._trackball_camera
-//  var _position0 = tc.position0.clone()
-//  var _target0 = tc.target0.clone()
-//  tc.reset()
-//DEBUG_show(_position0.toArray()+'/'+_target0.toArray(),0,1)
-
-//  center_view = MMD_SA.TEMP_v3.set(center_view[0], center_view[1], center_view[2]).applyEuler(MMD_SA._v3a.set(MMD_SA_options.camera_rotation[0], MMD_SA_options.camera_rotation[1], MMD_SA_options.camera_rotation[2])).toArray()
-//DEBUG_show(center_view,0,1)
   tc.position0.set(camera_position[0]+center_view[0], camera_position[1]+center_view[1], camera_position[2]+center_view[2])
-//DEBUG_show(camera_position+'\n'+tc.position0.toArray(),0,1)
-//  var _lookAt = tc.object._lookAt
-//DEBUG_show(_lookAt.toArray()+'/'+center_view_lookAt,0,1)
-//  tc.target0.set(_lookAt.x+center_view_lookAt[0], _lookAt.y+center_view_lookAt[1], _lookAt.z+center_view_lookAt[2])
   tc.target0.set(model_pos.x+center_view_lookAt[0]+MMD_SA_options.camera_lookAt[0], model_pos.y+center_view_lookAt[1]+MMD_SA_options.camera_lookAt[1], model_pos.z+center_view_lookAt[2]+MMD_SA_options.camera_lookAt[2])
   tc.reset()
+
+  tc.object.updateProjectionMatrix();
 
 //  tc.position0 = _position0
 //  tc.target0 = _target0
