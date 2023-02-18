@@ -1,5 +1,5 @@
 // Media control for Silverlight and HTML5 Canvas
-// (2022-11-30)
+// (2023-02-18)
 
 var EV_SL_MediaEnded, EV_SL_MediaOpened
 
@@ -211,13 +211,18 @@ function SL_MC_Play(ignore_linked_control) {
 
 //play=52,4, pause=59,;
   if (SL_MC_simple_mode) {
-    if (SL_MC_video_obj.paused)
-      SL_MC_video_obj.play()
+    if (SL_MC_video_obj.paused) {
+      SL_MC_video_obj.play();
+
+      System._browser.video_capture.resume();
+    }
     else {
       SL_MC_video_obj.pause()
       var m = parseInt(SL_MC_video_obj.currentTime/60)
       var s = parseInt((SL_MC_video_obj.currentTime - m*60)*1000)/1000
       DEBUG_show('PAUSED(' + m + 'm' + s + 's)', 2)
+
+      System._browser.video_capture.pause();
     }
   }
   else if (self.MMD_SA) {
@@ -226,6 +231,8 @@ function SL_MC_Play(ignore_linked_control) {
       ao._MMD_SA_on_playing_skipped = (ao.currentTime > 0)
       ao.play()
       jThree.MMD.play(true)
+
+      System._browser.video_capture.resume();
     }
     else {
       ao.pause()
@@ -233,6 +240,8 @@ function SL_MC_Play(ignore_linked_control) {
       var m = parseInt(ao.currentTime/60)
       var s = parseInt((ao.currentTime - m*60)*1000)/1000
       DEBUG_show('PAUSED(' + m + 'm' + s + 's)', 2)
+
+      System._browser.video_capture.pause();
     }
   }
   else if (use_WMP && WMP.in_use) {
