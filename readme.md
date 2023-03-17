@@ -78,9 +78,9 @@ Lastly, click the Snapshot icon and a still photo will be generated. This can be
 
 XR Animator inherits from System Animator, my desktop gadget project which have been active for many years. Lots of time, efforts and money have been spent to keep these projects free and running. If you like our works, please consider making a donation. Your financial support is needed to keep us going!🙏
 
-### 🙏[Donate via PayPal.Me](https://www.paypal.me/AnimeThemeGadgets)
+- 🙏[Donate via PayPal.Me](https://www.paypal.me/AnimeThemeGadgets)
 
-### 🟡Donate via Bitcoin ( 1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p )
+- 🟡Donate via Bitcoin ( 1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p )
 
 # About System Animator
 
@@ -97,7 +97,11 @@ https://www.animetheme.com/sidebar/
 
 ### 📖Background Story
 
-System Animator was born more than 10 years ago as a personal and tiny 100-line-ish JavaScript desktop gadget project for Windows Vista which shows an animated rocket Anime girl as a CPU meter (the animation is still in XR Animator). As time goes by, I decided to add more features, multi-purpose system meter, music visualizer, 3D/MMD support, animated wallpaper engine, RPG engine and eventually what you see in XR Animator. The codebase has grown exponentially while the core is still an Internet-Explorer-based JavaScript gadget, and things were becoming more and more clumsy, to a point when I had to decide whether to rewrite everything from scratch to match the modern coding standard (open source, module based, etc). However, I gave up and decided to carry on with what I have written, as a total restart would require too much time and efforts, probably not worthy as a personal project. Besides, as the rule of programming says, "If it works, don't touch it" LOL. Eventually, I decided to put the project on Github so technically speaking it is still open source, though I have to admit that some of the codes are outdated, clumsy and confusing. Everything is fine if you are just an end-user of XR Animator/System Animator as an app, but if you want to build your own things from my codes, be warned that they can be pretty incomprehensible LOL
+System Animator was born more than 10 years ago as a personal and tiny 100-line-ish JavaScript desktop gadget project for Windows Vista which shows an animated rocket Anime girl as a CPU meter (the animation is still in XR Animator).
+
+As time goes by, I decided to add more features, multi-purpose system meter, music visualizer, 3D/MMD support, animated wallpaper engine, RPG engine and eventually what you see in XR Animator. The codebase has grown exponentially while the core is still an Internet-Explorer-based JavaScript gadget, and things were becoming more and more clumsy, to a point when I had to decide whether to rewrite everything from scratch to match the modern coding standard (open source, module based, etc). However, I gave up and decided to carry on with what I have written, as a total restart would require too much time and efforts, probably not worthy as a personal project. Besides, as the rule of programming says, "If it works, don't touch it" LOL
+
+Eventually, I decided to put the project on Github for my own convenience, but technically speaking you can consider it open source, though I have to admit that some of the codes are outdated, clumsy and confusing. Everything is fine if you are just an end-user of XR Animator/System Animator as an app, but if you want to build your own things from my codes, be warned that they can be pretty incomprehensible LOL
 
 # Other demos based on System Animator Online
 
