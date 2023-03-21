@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-02-18)
+// (2023-03-21)
 
 var use_full_spectrum = true
 
@@ -641,7 +641,7 @@ MMD_SA._click_to_reset = null;
     if (webkit_electron_mode)
       System.Gadget.Settings.writeString("LABEL_3D_model_path", src);
   }
-  else if (item.isFileSystem && /([^\/\\]+)\.(vmd|bvh)$/i.test(src) || (item.isFileSystem && /([^\/\\]+)\.(fbx)$/i.test(src) && !MMD_SA.THREEX.enabled)) {
+  else if (item.isFileSystem && /([^\/\\]+)\.(vmd|bvh)$/i.test(src) || (item.isFileSystem && /([^\/\\]+)\.(fbx)$/i.test(src) && (!MMD_SA.THREEX.enabled || MMD_SA.THREEX.utils.convert_FBX_motion_to_VMD))) {
     const filename = RegExp.$1;
 
     if (MMD_SA.music_mode) {
@@ -963,7 +963,20 @@ if (!ao.ontimeupdate)
       DEBUG_show('(motion tracking required)', 3)
     }
   }
-  else if (item.isFileSystem && /([^\/\\]+)\.(json)$/i.test(src)) {}
+  else if (item.isFileSystem && /([^\/\\]+)\.(json)$/i.test(src)) {
+    const response = fetch(toFileProtocol(src)).then(response=>{ response.json().then(json=>{
+      if (json.System_Animator_motion_para) {
+        for (const name in json.System_Animator_motion_para) {
+          if (MMD_SA_options.motion_para[name])
+            MMD_SA_options.motion_para[name] = Object.assign(MMD_SA_options.motion_para[name]||{}, json.System_Animator_motion_para[name]);
+        }
+        DEBUG_show('✅Motion config imported', 3);
+      }
+      else {
+        DEBUG_show('(Unsupported JSON config)', 3);
+      }
+    })});
+  }
   else {
     if (!item._winamp_JSON)
       DragDrop_install(item)
@@ -1358,7 +1371,7 @@ this._kissing = MMD_SA.meter_motion_disabled = false
         condition: function (is_bone_action, objs) {
 if (objs._model_index) return false
 
-var busy = MMD_SA._busy_mode1_ || !MMD_SA_options.look_at_screen
+var busy = MMD_SA._busy_mode1_ || !MMD_SA_options.look_at_screen || System._browser.camera.ML_enabled;
 if (MMD_SA._hit_hip_ || ((MMD_SA_options.model_para_obj._cover_undies != false) && (MMD_SA.MMD.motionManager.para_SA._cover_undies != false) && !busy && !MMD_SA.custom_action_default.kissing.action._kissing && this._condition(is_bone_action, objs, (((MMD_SA._rx*180/Math.PI) % 360 > 45 * ((MMD_SA.use_jThree) ? 0.75 : 1)) )/* && !Audio_BPM.vo.motion_by_song_name_mode*/) )) {
   this._undies_visible = true
 
@@ -1621,6 +1634,7 @@ function _finalize() {
   mm.filename = name_new
 
   mm.para_SA = MMD_SA_options.motion_para[name_new] = MMD_SA_options.motion_para[name_new]||{};
+
   for (const p of [['look_at_screen',false], ['random_range_disabled',true], ['motion_tracking_enabled',true], ['motion_tracking_upper_body_only',true]]) {
     if (mm.para_SA[p[0]] == null)
       mm.para_SA[p[0]] = p[1];
@@ -2772,9 +2786,9 @@ for (var i = 0, i_length = msg_line.length; i < i_length; i++) {
   if (MMD_SA_options.SpeechBubble_branch) {
     if (MMD_SA_options.SpeechBubble_branch.RE.test(msg_line[i]))
       branch_index = RegExp.$1
-    let fillStyle = (branch_index > -1) ? MMD_SA_options.SpeechBubble_branch.fillStyle || 'Navy' : 'black';
+    let fillStyle = (branch_index != -1) ? MMD_SA_options.SpeechBubble_branch.fillStyle || 'Navy' : 'black';
     if (MMD_SA_options.SpeechBubble_branch.confirm_keydown && (this._branch_key_ != null)) {
-      if ((branch_index > -1) && (branch_index == this._branch_key_)) {
+      if ((branch_index != -1) && (branch_index == this._branch_key_)) {
         fillStyle = 'red'
       }
     }
@@ -3063,16 +3077,22 @@ return r
   }
 
  ,get_bone_position: (function () {
-    var TEMP_m4;
+    var TEMP_m4, q1;
     window.addEventListener("jThree_ready", function () {
       TEMP_m4 = new THREE.Matrix4();
+      q1 = new THREE.Quaternion();
     });
 
-    return function (mesh, name, parent_to_stop) {
+    return function (mesh, name, parent_to_stop, A_pose_enforced) {
+function convert_to_A_pose(bone) {
+  return (!A_pose_enforced || !is_T_pose) ? bone.quaternion : q1.fromArray(MMD_SA.THREEX.utils.convert_T_pose_rotation_to_A_pose(bone.name, bone.quaternion.toArray()));
+}
+
 var pos = new THREE.Vector3();
 
 const mesh_by_number = typeof mesh == 'number';
 const is_THREEX = (mesh_by_number) ? MMD_SA.THREEX.enabled : !!mesh.model;
+const is_T_pose = MMD_SA.THREEX.get_model((mesh_by_number) ? mesh : mesh._model_index).is_T_pose;
 
 var model, bone;
 if (is_THREEX) {
@@ -3087,6 +3107,9 @@ else {
 
 if (!bone) return pos;
 
+// should be safe and save some headaches without the need to set A_pose_enforced manually, since MMD bones should always operate on A pose
+if ((A_pose_enforced == null) && !mesh.model) A_pose_enforced = true;
+
 if (parent_to_stop && (typeof parent_to_stop == "string")) {
   parent_to_stop = (is_THREEX) ? model.get_bone_by_MMD_name(parent_to_stop) : mesh.bones_by_name[parent_to_stop];
 }
@@ -3095,7 +3118,7 @@ pos.copy(bone.position);
 var _bone = bone;
 while ((_bone.parent !== mesh) && (_bone.parent !== parent_to_stop)) {
   _bone = _bone.parent;
-  pos.applyMatrix4(TEMP_m4.makeRotationFromQuaternion(_bone.quaternion).setPosition(_bone.position));
+  pos.applyMatrix4(TEMP_m4.makeRotationFromQuaternion(convert_to_A_pose(_bone)).setPosition(_bone.position));
 }
 if (is_THREEX) pos.multiply(mesh.scale);
 if (!parent_to_stop)
@@ -3105,7 +3128,19 @@ return pos;
     };
   })()
 
- ,get_bone_rotation: function (mesh, name, parent_only, parent_to_stop) {
+ ,get_bone_rotation: (()=>{
+    var q1;
+    window.addEventListener('jThree_ready', ()=>{
+      q1 = new THREE.Quaternion();
+    });
+
+    return function (mesh, name, parent_only, parent_to_stop, A_pose_enforced) {
+function convert_to_A_pose(bone) {
+  return (!A_pose_enforced || !is_T_pose) ? bone.quaternion : q1.fromArray(MMD_SA.THREEX.utils.convert_T_pose_rotation_to_A_pose(bone.name, bone.quaternion.toArray()));
+}
+
+const is_T_pose = MMD_SA.THREEX.get_model(mesh._model_index).is_T_pose;
+
 var rot = new THREE.Quaternion();
 var bone = (typeof name == "string") ? mesh.bones_by_name[name] : mesh.bones[name]
 if (!bone)
@@ -3115,22 +3150,23 @@ if (parent_to_stop && (typeof parent_to_stop == "string"))
   parent_to_stop = mesh.bones_by_name[parent_to_stop]
 
 if (!parent_only)
-  rot.copy(bone.quaternion)
+  rot.copy(convert_to_A_pose(bone));
 
 var _bone = bone;
 while ((_bone.parent !== mesh) && (_bone.parent !== parent_to_stop)) {
   _bone = _bone.parent;
 // parent x self
-  rot.multiplyQuaternions(_bone.quaternion, rot)
+  rot.multiplyQuaternions(convert_to_A_pose(_bone), rot)
 }
 if (!parent_to_stop)
   rot.multiplyQuaternions(mesh.quaternion, rot)
 
 return rot.normalize();
-  }
+    };
+  })()
 
- ,get_bone_rotation_parent: function (mesh, name, parent_to_stop) {
-return this.get_bone_rotation(mesh, name, true, parent_to_stop)
+ ,get_bone_rotation_parent: function (mesh, name, parent_to_stop, A_pose_enforced) {
+return this.get_bone_rotation(mesh, name, true, parent_to_stop, A_pose_enforced)
   }
 
  ,clean_axis_rotation: (function () {
@@ -5626,14 +5662,20 @@ constructor(id) {
   this.pos_last = new THREE.Vector3();
   this.target_last = new THREE.Vector3();
 
-  Camera_mod.#mod_list[id] = this;
+  this.up_z_last = 0;
+
+  Camera_mod.mod_list[id] = this;
 }
 
-adjust(pos, target) {
+adjust(pos, target, up_z) {
   const obj = MMD_SA._trackball_camera;
 
   Camera_mod.c_pos.copy(obj.object.position).sub(Camera_mod.pos_last);
   Camera_mod.c_target.copy(obj.target).sub(Camera_mod.target_last);
+
+  if (Math.abs(Camera_mod.up_z_last) > 0.0001) {
+    Camera_mod.rotate_up_z(Camera_mod.c_up, obj.object.up, -Camera_mod.up_z_last);
+  }
 
   if (pos) {
     Camera_mod.pos_last.sub(this.pos_last).add(pos);
@@ -5645,31 +5687,56 @@ adjust(pos, target) {
     obj.target.copy(Camera_mod.c_target).add(Camera_mod.target_last);
     this.target_last.copy(target);
   }
+  if (up_z != null) {
+    Camera_mod.up_z_last = Camera_mod.up_z_last - this.up_z_last + up_z;
+    Camera_mod.rotate_up_z(obj.object.up, Camera_mod.c_up, Camera_mod.up_z_last);
+    this.up_z_last = up_z;
+  }
 }
 
-static #mod_list = {};
+static rotate_up_z(up_target, up, z) {
+  const obj = MMD_SA._trackball_camera;
+
+  const axis = Camera_mod.#v1.copy(obj.object.position).sub(obj.target).normalize();
+  const up_rot = Camera_mod.#q1.setFromAxisAngle(axis, z);
+  return up_target.copy(up).applyQuaternion(up_rot);
+}
+
+static #up = new THREE.Vector3(0,1,0);
+static #q1 = new THREE.Quaternion();
+static #q2 = new THREE.Quaternion();
+static #v1 = new THREE.Vector3();
+static #v2 = new THREE.Vector3();
 
 static c_pos = new THREE.Vector3();
 static c_target = new THREE.Vector3();
 static pos_last = new THREE.Vector3();
 static target_last = new THREE.Vector3();
 
+static c_up = new THREE.Vector3();
+static up_z_last = 0;
+
+static mod_list = {};
 static get_mod(id) {
-  return Camera_mod.#mod_list[id] || new Camera_mod(id);
+  return Camera_mod.mod_list[id] || new Camera_mod(id);
 }
       }
 
-      window.addEventListener('MMDCameraReset_after', ()=>{
+      window.addEventListener('MMDCameraReset_after', (e)=>{
+        if (e.detail.enforced === false) return;
+
         var obj = MMD_SA._trackball_camera;
         obj.object.position.add(camera_mod.pos_last);
         obj.target.add(camera_mod.target_last);
+
+        camera_mod.rotate_up_z(obj.object.up, obj.object.up, camera_mod.up_z_last);
       });
     });
 
-    return function (id, pos, target) {
+    return function (id, pos, target, up) {
 if (!MMD_SA.MMD_started) return;
 
-camera_mod.get_mod(id).adjust(pos, target);
+camera_mod.get_mod(id).adjust(pos, target, up);
 
 return [camera_mod.c_pos, camera_mod.c_target];
     };
@@ -8125,7 +8192,10 @@ if (use_VRM1) {
   data.renderer.outputEncoding = THREEX.sRGBEncoding;
 
 // https://threejs.org/docs/#manual/en/introduction/Color-management
-  THREEX.ColorManagement.legacyMode = false;
+// r149 => r150
+// https://github.com/mrdoob/three.js/wiki/Migration-Guide#r149--r150
+//  THREEX.ColorManagement.legacyMode = false;
+  THREEX.ColorManagement.enabled = true;
 
 // Install GLTFLoader plugin
   GLTF_loader.register((parser) => {
@@ -8140,7 +8210,6 @@ if (use_VRM1) {
 
       window.addEventListener('jThree_ready', ()=>{
 rot_parent_upper_body_inv = new THREE.Quaternion();
-rot_parent_upper_body_offset = new THREE.Quaternion();
       });
 
       window.addEventListener("MMDStarted", ()=>{
@@ -8384,9 +8453,15 @@ return;
 
     rot_parent_upper_body_inv.multiply(bone.quaternion);
   }
-
   rot_parent_upper_body_inv.conjugate();
-  System._browser.camera.poseNet.upper_body_rotation_limiter(rot_parent_upper_body_inv, rot_parent_upper_body_offset);
+
+// probably need to redo for animation.mixer to support look_at_screen
+  if (System._browser.camera.poseNet.enabled) {
+    const frames = System._browser.camera.poseNet.frames;
+    rot_parent_upper_body_inv.multiply(frames._rot_camera_offset);
+// not used yet (needs updates anyways)
+    frames.upper_body_rotation_limiter(rot_parent_upper_body_inv);
+  }
 }
 
 // bone START
@@ -8533,12 +8608,13 @@ if (!animation_enabled || System._browser.camera.poseNet.enabled) {
 }
 
 //両目
-const eye_bone = bones_by_name['両目']
-const eyeL = this.getBoneNode('leftEye')
-const eyeR = this.getBoneNode('rightEye')
-q1.set(0,0,0,1).slerp(eye_bone.quaternion, 0.5);
-if (eyeL) eyeL.quaternion.premultiply(this.process_rotation(q2.copy(q1), 'leftEye')).slerp(q2.set(0,0,0,1), 0.5);
-if (eyeR) eyeR.quaternion.premultiply(this.process_rotation(q2.copy(q1), 'rightEye')).slerp(q2.set(0,0,0,1), 0.5);
+
+const eye_bone = bones_by_name['両目'];
+
+const lookAt = vrm.lookAt;
+
+const eye_aa = eye_bone.quaternion.toAxisAngle();
+lookAt.lookAt(lookAt.getLookAtWorldPosition(v1).add( this.process_position(v2.set(0,0,100)).applyQuaternion(this.get_bone_rotation_by_MMD_name('頭').multiply(q1.setFromAxisAngle(eye_aa[0], eye_aa[1]*5))) ));
 
 // bone END
 
@@ -8546,6 +8622,7 @@ if (eyeR) eyeR.quaternion.premultiply(this.process_rotation(q2.copy(q1), 'rightE
 // morph START
 
 const blendshape_weight = {};
+
 const MMD_morph_weight = mesh_MMD.geometry.morphs_weight_by_name;
 MMD_morph_list.forEach(name => {
   const w = MMD_morph_weight[name]
@@ -8689,7 +8766,7 @@ if (!mesh.matrixAutoUpdate) {
 
     let vrm_list = [];
 
-    let rot_parent_upper_body_inv, rot_parent_upper_body_offset;
+    let rot_parent_upper_body_inv;
 
     const is_MMD_bone_motion_mixed = new RegExp(toRegExp(['上半身','肩'],'|'));
     const is_MMD_bone_motion_skipped = new RegExp(toRegExp(['センター','下半身','足','ひざ'],'|'));
@@ -9220,9 +9297,8 @@ if (MMD_SA_options.THREEX_options.use_MMD) {
   }
 }
 
-// r148
-// https://github.com/mrdoob/three.js/issues/25332
-const GLTFLoader_module = await import(System.Gadget.path + '/three.js/GLTFLoader.js');
+// 2023-03-11
+const GLTFLoader_module = await import(System.Gadget.path + '/three.js/loaders/GLTFLoader.js');
 Object.assign(self.THREE, GLTFLoader_module);
 
 //const BVHLoader_module = await import(System.Gadget.path + '/three.js/BVHLoader.js'); Object.assign(self.THREE, BVHLoader_module);
@@ -9894,8 +9970,12 @@ c.position.copy(light.position);
 c.color.copy(light.color);
 c_max = Math.max(c.color.r, c.color.g, c.color.b);
 
-threeX.renderer.obj.physicallyCorrectLights=true;
-if (threeX.renderer.obj.physicallyCorrectLights) c_max *= 5;
+// r149 => r150
+// https://github.com/mrdoob/three.js/wiki/Migration-Guide#r149--r150
+//threeX.renderer.obj.physicallyCorrectLights=true;
+//if (threeX.renderer.obj.physicallyCorrectLights) c_max *= 5;
+threeX.renderer.obj.useLegacyLights = false;
+if (!threeX.renderer.obj.useLegacyLights) c_max *= 5;
 
 if (c.type == 'DirectionalLight') {
   if (use_VRM1)
@@ -10002,23 +10082,16 @@ q1.fromArray(rot);
 
 if (RegExp.$3.indexOf('捩') != -1) {
 // It seems that 捩 bone rotation is always screwed for any modified T-pose MMD model. Just ignore it for now (you don't really need to modify it to transfer this rotation to other non-MMD model anyways).
-/*
-  const aa = q1.toAxisAngle();
-  if (!aa[1]) return
-  const sign = (Math.sign(aa[0].x) == dir) ? 1 : -1;
-  q1.setFromAxisAngle(v1.set(dir*sign,0,0), aa[1]);
-//q1.set(0,0,0,1)
-//console.log(name, aa[0].toArray())
-*/
+// NOTE: May need to be calculated in the future since this may affect MMD_SA.get_bone_position()/.get_bone_position() calculations...?
 }
-else {
+else if (RegExp.$3.indexOf('+') == -1) {
   const rot_axis = (RegExp.$2 == '肩') ? rot_shoulder_axis : rot_arm_axis;//rot_arm_axis;//
 
 // NOTE: It seems rotating the axis of rot by q is the same as (q x rot x -q)
 //  const aa = q1.toAxisAngle(); q1.setFromAxisAngle(aa[0].applyQuaternion(rot_axis[dir]), aa[1])
   q1.premultiply(rot_axis[dir]).multiply(rot_axis[-dir]);
 
-  if ((RegExp.$2 == '腕') && (RegExp.$3 != '+')) {
+  if (RegExp.$2 == '腕') {
     q1.premultiply(rot_arm_axis[-dir]);
     if (!RegExp.$3) q1.premultiply(rot_shoulder_axis[dir]);
   }
@@ -10098,6 +10171,7 @@ mixamorigRightToeBase:'rightToes',
         },
       },
 
+      convert_FBX_motion_to_VMD: true,
       load_FBX_motion: (function () {
         var loader;
         var _interp;
@@ -10114,7 +10188,7 @@ else {
   });
 }
 
-// 2023-01-19
+// 2023-03-11
 const FBXLoader_module = await System._browser.load_script(System.Gadget.path + '/three.js/FBXLoader.js', true);
 for (const name in FBXLoader_module) THREE[name] = FBXLoader_module[name];
         }
@@ -10198,6 +10272,8 @@ function MMD_LR(name) {
     dir = '右';
   else if (/^(l|r)_/i.test(name) || /_(l|r)$/i.test(name) || /_(l|r)_/i.test(name))
     dir = (RegExp.$1.toLowerCase() == 'r') ? '右' : '左';
+  else if (/_(L|R)/.test(name))
+    dir = (RegExp.$1 == 'R') ? '右' : '左';
 
   return dir;
 }
@@ -10305,13 +10381,14 @@ return rig_map;
 
           return loader.loadAsync( toFileProtocol(url) ).then( ( asset ) => {
 const MMD_started = MMD_SA.MMD_started;
+const to_VMD = !THREEX_enabled || !MMD_started || this.convert_FBX_motion_to_VMD;
 let VRM_mode;
 
 let vrm;
 let bones_by_name;
 let model_type;
 
-if (THREEX_enabled && MMD_started) {
+if (!to_VMD) {
   VRM_mode = true;
   vrm = model.model;
   model_type = 'VRM';
@@ -10321,9 +10398,9 @@ else {
   model_type = 'MMD';
 }
 
-const modelX = (VRM_mode) ? model : ((MMD_started || !THREEX_enabled) ? MMD_SA.THREEX.get_model(model._model_index) : MMD_SA.THREEX.models_dummy[0]);
+const modelX = (!to_VMD) ? model : ((!THREEX_enabled) ? MMD_SA.THREEX.get_model(model._model_index) : MMD_SA.THREEX.models_dummy[0]);
 
-if (VRM_mode) delete model.animation._single_frame;
+if (!to_VMD) delete model.animation._single_frame;
 
 let rig_name;
 let clip = THREE.AnimationClip.findByName( asset.animations, 'mixamo.com' ); // extract the AnimationClip
@@ -10372,9 +10449,12 @@ Object.keys(axis_vector).forEach(dir=>{
   const axis = axis_vector[dir];
   if (dir == 'y') {
     for (const name of ['上半身','上半身2','上半身3','首']) {
-      const bone = asset.getObjectByName( Object.entries(rig_map.MMD).find(kv=>kv[1]==name)[0] );
-      if (bone)
-        axis.add(bone.position);
+      const kv = Object.entries(rig_map.MMD).find(kv=>kv[1]==name);
+      if (kv) {
+        const bone = asset.getObjectByName( kv[0] );
+        if (bone)
+          axis.add(bone.position);
+      }
     }
   }
   else {
@@ -10417,7 +10497,8 @@ const motionHipsHeight = v1.copy(motion_hips.position).applyQuaternion(q1.copy(m
 let hips_height;
 // always use native model bone measuremenet if even the motion is loaded in MMD mode (e.g. loading FBX on app start)
 if (THREEX_enabled) {
-  const vrmHipsY = MMD_SA.THREEX.get_model(modelX.index).para.pos0['hips'][1] * ((MMD_started) ? 1 : modelX.model_scale);
+  const model_native = (!to_VMD) ? model : MMD_SA.THREEX.get_model(model._model_index);
+  const vrmHipsY = model_native.para.pos0['hips'][1] * ((!to_VMD) ? 1 : model_native.model_scale);
   const vrmRootY = 0;//vrm.scene.getWorldPosition( _vec3 ).y;
 
   hips_height = Math.abs( vrmHipsY - vrmRootY );
@@ -12011,10 +12092,10 @@ this._look_at_mouse = v
   MMD_SA_options._look_at_screen_ratio = MMD_SA_options.look_at_screen_ratio;
 
   MMD_SA_options.look_at_screen_ratio_by_model = function (model) {
-if (System._browser.camera.ML_enabled && !MMD_SA.WebXR.session) return 0;
-
 const mm = (model && (model._model_index > 0)) ? MMD_SA.motion[model.skin._motion_index] : MMD_SA.MMD.motionManager;
 const para_SA = mm.para_SA;
+
+if (System._browser.camera.ML_enabled && !para_SA.motion_tracking?.look_at_screen && !MMD_SA.WebXR.session) return 0;
 
 // cache the return value for better performance in case of getter functions
 var v

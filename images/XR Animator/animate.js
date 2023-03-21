@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-02-18)
+// (2023-03-21)
 
 var MMD_SA_options = {
 
@@ -137,7 +137,7 @@ var MMD_SA_options = {
 
 // must-load list
 //  ,{ must_load:true, no_shuffle:true, path:'C:\\Users\\User\\Downloads\\MikuMikuDanceE_v739\\MikuMikuDanceE_v739\\UserFile\\Motion\\Muuubu Rin -Append-\\motion_BAL3.vmd'}
-   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/model/gal_model_motion_with_legs-2_loop_v01.vmd' }
+//   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/model/gal_model_motion_with_legs-2_loop_v01.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/motion_misc.zip#/壁穴モーション/壁穴_モデルモーション_loop.vmd'}
 
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/emote/emote-mod_お辞儀1.vmd' }
@@ -170,10 +170,21 @@ var MMD_SA_options = {
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/i-shaped_balance/i-shaped_balance_TDA_f0-50.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/leg_hold.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/stand_simple.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/walk_n_run/walk_A34_f0-42.vmd' }
+
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/Mixamo - Sitting02.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/Mixamo - Sitting Idle01.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/Mixamo - Sitting Idle02.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/Mixamo - Female Sitting Pose01.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/Mixamo - Female Sitting Pose02.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/Mixamo - Happy Idle.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/sitting_sexy01.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/sitting_sexy02.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/sitting_sexy03.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/sitting_sexy04.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/sitting_sexy05.vmd' }
 
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/baseball_throw/baseball_throw.vmd' }
-
-   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/walk_n_run/walk_A34_f0-42.vmd' }
 
 // roomba
 //   ,{ must_load:true, no_shuffle:true, path:'F:\\Programs Portable\\node-webkit\\_TEMP\\gura_x_roomba\\data\\gura_sit_01.vmd' }
@@ -358,7 +369,12 @@ xr._wall.visible = true
    ,"gal_model_motion_with_legs-2_loop_v01" : {
   look_at_screen_angle_x_limit: [Math.PI*0.25, -Math.PI*0.5]
 
+ ,center_view: [0,0,7.5]
+
  ,motion_tracking_enabled: true, motion_tracking_upper_body_only: true
+ ,motion_tracking: {
+    look_at_screen: true,
+  }
 
 // ,loop:[1,1]
  ,onended: function (last_frame) { MMD_SA._no_fading=last_frame&&(!this.loop||this.loop_count); }
@@ -404,6 +420,8 @@ xr._wall.visible = true
 //,SpeechBubble_pos_mod: [0,3,8]
 
  ,get look_at_screen_ratio() {
+if (System._browser.camera.poseNet.enabled) return 1;
+
 var f = THREE.MMD.getModels()[0].skin.time*30
 var ratio = 1
 if (f >= 157) {
@@ -430,7 +448,12 @@ if (f >= 157) {
     ratio = (f-210)/23
 }
 
-return (System._browser.camera.facemesh.enabled) ? [
+return (System._browser.camera.poseNet.enabled) ? [
+  { name:"首", weight_screen:0.5, weight_screen_y:0.5, weight_motion:0 },
+  { name:"頭", weight_screen:0.5, weight_screen_y:0.5, weight_motion:0 },
+  { name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+  { name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+] : (System._browser.camera.facemesh.enabled) ? [
   { name:"首", weight_screen:0.5*ratio, weight_motion:1*(1-ratio) }
  ,{ name:"頭", weight_screen:0.5*ratio, weight_motion:1*(1-ratio) }
 ] : [
@@ -1262,15 +1285,27 @@ MMD_SA.WebXR.ground_plane.visible = false
 //model_para._custom_skin = [{ key:{ name:"右腕ＩＫ", pos:[0,1,0] ,rot:[0,0,0,1] ,interp:MMD_SA._skin_interp_default }, idx:mesh.bones_by_name["右腕ＩＫ"]._index }]
   }
 
+ ,center_view: [0,-7.5,7.5]
+
  ,motion_tracking_enabled: true, motion_tracking_upper_body_only: true
 
  ,motion_tracking: {
-    hand_as_foot: {
-      transform_position: function (pos) {
-pos.y += MMD_SA_options.model_para_obj.left_arm_to_IK_xy[1];
-pos.z -= MMD_SA_options.model_para_obj.left_leg_length * 0.25
-pos.multiplyScalar(1.5)
-      }
+    arm_as_leg: {
+      enabled: true,
+      transformation: {
+
+        position: {
+          x: { unit_length:1, scale:2 },
+          y: { add:-0.1, min:0.05, scale:2 },
+          z: { unit_length:1, add:0, min:7, scale:3 },
+          length_limit: 1.2,
+        },
+
+        rotation: {
+//          y: { scale:1.25 },
+          y: { foot_ratio:0.5 },
+        },
+      },
     }
   }
 
@@ -1322,7 +1357,6 @@ System._browser.camera.poseNet.enable_IK('右腕ＩＫ', true)
 
  ,auto_blink: true
 // ,adjust_center_view_disabled: true
- ,center_view: [0,-4,0]
 
  ,adjustment_per_model: {
     _default_ : {
@@ -1350,7 +1384,25 @@ System._browser.camera.poseNet.enable_IK('右腕ＩＫ', true)
     })()
 
    ,"walk_A34_f0-42": {
-motion_tracking_enabled: true, motion_tracking_upper_body_only: true
+  look_at_screen_bone_list: [
+    { name:"首", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
+    { name:"頭", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
+    { name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+    { name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+  ],
+
+  motion_tracking_enabled: true, motion_tracking_upper_body_only: true,
+
+  motion_tracking: {
+    look_at_screen:true,
+    motion_default_weight: {
+      head: 0.5,
+    },
+    hip_adjustment: {
+      rotation_weight: 0.5,
+      displacement_weight: 1,
+    },
+  },
     }
 
    ,"stand_simple": {
@@ -1363,12 +1415,17 @@ motion_tracking_enabled: true, motion_tracking_upper_body_only: true
  ,motion_tracking_enabled: true
  ,get motion_tracking_upper_body_only() { return this.center_view_enforced; }
 
- ,onstart: function () {
-let model = THREE.MMD.getModels()[0]
-let bones_by_name = model.mesh.bones_by_name
-let head = MMD_SA._head_pos;
+ ,motion_tracking: {
+    hip_adjustment: {
+      rotation_weight: 0.5,
+      displacement_weight: 1,
+    },
+  }
 
-this.center_view = (this.center_view_enforced) ? [0, (head.y)*1.025-11.4, -20*MMD_SA_options.Dungeon_options.camera_position_z_sign] : [0,0,0];
+ ,onstart: function () {
+let head_y = (MMD_SA.THREEX.enabled) ? MMD_SA.THREEX.get_model(0).para.pos0['head'][1] * MMD_SA.THREEX.get_model(0).model_scale : THREE.MMD.getModels()[0].mesh.bones_by_name['頭'].pmxBone.origin[1];
+
+this.center_view = (this.center_view_enforced) ? [0, (head_y)*1.025-11.4, -20*MMD_SA_options.Dungeon_options.camera_position_z_sign] : [0,0,0];
   }
 
  ,object_click_disabled: true
@@ -1383,6 +1440,14 @@ this.center_view = (this.center_view_enforced) ? [0, (head.y)*1.025-11.4, -20*MM
   freeze_onended: true
 
  ,motion_tracking_enabled: true, motion_tracking_upper_body_only: true
+ ,motion_tracking: {
+    look_at_screen:true,
+    hip_adjustment: {
+      rotation_weight: 0.5,
+      displacement_weight: 1,
+    },
+    arm_IK_stickiness: { default_rotation_weight:0.5 },
+  }
 
  ,adjustment_per_model: {
     _default_ : {
@@ -1671,6 +1736,584 @@ cam_pos.copy(MMD_SA._trackball_camera.object.position)
       };
     })()
 
+   ,"Mixamo - Happy Idle": {
+  look_at_screen_bone_list: [
+    { name:"首", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
+    { name:"頭", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
+    { name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+    { name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+  ],
+
+  motion_tracking_enabled: true, motion_tracking_upper_body_only: true,
+  motion_tracking: {
+    look_at_screen: true,
+    motion_default_weight: {
+      'head': 0.5,
+    },
+    hip_adjustment: {
+      rotation_weight: 0.5,
+      displacement_weight: 1,
+    },
+    arm_IK_stickiness: { default_rotation_weight:0.5 },
+  },
+    }
+
+   ,"Mixamo - Sitting Idle01": {
+  adjustment_per_model: {
+    _default_: {
+  skin_default: {
+    "左腕": { rot_add:{x:0, y:0, z:-15} }
+  }
+    },
+    'ボサ髪_naked_feet.pmx': {
+  skin_default: {
+    "左腕": { rot_add:{x:0, y:0, z:-5} }
+  }
+    },
+  },
+
+  center_view: [0,-5,5],
+
+  look_at_screen_bone_list: [
+    { name:"首", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
+    { name:"頭", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
+    { name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+    { name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+  ],
+
+  motion_tracking_enabled: true,
+  motion_tracking_upper_body_only: true,
+  motion_tracking: {
+    look_at_screen: true,
+    arm_IK_stickiness: {
+      'right': { default_rotation_weight: 0.5 },
+      'left' : { parent:{ weight:{x:{left:0.5,right:0.5}, y:{down:0.5,up:0.5}, z:{backward:0,forward:0.5}} } },
+    },
+    arm_as_leg: {
+//      enabled: true,
+      linked_side: 'left',
+      transformation: {
+        position: {
+          x: { scale:2 },
+          y: { add:-0.1, min:0.05, scale:3 },
+          z: { add:0.2, scale:2 },
+          length_limit: 1.2,
+//          camera_weight: 0.5,
+        },
+        rotation: {
+          y: { foot_ratio:0.5 },
+        }
+      },
+    },
+  }
+    }
+
+   ,"Mixamo - Sitting Idle02": {
+  look_at_screen_bone_list: [
+    { name:"首", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
+    { name:"頭", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
+    { name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+    { name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+  ],
+
+  center_view: [0,-5,7.5],
+
+  motion_tracking_enabled: true,
+  motion_tracking_upper_body_only: true,
+  motion_tracking: {
+    look_at_screen: true,
+    motion_default_weight: {
+      'head': 0,
+      'upper_body': 0.5,
+    },
+    hip_adjustment: {
+      rotation_weight: 1/3,
+      displacement_weight: 0.1,
+      feet_fixed_weight:0.8,
+    },
+    arm_IK_stickiness: {
+      default_rotation_weight:1, default_position_weight:1,
+    },
+    arm_as_leg: {
+//      enabled: true,
+      linked_side: 'left',
+      transformation: {
+        position: {
+          x: { scale:1.5 },
+          y: { add:0.4, scale:1.75 },
+          z: { add:0.4, scale:2 },
+          camera_weight: 0.75,
+        },
+        rotation: {
+          y: { scale:1.25 },
+        },
+      },
+    },
+  }
+    }
+
+   ,"Mixamo - Sitting02": {
+  look_at_screen_bone_list: [
+    { name:"首", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
+    { name:"頭", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
+    { name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+    { name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+  ],
+
+  center_view: [0,-3.5,5],
+
+//  look_at_screen: true,
+  motion_tracking_enabled: true,
+  motion_tracking_upper_body_only: true,
+  motion_tracking: {
+    look_at_screen: true,
+    arm_IK_stickiness: {
+      parent:{ weight: 1/3 },
+    },
+    hip_adjustment: {
+      feet_fixed_weight: 2/3,
+    },
+    arm_as_leg: {
+//      enabled: true,
+      linked_side: 'left',
+      transformation: {
+        position: {
+          x: { scale:1.5 },
+          y: { add:0.4, scale:1.5 },
+          z: { add:0.4, scale:2 },
+          camera_weight: 0.75,
+        },
+      },
+    },
+  }
+    }
+
+   ,"kabedon_single_hand_v01": {
+//  look_at_screen: true,
+  motion_tracking_enabled: true,
+  motion_tracking_upper_body_only: true,
+  motion_tracking: {
+//    look_at_screen: true,
+    arm_IK_stickiness: {
+      default_rotation_weight: 0.5,
+    },
+    arm_as_leg: {
+      enabled: true,
+      linked_side: 'right',
+      transformation: {
+        position: {
+          y: { add:1.5, scale:1.5 },
+          z: { add:0.4, scale:1.5, max:1 },
+        },
+      },
+    },
+  }
+    }
+
+   ,"大人ミクさんポーズ1_v01": {
+//  look_at_screen: true,
+  motion_tracking_enabled: true,
+  motion_tracking_upper_body_only: true,
+  motion_tracking: {
+//    look_at_screen: true,
+    arm_IK_stickiness: {
+      'right': { parent:{name:'頭', weight:0.75}, default_position_weight:1, default_rotation_weight:1 },
+      'left' : { default_position_weight:1 },
+    },
+    arm_as_leg: {
+      enabled: true,
+      linked_side: 'left',
+    },
+  }
+    }
+
+   ,"sitting_sexy01": {
+//  look_at_screen: true,
+
+  adjustment_per_model: {
+    _default_: {
+  skin_default: {
+    '左足ＩＫ': { rot_add:{x:-30, y:0, z:0} },
+//    '右足ＩＫ': { rot_add:{x:-15, y:0, z:0} }
+  }
+    },
+    'DUMMY.pmx' : {
+  skin_default: {
+    '左足ＩＫ': { rot_add:{x:-30, y:0, z:0} },
+    '右ひじ': { rot_add:{x:(31.4-(19)), y:(137.7-(153.5)), z:(74.7+10-(81.4))} },
+    '右腕': { rot_add:{x:(6.9-(19.8)), y:(0.2-(11.9)), z:(-12-(-9.3))} },
+  }
+    },
+  },
+
+  center_view: [0,-2.5,5],
+
+  look_at_screen_bone_list: [
+    { name:"首", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
+    { name:"頭", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
+    { name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+    { name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+  ],
+
+  motion_tracking_enabled: true,
+  motion_tracking_upper_body_only: true,
+  motion_tracking: {
+    look_at_screen: true,
+    motion_default_weight: {
+      'head': 1
+    },
+    hip_adjustment: {
+      'left' : { feet_fixed_weight:1 },
+      'right': { feet_fixed_weight:2/3, },
+    },
+    arm_IK_stickiness: {
+      'right': { parent:{name:'頭', weight:{ x:{left:1.5, right:0.5}, y:{down:1.5, up:0.5}, z:{backward:0.5, forward:1.5} }}, default_position_weight:0.1, default_rotation_weight:1 },
+      'left' : { default_position_weight:1, default_rotation_weight:1 },
+    },
+    arm_as_leg: {
+//      enabled: true,
+//toes_disabled: true,
+      linked_side: 'right',
+      transformation: {
+        position: {
+          x: { scale:1.5 },
+          y: { add:0.4, scale:1.5 },
+          z: { add:0.4, scale:2 },
+          camera_weight: 0.75,
+        },
+        rotation: {
+          y: { foot_ratio:0.5 },
+        },
+      },
+    },
+  }
+    }
+
+   ,"sitting_sexy02": {
+  look_at_screen_bone_list: [
+    { name:"首", weight_screen:0.5, weight_screen_y:0.75, weight_motion:1 },
+    { name:"頭", weight_screen:0.5, weight_screen_y:0.75, weight_motion:1 },
+    { name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.25, weight_motion:1 },
+    { name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.25, weight_motion:1 },
+  ],
+
+  center_view: [0,2,10],
+
+//  look_at_screen: true,
+  motion_tracking_enabled: true,
+  motion_tracking_upper_body_only: true,
+  motion_tracking: {
+    look_at_screen: true,
+    hip_adjustment: {
+      rotation_weight: 0.5,
+      feet_fixed_weight: 0.5,
+    },
+    arm_IK_stickiness: {
+      default_position_weight:1, default_rotation_weight:1,
+    },
+    arm_as_leg: {
+//      enabled: true,
+      transformation: {
+        position: {
+          x: { unit_length:1, add:{'left':-2, 'right':2}, min:{'left':-10, 'right':2.2-10.5}, max:{'left':10, 'right':2.2+10.5}, scale:{'left':1, 'right':1} },
+          y: { unit_length:1, add:{'left':5, 'right':3}, min:{'left':4.5, 'right':3.5}, max:{'left':15, 'right':3.5+0.5},scale:{'left':1.75, 'right':0.3} },
+          z: { unit_length:1, add:3, min:{'left':5, 'right':11.2-10}, max:{'left':12, 'right':11.2}, scale:{'left':2, 'right':2} },
+/*
+  　　　　　　　process: (legs)=>{
+if (legs.length < 2) return;
+
+const diff = (1 - Math.abs(legs[0].pos.y - legs[1].pos.y)) / 2;
+if (diff > 0) {
+
+  if (legs[0].pos.y < legs[1].pos.y) {
+    const y0 = legs[0].pos.y;
+    legs[0].pos.y = legs[1].pos.y;
+    legs[1].pos.y = y0;
+  }
+
+  const sign = (legs[0].pos.y > legs[1].pos.y) ? 1 : -1;
+  legs[0].pos.y += diff * sign;
+  legs[1].pos.y -= diff * sign;
+}
+          },
+*/
+        },
+        rotation: {
+          y: { foot_ratio:0.75 },
+        },
+      },
+    },
+  }
+    }
+
+   ,"Mixamo - Female Sitting Pose01": {
+  look_at_screen_bone_list: [
+    { name:"首", weight_screen:0.5, weight_screen_y:0.75, weight_motion:1 },
+    { name:"頭", weight_screen:0.5, weight_screen_y:0.75, weight_motion:1 },
+    { name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.25, weight_motion:1 },
+    { name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.25, weight_motion:1 },
+  ],
+
+  center_view: [0,-3,5],
+
+//  look_at_screen: true,
+  motion_tracking_enabled: true,
+  motion_tracking_upper_body_only: true,
+  motion_tracking: {
+    look_at_screen: true,
+    hip_adjustment: {
+      'left' : { feet_fixed_weight:1 },
+      'right': { feet_fixed_weight:2/3, },
+    },
+    arm_IK_stickiness: {
+//      'left': { parent:{ name:'右足', weight:1 } },
+      'right': { parent:{ weight:1 } },
+    },
+
+    arm_as_leg: {
+//      enabled: true,
+      linked_side: 'right',
+      transformation: {
+        position: {
+          x: { scale:1.5 },
+          y: { add:0.15, scale:1.5 },
+          z: { add:0.4, scale:2 },
+          rotation: { x:0, y:15, z:0 },
+          camera_weight: 0.5,
+        },
+      },
+    },
+
+  }
+    }
+
+   ,"Mixamo - Female Sitting Pose02": {
+  look_at_screen_bone_list: [
+    { name:"首", weight_screen:0.5, weight_screen_y:0.75, weight_motion:1 },
+    { name:"頭", weight_screen:0.5, weight_screen_y:0.75, weight_motion:1 },
+    { name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.25, weight_motion:1 },
+    { name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.25, weight_motion:1 },
+  ],
+
+  center_view: [0,-3.5,5],
+
+//  look_at_screen: true,
+  motion_tracking_enabled: true,
+  motion_tracking_upper_body_only: true,
+  motion_tracking: {
+    look_at_screen: true,
+    motion_default_weight: {
+      'head': 0.5,
+      'upper_body': 0.75,
+    },
+    hip_adjustment: {
+      feet_fixed_weight:1,
+    },
+    arm_IK_stickiness: {
+      'right': { parent:{ weight:0.8 } },
+    },
+    arm_as_leg: {
+//      enabled: true,
+      linked_side: 'right',
+      transformation: {
+        position: {
+          x: { scale:1.5 },
+          y: { add:0.15, scale:1.5 },
+          z: { add:0.4, scale:2 },
+          rotation: { x:0, y:15, z:0 },
+          camera_weight: 0.5,
+        },
+      },
+    },
+  }
+    }
+
+   ,"sitting_sexy03": {
+  adjustment_per_model: {
+    _default_: {
+  skin_default: {
+//    '右腕': { rot_add:{x:(39.5-(50.6))*0.5, y:(-7.9-(-4.3))*0.5, z:(-41.1-(-38.5))*0.5} },
+  }
+    },
+    'DUMMY.pmx' : {
+  skin_default: {
+    '右腕': { rot_add:{x:(39.5-(50.6))*3, y:(-7.9-(-4.3))*3, z:(-41.1-(-38.5))*3} },
+    '右ひじ': { rot_add:{x:0, y:0, z:15} },
+  }
+    },
+  },
+
+
+  look_at_screen_bone_list: [
+    { name:"首", weight_screen:0.5, weight_screen_y:0.75, weight_motion:1 },
+    { name:"頭", weight_screen:0.5, weight_screen_y:0.75, weight_motion:1 },
+    { name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.25, weight_motion:1 },
+    { name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.25, weight_motion:1 },
+  ],
+
+  center_view: [-2.5,-5.5,10],
+
+//  look_at_screen: false,
+  motion_tracking_enabled: true,
+  motion_tracking_upper_body_only: true,
+  motion_tracking: {
+    look_at_screen: true,
+    motion_default_weight: {
+      'head': 0.5,
+    },
+    hip_adjustment: {
+      feet_fixed_weight:1,
+    },
+    arm_IK_stickiness: {
+      'right' : { parent:{ name:'頭', weight:{ x:{left:1.5, right:0.5}, y:{down:1.5, up:0.5}, z:{backward:0.5, forward:1.5} } }, default_position_weight:0.1, default_rotation_weight:0.5, },
+      'left': { default_position_weight:1, default_rotation_weight:1, },
+    },
+    arm_as_leg: {
+//      enabled: true,
+      linked_side: 'left',
+      transformation: {
+        position: {
+          x: { scale:1.5 },
+          y: { add:0.6, scale:1.5 },
+          z: { add:0.4, scale:2 },
+          rotation: { x:0, y:-20, z:0 },
+          camera_weight: 0.5,
+        },
+      },
+    },
+  }
+    }
+
+   ,"sitting_sexy04": {
+  adjustment_per_model: {
+    'DUMMY.pmx' : {
+  skin_default: {
+    "左腕": { rot_add:{x:(45.4-(57.5))*1.5, y:(-23.4-(-35.7))*1.5, z:(24.9-(15.2))*1.5} },
+    "左ひじ": { rot_add:{x:0, y:0, z:-30} },
+  }
+    }
+  },
+
+  look_at_screen_bone_list: [
+    { name:"首", weight_screen:0.5, weight_screen_y:0.75, weight_motion:1 },
+    { name:"頭", weight_screen:0.5, weight_screen_y:0.75, weight_motion:1 },
+    { name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.25, weight_motion:1 },
+    { name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.25, weight_motion:1 },
+  ],
+
+  center_view: [0,-6,7.5],
+
+  motion_tracking_enabled: true,
+  motion_tracking_upper_body_only: true,
+  motion_tracking: {
+    look_at_screen: true,
+    motion_default_weight: {
+      'head': 1,
+    },
+    hip_adjustment: {
+      feet_fixed_weight:1,
+    },
+    arm_IK_stickiness: {
+      'left' : { parent:{ name:'頭', weight:{ x:{left:0.5, right:1.5}, y:{down:1.5, up:0.5}, z:{backward:0.5, forward:1.5} } }, default_position_weight:0.1, default_rotation_weight:0.5, },
+      'right': { default_position_weight:1, default_rotation_weight:1, },
+    },
+    arm_as_leg: {
+//      enabled: true,
+      linked_side: 'left',
+      transformation: {
+        position: {
+/*
+          x: { unit_length:1, scale:2 },
+          y: { unit_length:1, min:8, add:5, scale:4 },
+          z: { scale:0 },
+          rotation: { x:-90, y:0, z:0 },
+*/
+
+          x: { scale:1.5 },
+          y: { add:0.4, scale:1.5 },
+          z: { add:0.3, scale:2 },
+          camera_weight: 0.75,
+
+        },
+      },
+    },
+  }
+    }
+
+   ,"sitting_sexy05": {
+  adjustment_per_model: {
+    'DUMMY.pmx' : {
+  skin_default: {
+    '左足ＩＫ': { pos_add:{ x:0.4, y:0, z:0 } },
+    '右足ＩＫ': { pos_add:{ x:-0.4, y:0, z:0 } },
+  }
+    }
+  },
+
+  onstart: (()=>{
+    let adjusted;
+    return function () {
+if (adjusted) return;
+adjusted = true;
+
+const z_para = this.motion_tracking?.arm_as_leg?.transformation?.position?.z;
+if (z_para) {
+  z_para.min.left -= 0.4;
+  z_para.max.left -= 0.4;
+  z_para.min.right += 0.4;
+  z_para.max.right += 0.4;
+}
+    };
+  })(),
+
+  look_at_screen_bone_list: [
+    { name:"首", weight_screen:0.5, weight_screen_y:0.75, weight_motion:1 },
+    { name:"頭", weight_screen:0.5, weight_screen_y:0.75, weight_motion:1 },
+    { name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.25, weight_motion:1 },
+    { name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.25, weight_motion:1 },
+  ],
+
+  center_view: [0,-6,7.5],
+
+  motion_tracking_enabled: true,
+  motion_tracking_upper_body_only: true,
+  motion_tracking: {
+    look_at_screen: true,
+    motion_default_weight: {
+      'head': 0.5,
+    },
+    hip_adjustment: {
+      feet_fixed_weight:0.9,
+    },
+    arm_IK_stickiness: {
+      parent:{ weight:0.5 }, default_position_weight:1, default_rotation_weight:0.5,
+    },
+    arm_as_leg: {
+//      enabled: true,
+//      linked_side: 'left',
+      transformation: {
+        position: {
+/*
+          x: { unit_length:1, min:{left:-0.85,right:0.5}, max:{left:-0.85,right:0.5}, scale:0.2 },
+          y: { add:0.3, scale:1.5 },
+          z: { add:0, min:0.75, scale:3 },
+*/
+
+          x: { add:0.75, min:0.75, scale:{left:1.5, right:-1.5} },
+          y: { add:0.3, scale:1.5 },
+          z: { unit_length:1, min:{left:0.85,right:-0.5}, max:{left:0.85,right:-0.5}, scale:0.2 },
+          rotation: { x:0, y:-90, z:0 },
+
+//          camera_weight: 0.5,
+        },
+        rotation: {
+          y: { foot_ratio:0.5 },
+        }
+      },
+    },
+  }
+    }
+
   }
 
  ,custom_action: [
@@ -1851,13 +2494,17 @@ video:{
 //  hidden:true,
 //  hidden_on_webcam: true,
   scale:0.4, top:-0.5,
-//scale:0.4*2*1,top:0,left:-3,
+//scale:0.4,top:-0.8,left:-0.4,
+//scale:0.4*1,top:0,left:-3,
+//scale:0.4*2,top:0,left:-1,
 },
 wireframe:{
 //  hidden:true,
 //  align_with_video:true,
   top:0.5,
+//top:0.8,left:0.4,
 //top:0,left:3,
+//top:-0.5,left:1,
 }
     },
     preference: {
@@ -1896,7 +2543,7 @@ wireframe:{
 
  ,SpeechBubble_branch: {
 //    confirm_keydown:true,
-    RE: /^(\d)\.\s/
+    RE: /^([\dA-Z])\.\s/
   }
 
  ,_SpeechBubble_scale_: 0
@@ -2269,8 +2916,14 @@ if (mf) {
 //DEBUG_show(Date.now()+":"+MMD_SA._custom_morph.length)
       }
 
-      function change_motion(motion_index_absolute) {
-if (!MMD_SA_options.Dungeon.event_mode) {
+      function change_motion(motion_index_absolute, ignore_event) {
+if (ignore_event) {
+  if (motion_index_absolute == -1) {
+    change_custom_motion();
+    return;
+  }
+}
+else if ((motion_index_absolute == null) && !MMD_SA_options.Dungeon.event_mode) {
   MMD_SA_options.Dungeon.run_event("_POSE_",0)
   return
 }
@@ -2323,71 +2976,7 @@ else {
 }
       }
 
-      var morph_event_registered = false
-
-      var morph_form = [null]
-      var morph_form_index = 0
-
-      var _motion_list_index = -1
-      var _motion_list = []
-
-      var motion_index
-
-      window.addEventListener("MMDStarted", function () {
-var mf = MMD_SA_options.model_para_obj.morph_form
-if (mf) {
-  morph_form = morph_form.concat(Object.values(mf))
-}
-
-_motion_list[0] = [
-  {name:"standmix2_modified", info:"Stand relaxed"},
-
-  {
-    name:"stand_simple", info:"Stand simple (full-body mocap/F)",
-    action: (name)=>{ MMD_SA_options.motion_para[name].center_view_enforced = false },
-  },
-
-  {
-    name:"stand_simple", info:"Stand simple (upper-only mocap/U)",
-    action: (name)=>{ MMD_SA_options.motion_para[name].center_view_enforced = true },
-  },
-
-  {name:"walk_A34_f0-42", info:"Model walk (U)"},
-// roomba
-//{name:"gura_sit_01"},
-
-  {name:"i-shaped_balance_TDA_f0-50", info:"I-shaped balance (U)"},
-  ((!MMD_SA.THREEX.enabled/* && MMD_SA_options.WebXR.AR._adult_mode*/) ? {name:"leg_hold", info:"???"} : null),
-  {name:"gal_model_motion_with_legs-2_loop_v01", info:"Sit 01 (U)"},
-  {name:"chair_sit01_armIK", info:"Sit 02 (U)"},
-].filter(m=>m!=null);
-
-_motion_list[1] = _motion_list[0].filter((m)=>MMD_SA_options.motion_para[m.name].motion_tracking_enabled);
-
-MMD_SA_options.Dungeon_options.events_default["_POSE_"] = [
-//0
-      [
-        {
-          message: {
-  get content() {
-const index = (System._browser.camera.poseNet.enabled) ? 1 : 0;
-this._has_custom_animation_ = (MMD_SA.THREEX.enabled && MMD_SA.THREEX.get_model(0).animation.has_clip) || (MMD_SA_options.motion.length > MMD_SA.motion_max_default);
-
-const content =  _motion_list[index].map((m,i) => (i+1)+'. ' + (m.info||m.name)).slice(0,(this._has_custom_animation_)?7:8).join('\n')
-+ ((this._has_custom_animation_) ? ('\n' + Math.min(_motion_list[index].length+1,8) + '. (Custom Motion: ' + (((this._animation_on_ != null) ? this._animation_on_ : (MMD_SA.THREEX.enabled && MMD_SA.THREEX.get_model(0).animation.enabled) || (THREE.MMD.getModels()[0].skin._motion_index >= MMD_SA.motion_max_default))?'ON':'OFF') + ') (U)') : '')
-+ '\n' + Math.min(_motion_list[index].length+1+((this._has_custom_animation_)?1:0),9) + '. Done';
-//DEBUG_show(''+this._animation_on_,0,1)
-//MMD_SA_options.SpeechBubble_branch.confirm_keydown=false
-
-System._browser.on_animation_update.add(()=>{this._animation_on_ = null},0,0);
-
-return content;
-  }
- ,bubble_index: 3
- ,get branch_list() {
-const index = (System._browser.camera.poseNet.enabled) ? 1 : 0;
-return _motion_list[index].map((m,i) => { return { key:i+1, event_id:{ func:()=>{change_motion(i)}, goto_event:{id:'_POSE_',branch_index:0} } }; }).slice(0,(this._has_custom_animation_)?7:8)
-  .concat((this._has_custom_animation_)?[{ key:Math.min(_motion_list[index].length+1,8), event_id:{ func:()=>{
+      function change_custom_motion() {
 const animation = MMD_SA.THREEX.get_model(0).animation;
 const MMD_animation_customized = MMD_SA_options.motion.length > MMD_SA.motion_max_default;
 const MMD_animation_on = THREE.MMD.getModels()[0].skin._motion_index >= MMD_SA.motion_max_default;
@@ -2420,11 +3009,165 @@ else if (MMD_animation_customized) {
   MMD_SA._force_motion_shuffle = true;
 }
 
-this._animation_on_ = animation_on;
-  }, goto_event:{id:'_POSE_',branch_index:0} } }]:[], [{ key:Math.min(_motion_list[index].length+1+((this._has_custom_animation_)?1:0),9) }]
-  );
+return animation_on;
+      }
+
+      var morph_event_registered = false
+
+      var morph_form = [null]
+      var morph_form_index = 0
+
+      var _motion_list_index = -1
+      var _motion_list = []
+
+      var motion_index
+
+      window.addEventListener("MMDStarted", function () {
+function delay_dialogue() {
+  MMD_SA_options.Dungeon.run_event();
+}
+
+function export_motion_config() {
+  const motion_para = MMD_SA.MMD.motionManager.para_SA;
+  const motion_id = motion_para._path.replace(/^.+[\/\\]/, '').replace(/\.\w{3,4}$/, '');
+  const config = {
+    System_Animator_motion_para: {}
+  };
+  config.System_Animator_motion_para[motion_id] = { motion_tracking: motion_para.motion_tracking || {} };
+
+  let json;
+  try {
+    json = JSON.stringify(config, null, '\t');
   }
+  catch (err) {
+    DEBUG_show('ERROR: The config of the current motion is not exportable.', 3);
+    return;
+  }
+
+  System._browser.save_file('motion_para.json', json, 'application/json');
+}
+
+var mf = MMD_SA_options.model_para_obj.morph_form
+if (mf) {
+  morph_form = morph_form.concat(Object.values(mf))
+}
+
+_motion_list[0] = [
+  {name:"standmix2_modified", info:"Stand relaxed"},
+
+  {
+    name:"stand_simple", info:"Stand simple (💃➔full-body mocap)",
+    action: (name)=>{ MMD_SA_options.motion_para[name].center_view_enforced = false },
+  },
+
+  {
+    name:"stand_simple", info:"Stand simple (🙋‍➔upper-only mocap)",
+    action: (name)=>{ MMD_SA_options.motion_para[name].center_view_enforced = true },
+  },
+
+  {name:"walk_A34_f0-42", info:"Model walk (🙋)"},
+// roomba
+//{name:"gura_sit_01"},
+
+  {name:"Mixamo - Happy Idle", info:"Happy idle (🙋)"},
+
+  {name:"i-shaped_balance_TDA_f0-50", info:"I-shaped balance (🙋)"},
+
+  ((!MMD_SA.THREEX.enabled/* && MMD_SA_options.WebXR.AR._adult_mode*/) ? {name:"leg_hold", info:"???"} : null),
+
+  {name:"Mixamo - Sitting02", info:"Sit 01 (🙋/🦶)"},
+
+  {name:"chair_sit01_armIK", info:"Sit 02 (🦶/🙋)"},
+
+  {name:"Mixamo - Sitting Idle01", info:"Sit 03 (🙋/🦶)"},
+
+  {name:"sitting_sexy01", info:"Sit 04 (🙋/🦶)"},
+
+  {name:"Mixamo - Female Sitting Pose01", info:"Sit 05 (🙋)"},
+
+  {name:"Mixamo - Female Sitting Pose02", info:"Sit 06 (🙋/🦶)"},
+
+  {name:"sitting_sexy03", info:"Sit 07 (🙋/🦶)"},
+
+  {name:"sitting_sexy04", info:"Sit 08 (🙋/🦶)"},
+
+  {name:"Mixamo - Sitting Idle02", info:"Sit 09 (🙋/🦶)"},
+
+//  {name:"gal_model_motion_with_legs-2_loop_v01", info:"Sit - Floating (🙋)"},
+
+  {name:"sitting_sexy05", info:"Sit 10 (🙋/🦶)"},
+
+  {name:"sitting_sexy02", info:"Legs on table (🙋/🦶)"},
+
+].filter(m=>m!=null);
+
+_motion_list[1] = _motion_list[0].filter((m)=>MMD_SA_options.motion_para[m.name].motion_tracking_enabled);
+
+let _motion_page = 0;
+
+MMD_SA_options.Dungeon_options.events_default["_POSE_"] = [
+//0
+      [
+
+        {
+          func: ()=>{
+window.addEventListener('SA_MMD_model0_process_bones_after_IK', delay_dialogue, {once:true});
           }
+        },
+
+        {
+          message: {
+  get content() {
+const index = (System._browser.camera.poseNet.enabled) ? 1 : 0;
+this._has_custom_animation_ = (MMD_SA.THREEX.enabled && MMD_SA.THREEX.get_model(0).animation.has_clip) || (MMD_SA_options.motion.length > MMD_SA.motion_max_default);
+
+if (_motion_page * 9 >= _motion_list[index].length)
+  _motion_page = 0;
+let ini = _motion_page * 9;
+
+const content =  _motion_list[index].slice(ini, ini+9).map((m,i) => (i+1)+'. ' + (m.info||m.name)).join('\n')
++ ((this._has_custom_animation_) ? ('\n0. (Custom Motion: ' + (((this._animation_on_ != null) ? this._animation_on_ : (MMD_SA.THREEX.enabled && MMD_SA.THREEX.get_model(0).animation.enabled) || (THREE.MMD.getModels()[0].skin._motion_index >= MMD_SA.motion_max_default))?'ON':'OFF') + ') (🙋)') : '');
+//DEBUG_show(''+this._animation_on_,0,1)
+//MMD_SA_options.SpeechBubble_branch.confirm_keydown=false
+
+System._browser.on_animation_update.add(()=>{this._animation_on_ = null},0,0);
+
+return content;
+  },
+
+  bubble_index: 3,
+  para: { row_max:11, font_size:17 },
+
+  get branch_list() {
+const index = (System._browser.camera.poseNet.enabled) ? 1 : 0;
+
+let ini = _motion_page * 9;
+
+return _motion_list[index].slice(ini, ini+9).map((m,i) => { return { key:i+1, event_id:{ func:()=>{change_motion(ini+i)}, goto_event:{id:'_POSE_',branch_index:0} } }; })
+  .concat((this._has_custom_animation_)?[{ key:0, event_id:{ func:()=>{this._animation_on_ = change_custom_motion();}, goto_event:{id:'_POSE_',branch_index:0} } }]:[]);
+  },
+          },
+
+          next_step: {},
+        },
+
+        {
+message: {
+  index: 1,
+  bubble_index: 3,
+  content: 'Drop a motion config JSON to change the config of any motion.\nA. Next 9 motions\nB. Export motion config JSON\nX. Done',
+  branch_list: [
+    { key:'A', event_id:{ func:()=>{_motion_page++}, goto_event:{id:'_POSE_',branch_index:0} } },
+    { key:'B', event_id:{ func:()=>{ export_motion_config() }, goto_event:{id:'_POSE_',branch_index:0} } },
+    { key:'X', event_id:{ next_step:{} } },
+  ]
+}
+        },
+
+        {
+          func: ()=>{
+          },
+          ended: true,
         }
       ]
 ];
@@ -2438,6 +3181,7 @@ this._animation_on_ = animation_on;
  ,stock_max: 1
  ,stock_default: 1
 
+ ,_change_motion_: change_motion
  ,action: {
     set _motion_list_index(v) { _motion_list_index = v; },
     func: function () { change_motion() }
@@ -2461,13 +3205,13 @@ if (System._browser.camera.ML_enabled) {
   '- The current pose '
 + ((MMD_SA.MMD.motionManager.para_SA.motion_tracking_enabled) ? 'supports ' + ((MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only) ? 'upper-body' : 'full-body') + ' motion tracking.' : 'does not support motion tracking.') + '\n'
 + '- Double-click to change the pose of the avatar.\n'
-+ '- Use numeric keys to pick a numbered option.';
++ '- Use the corresponding key to pick an alphanumeric option.';
 }
 else {
  info =
   '- Double-click to change the pose of the avatar.\n'
 + '- Choose a suitable pose depending on whether you want a full-body or upper-only mocap.\n'
-+ '- Use numeric keys to pick a numbered option.';
++ '- Use the corresponding key to pick an alphanumeric option.';
 }
 
 return info;
@@ -3361,7 +4105,7 @@ MMD_SA.WebXR.enter_AR()
       [
         {
           message: {
-  get content() { return 'Enable face and body tracking?\n1. Face only\n2. Body only\n3. Body + Hands\n4. Face + Body' + ((System._browser.camera.poseNet._use_holistic_) ? '\n5. Full body (Holistic)' : '\n5. Face + Body + Hands') + '\n6. Options/Tools\n7. Cancel'; }
+  get content() { return 'Enable face and body tracking?\n1. Face only\n2. Body only\n3. Body + Hands\n4. Face + Body' + ((System._browser.camera.poseNet._use_holistic_) ? '\n5. Full body (Holistic)' : '\n5. Face + Body + Hands') + /*'\n6. Options/Tools*/ '\n6. Cancel'; }
  ,bubble_index: 3
  ,get branch_list() {
 if (System._browser.camera.poseNet._use_holistic_) {
@@ -3371,8 +4115,8 @@ if (System._browser.camera.poseNet._use_holistic_) {
    ,{ key:3, branch_index:3 }
    ,{ key:4, branch_index:4 }
    ,{ key:5, branch_index:6 }
-   ,{ key:6, branch_index:7 }
-   ,{ key:7 }
+//   ,{ key:6, branch_index:7 }
+   ,{ key:6 }
   ];
 }
 return [
@@ -3381,8 +4125,8 @@ return [
    ,{ key:3, branch_index:3 }
    ,{ key:4, branch_index:4 }
    ,{ key:5, branch_index:5 }
-   ,{ key:6, branch_index:7 }
-   ,{ key:7 }
+//   ,{ key:6, branch_index:7 }
+   ,{ key:6 }
 ];
   }
           }
@@ -3835,7 +4579,10 @@ if (object3d.parent_bone)
 object3d.user_data.id = model_id;
 object3d.user_data.path = url;
 object3d.user_data.obj_all = obj_all;
+
 object3d.user_data._rotation_ = new THREE.Euler();
+if (placement.rotation)
+  object3d.user_data._rotation_.copy(placement.rotation).multiplyScalar(Math.PI/180);
 
 object3d.user_data._default_state_ = {
   position: (object3d.parent_bone) ? new THREE.Vector3() : mesh.position.clone(),
@@ -4795,6 +5542,11 @@ p_bone.is_T_pose = is_T_pose;
       const response = await fetch(toFileProtocol(src));
       const json = await response.json();
 
+      if (!json.XR_Animator_scene) {
+        _onDrop_finish.call(DragDrop, item);
+        return;
+      }
+
       parse_scene(json);
     }
     else {
@@ -5007,7 +5759,7 @@ return [
           _show_other_options_: false,
 
           message: {
-  get content() { this._motion_for_export_ = /\.(bvh|fbx)$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd; return (!MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_ && System._browser.camera.ML_enabled) ? ((this._motion_for_export_) ? '1. Export motion to file\n2. Record motion\n3. Mocap options\n4. Mocap OFF' : '1. Record motion\n2. Mocap options\n3. Mocap OFF\n4. Enable motion control') + '\n5. Other options\n6. Cancel' : '1. Overlay & UI\n2. BG/Scene/3D\n3. Miscellaneous Options\n4. Export motion to file\n5. About XR Animator\n6. Cancel'; }
+  get content() { this._motion_for_export_ = /\.(bvh|fbx)$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd; return (!MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_ && System._browser.camera.ML_enabled) ? ((this._motion_for_export_) ? '1. Export motion to file\n2. Record motion\n3. Mocap options\n4. Mocap OFF' : '1. Record motion\n2. Mocap options\n3. Mocap OFF\n4. Enable motion control') + /*'\n5. Other options*/ '\n5. Cancel' : '1. Overlay & UI\n2. BG/Scene/3D\n3. Miscellaneous Options\n4. Export motion to file\n5. About XR Animator\n6. Cancel'; }
  ,bubble_index: 3
  ,get branch_list() {
 return (!MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_ && System._browser.camera.ML_enabled) ? ((this._motion_for_export_) ? [
@@ -5015,15 +5767,15 @@ return (!MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_opti
   { key:2, branch_index:record_motion_branch },
   { key:3, branch_index:mocap_options_branch },
   { key:4, branch_index:2 },
-  { key:5, event_id:{ func:()=>{MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_=true;setTimeout(()=>{MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_=false},0);}, goto_event: { id:"_FACEMESH_OPTIONS_", branch_index:0 } } },
-  { key:6 }
+//  { key:5, event_id:{ func:()=>{MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_=true;setTimeout(()=>{MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_=false},0);}, goto_event: { id:"_FACEMESH_OPTIONS_", branch_index:0 } } },
+  { key:5 }
 ] : [
   { key:1, branch_index:record_motion_branch },
   { key:2, branch_index:mocap_options_branch },
   { key:3, branch_index:2 },
   { key:4, branch_index:motion_control_branch },
-  { key:5, event_id:{ func:()=>{MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_=true;setTimeout(()=>{MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_=false},0);}, goto_event: { id:"_FACEMESH_OPTIONS_", branch_index:0 } } },
-  { key:6 }
+//  { key:5, event_id:{ func:()=>{MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_=true;setTimeout(()=>{MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_=false},0);}, goto_event: { id:"_FACEMESH_OPTIONS_", branch_index:0 } } },
+  { key:5 }
 ]) : [
   { key:1, branch_index:1 },
   { key:2, branch_index:3 },
@@ -5495,7 +6247,7 @@ MMD_SA_options.Dungeon.update_camera_position_base();
      ,[
         {
           message: {
-  content: 'XR Animator (v0.3.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Cancel'
+  content: 'XR Animator (v0.4.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -5630,12 +6382,14 @@ setTimeout(()=>{
      ,[
         {
           message: {
-  get content() { return 'Miscellaneous Options\n1. Camera face-locking:' + ((MMD_SA_options.camera_face_locking==null)?'Auto':(MMD_SA_options.camera_face_locking)?'ON':'OFF') + '\n2. Audio visualizer:' + ((MMD_SA_options.use_CircularSpectrum) ? 'ON' : 'OFF') + '\n3. Done'; },
+  get content() { return '1. ⌨️Hotkey list and options\n2. Camera face-locking:' + ((MMD_SA_options.camera_face_locking==null)?'Auto':(MMD_SA_options.camera_face_locking)?'ON':'OFF') + '\n3. Audio visualizer:' + ((MMD_SA_options.use_CircularSpectrum) ? 'ON' : 'OFF') + '\n4. Done'; },
   bubble_index: 3,
+  para: { no_word_break:true },
   branch_list: [
-    { key:1, event_index:1 },
-    { key:2, event_index:2 },
-    { key:3, event_index:99 },
+    { key:1, event_index:3 },
+    { key:2, event_index:1 },
+    { key:3, event_index:2 },
+    { key:4, event_index:99 },
   ],
           }
         },
@@ -5659,7 +6413,49 @@ MMD_SA.THREEX.utils.camera_auto_targeting({ id:'face', enabled:MMD_SA_options.ca
 MMD_SA_options.use_CircularSpectrum = !MMD_SA_options.use_CircularSpectrum;
           },
           goto_event: { event_index:0 },
-        }
+        },
+// 3
+        {
+          message: {
+  get content() {
+function get_state(id) {
+  const hotkeys = System._browser.hotkeys
+
+  let state = '✔️';
+//  if (!id) return (hotkeys.is_global) ? '🌐' : state;
+
+  const config = hotkeys.config_by_id[id];
+  if (!config) return '❌';
+
+  if (hotkeys.accelerators[config.accelerator[0]].is_global)
+    state = '🌐';
+
+  return state;
+}
+
+return [
+  '・' + get_state('switch_motion') + 'Alt/Ctrl+Num0-9 to switch motion',
+  '・' + get_state('switch_motion_control_mode') + 'Ctrl+Z to toggle🙋↔️🦶control mode',
+  '・' + get_state('mocap_auto_grounding') + 'Ctrl+G to toggle mocap auto-grounding',
+  '・' + get_state('camera_3D_lock') + 'Ctrl+L to toggle 3D camera lock',
+  '1. 🌐Global hotkey mode: ' + ((System._browser.hotkeys.is_global) ? 'ON' : 'OFF'),
+  '2. Done',
+].join('\n');
+  },
+  bubble_index: 3,
+  para: { no_word_break:true },
+  branch_list: [
+    { key:1, event_index:4 },
+    { key:2, event_index:99 },
+  ]
+          }
+        },
+        {
+          func: ()=>{
+System._browser.hotkeys.register_global();
+          },
+          goto_event: { event_index:3 },
+        },
       ]
 // 24
      ,[
@@ -5909,12 +6705,12 @@ MMD_SA_options.Dungeon.run_event(null,done_branch,0);
         {
           func: function () {
 if (1) {
-  MMD_SA.SpeechBubble.message(0, '(🚧 Work in progress 🚧)', 3*1000)
   MMD_SA_options.Dungeon.run_event(null,done_branch,0)
+  MMD_SA.SpeechBubble.message(0, '(🚧 Work in progress 🚧)', 3*1000)
 }
 else if (!webkit_electron_mode) {
-  MMD_SA.SpeechBubble.message(0, 'This option is for native app mode only.', 3*1000)
   MMD_SA_options.Dungeon.run_event(null,done_branch,0)
+  MMD_SA.SpeechBubble.message(0, 'This option is for native app mode only.', 3*1000)
 }
 else {
   MMD_SA_options.Dungeon.run_event()
@@ -6310,6 +7106,109 @@ window.addEventListener("SA_AR_onARFrame", (function () {
       timerID = requestAnimationFrame(item_reticle_flash)
   };
 })());
+
+
+(()=>{
+  const v1 = new THREE.Vector3();
+  const v2 = new THREE.Vector3();
+  const v3 = new THREE.Vector3();
+  const q1 = new THREE.Quaternion();
+
+  let camera_locked;
+  function camera_lock() {
+    const obj = MMD_SA._trackball_camera;
+
+    camera_locked = !camera_locked;
+    if (camera_locked) {
+      const z = v1.setEulerFromQuaternion(obj.object.quaternion, 'YXZ').z;
+      const pos = v2.copy(obj.object.position);
+      const target = v3.copy(obj.target);
+
+      MMD_SA.reset_camera(false);
+
+      MMD_SA.adjust_camera('camera_lock', pos.sub(obj.object.position), target.sub(obj.target), z);
+
+      MMD_SA.reset_camera();
+    }
+    else {
+      MMD_SA.adjust_camera('camera_lock', v1.set(0,0,0), v2.set(0,0,0), 0);
+    }
+
+    DEBUG_show('Camera lock: ON', 3);
+  }
+
+  let expression_active = [];
+  window.addEventListener('SA_MMD_model0_process_morphs', (e)=>{
+//detail:{ model:this, morph:this.morph }
+const model = e.detail.model;
+
+expression_active.forEach(ex=>{
+  var _m_idx = model.pmx.morphs_index_by_name[ex];
+  if (_m_idx != null) {
+    let _m = model.pmx.morphs[_m_idx];
+    MMD_SA._custom_morph.push({ key:{ name:ex, weight:1, morph_type:_m.type, morph_index:_m_idx, override_weight:true }, idx:model.morph.target_index_by_name[ex] });
+  }
+});
+  });
+
+  const hotkey_config = [
+    {
+      id: 'switch_motion',
+      accelerator: (()=>{
+const acc = [];
+for (let i = 0; i < 10; i++)
+  acc.push('Alt+num'+i, 'Ctrl+num'+i);
+return acc;
+      })(),
+      process: (e)=>{
+const ev = e.detail.e;
+if (/Numpad(\d)/.test(ev.code) && (ev.altKey||ev.ctrlKey)) {
+  const num = parseInt(RegExp.$1);
+// e.detail.alt_location
+  const motion_index = (num == 0) ? -1 : (num-1) + ((ev.altKey) ? 0 : 9);
+//DEBUG_show(motion_index+'/'+Date.now(),0,1)
+  MMD_SA_options.Dungeon_options.item_base.pose._change_motion_(motion_index, true);
+}
+      }
+    },
+
+    {
+      id: 'mocap_auto_grounding',
+      accelerator: ['Ctrl+G'],
+      process: (e)=>{
+System._browser.camera.poseNet.auto_grounding = !System._browser.camera.poseNet.auto_grounding;
+DEBUG_show('Mocap auto-grounding:' + ((System._browser.camera.poseNet.auto_grounding) ? 'ON' : 'OFF'), 3);
+      }
+    },
+
+    {
+      id: 'camera_3D_lock',
+      accelerator: ['Ctrl+L'],
+      global_disabled: true,
+      process: (e)=>{
+camera_lock();
+      }
+    },
+
+    {
+      id: 'expression_sad',
+      accelerator: ['Alt+S'],
+      process: (e)=>{
+expression_active = (expression_active[0] == '困る') ? [] : ['困る'];
+if (expression_active.length && !MMD_SA.THREEX.enabled)
+  expression_active.push('照れ');
+      }
+    },
+  ];
+
+  hotkey_config.forEach(config=>{
+    System._browser.hotkeys.add(config);
+  });
+
+  if (!browser_native_mode)
+    System._browser.hotkeys.register_global(true);
+})();
+
 
 });
 
