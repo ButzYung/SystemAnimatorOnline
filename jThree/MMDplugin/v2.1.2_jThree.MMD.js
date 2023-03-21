@@ -1,4 +1,4 @@
-// (2023-02-18)
+// (2023-03-21)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -3830,51 +3830,125 @@ if (self.MMD_SA) {
 // AT: IK toggle
 //if (mesh._IK_and_AddTrans[a].pmxBone.name.indexOf("ひざ下IK") != -1) { DEBUG_show(Date.now()); continue; }
 //DEBUG_show(mesh._IK_and_AddTrans[a].pmxBone.name,0,1)
+let bones_for_pose_conversion;
 if (mm) {
-  if (para_SA.IK_disabled && para_SA.IK_disabled.test(target.name)) {
+  let use_default_IK_disabled;
+  if ((mesh._model_index == 0) && System._browser.camera.ML_enabled) {
+    const IK_disabled = System._browser.camera.poseNet.IK_disabled_check(target.name);
+    if (IK_disabled === null) {
+      use_default_IK_disabled = true;
+    }
+    else if (IK_disabled) {
+      continue;
+    }
+  }
+  else {
+    use_default_IK_disabled = true;
+  }
+
+  if (use_default_IK_disabled && para_SA.IK_disabled && para_SA.IK_disabled.test(target.name)) {
     continue
   }
-  if (System._browser.camera.poseNet.IK_disabled_check(target.name)) {
-    continue
+
+  const result = {};
+// NOTE: always an one-time event
+  window.dispatchEvent(new CustomEvent('SA_IK_' + target.name + '_onupdate', { detail:{ result:result } }));
+
+  if (result.links) {
+    a--;
+
+    const IK_target = result.links.target;
+    const pos = MMD_SA.TEMP_v3.copy(target.position);
+    target.position.copy(IK_target);
+    IK_target.copy(pos);
+
+    const effector = bones[ik.effector];
+    const IK_effector = result.links.effector;
+    const e_rot = MMD_SA.TEMP_q.copy(effector.quaternion);
+    effector.quaternion.copy(IK_effector);
+    IK_effector.copy(e_rot);
+
+    const links = result.links.links;
+    const links_result = result.links_result;
+    const jl = ik.links.length;
+    for (let j=0; j<jl; j++) {
+      const ikl = ik.links[j];
+      const link = bones[ikl.bone];
+      const rot = MMD_SA.TEMP_q.copy(link.quaternion);
+      link.quaternion.copy(links[j]);
+      links[j].copy(rot);
+    }
+    window.addEventListener('SA_IK_' + target.name + '_onupdate', (e)=>{
+      target.position.copy(IK_target);
+// needed to update matrix
+      effector.visible = true;
+      effector.quaternion.copy(IK_effector);
+      
+      for (let j=0; j<jl; j++) {
+        const ikl = ik.links[j];
+        const link = bones[ikl.bone];
+        links_result.links[j].copy(link.quaternion);
+        links_result.updated = RAF_timestamp;
+// needed to update matrix
+        link.visible = true;
+        link.quaternion.copy(links[j]);
+      }
+    }, {once:true});
   }
+
 // arm IK
   if (/\u8155\uFF29\uFF2B/.test(target.name)) {
     let _vmd = MMD_SA.vmd_by_filename[mm.filename]
     if (!System._browser.camera.use_armIK && _vmd && !_vmd.use_armIK && !para_SA.use_armIK) { continue }
 //DEBUG_show( THREE.MMD.getModels()[0].mesh.bones_by_name["左腕ＩＫ"].position.toArray() )
 
-if (MMD_SA.THREEX.enabled) {
-// For some reasons there are duplicated updates on IKs (model.updateMotion()?) when the motion loops. Avoid duplicated calculations in such case
-// also provide a mechanism to cancel the possibly duplicated calculation from outer functions (e.g. when mocap is active)
-  const u = model._update_timestamp_ = model._update_timestamp_ || {};
+    const t = target.name;
+    const d = t.charAt(0);
+    const frames = System._browser.camera.poseNet.frames;
+    const bones_by_name = mesh.bones_by_name;
 
-  const t = target.name;
-  const d = t.charAt(0);
-  const bones_by_name = mesh.bones_by_name;
-
-  for (const name of [d+'肩',d+'腕',d+'ひじ']) {
-    const q = bones_by_name[name].quaternion;
-// assuming that if the quaternion is zero, it means there is no key frame for 腕/ひじ in the current motion, and thus there is no need for adjustment
-    if (!q.x && !q.y && !q.z) continue;
-
-    const rot = q.toArray();
-    MMD_SA.THREEX.utils.convert_T_pose_rotation_to_A_pose(name, rot);
-    q.fromArray(rot);
-  }
-
-  window.addEventListener('SA_MMD_model' + mesh._model_index + '_process_bones_after_IK', (e)=>{
-    if (u[t] == RAF_timestamp) return;
-    u[t] = RAF_timestamp;
-
-    for (const name of [d+'肩',d+'腕',d+'ひじ']) {
-      const q = bones_by_name[name].quaternion;
-      const rot = q.toArray();
-      MMD_SA.THREEX.utils.convert_A_pose_rotation_to_T_pose(name, rot);
-      q.fromArray(rot);
+    const mocap_IK = System._browser.camera.poseNet.enabled && (frames.skin[d+'腕ＩＫ'] || (System._browser.camera.poseNet.IK_disabled_check(target.name) === false));
+// save some headaches and discard any non-arm-IK motion when arm IK　mocap is not used, as even when arm-IK is at default, any shoulder rotation will still affect the output
+    if (!_vmd.use_armIK && !mocap_IK) {
+      continue;
     }
-  }, {once:true});
-}
 
+    if (mocap_IK) {
+      for (const name of [d+'腕', d+'ひじ']) {
+        bones_by_name[name+'+'].quaternion.copy(bones_by_name[name].quaternion);
+        bones_by_name[name].quaternion.set(0,0,0,1);
+      }
+    }
+
+    if (MMD_SA.THREEX.get_model(mesh._model_index).is_T_pose) {
+// MMD IK operates on A pose, and returns A pose
+// arm IK operates on bones+, and grants the rotations to the original bones
+
+// always convert shoulder, as it will affect arm IK calculation
+      bones_for_pose_conversion = [d+'肩'];
+
+      if (mocap_IK) {
+        bones_for_pose_conversion.push(d+'腕+', d+'ひじ+');
+      }
+      else if (_vmd.use_armIK) {
+// save some headaches and just assume that bones+ are not used
+      }
+
+      for (const name of bones_for_pose_conversion) {
+        const q = bones_by_name[name].quaternion;
+        const rot = q.toArray();
+        MMD_SA.THREEX.utils.convert_T_pose_rotation_to_A_pose(name.replace(/\+/, ''), rot);
+        q.fromArray(rot);
+      }
+
+      if (mocap_IK) {
+        bones_for_pose_conversion = [d+'肩', d+'腕+', d+'ひじ+'];
+      }
+      else if (_vmd.use_armIK) {
+// assuming shoulder rotation is never zero for T-posed model, there is always a non-zero output for arm IK
+        bones_for_pose_conversion = [d+'肩', d+'腕+', d+'ひじ+'];
+      }
+    }
   }
 }
 		effector = bones[ik.effector];
@@ -3893,7 +3967,7 @@ il = Math.max(Math.floor(il * ik_iteration_factor), 1);
 			link = bones[ikl.bone];
 // AT: comment out quaternion.set(0,0,0,1) for independent rotations on linked bones to work
 // limiting rotation from 足首 looks more natural
-if (link.name.indexOf("足首") != -1) link.quaternion.slerp(MMD_SA.TEMP_q.set(0,0,0,1), 0.5)
+if (link.name.indexOf("足首") != -1) link.quaternion.slerp(MMD_SA.TEMP_q.set(0,0,0,1), 0.5);
 //			link.quaternion.set(0,0,0,1);
 // AT: link sign
 link_sign[j] = (ikl.limits && model_para && model_para.IK_link_inverted && model_para.IK_link_inverted.test(link.name))?-1:1
@@ -3972,20 +4046,18 @@ rotated = true
 			}
 if (!rotated) { /*DEBUG_show(i,0,1);*/break; }
 		}
-/*
-if (mesh._IK_and_AddTrans[a].pmxBone.name.indexOf("ひざ下IK") != -1) {//(mesh._model_index==3 && /\u8155\uFF29\uFF2B/.test(target.name) && target.position.y) {
-//DEBUG_show(target.name+'/'+targetPos.toArray()+'/'+Date.now())
-var str = [ik.control]
-		for (j=0; j<jl; j++) {
-			ikl = ik.links[j];
-			link = bones[ikl.bone];
-str.push(link.name+'/'
-+MMD_SA.TEMP_v3.setEulerFromQuaternion(link.quaternion).multiplyScalar(180/Math.PI).toArray()
-+'/'+(ikl.limits && JSON.stringify(ikl.limits)));
-		}
-DEBUG_show(str.join("\n"))
+
+// MMD IK operates on A pose. Convert it back to T pose for T-posed model
+const bones_by_name = mesh.bones_by_name;
+if (bones_for_pose_conversion) {
+  for (const name of bones_for_pose_conversion) {
+    const q = bones_by_name[name].quaternion;
+    const rot = q.toArray();
+    MMD_SA.THREEX.utils.convert_A_pose_rotation_to_T_pose(name.replace(/\+/, ''), rot);
+    q.fromArray(rot);
+  }
 }
-*/
+
 	}
 
 	bones.forEach(function(v) {
@@ -4973,7 +5045,7 @@ if (morph_to_skip[nextKey.name]) {
   return
 }
 if (nextKey.morph_type == 0) {
-if (!MMDmorphs[nextKey.morph_index]) console.log(nextKey,MMDmorphs)
+//if (!MMDmorphs[nextKey.morph_index]) console.log(nextKey,MMDmorphs)
   MMDmorphs[nextKey.morph_index].items.forEach(function (m) {
     morph_to_skip[MMDmorphs[m.target].name] = true
   });
@@ -5796,31 +5868,90 @@ Model.prototype.load = function( modelUrl, motionUrl, onload ) {
 };
 
 // AT: _update_IK_and_AddTrans
-Model.prototype._update_IK_and_AddTrans = function (afterPhysics, bone_name) {
-  var that = this
+Model.prototype._update_IK_and_AddTrans = function (afterPhysics, bone_name, include_hierarchy, reset_transformer) {
+  var that = this;
 
-  var IK_and_AddTrans = _IK_and_AddTrans = this.mesh._IK_and_AddTrans
-  var is_IK
-  var a_ini, a_end, idx_last
+  var _IK_and_AddTrans;
+  var IK_and_AddTrans = _IK_and_AddTrans = this.mesh._IK_and_AddTrans;
+  var is_IK;
+  var a_ini, a_end, idx_last;
 
+  let p_name;
   if (bone_name) {
-    let bone = this.mesh.bones_by_name[bone_name]
-    IK_and_AddTrans = bone._IK_and_AddTrans
+    const bone = this.mesh.bones_by_name[bone_name];
+    p_name = (include_hierarchy) ? '_IK_and_AddTrans_hierarchy' : '_IK_and_AddTrans';
+    IK_and_AddTrans = bone[p_name];
     if (!IK_and_AddTrans) {
-      let b_list = [bone._index]
-      IK_and_AddTrans = _IK_and_AddTrans.filter((b)=>{
+      let d = bone_name.charAt(0);
+      if ((d != '左') && (d != '右'))
+        d = '';
+
+      const t_list = {};
+      t_list[bone._index] = true;
+
+      bone[p_name+'_reset_list'] = {};
+
+      const bone_parent = ((typeof include_hierarchy == 'string') && this.mesh.bones_by_name[include_hierarchy]) || bone.parent;
+      IK_and_AddTrans = bone[p_name] = _IK_and_AddTrans.filter((b)=>{
+if (d && (d != b.name.charAt(0))) return false;
+
+var return_value = false;
+
+// include all bones that rely on transforms that share the same parent, and all IKs that share the same parent
+if (include_hierarchy) {
+  const b_transformer = (b.pmxBone.additionalTransform && this.mesh.bones[b.pmxBone.additionalTransform[0]]) || (b.pmxBone.IK && b);
+  let p = b_transformer;
+  do {
+    p = p.parent;
+    if (p == bone_parent) {
+      t_list[b_transformer._index] = true;
+      return_value = true;
+      break;
+    }
+  }
+  while (p && p.isBone);
+}
+
+// include all bones that rely on this transform and the bones themselves
 if (b.pmxBone.additionalTransform && (!b.pmxBone.IK || b._additionalTransform_only)) {
-  if (b_list.indexOf(b.pmxBone.additionalTransform[0]) != -1) {
-    b_list.push(b._index)
-    return true
+  const transformer = b.pmxBone.additionalTransform[0];
+  if (t_list[transformer]) {
+    t_list[b._index] = true;
+// top-level transformer only (i.e. not depending on another transformer)
+    bone[p_name+'_reset_list'][transformer] = true;
+// just reset all transformed bones for simplicity
+//    bone[p_name+'_reset_list'][b._index] = true;
+
+    return true;
   }
 }
-return false
+
+return return_value;
+      });
+
+      bone[p_name+'_reset_list'] = Object.keys(bone[p_name+'_reset_list']).map(i=>{
+return { bone:this.mesh.bones[i], pos:new THREE.Vector3(), rot:new THREE.Quaternion() };
       });
     }
-    this.mesh._IK_and_AddTrans = IK_and_AddTrans
-    a_ini = 0
-    idx_last = IK_and_AddTrans.length - 1
+
+    if (reset_transformer) {
+      bone[p_name+'_reset_list'].forEach(obj=>{
+        const b = obj.bone;
+        obj.pos.copy(b.position);
+        obj.rot.copy(b.quaternion);
+        b.position.negate();
+        b.quaternion.conjugate();
+      });
+// process in reversed order so that nested transformers work
+      const IK_and_AddTrans_reversed = [];
+      IK_and_AddTrans = IK_and_AddTrans.filter(b=>!b.pmxBone.IK);
+      IK_and_AddTrans.forEach(b=>{IK_and_AddTrans_reversed.unshift(b)});
+      IK_and_AddTrans = IK_and_AddTrans_reversed;
+    }
+
+    this.mesh._IK_and_AddTrans = IK_and_AddTrans;
+    a_ini = 0;
+    idx_last = IK_and_AddTrans.length - 1;
   }
   else {
     if (afterPhysics) {
@@ -5875,7 +6006,15 @@ return false
   }
 //if (str) DEBUG_show(str+'\n'+Date.now())
 
-  this.mesh._IK_and_AddTrans = _IK_and_AddTrans
+  if (bone_name && reset_transformer) {
+    this.mesh.bones_by_name[bone_name][p_name+'_reset_list'].forEach(obj=>{
+      const b = obj.bone;
+      b.position.add(obj.pos).add(obj.pos);
+      b.quaternion.premultiply(obj.rot).premultiply(obj.rot);
+    });
+  }
+
+  this.mesh._IK_and_AddTrans = _IK_and_AddTrans;
 }
 
 Model.prototype.create = function( param, oncreate ) {
@@ -6542,6 +6681,8 @@ if (self.MMD_SA && MMD_SA_options.auto_blink && !morph_extra_played && (this.pmx
 	if ( this.skin ) {
 // AT: SFX (sound, etc)
 self.MMD_SA && MMD_SA_options.Dungeon && MMD_SA_options.Dungeon.SFX_check(this, para_SA, this.skin, dt)
+// AT: before skin
+window.dispatchEvent(new CustomEvent("SA_MMD_model" + this._model_index + "_before_process_bones", { detail:{ model:this, skin:this.skin } }));
 		this.skin.update( dt, force );
 // AT: moved to somewhere near the end of this function, after all custom skin calculations
 //		this.mesh.geometry.boundingSphere.center.addVectors( this.mesh.bones[0].position, this.boundingCenterOffset );
@@ -6644,6 +6785,8 @@ if (self.MMD_SA) {
 }
 
 //if (this._model_index == 1) { DEBUG_show(MMD_SA._head_pos.toArray()+'\n'+_head_pos.toArray()) }
+
+System._browser.camera.poseNet.frames.set_upper_body_rotation(this._model_index, 0);
 
 var look_at_screen
 if (self.MMD_SA && _head_pos && (mesh.bones_by_name[head_name]) && (look_at_screen_ratio != 0) && MMD_SA_options.look_at_screen_by_model(this) && (model_para.look_at_screen != false)) {
@@ -6872,6 +7015,8 @@ if (self.MMD_SA && (this._model_index == 0)) {
 // meter motion END
 	}
 
+System._browser.camera.poseNet.frames.set_upper_body_rotation(this._model_index, 1);
+
 // AT: custom skin (before IK update)
 if (self.MMD_SA) {
 //model_para._custom_skin = [{ key:{ name:"右腕ＩＫ", pos:[0,1,0] ,rot:[0,0,0,1] ,interp:MMD_SA._skin_interp_default }, idx:mesh.bones_by_name["右腕ＩＫ"]._index }]
@@ -6900,6 +7045,14 @@ if (!s.condition || s.condition(that)) {
 //DEBUG_show(pos_diff.toArray().join("\n")+"\n"+Date.now())
       }
     }
+  }
+}
+
+// AT: process_bones (before IK)
+if (self.MMD_SA) {
+  if (!para_SA.process_bones_before_IK || !para_SA.process_bones_before_IK(this, this.skin)) {
+    model_para.process_bones_before_IK && model_para.process_bones_before_IK(this, this.skin)
+    window.dispatchEvent(new CustomEvent("SA_MMD_model" + this._model_index + "_process_bones_before_IK", { detail:{ model:this, skin:this.skin } }));
   }
 }
 
