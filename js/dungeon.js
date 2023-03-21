@@ -1,4 +1,4 @@
-// (2023-02-18)
+// (2023-03-21)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -3729,7 +3729,7 @@ if (!_key_pressed_when_character_clicked[e.keyCode]) {
 
   var _cursor_timerID
   window.addEventListener('SA_Dungeon_character_clicked', function (e) {
-if (MMD_SA.music_mode) return false;
+if (MMD_SA.music_mode || System._browser.camera.ML_enabled) return false;
 
 var d = MMD_SA_options.Dungeon
 var intersected = e.detail.intersected.sub(d.character.pos)
@@ -6195,7 +6195,9 @@ key_map.down = 0
   });
 
   d.SA_keydown = function (e) {
-var k = e.detail.keyCode
+const k = e.detail.keyCode;
+const k_code = e.detail.e.code;
+
 // use RAF_timestamp instead, making it easier to track if a key is pressed in the same frame
 var t = RAF_timestamp//performance.now()
 // Raw key press data. Avoid altering it besides keyboard events.
@@ -6203,14 +6205,14 @@ if (!d._key_pressed[k]) d._key_pressed[k] = t
 
 var msg_branch_list = d.dialogue_branch_mode
 if (msg_branch_list) {
-  if (!d._states.action_allowed_in_event_mode || ((k >= 96) && (k <= 96+9)) || ((k >= 48) && (k <= 48+9)))
+  if (!d._states.action_allowed_in_event_mode || ((k >= 96) && (k <= 96+9)) || ((k >= 48) && (k <= 48+9)) || /Key[A-Z]/.test(k_code))
     e.detail.result.return_value = true;
 
   for (var i = 0, i_max = msg_branch_list.length; i < i_max; i++) {
     const branch = msg_branch_list[i]
     const sb_index = branch.sb_index || 0;
     const sb = MMD_SA.SpeechBubble.list[sb_index];
-    if ((k == 96+branch.key) || (k == 48+branch.key)) {
+    if ((typeof branch.key == 'number') ? ((k == 96+branch.key) || (k == 48+branch.key)) : (k_code == 'Key'+branch.key)) {
       if (MMD_SA_options.SpeechBubble_branch && MMD_SA_options.SpeechBubble_branch.confirm_keydown && (branch.key != sb._branch_key_) && (sb.msg_line.some(msg=>MMD_SA_options.SpeechBubble_branch.RE.test(msg)&&(RegExp.$1==branch.key)))) {
         sb._branch_key_ = branch.key
         sb._update_placement(true)
@@ -11998,7 +12000,7 @@ if (e.goto_branch != null) {
 }
 
 if (e.goto_event) {
-  this.run_event(e.goto_event.id, e.goto_event.branch_index, e.goto_event.step||0)
+  this.run_event(e.goto_event.id, e.goto_event.branch_index, e.goto_event.step||e.goto_event.event_index||0)
 }
 
 // backward compatibility
@@ -12007,7 +12009,7 @@ if (e.next_event) {
   delete e.next_event
 }
 if (e.next_step) {
-  if (e.next_step.delay)
+  if (e.next_step.delay != null)
     setTimeout(function () { MMD_SA_options.Dungeon.run_event() }, e.next_step.delay*1000)
   else
     this.run_event()
