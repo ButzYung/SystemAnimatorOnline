@@ -1,6 +1,6 @@
 /*
 
-_SA.js (2022-12-20)
+_SA.js (2023-03-21)
 
 System Animator
 (c) Butz Yung / Anime Theme. All rights reserved.
@@ -711,12 +711,29 @@ function SA_ClearInterface(event) {
   } catch (err) { console.error(err.message) }
 }
 
-function SA_OnKeyDown(event, enforced) {
+// cannot use const as it won't appear under self
+var SA_OnKeyDown = (()=>{
+
+  let shift_location, ctrl_location, alt_location;
+
+return function (event, enforced) {
 // event object used here may not be native, and thus it may not have native properties/functions.
   event.preventDefault && event.preventDefault();
 
   var k = event.keyCode
   if (k > 249) return
+
+  switch (event.key) {
+    case 'Control':
+      ctrl_location = event.location;
+      break;
+    case 'Shift':
+      shift_location = event.location;
+      break;
+    case 'Alt':
+      alt_location = event.location;
+      break;
+  }
 
   const is_altKey = event.altKey;
   const is_safe_key = is_altKey || !self.MMD_SA || !MMD_SA_options.Dungeon_options || !event.preventDefault;
@@ -738,7 +755,7 @@ function SA_OnKeyDown(event, enforced) {
   }
 
   var result = { return_value:null }
-  window.dispatchEvent(new CustomEvent("SA_keydown", { detail:{ e:event, keyCode:k, result:result } }));
+  window.dispatchEvent(new CustomEvent("SA_keydown", { detail:{ e:event, keyCode:k, shift_location:shift_location, ctrl_location:ctrl_location, alt_location:alt_location, result:result } }));
 
   var _browser_onkeydown
   if (result.return_value) {
@@ -867,7 +884,9 @@ function SA_OnKeyDown(event, enforced) {
   }
 
   System._browser.showFocus(false)
-}
+};
+
+})();
 
 async function SA_DragDropEMU(file) {
 //if (file) DEBUG_show(file.constructor,0,1)
