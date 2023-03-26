@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-03-21)
+// (2023-03-26)
 
 var use_full_spectrum = true
 
@@ -2602,7 +2602,7 @@ return !!flipH_bubble
 
     SB.prototype.update_bubble = function (flipH_bubble, para) {
 if (!para)
-  para = {}
+  para = this.para;
 this.flipH_bubble = flipH_bubble
 
 bubble_index = this.bubble_index
@@ -2758,11 +2758,16 @@ else
 
 this.msg_line = msg_line
 
+this.msg_obj = msg_line.map(msg=>{
+  return {};
+});
+
 var w_max = 0, h_max = font_size
 for (var i = 0, i_length = msg_line.length; i < i_length; i++) {
-  var m = context.measureText(msg_line[i])
+  const m = context.measureText(msg_line[i]);
+  this.msg_obj[i].w = m.width;
   if (w_max < m.width)
-    w_max = m.width
+    w_max = m.width;
 }
 
 var w = w_max
@@ -2787,14 +2792,22 @@ for (var i = 0, i_length = msg_line.length; i < i_length; i++) {
     if (MMD_SA_options.SpeechBubble_branch.RE.test(msg_line[i]))
       branch_index = RegExp.$1
     let fillStyle = (branch_index != -1) ? MMD_SA_options.SpeechBubble_branch.fillStyle || 'Navy' : 'black';
-    if (MMD_SA_options.SpeechBubble_branch.confirm_keydown && (this._branch_key_ != null)) {
+    if ((MMD_SA_options.SpeechBubble_branch.confirm_keydown || (MMD_SA_options.SpeechBubble_branch.use_cursor !== false)) && (this._branch_key_ != null)) {
       if ((branch_index != -1) && (branch_index == this._branch_key_)) {
         fillStyle = 'red'
       }
     }
     context.fillStyle = fillStyle
   }
-  context.fillText(msg_line[i], x, y + i*(h_max+10))
+
+  const y_final = y + i*(h_max+10);
+  context.fillText(msg_line[i], x, y_final);
+
+  const msg_obj = this.msg_obj[i];
+  msg_obj.branch_key = (branch_index == -1) ? null : branch_index;
+  msg_obj.x = x;
+  msg_obj.y = y_final;
+  msg_obj.h = h_max+10;
 }
 
 context.restore()
@@ -2804,7 +2817,8 @@ this._txr.needsUpdate = true
 
     SB.prototype.message = function (bubble_index, msg, duration, para) {
 if (!para)
-  para = {}
+  para = {};
+this.para = para;
 
 var group = para.group
 var msg_group = this.msg_group
@@ -3031,6 +3045,104 @@ MMD_SA.THREEX.mesh_obj.get( "SpeechBubbleMESH" + this.index ).hide();
     new SB();
 
     new SB(1, {invertH_side:true});
+
+    if (self.MMD_SA_options?.Dungeon_options && (MMD_SA_options.SpeechBubble_branch.use_cursor !== false)) {
+window.addEventListener('MMDStarted', ()=>{
+//  const THREE = MMD_SA.THREEX.THREE;
+  const SL = MMD_SA.THREEX.SL;
+
+  const v1 = new THREE.Vector3();
+  const v2 = new THREE.Vector3();
+
+  let mouse_x, mouse_y;
+  const d_target = document.getElementById('SL_Host');
+  d_target.addEventListener('mousemove', (e)=>{
+    mouse_x = e.clientX;
+    mouse_y = e.clientY;
+  });
+  d_target.addEventListener('click', (e)=>{
+    if (d_target.style.cursor != 'pointer') return;
+
+    const sb = bb_list.find(sb=>sb._branch_key_!=null);
+    const ev = {};
+    const num = parseInt(sb._branch_key_);
+    if (num >= 0) {
+      ev.keyCode = 96+num;
+    }
+    else {
+      ev.code = 'Key'+sb._branch_key_;
+    }
+
+    SA_OnKeyDown(ev);
+  });
+
+// https://stackoverflow.com/questions/11586527/converting-world-coordinates-to-screen-coordinates-in-three-js-using-projection
+
+  System._browser.on_animation_update.add(()=>{
+    function clear_highlight(sb) {
+      if (sb._branch_key_ != null) {
+        sb._branch_key_ = null;
+        sb._update_placement(true);
+      }
+    }
+
+    let is_pointer = false;
+    bb_list.forEach(sb=>{
+      if (!sb.visible || (mouse_x == null)) {
+        clear_highlight(sb);
+        return;
+      }
+
+      const width = SL.width, height = SL.height;
+      const widthHalf = width / 2, heightHalf = height / 2;
+
+      const pos = v1.copy(sb._mesh.position).project(MMD_SA._trackball_camera.object);
+      pos.x = ( pos.x * widthHalf ) + widthHalf;
+      pos.y = - ( pos.y * heightHalf ) + heightHalf;
+
+      pos.x = mouse_x - pos.x;
+      pos.y = mouse_y - pos.y;
+
+      const b = sb.bubbles[sb.bubble_index];
+      const w = b.image.width;
+      const h = b.image.height;
+
+      const scale = v2.copy(sb._mesh.scale).multiplyScalar(Math.min(SL.width/w, SL.height/h));
+      pos.x /= scale.x;
+      pos.y /= scale.y;
+
+      pos.x += w/2;
+      pos.y += h/2;
+
+      if ((pos.x < 0) || (pos.x > w) || (pos.y < 0) || (pos.y > h)) {
+        clear_highlight(sb);
+        return;
+      }
+
+      let msg_obj;
+      for (let i = sb.msg_obj.length-1; i >= 0; i--) {
+        const obj = sb.msg_obj[i];
+        if ((pos.x > obj.x) && (pos.y > obj.y)) {
+          if ((pos.x-obj.x < obj.w*1.2) && ((i < sb.msg_obj.length-1) || (pos.y-obj.y < obj.h*1.2)))
+            msg_obj = sb.msg_obj[i];
+          break;
+        }
+      }
+
+      if ((msg_obj?.branch_key != null) ? sb._branch_key_ != msg_obj.branch_key : sb._branch_key_ != null) {
+        sb._branch_key_ = (msg_obj?.branch_key != null) ? msg_obj.branch_key : null;
+        sb._update_placement(true);
+//DEBUG_show(Date.now())
+      }
+
+      is_pointer = is_pointer || (sb._branch_key_ != null);
+//      DEBUG_show(pos.toArray().join('\n')+'\n\n'+((msg_obj)?msg_obj.branch_index:-1));
+    });
+
+    d_target.style.cursor = (is_pointer) ? 'pointer' : 'auto';
+  }, 0,0,-1);
+});
+    }
 
     return bb_list[0];
   })()
