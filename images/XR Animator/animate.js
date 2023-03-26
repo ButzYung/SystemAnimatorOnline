@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-03-21)
+// (2023-03-26)
 
 var MMD_SA_options = {
 
@@ -183,6 +183,7 @@ var MMD_SA_options = {
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/sitting_sexy03.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/sitting_sexy04.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/sitting_sexy05.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/sitting_sexy06.vmd' }
 
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/baseball_throw/baseball_throw.vmd' }
 
@@ -1298,7 +1299,7 @@ MMD_SA.WebXR.ground_plane.visible = false
           x: { unit_length:1, scale:2 },
           y: { add:-0.1, min:0.05, scale:2 },
           z: { unit_length:1, add:0, min:7, scale:3 },
-          length_limit: 1.2,
+          length_max: 1.2,
         },
 
         rotation: {
@@ -1446,7 +1447,7 @@ this.center_view = (this.center_view_enforced) ? [0, (head_y)*1.025-11.4, -20*MM
       rotation_weight: 0.5,
       displacement_weight: 1,
     },
-    arm_IK_stickiness: { default_rotation_weight:0.5 },
+    arm_default_stickiness: { default_rotation_weight:0.5 },
   }
 
  ,adjustment_per_model: {
@@ -1754,7 +1755,7 @@ cam_pos.copy(MMD_SA._trackball_camera.object.position)
       rotation_weight: 0.5,
       displacement_weight: 1,
     },
-    arm_IK_stickiness: { default_rotation_weight:0.5 },
+    arm_default_stickiness: { default_rotation_weight:0.5 },
   },
     }
 
@@ -1785,7 +1786,7 @@ cam_pos.copy(MMD_SA._trackball_camera.object.position)
   motion_tracking_upper_body_only: true,
   motion_tracking: {
     look_at_screen: true,
-    arm_IK_stickiness: {
+    arm_default_stickiness: {
       'right': { default_rotation_weight: 0.5 },
       'left' : { parent:{ weight:{x:{left:0.5,right:0.5}, y:{down:0.5,up:0.5}, z:{backward:0,forward:0.5}} } },
     },
@@ -1797,7 +1798,7 @@ cam_pos.copy(MMD_SA._trackball_camera.object.position)
           x: { scale:2 },
           y: { add:-0.1, min:0.05, scale:3 },
           z: { add:0.2, scale:2 },
-          length_limit: 1.2,
+          length_max: 1.2,
 //          camera_weight: 0.5,
         },
         rotation: {
@@ -1831,7 +1832,7 @@ cam_pos.copy(MMD_SA._trackball_camera.object.position)
       displacement_weight: 0.1,
       feet_fixed_weight:0.8,
     },
-    arm_IK_stickiness: {
+    arm_default_stickiness: {
       default_rotation_weight:1, default_position_weight:1,
     },
     arm_as_leg: {
@@ -1867,7 +1868,7 @@ cam_pos.copy(MMD_SA._trackball_camera.object.position)
   motion_tracking_upper_body_only: true,
   motion_tracking: {
     look_at_screen: true,
-    arm_IK_stickiness: {
+    arm_default_stickiness: {
       parent:{ weight: 1/3 },
     },
     hip_adjustment: {
@@ -1894,7 +1895,7 @@ cam_pos.copy(MMD_SA._trackball_camera.object.position)
   motion_tracking_upper_body_only: true,
   motion_tracking: {
 //    look_at_screen: true,
-    arm_IK_stickiness: {
+    arm_default_stickiness: {
       default_rotation_weight: 0.5,
     },
     arm_as_leg: {
@@ -1906,23 +1907,6 @@ cam_pos.copy(MMD_SA._trackball_camera.object.position)
           z: { add:0.4, scale:1.5, max:1 },
         },
       },
-    },
-  }
-    }
-
-   ,"大人ミクさんポーズ1_v01": {
-//  look_at_screen: true,
-  motion_tracking_enabled: true,
-  motion_tracking_upper_body_only: true,
-  motion_tracking: {
-//    look_at_screen: true,
-    arm_IK_stickiness: {
-      'right': { parent:{name:'頭', weight:0.75}, default_position_weight:1, default_rotation_weight:1 },
-      'left' : { default_position_weight:1 },
-    },
-    arm_as_leg: {
-      enabled: true,
-      linked_side: 'left',
     },
   }
     }
@@ -1966,8 +1950,8 @@ cam_pos.copy(MMD_SA._trackball_camera.object.position)
       'left' : { feet_fixed_weight:1 },
       'right': { feet_fixed_weight:2/3, },
     },
-    arm_IK_stickiness: {
-      'right': { parent:{name:'頭', weight:{ x:{left:1.5, right:0.5}, y:{down:1.5, up:0.5}, z:{backward:0.5, forward:1.5} }}, default_position_weight:0.1, default_rotation_weight:1 },
+    arm_default_stickiness: {
+      'right': { parent:{name:'頭', weight:{ x:{left:1.5, right:0.5}, y:{down:1.5, up:0.5}, z:{backward:0.5, forward:1.5} }}, default_position_weight:0.1, default_rotation_weight:0.8 },
       'left' : { default_position_weight:1, default_rotation_weight:1 },
     },
     arm_as_leg: {
@@ -2008,7 +1992,7 @@ cam_pos.copy(MMD_SA._trackball_camera.object.position)
       rotation_weight: 0.5,
       feet_fixed_weight: 0.5,
     },
-    arm_IK_stickiness: {
+    arm_default_stickiness: {
       default_position_weight:1, default_rotation_weight:1,
     },
     arm_as_leg: {
@@ -2065,8 +2049,8 @@ if (diff > 0) {
       'left' : { feet_fixed_weight:1 },
       'right': { feet_fixed_weight:2/3, },
     },
-    arm_IK_stickiness: {
-//      'left': { parent:{ name:'右足', weight:1 } },
+    arm_default_stickiness: {
+      'left': { parent:{ name:'右足', weight:1 } },
       'right': { parent:{ weight:1 } },
     },
 
@@ -2109,7 +2093,7 @@ if (diff > 0) {
     hip_adjustment: {
       feet_fixed_weight:1,
     },
-    arm_IK_stickiness: {
+    arm_default_stickiness: {
       'right': { parent:{ weight:0.8 } },
     },
     arm_as_leg: {
@@ -2164,7 +2148,7 @@ if (diff > 0) {
     hip_adjustment: {
       feet_fixed_weight:1,
     },
-    arm_IK_stickiness: {
+    arm_default_stickiness: {
       'right' : { parent:{ name:'頭', weight:{ x:{left:1.5, right:0.5}, y:{down:1.5, up:0.5}, z:{backward:0.5, forward:1.5} } }, default_position_weight:0.1, default_rotation_weight:0.5, },
       'left': { default_position_weight:1, default_rotation_weight:1, },
     },
@@ -2213,9 +2197,9 @@ if (diff > 0) {
     hip_adjustment: {
       feet_fixed_weight:1,
     },
-    arm_IK_stickiness: {
+    arm_default_stickiness: {
       'left' : { parent:{ name:'頭', weight:{ x:{left:0.5, right:1.5}, y:{down:1.5, up:0.5}, z:{backward:0.5, forward:1.5} } }, default_position_weight:0.1, default_rotation_weight:0.5, },
-      'right': { default_position_weight:1, default_rotation_weight:1, },
+      'right': { default_position_weight:0.5, default_rotation_weight:0.5, },
     },
     arm_as_leg: {
 //      enabled: true,
@@ -2285,7 +2269,7 @@ if (z_para) {
     hip_adjustment: {
       feet_fixed_weight:0.9,
     },
-    arm_IK_stickiness: {
+    arm_default_stickiness: {
       parent:{ weight:0.5 }, default_position_weight:1, default_rotation_weight:0.5,
     },
     arm_as_leg: {
@@ -2300,7 +2284,7 @@ if (z_para) {
 */
 
           x: { add:0.75, min:0.75, scale:{left:1.5, right:-1.5} },
-          y: { add:0.3, scale:1.5 },
+          y: { add:0.3, scale:1.5, min:0 },
           z: { unit_length:1, min:{left:0.85,right:-0.5}, max:{left:0.85,right:-0.5}, scale:0.2 },
           rotation: { x:0, y:-90, z:0 },
 
@@ -2313,6 +2297,143 @@ if (z_para) {
     },
   }
     }
+
+   ,"sitting_sexy06": {
+  adjustment_per_model: {
+    'DUMMY.pmx' : {
+  skin_default: {
+  }
+    }
+  },
+
+  look_at_screen_bone_list: [
+    { name:"首", weight_screen:0.5, weight_screen_y:0.75, weight_motion:1 },
+    { name:"頭", weight_screen:0.5, weight_screen_y:0.75, weight_motion:1 },
+    { name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.25, weight_motion:1 },
+    { name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.25, weight_motion:1 },
+  ],
+
+  center_view: [0,-5,7.5],
+
+  motion_tracking_enabled: true,
+  motion_tracking_upper_body_only: true,
+  motion_tracking: {
+    look_at_screen: true,
+    motion_default_weight: {
+      'head': 0.5,
+    },
+    hip_adjustment: {
+      feet_fixed_weight:1,
+      rotation_weight:0.25,
+      displacement_weight:0,
+    },
+    arm_default_stickiness: {
+      'left' : { default_position_weight:1, default_rotation_weight:1, },
+      'right': { default_position_weight:0.8, default_rotation_weight:0.5, },
+    },
+    arm_as_leg: {
+//      enabled: true,
+      linked_side: 'right',
+      transformation: {
+        position: {
+          x: { add:-0.3, max:-0.1, scale:3 },
+          y: { unit_length:1, add:-1.5, min:0.5, scale:2 },
+          z: { add:-0.3, min:0.1, scale:3 },
+          len_max: 1.2,
+          length_min: 0.5,
+//          camera_weight: 0.75,
+        },
+      },
+    },
+  }
+    }
+
+
+   ,"crouch01": {
+  adjustment_per_model: {
+    'DUMMY.pmx' : {
+  skin_default: {
+  }
+    }
+  },
+
+  look_at_screen: true,
+  look_at_screen_bone_list: [
+    { name:"首", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
+    { name:"頭", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
+    { name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+    { name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+  ],
+
+//  center_view: [0,-6,7.5],
+
+  motion_tracking_enabled: true,
+  motion_tracking_upper_body_only: true,
+  motion_tracking: {
+    look_at_screen: true,
+    motion_default_weight: {
+      'head': 1,
+    },
+    hip_adjustment: {
+      feet_fixed_weight: 1,
+      displacement_weight: 0.75,
+//rotation_weight:0,
+    },
+    arm_default_stickiness: {
+      'left' : { parent:{ name:'頭', weight:{ x:{left:1, right:1}, y:{down:1, up:1}, z:{backward:0.5, forward:1} } }, default_position_weight:0.1, default_rotation_weight:0.5, },
+      'right': { parent:{ name:'頭', weight:{ x:{left:1, right:1}, y:{down:1, up:1}, z:{backward:0.5, forward:1} } }, default_position_weight:0.1, default_rotation_weight:0.5, },
+//default_position_weight:0, default_rotation_weight:0
+    },
+  }
+    }
+
+   ,"crouch02": {
+  adjustment_per_model: {
+    'DUMMY.pmx' : {
+  skin_default: {
+  }
+    }
+  },
+
+  look_at_screen: true,
+  look_at_screen_bone_list: [
+    { name:"首", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
+    { name:"頭", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
+    { name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+    { name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+  ],
+
+//  center_view: [0,-6,7.5],
+
+  motion_tracking_enabled: true,
+  motion_tracking_upper_body_only: true,
+  motion_tracking: {
+    look_at_screen: true,
+    motion_default_weight: {
+      'head': 1,
+    },
+    hip_adjustment: {
+      feet_fixed_weight: 1,
+      displacement_weight: 1,
+    },
+    arm_default_stickiness: {
+      default_position_weight:0.75, default_rotation_weight:0.5,
+    },
+    arm_tracking: {
+      transformation: {
+        position: {
+          x: { scale:1.5 },
+          y: { scale:1.5 },
+          z: {},
+        },
+      },
+      IK_constraint: {
+//        target_offset: [0,3,0],
+      },
+    },
+  }
+    }
+
 
   }
 
@@ -3083,7 +3204,7 @@ _motion_list[0] = [
 
   {name:"sitting_sexy01", info:"Sit 04 (🙋/🦶)"},
 
-  {name:"Mixamo - Female Sitting Pose01", info:"Sit 05 (🙋)"},
+  {name:"Mixamo - Female Sitting Pose01", info:"Sit 05 (🙋/🦶))"},
 
   {name:"Mixamo - Female Sitting Pose02", info:"Sit 06 (🙋/🦶)"},
 
@@ -3096,6 +3217,8 @@ _motion_list[0] = [
 //  {name:"gal_model_motion_with_legs-2_loop_v01", info:"Sit - Floating (🙋)"},
 
   {name:"sitting_sexy05", info:"Sit 10 (🙋/🦶)"},
+
+  {name:"sitting_sexy06", info:"Sit 11 (🙋/🦶)"},
 
   {name:"sitting_sexy02", info:"Legs on table (🙋/🦶)"},
 
@@ -6247,7 +6370,7 @@ MMD_SA_options.Dungeon.update_camera_position_base();
      ,[
         {
           message: {
-  content: 'XR Animator (v0.4.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Cancel'
+  content: 'XR Animator (v0.4.2)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
