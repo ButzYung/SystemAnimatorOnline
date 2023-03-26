@@ -3328,13 +3328,13 @@ if (System._browser.camera.ML_enabled) {
   '- The current pose '
 + ((MMD_SA.MMD.motionManager.para_SA.motion_tracking_enabled) ? 'supports ' + ((MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only) ? 'upper-body' : 'full-body') + ' motion tracking.' : 'does not support motion tracking.') + '\n'
 + '- Double-click to change the pose of the avatar.\n'
-+ '- Use the corresponding key to pick an alphanumeric option.';
++ '- Use mouse or keys to pick an alphanumeric option.';
 }
 else {
  info =
   '- Double-click to change the pose of the avatar.\n'
 + '- Choose a suitable pose depending on whether you want a full-body or upper-only mocap.\n'
-+ '- Use the corresponding key to pick an alphanumeric option.';
++ '- Use mouse or keys to pick an alphanumeric option.';
 }
 
 return info;
@@ -3387,7 +3387,7 @@ else {
   info +=
   '- Double-click to choose a video input.\n'
 + '- You can use ' + ((is_mobile) ? 'selfie camera' : 'webcam') + ', or drop a local video/picture file.\n'
-+ '- Use numeric keys to pick a numbered option.';
++ '- Use mouse or keys to pick a numbered option.';
 }
 
 return info;
@@ -3443,7 +3443,7 @@ else {
     info +=
   '- Double-click to enable motion capture to control the avatar.\n'
 + '- You can track your face, full body, or something in between.\n'
-+ '- Use numeric keys to pick a numbered option.';
++ '- Use mouse or keys to pick a numbered option.';
 }
 
 return info;
@@ -3833,7 +3833,7 @@ else {
   '- Press F12 to capture a still shot of the 3D content.',
   '- Press F9 to capture a video of the 3D content. Press F10 to stop and return the recorded MP4 file.',
   '- Double-click for options.',
-  '- Use numeric keys to pick a numbered option.',
+  '- Use mouse or keys to pick a numbered option.',
   ].join('\n');
 }
 
@@ -3864,7 +3864,7 @@ MMD_SA_options.Dungeon.run_event("_FACEMESH_OPTIONS_",0);
 
  ,info: [
   '- Double-click for UI settings and other options.',
-  '- Use numeric keys to pick a numbered option.',
+  '- Use mouse or keys to pick a numbered option.',
   ].join('\n')
     }
 
@@ -3891,7 +3891,7 @@ MMD_SA_options.Dungeon.run_event("_VMC_PROTOCOL_",0);
 
  ,info: [
   '- Double-click to configure VMC-protocol, which allows beaming 3D motion data in real time to other supported apps, such as VSeeFace, Unity and Unreal Engine.',
-  '- Use numeric keys to pick a numbered option.',
+  '- Use mouse or keys to pick a numbered option.',
   ].join('\n')
     }
 
