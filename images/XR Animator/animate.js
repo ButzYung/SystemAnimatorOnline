@@ -4155,13 +4155,14 @@ MMD_SA.WebXR.user_camera.start((0&&webkit_electron_mode) ? toFileProtocol("C:\\U
      ,[
         {
           message: {
-  get content() { return 'Choose a pixel limit (current is ' + (MMD_SA_options.user_camera.pixel_limit.current||MMD_SA_options.user_camera.pixel_limit._default_).join('x') + ').\n1. Default (' + MMD_SA_options.user_camera.pixel_limit._default_.join('x') + ')\n2. 1280x720\n3. 1920x1080\n4. Cancel'; }
+  get content() { return 'Choose a resolution limit.\n(Current: ' + ((MMD_SA_options.user_camera.pixel_limit.disabled) ? 'None / ' : (!MMD_SA_options.user_camera.pixel_limit.current) ? 'Default / ' : '') + (MMD_SA_options.user_camera.pixel_limit.current||MMD_SA_options.user_camera.pixel_limit._default_).join('x') + ').\n1. Default (' + MMD_SA_options.user_camera.pixel_limit._default_.join('x') + ')\n2. 1280x720\n3. 1920x1080\n4. No limit (auto/compatibility)\n5. Return'; }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:4 }
    ,{ key:2, branch_index:5 }
    ,{ key:3, branch_index:6 }
-   ,{ key:4 }
+   ,{ key:4, branch_index:7 }
+   ,{ key:5, branch_index:0 }
   ]
           }
         }
@@ -4170,30 +4171,44 @@ MMD_SA.WebXR.user_camera.start((0&&webkit_electron_mode) ? toFileProtocol("C:\\U
      ,[
         {
           func: function () {
-MMD_SA_options.user_camera.pixel_limit.current = null
+MMD_SA_options.user_camera.pixel_limit.disabled = false;
+MMD_SA_options.user_camera.pixel_limit.current = null;
 DEBUG_show('Video pixel limit: ' + MMD_SA_options.user_camera.pixel_limit._default_.join('x'), 2)
           }
-         ,ended: true
+         ,goto_branch: 3
         }
       ]
 // 5
      ,[
         {
           func: function () {
-MMD_SA_options.user_camera.pixel_limit.current = [1280,720]
+MMD_SA_options.user_camera.pixel_limit.disabled = false;
+MMD_SA_options.user_camera.pixel_limit.current = [1280,720];
 DEBUG_show('Video pixel limit: 1280x720', 2)
           }
-         ,ended: true
+         ,goto_branch: 3
         }
       ]
 // 6
      ,[
         {
           func: function () {
-MMD_SA_options.user_camera.pixel_limit.current = [1920,1080]
+MMD_SA_options.user_camera.pixel_limit.disabled = false;
+MMD_SA_options.user_camera.pixel_limit.current = [1920,1080];
 DEBUG_show('Video pixel limit: 1920x1080', 2)
           }
-         ,ended: true
+         ,goto_branch: 3
+        }
+      ]
+// 7
+     ,[
+        {
+          func: function () {
+MMD_SA_options.user_camera.pixel_limit.disabled = true;
+MMD_SA_options.user_camera.pixel_limit.current = null;
+DEBUG_show('Video pixel limit: ' + MMD_SA_options.user_camera.pixel_limit._default_.join('x'), 2)
+          }
+         ,goto_branch: 3
         }
       ]
     ]
