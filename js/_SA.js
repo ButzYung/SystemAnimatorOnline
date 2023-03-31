@@ -1,6 +1,6 @@
 /*
 
-_SA.js (2023-03-21)
+_SA.js (2023-03-31)
 
 System Animator
 (c) Butz Yung / Anime Theme. All rights reserved.
@@ -516,6 +516,8 @@ this.contentWindow.System._browser.onmouseout()
 
   if (use_SA_browser_mode) {
     self.onbeforeunload = function () {
+window.dispatchEvent(new CustomEvent('SA_writeSettings'));
+
 if (WallpaperEngine_CEF_mode)
   return
 
