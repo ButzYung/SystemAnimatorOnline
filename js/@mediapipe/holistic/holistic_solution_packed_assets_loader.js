@@ -1,13 +1,17 @@
 
   var Module = typeof createMediapipeSolutionsPackedAssets !== 'undefined' ? createMediapipeSolutionsPackedAssets : {};
-  
+
   if (!Module.expectedDataFileDownloads) {
     Module.expectedDataFileDownloads = 0;
   }
+
   Module.expectedDataFileDownloads++;
   (function() {
-   var loadPackage = function(metadata) {
-  
+    // When running as a pthread, FS operations are proxied to the main thread, so we don't need to
+    // fetch the .data bundle on the worker
+    if (Module['ENVIRONMENT_IS_PTHREAD']) return;
+    var loadPackage = function(metadata) {
+
       var PACKAGE_PATH = '';
       if (typeof window === 'object') {
         PACKAGE_PATH = window['encodeURIComponent'](window.location.pathname.toString().substring(0, window.location.pathname.toString().lastIndexOf('/')) + '/');
@@ -22,12 +26,9 @@
         err('warning: you defined Module.locateFilePackage, that has been renamed to Module.locateFile (using your locateFilePackage for now)');
       }
       var REMOTE_PACKAGE_NAME = Module['locateFile'] ? Module['locateFile'](REMOTE_PACKAGE_BASE, '') : REMOTE_PACKAGE_BASE;
-    
-      var REMOTE_PACKAGE_SIZE = metadata['remote_package_size'];
-      var PACKAGE_UUID = metadata['package_uuid'];
-    
+var REMOTE_PACKAGE_SIZE = metadata['remote_package_size'];
+
       function fetchRemotePackage(packageName, packageSize, callback, errback) {
-        
         if (typeof process === 'object' && typeof process.versions === 'object' && typeof process.versions.node === 'string') {
           require('fs').readFile(packageName, function(err, contents) {
             if (err) {
@@ -38,7 +39,6 @@
           });
           return;
         }
-      
         var xhr = new XMLHttpRequest();
         xhr.open('GET', packageName, true);
         xhr.responseType = 'arraybuffer';
@@ -89,57 +89,57 @@
       function handleError(error) {
         console.error('package error:', error);
       };
-    
-        var fetchedCallback = null;
-        var fetched = Module['getPreloadedPackage'] ? Module['getPreloadedPackage'](REMOTE_PACKAGE_NAME, REMOTE_PACKAGE_SIZE) : null;
 
-        if (!fetched) fetchRemotePackage(REMOTE_PACKAGE_NAME, REMOTE_PACKAGE_SIZE, function(data) {
-          if (fetchedCallback) {
-            fetchedCallback(data);
-            fetchedCallback = null;
-          } else {
-            fetched = data;
-          }
-        }, handleError);
-      
+      var fetchedCallback = null;
+      var fetched = Module['getPreloadedPackage'] ? Module['getPreloadedPackage'](REMOTE_PACKAGE_NAME, REMOTE_PACKAGE_SIZE) : null;
+
+      if (!fetched) fetchRemotePackage(REMOTE_PACKAGE_NAME, REMOTE_PACKAGE_SIZE, function(data) {
+        if (fetchedCallback) {
+          fetchedCallback(data);
+          fetchedCallback = null;
+        } else {
+          fetched = data;
+        }
+      }, handleError);
+
     function runWithFS() {
-  
+
       function assert(check, msg) {
         if (!check) throw msg + new Error().stack;
       }
-  Module['FS_createPath']("/", "third_party", true, true);
+Module['FS_createPath']("/", "third_party", true, true);
 Module['FS_createPath']("/third_party", "mediapipe", true, true);
 Module['FS_createPath']("/third_party/mediapipe", "modules", true, true);
-Module['FS_createPath']("/third_party/mediapipe/modules", "pose_detection", true, true);
-Module['FS_createPath']("/third_party/mediapipe/modules", "palm_detection", true, true);
-Module['FS_createPath']("/third_party/mediapipe/modules", "holistic_landmark", true, true);
-Module['FS_createPath']("/third_party/mediapipe/modules", "hand_landmark", true, true);
-Module['FS_createPath']("/third_party/mediapipe/modules", "face_landmark", true, true);
+Module['FS_createPath']("/third_party/mediapipe/modules", "face_detection", true, true);
 Module['FS_createPath']("/third_party/mediapipe/modules", "face_geometry", true, true);
 Module['FS_createPath']("/third_party/mediapipe/modules/face_geometry", "data", true, true);
-Module['FS_createPath']("/third_party/mediapipe/modules", "face_detection", true, true);
+Module['FS_createPath']("/third_party/mediapipe/modules", "face_landmark", true, true);
+Module['FS_createPath']("/third_party/mediapipe/modules", "hand_landmark", true, true);
+Module['FS_createPath']("/third_party/mediapipe/modules", "holistic_landmark", true, true);
+Module['FS_createPath']("/third_party/mediapipe/modules", "palm_detection", true, true);
+Module['FS_createPath']("/third_party/mediapipe/modules", "pose_detection", true, true);
 
-          /** @constructor */
-          function DataRequest(start, end, audio) {
-            this.start = start;
-            this.end = end;
-            this.audio = audio;
-          }
-          DataRequest.prototype = {
-            requests: {},
-            open: function(mode, name) {
-              this.name = name;
-              this.requests[name] = this;
-              Module['addRunDependency']('fp ' + this.name);
-            },
-            send: function() {},
-            onload: function() {
-              var byteArray = this.byteArray.subarray(this.start, this.end);
-              this.finish(byteArray);
-            },
-            finish: function(byteArray) {
-              var that = this;
-      
+      /** @constructor */
+      function DataRequest(start, end, audio) {
+        this.start = start;
+        this.end = end;
+        this.audio = audio;
+      }
+      DataRequest.prototype = {
+        requests: {},
+        open: function(mode, name) {
+          this.name = name;
+          this.requests[name] = this;
+          Module['addRunDependency']('fp ' + this.name);
+        },
+        send: function() {},
+        onload: function() {
+          var byteArray = this.byteArray.subarray(this.start, this.end);
+          this.finish(byteArray);
+        },
+        finish: function(byteArray) {
+          var that = this;
+          
           Module['FS_createPreloadedFile'](this.name, null, byteArray, true, true, function() {
             Module['removeRunDependency']('fp ' + that.name);
           }, function() {
@@ -149,45 +149,41 @@ Module['FS_createPath']("/third_party/mediapipe/modules", "face_detection", true
               err('Preloading file ' + that.name + ' failed');
             }
           }, false, true); // canOwn this data in the filesystem, it is a slide into the heap that will never change
-  
-              this.requests[this.name] = null;
-            }
-          };
-      
-              var files = metadata['files'];
-              for (var i = 0; i < files.length; ++i) {
-                new DataRequest(files[i]['start'], files[i]['end'], files[i]['audio']).open('GET', files[i]['filename']);
-              }
-      
-        
+
+          this.requests[this.name] = null;
+        }
+      };
+
+      var files = metadata['files'];
+      for (var i = 0; i < files.length; ++i) {
+        new DataRequest(files[i]['start'], files[i]['end'], files[i]['audio'] || 0).open('GET', files[i]['filename']);
+      }
+
       function processPackageData(arrayBuffer) {
         assert(arrayBuffer, 'Loading data file failed.');
-        assert(arrayBuffer instanceof ArrayBuffer, 'bad input to processPackageData');
+        assert(arrayBuffer.constructor.name === ArrayBuffer.name, 'bad input to processPackageData');
         var byteArray = new Uint8Array(arrayBuffer);
         var curr;
-        
-          // Reuse the bytearray from the XHR as the source for file reads.
+        // Reuse the bytearray from the XHR as the source for file reads.
           DataRequest.prototype.byteArray = byteArray;
-    
-            var files = metadata['files'];
-            for (var i = 0; i < files.length; ++i) {
-              DataRequest.prototype.requests[files[i].filename].onload();
-            }
-                Module['removeRunDependency']('datafile_blaze-out/k8-opt/genfiles/third_party/mediapipe/web/solutions/holistic/holistic_solution_packed_assets.data');
+          var files = metadata['files'];
+          for (var i = 0; i < files.length; ++i) {
+            DataRequest.prototype.requests[files[i].filename].onload();
+          }          Module['removeRunDependency']('datafile_blaze-out/k8-opt/genfiles/third_party/mediapipe/web/solutions/holistic/holistic_solution_packed_assets.data');
 
       };
       Module['addRunDependency']('datafile_blaze-out/k8-opt/genfiles/third_party/mediapipe/web/solutions/holistic/holistic_solution_packed_assets.data');
-    
+
       if (!Module.preloadResults) Module.preloadResults = {};
-    
-        Module.preloadResults[PACKAGE_NAME] = {fromCache: false};
-        if (fetched) {
-          processPackageData(fetched);
-          fetched = null;
-        } else {
-          fetchedCallback = processPackageData;
-        }
-      
+
+      Module.preloadResults[PACKAGE_NAME] = {fromCache: false};
+      if (fetched) {
+        processPackageData(fetched);
+        fetched = null;
+      } else {
+        fetchedCallback = processPackageData;
+      }
+
     }
     if (Module['calledRun']) {
       runWithFS();
@@ -195,9 +191,8 @@ Module['FS_createPath']("/third_party/mediapipe/modules", "face_detection", true
       if (!Module['preRun']) Module['preRun'] = [];
       Module["preRun"].push(runWithFS); // FS is not initialized yet, wait for it
     }
-  
-   }
-   loadPackage({"files": [{"filename": "/third_party/mediapipe/modules/pose_detection/pose_detection.tflite", "start": 0, "end": 2962288, "audio": 0}, {"filename": "/third_party/mediapipe/modules/palm_detection/palm_detection_lite.tflite", "start": 2962288, "end": 4947728, "audio": 0}, {"filename": "/third_party/mediapipe/modules/palm_detection/palm_detection_full.tflite", "start": 4947728, "end": 7289008, "audio": 0}, {"filename": "/third_party/mediapipe/modules/holistic_landmark/hand_recrop.tflite", "start": 7289008, "end": 7412800, "audio": 0}, {"filename": "/third_party/mediapipe/modules/hand_landmark/handedness.txt", "start": 7412800, "end": 7412811, "audio": 0}, {"filename": "/third_party/mediapipe/modules/hand_landmark/hand_landmark_full.tflite", "start": 7412811, "end": 12891499, "audio": 0}, {"filename": "/third_party/mediapipe/modules/face_landmark/face_landmark_with_attention.tflite", "start": 12891499, "end": 15387451, "audio": 0}, {"filename": "/third_party/mediapipe/modules/face_landmark/face_landmark.tflite", "start": 15387451, "end": 16629347, "audio": 0}, {"filename": "/third_party/mediapipe/modules/face_geometry/data/geometry_pipeline_metadata_landmarks.binarypb", "start": 16629347, "end": 16648723, "audio": 0}, {"filename": "/third_party/mediapipe/modules/face_detection/face_detection_short_range.tflite", "start": 16648723, "end": 16877755, "audio": 0}], "remote_package_size": 16877755, "package_uuid": "ae959d57-f008-4fa8-81e3-d2180f7564f5"});
-  
+
+    }
+    loadPackage({"files": [{"filename": "/third_party/mediapipe/modules/face_detection/face_detection_short_range.tflite", "start": 0, "end": 229032}, {"filename": "/third_party/mediapipe/modules/face_geometry/data/geometry_pipeline_metadata_landmarks.binarypb", "start": 229032, "end": 248408}, {"filename": "/third_party/mediapipe/modules/face_landmark/face_landmark.tflite", "start": 248408, "end": 1490304}, {"filename": "/third_party/mediapipe/modules/face_landmark/face_landmark_with_attention.tflite", "start": 1490304, "end": 3986256}, {"filename": "/third_party/mediapipe/modules/hand_landmark/hand_landmark_full.tflite", "start": 3986256, "end": 9464944}, {"filename": "/third_party/mediapipe/modules/hand_landmark/handedness.txt", "start": 9464944, "end": 9464955}, {"filename": "/third_party/mediapipe/modules/holistic_landmark/hand_recrop.tflite", "start": 9464955, "end": 9588747}, {"filename": "/third_party/mediapipe/modules/palm_detection/palm_detection_full.tflite", "start": 9588747, "end": 11930027}, {"filename": "/third_party/mediapipe/modules/palm_detection/palm_detection_lite.tflite", "start": 11930027, "end": 13915467}, {"filename": "/third_party/mediapipe/modules/pose_detection/pose_detection.tflite", "start": 13915467, "end": 16877755}], "remote_package_size": 16877755});
+
   })();
-  

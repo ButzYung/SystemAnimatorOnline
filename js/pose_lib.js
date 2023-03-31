@@ -385,7 +385,9 @@ async function process_video_buffer(rgba, w,h, options) {
 
     if (options.use_holistic) {
       const _result = pose
-      if (_result.ea && _result.ea.length && _result.poseLandmarks && _result.poseLandmarks.length) {
+//console.log(_result)
+      const _keypoints3D = _result.ea || _result.za;
+      if (_keypoints3D && _keypoints3D.length && _result.poseLandmarks && _result.poseLandmarks.length) {
 // https://github.com/tensorflow/tfjs-models/blob/master/pose-detection/src/blazepose_mediapipe/detector.ts
 
         const iw = _result.image.width
@@ -400,7 +402,7 @@ z: landmark.z,
 score: landmark.visibility,
 name: BLAZEPOSE_KEYPOINTS[i]
   })),
-  keypoints3D: _result.ea.map((landmark, i) => ({
+  keypoints3D: _keypoints3D.map((landmark, i) => ({
 x: landmark.x,
 y: landmark.y,
 z: landmark.z,
