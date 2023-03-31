@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-03-26)
+// (2023-03-31)
 
 var use_full_spectrum = true
 
@@ -965,6 +965,9 @@ if (!ao.ontimeupdate)
   }
   else if (item.isFileSystem && /([^\/\\]+)\.(json)$/i.test(src)) {
     const response = fetch(toFileProtocol(src)).then(response=>{ response.json().then(json=>{
+      const result = {};
+      window.dispatchEvent(new CustomEvent('SA_dragdrop_JSON', { detail:{ json:json, result:result } }));
+
       if (json.System_Animator_motion_para) {
         for (const name in json.System_Animator_motion_para) {
           if (MMD_SA_options.motion_para[name])
@@ -973,7 +976,8 @@ if (!ao.ontimeupdate)
         DEBUG_show('✅Motion config imported', 3);
       }
       else {
-        DEBUG_show('(Unsupported JSON config)', 3);
+        if (!result.return_value)
+          DEBUG_show('(Unsupported JSON config)', 3);
       }
     })});
   }
@@ -8828,6 +8832,11 @@ bone.position.x, bone.position.y, -bone.position.z,
   MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Bundle(...bone_msgs));
 
   const morph_msgs = [];
+  for (const name of ['lookUp', 'lookDown', 'lookLeft', 'lookRight']) {
+    const v = expressionManager.getValue(name);
+    if (v != null)
+      blendshape_weight[name] = v;
+  }
   for (const name in blendshape_weight) {
     morph_msgs.push(MMD_SA.OSC.VMC.Message("/VMC/Ext/Blend/Val",
       [
