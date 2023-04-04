@@ -76,7 +76,9 @@ Lastly, click the Snapshot icon and a still photo will be generated. This can be
 
 # ❤️Donation
 
-XR Animator inherits from System Animator, my desktop gadget project which have been active for many years. Lots of time, efforts and money have been spent to keep these projects free and running. If you like our works, please consider making a donation. Your financial support is needed to keep us going!🙏
+XR Animator inherits from System Animator, my desktop gadget project which have been active for many years. Lots of time, efforts and money have been spent to keep these projects free and running. If you like my works, please consider making a donation. Your financial support is needed to keep us going!🙏
+
+- ☕[Buy Me a Coffee](https://ko-fi.com/butzyung)
 
 - 🙏[Donate via PayPal.Me](https://www.paypal.me/AnimeThemeGadgets)
 
