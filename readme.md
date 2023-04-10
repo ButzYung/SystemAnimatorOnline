@@ -205,17 +205,20 @@ All demos support the use of custom MMD (MikuMikuDance) model. Drop a zip of you
 
 # Contacts
 
-- Homepage:
-  https://www.animetheme.com/sidebar/
-
 - YouTube:
   https://www.youtube.com/user/AnimeThemeGadget
+
+- Twitter:
+  https://twitter.com/butz_yung
 
 - Facebook:
   https://www.facebook.com/AnimeThemeGadgets/
 
-- Twitter:
-  https://twitter.com/butz_yung
+- Ko-fi:
+  https://ko-fi.com/butzyung
+
+- Homepage (System Animator):
+  https://www.animetheme.com/sidebar/
 
 - Email:
   webmaster@animetheme.com
