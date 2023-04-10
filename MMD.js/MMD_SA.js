@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-03-31)
+// (2023-04-10)
 
 var use_full_spectrum = true
 
@@ -932,6 +932,10 @@ if (MMD_SA_options.PPE_disabled_on_idle) {
   }
 }
 MMD_SA_options.audio_onstart && MMD_SA_options.audio_onstart()
+
+if (!System._browser.video_capture.started) {
+  MMD_SA.reset_camera();
+}
 
 if (!ao.ontimeupdate)
   DEBUG_show("Audio:START", 2)
@@ -4367,6 +4371,9 @@ switch (para[0]) {
       case "enabled":
         MMD_SA.OSC.VMC.sender_enabled = !!parseInt(para[2]);
         break;
+      case "send_camera_data":
+        MMD_SA.OSC.VMC.send_camera_data = !!parseInt(para[2]);
+        break;
       case "VSeeFace_mode":
         MMD_SA.OSC.VMC.VSeeFace_mode = !!parseInt(para[2]);
         break;
@@ -5768,10 +5775,14 @@ return Promise.all([
 ]);
   }
 
- ,adjust_camera: (function () {
+ ,Camera_MOD: (function () {
     let camera_mod;
 
+    let v1, v2;
     window.addEventListener('jThree_ready', ()=>{
+      v1 = new THREE.Vector3();
+      v2 = new THREE.Vector3();
+
       camera_mod = class Camera_mod {
 constructor(id) {
   this.id = id;
@@ -5784,14 +5795,9 @@ constructor(id) {
 }
 
 adjust(pos, target, up_z) {
+  Camera_mod.update_camera_base();
+
   const obj = MMD_SA._trackball_camera;
-
-  Camera_mod.c_pos.copy(obj.object.position).sub(Camera_mod.pos_last);
-  Camera_mod.c_target.copy(obj.target).sub(Camera_mod.target_last);
-
-  if (Math.abs(Camera_mod.up_z_last) > 0.0001) {
-    Camera_mod.rotate_up_z(Camera_mod.c_up, obj.object.up, -Camera_mod.up_z_last);
-  }
 
   if (pos) {
     Camera_mod.pos_last.sub(this.pos_last).add(pos);
@@ -5807,6 +5813,17 @@ adjust(pos, target, up_z) {
     Camera_mod.up_z_last = Camera_mod.up_z_last - this.up_z_last + up_z;
     Camera_mod.rotate_up_z(obj.object.up, Camera_mod.c_up, Camera_mod.up_z_last);
     this.up_z_last = up_z;
+  }
+}
+
+static update_camera_base() {
+  const obj = MMD_SA._trackball_camera;
+
+  Camera_mod.c_pos.copy(obj.object.position).sub(Camera_mod.pos_last);
+  Camera_mod.c_target.copy(obj.target).sub(Camera_mod.target_last);
+
+  if (Math.abs(Camera_mod.up_z_last) > 0.0001) {
+    Camera_mod.rotate_up_z(Camera_mod.c_up, obj.object.up, -Camera_mod.up_z_last);
   }
 }
 
@@ -5841,20 +5858,51 @@ static get_mod(id) {
       window.addEventListener('MMDCameraReset_after', (e)=>{
         if (e.detail.enforced === false) return;
 
-        var obj = MMD_SA._trackball_camera;
-        obj.object.position.add(camera_mod.pos_last);
-        obj.target.add(camera_mod.target_last);
+        System._browser.on_animation_update.add(()=>{
+          var obj = MMD_SA._trackball_camera;
+          obj.object.position.add(camera_mod.pos_last);
+          obj.target.add(camera_mod.target_last);
 
-        camera_mod.rotate_up_z(obj.object.up, obj.object.up, camera_mod.up_z_last);
+          camera_mod.rotate_up_z(obj.object.up, obj.object.up, camera_mod.up_z_last);
+        },0,0);
       });
     });
 
-    return function (id, pos, target, up) {
+    return {
+      get _obj() { return camera_mod; },
+
+      adjust_camera: function (id, pos, target, up) {
 if (!MMD_SA.MMD_started) return;
 
-camera_mod.get_mod(id).adjust(pos, target, up);
+const c_mod = camera_mod.get_mod(id);
+c_mod.adjust(pos, target, up);
 
-return [camera_mod.c_pos, camera_mod.c_target];
+return c_mod;
+      },
+
+      get_mod: function (id) {
+return camera_mod.get_mod(id);
+      },
+
+      get_camera_base: function (ignore_list) {
+camera_mod.update_camera_base();
+
+const pos = v1.copy(camera_mod.c_pos);
+const target = v2.copy(camera_mod.c_target);
+
+ignore_list?.forEach(id=>{
+  const c = camera_mod.mod_list[id];
+  if (c) {
+    pos.add(c.pos_last);
+    target.add(c.target_last);
+  }
+});
+
+return {
+  pos:pos,
+  target:target,
+};
+      },
     };
   })()
 
@@ -8852,19 +8900,23 @@ blendshape_weight[name],
   morph_msgs.push(MMD_SA.OSC.VMC.Message("/VMC/Ext/Blend/Apply"));
   MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Bundle(...morph_msgs));
 
-/*
-  const camera = MMD_SA.THREEX.camera.obj;
-  const camera_pos = v1.copy(camera.position).sub(mesh.position);
-  MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/Cam",
-    [
-'camera',
-camera_pos.x*model_pos_scale, camera_pos.y*model_pos_scale, -camera_pos.z*model_pos_scale,
--camera.quaternion.x, -camera.quaternion.y, camera.quaternion.z, camera.quaternion.w,
+  if (MMD_SA.OSC.VMC.send_camera_data) {
+    const camera = MMD_SA.THREEX.camera.obj;
+    const camera_pos = v1.copy(camera.position).sub(mesh.position);
+    const camera_rot = q1.copy(camera.quaternion).premultiply(q2.set(0,1,0,0));
+    MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/Cam",
+      [
+'Camera',
+-camera_pos.x*model_pos_scale, camera_pos.y*model_pos_scale, camera_pos.z*model_pos_scale,
+-camera_rot.x, -camera_rot.y, camera_rot.z, camera_rot.w,
+//0,0,0,
+//0,1,0,0,
 camera.fov,
-    ],
-    'sffffffff'
-  ));
-*/
+      ],
+      'sffffffff'
+    ));
+//DEBUG_show(camera.fov);
+  }
 
   MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/OK", [1], 'i'));
 
@@ -9195,7 +9247,7 @@ if (data.OutlineEffect && VRM.use_OutlineEffect) {
   });
 }
 
-// fix a bug in VRM physics when the mesh is scaled
+// fix bugs in VRM physics/MToon material outline when the mesh is scaled
 if (vrm_scale != 1) {
   mesh_obj.scale.set(vrm_scale, vrm_scale, vrm_scale);
 
@@ -9222,6 +9274,11 @@ if (vrm_scale != 1) {
       }
     }
   }
+
+  vrm.materials.forEach(m=>{
+    if (m.isMToonMaterial && (m.outlineWidthMode != 'screenCoordinates') && m.outlineWidthFactor != null)
+      m.outlineWidthFactor *= vrm_scale;
+  });
 }
 
 
@@ -10035,14 +10092,16 @@ c.up.copy(camera.up)
 
 c.matrixAutoUpdate = camera.matrixAutoUpdate
 if (!c.matrixAutoUpdate) {
-  c.matrix.copy(camera.matrix)
-  c.matrixWorld.copy(camera.matrixWorld)
-  c.projectionMatrix.copy(camera.projectionMatrix)
+  c.matrix.copy(camera.matrix);
+  c.matrixWorld.copy(camera.matrixWorld);
+  c.projectionMatrix.copy(camera.projectionMatrix);
+  c.fov = camera.fov;
 }
 else {
   if (c.fov != camera.fov) {
     c.fov = camera.fov;
-    c.updateProjectionMatrix();
+    c.projectionMatrix.copy(camera.projectionMatrix);
+//    c.updateProjectionMatrix();
   }
 }
       },
@@ -11083,13 +11142,13 @@ onload(gltf);
       camera_auto_targeting: (function () {
         function targeting() {
 if (!target_current.enabled && ((target_current.enabled === false) || (target_current.condition && !target_current.condition()))) {
-  MMD_SA.adjust_camera(target_current.id, null, v1.set(0,0,0));
+  MMD_SA.Camera_MOD.adjust_camera(target_current.id, null, v1.set(0,0,0));
   return;
 }
 
 var target_pos = v4.fromArray(target_data.filter(target_current.get_target_position().toArray()));//target_current.get_target_position();//
 //DEBUG_show(target_pos.toArray().join('\n') + '\n' + Date.now());
-MMD_SA.adjust_camera(target_current.id, null, target_pos);
+MMD_SA.Camera_MOD.adjust_camera(target_current.id, null, target_pos);
         }
 
         var target_current;
@@ -11118,7 +11177,8 @@ else {
   head_pos = model.get_bone_position_by_MMD_name('頭').add(v3.set(0,0.8,0).applyQuaternion(model.get_bone_rotation_by_MMD_name('頭')));
   head_pos.y -= head_pos_ref.y/2;
 }
-pos.sub(MMD_SA.adjust_camera(this.id)[1]);
+const c_base = MMD_SA.Camera_MOD.get_camera_base(['camera_lock']);
+pos.sub(c_base.target);
 
 return head_pos.add(pos).multiplyScalar(0.75);
   },
@@ -11135,7 +11195,7 @@ target_data = new System._browser.data_filter([{ type:'average', para:[200, 'vec
 if (!target) {
   if (!target_current) return;
   System._browser.on_animation_update.remove(targeting, 1);
-  MMD_SA.adjust_camera(target_current.id, null, v1.set(0,0,0));
+  MMD_SA.Camera_MOD.adjust_camera(target_current.id, null, v1.set(0,0,0));
   target_current = null;
   return;
 }
