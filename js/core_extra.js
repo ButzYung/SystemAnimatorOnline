@@ -1,4 +1,4 @@
-// System Animator core - EXTRA (2023-02-18)
+// System Animator core - EXTRA (2023-04-10)
 
 var use_SA_gimage_emulation
 
@@ -690,7 +690,7 @@ function SA_load_body2() {
     Lquick_menu_settings_button.setAttribute("data-title", "About")
     Lquick_menu_settings_button.onclick = function () {
 if (browser_native_mode && /^https?\:/.test(location.href)) {
-  window.open(self._readme_url_ || System.Gadget.path + '/readme.txt')
+  window.open(self._readme_url_ || 'https://github.com/ButzYung/SystemAnimatorOnline#readme'); //System.Gadget.path + '/readme.txt')
 }
 else {
   alert('System Animator Lite (' + System.Gadget.version + ')\n\nhttp://www.animetheme.com/sidebar/')
