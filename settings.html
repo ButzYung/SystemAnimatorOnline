@@ -1596,8 +1596,8 @@ var html = 'Version ' + System.Gadget.version;//.replace(/\.\d+$/, "")
 document.write(html)
 })();
 </script>
-				<input name="updates" type="button" id="updates" style="width:50px" value="Update" onclick="if (xul_mode) { XUL_openURL('http://www.animetheme.com/sidebar/') } else if (webkit_nwjs_mode) { require('nw.gui').Shell.openExternal('http://www.animetheme.com/sidebar/') } else { self.open('http://www.animetheme.com/sidebar/') }" class="textBox" />
-				<a href="#" onclick="System.Shell.execute(System.Gadget.path + '\\changelog.txt'); return false">(changelog)</a>
+				<input name="updates" type="button" id="updates" style="width:50px" value="Update" onclick="webkit_electron_remote.shell.openExternal('https://github.com/ButzYung/SystemAnimatorOnline/releases')" class="textBox" />
+<!--				<a href="" target="_blank">(changelog)</a>-->
 			</td>
 		</tr>
 	</table>
@@ -2777,6 +2777,41 @@ document.write(html)
 <h2>Others</h2>
 
 <div class="tabber">
+
+<div class="tabbertab" title="Donate">
+	<table border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px; padding-right:12px;">
+<p>XR Animator is the successor of System Animator, a desktop gadget project born more than 10 years ago, and is still growing strong. While XR Animator is free, lots of time, efforts and money have been spent to keep this project running. If you like our works, please consider making a donation. Your financial support is needed to keep us going!🙏</p>
+
+<ul style="">
+<li><a href="https://ko-fi.com/butzyung" target=_blank>Buy me a coffee</a>☕</li>
+<li>Donate via <a href="https://www.paypal.me/AnimeThemeGadgets" target=_blank>PayPal.Me</a></li>
+<li>Donate via Bitcoin (<a href="" onclick="navigator.clipboard.writeText('1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p').then(()=>{DEBUG_show('Bitcoin address copied',3)}); return false;">copy address to clipboard</a>)<br/><br/><span style="border:1px solid black; padding: 3px 6px; font-weight:bold;"><code>1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p</code></span></li>
+</ul>
+
+			</td>
+		</tr>
+	</table>
+</div>
+
+<div class="tabbertab" title="Copyright/License">
+	<table border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
+
+		<tr>
+			<td>&nbsp;</td>
+			<td style="padding-top:4px;">
+<ul style="font-weight:bold;">
+<li style="margin:10px;">📚 <a href="https://github.com/ButzYung/SystemAnimatorOnline#copyrightlicensecredits" target="_blank">Copyright/License/Credits</a></li>
+<li style="margin:10px;">📧 <a href="https://github.com/ButzYung/SystemAnimatorOnline#contacts" target="_blank">Contacts</a></li>
+</ul>
+			</td>
+		</tr>
+
+	</table>
+</div>
+
 <div class="tabbertab" title="Misc">
 	<table border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
 
@@ -2851,60 +2886,7 @@ function createAnimationHost() {
 -->
 	</table>
 </div>
-<div class="tabbertab" title="Copyright/License" style="height:270px; width:280px; overflow-y:scroll">
-	<table border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
 
-		<tr>
-			<td>&nbsp;</td>
-			<td style="padding-top:4px;">
-<h5>Copyright/License <a href="#" onclick="System.Shell.execute(System.Gadget.path + '\\readme.txt'); return false">(latest version)</a>:</h5>
-<ul>
-<li>System Animator &#169; <a href="http://www.animetheme.com/sidebar/" target="_blank">Butz Yung/Anime Theme</a>
-<ul>
-<li>License - <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank"><img alt="Creative Commons License" style="border-width:0" align="absmiddle" src="images/cc4-by-nc-sa-80x15.png" /></a> (*)
-<br/>(*) - System Animator's license does NOT cover any third-party assets which may have incompatible licenses of their own.</li>
-<li><a href="#" onclick="System.Shell.execute(System.Gadget.path + '\\docs\\disclaimer.txt'); return false">Disclaimer</a></li>
-</ul>
-</li>
-</ul>
-
-<ul>
-<li><a href="https://www.electronjs.org/" target="_blank">Electron</a></li>
-<li><a href="https://threejs.org/" target="_blank">three.js</a></li>
-<li><a href="https://github.com/GrimoireGL/GrimoireJS" target="_blank">jThree v2</a> (now known as "Grimoire.js")</li>
-<li><a href="https://github.com/kripken/ammo.js" target="_blank">ammo.js</a> (a port of Bullet Physics, zlib licensed)</li>
-<li><a href="https://stuk.github.io/jszip/" target="_blank">JSZip</a> (used under MIT license)</li>
-<li><a href="https://github.com/google/mediapipe" target="_blank">MediaPipe</a>
-<li><a href="https://github.com/tensorflow/tfjs" target="_blank">TensorFlow.js</a>
-<li><a href="https://github.com/adzialocha/osc-js" target="_blank">osc-js</a>
-<li><a href="https://peerjs.com/" target="_blank">PeerJS</a>
-<li><a href="http://3d.nicovideo.jp/alicia/" target="_blank">"ニコニ立体ちゃん" 3D Model</a>
-<li>"Appearance Miku" 3D Model <a href="#" onclick="System.Shell.execute(System.Gadget.path + '\\jThree\\model\\Appearance Miku\\Readme.txt'); return false">(readme/license)</a></li>
-<li>Various 3D background effects ported and modified from codes found on <a href="https://www.shadertoy.com/" target="_blank">Shadertoy</a></li>
-<li>For some third-party programming libraries/3D data/assets used in System Animator, please refer to the corresponding script/readme for license and terms.</li>
-<li>Credits are given to the authors of any other image/media files used in System Animator.</li>
-</ul>
-			</td>
-		</tr>
-
-	</table>
-</div>
-<div class="tabbertab" title="Donate">
-	<table border="0" width="300" cellpadding="0" cellspacing="0" class="normal">
-		<tr>
-			<td>&nbsp;</td>
-			<td style="padding-top:4px; padding-right:12px;">
-<p>System Animator was born more than 10 years ago, and is still growing strong. While System Animator is free, lots of time, efforts and money have been spent to keep this project running. If you like our works, please consider making a donation. Your financial support is needed to keep us going!🙏</p>
-
-<ul style="">
-<li>Donate via <a href="https://www.paypal.me/AnimeThemeGadgets" target=_blank>PayPal.Me</a></li>
-<li>Donate via Bitcoin (<a href="" onclick="navigator.clipboard.writeText('1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p').then(()=>{DEBUG_show('Bitcoin address copied',3)}); return false;">copy address to clipboard</a>)<br/><br/><span style="border:1px solid black; padding: 3px 6px; font-weight:bold;"><code>1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p</code></span></li>
-</ul>
-
-			</td>
-		</tr>
-	</table>
-</div>
 </div>
 </div>
 
