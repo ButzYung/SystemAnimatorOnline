@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-03-31)
+// (2023-04-10)
 
 var MMD_SA_options = {
 
@@ -1955,6 +1955,11 @@ cam_pos.copy(MMD_SA._trackball_camera.object.position)
       'right': { parent:{name:'頭', weight:{ x:{left:1.5, right:0.5}, y:{down:1.5, up:0.5}, z:{backward:0.5, forward:1.5} }}, default_position_weight:0.1, default_rotation_weight:0.8 },
       'left' : { default_position_weight:1, default_rotation_weight:1 },
     },
+    arm_tracking: {
+      elbow_lock: {
+        right: {},
+      }
+    },
     arm_as_leg: {
 //      enabled: true,
 //toes_disabled: true,
@@ -2349,6 +2354,144 @@ if (z_para) {
   }
     }
 
+   ,"sitting_sexy07": {
+  adjustment_per_model: {
+    'DUMMY.pmx' : {
+  skin_default: {
+  }
+    }
+  },
+
+  look_at_screen_bone_list: [
+    { name:"首", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
+    { name:"頭", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
+    { name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+    { name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+  ],
+
+//  look_at_screen: true,
+//  center_view: [0,-5,7.5],
+
+  motion_tracking_enabled: true,
+  motion_tracking_upper_body_only: true,
+  motion_tracking: {
+    look_at_screen: true,
+    motion_default_weight: {
+      'head': 1,
+    },
+    hip_adjustment: {
+//      feet_fixed_weight:1,
+//      rotation_weight:0.25,
+//      displacement_weight:0,
+    },
+    arm_default_stickiness: {
+      'left' : { parent:{ name:'頭', weight:{ x:{left:0.5, right:0.8}, y:{down:0.5, up:0.5}, z:{backward:0.5, forward:1.0} } }, default_position_weight:0.1, default_rotation_weight:0.5, },
+      'right': { parent:{ name:'頭', weight:{ x:{left:0.8, right:0.5}, y:{down:0.5, up:0.5}, z:{backward:0.5, forward:1.0} } }, default_position_weight:0.1, default_rotation_weight:0.5, },
+    },
+    arm_tracking: {
+      elbow_lock: {
+        left: {},
+        right: {},
+      },
+    },
+    arm_as_leg: {
+//      enabled: true,
+//      linked_side: 'right',
+      transformation: {
+        position: {
+          x: { add:-0.3, max:-0.1, scale:3 },
+          y: { unit_length:1, add:-1.5, min:0.5, scale:2 },
+          z: { add:-0.3, min:0.1, scale:3 },
+          len_max: 1.2,
+          length_min: 0.5,
+//          camera_weight: 0.75,
+        },
+      },
+    },
+  }
+    }
+
+   ,"sitting_sexy08": {
+  adjustment_per_model: {
+    _default_ : {
+  skin_default: {
+//    "右ひじ": { rot_add:{x:0, y:-10, z:20} },
+  }
+    }
+  },
+
+  look_at_screen_bone_list: [
+    { name:"首", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
+    { name:"頭", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
+    { name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+    { name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+  ],
+
+//  look_at_screen: true,
+//  center_view: [0,-5,7.5],
+
+  motion_tracking_enabled: true,
+  motion_tracking_upper_body_only: true,
+  motion_tracking: {
+    look_at_screen: true,
+    motion_default_weight: {
+      'head': 1,
+    },
+    hip_adjustment: {
+      feet_fixed_weight:2/3,
+//      rotation_weight:0.25,
+//      displacement_weight:0,
+    },
+    arm_default_stickiness: {
+      'left' : { default_position_weight:1, default_rotation_weight:1, },
+      'right': { parent:{ name:'頭', weight:{ x:{left:0.8, right:0.5}, y:{down:0.5, up:0.5}, z:{backward:0, forward:1.0} } }, default_position_weight:0.1, default_rotation_weight:0.5, },
+    },
+    arm_tracking: {
+     transformation: {
+        position: {
+          y: { unit_length:1, min:'elbow+0' },
+        }
+      },
+      elbow_lock: {
+        left:{},
+        right:{},
+      },
+    },
+    arm_as_leg: {
+//      enabled: true,
+      linked_side: 'right',
+      transformation: {
+        position: {
+          x: { unit_length:1, add:1.5, min:-4, max:4, scale:1 },
+          y: { unit_length:1, add:1, min:0, scale:1 },
+          z: { unit_length:1, min:2, max:2 },
+          len_max: 99,
+//          length_min: 0.5,
+//          camera_weight: 0.75,
+
+          position_to_rotation: {
+            upper: {
+              x: { max:-105 },
+"z": { "rot_formula":"z", "scale":-0.2 },
+"y": { "rot_formula":"z", "scale":0.8 },
+            },
+            lower: {
+//63.43494882292201 * 2
+//, curve:{ini:0, end:120, pow_factor:1.5}
+              x: { rot_formula:'x', min:0, add:-30, scale:1.5 },
+            },
+          },
+        },
+
+        rotation: {
+          y: { foot_ratio:0.75 },
+        },
+      },
+    },
+  }
+    }
+
+
 
    ,"prone_pose01": {
   adjustment_per_model: {
@@ -2398,6 +2541,7 @@ if (z_para) {
 //          length_min: 0.5,
         },
       },
+//      elbow_lock: {},
     },
     arm_as_leg: {
 //      enabled: true,
@@ -2439,7 +2583,7 @@ if (z_para) {
     }
   },
 
-  look_at_screen: true,
+//  look_at_screen: true,
   look_at_screen_bone_list: [
     { name:"首", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
     { name:"頭", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
@@ -2477,7 +2621,7 @@ if (z_para) {
     }
   },
 
-  look_at_screen: true,
+//  look_at_screen: true,
   look_at_screen_bone_list: [
     { name:"首", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
     { name:"頭", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
@@ -2707,7 +2851,7 @@ wireframe:{
   top:0.5,
 //top:0.8,left:0.4,
 //top:0,left:3,
-//top:-0.5,left:1,
+//top:0.5,left:1,
 }
     },
     preference: {
@@ -3417,7 +3561,8 @@ if (System._browser.camera.ML_enabled) {
 else {
  info =
   '- Double-click to change the pose of the avatar.\n'
-+ '- Choose a suitable pose depending on whether you want a full-body or upper-only mocap.\n'
++ '- Choose a suitable pose depending on whether you want a full-body💃 or upper-only🙋 mocap.\n'
++ '- 🦶denotes the support of arm-to-leg🙋↔️🦶control mode by pressing Ctrl+Z. Repeat to return to normal mode.\n'
 + '- Use mouse or keys to pick an alphanumeric option.';
 }
 
@@ -3558,7 +3703,7 @@ v3b = new THREE.Vector3()
  ,info_short: "Baseball catcher"
 // ,is_base_inventory: true
 
- ,index_default: undefined
+ ,get index_default() { return (is_mobile) ? undefined : (MMD_SA_options.Dungeon.inventory.max_base+MMD_SA_options.Dungeon.inventory.max_base*(MMD_SA_options.Dungeon.inventory.max_row-1))+1; }
 // ,get index_default() { return (is_mobile) ? undefined : MMD_SA_options.Dungeon.inventory.max_base+1; }
 
  ,stock_max: 1
@@ -3747,12 +3892,170 @@ MMD_SA._force_motion_shuffle = true
       return baseball;
     })()
 
+   ,"hand_camera": (()=>{
+      function hand_camera() {
+hand_camera_active = false;
+
+if (!hand_camera_enabled) return;
+
+if (!System._browser.camera.poseNet.enabled) {
+  disable_hand_camera();
+  return;
+}
+
+const d = hand_camera_side;
+const motion_para = MMD_SA.MMD.motionManager.para_SA;
+if (!System._browser.camera.poseNet.data_detected || (MMD_SA.MMD.motionManager.para_SA.motion_tracking?.arm_as_leg?.enabled && (MMD_SA.MMD.motionManager.para_SA.motion_tracking.arm_as_leg.linked_side != ((d=='左')?'right':'left'))) || (System._browser.camera.poseNet.frames.get_blend_default_motion('skin', d+'手首') > 0.5)) {
+  System._browser.camera.poseNet._arm_IK_scale[hand_camera_side] = null;
+  MMD_SA.Camera_MOD.adjust_camera('hand_camera', v1.set(0,0,0), v2.set(0,0,0), null);
+  return;
+}
+
+hand_camera_active = true;
+
+const frames = System._browser.camera.poseNet.frames;
+if (System._browser.camera.handpose.enabled) {
+  System._browser.on_animation_update.add(()=>{
+    finger_list.forEach((f,i)=>{
+      let ini = (i == 0) ? 0 : 1;
+      for (let n = ini; n < ini+3; n++) {
+        const f_name = d+f+'指'+nj_list[n];
+        if (frames.skin[f_name])
+          frames.skin[f_name][0].rot.set(0,0,0,1);
+      }
+    });
+  }, 0,0);
+}
+
+System._browser.camera.poseNet._arm_IK_scale[hand_camera_side] = 1.5;
+if (frames.skin[d+'腕ＩＫ'])
+  frames.skin[d+'腕ＩＫ'][0].data_filter = {};
+
+const model = THREE.MMD.getModels()[0];
+const mesh = model.mesh;
+const modelX = MMD_SA.THREEX.get_model(0);
+const hand_pos = modelX.get_bone_position_by_MMD_name(d+'手首');//MMD_SA.get_bone_position(mesh, d+'手首');//
+const hand_rot = modelX.get_bone_rotation_by_MMD_name(d+'手首');//MMD_SA.get_bone_rotation(mesh, d+'手首');//
+
+const sign_LR = (d=='左')?1:-1;
+const target = v1.set(0,-sign_LR,0);
+if (!MMD_SA.THREEX.enabled && MMD_SA_options.model_para_obj.rot_arm_adjust) target.applyQuaternion(MMD_SA_options.model_para_obj.rot_arm_adjust[d+'腕'].axis_rot);
+target.applyQuaternion(hand_rot).multiplyScalar(sign_LR);
+
+hand_shift = v3.set(1*((MMD_SA.THREEX.enabled)?-1:1),0,0);
+if (!MMD_SA.THREEX.enabled && MMD_SA_options.model_para_obj.rot_arm_adjust) hand_shift.applyQuaternion(MMD_SA_options.model_para_obj.rot_arm_adjust[d+'腕'].axis_rot);
+hand_shift.applyQuaternion(hand_rot).multiplyScalar(sign_LR);
+
+//v2.setEulerFromQuaternion(hand_rot, 'ZYX').multiplyScalar(180/Math.PI);
+//System._browser.camera.DEBUG_show(v2.toArray().join('\n')+'\n\n'+target.toArray().join('\n'))
+
+hand_pos.add(v2.copy(target).multiplyScalar(0.4)).add(hand_shift);
+target.multiplyScalar(30).add(hand_pos);
+
+const c_base = MMD_SA.Camera_MOD.get_camera_base(['camera_lock']);
+hand_pos.sub(c_base.pos);
+target.sub(c_base.target);
+
+MMD_SA.Camera_MOD.adjust_camera('hand_camera', hand_pos, target, null);
+      }
+
+      function disable_hand_camera() {
+hand_camera_enabled = false;
+hand_camera_active = false;
+System._browser.camera.poseNet._arm_IK_scale = {};
+
+MMD_SA_options.look_at_screen = returnBoolean("MMDLookAtCamera");
+
+for (const d of ['左','右'])
+  delete System._browser.camera.poseNet.frames.skin[d+'腕ＩＫ']?.[0]?.data_filter;
+
+MMD_SA.Camera_MOD.adjust_camera('hand_camera', v1.set(0,0,0), v2.set(0,0,0), null);
+
+System._browser.camera.DEBUG_show('Hand camera:OFF', 3);
+      }
+
+      var finger_list = ["親", "人", "中", "薬", "小"];
+      var nj_list = ["０","１","２","３"];
+
+      let hand_camera_enabled, hand_camera_active;
+      let hand_camera_side;
+
+      let v1, v2, v3;
+//      let q1;
+      window.addEventListener('SA_Dungeon_onstart', ()=>{
+v1 = new THREE.Vector3();
+v2 = new THREE.Vector3();
+v3 = new THREE.Vector3();
+
+System._browser.on_animation_update.add(()=>{
+//  window.addEventListener('SA_camera_poseNet_process_bones_onended', ()=>{
+  hand_camera();
+//  });
+}, 0,1,-1);
+      });
+
+      return {
+  icon_path: Settings.f_path + '/assets/assets.zip#/icon/hand_camera_64x64.png'
+ ,info_short: "Hand camera"
+// ,is_base_inventory: true
+
+ ,index_default: (is_mobile) ? undefined : 5
+// ,get index_default() { return (is_mobile) ? undefined : (browser_native_mode) ? 4 : 6;}//MMD_SA_options.Dungeon.inventory.max_base+4; }
+
+ ,stock_max: 1
+ ,stock_default: 1
+
+ ,get _hand_camera_enabled() { return hand_camera_enabled; }
+ ,get _hand_camera_active() { return hand_camera_enabled && hand_camera_active; }
+
+ ,action: {
+    func: function (item) {
+const c = System._browser.camera;
+if (!c.poseNet.enabled) {
+  DEBUG_show('(For mocap mode only)', 3);
+  return true;
+}
+
+if (!hand_camera_enabled) {
+  hand_camera_enabled = true;
+  hand_camera_side = '右';
+
+  System._browser.camera.poseNet._arm_IK_scale = {};
+
+  MMD_SA_options.look_at_screen = false;
+
+  c.DEBUG_show('Hand camera:ON (left hand)', 5);
+}
+else {
+  if (hand_camera_side == '右') {
+    hand_camera_side = '左';
+
+    System._browser.camera.poseNet._arm_IK_scale = {};
+
+    c.DEBUG_show('Hand camera:ON (right hand)', 5);
+  }
+  else {
+    disable_hand_camera();
+  }
+}
+    }
+   ,anytime: true
+  }
+
+ ,info: [
+'- Ctrl+H / double-click to use your hand as camera during mocap.',
+'- Repeat to switch from left to right hand.',
+'- Repeat to disable it.',
+  ].join('\n')
+      };
+    })()
+
    ,"body_pix" : {
   icon_path: Settings.f_path + '/assets/assets.zip#/icon/selfie_segmentation_64x64.png'
  ,info_short: "Selfie Segmentation AI"
 // ,is_base_inventory: true
 
- ,index_default: (is_mobile) ? undefined : 5
+// ,index_default: (is_mobile) ? undefined : 5
 // ,get index_default() { return (is_mobile) ? undefined : (browser_native_mode) ? 4 : 6;}//MMD_SA_options.Dungeon.inventory.max_base+4; }
 
  ,stock_max: 1
@@ -3974,7 +4277,7 @@ MMD_SA_options.Dungeon.run_event("_VMC_PROTOCOL_",0);
   }
 
  ,info: [
-  '- Double-click to configure VMC-protocol, which allows beaming 3D motion data in real time to other supported apps, such as VSeeFace, Unity and Unreal Engine.',
+  '- Double-click to configure VMC-protocol, which allows beaming 3D motion data in real time to other supported apps, such as VSeeFace, VNyan, Unity and Unreal Engine.',
   '- Use mouse or keys to pick a numbered option.',
   ].join('\n')
     }
@@ -3987,13 +4290,26 @@ const t = Date.now();
 let windPower = ( Math.sin( t * Math.PI / 3 ) + 1 ) / 2;
 windPower = 0.5 + windPower*0.5;
 
-var camera = MMD_SA._trackball_camera.object
-var gravity = MMD_SA.TEMP_v3.copy(camera.position).sub(camera._lookAt).normalize().multiplyScalar((state==2) ? 2 : -2).multiplyScalar(windPower).toArray()
-//DEBUG_show(gravity)
-THREE.MMD.setGravity( gravity[0]*9.8*10, gravity[1]*9.8*10, gravity[2]*9.8*10 )
+let _air_vector = air_vector;
+if (!_air_vector) {
+  _air_vector = get_direction();
+}
+
+let gravity = MMD_SA.TEMP_v3.fromArray(_air_vector).multiplyScalar(windPower);
+//DEBUG_show(gravity.toArray(),0,1)
+
+THREE.MMD.setGravity( gravity.x*9.8*10, gravity.y*9.8*10, gravity.z*9.8*10 )
       }
 
-      var state = 0
+      function get_direction() {
+const camera = MMD_SA._trackball_camera.object;
+const phase = Math.floor((state-1)/2);
+return MMD_SA.TEMP_v3.copy(camera.position).sub(camera._lookAt).normalize().multiplyScalar(2 * ((phase == 1) ? 1 : -1)).toArray();
+      }
+
+      let state = 0;
+      let air_vector;
+      let msg = '';
       var air_blower = {
   icon_path: Settings.f_path + '/assets/assets.zip#/icon/hair-dryer_64x64.png'
  ,info_short: "Air blower"
@@ -4007,18 +4323,27 @@ THREE.MMD.setGravity( gravity[0]*9.8*10, gravity[1]*9.8*10, gravity[2]*9.8*10 )
  ,action: {
     func: function () {
 var phase = 1
-if (++state <= 2) {
-  if (state == 1) {
-    System._browser.on_animation_update.add(air_blower_frame,0,phase,-1)
-    DEBUG_show("(air blowing)", 2)
+if (++state <= 4) {
+
+  if (state % 2) {
+    air_vector = null;
+    if (state == 1) {
+      System._browser.on_animation_update.add(air_blower_frame, 0,phase,-1)
+      msg = '🌬️Air blowing';
+    }
+    else {
+      msg = '🌬️Air sucking';
+    }
   }
   else {
-    DEBUG_show("(air sucking)", 2)
+    air_vector = get_direction();
+    msg += '/fixed direction';
   }
+  DEBUG_show('(' + msg + ')', 3);
 }
 else {
   System._browser.on_animation_update.remove(air_blower_frame,phase)
-  DEBUG_show("(air blower stopped)", 2)
+  DEBUG_show("(🌬️Air blower stopped)", 3)
   air_blower.reset()
 }
     }
@@ -4031,6 +4356,14 @@ state = 0
 var gravity = MMD_SA.MMD.motionManager.para_SA.gravity || [0,-1,0]
 THREE.MMD.setGravity( gravity[0]*9.8*10, gravity[1]*9.8*10, gravity[2]*9.8*10 )
   }
+
+ ,info: [
+'- Double-click for a camera-oriented wind-blowing effect.',
+'- Repeat to lock the current direction.',
+'- Repeat for a camera-oriented wind-sucking effect.',
+'- Repeat to lock the current direction.',
+'- Repeat to disable it.',
+  ].join('\n')
       };
 
       return air_blower;
@@ -4050,7 +4383,7 @@ v3b = new THREE.Vector3()
  ,info_short: "Social meter"
 // ,is_base_inventory: true
 
- ,index_default: undefined
+ ,get index_default() { return (is_mobile) ? undefined : (MMD_SA_options.Dungeon.inventory.max_base+MMD_SA_options.Dungeon.inventory.max_base*(MMD_SA_options.Dungeon.inventory.max_row-1))+2; }
 // ,get index_default() { return (is_mobile) ? undefined : MMD_SA_options.Dungeon.inventory.max_base+3; }
 
  ,stock_max: 1
@@ -4155,8 +4488,17 @@ MMD_SA._force_motion_shuffle = true
       return social_distancing;
     })()
 
+   ,"menu": {
+  get index_default() { return MMD_SA_options.Dungeon.inventory.max_base * MMD_SA_options.Dungeon.inventory.max_row -2; }
+    }
+
    ,"_map_": {
   get index_default() { return MMD_SA_options.Dungeon.inventory.max_base * MMD_SA_options.Dungeon.inventory.max_row -1; }
+    }
+
+   ,"bag01": {
+  info_short: 'Bag (AR items)',
+  get index_default() { return MMD_SA_options.Dungeon.inventory.max_base; },
     }
 
 
@@ -4473,14 +4815,15 @@ DEBUG_show("Facemesh/Pose/Hands AI:ON", 4)
         {
           message: {
   get content() {
-return 'VMC-protocol parameters\n- port: ' + MMD_SA_options.OSC.VMC.send.port + '\n- host: ' + MMD_SA_options.OSC.VMC.send.host + '\n1. VMC-protocol: ' + ((MMD_SA.OSC.VMC.sender_enabled) ? 'ON' : 'OFF') + '\n2. VSeeFace mode: ' + ((MMD_SA.OSC.VMC.VSeeFace_mode) ? 'ON' : 'OFF') + '\n3. 3D Avatar: ' + ((MMD_SA.hide_3D_avatar) ? 'HIDDEN' : 'VISIBLE') + '\n4. Done';
+return 'VMC-protocol parameters\n- port: ' + MMD_SA_options.OSC.VMC.send.port + '\n- host: ' + MMD_SA_options.OSC.VMC.send.host + '\n1. VMC-protocol: ' + ((MMD_SA.OSC.VMC.sender_enabled) ? 'ON' : 'OFF') + '\n2. Send camera data: ' + ((MMD_SA.OSC.VMC.send_camera_data) ? 'ON':  'OFF') + '\n3. VSeeFace mode: ' + ((MMD_SA.OSC.VMC.VSeeFace_mode) ? 'ON' : 'OFF') + '\n4. 3D Avatar: ' + ((MMD_SA.hide_3D_avatar) ? 'HIDDEN' : 'VISIBLE') + '\n5. Done';
   }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id:{ func:()=>{ MMD_SA.OSC.VMC.sender_enabled=!MMD_SA.OSC.VMC.sender_enabled; System._browser.update_tray(); }, goto_event: { id:"_VMC_PROTOCOL_", branch_index:0 } } },
-    { key:2, event_id:{ func:()=>{ MMD_SA.OSC.VMC.VSeeFace_mode=!MMD_SA.OSC.VMC.VSeeFace_mode; System._browser.update_tray(); }, goto_event: { id:"_VMC_PROTOCOL_", branch_index:0 } } },
-    { key:3, event_id:{ func:()=>{ MMD_SA.hide_3D_avatar=!MMD_SA.hide_3D_avatar; System._browser.update_tray(); }, goto_event: { id:"_VMC_PROTOCOL_", branch_index:0 } } },
-    { key:4 },
+    { key:2, event_id:{ func:()=>{ MMD_SA.OSC.VMC.send_camera_data=!MMD_SA.OSC.VMC.send_camera_data; System._browser.update_tray(); }, goto_event: { id:"_VMC_PROTOCOL_", branch_index:0 } } },
+    { key:3, event_id:{ func:()=>{ MMD_SA.OSC.VMC.VSeeFace_mode=!MMD_SA.OSC.VMC.VSeeFace_mode; System._browser.update_tray(); }, goto_event: { id:"_VMC_PROTOCOL_", branch_index:0 } } },
+    { key:4, event_id:{ func:()=>{ MMD_SA.hide_3D_avatar=!MMD_SA.hide_3D_avatar; System._browser.update_tray(); }, goto_event: { id:"_VMC_PROTOCOL_", branch_index:0 } } },
+    { key:5 },
   ]
           }
         }
@@ -4736,6 +5079,24 @@ xhr.send();
 }
 
 const add_object3D = (function () {
+  let _Object3D_proxy;
+  window.addEventListener('load', ()=>{
+    _Object3D_proxy = class extends MMD_SA_options.Dungeon.Object3D_proxy_base {
+      constructor (object3d) {
+super(object3d);
+      }
+
+      set hidden(v) {
+if (MMD_SA.THREEX.enabled) {
+  this._parent._obj.visible = !v;
+}
+else {
+  ((this._parent._obj.children[0]?.isMesh) ? this._parent._obj.children[0] : this._parent._obj).visible = !v;
+}
+      }
+    };
+  });
+
   function onload_common(url, obj_all) {
 const mesh = obj_all.scene;
 
@@ -4780,7 +5141,7 @@ mesh.scale.setScalar(placement.scale||((is_X_model) ? 10 : 1));
 var object3d = Object.assign({}, model_para);
 if (!object3d.user_data) object3d.user_data = {};
 object3d._obj = object3d._mesh = mesh;
-object3d._obj_proxy = new MMD_SA_options.Dungeon.Object3D_proxy_base(object3d);
+object3d._obj_proxy = new _Object3D_proxy(object3d);
 
 var model_id = model_filename;
 if (object3d_cache.get(url)) {
@@ -5550,13 +5911,13 @@ p_bone.is_T_pose = is_T_pose;
     async function locate_file(zip, obj, type) {
       if (!obj || !obj.path) return false;
 
+      const filename = obj.path.replace(/^.+[\/\\]/, '');
       if (!zip) {
         if (FSO_OBJ.FileExists(obj.path)) return true;
-        show_status('❎"' + filename + '"');
+        show_status('❌"' + filename + '"');
         return false;
       }
 
-      const filename = obj.path.replace(/^.+[\/\\]/, '');
       const obj_list = zip.file(new RegExp(toRegExp(filename), "i"));
       if (!obj_list.length) {
         show_status('"' + filename + '" not found');
@@ -5845,9 +6206,10 @@ window.addEventListener('jThree_ready', ()=>{
 
   MMD_SA.THREEX.utils.camera_auto_targeting({
     id:'face',
-    enabled: MMD_SA_options.camera_face_locking,
+// use .condition instead of .enabled to save some headaches when .camera_face_locking can change at any time
+//    enabled: MMD_SA_options.camera_face_locking,
     condition: ()=>{
-return !explorer_mode && MMD_SA_options.Dungeon.started && (MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.visible || object3d_list.some(obj=>!obj.parent_bone)) && !MMD_SA.THREEX._THREE.MMD.getCameraMotion().length;
+return MMD_SA_options.camera_face_locking || ((MMD_SA_options.camera_face_locking !== false) && !explorer_mode && !MMD_SA_options.Dungeon_options.item_base.hand_camera._hand_camera_active && MMD_SA_options.Dungeon.started && (MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.visible || object3d_list.some(obj=>!obj.parent_bone)) && !MMD_SA.THREEX._THREE.MMD.getCameraMotion().length);
     },
   });
 });
@@ -6480,7 +6842,7 @@ MMD_SA_options.Dungeon.update_camera_position_base();
      ,[
         {
           message: {
-  content: 'XR Animator (v0.4.5)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Cancel'
+  content: 'XR Animator (v0.5.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -6496,7 +6858,7 @@ else
     }
    ,{ key:2, event_id: {
         func: function () {
-var url = self._readme_url_ || System.Gadget.path + '/readme.txt'
+var url = self._readme_url_ || 'https://github.com/ButzYung/SystemAnimatorOnline#readme'; //System.Gadget.path + '/readme.txt'
 if (webkit_electron_mode)
   webkit_electron_remote.shell.openExternal(url)
 else
@@ -6517,16 +6879,38 @@ else
       }
     }
    ,{ key:4, event_index:1 }
-   ,{ key:5, event_index:99 }
+   ,{ key:5, event_id: {
+        func:()=>{
+var url = 'https://github.com/ButzYung/SystemAnimatorOnline#contacts'
+if (webkit_electron_mode)
+  webkit_electron_remote.shell.openExternal(url)
+else
+  window.open(url)
+        }
+       ,ended: true
+      }
+    }
+   ,{ key:6, event_index:99 }
   ]
           }
         },
         {
           message: {
-  get content() { return 'If you like XR Animator, please consider making a donation and help keep this project running🙏\n1. 🤝PayPal.Me' + ((webkit_electron_mode) ? '\n2. 🟡Bitcoin\n3. Cancel' : '\n2. Cancel'); }
+  get content() { return 'If you like XR Animator, please consider making a donation and help keep this project running🙏\n1. ☕Buy me a coffee~\n2. 🤝PayPal.Me' + ((webkit_electron_mode) ? '\n3. 🟡Bitcoin\n4. Cancel' : '\n3. Cancel'); }
  ,bubble_index: 3
  ,get branch_list() { return [
     { key:1, event_id: {
+        func:()=>{
+var url = 'https://ko-fi.com/butzyung'
+if (webkit_electron_mode)
+  webkit_electron_remote.shell.openExternal(url)
+else
+  window.open(url)
+        }
+       ,ended: true
+      }
+    },
+    { key:2, event_id: {
         func:()=>{
 var url = 'https://www.paypal.me/AnimeThemeGadgets'
 if (webkit_electron_mode)
@@ -6538,7 +6922,7 @@ else
       }
     }
   ].concat((webkit_electron_mode) ? [
-    { key:2, event_id: {
+    { key:3, event_id: {
         func:()=>{
 navigator.clipboard.writeText('1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p').then(()=>{
   speech_bubble2('The following BTC address has been copied to the clipboard. Thanks in advance for any amount you will be sending!🙏\n・1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p', 10, { scale:1, no_word_break:true });
@@ -6547,9 +6931,9 @@ navigator.clipboard.writeText('1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p').then(()=>{
        ,ended: true
       }
     },
-    { key:3 }
+    { key:4 }
   ] : [
-    { key:2 }
+    { key:3 }
   ]); }
           }
         }
@@ -6639,7 +7023,7 @@ else if (MMD_SA_options.camera_face_locking) {
 else {
   MMD_SA_options.camera_face_locking = null;
 }
-MMD_SA.THREEX.utils.camera_auto_targeting({ id:'face', enabled:MMD_SA_options.camera_face_locking });
+//MMD_SA.THREEX.utils.camera_auto_targeting({ id:'face', enabled:MMD_SA_options.camera_face_locking });
           },
           goto_event: { event_index:0 },
         },
@@ -6673,6 +7057,7 @@ return [
   '・' + get_state('switch_motion_control_mode') + 'Ctrl+Z to toggle🙋↔️🦶control mode',
   '・' + get_state('mocap_auto_grounding') + 'Ctrl+G to toggle mocap auto-grounding',
   '・' + get_state('camera_3D_lock') + 'Ctrl+L to toggle 3D camera lock',
+  '・' + get_state('hand_camera') + 'Ctrl+H to toggle hand camera mode',
   '1. 🌐Global hotkey mode: ' + ((System._browser.hotkeys.is_global) ? 'ON' : 'OFF'),
   '2. Done',
 ].join('\n');
@@ -7428,13 +7813,11 @@ window.addEventListener("SA_AR_onARFrame", (function () {
       const target = v3.copy(obj.target);
 
       MMD_SA.reset_camera(false);
-
-      MMD_SA.adjust_camera('camera_lock', pos.sub(obj.object.position), target.sub(obj.target), z);
-
+      MMD_SA.Camera_MOD.adjust_camera('camera_lock', pos.sub(obj.object.position), target.sub(obj.target), z);
       MMD_SA.reset_camera();
     }
     else {
-      MMD_SA.adjust_camera('camera_lock', v1.set(0,0,0), v2.set(0,0,0), 0);
+      MMD_SA.Camera_MOD.adjust_camera('camera_lock', v1.set(0,0,0), v2.set(0,0,0), 0);
     }
 
     DEBUG_show('Camera lock: ON', 3);
@@ -7490,6 +7873,15 @@ DEBUG_show('Mocap auto-grounding:' + ((System._browser.camera.poseNet.auto_groun
       global_disabled: true,
       process: (e)=>{
 camera_lock();
+      }
+    },
+
+    {
+      id: 'hand_camera',
+      accelerator: ['Ctrl+H'],
+      global_disabled: true,
+      process: (e)=>{
+MMD_SA_options.Dungeon.item_base.hand_camera.action.func();
       }
     },
 
@@ -7565,6 +7957,8 @@ return config;
   };
 
   window.addEventListener('SA_writeSettings', ()=>{
+if (!MMD_SA_options.Dungeon.started) return;
+
 const config = MMD_SA_options._XRA_settings_export();
 
 System.Gadget.Settings.writeString('LABEL_XRA_settings', JSON.stringify(config));
