@@ -1,4 +1,4 @@
-// (2023-02-18)
+// (2023-04-10)
 
 /*!
  * jThree JavaScript Library v2.1.2
@@ -5459,6 +5459,72 @@ THREE.Plane.prototype = {
 /**
  * @author alteredq / http://alteredqualia.com/
  */
+
+// AT: plane-plane intersection
+// https://www.appsloveworld.com/threejs/100/1/finding-the-line-along-the-intersection-of-two-planes
+THREE.Plane.prototype.intersectPlane = (()=>{
+
+  const v1 = new THREE.Vector3();
+
+/*
+Algorithm taken from http://geomalgorithms.com/a05-_intersect-1.html. See the
+section 'Intersection of 2 Planes' and specifically the subsection
+(A) Direct Linear Equation
+*/
+function intersectPlanes(p1, p2) {
+  // the cross product gives us the direction of the line at the intersection
+  // of the two planes, and gives us an easy way to check if the two planes
+  // are parallel - the cross product will have zero magnitude
+
+  var direction = new THREE.Vector3().crossVectors(p1.normal, p2.normal)
+  var magnitude = direction.distanceTo(v1.set(0, 0, 0))
+  if (magnitude === 0) {
+    return null
+  }
+  // now find a point on the intersection. We use the 'Direct Linear Equation'
+  // method described in the linked page, and we choose which coordinate
+  // to set as zero by seeing which has the largest absolute value in the
+  // directional vector
+  var X = Math.abs(direction.x)
+  var Y = Math.abs(direction.y)
+  var Z = Math.abs(direction.z)
+  var point
+  if (Z >= X && Z >= Y) {
+    point = solveIntersectingPoint('z', 'x', 'y', p1, p2)
+  } else if (Y >= Z && Y >= X){
+    point = solveIntersectingPoint('y', 'z', 'x', p1, p2)
+  } else {
+    point = solveIntersectingPoint('x', 'y', 'z', p1, p2)
+  }
+  return [point, direction]
+}
+
+/*
+This method helps finding a point on the intersection between two planes.
+Depending on the orientation of the planes, the problem could solve for the
+zero point on either the x, y or z axis
+*/
+function solveIntersectingPoint(zeroCoord, A, B, p1, p2){
+    var a1 = p1.normal[A]
+    var b1 = p1.normal[B]
+    var d1 = p1.constant
+    var a2 = p2.normal[A]
+    var b2 = p2.normal[B]
+    var d2 = p2.constant
+    var A0 = ((b2 * d1) - (b1 * d2)) / ((a1 * b2 - a2 * b1))
+    var B0 = ((a1 * d2) - (a2 * d1)) / ((a1 * b2 - a2 * b1))
+    var point = new THREE.Vector3()
+    point[zeroCoord] = 0
+    point[A] = A0
+    point[B] = B0
+    return point
+}
+
+  return function (p2) {
+    return intersectPlanes(this, p2);
+  };
+})();
+
 
 THREE.Math = {
 
@@ -21452,6 +21518,14 @@ if (material.uniTexture) {
   }
   if (m_uniforms.uniTexture_null_zone && MMD_SA.MMD_started) {
     let c_pos = THREE.MMD.getModels()[0].mesh.position
+/*
+if (1) {
+  const mesh = THREE.MMD.getModels()[0].mesh;
+  const pos = MMD_SA.get_bone_position(mesh, '左手首');
+  m_uniforms.uniTexture_null_zone.value.set(pos.x, pos.y, pos.z, 3);
+}
+else
+*/
     m_uniforms.uniTexture_null_zone.value.set(c_pos.x, c_pos.y+10, c_pos.z, (object._model_index==0)?999:MMD_SA_options.model_para_obj.left_leg_length*1.2)
   }
   if (m_uniforms.uniTexture_MatrixRain_height_limit) {
