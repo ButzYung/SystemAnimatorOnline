@@ -1,4 +1,4 @@
-// (2023-03-21)
+// (2023-04-10)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -5683,14 +5683,14 @@ MMDCamera.prototype.play = function( loop ) {
 	Animation.prototype.play.call( this, loop );
 	// matrix の更新は自前でやるので autoUpdate は無効にする。
 	// そのため trackball control とかで影響でるので要注意！
-// AT: not needed for MMD_SA.adjust_camera()
+// AT: not needed for MMD_SA.Camera_MOD.adjust_camera()
 //	this.persepectiveCamera.rotationAutoUpdate = false;
 //	this.persepectiveCamera.matrixAutoUpdate = false;
 };
 
 MMDCamera.prototype.pause = function() {
 	Animation.prototype.pause.call( this );
-// AT: not needed for MMD_SA.adjust_camera()
+// AT: not needed for MMD_SA.Camera_MOD.adjust_camera()
 //	this.persepectiveCamera.rotationAutoUpdate = true;
 //	this.persepectiveCamera.matrixAutoUpdate = true;
 };
@@ -5752,7 +5752,7 @@ const c_distance = MMD_SA._trackball_camera.position0.distanceTo(MMD_SA._trackba
 c_target.set(0,0,-1).applyEuler(rot).multiplyScalar((Math.abs(distance)) ? Math.sign(distance) * Math.max(Math.abs(distance), c_distance) : c_distance);
 c_target.add(c_pos).add(c_base.setY(0));
 
-MMD_SA.adjust_camera('MMDCamera_onupdate', c_pos,c_target);
+MMD_SA.Camera_MOD.adjust_camera('MMDCamera_onupdate', c_pos,c_target);
 
 
 	persepectiveCamera.up.copy( _v.getColumnFromMatrix(1,mtx) ); // for trackball control
@@ -7411,7 +7411,7 @@ else {
       c.fov = MMD_SA_options.camera_fov;
       c.updateProjectionMatrix();
     }
-    MMD_SA.adjust_camera('MMDCamera_onupdate', MMD_SA._v3a_.set(0,0,0), MMD_SA._v3b_.set(0,0,0));
+    MMD_SA.Camera_MOD.adjust_camera('MMDCamera_onupdate', MMD_SA._v3a_.set(0,0,0), MMD_SA._v3b_.set(0,0,0));
 	c.rotationAutoUpdate = true;
 	c.matrixAutoUpdate = true;
   }
