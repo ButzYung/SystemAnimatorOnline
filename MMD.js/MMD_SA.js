@@ -3054,7 +3054,7 @@ MMD_SA.THREEX.mesh_obj.get( "SpeechBubbleMESH" + this.index ).hide();
 
     new SB(1, {invertH_side:true});
 
-    if (self.MMD_SA_options?.Dungeon_options && (MMD_SA_options.SpeechBubble_branch.use_cursor !== false)) {
+    if (self.MMD_SA_options?.Dungeon_options && (MMD_SA_options.SpeechBubble_branch?.use_cursor !== false)) {
 window.addEventListener('MMDStarted', ()=>{
 //  const THREE = MMD_SA.THREEX.THREE;
   const SL = MMD_SA.THREEX.SL;
