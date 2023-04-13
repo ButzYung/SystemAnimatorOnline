@@ -8470,6 +8470,11 @@ para.spine_to_hips_ratio = (para.pos0['chest']) ? 0 : 1 - THREE.Math.clamp((para
 Model_obj.call(this, index, vrm, para);
 this.mesh = vrm.scene;
 
+this._joints_settings = [];
+vrm.springBoneManager.joints.forEach( e => {
+  this._joints_settings.push(Object.assign({}, e.settings));
+});
+
 if (!MMD_SA.MMD_started)
   vrm_list.push(this)
     }
@@ -8922,6 +8927,8 @@ camera.fov,
 
 }
 
+
+if (this._reset_physics_) { delete this._reset_physics_; this.resetPhysics(); }
 
 vrm.update(time_delta);
 

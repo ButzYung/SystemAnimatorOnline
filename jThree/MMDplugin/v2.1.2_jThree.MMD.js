@@ -317,6 +317,8 @@ para_SA.motion_blending = {
       MMD_SA_options.model_para_obj.onMotionChange && MMD_SA_options.model_para_obj.onMotionChange();
 
       _delta0_from_last_loop = 0
+
+      if (MMD_SA.THREEX.enabled) MMD_SA.THREEX.get_model(0)._reset_physics_ = true;
     }
     else {
       let ignore_physics_reset = ((mm.para_SA.loopback_physics_reset == false) || ((mm.lastFrame_ == mm.lastFrame) && !mm.firstFrame_ && !mm.para_SA.loopback_fading))
@@ -7629,14 +7631,17 @@ window.dispatchEvent(new CustomEvent("SA_MMD_after_updateMotion"));
 if (!MMD_SA.MMD_started || !MMD_SA.THREEX.enabled) return;
 
 const gravity = MMD_SA.THREEX.v1.set(x,y,z);
-const gravityPower = gravity.length()/10;
+const gravityPower = gravity.length()/5;
 const gravityDir = gravity.normalize();
 
 MMD_SA.THREEX.models.forEach(model=>{
   if ((model.type == 'VRM') && model.model.springBoneManager) {
+// Set.forEach has no index
+    let i = 0;
     model.model.springBoneManager.joints.forEach( e => {
       e.settings.gravityDir.copy(gravityDir);
-      e.settings.gravityPower = gravityPower;
+      e.settings.gravityPower = model._joints_settings[i].gravityPower * gravityPower;
+      i++;
     });
   }
 });
