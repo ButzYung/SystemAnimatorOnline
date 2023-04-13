@@ -1,4 +1,4 @@
-// (2023-04-10)
+// (2023-04-14)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -161,6 +161,12 @@ if (self.MMD_SA && !MMD_SA_options.MMD_disabled) {
 
     THREE.MMD.setGravity( gravity[0]*9.8*10, gravity[1]*9.8*10, gravity[2]*9.8*10 )
 //DEBUG_show(MMD_SA._gravity_+'/'+MMD_SA._gravity_factor+'\n'+gravity)
+
+    if (MMD_SA.THREEX.enabled && gravity.every((v,i)=>v==MMD_SA.gravity[i])) {
+      MMD_SA.THREEX.models.forEach(model=>{
+        model.resetPhysics();
+      });
+    }
   }
 
   var _delta = delta
