@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-04-10)
+// (2023-04-14)
 
 var use_full_spectrum = true
 
@@ -8160,7 +8160,7 @@ return bone_parent && (b[bone_parent.name] || b[dir+bone_parent.name]);
 
     resetPhysics: function () {
 if (threeX.enabled) {
-//  if (this.type == 'VRM') this.model.springBoneManager.reset();//setInitState();//
+//  if (this.type == 'VRM') this.model.springBoneManager.reset();
 }
 else {
   this.model.resetPhysics();
@@ -8507,13 +8507,11 @@ return (!use_VRM1) ? (THREE.VRMSchema.HumanoidBoneName[name.charAt(0).toUpperCas
 
       resetPhysics: {
         value: function () {
-/*
 // three-vrm 1.0 (TEST)
-if (!use_VRM1) return;
+//if (!use_VRM1) return;
 
 this.model.springBoneManager.reset();
-this.model.springBoneManager.setInitState();
-*/
+//this.model.springBoneManager.setInitState();
         }
       },
 
@@ -10160,6 +10158,7 @@ if (!threeX.renderer.obj.useLegacyLights) c_max *= 5;
 if (c.type == 'DirectionalLight') {
   if (use_VRM1)
     c.intensity = light.intensity * c_max;
+  c.intensity *= 3;
 
   const c_scale = Math.min(1/c_max);
   c.color.multiplyScalar(c_scale);
@@ -10190,6 +10189,7 @@ else if (c.type == 'AmbientLight') {
   if (use_VRM1) {
     c.intensity = c_max * 0.5;
   }
+  c.intensity *= 2/3;
 }
       }
     },
