@@ -211,11 +211,14 @@ All demos support the use of custom MMD (MikuMikuDance) model. Drop a zip of you
 - Twitter:
   https://twitter.com/butz_yung
 
-- Facebook:
-  https://www.facebook.com/AnimeThemeGadgets/
-
 - Ko-fi:
   https://ko-fi.com/butzyung
+
+- BOOTH:
+  https://xr-animator.booth.pm/
+
+- Facebook:
+  https://www.facebook.com/AnimeThemeGadgets/
 
 - Homepage (System Animator):
   https://www.animetheme.com/sidebar/
