@@ -1,4 +1,4 @@
-// (2023-04-10)
+// (2023-04-22)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -3200,7 +3200,7 @@ if (MMD_SA_options.model_para_obj._icon_canvas) {
   MMD_SA_options.Dungeon.update_status_bar(true)
 */
 }
-else if (MMD_SA.THREEX.enabled && (MMD_SA.THREEX.get_model(0).type == 'VRM')) {
+else if (MMD_SA.THREEX.enabled && (MMD_SA.THREEX.get_model(0).type == 'VRM') && ((MMD_SA.THREEX.get_model(0).is_VRM1) ? MMD_SA.THREEX.get_model(0).model.meta.thumbnailImage : MMD_SA.THREEX.get_model(0).model.meta.texture)) {
   const model = MMD_SA.THREEX.get_model(0);
   const para_SAX = model.model_para;
   const para_SA = MMD_SA_options.model_para_obj;
@@ -5591,7 +5591,7 @@ if (collision_by_mesh) {// && hit_moved_once) {
     const obj_m4_inv = _m4.getInverse(cache.matrixWorld);
 
     const height = subject_bb_to_collide.max.y - subject_bb_to_collide.min.y;
-    const radius = height/8;
+    const radius = height/8 * (obj_base.octree_collider_radius||1);
 
     const pos = new THREE.Vector3();
     subject_bb_to_collide.center(pos);
@@ -6385,7 +6385,8 @@ if (!d._key_pressed[k]) d._key_pressed[k] = t
 
 var msg_branch_list = d.dialogue_branch_mode
 if (msg_branch_list) {
-  if (!d._states.action_allowed_in_event_mode || ((k >= 96) && (k <= 96+9)) || ((k >= 48) && (k <= 48+9)) || /Key[A-Z]/.test(k_code))
+// save some headaches and ignore alpha keys for now as it may affect movement and action
+  if (!d._states.action_allowed_in_event_mode || ((k >= 96) && (k <= 96+9)) || ((k >= 48) && (k <= 48+9)))// || /Key[A-Z]/.test(k_code))
     e.detail.result.return_value = true;
 
   for (var i = 0, i_max = msg_branch_list.length; i < i_max; i++) {
@@ -6393,6 +6394,8 @@ if (msg_branch_list) {
     const sb_index = branch.sb_index || 0;
     const sb = MMD_SA.SpeechBubble.list[sb_index];
     if ((typeof branch.key == 'number') ? ((k == 96+branch.key) || (k == 48+branch.key)) : (k_code == 'Key'+branch.key)) {
+      e.detail.result.return_value = true;
+
       if (MMD_SA_options.SpeechBubble_branch && MMD_SA_options.SpeechBubble_branch.confirm_keydown && (branch.key != sb._branch_key_) && (sb.msg_line.some(msg=>MMD_SA_options.SpeechBubble_branch.RE.test(msg)&&(RegExp.$1==branch.key)))) {
         sb._branch_key_ = branch.key
         sb._update_placement(true)
@@ -8225,15 +8228,28 @@ if (options.character) {
 // dungeon motion START
 this.motion_by_name = {}
 this.motion = options.motion || {}
-if (!this.motion["PC default"]) {
-  this.motion["PC default"] = { path:System.Gadget.path + '/MMD.js/motion/motion_rpg_pack01.zip#/tsuna/tsuna_standby.vmd',
-    para: { adjust_center_view_disabled:true, loop_on_blending:true, onended: function () { MMD_SA._no_fading=true; } }
-  };
-}
-if (!this.motion["PC movement forward"]) {
-  this.motion["PC movement forward"] = { path:System.Gadget.path + '/MMD.js/motion/motion_rpg_pack01.zip#/walk_n_run/run_H57_f0-20.vmd',
-    para: { adjust_center_view_disabled:true, loop_on_blending:true, onended: function () { MMD_SA._no_fading=true; }
- ,adjustment_per_model: {
+
+this.motion["PC default"] = Object.assign({
+  path:System.Gadget.path + '/MMD.js/motion/motion_rpg_pack01.zip#/tsuna/tsuna_standby.vmd',
+  para: { adjust_center_view_disabled:true, loop_on_blending:true, onended: function () { MMD_SA._no_fading=true; } }
+}, this.motion["PC default"]||{});
+Object.assign(this.motion["PC default"].para, this.motion["PC default"].para_SA||{});
+delete this.motion["PC default"].para_SA;
+
+this.motion["PC movement forward"] = Object.assign({
+  path:System.Gadget.path + '/MMD.js/motion/motion_rpg_pack01.zip#/walk_n_run/run_H57_f0-20.vmd',
+  para: { adjust_center_view_disabled:true, loop_on_blending:true, onended: function () { MMD_SA._no_fading=true; },
+
+// h01: 2000/1800
+// h16: 1474.79/1800
+// h26: 2700/1800
+// h45: 2500/1800
+// h46: 2500/3600
+// h57: 2700/3600
+// A34: 360/1800
+  _speed: 2700/1800 *30,
+
+  adjustment_per_model: {
     _default_ : {
   skin_default: {}
  ,morph_default:{
@@ -8279,14 +8295,16 @@ if (!this.motion["PC movement forward"]) {
   }
     }
 
-  }
+  },
 
- ,SFX: [
+  SFX: [
     { frame:2,  sound:{} }
    ,{ frame:12, sound:{} }
   ]
     }
-  };
+}, this.motion["PC movement forward"]||{});
+Object.assign(this.motion["PC movement forward"].para, this.motion["PC movement forward"].para_SA||{});
+delete this.motion["PC movement forward"].para_SA;
 /*
   this.motion["PC movement forward"] = { path:System.Gadget.path + '/MMD.js/motion/walk_n_run/run_H45_f0-360.vmd',
     para: { adjust_center_view_disabled:true, onended: function () { MMD_SA._no_fading=true; }
@@ -8305,7 +8323,7 @@ if (!this.motion["PC movement forward"]) {
     }
   };
 */
-}
+
 if (!this.motion["PC forward jump"]) {
   this.motion["PC forward jump"] = { path:System.Gadget.path + '/MMD.js/motion/motion_rpg_pack01.zip#/tsuna/tsuna_small_jump.vmd',
     para: { adjust_center_view_disabled:true, motion_duration:(46-12)/30, onended: function () { MMD_SA._no_fading=true; }
@@ -10071,43 +10089,37 @@ for (var key in this.key_map) {
     ULDR_indexd[index] = true
 }
 
-ULDR_id.forEach(function (id, idx) {
+ULDR_id.forEach((id, idx)=>{
   if (ULDR_indexd[idx])
     return
 
   var key_map = that.key_map[ULDR_keyCode[idx]] = { order:1000+idx, id:id, type_movement:true };
-// h16: 1474.79/1800
-// h26: 2700/1800
-// h45: 2500/1800
-// h46: 2500/3600
-// h57: 2700/3600
-// A34: 360/1800
 
   switch (id) {
     case "up":
       key_map.about_turn = false
       key_map.key_id_cancel_list = ["down"]
       key_map.motion_id = "PC movement forward"
-      key_map.mov_speed = 2700/1800*30
+      key_map.mov_speed = this.motion["PC movement forward"].para._speed
       key_map.motion_can_float = true
       key_map.TPS_mode = {
   mov_to_rot_absolute: true
  ,key_id_cancel_list: ["down"]
  ,motion_id: "PC movement forward"
- ,mov_speed: [{ frame:0, speed:{x:0, y:0, z: 2700/1800*30} }]
+ ,mov_speed: [{ frame:0, speed:{x:0, y:0, z: this.motion["PC movement forward"].para._speed} }]
       }
       break
     case "down":
       key_map.about_turn = true
       key_map.key_id_cancel_list = ["up"]
       key_map.motion_id = "PC movement forward"
-      key_map.mov_speed = 2700/1800*30
+      key_map.mov_speed = this.motion["PC movement forward"].para._speed
       key_map.motion_can_float = true
       key_map.TPS_mode = {
   mov_to_rot_absolute: true
  ,key_id_cancel_list: ["up"]
  ,motion_id: "PC movement forward"
- ,mov_speed: [{ frame:0, speed:{x:0, y:0, z:-2700/1800*30} }]
+ ,mov_speed: [{ frame:0, speed:{x:0, y:0, z:-this.motion["PC movement forward"].para._speed} }]
       }
       break
     case "left":
@@ -10119,7 +10131,7 @@ ULDR_id.forEach(function (id, idx) {
   mov_to_rot_absolute: true
  ,key_id_cancel_list: ["right"]
  ,motion_id: "PC movement forward"
- ,mov_speed: [{ frame:0, speed:{x: 2700/1800*30, y:0, z:0 } }]
+ ,mov_speed: [{ frame:0, speed:{x: this.motion["PC movement forward"].para._speed, y:0, z:0 } }]
       }
       break
     case "right":
@@ -10131,7 +10143,7 @@ ULDR_id.forEach(function (id, idx) {
   mov_to_rot_absolute: true
  ,key_id_cancel_list: ["left"]
  ,motion_id: "PC movement forward"
- ,mov_speed: [{ frame:0, speed:{x:-2700/1800*30, y:0, z:0 } }]
+ ,mov_speed: [{ frame:0, speed:{x:-this.motion["PC movement forward"].para._speed, y:0, z:0 } }]
       }
       break
   }
