@@ -1,4 +1,4 @@
-// (2023-04-14)
+// (2023-04-22)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -2494,7 +2494,7 @@ const to_A_pose = !to_T_pose && /\.fbx$/i.test(this.url) && !MMD_SA.THREEX.get_m
 const need_pose_conversion = to_A_pose || to_T_pose;
 
 var motion_para = self.MMD_SA && MMD_SA_options.motion_para[decodeURIComponent(this.url.replace(/^.+[\/\\]/, "").replace(/\.([a-z0-9]{1,4})$/i, ""))];
-var motion_sd = motion_para && motion_para.adjustment_per_model && (motion_para.adjustment_per_model[model_para_obj._filename] || motion_para.adjustment_per_model[model_para_obj._filename_cleaned] || motion_para.adjustment_per_model._default_);
+var motion_sd = motion_para && motion_para.adjustment_per_model && (motion_para.adjustment_per_model[MMD_SA.THREEX.get_model(pmx._model_index).model_path.replace(/^.+[\/\\]/, '')] || motion_para.adjustment_per_model[model_para_obj._filename_cleaned] || motion_para.adjustment_per_model._default_);
 motion_sd = (motion_sd && motion_sd.skin_default) || {};
 var multi_model_motion = (MMD_SA_options.model_para_obj_all.length > 1) && motion_para && (motion_para.model_index_list || motion_para.model_name_RegExp)
 var that = this;
@@ -2750,7 +2750,7 @@ var _RE = self.MMD_SA && model_para_obj.morph_filter
 var that = this
 var targets_extra = [];
 var motion_para = self.MMD_SA && MMD_SA_options.motion_para[decodeURIComponent(this.url.replace(/^.+[\/\\]/, "").replace(/\.([a-z0-9]{1,4})$/i, ""))];
-var motion_md = motion_para && motion_para.adjustment_per_model && (motion_para.adjustment_per_model[model_para_obj._filename] || motion_para.adjustment_per_model[model_para_obj._filename_cleaned] || motion_para.adjustment_per_model._default_);
+var motion_md = motion_para && motion_para.adjustment_per_model && (motion_para.adjustment_per_model[MMD_SA.THREEX.get_model(pmx._model_index).model_path.replace(/^.+[\/\\]/, '')] || motion_para.adjustment_per_model[model_para_obj._filename_cleaned] || motion_para.adjustment_per_model._default_);
 motion_md = (motion_md && motion_md.morph_default) || {};
 
 // AT: custom duration
@@ -4484,7 +4484,7 @@ if (self.MMD_SA) {
   model_para_obj = MMD_SA_options.model_para_obj_all[model_index]
   motion_name = (model.skin && MMD_SA.motion[model.skin._motion_index].filename) || ""
   motion_para = MMD_SA_options.motion_para[motion_name] || {}
-  motion_para_per_model = (motion_para.adjustment_per_model && (motion_para.adjustment_per_model[model_para_obj._filename] || motion_para.adjustment_per_model[model_para_obj._filename_cleaned] || motion_para.adjustment_per_model._default_)) || motion_para;
+  motion_para_per_model = (motion_para.adjustment_per_model && (motion_para.adjustment_per_model[MMD_SA.THREEX.get_model(model_index).model_path.replace(/^.+[\/\\]/, '')] || motion_para.adjustment_per_model[model_para_obj._filename_cleaned] || motion_para.adjustment_per_model._default_)) || motion_para;
   skin_filter = (model_para_obj.skin_filter_by_motion && (model_para_obj.skin_filter_by_motion.find(function (filter) { return filter.motion.test(motion_name); })||{}).skin) || motion_para_per_model.skin_filter || motion_para.skin_filter
 //if (motion_name!="standby") DEBUG_show(motion_name+'/'+!!MMD_SA_options.motion_para[motion_name]+'/'+Date.now())
   bc = model_para_obj.bone_constraint
@@ -5452,7 +5452,7 @@ if (self.MMD_SA) {
     }
   }
   motion_para = MMD_SA_options.motion_para[motion_name];
-  let motion_sd = motion_para && motion_para.adjustment_per_model && (motion_para.adjustment_per_model[model_para_obj._filename] || motion_para.adjustment_per_model[model_para_obj._filename_cleaned] || motion_para.adjustment_per_model._default_);
+  let motion_sd = motion_para && motion_para.adjustment_per_model && (motion_para.adjustment_per_model[MMD_SA.THREEX.get_model(this.mesh._model_index).model_path.replace(/^.+[\/\\]/, '')] || motion_para.adjustment_per_model[model_para_obj._filename_cleaned] || motion_para.adjustment_per_model._default_);
   motion_sd = (motion_sd && motion_sd.skin_default) || {};
   let sd = motion_sd[gbone.name] || model_para_obj.skin_default[gbone.name]
   if (sd && sd.gpos_add) {
@@ -6663,7 +6663,7 @@ if (self.MMD_SA && MMD_SA_options.auto_blink && !morph_extra_played && (this.pmx
       let blink_weight = -1
       let blink_scale = 2
       if (countdown <= -1-blink_scale*3) {
-        this._blink_countdown = ~~(20 * (Math.random()*4 + 4))
+        this._blink_countdown = ~~(20 * (Math.random()*8 + 4))
         blink_weight = m || 0
       }
       else if (countdown <= -1-blink_scale*2)
@@ -6680,7 +6680,7 @@ if (self.MMD_SA && MMD_SA_options.auto_blink && !morph_extra_played && (this.pmx
 //DEBUG_show(blink_morph_name+":"+blink_weight)
 //DEBUG_show(blink_weight,0,1)
       }
-      this._blink_countdown--
+      this._blink_countdown -= RAF_timestamp_delta/1000*60;
     }
   }
 }
