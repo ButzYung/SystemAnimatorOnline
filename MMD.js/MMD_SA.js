@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-04-14)
+// (2023-04-22)
 
 var use_full_spectrum = true
 
@@ -952,7 +952,7 @@ if (!ao.ontimeupdate)
 
     return false
   }
-  else if (item.isFileSystem && /([^\/\\]+)\.(png|jpg|jpeg|bmp|webp|mp4|mkv)$/i.test(src)) {
+  else if (item.isFileSystem && /([^\/\\]+)\.(png|jpg|jpeg|bmp|webp|mp4|mkv|webm)$/i.test(src)) {
 //console.log(toFileProtocol(item.path), item)
     if (MMD_SA_options.user_camera.enabled || System._browser.camera.ML_enabled) {
       if (System._browser.camera.initialized && !System._browser.camera.stream) {
@@ -7996,10 +7996,10 @@ return MMD_SA_options.THREEX_options.model_para[this.model_path.replace(/^.+[\/\
 
     get model_path() {
 if (!threeX.enabled) {
-  return (MMD_SA.MMD_started) ? this.model.pmx.url : ((this.index == 0) ? MMD_SA_options.model_path : MMD_SA_options.model_path_extra[this.index-1]);
+  return decodeURIComponent((MMD_SA.MMD_started) ? this.model.pmx.url : ((this.index == 0) ? MMD_SA_options.model_path : MMD_SA_options.model_path_extra[this.index-1]));
 }
 
-return (MMD_SA.MMD_started) ? this.para.url : ((this.index == 0) ? MMD_SA_options.THREEX_options.model_path : MMD_SA_options.THREEX_options.model_path_extra[this.index-1]);
+return decodeURIComponent((MMD_SA.MMD_started) ? this.para.url : ((this.index == 0) ? MMD_SA_options.THREEX_options.model_path : MMD_SA_options.THREEX_options.model_path_extra[this.index-1]));
     },
 
     get_bone_position_by_MMD_name: function (name, local_only) {
@@ -12283,7 +12283,7 @@ this._look_at_mouse = v
 const mm = (model && (model._model_index > 0)) ? MMD_SA.motion[model.skin._motion_index] : MMD_SA.MMD.motionManager;
 const para_SA = mm.para_SA;
 
-if (System._browser.camera.ML_enabled && !para_SA.motion_tracking?.look_at_screen && !MMD_SA.WebXR.session) return 0;
+if (System._browser.camera.ML_enabled && ((MMD_SA_options.user_camera.ML_models.look_at_screen === false) || (!para_SA.motion_tracking?.look_at_screen && !MMD_SA.WebXR.session))) return 0;
 
 // cache the return value for better performance in case of getter functions
 var v
