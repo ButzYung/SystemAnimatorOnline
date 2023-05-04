@@ -3,7 +3,7 @@
 
 // modified by Butz Yung - https://github.com/ButzYung
 // THREE.Quaternion required
-// (2022-12-27)
+// (2023-05-05)
 
 class LowPassFilter {
   constructor(alpha, type) {
@@ -167,7 +167,9 @@ OneEuroFilter.#q2_dx = new THREE.Quaternion();
 
   filter(x, timestamp=null) {
     if (this.lasttime && timestamp) {
-      this.freq = 1.0 / Math.max( timestamp - this.lasttime, 0 );
+// AT: convert timestamp to seconds
+// avoid infinity when time delta is 0
+      this.freq = 1.0 / Math.max( (timestamp - this.lasttime)/1000, 1/60 );
     }
     this.lasttime = timestamp;
 
@@ -175,6 +177,7 @@ OneEuroFilter.#q2_dx = new THREE.Quaternion();
     const edx = this.computeDerivativeMagnitude(this.dx.filter(dx, timestamp, this.alpha(this.dCutOff)));
 
     const cutOff = this.minCutOff + this.beta * edx;
+//if (!this._cutOff_max_) this._cutOff_max_=[]; this._cutOff_max_.unshift(cutOff); this._cutOff_max_.length=Math.min(this._cutOff_max_.length,100); System._browser.camera.DEBUG_show(((this.id && (this.id+'-'))||'')+'cutOff(' + cutOff+'/'+Math.max(...this._cutOff_max_) + '/freq:' + this.freq);
     return this.x.filter(x, timestamp, this.alpha(cutOff));
   }
 }
