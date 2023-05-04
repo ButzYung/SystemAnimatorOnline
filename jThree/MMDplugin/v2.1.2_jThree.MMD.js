@@ -1,4 +1,4 @@
-// (2023-04-22)
+// (2023-05-05)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -195,7 +195,7 @@ if (self.MMD_SA && !MMD_SA_options.MMD_disabled) {
     let result = { return_value:null };
     if (skin.time+delta > mm.lastFrame_/30) {
 // onended has to run BEFORE custom_motion_shuffle in some cases
-      window.dispatchEvent(new CustomEvent("SA_MMD_model0_onmotionended", { detail:{ result:result } }));
+      window.dispatchEvent(new CustomEvent("SA_MMD_model0_onmotionended", { detail:{ is_loop:true, result:result } }));
       if (!result.return_value) {
         mm.para_SA.onended && mm.para_SA.onended(true);
       }
@@ -2676,6 +2676,21 @@ if (key_mod.interp)
   }
 
   if ((last && ((keys.length > 1) || (last.time < timeMax))) && /guitar|g_head|g_bridge|f_board|\u8155\uFF29\uFF2B/.test(v.name)) { that.use_armIK = true }
+}
+
+if (!MMD_SA.THREEX.enabled) {
+  const para = motion_para?.adjustment_by_scale?.[v.name];
+  if (para) {
+    switch (v.name) {
+      case 'センター':
+        const scale = MMD_SA.THREEX.get_model(pmx._model_index).mesh.bones_by_name['左足'].pmxBone.origin[1]/para.reference_value;
+//console.log(v.name, scale)
+        keys.forEach(k=>{
+          k.pos[1] *= scale;
+        });
+        break;
+    }
+  }
 }
 
 		if ( last && last.time < timeMax ) {
