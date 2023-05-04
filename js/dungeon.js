@@ -1,4 +1,4 @@
-// (2023-04-22)
+// (2023-05-05)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -3360,6 +3360,8 @@ System._browser.on_animation_update.add(function () {
 
   MMD_SA_options.Dungeon.event_mode = false
   MMD_SA_options.Dungeon.run_event("onstart")
+
+  options._startup_position_ = c.pos.clone();
 
   SL_Host.style.visibility = "inherit";
 }, frame_to_skip+3, 0);
