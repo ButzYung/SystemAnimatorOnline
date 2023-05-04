@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-04-22)
+// (2023-05-05)
 
 var use_full_spectrum = true
 
@@ -512,6 +512,8 @@ if (!pmx_list.length) {
 const sb = document.getElementById("LMMD_StartButton")
 
 if (pmx_list.length) {
+  MMD_SA._init_my_model = null;
+
   MMD_SA.THREEX.enabled = false
 
   const model_filename = pmx_list[0].name.replace(/^.+[\/\\]/, "")
@@ -566,6 +568,8 @@ MMD_SA._click_to_reset = null;
     System.Gadget.Settings.writeString("LABEL_3D_model_path", src);
 }
 else if (vrm_list.length) {
+  MMD_SA._init_my_model = null;
+
   MMD_SA.THREEX.enabled = true
   MMD_SA_options.THREEX_options.model_path = src + '#/' + vrm_list[0].name
 
@@ -603,7 +607,9 @@ MMD_SA._click_to_reset = null;
 //console.log(DragDrop)
   }
   else if (item.isFileSystem && /([^\/\\]+)\.(vrm)$/i.test(src)) {
-    if (!MMD_SA_options.use_THREEX) return
+    if (!MMD_SA_options.use_THREEX) return;
+
+    MMD_SA._init_my_model = null;
 
     MMD_SA.THREEX.enabled = true
     MMD_SA_options.THREEX_options.model_path = src
@@ -1070,6 +1076,8 @@ if (browser_native_mode || MMD_SA_options.Dungeon || use_startup_screen) {
 
 let init = async function () {
   await MMD_SA.THREEX.init()
+
+  await MMD_SA.THREEX.GUI.init();
 
   if (MMD_SA._init_my_model) {
     MMD_SA._init_my_model()
@@ -2565,9 +2573,14 @@ if (!MMD_SA.THREEX.enabled) {
 }
 else {
   material.map.encoding = THREE.sRGBEncoding;
+//  material.depthWrite = false;
 }
 
-return new THREE.Sprite( material );
+const sprite = new THREE.Sprite( material );
+
+//if (MMD_SA.THREEX.enabled) sprite.renderOrder = 999;
+
+return sprite;
   } });
 
     };
@@ -7711,6 +7724,8 @@ data.renderer = new THREE.WebGLRenderer({
   preserveDrawingBuffer: true
 });
 
+//data.renderer.outputColorSpace = THREE.SRGBColorSpace;//LinearSRGBColorSpace;//
+
 data.renderer.setPixelRatio(window.devicePixelRatio);
 
 GLTF_loader = new THREE.GLTFLoader();
@@ -8000,6 +8015,10 @@ if (!threeX.enabled) {
 }
 
 return decodeURIComponent((MMD_SA.MMD_started) ? this.para.url : ((this.index == 0) ? MMD_SA_options.THREEX_options.model_path : MMD_SA_options.THREEX_options.model_path_extra[this.index-1]));
+    },
+
+    get_bone_origin_by_MMD_name: function (name) {
+return (threeX.enabled) ? this.para.pos0[VRM.bone_map_MMD_to_VRM[name]]?.slice().map(v=>v*this.model_scale) : this.get_bone_by_MMD_name(name)?.pmxBone.origin;
     },
 
     get_bone_position_by_MMD_name: function (name, local_only) {
@@ -9235,9 +9254,11 @@ if (MMD_SA_options.use_shadowMap) {
   });
 }
 
-// Disable frustum culling
 mesh_obj.traverse( ( obj ) => {
+// Disable frustum culling, saving some headaches in some situations when the model should be displayed but is frustumCulled
   obj.frustumCulled = false;
+
+  obj.layers.enable(threeX.PPE.UnrealBloom.BLOOM_SCENE);
 } );
 
 data.scene.add(mesh_obj);
@@ -9448,6 +9469,502 @@ return new Promise((resolve)=>{
 });
     },
 
+    PPE: (()=>{
+      let PPE_initialized, PPE_initializing;
+      let renderScene;
+
+      let PPE_list = ['UnrealBloom'];
+
+      const PPE = {
+        enabled: true,
+
+        get initialized() { return PPE_initialized; },
+
+        init: async function () {
+if (PPE_initialized) return;
+PPE_initializing = true;
+
+const EffectComposer = await import(System.Gadget.path + '/three.js/postprocessing/EffectComposer.js');
+const RenderPass = await import(System.Gadget.path + '/three.js/postprocessing/RenderPass.js');
+const ShaderPass = await import(System.Gadget.path + '/three.js/postprocessing/ShaderPass.js');
+
+THREE.EffectComposer = EffectComposer.EffectComposer;
+THREE.RenderPass = RenderPass.RenderPass;
+THREE.ShaderPass = ShaderPass.ShaderPass;
+
+for (const name of PPE_list) {
+  const effect = this[name];
+  await effect.init();
+}
+
+if (MMD_SA.MMD_started) {
+  this.setup();
+}
+else {
+  window.addEventListener('MMDStarted', ()=>{
+    this.setup();
+  });
+}
+        },
+
+        setup: function () {
+const gui = this.gui = threeX.GUI.obj.visual_effects.addFolder( 'Post-Processing Effects' );
+
+renderScene = new THREE.RenderPass( data.scene, data.camera );
+
+PPE_list.forEach(name=>{
+  const effect = this[name];
+effect.enabled = true;
+  effect.setup();
+});
+
+window.addEventListener('SA_MMD_SL_resize', ()=>{
+  PPE_list.forEach(name=>{
+    const effect = this[name];
+    if (effect.enabled)
+      effect.resize();
+  });
+});
+
+PPE_initializing = false;
+PPE_initialized = true;
+        },
+
+        render: function (scene, camera) {
+//return false;
+if (!PPE_initialized || !this.enabled) return false;
+
+let rendered = false;
+PPE_list.forEach(name=>{
+  const effect = this[name];
+  if (effect.enabled)
+    rendered = effect.render(scene, camera) || rendered;
+});
+
+return rendered;
+        },
+
+        UnrealBloom: (()=>{
+          const ENTIRE_SCENE = 0, BLOOM_SCENE = 1;
+          let bloomLayer;
+          let params_default, params, _params;
+          let params_vrm_default, params_vrm, _params_vrm;
+          let gui_bloom, gui_bloom_vrm;
+          let darkMaterial, materials;
+          let bloomComposer, finalComposer;
+
+          const vertexShader = [
+'			varying vec2 vUv;',
+
+'			void main() {',
+
+'				vUv = uv;',
+
+'				gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );',
+
+'			}',
+          ].join('\n');
+
+          const fragmentShader = [
+'			uniform sampler2D baseTexture;',
+'			uniform sampler2D bloomTexture;',
+
+'			varying vec2 vUv;',
+
+'			void main() {',
+
+'				gl_FragColor = ( texture2D( baseTexture, vUv ) + vec4( 1.0 ) * texture2D( bloomTexture, vUv ) );',
+// https://discourse.threejs.org/t/srgbencoding-with-post-processing/12582/6
+//'				gl_FragColor = LinearTosRGB(( texture2D( baseTexture, vUv ) + vec4( 1.0 ) * texture2D( bloomTexture, vUv ) ));',
+'gl_FragColor = mix(gl_FragColor, LinearTosRGB(gl_FragColor), 0.6667);',
+
+'			}',
+          ].join('\n');
+
+          let vrm_bloom_factor = 0.2;
+
+          let UnrealBloom_enabled = false;
+
+          return {
+            get params() { return params || _params; },
+            set params(v) {
+_params = v;
+if (PPE_initialized) {
+  Object.assign(params, v);
+  threeX.GUI.update(this.gui);
+//console.log(params)
+}
+            },
+
+            get params_vrm() { return params_vrm || _params_vrm; },
+            set params_vrm(v) {
+_params_vrm = v;
+if (PPE_initialized) {
+  Object.assign(params_vrm, v);
+  threeX.GUI.update(this.gui_vrm);
+//console.log(params_vrm)
+}
+            },
+
+            BLOOM_SCENE: BLOOM_SCENE,
+
+            init: async function () {
+const UnrealBloomPass = await import(System.Gadget.path + '/three.js/postprocessing/UnrealBloomPass.js');
+THREE.UnrealBloomPass = UnrealBloomPass.UnrealBloomPass;
+
+bloomLayer = new THREE.Layers();
+bloomLayer.set( BLOOM_SCENE );
+
+params_default = {
+  enabled: true,
+//  exposure: 1,
+  bloomStrength: 0.8,
+  bloomRadius: 0.4,
+  bloomThreshold: 0.3,
+};
+
+params = Object.assign({
+  reset: function () {
+    gui_bloom.controllers.forEach(c=>{c.reset()});
+  },
+}, params_default);
+
+params_vrm_default = {
+/*
+const p = m.userData.gltfExtensions.VRMC_materials_mtoon;
+m.parametricRimFresnelPowerFactor = p.parametricRimFresnelPowerFactor * 2;
+m.parametricRimLiftFactor = p.parametricRimLiftFactor * 2
+//m.rimLightingMixFactor = p.rimLightingMixFactor * 2
+//m.parametricRimColorFactor.set('white')
+//m.matcapFactor.set('white')
+*/
+  bloom_factor: vrm_bloom_factor,
+  RimFresnelPower: 1,
+  RimLift: 1,
+};
+
+params_vrm = Object.assign({
+  reset: function () {
+    gui_bloom_vrm.controllers.forEach(c=>{c.reset()});
+  },
+}, params_vrm_default);
+
+darkMaterial = new THREE.MeshBasicMaterial( { color: 'black' } );
+materials = {};
+            },
+
+            setup: function() {
+const renderer = data.renderer;
+const camera = data.camera;
+const SL = threeX.SL;
+
+THREEX.ColorManagement.enabled = false;
+//renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+renderer.toneMapping = THREE.ReinhardToneMapping;
+
+const bloomPass = new THREE.UnrealBloomPass( new THREE.Vector2( SL.width, SL.height ), 1.5, 0.4, 0.85 );
+bloomPass.threshold = params.bloomThreshold;
+bloomPass.strength = params.bloomStrength;
+bloomPass.radius = params.bloomRadius;
+
+bloomComposer = new THREE.EffectComposer( renderer );
+bloomComposer.renderToScreen = false;
+bloomComposer.addPass( renderScene );
+bloomComposer.addPass( bloomPass );
+
+const finalPass = new THREE.ShaderPass(
+  new THREE.ShaderMaterial( {
+    uniforms: {
+      baseTexture: { value: null },
+      bloomTexture: { value: bloomComposer.renderTarget2.texture }
+    },
+    vertexShader: vertexShader,
+    fragmentShader: fragmentShader,
+    defines: {}
+  } ),
+  'baseTexture'
+);
+finalPass.needsSwap = true;
+
+finalComposer = new THREE.EffectComposer( renderer );
+finalComposer.renderTarget1.samples = finalComposer.renderTarget2.samples = 4;
+finalComposer.addPass( renderScene );
+finalComposer.addPass( finalPass );
+
+//finalComposer.renderTarget1.texture.colorSpace = finalComposer.renderTarget2.texture.colorSpace = THREE.SRGBColorSpace;
+//bloomComposer.renderTarget1.texture.colorSpace = bloomComposer.renderTarget2.texture.colorSpace = THREE.SRGBColorSpace;
+
+MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.layers.enable(BLOOM_SCENE);
+
+const gui = PPE.gui;
+gui_bloom = this.gui = gui.addFolder( 'Unreal Bloom (Selective) Parameters' );
+gui_bloom.add( params, 'enabled' ).onChange( ( value )=>{
+  this.enabled = value;
+});
+
+gui_bloom.add( params, 'bloomThreshold', 0.0, 1.0 ).onChange( function ( value ) {
+  bloomPass.threshold = Number( value );
+});
+
+gui_bloom.add( params, 'bloomStrength', 0.0, 10.0 ).onChange( function ( value ) {
+  bloomPass.strength = Number( value );
+});
+
+gui_bloom.add( params, 'bloomRadius', 0.0, 1.0 ).step( 0.01 ).onChange( function ( value ) {
+  bloomPass.radius = Number( value );
+});
+gui_bloom.add( params, 'reset' );
+
+gui_bloom_vrm = this.gui_vrm = gui_bloom.addFolder( 'VRM Specific Parameters' );
+gui_bloom_vrm.add( params_vrm, 'bloom_factor', 0.0, 1.0 ).onChange( function ( value ) {
+  vrm_bloom_factor = Number( value );
+});
+gui_bloom_vrm.add( params_vrm, 'RimFresnelPower', 0.0, 5.0 ).onChange( function ( value ) {
+  const v = Number( value );
+  MMD_SA.THREEX.get_model(0).model.materials.forEach(m=>{
+    const p = m.userData.gltfExtensions.VRMC_materials_mtoon;
+    m.parametricRimFresnelPowerFactor = (('parametricRimFresnelPowerFactor' in p) ? p.parametricRimFresnelPowerFactor : 5) * v;
+ });
+});
+gui_bloom_vrm.add( params_vrm, 'RimLift', 0.0, 5.0 ).onChange( function ( value ) {
+  const v = Number( value );
+  MMD_SA.THREEX.get_model(0).model.materials.forEach(m=>{
+    const p = m.userData.gltfExtensions.VRMC_materials_mtoon;
+    m.parametricRimLiftFactor = (('parametricRimLiftFactor' in p) ? p.parametricRimLiftFactor : 0.1) * v;
+ });
+});
+gui_bloom_vrm.add( params_vrm, 'reset' );
+
+Object.assign(params, _params||{});
+Object.assign(params_vrm, _params_vrm||{});
+threeX.GUI.update(gui_bloom);
+threeX.GUI.update(gui_bloom_vrm);
+            },
+
+            resize: function () {
+const SL = threeX.SL;
+const width = SL.width;
+const height = SL.height;
+
+bloomComposer.setSize( width, height );
+finalComposer.setSize( width, height );
+            },
+
+            render: function (scene, camera) {
+function renderBloom( mask ) {
+  if ( mask === true ) {
+    scene.traverse( darkenNonBloomed );
+    bloomComposer.render();
+    scene.traverse( restoreMaterial );
+  }
+  else {
+    camera.layers.set( ENTIRE_SCENE);//BLOOM_SCENE );
+    bloomComposer.render();
+    camera.layers.set( ENTIRE_SCENE );
+  }
+}
+
+function darkenNonBloomed( obj ) {
+  MMD_SA.THREEX.get_model(0).model.materials.forEach(m=>{
+// assign rgb values directly instead of using *= or /= (not working probably because of its getter/setting nature)
+// https://github.com/pixiv/three-vrm/blob/dev/packages/three-vrm-materials-mtoon/src/MToonMaterial.ts#L63
+// should be safe to assume (1,1,1) by default
+//    if (!m._color_) m._color_ = m.color.clone();
+
+    m.color.r = vrm_bloom_factor;
+    m.color.g = vrm_bloom_factor;
+    m.color.b = vrm_bloom_factor;
+  });
+  if ( (obj.isMesh || obj.isSprite) && bloomLayer.test( obj.layers ) === false ) {
+    materials[ obj.uuid ] = obj.material;
+    obj.material = darkMaterial;
+  }
+}
+
+function restoreMaterial( obj ) {
+  MMD_SA.THREEX.get_model(0).model.materials.forEach(m=>{
+//    m.color.copy(m._color_);
+    m.color.r = m.color.g = m.color.b = 1;
+  });
+  if ( materials[ obj.uuid ] ) {
+    obj.material = materials[ obj.uuid ];
+    delete materials[ obj.uuid ];
+  }
+}
+
+//return false;
+
+data.renderer.toneMapping = THREE.ReinhardToneMapping;
+
+// render scene with bloom
+renderBloom( true );
+
+data.renderer.toneMapping = THREE.LinearToneMapping;//ACESFilmicToneMapping;//NoToneMapping;//
+
+// render the entire scene, then render bloom scene on top
+finalComposer.render();
+
+return true;
+            },
+
+            get enabled() { return UnrealBloom_enabled; },
+            set enabled(v) {
+              if (!!v == UnrealBloom_enabled) return;
+
+              UnrealBloom_enabled = !!v;
+              if (v) {
+                vrm_bloom_factor = params_vrm.bloom_factor;
+                MMD_SA.THREEX.get_model(0).model.materials.forEach(m=>{
+const p = m.userData.gltfExtensions.VRMC_materials_mtoon;
+if ('parametricRimFresnelPowerFactor' in p) {
+  m.parametricRimFresnelPowerFactor = p.parametricRimFresnelPowerFactor * params_vrm.RimFresnelPower;
+}
+else {
+  const c = 0.25;//Math.min(threeX.light.obj.DirectionalLight[0].intensity/20, 1);
+  m.parametricRimColorFactor.setRGB(c,c,c);
+  m.parametricRimFresnelPowerFactor = 5 * params_vrm.RimFresnelPower;
+}
+
+m.parametricRimLiftFactor = (('parametricRimLiftFactor' in p) ? p.parametricRimLiftFactor : 0.1) * params_vrm.RimLift;
+
+//m.matcapFactor.set('white')
+//m.parametricRimColorFactor.setRGB(0.1,0.1,0.1)
+//m.rimLightingMixFactor=1
+//m.parametricRimFresnelPowerFactor=5
+//m.parametricRimLiftFactor=1
+                });
+              }
+              else {
+                vrm_bloom_factor = params_vrm_default.bloom_factor;
+                MMD_SA.THREEX.get_model(0).model.materials.forEach(m=>{
+// https://github.com/pixiv/three-vrm/blob/dev/packages/three-vrm-materials-mtoon/src/MToonMaterial.ts#L411
+const p = m.userData.gltfExtensions.VRMC_materials_mtoon;
+if ('parametricRimFresnelPowerFactor' in p) {
+  m.parametricRimFresnelPowerFactor =  p.parametricRimFresnelPowerFactor;
+}
+else {
+  m.parametricRimColorFactor.setRGB(0,0,0);
+  m.parametricRimFresnelPowerFactor = 1;
+}
+
+m.parametricRimLiftFactor = (('parametricRimLiftFactor' in p) ? p.parametricRimLiftFactor : 0);
+                });
+              }
+            },
+
+          };
+        })(),
+      };
+
+      return PPE;
+    })(),
+
+    GUI: {
+      obj: {},
+
+      create: function () {
+const gui = new THREE.GUI();
+
+SL_Host.appendChild(gui.domElement);
+gui.domElement.addEventListener('mousedown', (e)=>{
+//  e.preventDefault();
+  e.stopPropagation();
+});
+
+gui.add({
+  'Hide Controls': function () {
+    gui.hide();
+  },
+}, 'Hide Controls');
+console.log(gui);
+
+gui.hide();
+
+return gui;
+      },
+
+      update: function (gui) {
+gui.controllers.forEach(c=>{
+  const v = c.object[c._name];
+  if (typeof c != 'function')
+    c.setValue(v);
+});
+      },
+
+      init: async function () {
+const GUI = await import(System.Gadget.path + '/three.js/libs/lil-gui.module.min.js');
+THREE.GUI = GUI.GUI;
+
+const gui = this.obj.visual_effects = this.create();
+
+const gui_light = gui.addFolder( 'Light' );
+
+window.addEventListener('MMDStarted', (()=>{
+  function update_tray() {
+    function f() {
+      System._browser.update_tray();
+    }
+
+    System._browser.on_animation_update.remove(f, 0);
+    System._browser.on_animation_update.add(f, 0,0);
+  }
+
+  return ()=>{
+let dir_light_pos = MMD_SA_options._light_position;
+threeX.light.params_directional_light_default = {
+  color: MMD_SA_options._light_color,
+  x: dir_light_pos[0],
+  y: dir_light_pos[1],
+  z: dir_light_pos[2],
+};
+
+const params = threeX.light.params_directional_light = Object.assign({
+  reset: function () {
+/*
+    const light = MMD_SA.light_list[1].obj;
+    System.Gadget.Settings.writeString('MMDLightColor', '');
+    System.Gadget.Settings.writeString('MMDLightPosition', '');
+    light.color.set(MMD_SA_options.light_color);
+    light.position.fromArray(MMD_SA_options.light_position).add(THREE.MMD.getModels()[0].mesh.position);
+    System._browser.update_tray();
+*/
+    gui_directional_light.controllers.forEach(c=>{c.reset()});
+  },
+}, threeX.light.params_directional_light_default);
+
+const gui_directional_light = gui_light.addFolder( 'Directional Light Parameters' );
+gui_directional_light.addColor( params, 'color' ).onChange( function ( value ) {
+  const light = MMD_SA.light_list[1].obj;
+  System.Gadget.Settings.writeString('MMDLightColor', value);
+  light.color.set(MMD_SA_options.light_color);
+  update_tray();
+});
+for (const d of ['x', 'y', 'z']) {
+  gui_directional_light.add( params, d, -1,1 ).onChange( function ( value ) {
+    const v = Number(value);
+    const light = MMD_SA.light_list[1].obj;
+    v1.set(params.x, params.y, params.z);
+    v1[d] = v;
+    System.Gadget.Settings.writeString('MMDLightPosition', '[' + v1.toArray().join(',') + ']');
+    light.position.fromArray(MMD_SA_options.light_position).add(_THREE.MMD.getModels()[0].mesh.position);
+    update_tray();
+  });
+}
+gui_directional_light.add( params, 'reset' );
+
+dir_light_pos = MMD_SA_options.light_position;
+Object.assign(params, {
+  color: MMD_SA_options.light_color,
+  x: dir_light_pos[0]/MMD_SA_options.light_position_scale,
+  y: dir_light_pos[1]/MMD_SA_options.light_position_scale,
+  z: dir_light_pos[2]/MMD_SA_options.light_position_scale,
+});
+gui_directional_light.controllers.forEach(c=>{c.updateDisplay()});
+  };
+})());
+      },
+    },
+
     load_scripts: async function () {
 loading = true
 
@@ -9496,6 +10013,8 @@ else {
 
 THREE = self.THREEX = self.THREE
 self.THREE = _THREE
+
+//await this.PPE.init();
 
 if (MMD_SA_options.Dungeon_options && MMD_SA_options.Dungeon.use_octree) await this.utils.load_octree();
 
@@ -10061,7 +10580,10 @@ if (threeX.use_OutlineEffect) {
 //  data.renderer.autoClear = false
 }
 else {
-  data.renderer.render(data.scene, data.camera);
+  if (!threeX.PPE.render(data.scene, data.camera)) {
+    data.renderer.toneMapping = THREE.NoToneMapping;
+    data.renderer.render(data.scene, data.camera);
+  }
 }
 
 obj_hidden_list.forEach(obj=>{
@@ -10088,9 +10610,11 @@ return c
       },
 
       update: function (camera) {
-if (!threeX.enabled) return
+if (!threeX.enabled) return;
 
-var c = camera._THREEX_child
+var c = camera._THREEX_child;
+if (!c) return;
+
 c.position.copy(camera.position)
 c.quaternion.copy(camera.quaternion)
 c.up.copy(camera.up)
@@ -10120,8 +10644,19 @@ if (threeX.enabled) {
       }
     },
 
-    light: {
-      clone: function (light) {
+    light: (()=>{
+      const obj = {
+        AmbientLight: [],
+        DirectionalLight: [],
+      };
+
+      return {
+        obj: {
+          get AmbientLight() { return (threeX.enabled) ? obj.AmbientLight : []; },
+          get DirectionalLight() { return (threeX.enabled) ? obj.DirectionalLight : []; },
+        },
+
+        clone: function (light) {
 if (!threeX.enabled) return
 
 var type
@@ -10134,6 +10669,9 @@ else if (light instanceof _THREE.AmbientLight) {
 
 var l = new THREE[type]()
 light._THREEX_child = l
+l._THREE_parent = light;
+
+obj[type].push(l);
 
 // https://threejs.org/docs/#api/en/lights/DirectionalLight
 if (type == 'DirectionalLight') {
@@ -10144,9 +10682,9 @@ if (type == 'DirectionalLight') {
 }
 
 data.scene.add(l)
-      },
+        },
 
-      update: function (light) {
+        update: function (light) {
 if (!threeX.enabled) return
 
 var c, c_max;
@@ -10198,8 +10736,9 @@ else if (c.type == 'AmbientLight') {
   }
   c.intensity *= 2/3;
 }
-      }
-    },
+        }
+      };
+    })(),
 
     VRM: VRM,
 
@@ -12845,6 +13384,8 @@ Array.prototype.shuffle = function () {
       './libs/': './three.js/libs/',
       './curves/': './three.js/curves/',
       './math/': './three.js/',
+      './postprocessing/': './three.js/postprocessing/',
+      './shaders/': './three.js/shaders/',
     }
   };
 

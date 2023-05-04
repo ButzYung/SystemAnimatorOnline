@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-04-22)
+// (2023-05-05)
 
 var MMD_SA_options = {
 
@@ -1942,6 +1942,18 @@ cam_pos.copy(MMD_SA._trackball_camera.object.position)
     { name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
   ],
 
+  auto_fit: {
+    table: {
+      reference_bones: ['右ひじ'],
+      depth_scale: 0.1,
+      rotation: { x:0, y:-90, z:0 },
+    },
+    chair: {
+      depth_scale: 0.5,
+      depth_rotation: { x:0, y:-90, z:0 },
+    },
+  },
+
   motion_tracking_enabled: true,
   motion_tracking_upper_body_only: true,
   motion_tracking: {
@@ -1990,6 +2002,16 @@ cam_pos.copy(MMD_SA._trackball_camera.object.position)
   ],
 
   center_view: [0,2,10],
+
+  auto_fit: {
+    table: {
+      reference_bones: ['左足首','右足首'],
+//      depth_scale: 0.1,
+    },
+    chair: {
+      depth_scale: 0.1,
+    },
+  },
 
 //  look_at_screen: true,
   motion_tracking_enabled: true,
@@ -2061,7 +2083,7 @@ if (diff > 0) {
       'left': { parent:{ name:'右足', weight:1 } },
       'right': { parent:{ weight:1 } },
     },
-
+/*
     arm_as_leg: {
 //      enabled: true,
       linked_side: 'right',
@@ -2075,6 +2097,42 @@ if (diff > 0) {
         },
       },
     },
+*/
+
+    arm_as_leg: {
+//      enabled: true,
+      linked_side: 'right',
+      transformation: {
+        position: {
+          x: { unit_length:1, add:1.5, min:-4, max:4, scale:1 },
+          y: { unit_length:1, add:1, min:0, scale:1 },
+          z: { unit_length:1, min:2, max:2 },
+          len_max: 99,
+//          length_min: 0.5,
+//          camera_weight: 0.75,
+
+          position_to_rotation: {
+
+            upper: {
+              x: { max:-100 },
+              z: { rot_formula:"z", scale:-0.5 },
+              y: { rot_formula:"z", scale:0.8 },
+            },
+
+            lower: {
+//63.43494882292201 * 2
+//, curve:{ini:0, end:120, pow_factor:1.5}
+              x: { rot_formula:'x', min:0, add:-30, scale:1.5 },
+            },
+          },
+        },
+
+        rotation: {
+          y: { foot_ratio:0.75 },
+        },
+      },
+    },
+
 
   }
     }
@@ -2103,7 +2161,9 @@ if (diff > 0) {
     },
     arm_default_stickiness: {
       'right': { parent:{ weight:0.8 } },
+      'left': { parent:{ weight:0.8 } },
     },
+/*
     arm_as_leg: {
 //      enabled: true,
       linked_side: 'right',
@@ -2117,6 +2177,38 @@ if (diff > 0) {
         },
       },
     },
+*/
+
+    arm_as_leg: {
+      transformation: {
+        position: {
+          x: { unit_length:1, add:{"left":8,"right":-8}, min:{"left":-0.25,"right":-8}, max:{"left":8,"right":0.25}, scale: 1 },
+          y: { unit_length:1, add:1, min:0, scale:1 },
+          z: { unit_length:1, min:2, max:2 },
+          len_max: 99,
+//          length_min: 0.5,
+//          camera_weight: 0.75,
+
+          position_to_rotation: {
+            upper: {
+              x: { max:-112 },
+              z: { rot_formula:"z", scale:-0.35 },
+              y: { rot_formula:"z", scale:0.08 },
+            },
+            lower: {
+//63.43494882292201 * 2
+//, curve:{ini:0, end:120, pow_factor:1.5}
+              x: { rot_formula:'x', min:0, add:-30, scale:1.5 },
+            },
+          },
+        },
+
+        rotation: {
+          y: { foot_ratio:0.5 },
+        },
+      },
+    },
+
   }
     }
 
@@ -3356,11 +3448,11 @@ if (1) {//MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_s
     window.addEventListener("SA_MMD_model0_process_morphs", morph_event)
   }
 
-  let motion_list_index = (System._browser.camera.poseNet.enabled) ? 1 : 0
+  let motion_list_index = (System._browser.camera.poseNet.enabled) ? 2 : 1;
 
   let motion_list = _motion_list[motion_list_index]
   if (motion_list_index != _motion_list_index) {
-    motion_index = ((motion_list_index == 0) && (_motion_list_index == -1)) ? 0 : -1
+    motion_index = ((motion_list_index == 1) && (_motion_list_index == -1)) ? 0 : -1
   }
   _motion_list_index = motion_list_index
 
@@ -3437,7 +3529,7 @@ return animation_on;
 
       var motion_index
 
-      window.addEventListener("MMDStarted", function () {
+      window.addEventListener("jThree_ready", function () {
 function delay_dialogue() {
   MMD_SA_options.Dungeon.run_event();
 }
@@ -3477,7 +3569,9 @@ function push_motion_to_list_front() {
   _motion_list[0][index].index = index_first + 0.5;
   _motion_list[0].sort(sort_by_index);
   _motion_list[0].forEach((m,i)=>{ m.index=i; });
-  _motion_list[1].sort(sort_by_index);
+
+  for (let i = 1; i < _motion_list.length; i++)
+    _motion_list[i].sort(sort_by_index);
 
   _motion_page = 0;
 }
@@ -3493,8 +3587,9 @@ function reset_list_order(order) {
   else {
     _motion_list[0].forEach(m=>{ m.index=m.index_default; });
   }
-  _motion_list[0].sort(sort_by_index);
-  _motion_list[1].sort(sort_by_index);
+
+  for (let i = 0; i < _motion_list.length; i++)
+    _motion_list[i].sort(sort_by_index);
 
   _motion_page = 0;
 }
@@ -3526,7 +3621,7 @@ _motion_list[0] = [
 
   {name:"i-shaped_balance_TDA_f0-50", info:"I-shaped balance (🙋)"},
 
-  ((!MMD_SA.THREEX.enabled/* && MMD_SA_options.WebXR.AR._adult_mode*/) ? {name:"leg_hold", info:"???"} : null),
+  {name:"leg_hold", info:"???", _MMD_only_:true},
 
   {name:"Mixamo - Sitting02", info:"Sit 01 (🙋/🦶)"},
 
@@ -3562,7 +3657,13 @@ _motion_list[0] = [
 
 ].filter(m=>m!=null);
 
-_motion_list[1] = _motion_list[0].filter((m)=>MMD_SA_options.motion_para[m.name].motion_tracking_enabled);
+_motion_list[0].forEach(m=>{
+  MMD_SA_options.motion_para[m.name].adjustment_by_scale = { 'センター':{ reference_value:11.36464 } };
+});
+
+_motion_list[1] = _motion_list[0].filter((m)=>!m._MMD_only_ || (!MMD_SA.THREEX.enabled/* && MMD_SA_options.WebXR.AR._adult_mode*/));
+
+_motion_list[2] = _motion_list[0].filter((m)=>MMD_SA_options.motion_para[m.name].motion_tracking_enabled);
 
 _motion_list[0].forEach((m,i)=>{
   const para = MMD_SA_options.motion_para[m.name];
@@ -3593,7 +3694,7 @@ window.addEventListener('SA_MMD_model0_process_bones_after_IK', delay_dialogue, 
         {
           message: {
   get content() {
-const index = (System._browser.camera.poseNet.enabled) ? 1 : 0;
+const index = (System._browser.camera.poseNet.enabled) ? 2 : 1;
 this._has_custom_animation_ = (MMD_SA.THREEX.enabled && MMD_SA.THREEX.get_model(0).animation.has_clip) || (MMD_SA_options.motion.length > MMD_SA.motion_max_default);
 
 if (_motion_page * 9 >= _motion_list[index].length)
@@ -3614,7 +3715,7 @@ return content;
   para: { row_max:11, font_size:17 },
 
   get branch_list() {
-const index = (System._browser.camera.poseNet.enabled) ? 1 : 0;
+const index = (System._browser.camera.poseNet.enabled) ? 2 : 1;
 
 let ini = _motion_page * 9;
 
@@ -5146,7 +5247,7 @@ xhr.send();
     if (!model_list.length) {
       model_list = zip.file(/\.x$/i);
       if (!model_list.length) {
-        System._browser.DEBUG_show("(No PMX/X model found)");
+        DEBUG_show("(No PMX/X model found)");
         return;
       }
     }
@@ -5155,7 +5256,7 @@ xhr.send();
     const model_path = src + "#/" + model_list[0].name;
     console.log(src, model_filename, model_path);
 
-    object3d_cache.set(model_path, null);
+//    object3d_cache.set(model_path, null);
 
     const model_json = zip.file(/model\.json$/i);
     if (model_json.length) {
@@ -5175,35 +5276,35 @@ xhr.send();
 
     await add_object3D(model_path);
 
-    System._browser.DEBUG_show('✅PMX/X model (' + model_filename + ')');
+    DEBUG_show('✅PMX/X model (' + model_filename + ')');
   }
   else if (item.isFileSystem && /([^\/\\]+)\.(gltf|glb)$/i.test(src)) {
     if (!MMD_SA.THREEX.enabled) {
-      System._browser.DEBUG_show('(GLTF/GLB not available in MMD mode)');
+      DEBUG_show('(GLTF/GLB not available in MMD mode)');
       return;
     }
 
     const model_filename = src.replace(/^.+[\/\\]/, "");
 
-    object3d_cache.set(src, null);
+//    object3d_cache.set(src, null);
 
     update_model_para(src);
 
     await add_object3D(src);
 
-    System._browser.DEBUG_show('✅GLTF model (' + model_filename + ')');
+    DEBUG_show('✅GLTF model (' + model_filename + ')');
   }
   else if (item.isFileSystem && /([^\/\\]+)\.(bpm|jpg|jpeg|png|webp|mp4|mkv|webm)$/i.test(src)) {
     const file_type = RegExp.$2.toUpperCase();
     const model_filename = src.replace(/^.+[\/\\]/, "");
 
-    object3d_cache.set(src, null);
+//    object3d_cache.set(src, null);
 
     update_model_para(src);
 
     await add_object3D(src);
 
-    System._browser.DEBUG_show('✅' + file_type + ' (' + model_filename + ')');
+    DEBUG_show('✅' + file_type + ' (' + model_filename + ')');
   }
   else {
     _onDrop_finish.call(DragDrop, item)
@@ -5251,6 +5352,9 @@ if (material_para.receiveShadow != false) {
 }
 
 if (MMD_SA.THREEX.enabled) {
+  mesh.traverse(obj=>{
+    obj.layers.enable(MMD_SA.THREEX.PPE.UnrealBloom.BLOOM_SCENE);
+  });
 }
 else {
   if (model_para.instanced_drawing)
@@ -5271,6 +5375,7 @@ if (placement.rotation)
 mesh.scale.setScalar(placement.scale||((is_X_model) ? 10 : 1));
 
 var object3d = Object.assign({}, model_para);
+object3d.uuid = THREE.Math.generateUUID();
 if (!object3d.user_data) object3d.user_data = {};
 object3d._obj = object3d._mesh = mesh;
 object3d._obj_proxy = new _Object3D_proxy(object3d);
@@ -6041,12 +6146,24 @@ p_bone.rotation.z =  obj_rot_euler.z;
 p_bone.is_T_pose = is_T_pose;
   }
 
-  async function parse_scene(json, zip_path) {
+  async function parse_scene(json, scene_src) {
     async function locate_file(zip, obj, type) {
       if (!obj || !obj.path) return false;
+      if (/^[\w\-]+$/.test(obj.path)) {
+        switch (obj.path) {
+          case 'scene_auto_fit':
+            obj.path = System.Gadget.path + '\\js\\scene_auto_fit.js';
+            return true;
+        }
+      }
+
+      if (!/\.([a-z0-9]{1,4})$/i.test(obj.path))
+        obj.path += (MMD_SA.THREEX.enabled) ? '.glb' : '.zip';
 
       const filename = obj.path.replace(/^.+[\/\\]/, '');
       if (!zip) {
+        if (!/^\w+\:/.test(obj.path))
+          obj.path = scene_src.replace(/[^\/\\]+$/, '') + obj.path.replace(/^[\/\\]/, '');
         if (FSO_OBJ.FileExists(obj.path)) return true;
         show_status('❌"' + filename + '"');
         return false;
@@ -6122,6 +6239,8 @@ p_bone.is_T_pose = is_T_pose;
 
     show_status('Loading scene...', 99);
 
+    const zip_path = (/.zip$/i.test(scene_src)) ? scene_src : null;
+
     const zip = (zip_path) ? XMLHttpRequestZIP.zip_by_url(zip_path) : null;
 
     let loaded_count = 0;
@@ -6181,6 +6300,14 @@ p_bone.is_T_pose = is_T_pose;
       }
     }
 
+    const motion_list = json.XR_Animator_scene.motion_list;
+    if (motion_list) {
+      loaded_count_max++;
+      await parse_motion(motion_list);
+      show_status('✅Motion');
+      check_loaded(1);
+    }
+
     const object3D_list = json.XR_Animator_scene.object3D_list;
     if (object3D_list) {
       const is_T_pose = MMD_SA.THREEX.get_model(0).is_T_pose;
@@ -6193,21 +6320,18 @@ p_bone.is_T_pose = is_T_pose;
           if (p_bone && (p_bone.is_T_pose != null) && ((p_bone.is_T_pose) ? !is_T_pose : is_T_pose))
             adjust_parent_bone(p_bone, is_T_pose);
 
+          if (!obj.id) obj.id = filename.replace(/\.([a-z0-9]{1,4})$/i, '');
+
           loaded_count_max++;
-          onDrop_add_object3D({ isFileSystem:true, path:obj.path, _obj_json:obj }).then(()=>{
-            show_status('✅"' + filename + '"');
-            check_loaded(1);
-          });
+// need to use await (i.e. loading in order) to work with cloned objects
+          await onDrop_add_object3D({ isFileSystem:true, path:obj.path, _obj_json:obj });
+
+          obj._object3d_uuid = object3d_list[object3d_list.length-1].uuid;
+
+          show_status('✅"' + filename + '"');
+          check_loaded(1);
         }
       }
-    }
-
-    const motion_list = json.XR_Animator_scene.motion_list;
-    if (motion_list) {
-      loaded_count_max++;
-      await parse_motion(motion_list);
-      show_status('✅Motion');
-      check_loaded(1);
     }
 
     loaded_counting = false;
@@ -6265,7 +6389,7 @@ p_bone.is_T_pose = is_T_pose;
           const json = e.detail.json;
           if (json.XR_Animator_scene) {
             e.detail.result.return_value = true;
-            parse_scene(json);
+            parse_scene(json, src);
           }
         }, {once:true});
 
@@ -6490,7 +6614,7 @@ return [
           _show_other_options_: false,
 
           message: {
-  get content() { this._motion_for_export_ = /\.(bvh|fbx)$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd; return (!MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_ && System._browser.camera.ML_enabled) ? ((this._motion_for_export_) ? '1. Export motion to file\n2. Record motion\n3. Mocap options\n4. Mocap OFF' : '1. Record motion\n2. Mocap options\n3. Mocap OFF\n4. Enable motion control') + /*'\n5. Other options*/ '\n5. Cancel' : '1. Overlay & UI\n2. BG/Scene/3D\n3. Miscellaneous Options\n4. Export motion to file\n5. About XR Animator\n6. Cancel'; }
+  get content() { this._motion_for_export_ = /\.(bvh|fbx)$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd; return (!MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_ && System._browser.camera.ML_enabled) ? ((this._motion_for_export_) ? '1. Export motion to file\n2. Record motion\n3. Mocap options\n4. Mocap OFF' : '1. Record motion\n2. Mocap options\n3. Mocap OFF\n4. Enable motion control') + /*'\n5. Other options*/ '\n5. Cancel' : '1. Overlay & UI\n2. BG/Scene/3D\n3. Visual effects\n4. Miscellaneous Options\n5. Export motion to file\n6. About XR Animator\n7. Cancel'; }
  ,bubble_index: 3
  ,get branch_list() {
 return (!MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_ && System._browser.camera.ML_enabled) ? ((this._motion_for_export_) ? [
@@ -6510,10 +6634,30 @@ return (!MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_opti
 ]) : [
   { key:1, branch_index:1 },
   { key:2, branch_index:3 },
-  { key:3, branch_index:other_options_branch },
-  { key:4, branch_index:export_motion_branch },
-  { key:5, branch_index:about_branch },
-  { key:6 }
+  { key:3, event_id:{
+      func:()=>{
+        if (MMD_SA.THREEX.enabled) {
+          if (MMD_SA.THREEX.PPE.initialized) {
+            MMD_SA.THREEX.GUI.obj.visual_effects.show();
+          }
+          else {
+            MMD_SA.SpeechBubble.list[1].message(3, 'Initializing visual effects plugins...', 3000);
+            MMD_SA.THREEX.PPE.init().then(()=>{
+              MMD_SA.THREEX.GUI.obj.visual_effects.show();
+            });
+          }
+        }
+        else {
+          MMD_SA.THREEX.GUI.obj.visual_effects.show();
+        }
+        return true;
+      }
+    }
+  },
+  { key:4, branch_index:other_options_branch },
+  { key:5, branch_index:export_motion_branch },
+  { key:6, branch_index:about_branch },
+  { key:7 }
 ];
   }
           }
@@ -6979,7 +7123,7 @@ MMD_SA_options.Dungeon.update_camera_position_base();
      ,[
         {
           message: {
-  content: 'XR Animator (v0.5.2)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
+  content: 'XR Animator (v0.6.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -8095,6 +8239,13 @@ config.pose = {
   order: MMD_SA_options._XRA_pose_list[0].map(m=>m.index_default),
 };
 
+config.PPE = {
+  UnrealBloom: {
+    params: MMD_SA.THREEX.PPE.UnrealBloom.params,
+    params_vrm: MMD_SA.THREEX.PPE.UnrealBloom.params_vrm,
+  },
+};
+
 return config;
   };
 
@@ -8152,6 +8303,23 @@ try {
 
       case 'pose':
         MMD_SA_options._XRA_pose_reset(config[p].order);
+        break;
+
+      case 'PPE':
+        Object.keys(config[p]).forEach(effect=>{
+          const ec = config[p][effect];
+          switch (effect) {
+            case 'UnrealBloom':
+              const UnrealBloom = MMD_SA.THREEX.PPE.UnrealBloom;
+              for (const param of ['params', 'params_vrm']) {
+//console.log(param, ec[param])
+                if (ec[param]) {
+                  UnrealBloom[param] = Object.assign({}, ec[param]);
+                }
+              }
+              break;
+          }
+        });
         break;
     }
   }
