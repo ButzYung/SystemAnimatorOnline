@@ -1,18 +1,18 @@
 ﻿# XR Animator
 
-### Full-body, real-time motion tracking using just a single webcam, right on your browser!
+### Full-body, real-time motion tracking using just a single webcam, on your PC and web browser
 
 <p align="center">
   <img width="640" height="360" title="XR Animator" src="https://github.com/ButzYung/SystemAnimatorOnline/raw/master/images/XR_Animator_thumbnail01.png">
 </p>
 
-"XR Animator" is our featured web app based on our System Animator Online. It uses the machine learning (ML) solution from [MediaPipe](https://github.com/google/mediapipe) and [TensorFlow.js](https://github.com/tensorflow/tfjs-models) to detect the 3D poses from a live webcam video, which is then used to drive the 3D avatar (MMD/VRM model) as if you are controlling it with your body. It can be used for whatever XR purpose, and even for VTubing.
+"XR Animator" is our featured app based on our System Animator Online. It uses the machine learning (ML) solution from [MediaPipe](https://github.com/google/mediapipe) and [TensorFlow.js](https://github.com/tensorflow/tfjs-models) to detect the 3D poses from a live webcam video, which is then used to drive the 3D avatar (MMD/VRM model) as if you are controlling it with your body. It can be used for VTubing and various XR/3D purposes.
 
 It has a variety of motion tracking options. You can choose to track the face, full body, or something in between (any combination of face/body/hands).
 
-The online version works on all major web browsers both on desktop and smartphone. On browsers supporting both web worker and OffscreenCanvas (e.g. Chrome), it can achieve 60fps visual rendering and 30fps body pose detection on a medicore PC. On smartphones with limited processing power, you may want to use limit its usage on face tracking.
+The web app version works on all major web browsers both on desktop and smartphone. On browsers supporting both web worker and OffscreenCanvas (e.g. Chrome), it can achieve 60fps visual rendering and 30fps body pose detection on a medicore PC. On smartphones with limited processing power, you may want to use limit its usage on face tracking.
 
-### 🌐[XR Animator - Online version](https://sao.animetheme.com/XR_Animator.html)
+### 🌐[XR Animator - Web app version](https://sao.animetheme.com/XR_Animator.html)
 
 The Windows app version (powered by [Electron](https://www.electronjs.org/)) is also availabe for download, which provides a few extra features (e.g. VMC-protocol, transparent background) available only in a native-OS environment.
 
@@ -26,9 +26,9 @@ The Windows app version (powered by [Electron](https://www.electronjs.org/)) is 
 
 - Record mocap motion and export it to VMD motion format
 
-- Support loading VMD/BVH/FBX format 3D motions
+- Support loading VMD/FBX/BVH format 3D motions
 
-- Export BVH/FBX motions to VMD format
+- Export FBX/BVH motions to VMD format
 
 - Customize the background and 3D scene with 2D image/video , 3D panorama and 3D objects (.x/.glb format)
 
@@ -40,7 +40,7 @@ The Windows app version (powered by [Electron](https://www.electronjs.org/)) is 
 
 Check out these [YouTube video demos](https://youtube.com/playlist?list=PLLpwhHMvOCSt3i7NQcyJq1fFhoMiSmm5H) and watch XR Animator in action!
 
-(*) - To capture the online version of XR Animator on OBS without the browser UI, you have to open XR Animator on OBS browser. A few extra command line parameters on OBS are required to allow camera access. [Details](https://twitter.com/yeemachine/status/1461908260638785540)
+(*) - To capture the web app version of XR Animator on OBS without the browser UI, you have to open XR Animator on OBS browser. A few extra command line parameters on OBS are required to allow camera access. [Details](https://twitter.com/yeemachine/status/1461908260638785540)
 
 # Augmented Reality (AR)
 
