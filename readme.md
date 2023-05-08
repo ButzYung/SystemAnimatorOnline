@@ -1,6 +1,6 @@
 ﻿# XR Animator
 
-### Full-body, real-time motion tracking using just a single webcam, on your PC and web browser
+### Full-body, real-time motion tracking with a single webcam, on your PC and web browser
 
 <p align="center">
   <img width="640" height="360" title="XR Animator" src="https://github.com/ButzYung/SystemAnimatorOnline/raw/master/images/XR_Animator_thumbnail01.png">
