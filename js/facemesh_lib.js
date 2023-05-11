@@ -1,4 +1,4 @@
-// (2022-11-30)
+// (2023-05-12)
 
 var FacemeshAT = (function () {
 
@@ -55,7 +55,10 @@ else {
 
 use_faceLandmarksDetection = param.get('use_face_landmarks');
 use_human_facemesh = param.get('use_human_facemesh');
+
 use_mediapipe_facemesh = param.get('use_mediapipe_facemesh');
+use_mediapipe_face_landmarker = use_mediapipe_facemesh;
+
 facemesh_version = (use_faceLandmarksDetection || use_human_facemesh || use_mediapipe_facemesh) ? '' : '@0.0.3';
 
 fetch(path_adjusted('facemesh_triangulation.json')).then(response => response.json()).then(data => {TRIANGULATION=data});
@@ -227,12 +230,14 @@ var human;
 
 var use_SIMD;
 
-var use_faceLandmarksDetection, use_human_facemesh, use_mediapipe_facemesh, facemesh_version;
+var use_faceLandmarksDetection, use_human_facemesh, use_mediapipe_facemesh, use_mediapipe_face_landmarker, facemesh_version;
 
 var canvas, context, RAF_timerID;
 
 var model;
 var face_cover;
+
+var vt, vt_offset=0, vt_last=-1;
 
 var gray, gray_w, gray_h;
 var eyes;
@@ -337,37 +342,81 @@ var recalculate_z_rotation_from_scaledMesh;
 
 async function _init() {
   if (use_mediapipe_facemesh) {
-    await load_scripts('@mediapipe/face_mesh/face_mesh.js');
+    if (use_mediapipe_face_landmarker) {
+      await load_scripts('@mediapipe/tasks/tasks-vision/XRA_module_loader.js');
 
-    await (async function () {
-      var face = new FaceMesh({locateFile: (file) => {
+      await new Promise((resolve)=>{
+const timerID = setInterval(()=>{
+  if ('FilesetResolver' in self) {
+    clearInterval(timerID);
+    resolve();
+  }
+}, 100);
+      });
+
+      const vision = await FilesetResolver.forVisionTasks(
+// path/to/wasm/root
+//"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+'@mediapipe/tasks/tasks-vision/wasm'
+      );
+
+      const f = await FaceLandmarker.createFromOptions(
+vision,
+{
+  baseOptions: {
+    modelAssetPath: '@mediapipe/tasks/face_landmarker.task',
+    delegate: "GPU"
+  },
+  outputFaceBlendshapes: true,
+  runningMode: 'VIDEO',
+  numFaces: 1
+}
+      );
+
+      model = {
+detect: function (video, nowInMs) {
+  const result = f.detectForVideo(video, nowInMs);
+//console.log(result)
+  return Object.assign({ multiFaceLandmarks:result.faceLandmarks }, result);
+}
+      };
+
+      console.log('(Mediapipe Face Landmarker initialized)')
+      postMessageAT('(Mediapipe Face Landmarker initialized)')
+    }
+    else {
+      await load_scripts('@mediapipe/face_mesh/face_mesh.js');
+
+      await (async function () {
+        var face = new FaceMesh({locateFile: (file) => {
 return ((is_worker) ? '' : System.Gadget.path + '/') + _FacemeshAT.path_adjusted('@mediapipe/face_mesh/' + file);
-      }});
+        }});
 
-      face.setOptions({
+        face.setOptions({
   maxNumFaces: 1,
   refineLandmarks: true,
   minDetectionConfidence: 0.5,
   minTrackingConfidence: 0.5
-      });
+        });
 
-      var facemesh_results;
-      face.onResults((results)=>{
+        var facemesh_results;
+        face.onResults((results)=>{
 facemesh_results = results;
-      });
+        });
 
-      await face.initialize();
+        await face.initialize();
 
-      model = {
+        model = {
 estimateFaces: async function (obj, config) {
   await face.send({image:obj.input});
   return facemesh_results;
 }
-      };
-    })();
+        };
+      })();
 
-    console.log('(Mediapipe facemesh initialized)')
-    postMessageAT('(Mediapipe facemesh initialized)')
+      console.log('(Mediapipe facemesh initialized)')
+      postMessageAT('(Mediapipe facemesh initialized)')
+    }
   }
   else if (use_faceLandmarksDetection) {
     await load_scripts('https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection' + '@0.0.3' + '/dist/face-landmarks-detection.js');
@@ -411,6 +460,7 @@ async function process_video_buffer(rgba, w,h, options) {
     await load_lib(options)
   }
   catch (err) {
+    console.error(err);
     postMessageAT('Facemesh ERROR:' + err)
     return
   }
@@ -432,7 +482,25 @@ _t = _t_now = performance.now()
 
   let faces
   if (use_mediapipe_facemesh) {
-    faces = await model.estimateFaces({input:rgba});
+    if (use_mediapipe_face_landmarker) {
+      if (options.timestamp != null) {
+        vt = options.timestamp + vt_offset;
+        if (vt <= vt_last) {
+          vt_offset = (vt_last - options.timestamp) + 16.6667;
+          vt = options.timestamp + vt_offset;;
+        }
+        vt_last = vt;
+      }
+      else {
+        vt = _t;
+      }
+
+      faces = model.detect(rgba, vt);
+//console.log(faces);
+    }
+    else {
+      faces = await model.estimateFaces({input:rgba});
+    }
   }
   else if (use_human_facemesh) {
     const result = await human.detect(rgba);
@@ -460,11 +528,13 @@ _t_now = performance.now()
 _t_list[0] = _t_now-_t
 _t = _t_now
 
-  if ((use_mediapipe_facemesh) ? (!faces.multiFaceLandmarks||!faces.multiFaceLandmarks.length) : (!faces.length || ((faces[0].faceInViewConfidence||faces[0].confidence||faces[0].faceScore) < 0.5))) {
+  if ((use_mediapipe_facemesh) ? !faces.multiFaceLandmarks?.length : (!faces.length || ((faces[0].faceInViewConfidence||faces[0].confidence||faces[0].faceScore) < 0.5))) {
     postMessageAT(JSON.stringify({ faces:[], _t:_t_list.reduce((a,c)=>a+c) }));
     draw([], w,h, options)
     return
   }
+
+  const faceBlendshapes = faces.faceBlendshapes;
 
   faces = process_facemesh(faces, w,h, bb);
 //console.log(faces)
@@ -487,7 +557,7 @@ _t = _t_list.reduce((a,c)=>a+c)
 
   let draw_camera// = true;
 
-  postMessageAT(JSON.stringify({ faces:[{ faceInViewConfidence:face.faceScore||face.faceInViewConfidence||0, scaledMesh:(canvas)?{454:sm[454],234:sm[234]}:sm, mesh:face.mesh, eyes:eyes, bb_center:bb_center, emotion:face.emotion, rotation:face.rotation }], _t:_t, fps:fps, recalculate_z_rotation_from_scaledMesh:recalculate_z_rotation_from_scaledMesh }));
+  postMessageAT(JSON.stringify({ faces:[{ faceInViewConfidence:face.faceScore||face.faceInViewConfidence||0, scaledMesh:(canvas)?{454:sm[454],234:sm[234]}:sm, mesh:face.mesh, eyes:eyes, bb_center:bb_center, emotion:face.emotion, rotation:face.rotation, faceBlendshapes:faceBlendshapes?.[0] }], _t:_t, fps:fps, recalculate_z_rotation_from_scaledMesh:recalculate_z_rotation_from_scaledMesh }));
 
   if (draw_camera) {
     if (!canvas_camera) {
