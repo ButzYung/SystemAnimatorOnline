@@ -1,4 +1,4 @@
-// (2023-01-17)
+// (2023-05-12)
 
 /*!
  * jThree.XFile.js JavaScript Library v1.1
@@ -357,7 +357,8 @@ transparency_check: (function () {
     if (!tex_src) {
       material_count++
 // default
-      if (this.mtr.opacity == 1) this.mtr.transparent = false
+// NOTE: THREEX material.transparent is false by default. It's better to not assuming default and always assign the value here.
+      this.mtr.transparent = (this.mtr.opacity == 1) ? false : true;
       if (!this.mtr.transparent) opaque_count++
       return
     }
