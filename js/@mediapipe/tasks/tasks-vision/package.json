@@ -1,0 +1,11 @@
+{
+  "name": "@mediapipe/tasks-vision",
+  "version": "0.10.0",
+  "description": "MediaPipe Vision Tasks",
+  "main": "vision_bundle.js",
+  "author": "mediapipe@google.com",
+  "license": "Apache-2.0",
+  "types": "vision.d.ts",
+  "homepage": "http://mediapipe.dev",
+  "keywords": [ "AR", "ML", "Augmented", "MediaPipe", "MediaPipe Tasks" ]
+}

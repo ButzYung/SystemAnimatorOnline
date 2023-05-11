@@ -2579,6 +2579,8 @@ else {
 const sprite = new THREE.Sprite( material );
 
 //if (MMD_SA.THREEX.enabled) sprite.renderOrder = 999;
+if (MMD_SA.THREEX.enabled)
+  sprite.layers.enable(MMD_SA.THREEX.PPE.UnrealBloom.NO_BLOOM);
 
 return sprite;
   } });
@@ -6333,14 +6335,10 @@ var _hit_box_offset;
 window.addEventListener("jThree_ready",() => {
   _hit_box_offset = new THREE.Vector3();
   const p = 'thunder_particle';
-  MMD_SA_options.model_para_obj.SFX = [
-/*
-{
-
+  MMD_SA_options._thunder_SFX_ = {
       onloop: thunder_onloop,
-
       sprite:[
-  {bone_ref:"頭", sticky:true, name:p, depth:3, scale:0.5},
+//  {bone_ref:"頭", sticky:true, name:p, depth:3, scale:0.5},
   {bone_ref:"上半身2", sticky:true, name:p, depth:3},
   {bone_ref:"上半身", sticky:true, name:p, depth:3},
   {bone_ref:"下半身", sticky:true, name:p, depth:3},
@@ -6357,8 +6355,10 @@ window.addEventListener("jThree_ready",() => {
   {bone_ref:"右ひざ", sticky:true, name:p, depth:3, scale:0.5},
   {bone_ref:"右足首", sticky:true, name:p, depth:3, scale:0.5},
       ],
-}
-*/
+  };
+
+  MMD_SA_options.model_para_obj.SFX = [
+//    MMD_SA_options._thunder_SFX_
   ];
 });
 
@@ -8793,15 +8793,6 @@ if (!animation_enabled || System._browser.camera.poseNet.enabled) {
   })});
 }
 
-//両目
-
-const eye_bone = bones_by_name['両目'];
-
-const lookAt = vrm.lookAt;
-
-const eye_aa = eye_bone.quaternion.toAxisAngle();
-lookAt.lookAt(lookAt.getLookAtWorldPosition(v1).add( this.process_position(v2.set(0,0,100)).applyQuaternion(this.get_bone_rotation_by_MMD_name('頭').multiply(q1.setFromAxisAngle(eye_aa[0], eye_aa[1]*5))) ));
-
 // bone END
 
 
@@ -8865,12 +8856,38 @@ for (const name in MMD_morph_weight) {
 
 // three-vrm
 const expressionManager = (use_VRM1) ? vrm.expressionManager : vrm.blendShapeProxy;
+
+let use_faceBlendshapes;
+if (this.use_faceBlendshapes) {
+  const facemesh = System._browser.camera.facemesh;
+  use_faceBlendshapes = facemesh.enabled && facemesh.use_faceBlendshapes && facemesh.data_detected;
+  if (use_faceBlendshapes) {
+    for (const name in blendshape_weight)
+      blendshape_weight[name] = 0;
+  }
+
+  const f = facemesh.frames;
+  facemesh.faceBlendshapes_list.forEach(b=>{
+    const prefix = this.use_faceBlendshapes.substring(1);
+    blendshape_weight[prefix + b] = (use_faceBlendshapes && f.morph[b]) ? f.morph[b][0].weight : 0;
+  });
+}
+
 for (const name in blendshape_weight) {
 //if (name == name_blink) {DEBUG_show(Date.now())} else
   expressionManager.setValue(name, blendshape_weight[name])
 }
 
 // morph END
+
+//両目
+
+if (!use_faceBlendshapes) {
+  const eye_bone = bones_by_name['両目'];
+  const lookAt = vrm.lookAt;
+  const eye_aa = eye_bone.quaternion.toAxisAngle();
+  lookAt.lookAt(lookAt.getLookAtWorldPosition(v1).add( this.process_position(v2.set(0,0,100)).applyQuaternion(this.get_bone_rotation_by_MMD_name('頭').multiply(q1.setFromAxisAngle(eye_aa[0], eye_aa[1]*5))) ));
+}
 
 
 if (MMD_SA.OSC.VMC.sender_enabled && MMD_SA.OSC.VMC.ready) {
@@ -8908,11 +8925,12 @@ bone.position.x, bone.position.y, -bone.position.z,
       blendshape_weight[name] = v;
   }
   for (const name in blendshape_weight) {
+    const name_for_blendshapes = (use_faceBlendshapes) ? name.replace(/^BlendShape\./, '') : name;
     morph_msgs.push(MMD_SA.OSC.VMC.Message("/VMC/Ext/Blend/Val",
       [
 // three-vrm 1.0
 // use VRM0 name
-blendshape_map_name(name, false),
+blendshape_map_name(name_for_blendshapes, false),
 
 blendshape_weight[name],
       ],
@@ -9257,13 +9275,18 @@ if (MMD_SA_options.use_shadowMap) {
 mesh_obj.traverse( ( obj ) => {
 // Disable frustum culling, saving some headaches in some situations when the model should be displayed but is frustumCulled
   obj.frustumCulled = false;
-
-  obj.layers.enable(threeX.PPE.UnrealBloom.BLOOM_SCENE);
 } );
 
 data.scene.add(mesh_obj);
 
 var vrm_obj = new VRM_object(para.vrm_index, vrm, { url:url_raw });
+
+for (const prefix of ['BlendShape.','']) {
+  if (vrm.expressionManager.expressionMap[prefix+'CheekPuff']) {
+    vrm_obj.use_faceBlendshapes = ' ' + prefix;
+    break;
+  }
+}
 
 if (!vrm_obj.is_VRM1) mesh_obj.quaternion.set(0,1,0,0);
 
@@ -9545,8 +9568,8 @@ return rendered;
         },
 
         UnrealBloom: (()=>{
-          const ENTIRE_SCENE = 0, BLOOM_SCENE = 1;
-          let bloomLayer;
+          const ENTIRE_SCENE = 0, NO_BLOOM = 1;
+          let no_bloom_layer;
           let params_default, params, _params;
           let params_vrm_default, params_vrm, _params_vrm;
           let gui_bloom, gui_bloom_vrm;
@@ -9573,7 +9596,16 @@ return rendered;
 
 '			void main() {',
 
-'				gl_FragColor = ( texture2D( baseTexture, vUv ) + vec4( 1.0 ) * texture2D( bloomTexture, vUv ) );',
+//'				gl_FragColor = ( texture2D( baseTexture, vUv ) + vec4( 1.0 ) * texture2D( bloomTexture, vUv ) );',
+
+'vec4 base_color = texture2D(baseTexture, vUv);',
+'vec4 bloom_color = texture2D(bloomTexture, vUv);',
+//'gl_FragColor = base_color + bloom_color;',
+
+'float lum = 0.21 * bloom_color.r + 0.71 * bloom_color.g + 0.07 * bloom_color.b;',
+//'gl_FragColor = vec4(mix(bloom_color.rgb, base_color.rgb + bloom_color.rgb, base_color.a), max(base_color.a, lum));',
+'gl_FragColor = vec4(base_color.rgb + bloom_color.rgb, max(base_color.a, lum));',
+
 // https://discourse.threejs.org/t/srgbencoding-with-post-processing/12582/6
 //'				gl_FragColor = LinearTosRGB(( texture2D( baseTexture, vUv ) + vec4( 1.0 ) * texture2D( bloomTexture, vUv ) ));',
 'gl_FragColor = mix(gl_FragColor, LinearTosRGB(gl_FragColor), 0.6667);',
@@ -9606,14 +9638,14 @@ if (PPE_initialized) {
 }
             },
 
-            BLOOM_SCENE: BLOOM_SCENE,
+            NO_BLOOM: NO_BLOOM,
 
             init: async function () {
 const UnrealBloomPass = await import(System.Gadget.path + '/three.js/postprocessing/UnrealBloomPass.js');
 THREE.UnrealBloomPass = UnrealBloomPass.UnrealBloomPass;
 
-bloomLayer = new THREE.Layers();
-bloomLayer.set( BLOOM_SCENE );
+no_bloom_layer = new THREE.Layers();
+no_bloom_layer.set( NO_BLOOM );
 
 params_default = {
   enabled: true,
@@ -9676,7 +9708,8 @@ const finalPass = new THREE.ShaderPass(
   new THREE.ShaderMaterial( {
     uniforms: {
       baseTexture: { value: null },
-      bloomTexture: { value: bloomComposer.renderTarget2.texture }
+// not using bloomComposer.renderTarget2.texture since the final mix in UnrealBloom.js has been canceled (when it is not rendered to screen)
+      bloomTexture: { value: bloomPass.renderTargetsHorizontal[ 0 ].texture }
     },
     vertexShader: vertexShader,
     fragmentShader: fragmentShader,
@@ -9693,8 +9726,6 @@ finalComposer.addPass( finalPass );
 
 //finalComposer.renderTarget1.texture.colorSpace = finalComposer.renderTarget2.texture.colorSpace = THREE.SRGBColorSpace;
 //bloomComposer.renderTarget1.texture.colorSpace = bloomComposer.renderTarget2.texture.colorSpace = THREE.SRGBColorSpace;
-
-MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.layers.enable(BLOOM_SCENE);
 
 const gui = PPE.gui;
 gui_bloom = this.gui = gui.addFolder( 'Unreal Bloom (Selective) Parameters' );
@@ -9758,7 +9789,7 @@ function renderBloom( mask ) {
     scene.traverse( restoreMaterial );
   }
   else {
-    camera.layers.set( ENTIRE_SCENE);//BLOOM_SCENE );
+    camera.layers.set( ENTIRE_SCENE);
     bloomComposer.render();
     camera.layers.set( ENTIRE_SCENE );
   }
@@ -9775,7 +9806,7 @@ function darkenNonBloomed( obj ) {
     m.color.g = vrm_bloom_factor;
     m.color.b = vrm_bloom_factor;
   });
-  if ( (obj.isMesh || obj.isSprite) && bloomLayer.test( obj.layers ) === false ) {
+  if ( (obj.isMesh || obj.isSprite) && no_bloom_layer.test( obj.layers ) === true ) {
     materials[ obj.uuid ] = obj.material;
     obj.material = darkMaterial;
   }

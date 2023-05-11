@@ -283,9 +283,9 @@ class UnrealBloomPass extends Pass {
 			this.fsQuad.render( renderer );
 
 		} else {
-
-			renderer.setRenderTarget( readBuffer );
-			this.fsQuad.render( renderer );
+// AT: redundant for selective bloom
+//			renderer.setRenderTarget( readBuffer );
+//			this.fsQuad.render( renderer );
 
 		}
 
