@@ -2020,7 +2020,7 @@ cam_pos.copy(MMD_SA._trackball_camera.object.position)
     look_at_screen: true,
     hip_adjustment: {
       rotation_weight: 0.5,
-      feet_fixed_weight: 0.5,
+      feet_fixed_weight: 0.75,
     },
     arm_default_stickiness: {
       default_position_weight:1, default_rotation_weight:1,
@@ -3154,7 +3154,7 @@ model.mesh.quaternion.copy(MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.set(0, rot_
 
       return function () {
 var content = [];
-if (System._browser.motion_control.ready) {
+if (System._browser.motion_control.enabled_nut && System._browser.motion_control.ready) {
   const Key = System._browser.motion_control.Key;
   const key_pressed = System._browser.motion_control.key_pressed;
 
@@ -4902,28 +4902,18 @@ MMD_SA.WebXR.enter_AR()
       [
         {
           message: {
-  get content() { return 'Enable face and body tracking?\n1. Face only\n2. Body only\n3. Body + Hands\n4. Face + Body' + ((System._browser.camera.poseNet._use_holistic_) ? '\n5. Full body (Holistic)' : '\n5. Face + Body + Hands') + '\n6. Mocap options\n7. Cancel'; }
+  get content() { return 'Enable face and body tracking?\n1. Face only\n2. Body only\n3. Body + Hands\n4. Face + Body\n5. Full body (MediaPipe Tasks Vision)\n6. Full body (Legacy Holistic)\n7. Mocap options\n8. Cancel'; }
  ,bubble_index: 3
  ,get branch_list() {
-if (System._browser.camera.poseNet._use_holistic_) {
-  return [
-    { key:1, branch_index:1 }
-   ,{ key:2, branch_index:2 }
-   ,{ key:3, branch_index:3 }
-   ,{ key:4, branch_index:4 }
-   ,{ key:5, branch_index:6 }
-   ,{ key:6, branch_index:7 }
-   ,{ key:7 }
-  ];
-}
 return [
     { key:1, branch_index:1 }
    ,{ key:2, branch_index:2 }
    ,{ key:3, branch_index:3 }
    ,{ key:4, branch_index:4 }
    ,{ key:5, branch_index:5 }
-   ,{ key:6, branch_index:7 }
-   ,{ key:7 }
+   ,{ key:6, branch_index:6 }
+   ,{ key:7, branch_index:7 }
+   ,{ key:8 }
 ];
   }
           }
@@ -5352,9 +5342,6 @@ if (material_para.receiveShadow != false) {
 }
 
 if (MMD_SA.THREEX.enabled) {
-  mesh.traverse(obj=>{
-    obj.layers.enable(MMD_SA.THREEX.PPE.UnrealBloom.BLOOM_SCENE);
-  });
 }
 else {
   if (model_para.instanced_drawing)
@@ -8353,7 +8340,7 @@ MMD_SA_options._XRA_settings_import();
       var camera = System._browser.camera;
 
 // when backgroundThrottling is disabled and the app is hidden (i.e. System._browser.hidden), every requestAnimationFrame must be called and drawn (with dummy stuff in this case) to prevent the frames from halting
-      if (System._browser.hidden || (RAF_timestamp_delta > 25) || MMD_SA_options.user_camera.ML_models.worker_disabled || !camera.initialized || camera._needs_RAF || !camera.ML_busy || (!is_mobile && ((camera.ML_fps > ((camera.poseNet.enabled && camera.poseNet.use_holistic)?15:20)) || (cooling_count=10)) && (!camera.video.paused && (--cooling_count < 0))) || (!(camera.facemesh.enabled && camera.facemesh.use_mediapipe) && !camera.poseNet.enabled)) {
+      if (System._browser.hidden || (RAF_timestamp_delta > 25) || MMD_SA_options.user_camera.ML_models.worker_disabled || !camera.initialized || camera._needs_RAF || !camera.ML_busy || (!is_mobile && ((camera.ML_fps > 15) || (cooling_count=10)) && (!camera.video.paused && (--cooling_count < 0))) || (!(camera.facemesh.enabled && camera.facemesh.use_mediapipe) && !camera.poseNet.enabled)) {
         camera._needs_RAF = false
         update_frame = true
       }
