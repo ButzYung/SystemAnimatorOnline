@@ -1,4 +1,4 @@
-// (2023-02-18)
+// (2023-05-12)
 
 MMD_SA.fn = {
 /*
@@ -467,11 +467,33 @@ var model_index = p_bone.model_index || 0
 if (that._model_index != model_index)
   return
 
+const obj = x_object._obj;
+
 if (MMD_SA_options.Dungeon) {
-  if (!mesh.visible || x_object.parent_bone.disabled) {
-    x_object._obj_proxy.hidden = true
-    x_object._obj_proxy.visible = false
-    return
+  if (!mesh.visible || p_bone.disabled) {
+    if (!mesh.visible || !x_object.placement?.position || (p_bone.attached && !p_bone._detached_)) {
+      x_object._obj_proxy.hidden = true;
+      x_object._obj_proxy.visible = false;
+    }
+    else {
+      if (p_bone.attached) {
+        p_bone.attached = false;
+        obj.matrixAutoUpdate = true;
+
+        x_object._obj_proxy.hidden = false
+        x_object._obj_proxy.visible = true
+
+        obj.position.copy(p_bone._detached_.pos);
+        obj.quaternion.copy(p_bone._detached_.rot);
+      }
+      else {
+        if (!p_bone._detached_)
+          p_bone._detached_ = { pos:new THREE.Vector3(), rot: new THREE.Quaternion() };
+        p_bone._detached_.pos.copy(obj.position);
+        p_bone._detached_.rot.copy(obj.quaternion);
+      }
+    }
+    return;
   }
   x_object._obj_proxy.hidden = false
   x_object._obj_proxy.visible = true
@@ -496,7 +518,7 @@ if (!is_root) {
     return;
 }
 
-var obj = x_object._obj
+x_object.parent_bone.attached = true;
 
 var pos, rot;
 var model_mesh, modelX;

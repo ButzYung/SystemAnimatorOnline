@@ -1,5 +1,5 @@
 // auto fit
-// (2023-05-05)
+// (2023-05-12)
 
 const v1 = new THREE.Vector3();
 const v2 = new THREE.Vector3();
@@ -49,6 +49,8 @@ function auto_fit_core() {
     if (af.motion_target.indexOf(MMD_SA.MMD.motionManager.filename) == -1)
       return false;
   }
+
+  rotation_offset = v5.set(0,0,0);
 
   if (type == 'chair') {
 //    if (!System._browser.camera.poseNet.enabled) return;
@@ -137,13 +139,19 @@ function auto_fit_core() {
     const depth_v = v3.set(0, 0, ref_depth/2);
     const ref_pt = transform_contact_point(v2.copy(af.reference_point), depth_v, af_motion_para);
 
-    const pos_y = contact_y - ref_depth/16;
+    const pos_y = contact_y - ref_depth/8;
     scale_offset = pos_y/ref_pt.y;
     position_offset = v3.copy(pos);
     position_offset_y_ignored = true;
   }
   else {
-    const ref_pt = transform_contact_point(v2.copy(af.reference_point), v3.set(0,0,0));
+    if (af.reference_point) {
+      transform_contact_point(v2.copy(af.reference_point), v3.set(0,0,0));
+    }
+    else {
+      ref_pt_core.set(0,0,0);
+      ref_pt_shift.set(0,0,0);
+    }
 
     scale_offset = 1;
     position_offset = v3.set(0,0,0);
@@ -164,7 +172,7 @@ function auto_fit_core() {
 
   const transform_list = (af.global_transform) ? MMD_SA.THREEX._object3d_list_ : [object_3d];
   transform_list.forEach(obj=>{
-    if (obj.parent_bone?.name) return;
+    if (obj.parent_bone?.attached) return;
 
     const mesh_pos = v2.copy(obj._mesh.position).sub(model_position0);
     const _position_offset = v1.copy(position_offset);
@@ -191,6 +199,10 @@ function auto_fit_core() {
       obj.user_data._auto_fit_.global_transform = true;
   });
 
+  if (af.height_offset_by_bone) {
+    height_offset_by_bone.push({ bone:af.height_offset_by_bone, scale:object_3d._mesh.scale.y * scale_offset })
+  }
+
   if (af.center_view || af.center_view_lookAt) {
     if (af.center_view) {
       af._center_view_ = [MMD_SA.MMD.motionManager.filename, motion_para.center_view];
@@ -209,19 +221,34 @@ function auto_fit_core() {
 function auto_fit_loop(obj) {
   obj_para = obj;
 
+  object_3d = MMD_SA.THREEX._object3d_list_.find(obj=>obj.uuid==obj_para._object3d_uuid);
+  if (!object_3d) return;
+
   model_para = obj_para.model_para;
   placement = model_para.placement;
   af = obj_para.auto_fit;
   type = af.type;
-
-  object_3d = MMD_SA.THREEX._object3d_list_.find(obj=>obj.uuid==obj_para._object3d_uuid);
 
   const fitted = auto_fit_core();
 
   let visible;
   const ev = (fitted) ? af.on_fit : af.on_unfit;
 
-  object_3d._obj_proxy.hidden = ev?.visible === false;
+  if (ev?.hide_object) {
+    af._hidden_ = [];
+    ev.hide_object.forEach(id=>{
+      const _obj = para.json.XR_Animator_scene.object3D_list.find(obj=>obj.id==id);
+      if (!_obj) return;
+
+      const obj_3d = MMD_SA.THREEX._object3d_list_.find(obj=>obj.uuid==_obj._object3d_uuid);
+      if (!obj_3d) return;
+
+      af._hidden_.push(obj_3d.uuid);
+      obj_3d._obj_proxy.hidden = true;
+    });
+  }
+
+  object_3d._obj_proxy.hidden = af._hidden_ = (ev?.visible === false);
 
   return fitted;
 }
@@ -237,6 +264,10 @@ function auto_fit(list) {
       af = obj_para.auto_fit;
       if (!af) return;
 
+      if (af._hidden_ != null) {
+        MMD_SA.THREEX._object3d_list_.find(obj=>obj.uuid==obj_para._object3d_uuid)._obj_proxy.hidden = !af._hidden_;
+        delete af._hidden_;
+      }
       if (af._center_view_) {
         MMD_SA_options.motion_para[af._center_view_[0]].center_view = af._center_view_[1];
         delete af._center_view_;
@@ -250,7 +281,7 @@ function auto_fit(list) {
 
       const transform_list = (af.global_transform) ? MMD_SA.THREEX._object3d_list_ : [object_3d];
       transform_list.forEach(obj=>{
-        if (obj.parent_bone?.name) return;
+        if (obj.parent_bone?.attached) return;
 
         const _af_ = obj.user_data._auto_fit_;
         if (!_af_) return;
@@ -295,12 +326,176 @@ function auto_fit(list) {
   });
 }
 
+function process_gesture() {
+  const mc = System._browser.motion_control;
+  MMD_SA.THREEX._object3d_list_.forEach(x_object=>{
+    if (!x_object.on_gesture) return;
+
+    const handedness = mc.handedness || '左';
+    const p_bone = x_object.parent_bone;
+
+    for (const d of ['左','右']) {
+      const gesture = gesture_plugin.gesture[d];
+      let gesture_name;
+      for (const name in gesture) {
+        if (gesture[name] && x_object.on_gesture[name]) {
+          gesture_name = name;
+          break;
+        }
+      }
+
+      const g = x_object.on_gesture[gesture_name];
+      const condition = g?.condition;
+      if (condition) {
+        const hand_pos = model.get_bone_position_by_MMD_name(d+'手首');
+        const obj_pos = v1.copy(x_object._mesh.position);
+        if (condition.distance_limit) {
+          if (hand_pos.distanceTo(obj_pos) > condition.distance_limit) continue;
+        }
+        if (condition.angle_factor) {
+          const arm_pos = model.get_bone_position_by_MMD_name(d+'腕');
+          if (hand_pos.sub(arm_pos).normalize().dot(obj_pos.sub(arm_pos).normalize()) < condition.angle_factor) continue;
+        }
+      }
+
+      if (g?.action.attach) {
+        if (!p_bone.disabled) break;
+
+        const hand_free = MMD_SA.THREEX._object3d_list_.every(obj=>!obj.parent_bone || obj.parent_bone.disabled || (obj.parent_bone.name.charAt(0) != d));
+        if (!hand_free) continue;
+
+        p_bone.disabled = false;
+        if (p_bone.name.charAt(0) != d) {
+          p_bone.name = d + p_bone.name.substring(1);
+          p_bone.position.x *= -1;
+          const q = MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.copy(p_bone.rotation).multiplyScalar(Math.PI/180).multiply(v1.set(-1,1,-1)), 'YXZ');
+          q.x *= -1;
+          q.w *= -1;
+          const rot = MMD_SA.TEMP_v3.setEulerFromQuaternion(q, 'YXZ').multiplyScalar(180/Math.PI).multiply(v1);
+          p_bone.rotation.x = rot.x;
+          p_bone.rotation.y = rot.y;
+          p_bone.rotation.z = rot.z;
+        }
+        break;
+      }
+      else if ((!g && p_bone) || g?.action.detach) {
+        if (p_bone.disabled) continue;
+        if (p_bone.name.charAt(0) != d) continue;
+
+        if (gesture_name || System._browser.camera.poseNet.frames.get_blend_default_motion('skin', d+'腕ＩＫ')) {
+          p_bone.disabled = true;
+          break;
+        }
+      }
+    }
+  });
+}
+
+function adjust_height_offset_by_bone() {
+  const f = System._browser.camera.poseNet.frames;
+
+  height_offset_by_bone.forEach(config=>{
+    for (const b in config.bone) {
+      if (f._skin[b]) {
+        window.addEventListener('SA_camera_poseNet_process_bones_onstart', ()=>{
+          const offset = config.bone[b] * config.scale;
+          f._skin[b].pos.y += offset;
+        }, {once:true});
+      }
+    }
+  });
+}
+
+const gesture_plugin = (function () {
+  var initialized;
+
+  var GE;
+  function init() {
+if (initialized) return;
+
+const mc = System._browser.motion_control;
+
+GE = new fp.GestureEstimator([
+  mc.gestures.custom.index_pinky,
+  mc.gestures.custom.thumb,
+]);
+
+initialized = true;
+  }
+
+  return {
+    enabled: false,
+
+    gesture: { '左':{}, '右':{} },
+
+    process: async function (para) {
+const mc = System._browser.motion_control;
+
+if (!this.enabled) return;
+
+if (!para.posenet_data) return;
+
+init();
+
+for (const d of ['左', '右']) {
+  this.gesture[d] = {};
+}
+
+const handpose = para.posenet_data.handpose;
+if (!handpose || !handpose.length) return;
+
+const handedness = mc.handedness || '左';
+//const dir = (handedness == '右') ? 0 : 1;
+//const hand = handpose.find(h=>h._d==handedness);
+
+//console.log(para.posenet_data);
+
+mc._debug_msg.push(handedness+'/'+Date.now());
+
+handpose.forEach(hand=>{
+  if (!hand._used) return;
+
+  const d = hand._d;
+//  if (d != handedness) return;
+
+  mc.gestures.estimate(GE, hand);
+
+  let ge;
+  if (!ge) {
+    ge = mc.gestures.search('index_pinky', {
+      hand: hand,
+      thumb_out: false,
+      duration: 1000,
+    });
+    if (ge) {
+      this.gesture[d].fox = true;
+      mc._debug_msg.push('FOX'+'/'+d);
+    }
+  }
+  if (!ge) {
+    ge = mc.gestures.search('thumb', {
+      hand: hand,
+      thumb_out: false,
+      duration: 1000,
+    });
+    if (ge) {
+      this.gesture[d].grab = true;
+      mc._debug_msg.push('GRAB'+'/'+d);
+    }
+  }
+});
+    },
+  };
+})();
+
 let para;
 
 let model;
 let motion_para;
 let obj_para, model_para, placement, af, type;
 let object_3d;
+
+let height_offset_by_bone;
 
 let model_position0;
 const model_position_offset = new THREE.Vector3();
@@ -310,8 +505,30 @@ const fadeout_disabled = { condition:()=>false };
 function load(p) {
   para = p;
 
+  let use_gesture_plugin;
+  p.json.XR_Animator_scene.object3D_list.forEach(obj=>{
+    if (obj.model_para?.on_gesture) {
+      use_gesture_plugin = true;
+    }
+  });
+
+  if (use_gesture_plugin) {
+    System._browser.motion_control.enabled = true;
+    System._browser.motion_control.add_plugin(gesture_plugin);
+    gesture_plugin.enabled=true;
+
+    System._browser.on_animation_update.remove(process_gesture, 0);
+    System._browser.on_animation_update.add(process_gesture, 0,0,-1);
+  }
+
+  height_offset_by_bone = [];
+  System._browser.on_animation_update.remove(adjust_height_offset_by_bone, 0);
+  System._browser.on_animation_update.add(adjust_height_offset_by_bone, 0,0,-1);
+
   window.addEventListener('SA_MMD_model0_onmotionended', (e)=>{
     if (e.detail.is_loop) return;
+
+    height_offset_by_bone = [];
 
     const _motion_blending = MMD_SA.MMD.motionManager.para_SA.motion_blending;
     let _fadeout;
@@ -319,6 +536,11 @@ function load(p) {
       _motion_blending.fadeout = fadeout_disabled;
       _fadeout = _motion_blending.fadeout;
     }
+
+    MMD_SA.THREEX._object3d_list_.forEach(obj=>{
+      if (obj.parent_bone?.attached && obj.on_gesture)
+        obj.parent_bone.disabled = true;
+    });
 
     System._browser.on_animation_update.remove(auto_fit, 0);
     System._browser.on_animation_update.add(auto_fit, 1,0);
