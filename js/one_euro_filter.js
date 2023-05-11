@@ -24,8 +24,10 @@ class LowPassFilter {
 if (LowPassFilter.#initialized) return;
 LowPassFilter.#initialized = true;
 
-LowPassFilter.#q1 = new THREE.Quaternion();
-LowPassFilter.#q2 = new THREE.Quaternion();
+if (self.THREE) {
+  LowPassFilter.#q1 = new THREE.Quaternion();
+  LowPassFilter.#q2 = new THREE.Quaternion();
+}
   }
 
   setAlpha(alpha) {
@@ -89,8 +91,10 @@ class OneEuroFilter {
 if (OneEuroFilter.#initialized) return;
 OneEuroFilter.#initialized = true;
 
-OneEuroFilter.#q1_dx = new THREE.Quaternion();
-OneEuroFilter.#q2_dx = new THREE.Quaternion();
+if (self.THREE) {
+  OneEuroFilter.#q1_dx = new THREE.Quaternion();
+  OneEuroFilter.#q2_dx = new THREE.Quaternion();
+}
   }
 
   computeDerivative(x) {
