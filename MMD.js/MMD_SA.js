@@ -7746,9 +7746,7 @@ defaultAlpha: 0.5,
   });
 }
 
-window.addEventListener("jThree_ready", ()=>{
-  init_on_jThree_ready();
-});
+init_common();
 
 window.addEventListener("MMDStarted", ()=>{
   init_on_MMDStarted();
@@ -7795,7 +7793,7 @@ else {
 }
   }
 
-  const init_on_jThree_ready = (function () {
+  const init_common = (function () {
     var initialized;
     return function () {
 if (initialized) return;
@@ -10790,7 +10788,7 @@ if (!self.THREEX) {
   THREE = self.THREEX = self.THREE;
   self.THREE = _THREE;
 
-  init_on_jThree_ready();
+  init_common();
 }
       },
 
