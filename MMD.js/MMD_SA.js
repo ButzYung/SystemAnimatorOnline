@@ -7746,6 +7746,7 @@ defaultAlpha: 0.5,
 
 window.addEventListener("jThree_ready", ()=>{
   init_on_jThree_ready();
+  console.log('init_on_jThree_ready()');
 });
 
 window.addEventListener("MMDStarted", ()=>{
@@ -8860,7 +8861,7 @@ const expressionManager = (use_VRM1) ? vrm.expressionManager : vrm.blendShapePro
 let use_faceBlendshapes;
 if (this.use_faceBlendshapes) {
   const facemesh = System._browser.camera.facemesh;
-  use_faceBlendshapes = facemesh.enabled && facemesh.use_faceBlendshapes && facemesh.data_detected;
+  use_faceBlendshapes = facemesh.enabled && facemesh.use_faceBlendshapes;// && facemesh.data_detected;
   if (use_faceBlendshapes) {
     for (const name in blendshape_weight)
       blendshape_weight[name] = 0;
