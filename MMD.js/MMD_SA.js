@@ -1138,10 +1138,12 @@ const sb_func = async function () {
     }
     else {
       const response = await SystemAnimator_caches.match(["/user-defined-local/my_model.zip", "/user-defined-local/my_model.vrm"], {});
-      blob = await response.blob();
+      if (response) {
+        blob = await response.blob();
 //console.log(blob)
 //console.log(response)
-      path = response.statusText.split('|').find(v=>/\.(zip|vrm)$/i.test(v)) || 'my_model.zip';
+        path = response.statusText.split('|').find(v=>/\.(zip|vrm)$/i.test(v)) || 'my_model.zip';
+      }
     }
 
     if (blob) {
@@ -7746,7 +7748,6 @@ defaultAlpha: 0.5,
 
 window.addEventListener("jThree_ready", ()=>{
   init_on_jThree_ready();
-  console.log('init_on_jThree_ready()');
 });
 
 window.addEventListener("MMDStarted", ()=>{
