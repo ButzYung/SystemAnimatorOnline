@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-05-05)
+// (2023-05-14)
 
 var MMD_SA_options = {
 
@@ -7110,7 +7110,7 @@ MMD_SA_options.Dungeon.update_camera_position_base();
      ,[
         {
           message: {
-  content: 'XR Animator (v0.7.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
+  content: 'XR Animator (v0.7.2)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
