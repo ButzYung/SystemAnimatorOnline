@@ -1,4 +1,4 @@
-// (2023-05-12)
+// (2023-05-14)
 
 var PoseAT = (function () {
 
@@ -278,8 +278,8 @@ vision,
     ];
     data_filter.forEach(df=>{
       for (let i = 0; i < 33; i++) {
-        df.landmarks[i] = new OneEuroFilter(30, 1,1,1, 3);
-        df.worldLandmarks[i] = new OneEuroFilter(30, 1,1,1, 3);
+        df.landmarks[i] = new OneEuroFilter(30, 1,1,2, 3);
+        df.worldLandmarks[i] = new OneEuroFilter(30, 1,1,2, 3);
       }
     });
 
@@ -534,7 +534,7 @@ return score;
   keypoints: _result.poseLandmarks.map((landmark, i) => ({
 x: landmark.x * iw,
 y: landmark.y * ih,
-z: landmark.z,
+z: landmark.z * iw,
 score: score[i],
 name: BLAZEPOSE_KEYPOINTS[i]
   })),
@@ -558,7 +558,7 @@ name: BLAZEPOSE_KEYPOINTS[i]
     let keypoints_movenet = []
     pose[0].keypoints.forEach((kp) => {
       keypoints_movenet.push({
-  position: {x:kp.x, y:kp.y},
+  position: {x:kp.x, y:kp.y, z:kp.z},
   score: kp.score,
   part: kp.name.replace(/\_(\w)/, (match, p1)=>p1.toUpperCase()),
       });
