@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-05-05)
+// (2023-05-14)
 
 var use_full_spectrum = true
 
@@ -8860,7 +8860,7 @@ const expressionManager = (use_VRM1) ? vrm.expressionManager : vrm.blendShapePro
 let use_faceBlendshapes;
 if (this.use_faceBlendshapes) {
   const facemesh = System._browser.camera.facemesh;
-  use_faceBlendshapes = facemesh.enabled && facemesh.use_faceBlendshapes;// && facemesh.data_detected;
+  use_faceBlendshapes = facemesh.enabled && facemesh.use_faceBlendshapes && System._browser.camera.initialized && facemesh.eye_tracking;
   if (use_faceBlendshapes) {
     for (const name in blendshape_weight)
       blendshape_weight[name] = 0;
@@ -9083,10 +9083,10 @@ if (!mesh.matrixAutoUpdate) {
 "ｳｨﾝｸ２右": "blinkRight",
 
 "照れ": "relaxed",
-
 "困る": "sad",
-
 "怒り": "angry",
+"笑い": "happy",
+"びっくり": "Surprise",
     };
 
     const blendshape_map_by_MMD_name_VRM0 = {
@@ -9114,10 +9114,10 @@ if (!mesh.matrixAutoUpdate) {
 "ｳｨﾝｸ２右": "blink_r",
 
 "照れ": "fun",
-
 "困る": "sorrow",
-
 "怒り": "angry",
+"笑い": "happy",
+"びっくり": "Surprise",
     };
 
     const blendshape_map_by_MMD_name = (use_VRM1) ? blendshape_map_by_MMD_name_VRM1 : blendshape_map_by_MMD_name_VRM0;
@@ -12916,12 +12916,7 @@ var morphs_index_by_name = THREE.MMD.getModels()[0].pmx.morphs_index_by_name;
 
 // "まばたきL", "まばたきR"
 // お <==> ∧
-var _morph = [
-  "あ","お","にやり","ω",
-  "上","下","にこり","困る","怒り",
-  "まばたき","笑い","びっくり","まばたきL","まばたきR"
-];
-_morph.forEach(function (m) {
+System._browser.camera.facemesh.MMD_morph_list.forEach(function (m) {
   if (!facemesh_morph[m]) {
     const morph_alt = [];
     switch (m) {
@@ -12930,6 +12925,12 @@ case "にやり":
   break;
 case "ω":
   morph_alt.push('横潰し', '口幅小', m);
+  break;
+case "口角上げ":
+  morph_alt.push(m, '∪');
+  break;
+case "口角下げ":
+  morph_alt.push(m, '∩');
   break;
 case "上":
 case "下":
