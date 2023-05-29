@@ -3052,8 +3052,8 @@ wireframe:{
     MMD_SA_options.height = screen.height
   }
   else {
-    MMD_SA_options.width  = 1280//960
-    MMD_SA_options.height = 720//540
+    MMD_SA_options.width  = 960
+    MMD_SA_options.height = 540
   }
 
 //  RAF_animation_frame_unlimited = true
