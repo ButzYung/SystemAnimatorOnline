@@ -1,3 +1,5 @@
+// (2023-05-30)
+
 import {
 	Box3,
 	Line3,
@@ -381,8 +383,9 @@ class Octree {
 		this.getRayTriangles( ray, triangles );
 
 		for ( let i = 0; i < triangles.length; i ++ ) {
-// AT: true => !ignore_backfaceCulling
-			const result = ray.intersectTriangle( triangles[ i ].a, triangles[ i ].b, triangles[ i ].c, !ignore_backfaceCulling, _v1 );
+// AT: true => !ignore_backfaceCulling == backfaceCulling
+// invert normal for ._is_back_side
+			const result = (this._is_back_side) ? ray.intersectTriangle( triangles[ i ].c, triangles[ i ].b, triangles[ i ].a, !ignore_backfaceCulling, _v1 ) : ray.intersectTriangle( triangles[ i ].a, triangles[ i ].b, triangles[ i ].c, !ignore_backfaceCulling, _v1 );
 
 			if ( result ) {
 
