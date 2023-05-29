@@ -1,4 +1,4 @@
-// (2023-05-14)
+// (2023-05-30)
 
 var PoseAT = (function () {
 
@@ -270,7 +270,7 @@ vision,
 }
     );
 
-    const data_filter = [
+    data_filter = [
       {
         landmarks: [],
         worldLandmarks: [],
@@ -473,6 +473,9 @@ function _onmessage(e) {
     canvas = data.canvas
     context = canvas.getContext("2d")
   }
+  if (data.canvas_hands)
+    _canvas_hands = data.canvas_hands;
+  canvas_hands = (data.options.use_canvas_hands) ? _canvas_hands : null;
 
   if (data.rgba) {
     process_video_buffer(data.rgba, data.w,data.h, data.options);
@@ -489,8 +492,17 @@ var eyes_xy_last = [[0,0],[0,0]];
 
 var vt, vt_offset=0, vt_last=-1;
 
+let _canvas_hands;
+let canvas_hands;// = new OffscreenCanvas(1,1);
+
+let shoulder_width;
+
+let data_filter;
+
 async function process_video_buffer(rgba, w,h, options) {
   function pose_adjust(pose) {
+    shoulder_width = Math.min(w,h)/4;
+
     if (!pose || !use_movenet) return pose
 
 // latest human
@@ -512,37 +524,18 @@ async function process_video_buffer(rgba, w,h, options) {
         const iw = _result.image?.width  || w;
         const ih = _result.image?.height || h
 
-        const score = _result.poseLandmarks.map(landmark=>{
-if (landmark.visibility != null) return landmark.visibility;
-
-let score = 1;
-for (const d of ['x','y']) {
-  const v = landmark[d];
-  if (v < 0) {
-    score *= Math.max(1 + v*4, 0);
-  }
-  else if (v > 1) {
-    score *= Math.max(1 - (v-1)*4, 0);
-  }
-}
-
-return score;
-        });
-
         pose  = [{
   score: 1,
   keypoints: _result.poseLandmarks.map((landmark, i) => ({
 x: landmark.x * iw,
 y: landmark.y * ih,
 z: landmark.z * iw,
-score: score[i],
 name: BLAZEPOSE_KEYPOINTS[i]
   })),
   keypoints3D: _keypoints3D.map((landmark, i) => ({
 x: landmark.x,
 y: landmark.y,
 z: landmark.z,
-score: score[i],
 name: BLAZEPOSE_KEYPOINTS[i]
    })),
         }];
@@ -554,6 +547,47 @@ name: BLAZEPOSE_KEYPOINTS[i]
 
     if (!pose.length)
       return {score:0,keypoints:[]}
+
+    const armL_pos = pose[0].keypoints[get_pose_index(5)];
+    const armR_pos = pose[0].keypoints[get_pose_index(6)];
+    const arm_diff = [armL_pos.x-armR_pos.x, armL_pos.y-armR_pos.y, armL_pos.z-armR_pos.z];
+    shoulder_width = Math.sqrt(arm_diff[0]*arm_diff[0] + arm_diff[1]*arm_diff[1] + arm_diff[2]*arm_diff[2]);
+
+    if (data_filter) {
+      let filter_factor = Math.min(w,h)/shoulder_width;
+      filter_factor = (filter_factor < 3) ? 1 : Math.max(filter_factor/3, 3);
+      for (const p of ['landmarks', 'worldLandmarks']) {
+        for (let i = 0; i < 33; i++) {
+          const f = data_filter[0][p][i];
+//          f.minCutOff = 1 * (1 + (filter_factor-1)/2);
+          f.dCutOff = 2 * filter_factor;
+        }
+      }
+    }
+
+    if (pose[0].keypoints[0].score == null) {
+      const score = pose[0].keypoints.map(landmark=>{
+if (landmark.visibility != null) return landmark.visibility;
+
+let score = 1;
+for (const d of ['x','y']) {
+  const dim = (d == 'x') ? w : h;
+  const v = landmark[d]/dim;
+  const limit = (shoulder_width/1)/dim;
+  if (v < 0) {
+    score *= Math.max(1 + v/limit, 0);
+  }
+  else if (v > 1) {
+    score *= Math.max(1 - (v-1)/limit, 0);
+  }
+}
+
+return score;
+      });
+
+      pose[0].keypoints.forEach((p,i)=>{p.score=score[i]});
+      pose[0].keypoints3D?.forEach((p,i)=>{p.score=score[i]});
+    }
 
     let keypoints_movenet = []
     pose[0].keypoints.forEach((kp) => {
@@ -572,11 +606,23 @@ name: BLAZEPOSE_KEYPOINTS[i]
     let result = { score:pose[0].score, keypoints:keypoints_movenet };
     if (pose[0].keypoints3D)
       result.keypoints3D = pose[0].keypoints3D
+
 //console.log(result)
     return result;
   }
 
-  function hands_adjust(hands) {
+  function hands_adjust(hands, pose) {
+    function landmark_adjust(h, clip) {
+const scale = clip[8];
+const cw = canvas_hands.width;
+
+return [
+  (h.x*cw - clip[4])/scale + clip[0],
+  (h.y*cw - clip[5])/scale + clip[1],
+  h.z*cw/scale,
+];
+    }
+
     if (!hands || use_human_hands) return hands
 
     if (options.use_holistic) {
@@ -598,8 +644,57 @@ name: BLAZEPOSE_KEYPOINTS[i]
     var _hands = []
     var iw = hands.image?.width  || w;
     var ih = hands.image?.height || h;
-    for (var i = 0, i_max = Math.min(hands.multiHandedness.length,2); i < i_max; i++) {
-      let h = hands.multiHandLandmarks[i].map((_h)=>[_h.x*iw, _h.y*ih, _h.z*iw]);
+
+    const adjust_handedness = !options.use_holistic && canvas_hands && (hands.multiHandedness.length > 1) && (hands.multiHandedness[0].categoryName == hands.multiHandedness[1].categoryName) && hands.multiHandedness[0].categoryName;
+    if (adjust_handedness) {
+      clip_index = hand_clip.findIndex(c=>(adjust_handedness=='Left') ? c[9]==1 : c[9]==-1);
+      if (clip_index != -1) {
+        let clip = hand_clip[clip_index];
+
+        const dis = hands.multiHandLandmarks.map(h=>{
+const palm = landmark_adjust(h[0], clip);
+const x = clip[10] - palm[0];
+const y = clip[11] - palm[1];
+return Math.sqrt(x*x + y*y);
+        });
+
+        const idx_to_flip = (dis[0] > dis[1]) ? 0 : 1;
+        hands.multiHandedness[idx_to_flip].categoryName = (adjust_handedness=='Left') ? 'Right' : 'Left';
+        const h = hands.multiHandLandmarks[idx_to_flip];
+        hands.multiHandLandmarks[idx_to_flip] = [
+h[0],
+h[17],h[18],h[19],h[20],
+h[13],h[14],h[15],h[16],
+h[9], h[10],h[11],h[12],
+h[5], h[6], h[7], h[8],
+h[1], h[2], h[3], h[4],
+        ];
+//console.log(adjust_handedness, dis.join(','));
+      }
+    }
+
+    for (let i = 0, i_max = Math.min(hands.multiHandedness.length,2); i < i_max; i++) {
+      const label = hands.multiHandedness[i].label || hands.multiHandedness[i].categoryName;
+//options.video_flipped
+      let clip;
+      if (!options.use_holistic && canvas_hands) {
+        clip = hand_clip.find(c=>(label=='Left') ? c[9]==1 : c[9]==-1);
+        if (!clip) continue;
+      }
+
+      const h = hands.multiHandLandmarks[i].map(_h=>{
+if (options.use_holistic || !canvas_hands) {
+  return [
+_h.x*iw,
+_h.y*ih,
+_h.z*iw,
+  ];
+}
+else {
+  return landmark_adjust(_h, clip);
+}
+      });
+
       _hands.push({
 score: hands.multiHandedness[i].score,
 label: hands.multiHandedness[i].label || hands.multiHandedness[i].categoryName,
@@ -622,10 +717,99 @@ annotations: {
   function is_hand_visible(pose) {
     if (!pose || (pose.score < 0.1)) return false;
 
+    const limit = shoulder_width/Math.min(w,h)/3;
+
     return [9,10].some((id)=>{
-      var kp = pose.keypoints[id]
-      return (kp.score > score_threshold) && (kp.position.x > -w*0.05) && (kp.position.x < w*1.05) && (kp.position.y > -h*0.05) && (kp.position.x < h*1.05);
+      var kp = pose.keypoints[get_pose_index(id)];
+      return (kp.score > score_threshold) && (kp.position.x > -w*limit) && (kp.position.x < w*(1+limit)) && (kp.position.y > -h*limit) && (kp.position.y < h*(1+limit));
     });
+  }
+
+  const hand_clip = [];
+  function get_hand_canvas(pose) {
+//return rgba;
+if (!canvas_hands) return rgba;
+
+const ctx = canvas_hands.getContext('2d');
+ctx.save();
+
+//ctx.beginPath();
+
+hand_clip.length = 0;
+let clip = [];
+const radius = shoulder_width * (1 + Math.max(shoulder_width/Math.min(w,h)*3-0.5, 0.1)) /2;
+for (const id of [9,10]) {
+  const kp = pose.keypoints[get_pose_index(id)];
+  if (kp.score < score_threshold) continue;
+
+  let cw = radius * 2;
+  let ch = radius * 2;
+  let x = kp.position.x - radius;
+  if (x < 0) {
+    cw += x;
+    x = 0;
+  }
+  let y = kp.position.y - radius;
+  if (y < 0) {
+    ch += y;
+    y = 0;
+  }
+  if (x + cw > w)
+    cw -= (x + cw) - w;
+  if (y + ch > h)
+    ch -= (y + ch) - h;
+
+  if ((cw <= 0) || (ch <= 0)) continue;
+
+//console.log(id+':',x,y, cw,ch)
+  clip.push([x,y, cw,ch, (id==9)?-1:1, kp.position.x,kp.position.y]);
+}
+
+if (clip.length) {
+  ctx.fillStyle = 'black';
+  ctx.fillRect(0,0, canvas_hands.width,canvas_hands.height);
+
+  let x = Math.min(...clip.map(v=>v[0]));
+  let y = Math.min(...clip.map(v=>v[1]));
+  let cw = Math.max(...clip.map(v=>v[0]+v[2])) - x;
+  let ch = Math.max(...clip.map(v=>v[1]+v[3])) - y;
+
+  const c_radius = canvas_hands.width/2;
+  let scale;
+  if ((cw < radius*4) && (ch < radius*4)) {
+    scale = canvas_hands.width / Math.max(cw,ch);
+    let x_offset, y_offset;
+    if (cw > ch) {
+      x_offset = 0;
+      y_offset = (canvas_hands.width-ch*scale)/2;
+    }
+    else {
+      x_offset = (canvas_hands.width-cw*scale)/2;
+      y_offset = 0;
+    }
+    clip.forEach(c=>{
+      const x2 = x_offset + (c[0]-x)*scale;
+      const y2 = y_offset + (c[1]-y)*scale;
+      hand_clip.push([c[0],c[1],c[2],c[3], x2,y2,cw*scale,ch*scale, scale, c[4], c[5],c[6]]);
+    });
+    ctx.drawImage(rgba, x,y,cw,ch, x_offset,y_offset,cw*scale,ch*scale);
+  }
+  else {
+    scale = c_radius / (radius*2);
+    clip.forEach((c,i)=>{
+      const y2 = Math.max(Math.min( (((c[1] - y + c[3]/2) / ch) - 0.5) * 4, 1), -1) * c_radius/4 + c_radius/2;
+//((options.video_flipped)?1:-1)
+      const x2 = (c[4] == 1) ? 0 : c_radius;
+      hand_clip[i] = [c[0],c[1],c[2],c[3], x2,y2,c[2]/(radius*2)*c_radius,c[3]/(radius*2)*c_radius];
+      ctx.drawImage(rgba, ...hand_clip[i]);
+      hand_clip[i].push(scale, c[4], c[5],c[6]);
+    });
+  }
+}
+
+ctx.restore();
+
+return (clip.length) ? canvas_hands : rgba;
   }
 
 
@@ -872,7 +1056,7 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
       });
     }
   }
-  else if (no_hand_countdown <= 0) {
+  else {//if (no_hand_countdown <= 0) {
     pose = await ((use_human_pose) ? human.detect(rgba) : ((use_movenet) ? posenet.estimatePoses(rgba, {}, vt) : posenet_model.estimateSinglePose(rgba, {})));
     pose = pose_adjust((use_human_pose) ? pose.body[0] : pose)
 
@@ -880,7 +1064,7 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
       skip_hand_countdown = options.skip_hand_countdown_max||0
       if (is_hand_visible(pose)) {
         if (handpose_model) {
-          hands = await handpose_model.estimateHands(rgba, vt);
+          hands = await handpose_model.estimateHands(get_hand_canvas(pose), vt);
           hands = hands_adjust(hands)
         }
         else {
@@ -894,11 +1078,12 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
       }
     }
   }
+/*
   else {
     let p_list = [(use_human_pose) ? human.detect(rgba).then(result=>result.body[0]) : ((use_movenet) ? posenet.estimatePoses(rgba, {}, vt) : posenet_model.estimateSinglePose(rgba, {})).then(_pose=>_pose)]
     if (options.use_handpose && (handpose_model || use_human_hands) && (skip_hand_countdown-- <= 0)) {
       skip_hand_countdown = options.skip_hand_countdown_max||0
-      p_list.push((handpose_model) ? handpose_model.estimateHands(rgba, vt).then(_hands=>_hands) : human.detect(rgba).then(result=>result.hand));
+      p_list.push((handpose_model) ? handpose_model.estimateHands(get_hand_canvas(), vt).then(_hands=>_hands) : human.detect(rgba).then(result=>result.hand));
     }
 
     const values = await Promise.all(p_list);
@@ -914,6 +1099,7 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
       }
     }
   }
+*/
 
   _t = performance.now() - _t +(options._t||0);
 
@@ -976,6 +1162,14 @@ const BLAZEPOSE_KEYPOINTS = [
   'left_foot_index',
   'right_foot_index'
 ];
+
+const blazepose_translated = [
+0, 2,5, 7,8, 11,12,13,14,15,16, 23,24,25,26,27,28
+];
+
+function get_pose_index(id) {
+  return blazepose_translated[id];
+}
 
   var _PoseAT = {
     init,
