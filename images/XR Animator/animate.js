@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-05-14)
+// (2023-05-30)
 
 var MMD_SA_options = {
 
@@ -1422,7 +1422,7 @@ System._browser.camera.poseNet.enable_IK('右腕ＩＫ', true)
  ,motion_tracking: {
     hip_adjustment: {
       rotation_weight: 0.5,
-      displacement_weight: 1,
+      displacement_weight: 0.5,
     },
   }
 
@@ -2033,7 +2033,7 @@ cam_pos.copy(MMD_SA._trackball_camera.object.position)
           y: { unit_length:1, add:{'left':5, 'right':3}, min:{'left':4.5, 'right':3.5}, max:{'left':15, 'right':3.5+0.5},scale:{'left':1.75, 'right':0.3} },
           z: { unit_length:1, add:3, min:{'left':5, 'right':11.2-10}, max:{'left':12, 'right':11.2}, scale:{'left':2, 'right':2} },
 /*
-  　　　　　　　process: (legs)=>{
+          process: (legs)=>{
 if (legs.length < 2) return;
 
 const diff = (1 - Math.abs(legs[0].pos.y - legs[1].pos.y)) / 2;
@@ -3052,8 +3052,8 @@ wireframe:{
     MMD_SA_options.height = screen.height
   }
   else {
-    MMD_SA_options.width  = 960
-    MMD_SA_options.height = 540
+    MMD_SA_options.width  = 1280//960
+    MMD_SA_options.height = 720//540
   }
 
 //  RAF_animation_frame_unlimited = true
@@ -5164,10 +5164,71 @@ function onDrop_change_wallpaper(item) {
   }
 }
 
-function onDrop_change_panorama(item) {
+async function onDrop_change_panorama(item) {
   var src = item.path
-  if (item.isFileSystem && /([^\/\\]+)\.(png|jpg|jpeg|bmp)$/i.test(src)) {
-    change_panorama(0, src)
+  if (item.isFileSystem && /([^\/\\]+)\.zip$/i.test(src)) {
+    let zip_file = SA_topmost_window.DragDrop._path_to_obj && SA_topmost_window.DragDrop._path_to_obj[src.replace(/^(.+)[\/\\]/, "")];
+    if (!zip_file) {
+      const blob = await new Promise((resolve, reject) => {
+const xhr = new XMLHttpRequestZIP;
+xhr.onload = function () {
+  resolve(this.response);
+};
+xhr.open( "GET", src, true );
+xhr.responseType = "blob";
+xhr.send();
+      });
+
+      const file = new File([blob], src);
+
+// from SA_DragDropEMU()
+      console.log("File input (emulated):", file);
+      const dd = SA_topmost_window.DragDrop;
+      if (!dd._path_to_obj) {
+        dd._path_to_obj = {};
+        dd._obj_url = {};
+      }
+      dd._path_to_obj[file.name.replace(/^(.+)[\/\\]/, "")] = file;
+
+      zip_file = file;
+    }
+
+    const zip = await new self.JSZip().loadAsync(zip_file);
+
+// will be called, even if content is corrupted
+
+    XMLHttpRequestZIP.zip_by_url(src, zip);
+
+    let panorama_list = zip.file(/\.(png|jpg|jpeg)$/i);
+    if (!panorama_list.length) {
+      DEBUG_show("(No panorama found)");
+      return;
+    }
+
+    const panorama_filename = (panorama_list.filter(n=>!/_depth\.\w{3,4}$/i.test(n.name))[0] || panorama_list[0]).name;//.name;
+    const panorama_path = src + "#/" + panorama_filename;
+    const panorama_depth_filename = panorama_list.filter(n=>n.name.indexOf(panorama_filename.replace(/\.(\w{3,4})$/, '_depth')) == 0)[0]?.name;
+    const panorama_depth_path = (panorama_depth_filename) ? src + "#/" + panorama_depth_filename : '';
+    console.log(src, panorama_filename, panorama_depth_filename);
+
+//    object3d_cache.set(model_path, null);
+
+    const panorama_json = zip.file(/panorama\.json$/i);
+    let json;
+    if (panorama_json.length) {
+      const json_text = await panorama_json[0].async("text");
+      json = JSON.parse(json_text);
+      console.log("(panorama.json updated)");
+    }
+
+    await System._browser.update_obj_url(panorama_path);
+    if (panorama_depth_path)
+      await System._browser.update_obj_url(panorama_depth_path);
+
+    await change_panorama(0, panorama_path, { full_path:src, depth:panorama_depth_path, json:json });
+  }
+  else if (item.isFileSystem && /([^\/\\]+)\.(png|jpg|jpeg|bmp)$/i.test(src)) {
+    await change_panorama(0, src)
   }
   else {
     _onDrop_finish.call(DragDrop, item)
@@ -5236,37 +5297,68 @@ xhr.send();
     let model_list = (!MMD_SA.THREEX.enabled) ? zip.file(/\.pmx$/i) : [];
     if (!model_list.length) {
       model_list = zip.file(/\.x$/i);
-      if (!model_list.length) {
-        DEBUG_show("(No PMX/X model found)");
-        return;
-      }
     }
 
-    const model_filename = model_list[0].name.replace(/^.+[\/\\]/, "");
-    const model_path = src + "#/" + model_list[0].name;
-    console.log(src, model_filename, model_path);
+    if (model_list.length) {
+      const model_filename = model_list[0].name.replace(/^.+[\/\\]/, "");
+      const model_path = src + "#/" + model_list[0].name;
+      console.log(src, model_filename, model_path);
+
+//      object3d_cache.set(model_path, null);
+
+      const model_json = zip.file(/model\.json$/i);
+      if (model_json.length) {
+        const json = await model_json[0].async("text");
+        MMD_SA_options.model_para = Object.assign(MMD_SA_options.model_para, JSON.parse(json, function (key, value) {
+          if (typeof value == "string") {
+            if (/^eval\((.+)\)$/.test(value)) {
+              value = eval(decodeURIComponent(RegExp.$1));
+            }
+          }
+          return value;
+        }));
+        console.log("(model.json updated)");
+      }
+
+      update_model_para(model_path);
+
+      await add_object3D(model_path);
+
+      DEBUG_show('✅PMX/X model (' + model_filename + ')');
+    }
+    else {
+      let panorama_list = zip.file(/\.(png|jpg|jpeg)$/i);
+      if (!panorama_list.length) {
+        DEBUG_show("(No model found)");
+        return;
+      }
+
+      const panorama_filename = (panorama_list.filter(n=>!/_depth\.\w{3,4}$/i.test(n.name))[0] || panorama_list[0]).name;//.name;
+      const panorama_path = src + "#/" + panorama_filename;
+      const panorama_depth_filename = panorama_list.filter(n=>n.name.indexOf(panorama_filename.replace(/\.(\w{3,4})$/, '_depth')) == 0)[0]?.name;
+      const panorama_depth_path = (panorama_depth_filename) ? src + "#/" + panorama_depth_filename : '';
+      console.log(src, panorama_filename, panorama_depth_filename);
 
 //    object3d_cache.set(model_path, null);
 
-    const model_json = zip.file(/model\.json$/i);
-    if (model_json.length) {
-      const json = await model_json[0].async("text");
-      MMD_SA_options.model_para = Object.assign(MMD_SA_options.model_para, JSON.parse(json, function (key, value) {
-        if (typeof value == "string") {
-          if (/^eval\((.+)\)$/.test(value)) {
-            value = eval(decodeURIComponent(RegExp.$1));
-          }
-        }
-        return value;
-      }));
-      console.log("(model.json updated)");
+      const panorama_json = zip.file(/panorama\.json$/i);
+      let json;
+      if (panorama_json.length) {
+        const json_text = await panorama_json[0].async("text");
+        json = JSON.parse(json_text);
+        console.log("(panorama.json updated)");
+      }
+
+      await System._browser.update_obj_url(panorama_path);
+      if (panorama_depth_path)
+        await System._browser.update_obj_url(panorama_depth_path);
+
+      update_model_para(panorama_path);
+
+      await add_object3D(panorama_path, { panorama:{ depth:panorama_depth_path, json:json } });
+
+      DEBUG_show('✅Panorama mini (' + panorama_filename + ')');
     }
-
-    update_model_para(model_path);
-
-    await add_object3D(model_path);
-
-    DEBUG_show('✅PMX/X model (' + model_filename + ')');
   }
   else if (item.isFileSystem && /([^\/\\]+)\.(gltf|glb)$/i.test(src)) {
     if (!MMD_SA.THREEX.enabled) {
@@ -5429,7 +5521,7 @@ build_octree(object3d);
 //object3d.no_collision = true;
   }
 
-  return async function (url) {
+  return async function (url, para={}) {
     return new Promise((resolve)=>{
       const obj_cached = object3d_cache.get(url);
       if (obj_cached) {
@@ -5571,36 +5663,74 @@ resolve();
           img.autoplay = img.loop = img.muted = true;
         }
 
-        img.addEventListener((is_video)?'loadeddata':'load', ()=>{
+        img.addEventListener((is_video)?'loadeddata':'load', async ()=>{
 const THREE = MMD_SA.THREEX.THREE;
 
-let geometry, texture, canvas;
-if (is_video) {
-  geometry = new THREE.PlaneGeometry( img.videoWidth/100, img.videoHeight/100 );
-  if (MMD_SA.THREEX.enabled) {
-    texture = new THREE.VideoTexture(img);
-  }
-  else {
-    canvas = document.createElement('canvas');
-    canvas.width = 1024;//Math.min(img.videoWidth, 1080);
-    canvas.height = 1024;//Math.min(img.videoHeight, 1080);
-    texture = new THREE.Texture(canvas);
-//  texture.generateMipmaps = false;
-    texture.needsUpdate = true;
+let mesh, geometry, texture, canvas;
+
+if (para.panorama) {
+  canvas = document.createElement('canvas');
+
+  const cw = (is_mobile) ? 2048 : 4096;
+  const ch = 2048;
+  canvas.width  = cw
+  canvas.height = ch
+
+  canvas.getContext("2d").drawImage(img, 0,0,img.width,img.height, 0,0,cw,ch);
+
+  texture = new THREE.Texture(canvas);
+//THREE.BackSide,THREE.DoubleSide
+  const material = new THREE.MeshBasicMaterial( { map:texture, side:THREE.BackSide, fog:false, transparent:true } );
+  geometry = new THREE.SphereGeometry( 64*4, 64*4,64*4 );
+  mesh = new THREE.Mesh(
+    geometry,
+    material,
+  );
+
+  if (para.panorama.depth) {
+    await new Promise((resolve)=>{
+      const image = new Image();
+      image.onload = ()=>{
+        update_panorama_depth(image, mesh, para.panorama.json);
+        resolve();
+      };
+      image.onerror = ()=>{
+//        panorama_loading = false;
+        resolve();
+      };
+      image.src = toFileProtocol(para.panorama.depth);
+    });
   }
 }
 else {
-  geometry = new THREE.PlaneGeometry( img.width/100, img.height/100 );
-  texture = new THREE.Texture(img);
-  texture.needsUpdate = true;
+  if (is_video) {
+    if (MMD_SA.THREEX.enabled) {
+      texture = new THREE.VideoTexture(img);
+    }
+    else {
+      canvas = document.createElement('canvas');
+      canvas.width = 1024;//Math.min(img.videoWidth, 1080);
+      canvas.height = 1024;//Math.min(img.videoHeight, 1080);
+      texture = new THREE.Texture(canvas);
+//texture.generateMipmaps = false;
+    }
+  }
+  else {
+    texture = new THREE.Texture(img);
+  }
+
+  geometry = new THREE.PlaneGeometry( (img.videoWidth||img.width)/100, (img.videoHeight||img.height)/100 );
+  const material = new THREE.MeshBasicMaterial( {map:texture, side:THREE.DoubleSide} );
+
+  mesh = new THREE.Mesh( geometry, material );
 }
-if (MMD_SA.THREEX.enabled && MMD_SA.THREEX.use_sRGBEncoding) texture.encoding = THREE.sRGBEncoding ;
 
-const material = new THREE.MeshBasicMaterial( {map:texture, side:THREE.DoubleSide} );
-const plane = new THREE.Mesh( geometry, material );
-if (!MMD_SA.THREEX.enabled) plane.useQuaternion = true;
+if (!MMD_SA.THREEX.enabled) mesh.useQuaternion = true;
 
-const obj_all = { scene:plane };
+if (MMD_SA.THREEX.enabled && MMD_SA.THREEX.use_sRGBEncoding) texture.encoding = THREE.sRGBEncoding;
+texture.needsUpdate = true;
+
+const obj_all = { scene:mesh };
 
 onload_common(url, obj_all);
 
@@ -5642,6 +5772,7 @@ const adjust_object3D = (function () {
   return function(e) {
 if (!object3d_list.length) return;
 
+const THREE = MMD_SA.THREEX.THREE;
 const _THREE = MMD_SA.THREEX._THREE;
 
 const c_pos = _THREE.MMD.getModels()[0].mesh.position;
@@ -5895,7 +6026,7 @@ p.position.y = pos.y;
 p.position.z = pos.z;
 
 if (obj.parent_bone) {
-　　rot.fromArray(rot.toArray().slice(0,3).map(v=>Math.round(v*180/Math.PI)));
+  rot.fromArray(rot.toArray().slice(0,3).map(v=>Math.round(v*180/Math.PI)));
   p.rotation.x += rot.x;
   p.rotation.y += rot.y;
   p.rotation.z += rot.z;
@@ -5949,6 +6080,9 @@ function build_octree(object3d) {
     const octree = new THREEX.Octree();
     octree.fromGraphNode( object3d._obj );
     object3d._obj_base.octree = octree;
+
+    octree._is_back_side = (mesh_parent.material?.side == MMD_SA.THREEX.THREE.BackSide) ? true : false;
+
     console.log('octree', object3d);
   }
 }
@@ -6051,15 +6185,169 @@ var panorama_list = [
   System.Gadget.path + '/images/_dungeon/tex/ryntaro_nukata/angel_staircase.jpg',
   System.Gadget.path + '/images/_dungeon/tex/stars_milky_way.jpg',
 ];
-function change_panorama(index, src) {
+
+var canvas_dummy, canvas_dummy2;
+function update_panorama_depth(image, mesh, para={}) {
+  const THREE = MMD_SA.THREEX.THREE;
+
+  const m = mesh.material;
+
+  const canvas = document.createElement('canvas');
+  canvas.width  = image.width; 
+  canvas.height = image.height;
+
+  const ctx = canvas.getContext('2d');
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.drawImage(image, 0,0);
+
+  canvas_dummy = canvas_dummy || document.createElement('canvas');
+  canvas_dummy.width  = 1;
+  canvas_dummy.height = image.height;
+  const ctx_dummy = canvas_dummy.getContext('2d');
+  ctx_dummy.globalCompositeOperation = 'source-over';
+  ctx_dummy.globalAlpha = 1;
+  ctx_dummy.drawImage(image, 0,0,1,image.height, 0,0,1,image.height);
+  ctx_dummy.globalAlpha = 0.5;
+  ctx_dummy.drawImage(image, image.width-1,0,1,image.height, 0,0,1,image.height);
+  for (let x = 0; x < 1; x++) {
+    ctx.drawImage(canvas_dummy, 0,0,1,image.height, x,0,1,image.height);
+    ctx.drawImage(canvas_dummy, 0,0,1,image.height, image.width-1-x,0,1,image.height);
+  }
+
+  ctx.globalCompositeOperation = 'screen';
+  ctx.drawImage(canvas, 0,0);
+
+  if (m.transparent && para.depth_to_alpha) {
+    canvas_dummy.width  = image.width; 
+    canvas_dummy.height = image.height;
+    ctx_dummy.globalAlpha = 1;
+    ctx_dummy.drawImage(canvas, 0,0);
+
+    const depth_to_alpha_fadeout_start = para.depth_to_alpha.fadeout_start || 0.3;
+    const depth_to_alpha_fadeout_end   = para.depth_to_alpha.fadeout_end   || 0.1;
+    ctx_dummy.globalAlpha = 1;
+
+    let c = ~~((1-depth_to_alpha_fadeout_start)*256);
+    ctx_dummy.fillStyle = 'rgb(' + [c,c,c].join(' ') + ')';
+    ctx_dummy.globalCompositeOperation = 'lighter';
+    ctx_dummy.fillRect(0,0,image.width,image.height);
+
+    c = ~~((depth_to_alpha_fadeout_start * (1-depth_to_alpha_fadeout_end))*256);
+    ctx_dummy.fillStyle = 'rgb(' + [c,c,c].join(' ') + ')';
+    ctx_dummy.globalCompositeOperation = 'color-burn';
+    ctx_dummy.fillRect(0,0,image.width,image.height);
+
+  // CONV. STEP: move a component channel to alpha-channel
+    let idata = ctx_dummy.getImageData(0, 0, canvas_dummy.width, canvas_dummy.height);
+    let data32 = new Uint32Array(idata.data.buffer);
+    let i = 0, len = data32.length;
+    while(i < len) {
+      data32[i] = data32[i++] << 8; // shift blue channel into alpha (little-endian)
+    }
+  // update canvas
+    ctx_dummy.putImageData(idata, 0, 0); 
+    idata = data32 = undefined;
+
+    const canvas_color = m.map.image;
+    const ctx_color = canvas_color.getContext('2d');
+    ctx_color.globalCompositeOperation = 'destination-in';
+    ctx_color.drawImage(canvas_dummy, 0,0,canvas_color.width,canvas_color.height);
+    ctx_color.globalCompositeOperation = 'copy';
+  }
+
+  ctx.globalCompositeOperation = 'copy';
+  ctx.filter = 'blur(16px)';
+  ctx.drawImage(canvas, 0,0);
+  ctx.filter = 'none';
+
+  const canvas_disp = canvas_dummy2 = canvas_dummy2 || document.createElement('canvas');
+  const sd = MMD_SA_options.Dungeon_options.skydome;
+  let dw = canvas_disp.width  = sd.width_segments;
+  let dh = canvas_disp.height = sd.height_segments;
+  const ctx_disp = canvas_disp.getContext('2d');
+  ctx_disp.globalCompositeOperation = 'source-over';
+  ctx_disp.globalAlpha = 1;
+  ctx_disp.drawImage(canvas, 0,0,dw,dh);
+  const depth_idata = ctx_disp.getImageData(0,0,dw,dh);
+
+  if (MMD_SA.THREEX.enabled) {
+    const pos = mesh.geometry.getAttribute('position');
+    const uv  = mesh.geometry.getAttribute('uv');
+//console.log(pos.count,uv.count,mesh.geometry.getIndex().count)
+    for (let i = 0, i_max = pos.count; i < i_max; i++) {
+      let x = uv.array[i*2];
+      let y = uv.array[i*2+1];
+      if (x < 0) x += 1;
+      if (y < 0) y += 1;
+      y = 1-y;
+
+      x = Math.round(x*dw);
+      y = Math.round(y*dh);
+      if (x == dw) x = 0;
+      if (y == dh) y = 0;
+
+      const depth = 1 - depth_idata.data[(y*dw + x) * 4]/255 * (192/256);
+//continue
+      for (let j = 0; j < 3; j++)
+        pos.array[i*3+j] *= depth;
+    }
+  }
+  else {
+    const pos  = mesh.geometry.vertices;
+    const uv   = mesh.geometry.faceVertexUvs[0];
+    const face = mesh.geometry.faces;
+
+    const v_index = {};
+    const face_a = ['a', 'b', 'c'];
+    for (let i = 0, i_max = face.length; i < i_max; i++) {
+      const f_obj = face[i];
+      for (let f = 0; f < 3; f++) {
+        const vi = f_obj[face_a[f]];
+        if (v_index[vi]) break;
+        v_index[vi] = true;
+
+        let x = uv[i][f].x;
+        let y = uv[i][f].y;
+        if (x < 0) x += 1;
+        if (y < 0) y += 1;
+        y = 1-y;
+
+        x = Math.round(x*dw);
+        y = Math.round(y*dh);
+        if (x == dw) x = 0;
+        if (y == dh) y = 0;
+
+        const depth = 1 - depth_idata.data[(y*dw + x) * 4]/255 * (192/256);
+//continue
+        pos[vi].multiplyScalar(depth);
+      }
+    }
+  }
+
+/*
+  if (!m.displacementMap)
+    m.displacementMap = new THREE.Texture(canvas);
+  m.displacementMap.needsUpdate = true;
+  m.displacementScale = -192;
+*/
+//ctx.drawImage(canvas_dummy, 0,0,canvas.width,canvas.height); return;
+}
+
+async function change_panorama(index, src, para={}) {
   function show() {
     panorama_loading = false;
     sd.texture_index = index;
     sd.texture_setup();
     System._browser.camera.display_floating = (MMD_SA_options.user_camera.display.floating || (MMD_SA_options.user_camera.display.floating_auto !== false));
 
+    if (MMD_SA.THREEX.enabled) {
+      MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.traverse(obj=>{
+       obj.layers.enable(MMD_SA.THREEX.PPE.N8AO.NO_AO);
+      });
+    }
+
     panorama_index = index;
-    panorama_src = src;
+    panorama_src = para.full_path || src;
   }
 
   var sd = MMD_SA_options.Dungeon_options.skydome
@@ -6074,22 +6362,38 @@ function change_panorama(index, src) {
 
   if (!src) src = panorama_list[index];
 
-  let resolve_func;
-  const promise = new Promise((resolve)=>{ resolve_func=resolve; });
-
   panorama_loading = true;
-  var image = sd.texture_cache_list[index] = sd.texture_cache_list[index] || new Image();
-  image.onload = ()=>{
-    show();
-    resolve_func();
-  };
-  image.onerror = ()=>{
-    panorama_loading = false;
-    resolve_func();
-  };
-  image.src = toFileProtocol(src);
 
-  return promise;
+  await new Promise((resolve)=>{
+    const image = sd.texture_cache_list[index] = sd.texture_cache_list[index] || new Image();
+    image.onload = ()=>{
+      resolve();
+    };
+    image.onerror = ()=>{
+      panorama_loading = false;
+      resolve();
+    };
+    image.src = toFileProtocol(src);
+  });
+
+  if (panorama_loading && para.depth) {
+    panorama_loading = true;
+    await new Promise((resolve)=>{
+      const image = sd.texture_cache_list[-1] = sd.texture_cache_list[-1] || new Image();
+      image.onload = ()=>{
+        update_panorama_depth(image, MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj, para.json);
+        resolve();
+      };
+      image.onerror = ()=>{
+//        panorama_loading = false;
+        resolve();
+      };
+      image.src = toFileProtocol(para.depth);
+    });
+  }
+
+  if (panorama_loading)
+    show();
 }
 
 var dome_axis_angle = 0
@@ -6103,6 +6407,10 @@ function rotate_dome() {
   MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.useQuaternion = true
   MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.quaternion.setFromAxisAngle(axis, dome_rotation/180*Math.PI)
 }
+
+const scene_json_for_export = {
+  XR_Animator_scene: {}
+};
 
 const onDrop_scene_JSON = (function () {
   const RE_arm = new RegExp("^(" + toRegExp(["左","右"],"|") + ")(" + toRegExp(["腕","ひじ","手"],"|") + ")(.*)$");
@@ -6182,7 +6490,15 @@ p_bone.is_T_pose = is_T_pose;
         if (motion.para)
           MMD_SA_options.motion_para[filename] = Object.assign(MMD_SA_options.motion_para||{}, motion.para);
 
-        promise_list.push(MMD_SA.load_external_motion(motion.path, false));
+        const p = MMD_SA.load_external_motion(motion.path, false);
+        if (motion.load_on_ready) {
+          p.then(()=>{
+MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name[filename]];
+MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice();
+MMD_SA._force_motion_shuffle = true;
+          });
+        }
+        promise_list.push(p);
       });
       return Promise.all(promise_list);
     }
@@ -6236,7 +6552,15 @@ p_bone.is_T_pose = is_T_pose;
     let resolve_func;
     const promise = new Promise((resolve)=>{ resolve_func=resolve; });
 
-    if (!json.XR_Animator_scene.on) json.XR_Animator_scene.on = {};
+    if (json.XR_Animator_scene.on) {
+      scene_json_for_export.XR_Animator_scene.on = json.XR_Animator_scene.on;
+    }
+    else {
+      json.XR_Animator_scene.on = {};
+    }
+
+    if (json.XR_Animator_scene.auto_fit_list)
+      scene_json_for_export.XR_Animator_scene.auto_fit_list = json.XR_Animator_scene.auto_fit_list;
 
     const event_para = { json:json, zip:zip, zip_path:zip_path, locate_file:locate_file };
 
@@ -6273,7 +6597,7 @@ p_bone.is_T_pose = is_T_pose;
       }
       if (panorama.index >= 0) {
         loaded_count_max++;
-        change_panorama(panorama.index, panorama.path).then(()=>{
+        ((panorama.index == 0) ? onDrop_change_panorama({isFileSystem:true, path:panorama.path}) : change_panorama(panorama.index, panorama.path)).then(()=>{
           show_status('✅Panorama');
           check_loaded(1);
         });
@@ -6289,6 +6613,8 @@ p_bone.is_T_pose = is_T_pose;
 
     const motion_list = json.XR_Animator_scene.motion_list;
     if (motion_list) {
+      scene_json_for_export.XR_Animator_scene.motion_list = motion_list;
+
       loaded_count_max++;
       await parse_motion(motion_list);
       show_status('✅Motion');
@@ -6317,6 +6643,18 @@ p_bone.is_T_pose = is_T_pose;
 
           show_status('✅"' + filename + '"');
           check_loaded(1);
+        }
+      }
+    }
+
+    const settings = json.XR_Animator_scene.settings;
+    if (settings) {
+      scene_json_for_export.XR_Animator_scene.settings = settings;
+
+      if (settings.camera) {
+        if (settings.camera.fov) {
+          MMD_SA._trackball_camera.object.fov = settings.camera.fov;
+          MMD_SA._trackball_camera.object.updateProjectionMatrix();
         }
       }
     }
@@ -6404,6 +6742,8 @@ function export_scene_JSON() {
     const placement = model_para.placement = { scale:mesh.scale.x };
     if (obj.parent_bone) {
       model_para.parent_bone = { model_index:0, is_T_pose:MMD_SA.THREEX.get_model(0).is_T_pose, name:obj.parent_bone.name, position:obj.parent_bone.position, rotation:obj.parent_bone.rotation };
+      if (obj.parent_bone.disabled)
+        model_para.parent_bone.disabled = true;
     }
     else {
       const c_pos = MMD_SA.THREEX._THREE.MMD.getModels()[0].mesh.position;
@@ -6433,6 +6773,8 @@ function export_scene_JSON() {
     if (panorama_index == 0)
       scene_json.panorama.path = panorama_src;
   }
+
+  Object.assign(scene_json, scene_json_for_export.XR_Animator_scene);
 
   System._browser.save_file('scene.json', JSON.stringify({ XR_Animator_scene:scene_json }, null, '\t'), 'application/json');
 }
@@ -6488,7 +6830,9 @@ window.addEventListener('jThree_ready', (e)=>{
   _onDrop_finish = DragDrop._ondrop_finish;
 });
 
-function reset_scene_explorer() {
+function reset_scene_explorer(enforced) {
+  if (explorer_mode && !enforced) return;
+
   explorer_mode = false;
   MMD_SA_options.user_camera.ML_models.look_at_screen = null;
 
@@ -6628,7 +6972,7 @@ return (!MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_opti
             MMD_SA.THREEX.GUI.obj.visual_effects.show();
           }
           else {
-            MMD_SA.SpeechBubble.list[1].message(3, 'Initializing visual effects plugins...', 3000);
+            MMD_SA.SpeechBubble.list[1].message(3, 'Initializing visual effects plugins...', 1000);
             MMD_SA.THREEX.PPE.init().then(()=>{
               MMD_SA.THREEX.GUI.obj.visual_effects.show();
             });
@@ -6675,7 +7019,7 @@ window.removeEventListener('SA_MMD_before_render', animate_object3D);
 window.addEventListener('SA_MMD_before_render', animate_object3D);
           }
          ,message: {
-  get content() { return 'Choose a feature to change, or drop a scene JSON ' + ((webkit_electron_mode) ? '' : 'zipped with all required models ') + 'to change everything at once.\n1. Background image\n2. 3D panorama\n3. 3D object\n4. Export scene JSON\n5. Back to default\n6. Cancel'; }
+  get content() { return 'Choose a feature to change, or drop a scene JSON ' + ((webkit_electron_mode) ? '' : 'zipped with all required models ') + 'to change everything at once.\n1. Background image\n2. 3D panorama/skybox\n3. 3D scene builder (3D object)\n4. Export 3D scene JSON\n5. Back to default\n6. Cancel'; }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:bg_branch }
@@ -6728,6 +7072,8 @@ dome_rotation_speed = 0
 System._browser.on_animation_update.remove(rotate_dome,1)
 
 remove_object3D();
+
+scene_json_for_export.XR_Animator_scene = {};
 
 System._browser.camera.display_floating = false
           }
@@ -6852,7 +7198,7 @@ reset_scene_UI();
 DragDrop.onDrop_finish = onDrop_change_panorama;
           }
          ,message: {
-  content: 'Choose a 3D panorama, or drop a panorama image file.\n1. Blue sky\n2. Angel\'s staircase\n3. Stars & Milky Way\n4. >> Rotation speed+\n5. >> Rotation angle+\n6. Done'
+  content: 'Choose a 3D skybox, or drop a skybox image/zip file.\n1. Blue sky\n2. Angel\'s staircase\n3. Stars & Milky Way\n4. >> Rotation speed+\n5. >> Rotation angle+\n6. 🌎Generate your own skybox\n7. Done'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:panorama_branch+1 }
@@ -6860,7 +7206,15 @@ DragDrop.onDrop_finish = onDrop_change_panorama;
    ,{ key:3, branch_index:panorama_branch+3 }
    ,{ key:4, branch_index:panorama_branch+4 }
    ,{ key:5, branch_index:panorama_branch+5 }
-   ,{ key:6, branch_index:done_branch }
+   ,{ key:6, event_id:{ func:()=>{
+var url = 'https://skybox.blockadelabs.com/';
+if (webkit_electron_mode)
+  webkit_electron_remote.shell.openExternal(url)
+else
+  window.open(url)
+      }, goto_branch:done_branch }
+    }
+   ,{ key:7, branch_index:done_branch }
   ]
           }
         }
@@ -6950,7 +7304,7 @@ window.removeEventListener('SA_keydown', adjust_object3D);
 window.addEventListener('SA_keydown', adjust_object3D);
           }
          ,message: {
-  get content() { return 'Drop a ' + ((MMD_SA.THREEX.enabled) ? 'GLB model, ' : '') + 'zipped .X model or image/video file as 3D object. Info about the active object is on the top left corner. Use keyboard for controls.\n1. Show keyboard controls\n2. Hide UI\n3. Export scene JSON\n4. Explorer mode: ' + ((explorer_mode)?'ON':'OFF\n5. Done'); }
+  get content() { return 'Drop a ' + ((MMD_SA.THREEX.enabled) ? 'GLB model, ' : '') + 'zipped .X model or image/video file as 3D object. Info about the active object is on the top left corner. Use keyboard for controls.\n1. Show keyboard controls\n2. Hide UI\n3. Export 3D scene JSON\n4. Explorer mode: ' + ((explorer_mode)?'ON':'OFF') + '\n5. Done'; }
  ,bubble_index: 3
  ,get branch_list() { return [
     { key:1, event_id:[[
@@ -6992,7 +7346,9 @@ window.addEventListener('SA_keydown', adjust_object3D);
       }
     },
     { key:4, branch_index:object3D_branch+2 },
-  ].concat((explorer_mode) ? [] : [{ key:5, branch_index:done_branch }]); }
+    { key:5, branch_index:done_branch }
+  ]; }
+//  ].concat((explorer_mode) ? [] : [{ key:5, branch_index:done_branch }]); }
           }
         }
       ]
@@ -7024,7 +7380,8 @@ DEBUG_show((object3d_list.length) ? (object3d_index+1) + ': ' + object3d_list[ob
         {
           func: ()=>{
 if (explorer_mode) {
-  reset_scene_explorer();
+  reset_scene_explorer(true);
+
   MMD_SA.reset_camera(true);
 
   MMD_SA_options.Dungeon.run_event("_FACEMESH_OPTIONS_", object3D_branch, 0);
@@ -7057,7 +7414,7 @@ MMD_SA_options.Dungeon.run_event();
           }
         },
         {
-         　message: {
+          message: {
   content: 'Explorer mode allows you to control your avatar to move through your 3D scene.\n1. START\n2. Cancel'
  ,bubble_index: 3
  ,branch_list: [
@@ -7110,7 +7467,7 @@ MMD_SA_options.Dungeon.update_camera_position_base();
      ,[
         {
           message: {
-  content: 'XR Animator (v0.7.2)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
+  content: 'XR Animator (v0.8.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -7213,7 +7570,7 @@ navigator.clipboard.writeText('1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p').then(()=>{
 if (/\.(bvh|fbx)$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd) return true;
           }
          ,message: {
-  get content() { return 'There is no motion to export. Enable motion capture and record the motion, or drop a BVH' + ((MMD_SA.THREEX.enabled) ? '' : '/FBX') + ' motion file.'; },
+  content: 'There is no motion to export. Enable motion capture and record the motion, or drop a FBX/BVH motion file.',
   duration: 5
           }
          ,ended: true
@@ -7326,6 +7683,7 @@ return [
   '・' + get_state('mocap_auto_grounding') + 'Ctrl+G to toggle mocap auto-grounding',
   '・' + get_state('camera_3D_lock') + 'Ctrl+L to toggle 3D camera lock',
   '・' + get_state('hand_camera') + 'Ctrl+H to toggle hand camera mode',
+  '・' + get_state('auto_look_at_camera') + 'Ctrl+E to toggle auto "look at camera"',
   '1. 🌐Global hotkey mode: ' + ((System._browser.hotkeys.is_global) ? 'ON' : 'OFF'),
   '2. Done',
 ].join('\n');
@@ -7491,7 +7849,7 @@ System._browser.camera._info =
 + '- Turn auto-grounding on if the target person is always grounding with a fixed horizontal camera angle.'
           }
          ,message: {
-  get content() { return '1. Leg IK: ' + ((MMD_SA_options.user_camera.ML_models.pose.use_legIK)?'ON':'OFF') + '\n2. Leg scale adjustment: ' + ((!System._browser.camera.poseNet.leg_scale_adjustment)?'OFF':((System._browser.camera.poseNet.leg_scale_adjustment>0 && '+')||'')+System._browser.camera.poseNet.leg_scale_adjustment) + '\n3. Auto-grounding: ' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON') + '\n4. Hip adjustment: ' + ((System._browser.camera.poseNet.hip_adjustment_weight == 1) ? 'ON' : (System._browser.camera.poseNet.hip_adjustment_weight == 0) ? 'OFF' : Math.round(System._browser.camera.poseNet.hip_adjustment_weight*100) + '%') + '\n5. Clear bounding box\n6. Facemesh options\n7. Done'; }
+  get content() { return '1. Leg IK: ' + ((MMD_SA_options.user_camera.ML_models.pose.use_legIK)?'ON':'OFF') + '\n2. Leg scale adjustment: ' + ((!System._browser.camera.poseNet.leg_scale_adjustment)?'OFF':((System._browser.camera.poseNet.leg_scale_adjustment>0 && '+')||'')+System._browser.camera.poseNet.leg_scale_adjustment) + '\n3. Auto-grounding (Ctrl+G): ' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON') + '\n4. Hip adjustment: ' + ((System._browser.camera.poseNet.hip_adjustment_weight == 1) ? 'ON' : (System._browser.camera.poseNet.hip_adjustment_weight == 0) ? 'OFF' : Math.round(System._browser.camera.poseNet.hip_adjustment_weight*100) + '%') + '\n5. Clear bounding box\n6. Facemesh options\n7. Done'; }
  ,bubble_index: 3
  ,branch_list: [
   { key:1, branch_index:mocap_options_branch+1 },
@@ -7576,7 +7934,7 @@ System._browser.camera.poseNet.bb_clear = 15
   get content() {
 const camera = System._browser.camera;
 
-return '1. Eye tracking: ' + ((!System._browser.camera.facemesh.eye_tracking)?'OFF':'ON') + '\n2. Blink LR sync: ' + ((!System._browser.camera.facemesh.blink_sync)?'OFF':'ON') + '\n3. Auto blink: ' + ((!System._browser.camera.facemesh.auto_blink)?'OFF':'ON') + ((camera.facemesh.enabled && camera.video) ? '\n4. Reset calibration\n5. Import calibration\n6. Export calibration\n7. Done' : '\n4. Done');
+return '1. Eye tracking: ' + ((!System._browser.camera.facemesh.eye_tracking)?'OFF':'ON') + '\n2. Blink LR sync: ' + ((!System._browser.camera.facemesh.blink_sync)?'OFF':'ON') + '\n3. Auto blink: ' + ((!System._browser.camera.facemesh.auto_blink)?'OFF':'ON') + '\n4. Auto "look at camera" (Ctrl+E): ' + ((!System._browser.camera.facemesh.auto_look_at_camera)?'OFF':'ON') + ((camera.facemesh.enabled && camera.video) ? '\n5. Reset calibration\n6. Import calibration\n7. Export calibration\n8. Done' : '\n5. Done');
   }
  ,bubble_index: 3
  ,get branch_list() {
@@ -7586,13 +7944,14 @@ return [
   { key:1, branch_index:facemesh_options_branch+2 },
   { key:2, branch_index:facemesh_options_branch+1 },
   { key:3, event_id:{ func:()=>{ System._browser.camera.facemesh.auto_blink = !System._browser.camera.facemesh.auto_blink; }, goto_branch:facemesh_options_branch } },
+  { key:4, event_id:{ func:()=>{ System._browser.camera.facemesh.auto_look_at_camera = !System._browser.camera.facemesh.auto_look_at_camera; }, goto_branch:facemesh_options_branch } },
 ].concat((camera.facemesh.enabled && camera.video) ? [
-  { key:4, branch_index:facemesh_options_branch+3 },
-  { key:5, branch_index:facemesh_options_branch+4 },
-  { key:6, branch_index:facemesh_options_branch+5 },
-  { key:7, branch_index:done_branch }
+  { key:5, branch_index:facemesh_options_branch+3 },
+  { key:6, branch_index:facemesh_options_branch+4 },
+  { key:7, branch_index:facemesh_options_branch+5 },
+  { key:8, branch_index:done_branch }
 ] : [
-  { key:4, branch_index:done_branch }
+  { key:5, branch_index:done_branch }
 ]);
   }
           }
@@ -8154,6 +8513,15 @@ MMD_SA_options.Dungeon.item_base.hand_camera.action.func();
     },
 
     {
+      id: 'auto_look_at_camera',
+      accelerator: ['Ctrl+E'],
+      process: (e)=>{
+System._browser.camera.facemesh.auto_look_at_camera = !System._browser.camera.facemesh.auto_look_at_camera;
+DEBUG_show('Auto "look at camera":' + ((System._browser.camera.facemesh.auto_look_at_camera) ? 'ON' : 'OFF'), 3);
+      }
+    },
+
+    {
       id: 'expression_sad',
       accelerator: ['Alt+S'],
       process: (e)=>{
@@ -8203,6 +8571,7 @@ config.user_camera = {
       eye_tracking: System._browser.camera.facemesh.eye_tracking,
       blink_sync: System._browser.camera.facemesh.blink_sync,
       auto_blink: System._browser.camera.facemesh.auto_blink,
+      auto_look_at_camera: System._browser.camera.facemesh.auto_look_at_camera,
     },
     debug_hidden: MMD_SA_options.user_camera.ML_models.debug_hidden,
   },
@@ -8230,6 +8599,13 @@ config.PPE = {
   UnrealBloom: {
     params: MMD_SA.THREEX.PPE.UnrealBloom.params,
     params_vrm: MMD_SA.THREEX.PPE.UnrealBloom.params_vrm,
+  },
+  N8AO: {
+    effectController: MMD_SA.THREEX.PPE.N8AO.effectController,
+    effectController_vrm: MMD_SA.THREEX.PPE.N8AO.effectController_vrm,
+  },
+  DOF: {
+    effectController: MMD_SA.THREEX.PPE.DOF.effectController,
   },
 };
 
@@ -8267,6 +8643,7 @@ try {
         System._browser.camera.facemesh.eye_tracking = config[p].ML_models.facemesh.eye_tracking;
         System._browser.camera.facemesh.blink_sync = config[p].ML_models.facemesh.blink_sync;
         System._browser.camera.facemesh.auto_blink = config[p].ML_models.facemesh.auto_blink;
+        System._browser.camera.facemesh.auto_look_at_camera = config[p].ML_models.facemesh.auto_look_at_camera;
         break;
 
         System._browser.camera.poseNet.leg_scale_adjustment
@@ -8302,6 +8679,24 @@ try {
 //console.log(param, ec[param])
                 if (ec[param]) {
                   UnrealBloom[param] = Object.assign({}, ec[param]);
+                }
+              }
+              break;
+            case 'N8AO':
+              const N8AO = MMD_SA.THREEX.PPE.N8AO;
+              for (const param of ['effectController', 'effectController_vrm']) {
+//console.log(param, ec[param])
+                if (ec[param]) {
+                  N8AO[param] = Object.assign({}, ec[param]);
+                }
+              }
+              break;
+            case 'DOF':
+              const DOF = MMD_SA.THREEX.PPE.DOF;
+              for (const param of ['effectController']) {
+//console.log(param, ec[param])
+                if (ec[param]) {
+                  DOF[param] = Object.assign({}, ec[param]);
                 }
               }
               break;
