@@ -2,6 +2,9 @@ import {
 	Color
 } from 'three';
 import { Pass } from './Pass.js';
+// AT: CopyShader/ShaderPass
+import { CopyShader } from '../shaders/CopyShader.js';
+import { ShaderPass } from './ShaderPass.js';
 
 class RenderPass extends Pass {
 
@@ -54,6 +57,11 @@ class RenderPass extends Pass {
 
 		}
 
+// AT: depthTexture
+if (this._renderTarget_with_depthTexture) {
+  renderer.setRenderTarget(this._renderTarget_with_depthTexture);
+}
+else
 		renderer.setRenderTarget( this.renderToScreen ? null : readBuffer );
 
 		// TODO: Avoid using autoClear properties, see https://github.com/mrdoob/three.js/pull/15571#issuecomment-465669600
@@ -74,7 +82,22 @@ class RenderPass extends Pass {
 
 		renderer.autoClear = oldAutoClear;
 
+// AT: depthTexture
+if (this._renderTarget_with_depthTexture) {
+  this._copyPass = this._copyPass || new ShaderPass( CopyShader );
+  this._copyPass.render( renderer, readBuffer, this._renderTarget_with_depthTexture  );
+}
+
 	}
+
+// AT: setSize/dispose
+setSize( width, height ) {
+  this._renderTarget_with_depthTexture?.setSize( width, height );
+}
+dispose() {
+  this._renderTarget_with_depthTexture?.dispose();
+  this._copyPass?.dispose();
+}
 
 }
 
