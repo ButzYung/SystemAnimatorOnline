@@ -1,4 +1,4 @@
-// (2023-05-05)
+// (2023-05-30)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -3971,11 +3971,16 @@ if (options.combat_mode_enabled) {
 }
 
 
-var sd = this.skydome = options.skydome
+const sd = this.skydome = options.skydome;
 if (sd) {
   if (!sd.texture_path_list)
     sd.texture_path_list = [System.Gadget.path + "/images/_dungeon/tex/ryntaro_nukata/angel_staircase.jpg"]
   sd.texture_cache_list = []
+
+  if (!sd.width_segments)
+    sd.width_segments  = 64*4;
+  if (!sd.height_segments)
+    sd.height_segments = 64*4;
 
   sd.texture_path_list.forEach(function (path, idx) {
     var img = new Image()
@@ -5625,17 +5630,21 @@ if (collision_by_mesh) {// && hit_moved_once) {
     pos.applyMatrix4(obj_m4_inv).applyQuaternion(cache.quaternion);
 
     let ground_y = -9999;
+    const grounded = [];
     grounds.forEach(g=>{
       if (!g) return;
 
       g.position.applyQuaternion(cache.quaternion);
 
       const y = g.position.y//+0.1;
-      if (y < pos.y) return;
       if (y - pos.y > height/2) return;
 
       g.triangle.getNormal(_v3).applyQuaternion(cache.quaternion);
       if (_v3.y < 0.5) return;
+
+      grounded.push(g);
+
+      if (y < pos.y) return;
 
       ground_y = Math.max(y, ground_y);
     });
@@ -5653,6 +5662,13 @@ if (collision_by_mesh) {// && hit_moved_once) {
     mov_octree = _v3a.set(0,0,0);
     if (result_octree) {
       mov_octree.add( result_octree.normal.multiplyScalar( result_octree.depth ) );
+//if (Math.abs(result_octree.normal.y) < 0.3)
+      if (!grounded.length) {
+//applyMatrix4(obj_m4_inv)
+        const face_v3 = MMD_SA.TEMP_v3.set(0,0,1).applyQuaternion(subject.quaternion).applyQuaternion(MMD_SA.TEMP_q.copy(cache.quaternion).conjugate()).normalize().multiplyScalar(result_octree.depth*1.5).negate();
+        mov_octree.add(face_v3);
+//DEBUG_show(result_octree.depth,0,1);
+      }
 	}
 
     result = {
@@ -6390,7 +6406,6 @@ if (msg_branch_list) {
 // save some headaches and ignore alpha keys for now as it may affect movement and action
   if (!d._states.action_allowed_in_event_mode || ((k >= 96) && (k <= 96+9)) || ((k >= 48) && (k <= 48+9)))// || /Key[A-Z]/.test(k_code))
     e.detail.result.return_value = true;
-
   for (var i = 0, i_max = msg_branch_list.length; i < i_max; i++) {
     const branch = msg_branch_list[i]
     const sb_index = branch.sb_index || 0;
