@@ -10066,7 +10066,7 @@ if (pos) {
   let distance = pos.distanceTo(camera.position);
   if (target_last) {
     const distance_diff = distance - distance_last;
-    distance_last += Math.sign(distance_diff) * Math.min(RAF_timestamp_delta/1000*30, Math.abs(distance_diff));
+    distance_last += Math.sign(distance_diff) * Math.min(RAF_timestamp_delta/1000 * Math.max(30, Math.abs(distance_diff)), Math.abs(distance_diff));
     distance = distance_last;
   }
   target_last = target;
@@ -11388,15 +11388,12 @@ c.matrixAutoUpdate = camera.matrixAutoUpdate
 if (!c.matrixAutoUpdate) {
   c.matrix.copy(camera.matrix);
   c.matrixWorld.copy(camera.matrixWorld);
-  c.fov = camera.fov;
-  c.projectionMatrix.copy(camera.projectionMatrix);
 }
-else {
-  if (c.fov != camera.fov) {
-    c.fov = camera.fov;
-    c.projectionMatrix.copy(camera.projectionMatrix);
-//    c.updateProjectionMatrix();
-  }
+
+// always update projection matrix when necessary, as there are compatibility issues simply by copying the projection matrix from the old camera
+if (c.fov != camera.fov) {
+  c.fov = camera.fov;
+  c.updateProjectionMatrix();
 }
       },
 
