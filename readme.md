@@ -42,6 +42,14 @@ Check out these [YouTube video demos](https://youtube.com/playlist?list=PLLpwhHM
 
 (*) - To capture the web app version of XR Animator on OBS without the browser UI, you have to open XR Animator on OBS browser. A few extra command line parameters on OBS are required to allow camera access. [Details](https://twitter.com/yeemachine/status/1461908260638785540)
 
+# Performance
+
+XR Animator has relatively low system requirements, making it usable on a wide range of devices, including laptops and even smartphones. On an entry-level PC with GTX1650-class GPU running XR Animator with full body mocap, you can expect 20+ fps on pose/fingers tracking, 40+ fps (capped at 30) on face tracking, and 60fps on 3D rendering.
+
+However, you are using a laptop but you are experiencing lower-than-expected frame rate, the app may be using the slower integrated GPU. This is a pretty common problem for laptop users. Configure your graphics card settings and make sure that the faster dedicated GPU is used. Check out the article below if you don't know how.
+
+[How to Force Windows to Use Dedicated Graphics](https://techcult.com/how-to-force-windows-to-use-dedicated-graphics/)
+
 # Augmented Reality (AR)
 
 <p align="center">
