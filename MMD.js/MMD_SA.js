@@ -5433,6 +5433,7 @@ if (pose) {
     this.renderer.obj.setViewport(viewport.x*DPR, viewport.y*DPR, viewport.width*DPR, viewport.height*DPR);
 
     this.camera.projectionMatrix.fromArray(view.projectionMatrix);
+    if (MMD_SA.THREEX.enabled) MMD_SA.THREEX.data.camera.projectionMatrix.fromArray(view.projectionMatrix);
     this.camera.matrix.fromArray(view.transform.matrix);
 
 //    this.camera.updateMatrixWorld(true);
