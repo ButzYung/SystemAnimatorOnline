@@ -3930,7 +3930,7 @@ v3b = new THREE.Vector3()
  ,info_short: "Baseball catcher"
 // ,is_base_inventory: true
 
- ,get index_default() { return (is_mobile) ? undefined : (MMD_SA_options.Dungeon.inventory.max_base+MMD_SA_options.Dungeon.inventory.max_base*(MMD_SA_options.Dungeon.inventory.max_row-1))+1; }
+ ,get index_default() { return (is_mobile) ? 5 : (MMD_SA_options.Dungeon.inventory.max_base+MMD_SA_options.Dungeon.inventory.max_base*(MMD_SA_options.Dungeon.inventory.max_row-1))+1; }
 // ,get index_default() { return (is_mobile) ? undefined : MMD_SA_options.Dungeon.inventory.max_base+1; }
 
  ,stock_max: 1
@@ -4469,10 +4469,10 @@ return info;
  ,info_short: "UI settings and other options"
 // ,is_base_inventory: true
 
- ,index_default: (is_mobile) ? undefined : 4
+ ,index_default: (is_mobile) ? 4 : 4
 
  ,stock_max: 1
- ,stock_default: (is_mobile) ? 0 : 1
+ ,stock_default: 1
 
  ,action: {
     func: function (item) {
