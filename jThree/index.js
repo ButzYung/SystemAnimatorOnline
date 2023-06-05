@@ -1,4 +1,4 @@
-// (2023-05-12)
+// (2023-06-05)
 
 MMD_SA.fn = {
 /*
@@ -591,8 +591,11 @@ var m4_objs = MMD_SA.TEMP_m4.makeFromPositionQuaternionScale( obj.position, obj.
 obj.position.copy(m4_objs[0])
 obj.quaternion.copy(m4_objs[1])
 //DEBUG_show(obj.position.toArray())
-obj.matrixAutoUpdate = false
-obj.updateMatrix()
+// Object3D_Proxy has no updateMatrix function
+if (obj.updateMatrix) {
+  obj.matrixAutoUpdate = false;
+  obj.updateMatrix();
+}
   });
 };
 
