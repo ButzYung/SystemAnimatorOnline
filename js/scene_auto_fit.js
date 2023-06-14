@@ -1,5 +1,5 @@
 // auto fit
-// (2023-05-12)
+// (2023-06-15)
 
 const v1 = new THREE.Vector3();
 const v2 = new THREE.Vector3();
@@ -8,6 +8,7 @@ const v4 = new THREE.Vector3();
 const v5 = new THREE.Vector3();
 const v6 = new THREE.Vector3();
 
+const ref_pt = new THREE.Vector3();
 const ref_pt_core = new THREE.Vector3();
 const ref_pt_shift = new THREE.Vector3();
 
@@ -33,13 +34,24 @@ function auto_fit_core() {
       depth_v.setY(depth_y);
     }
 //DEBUG_show('\nDepth:\n'+depth_v.toArray().join('\n')+'\n',0,1)
-    ref_pt_core.copy(v).multiply(object_3d._mesh.scale).applyQuaternion(object_3d._mesh.quaternion).applyEuler(rotation_offset);
+
+    ref_pt_core.copy(v).multiply(object_3d._mesh.scale);
+    ref_pt_core.y -= get_ground_y();
+    ref_pt_core.applyQuaternion(object_3d._mesh.quaternion);
+
+    if (!af.transform_avatar)
+      ref_pt_core.applyEuler(rotation_offset);
     ref_pt_shift.copy(object_3d._mesh.position).sub(model_position0).add(depth_v);
     v.copy(ref_pt_core).add(ref_pt_shift);
 //DEBUG_show('\nref_pt_core:\n'+ref_pt_core.toArray().join('\n')+'\n',0,1)
 //DEBUG_show('\nref_pt_shift:\n'+ref_pt_shift.toArray().join('\n')+'\n',0,1)
 //DEBUG_show('\nv:\n'+v.toArray().join('\n')+'\n',0,1)
+    ref_pt.copy(v);
     return v;
+  }
+
+  function get_ground_y() {
+    return (af.ground_y) ? af.ground_y * object_3d._mesh.scale.y + object_3d._mesh.position.y : 0;
   }
 
   let scale_offset, position_offset, rotation_offset;
@@ -47,6 +59,12 @@ function auto_fit_core() {
 
   if (af.motion_target) {
     if (af.motion_target.indexOf(MMD_SA.MMD.motionManager.filename) == -1)
+      return false;
+  }
+
+  if (af.range) {
+    v1.copy(af.reference_point).multiply(object_3d._mesh.scale).add(object_3d._mesh.position);
+    if (v1.distanceTo(model.mesh.position) > af.range)
       return false;
   }
 
@@ -80,7 +98,7 @@ function auto_fit_core() {
       depth_v.z += Math.min(hip_offset*2, upper_leg_length/3);
     }
 
-    const ref_pt = transform_contact_point(v2.copy(af.reference_point), depth_v, af_motion_para);
+    transform_contact_point(v2.copy(af.reference_point), depth_v, af_motion_para);
 
     const hip_y = hip.y - thigh_thickness;
     if (af.scale) {
@@ -104,7 +122,7 @@ function auto_fit_core() {
 
     const thigh_thickness = legL0[1]/10;
 
-    const ref_pt = transform_contact_point(v2.copy(af.reference_point), v3.set(0,0,0));
+    transform_contact_point(v2.copy(af.reference_point), v3.set(0,0,0));
 
     hip.y -= thigh_thickness;
     scale_offset = 1;
@@ -137,7 +155,7 @@ function auto_fit_core() {
     const ref_depth = v3.fromArray(model.get_bone_origin_by_MMD_name(ref_depth_bones[0])).distanceTo(v4.fromArray(model.get_bone_origin_by_MMD_name(ref_depth_bones[1])));
 
     const depth_v = v3.set(0, 0, ref_depth/2);
-    const ref_pt = transform_contact_point(v2.copy(af.reference_point), depth_v, af_motion_para);
+    transform_contact_point(v2.copy(af.reference_point), depth_v, af_motion_para);
 
     const pos_y = contact_y - ref_depth/8;
     scale_offset = pos_y/ref_pt.y;
@@ -159,6 +177,9 @@ function auto_fit_core() {
 
 //DEBUG_show(type+'/'+Date.now())
 //DEBUG_show(scale_offset,0,1)
+  const _scale_offset = scale_offset;
+  if (af.transform_avatar) scale_offset = 1;
+
   position_offset.add(model_position_offset).sub(v4.copy(ref_pt_core).multiplyScalar(scale_offset)).sub(v4.copy(ref_pt_shift));
   if (position_offset_y_ignored)
     position_offset.setY(0);
@@ -170,6 +191,9 @@ function auto_fit_core() {
 
   const q_offset = q1.setFromEuler(rotation_offset);
 
+  if ((explorer_mode_locked == null) && !MMD_SA_options.Dungeon_options.character_movement_disabled)
+    explorer_mode_locked = true;
+
   const transform_list = (af.global_transform) ? MMD_SA.THREEX._object3d_list_ : [object_3d];
   transform_list.forEach(obj=>{
     if (obj.parent_bone?.attached) return;
@@ -178,6 +202,26 @@ function auto_fit_core() {
     const _position_offset = v1.copy(position_offset);
     if (obj != object_3d) {
       _position_offset.add(v4.copy(mesh_pos).sub(mesh0_pos).multiplyScalar(scale_offset).applyQuaternion(q_offset)).sub(mesh_pos).add(mesh0_pos);
+    }
+
+    if (af.transform_avatar) {
+      hip_y_offset = (af.reference_point) ? (1-_scale_offset) * ref_pt.y : 0;
+      if ((hip_y_offset < 0) && !MMD_SA.MMD.motionManager.para_SA.has_leg_IK) {
+        height_offset_by_bone.push({ bone:{'左足ＩＫ':1, '右足ＩＫ':1}, scale:-hip_y_offset });
+      }
+
+      const c = MMD_SA_options.Dungeon.character;
+      c.pos.sub(_position_offset);
+      c.pos.y = ((position_offset_y_ignored) ? 0 : c.pos.y) + get_ground_y();
+      MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = c.pos.y;
+
+      c.about_turn = false;
+      c.rot.copy(rotation_offset);
+      THREE.MMD.getModels()[0].mesh.quaternion.copy(q_offset);
+
+      c.pos_update();
+//DEBUG_show(c.pos.toArray().join('\n')+'\n\n'+hip_y_offset+'\n'+_scale_offset);
+      return;
     }
 
     obj.user_data._default_state_.position.add(_position_offset);
@@ -230,6 +274,22 @@ function auto_fit_loop(obj) {
   type = af.type;
 
   const fitted = auto_fit_core();
+
+  if (fitted && af.transform_avatar) {
+    if (explorer_mode_locked) {
+      System._browser.on_animation_update.add(()=>{
+        MMD_SA_options.Dungeon_options.character_movement_disabled = true;
+      }, 0,0);
+
+      MMD_SA_options.Dungeon_options.camera_position_z_sign = 1;
+      MMD_SA_options.Dungeon.update_camera_position_base();
+      MMD_SA_options.Dungeon.no_collision = true;
+      window.removeEventListener('SA_keydown', restore_explorer_mode);
+      window.addEventListener('SA_keydown', restore_explorer_mode);
+    }
+
+    MMD_SA.reset_camera();
+  }
 
   let visible;
   const ev = (fitted) ? af.on_fit : af.on_unfit;
@@ -315,15 +375,20 @@ function auto_fit(list) {
 
         return _fitted;
       });
-      return;
     }
-
-    list = para.json.XR_Animator_scene.object3D_list;
+    else {
+      list = para.json.XR_Animator_scene.object3D_list;
+    }
   }
 
-  list.forEach(obj=>{
+  list?.forEach(obj=>{
     auto_fit_loop(obj);
   });
+
+  window.removeEventListener('SA_MMD_model0_process_bones', adjust_hip_y_offset);
+  if (hip_y_offset) {
+    window.addEventListener('SA_MMD_model0_process_bones', adjust_hip_y_offset);
+  }
 }
 
 function process_gesture() {
@@ -391,17 +456,43 @@ function process_gesture() {
   });
 }
 
+function restore_explorer_mode(e) {
+  const ev = e.detail.e;
+  if (/^(Key[WASD]|Space)$/.test(ev.code)) {
+    MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name['tsuna_standby']];
+    MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice();
+    MMD_SA._force_motion_shuffle = true;
+
+    System._browser.on_animation_update.add(()=>{
+      explorer_mode_locked = null;
+      MMD_SA_options.Dungeon_options.character_movement_disabled = false;
+      MMD_SA_options.Dungeon_options.camera_position_z_sign = -1;
+      MMD_SA_options.Dungeon.update_camera_position_base();
+      MMD_SA_options.Dungeon.no_collision = false;
+
+      MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = para.json.XR_Animator_scene.settings?.explorer_mode?.ground_y || 0;
+    }, 0,0);
+
+    window.removeEventListener('SA_keydown', restore_explorer_mode);
+  }
+}
+
+function adjust_hip_y_offset() {
+  THREE.MMD.getModels()[0].mesh.bones_by_name['センター'].position.y += hip_y_offset;
+}
+
 function adjust_height_offset_by_bone() {
   const f = System._browser.camera.poseNet.frames;
 
   height_offset_by_bone.forEach(config=>{
     for (const b in config.bone) {
-      if (f._skin[b]) {
-        window.addEventListener('SA_camera_poseNet_process_bones_onstart', ()=>{
+      window.addEventListener('SA_camera_poseNet_process_bones_onstart', ()=>{
+        if (f._skin[b]) {
           const offset = config.bone[b] * config.scale;
           f._skin[b].pos.y += offset;
-        }, {once:true});
-      }
+          f._skin[b]._offset_y_ = offset;
+        }
+      }, {once:true});
     }
   });
 }
@@ -497,6 +588,12 @@ let object_3d;
 
 let height_offset_by_bone;
 
+let hip_y_offset = 0;
+
+let explorer_mode_locked;
+
+const motion_target_list = [];
+
 let model_position0;
 const model_position_offset = new THREE.Vector3();
 
@@ -525,16 +622,38 @@ function load(p) {
   System._browser.on_animation_update.remove(adjust_height_offset_by_bone, 0);
   System._browser.on_animation_update.add(adjust_height_offset_by_bone, 0,0,-1);
 
-  window.addEventListener('SA_MMD_model0_onmotionended', (e)=>{
-    if (e.detail.is_loop) return;
+  para.json.XR_Animator_scene.auto_fit_list?.forEach(list=>list.forEach(af=>{
+    if (af.motion_target)
+      motion_target_list.push(...af.motion_target);
+  }));
+//console.log(motion_target_list)
 
-    height_offset_by_bone = [];
+  window.addEventListener('SA_MMD_model0_onmotionchange', (e)=>{//ended', (e)=>{
+//    if (e.detail.is_loop) return;
+    if (e.detail.motion_new == e.detail.motion_old) return;
 
-    const _motion_blending = MMD_SA.MMD.motionManager.para_SA.motion_blending;
+    const f = System._browser.camera.poseNet.frames;
+    height_offset_by_bone.forEach(config=>{
+      for (const b in config.bone) {
+        if (f._skin[b])
+          f._skin[b]._offset_y_ = null;
+      }
+    });
+    height_offset_by_bone.length = 0;
+
+    hip_y_offset = 0;
+    window.removeEventListener('SA_MMD_model0_process_bones', adjust_hip_y_offset);
+
+    const filename_new = e.detail.motion_new.para_SA._path.replace(/^.+[\/\\]/, '').replace(/\.\w{3,4}$/, '');
+//DEBUG_show(filename_new)
+    const motion_target_matched = motion_target_list.indexOf(filename_new) != -1;
+
+    const _motion_blending = ((!explorer_mode_locked && MMD_SA_options.Dungeon_options.character_movement_disabled) || motion_target_matched) ? e.detail.motion_old.para_SA.motion_blending : null;
+
     let _fadeout;
     if (_motion_blending) {
-      _motion_blending.fadeout = fadeout_disabled;
       _fadeout = _motion_blending.fadeout;
+      _motion_blending.fadeout = fadeout_disabled;
     }
 
     MMD_SA.THREEX._object3d_list_.forEach(obj=>{
@@ -543,9 +662,12 @@ function load(p) {
     });
 
     System._browser.on_animation_update.remove(auto_fit, 0);
-    System._browser.on_animation_update.add(auto_fit, 1,0);
-    if (_motion_blending)
-      System._browser.on_animation_update.add(()=>{_motion_blending.fadeout=_fadeout}, 1,0);
+    System._browser.on_animation_update.add(auto_fit, 0,0);
+    if (_motion_blending) {
+      System._browser.on_animation_update.add(()=>{
+        _motion_blending.fadeout=_fadeout;
+      }, 0,0);
+    }
 
 //    System._browser.on_animation_update.add(auto_fit, 30,0);
   });
