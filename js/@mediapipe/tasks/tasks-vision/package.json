@@ -1,6 +1,6 @@
 {
   "name": "@mediapipe/tasks-vision",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "MediaPipe Vision Tasks",
   "main": "vision_bundle.js",
   "author": "mediapipe@google.com",

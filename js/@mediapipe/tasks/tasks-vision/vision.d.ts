@@ -172,13 +172,14 @@ export declare interface Detection {
     /** The bounding box of the detected objects. */
     boundingBox?: BoundingBox;
     /**
-     * Optional list of keypoints associated with the detection. Keypoints
-     * represent interesting points related to the detection. For example, the
-     * keypoints represent the eye, ear and mouth from face detection model. Or
-     * in the template matching detection, e.g. KNIFT, they can represent the
-     * feature points for template matching.
+     * List of keypoints associated with the detection. Keypoints represent
+     * interesting points related to the detection. For example, the keypoints
+     * represent the eye, ear and mouth from face detection model. Or in the
+     * template matching detection, e.g. KNIFT, they can represent the feature
+     * points for template matching. Contains an empty list if no keypoints are
+     * detected.
      */
-    keypoints?: NormalizedKeypoint[];
+    keypoints: NormalizedKeypoint[];
 }
 
 /** Detection results of a model. */
@@ -554,9 +555,9 @@ export declare interface FaceLandmarkerResult {
     /** Detected face landmarks in normalized image coordinates. */
     faceLandmarks: NormalizedLandmark[][];
     /** Optional face blendshapes results. */
-    faceBlendshapes?: Classifications[];
+    faceBlendshapes: Classifications[];
     /** Optional facial transformation matrix. */
-    facialTransformationMatrixes?: Matrix[];
+    facialTransformationMatrixes: Matrix[];
 }
 
 /** Performs face stylization on images. */
@@ -636,7 +637,7 @@ export declare class FaceStylizer extends VisionTaskRunner {
     /**
      * Performs face stylization on the provided single image and returns the
      * result. This method creates a copy of the resulting image and should not be
-     * used in high-throughput applictions. Only use this method when the
+     * used in high-throughput applications. Only use this method when the
      * FaceStylizer is created with the image running mode.
      *
      * @param image An image to process.
@@ -647,7 +648,7 @@ export declare class FaceStylizer extends VisionTaskRunner {
     /**
      * Performs face stylization on the provided single image and returns the
      * result. This method creates a copy of the resulting image and should not be
-     * used in high-throughput applictions. Only use this method when the
+     * used in high-throughput applications. Only use this method when the
      * FaceStylizer is created with the image running mode.
      *
      * The 'imageProcessingOptions' parameter can be used to specify one or all
@@ -714,7 +715,7 @@ export declare class FaceStylizer extends VisionTaskRunner {
     /**
      * Performs face stylization on the provided video frame. This method creates
      * a copy of the resulting image and should not be used in high-throughput
-     * applictions. Only use this method when the FaceStylizer is created with the
+     * applications. Only use this method when the FaceStylizer is created with the
      * video running mode.
      *
      * The input frame can be of any size. It's required to provide the video
@@ -1322,7 +1323,7 @@ export declare class ImageSegmenter extends VisionTaskRunner {
     /**
      * Performs image segmentation on the provided single image and returns the
      * segmentation result. This method creates a copy of the resulting masks and
-     * should not be used in high-throughput applictions. Only use this method
+     * should not be used in high-throughput applications. Only use this method
      * when the ImageSegmenter is created with running mode `image`.
      *
      * @param image An image to process.
@@ -1333,7 +1334,7 @@ export declare class ImageSegmenter extends VisionTaskRunner {
     /**
      * Performs image segmentation on the provided single image and returns the
      * segmentation result. This method creates a copy of the resulting masks and
-     * should not be used in high-v applictions. Only use this method when
+     * should not be used in high-v applications. Only use this method when
      * the ImageSegmenter is created with running mode `image`.
      *
      * @param image An image to process.
@@ -1385,7 +1386,7 @@ export declare class ImageSegmenter extends VisionTaskRunner {
     /**
      * Performs image segmentation on the provided video frame and returns the
      * segmentation result. This method creates a copy of the resulting masks and
-     * should not be used in high-v applictions. Only use this method when
+     * should not be used in high-v applications. Only use this method when
      * the ImageSegmenter is created with running mode `video`.
      *
      * @param videoFrame A video frame to process.
@@ -1432,19 +1433,46 @@ export declare interface ImageSegmenterOptions extends VisionTaskOptions {
 }
 
 /** The output result of ImageSegmenter. */
-export declare interface ImageSegmenterResult {
+export declare class ImageSegmenterResult {
     /**
      * Multiple masks represented as `Float32Array` or `WebGLTexture`-backed
      * `MPImage`s where, for each mask, each pixel represents the prediction
      * confidence, usually in the [0, 1] range.
      */
-    confidenceMasks?: MPMask[];
+    readonly confidenceMasks?: MPMask[] | undefined;
     /**
      * A category mask represented as a `Uint8ClampedArray` or
-     * `WebGLTexture`-backed `MPImage` where each pixel represents the class which
-     * the pixel in the original image was predicted to belong to.
+     * `WebGLTexture`-backed `MPImage` where each pixel represents the class
+     * which the pixel in the original image was predicted to belong to.
      */
-    categoryMask?: MPMask;
+    readonly categoryMask?: MPMask | undefined;
+    /**
+     * The quality scores of the result masks, in the range of [0, 1].
+     * Defaults to `1` if the model doesn't output quality scores. Each
+     * element corresponds to the score of the category in the model outputs.
+     */
+    readonly qualityScores?: number[] | undefined;
+    constructor(
+    /**
+     * Multiple masks represented as `Float32Array` or `WebGLTexture`-backed
+     * `MPImage`s where, for each mask, each pixel represents the prediction
+     * confidence, usually in the [0, 1] range.
+     */
+    confidenceMasks?: MPMask[] | undefined, 
+    /**
+     * A category mask represented as a `Uint8ClampedArray` or
+     * `WebGLTexture`-backed `MPImage` where each pixel represents the class
+     * which the pixel in the original image was predicted to belong to.
+     */
+    categoryMask?: MPMask | undefined, 
+    /**
+     * The quality scores of the result masks, in the range of [0, 1].
+     * Defaults to `1` if the model doesn't output quality scores. Each
+     * element corresponds to the score of the category in the model outputs.
+     */
+    qualityScores?: number[] | undefined);
+    /** Frees the resources held by the category and confidence masks. */
+    close(): void;
 }
 
 /**
@@ -1603,19 +1631,46 @@ export declare interface InteractiveSegmenterOptions extends TaskRunnerOptions {
 }
 
 /** The output result of InteractiveSegmenter. */
-export declare interface InteractiveSegmenterResult {
+export declare class InteractiveSegmenterResult {
     /**
      * Multiple masks represented as `Float32Array` or `WebGLTexture`-backed
      * `MPImage`s where, for each mask, each pixel represents the prediction
      * confidence, usually in the [0, 1] range.
      */
-    confidenceMasks?: MPMask[];
+    readonly confidenceMasks?: MPMask[] | undefined;
     /**
      * A category mask represented as a `Uint8ClampedArray` or
-     * `WebGLTexture`-backed `MPImage` where each pixel represents the class which
-     * the pixel in the original image was predicted to belong to.
+     * `WebGLTexture`-backed `MPImage` where each pixel represents the class
+     * which the pixel in the original image was predicted to belong to.
      */
-    categoryMask?: MPMask;
+    readonly categoryMask?: MPMask | undefined;
+    /**
+     * The quality scores of the result masks, in the range of [0, 1].
+     * Defaults to `1` if the model doesn't output quality scores. Each
+     * element corresponds to the score of the category in the model outputs.
+     */
+    readonly qualityScores?: number[] | undefined;
+    constructor(
+    /**
+     * Multiple masks represented as `Float32Array` or `WebGLTexture`-backed
+     * `MPImage`s where, for each mask, each pixel represents the prediction
+     * confidence, usually in the [0, 1] range.
+     */
+    confidenceMasks?: MPMask[] | undefined, 
+    /**
+     * A category mask represented as a `Uint8ClampedArray` or
+     * `WebGLTexture`-backed `MPImage` where each pixel represents the class
+     * which the pixel in the original image was predicted to belong to.
+     */
+    categoryMask?: MPMask | undefined, 
+    /**
+     * The quality scores of the result masks, in the range of [0, 1].
+     * Defaults to `1` if the model doesn't output quality scores. Each
+     * element corresponds to the score of the category in the model outputs.
+     */
+    qualityScores?: number[] | undefined);
+    /** Frees the resources held by the category and confidence masks. */
+    close(): void;
 }
 
 /**
@@ -1786,8 +1841,8 @@ export declare class MPMask {
     getAsUint8Array(): Uint8Array;
     /**
      * Returns the underlying mask as a single channel `Float32Array`. Note that
-     * this involves an expensive GPU to CPU transfer if the current mask is only
-     * available as a `WebGLTexture`.
+     * this involves an expensive GPU to CPU transfer if the current mask is
+     * only available as a `WebGLTexture`.
      *
      * @return The current mask as a Float32Array.
      */
@@ -1801,6 +1856,11 @@ export declare class MPMask {
      * @return The current mask as a WebGLTexture.
      */
     getAsWebGLTexture(): WebGLTexture;
+    /**
+     * Returns the texture format used for writing float textures on this
+     * platform.
+     */
+    getTexImage2DFormat(): GLenum;
     /**
      * Creates a copy of the resources stored in this `MPMask`. You can
      * invoke this method to extend the lifetime of a mask returned by a
@@ -2140,13 +2200,19 @@ export declare interface PoseLandmarkerOptions extends VisionTaskOptions {
  * Represents the pose landmarks deection results generated by `PoseLandmarker`.
  * Each vector element represents a single pose detected in the image.
  */
-export declare interface PoseLandmarkerResult {
-    /** Pose landmarks of detected poses. */
-    landmarks: NormalizedLandmark[][];
+export declare class PoseLandmarkerResult {
+    readonly landmarks: NormalizedLandmark[][];
     /** Pose landmarks in world coordinates of detected poses. */
-    worldLandmarks: Landmark[][];
+    readonly worldLandmarks: Landmark[][];
     /** Segmentation mask for the detected pose. */
-    segmentationMasks?: MPMask[];
+    readonly segmentationMasks?: MPMask[] | undefined;
+    constructor(/** Pose landmarks of detected poses. */ landmarks: NormalizedLandmark[][], 
+    /** Pose landmarks in world coordinates of detected poses. */
+    worldLandmarks: Landmark[][], 
+    /** Segmentation mask for the detected pose. */
+    segmentationMasks?: MPMask[] | undefined);
+    /** Frees the resources held by the segmentation masks. */
+    close(): void;
 }
 
 /**
