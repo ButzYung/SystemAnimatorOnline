@@ -353,7 +353,8 @@ class Octree {
 			if ( result = this.triangleCapsuleIntersect( _capsule, triangles[ i ] ) ) {
 
 				hit = true;
-
+// AT: check normal
+//_capsule.getCenter(_v1); _v1.sub(result.point).normalize(); if (Math.abs(_v1.angleTo(result.normal)) > Math.PI/2) { result.normal.negate(); DEBUG_show(Date.now()) };//console.log('N',result.normal.toArray(),result.depth,triangles[i]); };
 				_capsule.translate( result.normal.multiplyScalar( result.depth ) );
 
 			}
@@ -364,7 +365,7 @@ class Octree {
 
 			const collisionVector = _capsule.getCenter( new Vector3() ).sub( capsule.getCenter( _v1 ) );
 			const depth = collisionVector.length();
-
+//console.log(collisionVector.normalize().toArray(), depth)
 			return { normal: collisionVector.normalize(), depth: depth };
 
 		}
