@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-05-30)
+// (2023-06-15)
 
 var use_full_spectrum = true
 
@@ -1502,7 +1502,7 @@ return function (is_bone_action, objs) {
   assign_motion(mm.filename)
   return true
 };
-　　　　　　})()
+      })()
 
        ,_onmessage: function () {
 if (MMD_SA_options.Dungeon && MMD_SA_options.Dungeon_options.use_PC_click_reaction_default) return
@@ -1681,10 +1681,13 @@ function _finalize() {
   mm._index = mm.para_SA._index = index
   mm.para_SA._path = src
 
+  var result = { return_value:false };
+  window.dispatchEvent(new CustomEvent("SA_on_external_motion_loaded", { detail:{ path:src, result:result } }));
+
   if (_onload) {
     _onload()
   }
-  else if (_onload !== false) {
+  else if (!result.return_value && (_onload !== false)) {
     MMD_SA_options.motion_shuffle = [index]
     MMD_SA_options.motion_shuffle_list_default = null
     MMD_SA._force_motion_shuffle = true
@@ -1692,7 +1695,7 @@ function _finalize() {
     System._browser.on_animation_update.add(()=>{MMD_SA.motion_player_control.enabled = true;}, 0,1);
   }
 
-THREE.MMD.setupCameraMotion(model._MMD_SA_cache[src].camera)
+  THREE.MMD.setupCameraMotion(model._MMD_SA_cache[src].camera)
 
   resolve_func();
 }
@@ -2600,7 +2603,6 @@ else {
 
 const sprite = new THREE.Sprite( material );
 
-//if (MMD_SA.THREEX.enabled) sprite.renderOrder = 999;
 if (MMD_SA.THREEX.enabled) {
   sprite.layers.enable(MMD_SA.THREEX.PPE.UnrealBloom.NO_BLOOM);
 //  sprite.layers.enable(MMD_SA.THREEX.PPE.N8AO.AO_MASK);
@@ -2993,7 +2995,13 @@ if (is_mobile && screen.orientation) {
     is_portrait = true
 }
 
-this._mesh.position.copy(this.pos_base_ref.dir).multiplyScalar(this.distance_scale * ((is_portrait && 0.25) || 1) * scale).add(this.pos_base_ref._v3.copy(this.pos_base_ref.center).sub(this.pos_base_ref.character_pos_ref).add(THREE.MMD.getModels()[0].mesh.position))
+this._mesh.position.copy(this.pos_base_ref.dir).multiplyScalar(this.distance_scale * ((is_portrait && 0.25) || 1) * scale).add(this.pos_base_ref._v3.copy(this.pos_base_ref.center).sub(this.pos_base_ref.character_pos_ref).add(THREE.MMD.getModels()[0].mesh.position));
+
+if (MMD_SA.THREEX.enabled && MMD_SA.THREEX._object3d_list_) {
+  this._pos0 = (this._pos0||new THREE.Vector3()).copy(this._mesh.position);
+  this._mesh.position.sub(MMD_SA._trackball_camera.object.position).normalize().multiplyScalar(2).add(MMD_SA._trackball_camera.object.position);
+}
+
 this._mesh.scale.set(1,1,1).multiplyScalar(this.scale * scale * ((is_landscape && 1.5) || 1) * ((this.use_sprite)?1/3:1))
 
 //this.pos_base.copy(this._mesh.position).sub(this.pos_base_ref.character_pos_ref)
@@ -3004,7 +3012,6 @@ if (!MMD_SA_options.use_speech_bubble)
   return
 
 bb_list.forEach(b=>{b._update_placement()});
-
     };
 
     SB.prototype._update_placement = function (enforced) {
@@ -3012,15 +3019,13 @@ var mesh = this._mesh
 if (!mesh.visible)
   return
 
-var dis = this._mesh.position.distanceTo(MMD_SA._trackball_camera.object.position)
-var scale = (!this.use_sprite && (dis > 32)) ? 1 + (dis-32)/64 : 1
-//DEBUG_show(scale+'/'+Date.now())
+var dis = ((MMD_SA.THREEX.enabled && MMD_SA.THREEX._object3d_list_ && this._pos0) || this._mesh.position).distanceTo(MMD_SA._trackball_camera.object.position);
+var scale = (!this.use_sprite && (dis > 32)) ? 1 + (dis-32)/64 : 1;
 
-if (!this.index) {
+if (1) {//!this.index) {
   let sight_v3 = MMD_SA._v3a.copy(MMD_SA._trackball_camera.object._lookAt).sub(MMD_SA._trackball_camera.object.position).normalize()
   let PC_v3 = MMD_SA._v3b.copy(this.pos_base_ref.center).sub(MMD_SA._trackball_camera.object.position).normalize()
   if ((dis < 20) || (sight_v3.angleTo(PC_v3) > Math.PI/4)) {
-//DEBUG_show(sight_v3.angleTo(PC_v3)*180/Math.PI+'/'+Date.now())
     this.pos_base_ref.center.copy(sight_v3).multiplyScalar(30).add(MMD_SA._trackball_camera.object.position)
   }
 }
@@ -3493,6 +3498,21 @@ return mipmap_render_target_list
  ,render: function (renderer) {
 
 window.dispatchEvent(new CustomEvent("SA_MMD_before_render"));
+
+if (MMD_SA_options.use_THREEX && MMD_SA.MMD_started) {
+  const MMD_mesh0 = THREE.MMD.getModels()[0].mesh;
+  const model0 = MMD_SA.THREEX.get_model(0);
+//DEBUG_show(['頭', '上半身'].map(b=>model0.get_bone_position_by_MMD_name(b).distanceTo(MMD_SA._trackball_camera.object.position)).join('\n'))
+  const avatar_visible_distance = MMD_SA_options.avatar_visible_distance || 3;
+  if (MMD_mesh0.visible) {
+    const check_list = ['頭', '上半身'].map(b=>model0.get_bone_position_by_MMD_name(b));
+    check_list.push(MMD_SA.TEMP_v3.copy(check_list[check_list.length-1]).lerp(MMD_mesh0.position, 0.5));
+    if (check_list.some(p=>p.distanceTo(MMD_SA._trackball_camera.object.position) < avatar_visible_distance)) {
+      MMD_mesh0.visible = false;
+      System._browser.on_animation_update.add(()=>{ MMD_mesh0.visible=true }, 0,0);
+    }
+  }
+}
 
 //if (!MMD_SA.MMD_started) return true
 //var _t=performance.now()
@@ -4871,14 +4891,14 @@ update_obj(model_mesh, true)
 
 if (xr.can_requestHitTestSource && hit.createAnchor && (AR_options.anchors_enabled !== false)) {
   if (!createAnchor_compatibility_mode) {
-　　  hit.createAnchor().then(init_anchor).catch(function (err) {
-　　　　　　createAnchor_compatibility_mode = true
- 　　　});
+    hit.createAnchor().then(init_anchor).catch(function (err) {
+      createAnchor_compatibility_mode = true
+    });
   }
   if (createAnchor_compatibility_mode) {
-　　  hit.createAnchor(new XRRigidTransform()).then(init_anchor).catch(function (err) {
-　　    DEBUG_show(".createAnchor ERROR:" + err)
- 　　　});
+    hit.createAnchor(new XRRigidTransform()).then(init_anchor).catch(function (err) {
+      DEBUG_show(".createAnchor ERROR:" + err)
+    });
   }
 }
 
@@ -8945,16 +8965,24 @@ if (!use_faceBlendshapes || System._browser.camera.facemesh.auto_look_at_camera)
 
 
 if (MMD_SA.OSC.VMC.sender_enabled && MMD_SA.OSC.VMC.ready) {
+  const model_pos_scale = 1/vrm_scale;
+
+  const model_position0 = MMD_SA_options.Dungeon_options.options_by_area_id[MMD_SA_options.Dungeon.area_id]._startup_position_;
+  const model_position_offset = v4.copy(mesh.position).sub(model_position0).multiplyScalar(model_pos_scale);
+
+  const model_rot = q4.copy(mesh.quaternion);
+  const turned_around = MMD_SA.OSC.VMC.send_camera_data;
+  if (!turned_around ^ !!this.is_VRM1) model_rot.premultiply(q2.set(0,1,0,0));
+//DEBUG_show(mesh.quaternion.toArray())
+
   MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/Root/Pos",
     [
 'root',
-...((MMD_SA.OSC.VMC.VSeeFace_mode) ? ((System._browser.camera.poseNet.enabled && MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only && MMD_SA.MMD.motionManager.para_SA.center_view_enforced) ? [0,0,-5/10] : [0, 5/10, -60/10]) : [0,0,0]),
--0, -0, 0, 1,
+...((MMD_SA.OSC.VMC.VSeeFace_mode) ? ((System._browser.camera.poseNet.enabled && MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only && MMD_SA.MMD.motionManager.para_SA.center_view_enforced) ? [0,0,-5/10] : [0, 5/10, -60/10]) : [model_position_offset.x, model_position_offset.y, -model_position_offset.z]),
+-model_rot.x, -model_rot.y, model_rot.z, model_rot.w,
     ],
     'sfffffff'
   ));
-
-  const model_pos_scale = 1/vrm_scale;
 
   const bone_msgs = [];
   for (const name_VMC in VRMSchema.HumanoidBoneName) {
@@ -8964,6 +8992,7 @@ if (MMD_SA.OSC.VMC.sender_enabled && MMD_SA.OSC.VMC.ready) {
     bone_msgs.push(MMD_SA.OSC.VMC.Message("/VMC/Ext/Bone/Pos",
       [
 name_VMC,
+// TODO: support VRM1 in VNyan
 bone.position.x, bone.position.y, -bone.position.z,
 -bone.quaternion.x, -bone.quaternion.y, bone.quaternion.z, bone.quaternion.w,
       ],
@@ -8996,12 +9025,16 @@ blendshape_weight[name],
 
   if (MMD_SA.OSC.VMC.send_camera_data) {
     const camera = MMD_SA.THREEX.camera.obj;
-    const camera_pos = v1.copy(camera.position).sub(mesh.position);
-    const camera_rot = q1.copy(camera.quaternion).premultiply(q2.set(0,1,0,0));
+    const camera_pos = v1.copy(camera.position).sub(mesh.position).multiplyScalar(model_pos_scale);
+    camera_pos.add(model_position_offset);
+
+    const camera_rot = q1.copy(camera.quaternion);
+    if (!turned_around) camera_rot.premultiply(q2.set(0,1,0,0));
+
     MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/Cam",
       [
 'Camera',
--camera_pos.x*model_pos_scale, camera_pos.y*model_pos_scale, camera_pos.z*model_pos_scale,
+camera_pos.x*((!turned_around)?-1:1), camera_pos.y, -camera_pos.z*((!turned_around)?-1:1),
 -camera_rot.x, -camera_rot.y, camera_rot.z, camera_rot.w,
 //0,0,0,
 //0,1,0,0,
@@ -10155,6 +10188,7 @@ effectController_default = {
         distanceFalloff: 0.6,//1.0,
         intensity: 5.0,
         color: '#000000',
+        halfRes: true,
         renderMode: "Combined",
 
   screenSpaceRadius: false,//true,
@@ -10213,6 +10247,7 @@ gui_N8AO.add(effectController, "aoRadius", 1.0, 64.0, 0.01);
 gui_N8AO.add(effectController, "distanceFalloff", 0.0, 2.0, 0.01);
 gui_N8AO.add(effectController, "intensity", 0.0, 10.0, 0.01);
 gui_N8AO.addColor(effectController, "color");
+gui_N8AO.add(effectController, "halfRes");
 gui_N8AO.add(effectController, "renderMode", ["Combined", "AO", "No AO", "Split", "Split AO"]);
 gui_N8AO.add(effectController, 'reset' );
 
@@ -10238,6 +10273,7 @@ this.pass.configuration.aoSamples = effectController.aoSamples;
 this.pass.configuration.denoiseRadius = effectController.denoiseRadius;
 this.pass.configuration.denoiseSamples = effectController.denoiseSamples;
 this.pass.configuration.renderMode = ["Combined", "AO", "No AO", "Split", "Split AO"].indexOf(effectController.renderMode);
+this.pass.configuration.halfRes = effectController.halfRes;
 this.pass.configuration.screenSpaceRadius = effectController.screenSpaceRadius;
 
 const color_base = this.pass._color_base_material[0].color;
@@ -10762,7 +10798,7 @@ if (MMD_SA_options.THREEX_options.use_MMD) {
   }
 }
 
-// 2023-03-11
+// Mar 30, 2023
 const GLTFLoader_module = await import(System.Gadget.path + '/three.js/loaders/GLTFLoader.js');
 Object.assign(self.THREE, GLTFLoader_module);
 
