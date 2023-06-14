@@ -1,4 +1,4 @@
-// (2023-06-05)
+// (2023-06-15)
 
 MMD_SA.fn = {
 /*
@@ -853,7 +853,9 @@ MMD_SA.reset_morph = function (model_index) {
 
 MMD_SA._camera_y_offset_ = 0
 MMD_SA.reset_camera = function (check_event) {
-  window.dispatchEvent(new CustomEvent("MMDCameraReset", { detail:{ enforced:check_event } }));
+  const result = {};
+  window.dispatchEvent(new CustomEvent("MMDCameraReset", { detail:{ enforced:check_event, result:result } }));
+  if (result.return_value) return;
 
   this._camera_y_offset_ = 0
 
