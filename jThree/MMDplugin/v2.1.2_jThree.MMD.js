@@ -1,4 +1,4 @@
-// (2023-05-05)
+// (2023-06-15)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -252,6 +252,8 @@ if (self.MMD_SA && !MMD_SA_options.MMD_disabled) {
 // check the backup list ._motion_shuffle_list_default instead of .motion_shuffle_list_default since .motion_shuffle_list_default can be null sometimes
     let motion_index = (MMD_SA_options.motion_shuffle || MMD_SA_options._motion_shuffle_list_default) ? MMD_SA_options.motion_shuffle_list[MMD_SA.motion_shuffle_index] : 0
     let motion = MMD_SA_options.motion[motion_index]
+
+    window.dispatchEvent(new CustomEvent("SA_MMD_model0_onmotionchange", { detail:{ motion_old:mm_old, motion_new:mmd.motionManager } }));
 
     if (MMD_SA._force_motion_shuffle)
       adjust_center_view = true
@@ -623,6 +625,9 @@ mmd.frame_time_ref = t
         w2d.canvas.style.display = "none"
       }
     }
+  }
+  else {
+    SL_2D_front.style.display = "none";
   }
 
   MMD_SA._playbackRate = _playbackRate
