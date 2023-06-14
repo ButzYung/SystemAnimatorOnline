@@ -1,4 +1,4 @@
-// (2023-05-30)
+// (2023-06-15)
 
 var PoseAT = (function () {
 
@@ -299,7 +299,6 @@ estimatePoses: function (video, dummy, nowInMs) {
       v.z = v3[2];
    }
   }
-
 //console.log(result)
   return Promise.resolve(Object.assign({ poseLandmarks:result.landmarks[0], za:result.worldLandmarks[0] }, result));
 }
@@ -560,6 +559,7 @@ name: BLAZEPOSE_KEYPOINTS[i]
         for (let i = 0; i < 33; i++) {
           const f = data_filter[0][p][i];
 //          f.minCutOff = 1 * (1 + (filter_factor-1)/2);
+          f.beta = filter_factor;
           f.dCutOff = 2 * filter_factor;
         }
       }
