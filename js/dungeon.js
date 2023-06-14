@@ -1,4 +1,4 @@
-// (2023-05-30)
+// (2023-06-15)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -548,7 +548,8 @@ var km = (mode) ? key_map[mode] : key_map;
 if (!km)
   return
 
-km.motion_filename = km.motion_id && d.motion_filename_by_id[km.motion_id]
+if (!('motion_filename' in km))
+  Object.defineProperty(km, 'motion_filename', { get:function () { return this.motion_id && MMD_SA_options.Dungeon.motion_filename_by_id[this.motion_id]; } });
 
 var para = km.motion_id && d.motion[km.motion_id].para
 if (para) {
@@ -708,13 +709,13 @@ const d = document.getElementById("Ldungeon_inventory_item" + index)
 
 // not accessing .info directly as it may be a getter function
 if ("info" in this.item) {
-  d.className = 'Dungeon_inventory_item_info'
-  d.setAttribute("data-info", this.item.info_short + ':\n' + this.item.info)
+  d.className = 'Dungeon_inventory_item_info';
+  d.setAttribute("data-info", this.item.info_short + ':\n' + this.item.info);
 }
 else {
-  d.className = 'Dungeon_inventory_item_info_short'
-  d.setAttribute("data-info_short", this.item.info_short||("Item"+index))
+  d.className = 'Dungeon_inventory_item_info_short';
 }
+d.setAttribute("data-info_short", this.item.info_short||("Item"+index));
 
 d.style.visibility = (this.item.is_always_visible) ? "visible" : "inherit"
   }
@@ -3976,11 +3977,11 @@ if (sd) {
   if (!sd.texture_path_list)
     sd.texture_path_list = [System.Gadget.path + "/images/_dungeon/tex/ryntaro_nukata/angel_staircase.jpg"]
   sd.texture_cache_list = []
-
+// NOTE: There is little to no reason to use too many polygons for depth-enabled skybox, as fewer polygons sometimes actually look smoother
   if (!sd.width_segments)
-    sd.width_segments  = 64*4;
+    sd.width_segments  = 64*2;
   if (!sd.height_segments)
-    sd.height_segments = 64*4;
+    sd.height_segments = 64*2;
 
   sd.texture_path_list.forEach(function (path, idx) {
     var img = new Image()
@@ -4630,7 +4631,8 @@ inv_item.item.onmouseover && inv_item.item.onmouseover(e, _idx);
 
 // not accessing .info directly as it may be a getter function
 if ("info" in inv_item.item) {
-  this.setAttribute("data-info", inv_item.item.info_short + ':\n' + inv_item.item.info)
+  this.className = (System._browser.overlay_mode) ? 'Dungeon_inventory_item_info_short' : 'Dungeon_inventory_item_info';
+  this.setAttribute("data-info", inv_item.item.info_short + ':\n' + inv_item.item.info);
 }
   }, true);
   d.addEventListener("mouseout", function (e) {
@@ -5304,7 +5306,7 @@ if (obj.is_dummy)
 if (obj._mesh == subject)
   return
 
-if (obj.no_collision)
+if (obj.no_collision || MMD_SA_options.Dungeon.no_collision)
   return
 
 var cache = obj._obj
@@ -5598,7 +5600,7 @@ if (collision_by_mesh) {// && hit_moved_once) {
     const obj_m4_inv = _m4.getInverse(cache.matrixWorld);
 
     const height = subject_bb_to_collide.max.y - subject_bb_to_collide.min.y;
-    const radius = height/8 * (obj_base.octree_collider_radius||1);
+    const radius = height/8 * (obj_base.octree_collider_radius||1) *1.5;
 
     const pos = new THREE.Vector3();
     subject_bb_to_collide.center(pos);
@@ -5615,8 +5617,10 @@ if (collision_by_mesh) {// && hit_moved_once) {
 
     const octree = obj_base.octree;
 
+    const ground_upper_limit = height/2;
+
     const ray_origin = _v3a.copy(pos);
-    ray_origin.y += height;
+    ray_origin.y += ground_upper_limit;
     const ray = new THREEX.Ray(ray_origin, new THREEX.Vector3(0,-1,0)).applyMatrix4(obj_m4_inv);
 
     const grounds = [];
@@ -5624,7 +5628,7 @@ if (collision_by_mesh) {// && hit_moved_once) {
     grounds.push(ground_octree);
 
     ray_origin.copy(pos).add(mov_extended.multiplyScalar(radius));
-    ray_origin.y += height;
+    ray_origin.y += ground_upper_limit;
     grounds.push(octree.rayIntersect(ray));
 
     pos.applyMatrix4(obj_m4_inv).applyQuaternion(cache.quaternion);
@@ -5637,7 +5641,7 @@ if (collision_by_mesh) {// && hit_moved_once) {
       g.position.applyQuaternion(cache.quaternion);
 
       const y = g.position.y//+0.1;
-      if (y - pos.y > height/2) return;
+      if (y - pos.y > ground_upper_limit) return;
 
       g.triangle.getNormal(_v3).applyQuaternion(cache.quaternion);
       if (_v3.y < 0.5) return;
@@ -5662,7 +5666,7 @@ if (collision_by_mesh) {// && hit_moved_once) {
     mov_octree = _v3a.set(0,0,0);
     if (result_octree) {
       mov_octree.add( result_octree.normal.multiplyScalar( result_octree.depth ) );
-//if (Math.abs(result_octree.normal.y) < 0.3)
+//DEBUG_show(mov_octree.toArray().join('\n'))
       if (!grounded.length) {
 //applyMatrix4(obj_m4_inv)
         const face_v3 = MMD_SA.TEMP_v3.set(0,0,1).applyQuaternion(subject.quaternion).applyQuaternion(MMD_SA.TEMP_q.copy(cache.quaternion).conjugate()).normalize().multiplyScalar(result_octree.depth*1.5).negate();
@@ -5719,7 +5723,7 @@ if (collision_by_mesh) {// && hit_moved_once) {
 
       mov_octree.applyQuaternion(cache.quaternion).multiply(cache.scale);
       moved_final.copy(moved_before_bb_check).add(mov_octree);
-
+//console.log(moved_final.toArray(), ground_y);
       if (ground_y) {
         that.character.ground_normal = (that.character.ground_normal || new THREE.Vector3(0,1,0)).lerp(ground_octree.triangle.getNormal(_v3).applyQuaternion(cache.quaternion), 0.5);
       }
@@ -6463,7 +6467,7 @@ if (!key_map.is_down) {
   key_map.is_down = t
 }
 
-if ((key_map.type_movement && d.character_movement_disabled) || (key_map.type_combat && d.character_combat_locked)) {
+if ((key_map.type_movement && (d.character_movement_disabled || e.detail.e?.altKey || e.detail.e?.ctrlKey)) || (key_map.type_combat && d.character_combat_locked)) {
   e.detail.result.return_value = true
   return
 }
@@ -6921,8 +6925,9 @@ DEBUG_show(MMD_SA_options.motion_shuffle_list_default[0]+'/'+Date.now())
     }
     else {
       key_motion_running = (mm.filename == key_map.motion_filename)
-      if (key_motion_running)
+      if (key_motion_running) {// && (!key_map.type_movement || !d.character_movement_disabled)) {
         motion_time = model.skin.time
+      }
     }
 
 // For one-time motion (ie. key_map.motion_duration, eg. jump), let it finish naturally
@@ -7132,8 +7137,9 @@ key_para.pressed = _k.pressed
       }
     }
     else {
-      if (key_map_by_mode.motion_id)
-        motion_reset.push(key_map_by_mode)
+      if (key_map_by_mode.motion_id && (!key_map.type_movement || !d.character_movement_disabled)) {
+        motion_reset.push(key_map_by_mode);
+      }
 
       if (key_map.type_combat) {
         if (d.character_combat_locked == id) {
@@ -7208,6 +7214,7 @@ MMD_SA.reset_camera()
   var floating = c.floating || (mov && mov.y)// || d.key_map[32].down
   var gravity_y = 0
   var time_to_ground
+  const falling_height_threshold = MMD_SA_options.Dungeon_options.falling_height_threshold || 10;
   if (!floating) {
     let v = (gravity_obj.y + gravity_obj.mov_y_last) / gravity_obj.time
 // downward is positive
@@ -7215,7 +7222,7 @@ MMD_SA.reset_camera()
 //DEBUG_show(gravity_y+'/'+Date.now()+'\n'+gravity_obj.y +','+ gravity_obj.mov_y_last)
 //if (gravity_y > 3) DEBUG_show(gravity_y,0,1)
 //gravity_y=3
-    if (c.pos.y > ground_y+10) {
+    if (c.pos.y > ground_y+falling_height_threshold) {
 // http://www.math.com/students/calculators/source/quadratic.htm
       let _a = 0.5 * (98*1.5)
       let _b = v
@@ -7275,7 +7282,7 @@ MMD_SA.reset_camera()
   }
   else {
     let landing = (mm.filename == d.motion["PC landing"].name)
-    let falling = (!key_motion_disabled && (ground_y_delta < 0) && (c.pos.y > ground_y+10))
+    let falling = (!key_motion_disabled && (ground_y_delta < 0) && (c.pos.y > ground_y+falling_height_threshold))
     if (falling || (landing && !c.grounded)) {
       if (!landing) {
         d.key_map_list.forEach(function (key_map) {
@@ -8006,10 +8013,10 @@ Object.defineProperty(obj.cache.list, "0", {
   });
 })();
 
-  MMD_SA.SpeechBubble._mesh.renderDepth = 9999999 * ((!MMD_SA.THREEX.enabled) ? -1 : 1);
-  MMD_SA.SpeechBubble.bubbles.forEach(function (b) {
+  MMD_SA.SpeechBubble.list.forEach(m=>{ m.renderDepth = 9999999 * ((!MMD_SA.THREEX.enabled) ? -1 : 1); });
+  MMD_SA.SpeechBubble.list.forEach(b=>b.bubbles.forEach(b=>{
     b.pos_mod = [0,-2.5,0]
-  });
+  }));
 
   d.grid_blocks = {
     objs: []
@@ -8248,7 +8255,8 @@ this.motion = options.motion || {}
 
 this.motion["PC default"] = Object.assign({
   path:System.Gadget.path + '/MMD.js/motion/motion_rpg_pack01.zip#/tsuna/tsuna_standby.vmd',
-  para: { adjust_center_view_disabled:true, loop_on_blending:true, onended: function () { MMD_SA._no_fading=true; } }
+  para: { adjust_center_view_disabled:true, loop_on_blending:true, onended: function () { MMD_SA._no_fading=true; },
+  }
 }, this.motion["PC default"]||{});
 Object.assign(this.motion["PC default"].para, this.motion["PC default"].para_SA||{});
 delete this.motion["PC default"].para_SA;
@@ -8256,6 +8264,8 @@ delete this.motion["PC default"].para_SA;
 this.motion["PC movement forward"] = Object.assign({
   path:System.Gadget.path + '/MMD.js/motion/motion_rpg_pack01.zip#/walk_n_run/run_H57_f0-20.vmd',
   para: { adjust_center_view_disabled:true, loop_on_blending:true, onended: function () { MMD_SA._no_fading=true; },
+motion_tracking_enabled:true,
+motion_tracking_upper_body_only:true,
 
 // h01: 2000/1800
 // h16: 1474.79/1800
@@ -8265,6 +8275,11 @@ this.motion["PC movement forward"] = Object.assign({
 // h57: 2700/3600
 // A34: 360/1800
   _speed: 2700/1800 *30,
+
+  SFX: [
+    { frame:2,  sound:{} },
+    { frame:12, sound:{} },
+  ],
 
   adjustment_per_model: {
     _default_ : {
@@ -8313,13 +8328,9 @@ this.motion["PC movement forward"] = Object.assign({
     }
 
   },
-
-  SFX: [
-    { frame:2,  sound:{} }
-   ,{ frame:12, sound:{} }
-  ]
     }
 }, this.motion["PC movement forward"]||{});
+console.log(Object.assign({}, this.motion["PC movement forward"]));
 Object.assign(this.motion["PC movement forward"].para, this.motion["PC movement forward"].para_SA||{});
 delete this.motion["PC movement forward"].para_SA;
 /*
@@ -10117,26 +10128,26 @@ ULDR_id.forEach((id, idx)=>{
       key_map.about_turn = false
       key_map.key_id_cancel_list = ["down"]
       key_map.motion_id = "PC movement forward"
-      key_map.mov_speed = this.motion["PC movement forward"].para._speed
+      Object.defineProperty(key_map, 'mov_speed', { get:()=>this.motion["PC movement forward"].para._speed, });
       key_map.motion_can_float = true
       key_map.TPS_mode = {
   mov_to_rot_absolute: true
  ,key_id_cancel_list: ["down"]
  ,motion_id: "PC movement forward"
- ,mov_speed: [{ frame:0, speed:{x:0, y:0, z: this.motion["PC movement forward"].para._speed} }]
+ ,mov_speed: [{ frame:0, speed:{x:0, y:0, get z() { return MMD_SA_options.Dungeon.motion["PC movement forward"].para._speed; }} }]
       }
       break
     case "down":
       key_map.about_turn = true
       key_map.key_id_cancel_list = ["up"]
       key_map.motion_id = "PC movement forward"
-      key_map.mov_speed = this.motion["PC movement forward"].para._speed
+      Object.defineProperty(key_map, 'mov_speed', { get:()=>this.motion["PC movement forward"].para._speed, });
       key_map.motion_can_float = true
       key_map.TPS_mode = {
   mov_to_rot_absolute: true
  ,key_id_cancel_list: ["up"]
  ,motion_id: "PC movement forward"
- ,mov_speed: [{ frame:0, speed:{x:0, y:0, z:-this.motion["PC movement forward"].para._speed} }]
+ ,mov_speed: [{ frame:0, speed:{x:0, y:0, get z() { return -MMD_SA_options.Dungeon.motion["PC movement forward"].para._speed; }} }]
       }
       break
     case "left":
@@ -10148,7 +10159,7 @@ ULDR_id.forEach((id, idx)=>{
   mov_to_rot_absolute: true
  ,key_id_cancel_list: ["right"]
  ,motion_id: "PC movement forward"
- ,mov_speed: [{ frame:0, speed:{x: this.motion["PC movement forward"].para._speed, y:0, z:0 } }]
+ ,mov_speed: [{ frame:0, speed:{get x() { return MMD_SA_options.Dungeon.motion["PC movement forward"].para._speed; }, y:0, z:0 } }]
       }
       break
     case "right":
@@ -10160,7 +10171,7 @@ ULDR_id.forEach((id, idx)=>{
   mov_to_rot_absolute: true
  ,key_id_cancel_list: ["left"]
  ,motion_id: "PC movement forward"
- ,mov_speed: [{ frame:0, speed:{x:-this.motion["PC movement forward"].para._speed, y:0, z:0 } }]
+ ,mov_speed: [{ frame:0, speed:{get x() { return -MMD_SA_options.Dungeon.motion["PC movement forward"].para._speed; }, y:0, z:0 } }]
       }
       break
   }
@@ -11711,7 +11722,7 @@ const index = msg.index || 0;
 const func = function () {
   if (msg.content) {
     const bubble_index = msg.bubble_index || 0;
-    const para = msg.para || {};
+    let para = msg.para || {};
     if (System._browser.camera.initialized)
       para.always_update = true;
     const duration = (msg.duration) ? msg.duration * 1000 : 0
