@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-06-15)
+// (2023-06-24)
 
 var MMD_SA_options = {
 
@@ -2775,6 +2775,7 @@ if (z_para) {
     motion_default_weight: {
       'head': 1,
       'upper_body': 1,
+      'shoulder': 1,
     },
     hip_adjustment: {
       feet_fixed_weight:1,
@@ -2789,11 +2790,13 @@ if (z_para) {
       transformation: {
         position: {
           y: { unit_length:1, min:'elbow+0' },
+          x: { add:{left:0.1, right:-0}, scale:{left:1.5, right:1} },
         }
       },
       elbow_lock: {
-        left:{},
-        right:{},
+        right:{
+          use_smallest_angle:true
+        },
       },
     },
     arm_as_leg: {
@@ -3542,6 +3545,9 @@ if (mf) {
       }
 
       function change_motion(motion_index_absolute, ignore_event) {
+const model_mesh = THREE.MMD.getModels()[0].mesh;
+if (!model_mesh.visible) return true;
+
 if (ignore_event) {
   if (motion_index_absolute == -1) {
     change_custom_motion();
@@ -3555,9 +3561,6 @@ else if ((motion_index_absolute == null) && !MMD_SA_options.Dungeon.event_mode) 
 else if ((motion_index_absolute != null) && (MMD_SA_options.Dungeon._event_active.id != "_POSE_"))
   return true
 
-var model_mesh = THREE.MMD.getModels()[0].mesh
-if (!model_mesh.visible)
-  return true
 //DEBUG_show(MMD_SA.MMD.motionManager.filename)
 
 if (1) {//MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle_list_default.indexOf(MMD_SA.MMD.motionManager._index) != -1)) {
@@ -3987,14 +3990,14 @@ let info = '';
 if (System._browser.camera.ML_enabled) {
   info =
   '- The current pose '
-+ ((MMD_SA.MMD.motionManager.para_SA.motion_tracking_enabled) ? 'supports ' + ((MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only) ? 'upper-body' : 'full-body') + ' motion tracking.' : 'does not support motion tracking.') + '\n'
++ ((MMD_SA.MMD.motionManager.para_SA.motion_tracking_enabled) ? 'supports ' + ((MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only) ? 'upper-body🙋' : 'full-body💃') + ' motion tracking.' : 'does not support motion tracking.') + '\n'
 + '- Double-click to change the pose of the avatar.\n'
 + '- Use mouse or keys to pick an alphanumeric option.';
 }
 else {
  info =
   '- Double-click to change the pose of the avatar.\n'
-+ '- Choose a suitable pose depending on whether you want a full-body💃 or upper-only🙋 mocap.\n'
++ '- Choose a suitable pose depending on whether you want a full-body💃 or upper-body🙋 mocap.\n'
 + '- 🦶denotes the support of arm-to-leg🙋↔️🦶control mode by pressing Ctrl+Z. Repeat to return to normal mode.\n'
 + '- Use mouse or keys to pick an alphanumeric option.';
 }
@@ -4056,7 +4059,55 @@ return info;
   }
     }
 
-   ,"facemesh" : {
+   ,"facemesh" : (()=>{
+      function mocap_hotkeys(e) {
+const ev = e.detail.e;
+switch (ev.code) {
+  case 'Pause':
+    const camera = System._browser.camera;
+    if (camera.initialized && camera.ML_enabled) {
+      if (mocap_pause_timerID) {
+        clearInterval(mocap_pause_timerID);
+        mocap_pause_timerID = null;
+      }
+
+      if (camera.video.paused) {
+        camera.video.play();
+        camera.DEBUG_show('');
+      }
+      else {
+        mocap_pause_countdown = 3;
+        mocap_pause_timerID = setInterval(()=>{
+          if (--mocap_pause_countdown == 0) {
+            clearInterval(mocap_pause_timerID);
+            mocap_pause_timerID = null;
+
+            camera.video.pause();
+            camera.DEBUG_show('⏸️PAUSED');
+          }
+          else {
+            camera.DEBUG_show('⏸️Pausing in...' + mocap_pause_countdown);
+          }
+        }, 1000);
+
+        camera.DEBUG_show('⏸️Pausing in...' + mocap_pause_countdown);
+      }
+    }
+    break
+  default:
+    return;
+}
+
+e.detail.result.return_value = true;
+      }
+
+      let mocap_pause_timerID, mocap_pause_countdown;
+
+      window.addEventListener('MMDStarted', ()=>{
+        window.addEventListener('SA_keydown', mocap_hotkeys);
+      });
+
+      return {
   icon_path: Settings.f_path + '/assets/assets.zip#/icon/motion-capture_64x64.png'
  ,info_short: "Motion capture"
 // ,is_base_inventory: true
@@ -4099,7 +4150,8 @@ else if (System._browser.camera.ML_enabled) {
   '- To choose a video input, double-click the "Selfie camera" item. You can use a webcam, or drop a local video/picture file.\n';
   }
     info +=
-  '- To record motion while capturing, change options or turn it off, double-click this item.';
+  '- To record motion while capturing, change options or turn it off, double-click this item.\n'
++ '- Press Pause to pause/resume mocap';
 }
 else {
     info +=
@@ -4120,7 +4172,8 @@ SB.message(0, 'You can track your face, ' + ((System._browser.camera.poseNet.use
   }
 // ,onmouseout: function (e) {}
 */
-    }
+      };
+    })()
 
    ,"baseball" : (function () {
       var baseball_started;
@@ -7751,7 +7804,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  content: 'XR Animator (v0.9.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
+  content: 'XR Animator (v0.9.2)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -7965,7 +8018,7 @@ return [
   '・' + get_state('switch_motion') + 'Alt/Ctrl+Num0-9 to switch motion',
   '・' + get_state('switch_motion_control_mode') + 'Ctrl+Z to toggle🙋↔️🦶control mode',
   '・' + get_state('mocap_auto_grounding') + 'Ctrl+G to toggle mocap auto-grounding',
-  '・' + get_state('camera_3D_lock') + 'Ctrl+L to toggle 3D camera lock',
+//  '・' + get_state('camera_3D_lock') + 'Ctrl+L to toggle 3D camera lock',
   '・' + get_state('hand_camera') + 'Ctrl+H to toggle hand camera mode',
   '・' + get_state('auto_look_at_camera') + 'Ctrl+E to toggle auto "look at camera"',
   '1. 🌐Global hotkey mode: ' + ((System._browser.hotkeys.is_global) ? 'ON' : 'OFF'),
@@ -7975,11 +8028,28 @@ return [
   bubble_index: 3,
   para: { no_word_break:true },
   branch_list: [
-    { key:1, event_index:4 },
+    { key:1, event_index:5 },
     { key:2, event_index:99 },
   ]
-          }
+          },
+          next_step: {},
         },
+
+        {
+message: {
+  index: 1,
+  bubble_index: 3,
+  content: [
+'・✔️Ctrl+L to toggle 3D camera lock',
+'・✔️Pause to pause/resume mocap',
+'・✔️F9 to start video capture',
+'・✔️F10 to stop video capture',
+'・✔️F12 to capture still shot',
+
+  ].join('\n')
+}
+        },
+
         {
           func: ()=>{
 System._browser.hotkeys.register_global();
@@ -8055,16 +8125,16 @@ DEBUG_show('✅Settings reset', 3);
           func: function () {
 if (System._browser.camera.initialized) {
   if (!System._browser.camera.ML_warmed_up) {
-    MMD_SA.SpeechBubble.message(0, 'Mocap AI models are still warming up. Try again in a few seconds.', 3*1000)
-    MMD_SA_options.Dungeon.run_event(null,done_branch,0)
+    System._browser.on_animation_update.add(()=>{ MMD_SA.SpeechBubble.message(0, 'Mocap AI models are still warming up. Try again in a few seconds.', 3*1000); }, 0,0);
+    MMD_SA_options.Dungeon.run_event(null,done_branch,0);
   }
   else {
     MMD_SA_options.Dungeon.run_event()
   }
 }
 else {
-  MMD_SA.SpeechBubble.message(0, 'Choose a video input for motion capture first before you can record motion.', 3*1000)
-  MMD_SA_options.Dungeon.run_event(null,done_branch,0)
+  System._browser.on_animation_update.add(()=>{ MMD_SA.SpeechBubble.message(0, 'Choose a video input for motion capture first before you can record motion.', 3*1000); }, 0,0);
+  MMD_SA_options.Dungeon.run_event(null,done_branch,0);
 }
           }
         },
