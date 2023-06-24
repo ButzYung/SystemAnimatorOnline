@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-06-15)
+// (2023-06-24)
 
 var use_full_spectrum = true
 
@@ -8930,15 +8930,13 @@ if (this.use_faceBlendshapes && facemesh.enabled) {
 'EyeLookOutLeft',
 'EyeLookOutRight',
 ]) {
-      const prefix = this.use_faceBlendshapes.substring(1);
-      blendshape_weight[prefix + b] = 0;
+      blendshape_weight[this.faceBlendshapes_map[b]] = 0;
     }
   }
 
   const f = facemesh.frames;
   facemesh.faceBlendshapes_list.forEach(b=>{
-    const prefix = this.use_faceBlendshapes.substring(1);
-    blendshape_weight[prefix + b] = (use_faceBlendshapes && f.morph[b]) ? f.morph[b][0].weight : 0;
+    blendshape_weight[this.faceBlendshapes_map[b]] = (use_faceBlendshapes && f.morph[b]) ? f.morph[b][0].weight : 0;
   });
 }
 
@@ -9008,7 +9006,7 @@ bone.position.x, bone.position.y, -bone.position.z,
       blendshape_weight[name] = v;
   }
   for (const name in blendshape_weight) {
-    const name_for_blendshapes = (use_faceBlendshapes) ? name.replace(/^BlendShape\./, '') : name;
+    const name_for_blendshapes = (use_faceBlendshapes && this.faceBlendshapes_map_reversed[name]) || name;
     morph_msgs.push(MMD_SA.OSC.VMC.Message("/VMC/Ext/Blend/Val",
       [
 // three-vrm 1.0
@@ -9369,11 +9367,31 @@ data.scene.add(mesh_obj);
 
 var vrm_obj = new VRM_object(para.vrm_index, vrm, { url:url_raw });
 
-for (const prefix of ['BlendShape.','']) {
-  if (vrm.expressionManager.expressionMap[prefix+'CheekPuff']) {
-    vrm_obj.use_faceBlendshapes = ' ' + prefix;
-    break;
-  }
+vrm_obj.faceBlendshapes_map = {};
+if (vrm.expressionManager.expressionMap['CheekPuff']) {
+  vrm_obj.use_faceBlendshapes = true;
+  System._browser.camera.facemesh.faceBlendshapes_list.map(b=>{
+    vrm_obj.faceBlendshapes_map[b] = b;
+  });
+}
+else if (vrm.expressionManager.expressionMap['BlendShape.CheekPuff']) {
+  vrm_obj.use_faceBlendshapes = true;
+  System._browser.camera.facemesh.faceBlendshapes_list.map(b=>{
+    vrm_obj.faceBlendshapes_map[b] = 'BlendShape.' + b;
+  });
+}
+else if (vrm.expressionManager.expressionMap['cheekPuff']) {
+  vrm_obj.use_faceBlendshapes = true;
+  System._browser.camera.facemesh.faceBlendshapes_list.map(b=>{
+    vrm_obj.faceBlendshapes_map[b] = b.charAt(0).toLowerCase() + b.substring(1);
+  });
+}
+
+if (vrm_obj.use_faceBlendshapes) {
+  vrm_obj.faceBlendshapes_map_reversed = {};
+  Object.entries(vrm_obj.faceBlendshapes_map).forEach(e=>{
+    vrm_obj.faceBlendshapes_map_reversed[e[1]] = e[0];
+  });
 }
 
 if (!vrm_obj.is_VRM1) mesh_obj.quaternion.set(0,1,0,0);
