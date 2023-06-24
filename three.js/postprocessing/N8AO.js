@@ -1,4 +1,4 @@
-// June 03, 2023
+// June 19, 2023
 
 import {Color as $5Whe3$Color, WebGLRenderTarget as $5Whe3$WebGLRenderTarget, LinearFilter as $5Whe3$LinearFilter, NearestFilter as $5Whe3$NearestFilter, DepthTexture as $5Whe3$DepthTexture, UnsignedIntType as $5Whe3$UnsignedIntType, DepthFormat as $5Whe3$DepthFormat, DataTexture as $5Whe3$DataTexture, NoColorSpace as $5Whe3$NoColorSpace, RepeatWrapping as $5Whe3$RepeatWrapping, Vector2 as $5Whe3$Vector2, WebGLMultipleRenderTargets as $5Whe3$WebGLMultipleRenderTargets, RedFormat as $5Whe3$RedFormat, FloatType as $5Whe3$FloatType, RGBAFormat as $5Whe3$RGBAFormat, HalfFloatType as $5Whe3$HalfFloatType, ShaderMaterial as $5Whe3$ShaderMaterial, Vector3 as $5Whe3$Vector3, BufferGeometry as $5Whe3$BufferGeometry, BufferAttribute as $5Whe3$BufferAttribute, Sphere as $5Whe3$Sphere, OrthographicCamera as $5Whe3$OrthographicCamera, Mesh as $5Whe3$Mesh, Matrix4 as $5Whe3$Matrix4} from "three";
 // AT: path
@@ -128,7 +128,7 @@ void main() {
     #define SAMPLES 16
     #define FSAMPLES 16.0
 uniform sampler2D sceneDiffuse;
-uniform sampler2D sceneNormal;
+uniform highp sampler2D sceneNormal;
 uniform highp sampler2D sceneDepth;
 uniform mat4 projectionMatrixInv;
 uniform mat4 viewMatrixInv;
@@ -178,7 +178,7 @@ uniform sampler2D bluenoise;
       float b = farZ * nearZ / (nearZ - farZ);
       float linDepth = a + b / depth;
       vec4 clipVec = vec4(uv, linDepth, 1.0) * 2.0 - 1.0;
-      vec4 wpos = viewMatrixInv * projectionMatrixInv * clipVec;
+      vec4 wpos = projectionMatrixInv * clipVec;
       return wpos.xyz / wpos.w;
     }
     vec3 getWorldPos(float depth, vec2 coord) {
@@ -189,7 +189,7 @@ uniform sampler2D bluenoise;
       vec4 clipSpacePosition = vec4(coord * 2.0 - 1.0, z, 1.0);
       vec4 viewSpacePosition = projectionMatrixInv * clipSpacePosition;
       // Perspective division
-     vec4 worldSpacePosition = viewMatrixInv * viewSpacePosition;
+     vec4 worldSpacePosition = viewSpacePosition;
      worldSpacePosition.xyz /= worldSpacePosition.w;
       return worldSpacePosition.xyz;
   }
@@ -268,7 +268,7 @@ void main() {
         ;
         float moveAmt = samplesR[int(mod(i + noise.a * FSAMPLES, FSAMPLES))];
         vec3 samplePos = worldPos + radiusToUse * moveAmt * sampleDirection;
-        vec4 offset = projViewMat * vec4(samplePos, 1.0);
+        vec4 offset = projMat * vec4(samplePos, 1.0);
         offset.xyz /= offset.w;
         offset.xyz = offset.xyz * 0.5 + 0.5;
         float sampleDepth = textureLod(sceneDepth, offset.xy, 0.0).x;
@@ -373,6 +373,24 @@ const $12b21d24d1192a04$export$a815acccbd2c9a49 = {
         },
         "distanceFalloff": {
             value: 1.0
+        },
+        "fog": {
+            value: false
+        },
+        "fogExp": {
+            value: false
+        },
+        "fogDensity": {
+            value: 0.0
+        },
+        "fogNear": {
+            value: Infinity
+        },
+        "fogFar": {
+            value: Infinity
+        },
+        "colorMultiply": {
+            value: true
         }
 
 // AT: AO mask
@@ -388,8 +406,8 @@ const $12b21d24d1192a04$export$a815acccbd2c9a49 = {
 		}`,
     fragmentShader: /* glsl */ `
 		uniform sampler2D sceneDiffuse;
-    uniform sampler2D sceneDepth;
-    uniform sampler2D downsampledDepth;
+    uniform highp sampler2D sceneDepth;
+    uniform highp sampler2D downsampledDepth;
     uniform sampler2D tDiffuse;
     uniform sampler2D blueNoise;
     uniform vec2 resolution;
@@ -404,8 +422,15 @@ const $12b21d24d1192a04$export$a815acccbd2c9a49 = {
     uniform bool logDepth;
     uniform bool ortho;
     uniform bool screenSpaceRadius;
+    uniform bool fog;
+    uniform bool fogExp;
+    uniform bool colorMultiply;
+    uniform float fogDensity;
+    uniform float fogNear;
+    uniform float fogFar;
     uniform float radius;
     uniform float distanceFalloff;
+    uniform vec3 cameraPos;
     varying vec2 vUv;
 
 // AT: AO mask
@@ -439,7 +464,7 @@ uniform sampler2D AO_mask_diffuse;
         float b = farZ * nearZ / (nearZ - farZ);
         float linDepth = a + b / depth;
         vec4 clipVec = vec4(uv, linDepth, 1.0) * 2.0 - 1.0;
-        vec4 wpos = viewMatrixInv * projectionMatrixInv * clipVec;
+        vec4 wpos = projectionMatrixInv * clipVec;
         return wpos.xyz / wpos.w;
       }
       vec3 getWorldPos(float depth, vec2 coord) {
@@ -452,7 +477,7 @@ uniform sampler2D AO_mask_diffuse;
         vec4 clipSpacePosition = vec4(coord * 2.0 - 1.0, z, 1.0);
         vec4 viewSpacePosition = projectionMatrixInv * clipSpacePosition;
         // Perspective division
-       vec4 worldSpacePosition = viewMatrixInv * viewSpacePosition;
+       vec4 worldSpacePosition = viewSpacePosition;
        worldSpacePosition.xyz /= worldSpacePosition.w;
         return worldSpacePosition.xyz;
     }
@@ -489,12 +514,11 @@ uniform sampler2D AO_mask_diffuse;
     void main() {
         //vec4 texel = texture2D(tDiffuse, vUv);//vec3(0.0);
         vec4 sceneTexel = texture2D(sceneDiffuse, vUv);
-
-        #ifdef HALFRES 
         float depth = texture2D(
             sceneDepth,
             vUv
         ).x;
+        #ifdef HALFRES 
         vec4 texel;
         if (depth == 1.0) {
             texel = vec4(0.0, 0.0, 0.0, 1.0);
@@ -541,16 +565,33 @@ uniform sampler2D AO_mask_diffuse;
         #endif
 
 // AT: AO mask
+//        float finalAo = pow(texel.a, intensity);
+        float fogFactor;
+        float fogDepth = distance(
+            cameraPos,
+            getWorldPos(depth, vUv)
+        );
+        if (fog) {
+            if (fogExp) {
+                fogFactor = 1.0 - exp( - fogDensity * fogDensity * fogDepth * fogDepth );
+            } else {
+                fogFactor = smoothstep( fogNear, fogFar, fogDepth );
+            }
+        }
+
+// AT: AO mask
 vec4 AO_mask = texture2D(AO_mask_diffuse, vUv);
 float _finalAo = pow(texel.a, intensity);
+_finalAo = mix(_finalAo, 1.0, fogFactor);
 vec3 finalAo = _finalAo + (1.0-_finalAo) * AO_mask.rgb;
-//        float finalAo = pow(texel.a, intensity);
+//        finalAo = mix(finalAo, 1.0, fogFactor);
+        vec3 aoApplied = color * mix(vec3(1.0), sceneTexel.rgb, float(colorMultiply));
         if (renderMode == 0.0) {
 // AT: transparency
 gl_FragColor = vec4( sceneTexel.rgb *finalAo, sceneTexel.a);
-            gl_FragColor = vec4( mix(sceneTexel.rgb, color * sceneTexel.rgb, 1.0 - finalAo), sceneTexel.a);
+//            gl_FragColor = vec4( mix(sceneTexel.rgb, aoApplied, 1.0 - finalAo), sceneTexel.a);
         } else if (renderMode == 1.0) {
-            gl_FragColor = vec4( mix(vec3(1.0), color * sceneTexel.rgb, 1.0 - finalAo), sceneTexel.a);
+            gl_FragColor = vec4( mix(vec3(1.0), aoApplied, 1.0 - finalAo), sceneTexel.a);
         } else if (renderMode == 2.0) {
             gl_FragColor = vec4( sceneTexel.rgb, sceneTexel.a);
         } else if (renderMode == 3.0) {
@@ -559,7 +600,7 @@ gl_FragColor = vec4( sceneTexel.rgb *finalAo, sceneTexel.a);
             } else if (abs(vUv.x - 0.5) < 1.0 / resolution.x) {
                 gl_FragColor = vec4(1.0);
             } else {
-                gl_FragColor = vec4( mix(sceneTexel.rgb, color * sceneTexel.rgb, 1.0 - finalAo), sceneTexel.a);
+                gl_FragColor = vec4( mix(sceneTexel.rgb, aoApplied, 1.0 - finalAo), sceneTexel.a);
             }
         } else if (renderMode == 4.0) {
             if (vUv.x < 0.5) {
@@ -567,7 +608,7 @@ gl_FragColor = vec4( sceneTexel.rgb *finalAo, sceneTexel.a);
             } else if (abs(vUv.x - 0.5) < 1.0 / resolution.x) {
                 gl_FragColor = vec4(1.0);
             } else {
-                gl_FragColor = vec4( mix(vec3(1.0), color * sceneTexel.rgb, 1.0 - finalAo), sceneTexel.a);
+                gl_FragColor = vec4( mix(vec3(1.0), aoApplied, 1.0 - finalAo), sceneTexel.a);
             }
         }
         #include <dithering_fragment>
@@ -696,7 +737,7 @@ const $e52378cd0f5a973d$export$57856b59f317262e = {
      float b = farZ * nearZ / (nearZ - farZ);
      float linDepth = a + b / depth;
      vec4 clipVec = vec4(uv, linDepth, 1.0) * 2.0 - 1.0;
-     vec4 wpos = viewMatrixInv * projectionMatrixInv * clipVec;
+     vec4 wpos = projectionMatrixInv * clipVec;
      return wpos.xyz / wpos.w;
    }
     vec3 getWorldPos(float depth, vec2 coord) {
@@ -708,7 +749,7 @@ const $e52378cd0f5a973d$export$57856b59f317262e = {
         vec4 clipSpacePosition = vec4(coord * 2.0 - 1.0, z, 1.0);
         vec4 viewSpacePosition = projectionMatrixInv * clipSpacePosition;
         // Perspective division
-       vec4 worldSpacePosition = viewMatrixInv * viewSpacePosition;
+       vec4 worldSpacePosition = viewSpacePosition;
        worldSpacePosition.xyz /= worldSpacePosition.w;
         return worldSpacePosition.xyz;
     }
@@ -725,6 +766,10 @@ const $e52378cd0f5a973d$export$57856b59f317262e = {
         vec3 normal = data.rgb * 2.0 - 1.0;
         float count = 1.0;
         float d = texture2D(sceneDepth, vUv).x;
+        if (d == 1.0) {
+          gl_FragColor = data;
+          return;
+        }
         vec3 worldPos = getWorldPos(d, vUv);
         float size = radius;
         float angle;
@@ -757,7 +802,7 @@ const $e52378cd0f5a973d$export$57856b59f317262e = {
             float dSample = texture2D(sceneDepth, uv + offset).x;
             vec3 worldPosSample = getWorldPos(dSample, uv + offset);
             float tangentPlaneDist = abs(dot(worldPos - worldPosSample, normal));
-            float rangeCheck = exp(-1.0 * tangentPlaneDist * (1.0 / distanceFalloffToUse)) * max(dot(normal, normalSample), 0.0) * (1.0 - abs(occSample - baseOcc));
+            float rangeCheck = dSample == 1.0 ? 0.0 :exp(-1.0 * tangentPlaneDist * (1.0 / distanceFalloffToUse)) * max(dot(normal, normalSample), 0.0) * (1.0 - abs(occSample - baseOcc));
             occlusion += occSample * rangeCheck;
             count += rangeCheck;
         }
@@ -800,7 +845,7 @@ const $26aca173e0984d99$export$1efdf491687cd442 = {
         gl_Position = vec4(position, 1);
     }`,
     fragmentShader: /* glsl */ `
-    uniform sampler2D sceneDepth;
+    uniform highp sampler2D sceneDepth;
     uniform vec2 resolution;
     uniform float near;
     uniform float far;
@@ -819,7 +864,7 @@ const $26aca173e0984d99$export$1efdf491687cd442 = {
         float b = farZ * nearZ / (nearZ - farZ);
         float linDepth = a + b / depth;
         vec4 clipVec = vec4(uv, linDepth, 1.0) * 2.0 - 1.0;
-        vec4 wpos = viewMatrixInv * projectionMatrixInv * clipVec;
+        vec4 wpos = projectionMatrixInv * clipVec;
         return wpos.xyz / wpos.w;
       }
       vec3 getWorldPos(float depth, vec2 coord) {
@@ -830,7 +875,7 @@ const $26aca173e0984d99$export$1efdf491687cd442 = {
         vec4 clipSpacePosition = vec4(coord * 2.0 - 1.0, z, 1.0);
         vec4 viewSpacePosition = projectionMatrixInv * clipSpacePosition;
         // Perspective division
-       vec4 worldSpacePosition = viewMatrixInv * viewSpacePosition;
+       vec4 worldSpacePosition = viewSpacePosition;
        worldSpacePosition.xyz /= worldSpacePosition.w;
         return worldSpacePosition.xyz;
     }
@@ -1016,8 +1061,13 @@ class $05f6997e4b65da14$export$2d57db20b5eb5e0a extends (0, $5Whe3$Pass) {
          * denoiseIterations: number,
          * renderMode: 0 | 1 | 2 | 3 | 4,
          * color: THREE.Color,
-         * gammaCorrection: Boolean,
-         * logarithmicDepthBuffer: Boolean
+         * gammaCorrection: boolean,
+         * logarithmicDepthBuffer: boolean
+         * screenSpaceRadius: boolean,
+         * halfRes: boolean,
+         * depthAwareUpsampling: boolean,
+         * autoRenderBeauty: boolean
+         * colorMultiply: boolean
          * }
          */ this.configuration = new Proxy({
             aoSamples: 16,
@@ -1033,7 +1083,9 @@ class $05f6997e4b65da14$export$2d57db20b5eb5e0a extends (0, $5Whe3$Pass) {
             logarithmicDepthBuffer: false,
             screenSpaceRadius: false,
             halfRes: false,
-            depthAwareUpsampling: true
+            depthAwareUpsampling: true,
+            autoRenderBeauty: true,
+            colorMultiply: true
         }, {
             set: (target, propName, value)=>{
                 const oldProp = target[propName];
@@ -1056,7 +1108,6 @@ class $05f6997e4b65da14$export$2d57db20b5eb5e0a extends (0, $5Whe3$Pass) {
         this.configureEffectCompositer(this.configuration.logarithmicDepthBuffer);
         this.configureSampleDependentPasses();
         this.configureHalfResTargets();
-        //  this.effectCompisterQuad = new FullScreenTriangle(new THREE.ShaderMaterial(EffectCompositer));
         this.beautyRenderTarget = new $5Whe3$WebGLRenderTarget(this.width, this.height, {
             minFilter: $5Whe3$LinearFilter,
             magFilter: $5Whe3$NearestFilter
@@ -1236,7 +1287,6 @@ this._materials = {};
         this.writeTargetInternal.setSize(width * c, height * c);
         this.readTargetInternal.setSize(width * c, height * c);
         if (this.configuration.halfRes) this.depthDownsampleTarget.setSize(width * c, height * c);
-
 // AT: AO mask
 this._AO_mask.setSize(width, height);
     }
@@ -1258,8 +1308,10 @@ this._AO_mask.setSize(width, height);
                 this.debugMode = false;
             }
         }
-        renderer.setRenderTarget(this.beautyRenderTarget);
-        renderer.render(this.scene, this.camera);
+        if (this.configuration.autoRenderBeauty) {
+            renderer.setRenderTarget(this.beautyRenderTarget);
+            renderer.render(this.scene, this.camera);
+        }
         if (this.debugMode) {
             timerQuery = gl.createQuery();
             gl.beginQuery(ext.TIME_ELAPSED_EXT, timerQuery);
@@ -1321,7 +1373,7 @@ this.effectCompositerQuad.material.uniforms['AO_mask_diffuse'].value = this._AO_
         this.effectShaderQuad.material.uniforms["projViewMat"].value = this.camera.projectionMatrix.clone().multiply(this.camera.matrixWorldInverse.clone());
         this.effectShaderQuad.material.uniforms["projectionMatrixInv"].value = this.camera.projectionMatrixInverse;
         this.effectShaderQuad.material.uniforms["viewMatrixInv"].value = this.camera.matrixWorld;
-        this.effectShaderQuad.material.uniforms["cameraPos"].value = this.camera.position;
+        this.effectShaderQuad.material.uniforms["cameraPos"].value = this.camera.getWorldPosition(new $5Whe3$Vector3());
         this.effectShaderQuad.material.uniforms["resolution"].value = this.configuration.halfRes ? this._r.clone().multiplyScalar(0.5).floor() : this._r;
         this.effectShaderQuad.material.uniforms["time"].value = performance.now() / 1000;
         this.effectShaderQuad.material.uniforms["samples"].value = this.samples;
@@ -1350,7 +1402,7 @@ this.effectCompositerQuad.material.uniforms['AO_mask_diffuse'].value = this._AO_
             this.poissonBlurQuad.material.uniforms["viewMat"].value = this.camera.matrixWorldInverse;
             this.poissonBlurQuad.material.uniforms["projectionMatrixInv"].value = this.camera.projectionMatrixInverse;
             this.poissonBlurQuad.material.uniforms["viewMatrixInv"].value = this.camera.matrixWorld;
-            this.poissonBlurQuad.material.uniforms["cameraPos"].value = this.camera.position;
+            this.poissonBlurQuad.material.uniforms["cameraPos"].value = this.camera.getWorldPosition(new $5Whe3$Vector3());
             this.poissonBlurQuad.material.uniforms["resolution"].value = this.configuration.halfRes ? this._r.clone().multiplyScalar(0.5).floor() : this._r;
             this.poissonBlurQuad.material.uniforms["time"].value = performance.now() / 1000;
             this.poissonBlurQuad.material.uniforms["blueNoise"].value = this.bluenoise;
@@ -1388,6 +1440,19 @@ this.effectCompositerQuad.material.uniforms['AO_mask_diffuse'].value = this._AO_
         this.effectCompositerQuad.material.uniforms["gammaCorrection"].value = this.configuration.gammaCorrection;
         this.effectCompositerQuad.material.uniforms["tDiffuse"].value = this.writeTargetInternal.texture;
         this.effectCompositerQuad.material.uniforms["color"].value = this._c.copy(this.configuration.color).convertSRGBToLinear();
+        this.effectCompositerQuad.material.uniforms["colorMultiply"].value = this.configuration.colorMultiply;
+        this.effectCompositerQuad.material.uniforms["cameraPos"].value = this.camera.getWorldPosition(new $5Whe3$Vector3());
+        this.effectCompositerQuad.material.uniforms["fog"].value = !!this.scene.fog;
+        if (this.scene.fog) {
+            if (this.scene.fog.isFog) {
+                this.effectCompositerQuad.material.uniforms["fogExp"].value = false;
+                this.effectCompositerQuad.material.uniforms["fogNear"].value = this.scene.fog.near;
+                this.effectCompositerQuad.material.uniforms["fogFar"].value = this.scene.fog.far;
+            } else if (this.scene.fog.isFogExp2) {
+                this.effectCompositerQuad.material.uniforms["fogExp"].value = true;
+                this.effectCompositerQuad.material.uniforms["fogDensity"].value = this.scene.fog.density;
+            } else console.error(`Unsupported fog type ${this.scene.fog.constructor.name} in SSAOPass.`);
+        }
         renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer);
         this.effectCompositerQuad.render(renderer);
         if (this.debugMode) {
