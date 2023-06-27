@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-06-24)
+// (2023-06-27)
 
 var MMD_SA_options = {
 
@@ -2153,7 +2153,7 @@ if (diff > 0) {
           x: { unit_length:1, add:1.5, min:-4, max:4, scale:1 },
           y: { unit_length:1, add:1, min:0, scale:1 },
           z: { unit_length:1, min:2, max:2 },
-          len_max: 99,
+          length_max: 99,
 //          length_min: 0.5,
 //          camera_weight: 0.75,
 
@@ -2231,7 +2231,7 @@ if (diff > 0) {
           x: { unit_length:1, add:{"left":8,"right":-8}, min:{"left":-0.25,"right":-8}, max:{"left":8,"right":0.25}, scale: 1 },
           y: { unit_length:1, add:1, min:0, scale:1 },
           z: { unit_length:1, min:2, max:2 },
-          len_max: 99,
+          length_max: 99,
 //          length_min: 0.5,
 //          camera_weight: 0.75,
 
@@ -2485,7 +2485,7 @@ if (z_para) {
           x: { add:-0.3, max:-0.1, scale:3 },
           y: { unit_length:1, add:-1.5, min:0.5, scale:2 },
           z: { add:-0.3, min:0.1, scale:3 },
-          len_max: 1.2,
+          length_max: 1.2,
           length_min: 0.5,
 //          camera_weight: 0.75,
         },
@@ -2563,7 +2563,7 @@ if (z_para) {
           x: { unit_length:1, add:{"left":-1.0,"right":1.0}, min:{"left":-0.25,"right":-4}, max:{"left":4,"right":0.25}, scale: 1 },
           y: { unit_length:1, add:1, min:0, scale:1 },
           z: { unit_length:1, min:2, max:2 },
-          len_max: 99,
+          length_max: 99,
 //          length_min: 0.5,
 //          camera_weight: 0.75,
 
@@ -2643,7 +2643,7 @@ if (z_para) {
           x: { unit_length:1, add:1.5, min:-4, max:4, scale:1 },
           y: { unit_length:1, add:1, min:0, scale:1 },
           z: { unit_length:1, min:2, max:2 },
-          len_max: 99,
+          length_max: 99,
 //          length_min: 0.5,
 //          camera_weight: 0.75,
 
@@ -2715,7 +2715,7 @@ if (z_para) {
           y: { unit_length:1, add:-2.5, min:'default+0', scale:2 },
           z: { unit_length:1, add:-4, min:'default+0', scale:2 },
           camera_weight: 0.5,
-//          len_max: 1.2,
+//          length_max: 1.2,
 //          length_min: 0.5,
         },
       },
@@ -2729,7 +2729,7 @@ if (z_para) {
           x: { unit_length:1, add:{left:-1, right:1}, min:{left:0, right:-4}, max:{left:4, right:0}, scale:1 },
           y: { unit_length:1, add:1, min:0, scale:2 },
           z: { unit_length:1, min:2, max:2 },
-          len_max: 99,
+          length_max: 99,
 //          length_min: 0.5,
 //          camera_weight: 0.75,
 
@@ -2807,7 +2807,7 @@ if (z_para) {
           x: { add:0.2, min:0, scale:3 },
           y: { add:0.2, min:0, scale:3 },
           z: { min:0, scale:3 },
-          len_max: 1.2,
+          length_max: 1.2,
           length_min: 0.4,
 //          camera_weight: 0.75,
         },
@@ -3798,7 +3798,7 @@ _motion_list[0] = [
 
   {name:"i-shaped_balance_TDA_f0-50", info:"I-shaped balance (🙋)"},
 
-  {name:"leg_hold", info:"???", _MMD_only_:true},
+//  {name:"leg_hold", info:"???", _MMD_only_:true},
 
   {name:"Mixamo - Sitting02", info:"Sit 01 (🙋/🦶)"},
 
