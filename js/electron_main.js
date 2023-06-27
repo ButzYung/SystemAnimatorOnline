@@ -1,5 +1,5 @@
 // SA Electron - Main EXTENDED
-// (2023-04-10)
+// (2023-06-27)
 
 /*
 eval on Electron v1.6.x has some scope issues/bugs which makes the global variables on this script inaccessible inside functions.
@@ -27,16 +27,18 @@ app.commandLine.appendSwitch('disable-site-isolation-trials');
 
 app.commandLine.appendSwitch('enable-features','SharedArrayBuffer');
 
-//app.commandLine.appendSwitch('js-flags', '--experimental-wasm-simd');
+app.commandLine.appendSwitch("ignore-gpu-blocklist");
 
+//app.commandLine.appendSwitch('js-flags', '--experimental-wasm-simd');
 
 // https://github.com/electron/electron/issues/2170
 // transparency on Linux is broken, disabled for now
+// NOTE: It seems the latest version electron supports transparent window without any flags
 /*
 if (linux_mode) {
-  app.disableHardwareAcceleration()
-  app.commandLine.appendSwitch("disable-gpu")
-  app.commandLine.appendSwitch("enable-transparent-visuals")
+//  app.disableHardwareAcceleration()
+//  app.commandLine.appendSwitch("disable-gpu")
+//  app.commandLine.appendSwitch("enable-transparent-visuals")
 //  app.commandLine.appendSwitch("force-cpu-draw")
 }
 */
@@ -108,8 +110,8 @@ app.on('ready', function() {
   }
 
   if (linux_mode) {
-    global.is_natural_opaque = true
-    global.is_transparent = false
+//    global.is_natural_opaque = true
+//    global.is_transparent = false
   }
 
   var p = process.argv.slice(1)
