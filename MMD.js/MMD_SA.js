@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-06-24)
+// (2023-06-27)
 
 var use_full_spectrum = true
 
@@ -1153,7 +1153,12 @@ const sb_func = async function () {
       path = LABEL_LoadSettings("LABEL_3D_model_path", "");
       if (path && FSO_OBJ.FileExists(path)) {
         const response = await fetch(toFileProtocol(path));
-        blob = await response.blob();
+        if (linux_mode) {
+          blob = new Blob([await response.arrayBuffer()]);
+        }
+        else {
+          blob = await response.blob();
+        }
       }
     }
     else {
