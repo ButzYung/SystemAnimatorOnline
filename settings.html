@@ -492,8 +492,8 @@ System.Gadget.onSettingsClosing = SettingsClosing;
   if (!windows_mode) {
     toggleElement(T_AutoIt)
     toggleElement(L_EnforceWSH)
-    toggleElement(T_XUL)
-    toggleElement(T_HTA)
+//    toggleElement(T_XUL)
+//    toggleElement(T_HTA)
   }
   if (!use_SA_browser_mode) {
     toggleElement(T_HTA_XUL)
@@ -1119,16 +1119,16 @@ function createAnimationShortcut() {
   var script_name = 'SA' + System.Gadget.version.replace(/\..+$/, "") + ' - ' + parent_window.Settings.f_path.replace(/^.+[\/\\]/, "")
 
   if (linux_mode) {
-    var webkit_shortcut
+    let webkit_shortcut;
     if (electronRegisterCheck()) {
-      webkit_shortcut = process.env.HOME + "/Documents/system-animator"
+      webkit_shortcut = SA_require('process').env.HOME + "/Documents/system-animator";
     }
     else {
       SA_alert('NOTE: You have not registered System Animator to the OS. The current Electron path will be used to create the animation shortcut, which may become broken whenever Electron is upgraded in the future. Registration ensures that all animation shortcuts will remain valid as long as you register System Animator again whenever you upgrade Electron.\n\nTo register System Animator, go to the "Mode" tab and click the corresponding button.');
       webkit_shortcut = webkit_path.replace(/[\/\\][^\/\\]+$/, "");
     }
 
-    var data = [
+    let data = [
   '[Desktop Entry]'
  ,'Version=1.0'
  ,'Name=' + script_name
@@ -1140,9 +1140,9 @@ function createAnimationShortcut() {
  ,'Categories=Utility;Application;'
     ];
 //console.log(data)
-    var shortcut_path = process.env.HOME + "/Desktop/" + script_name + ".desktop";
+    let shortcut_path = SA_require('process').env.HOME + "/Desktop/" + script_name + ".desktop";
 
-    var fs = SA_require('fs');
+    const fs = SA_require('fs');
 // use parseInt to avoid problems for older browsers (0o777)
     fs.writeFileSync(shortcut_path, data.join("\n"), {mode: parseInt("777",8)});
 
@@ -1511,7 +1511,7 @@ function electronRegister() {
 
 // https://superuser.com/questions/167221/can-i-add-a-shortcut-to-replace-a-path-in-linux
 // Symbolic Links
-    var SA_link = process.env.HOME + "/Documents/system-animator"
+    const SA_link = SA_require('process').env.HOME + "/Documents/system-animator";
     if (electronRegisterCheck()) {
       FSO_OBJ.DeleteFile(SA_link)
       B_electron_register.value = "Register System Animator"
@@ -1521,9 +1521,9 @@ function electronRegister() {
       if (FSO_OBJ.FileExists(SA_link))
         FSO_OBJ.DeleteFile(SA_link)
 
-      var webkit_folder = webkit_path.replace(/[\/\\][^\/\\]+$/, "")
+      const webkit_folder = webkit_path.replace(/[\/\\][^\/\\]+$/, "");
       SA_require('child_process').exec('ln -s "' + webkit_folder + '" ' + SA_link)
-      B_electron_register.value = "Unregister System Animator"
+      B_electron_register.value = "Unregister System Animator";
       SA_alert(
   "System Animator has been registered.\n\n"
 + "Symbolic link:\n"
@@ -1540,7 +1540,7 @@ function electronRegisterCheck() {
     return false
 
   if (windows_mode) {
-    var registered
+    let registered;
     try {
       registered = webkit_electron_remote.app.isDefaultProtocolClient("system-animator")
     }
@@ -1548,9 +1548,10 @@ function electronRegisterCheck() {
     return registered
   }
   else if (linux_mode) {
-    var SA_link = process.env.HOME + "/Documents/system-animator"
+    const SA_link = SA_require('process').env.HOME + "/Documents/system-animator";
     if (FSO_OBJ.FileExists(SA_link)) {
-      var result = SA_require('child_process').execSync('readlink -f ' + SA_link)
+      const result = SA_require('fs').readlinkSync(SA_link);
+//      const result = SA_require('child_process').execSync('readlink -f ' + SA_link);
       return (result && (webkit_path.indexOf(result.toString().replace(/\s+$/, "")) == 0))
     }
     return false
@@ -2826,7 +2827,7 @@ function createAnimationHost() {
     desktop_path = (xul_mode) ? XPCOM_object._getSpecialPath("Desk") : System.Environment.getEnvironmentVariable("USERPROFILE") + '\\Desktop';
   }
   else if (linux_mode) {
-    desktop_path = process.env.HOME + "/Desktop"
+    desktop_path = SA_require('process').env.HOME + "/Desktop"
   }
   var path_parent = desktop_path + toLocalPath('\\SA') + System.Gadget.version.replace(/\..+$/, "") + ' - Animation Host '
 
