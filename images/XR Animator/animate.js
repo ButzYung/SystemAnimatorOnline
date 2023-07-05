@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-06-27)
+// (2023-07-06)
 
 var MMD_SA_options = {
 
@@ -3928,10 +3928,19 @@ return _motion_list[index].slice(ini, ini+9).map((m,i) => { return { key:i+1, ev
 message: {
   index: 1,
   bubble_index: 3,
-  get content() { return ((_motion_page <= 1) ? '・Hotkeys: ' + ((_motion_page == 0) ? 'Alt' : 'Ctrl') + '+Numpad' + ((_has_custom_animation_) ? 0 : 1) + '-9\n' : '') + '・Drop motion config JSON to apply changes to parameters.\nA. Next 9 motions\nB. Export motion config JSON\n\nC. Push motion to list front\nD. Reset list order\nE. Clear custom motion\nX. Done'; },
+  para: { row_max:11 },
+  get content() { return ((_motion_page <= 1) ? '・Hotkeys: ' + ((_motion_page == 0) ? 'Alt' : 'Ctrl') + '+Numpad' + ((_has_custom_animation_) ? 0 : 1) + '-9\n' : '・Drop motion config JSON to apply changes to parameters.') + '\nA. Next 9 motions\nB. Shoulder adjust: ' + (MMD_SA.THREEX.shoulder_adjust||'Default') + '\nC. Push motion to list front\nD. Reset list order\nE. Clear custom motion\nF. Export motion config JSON\n\nX. Done'; },
   branch_list: [
     { key:'A', event_id:{ func:()=>{ _motion_page++ }, goto_event:{id:'_POSE_',branch_index:0} } },
-    { key:'B', event_id:{ func:()=>{ export_motion_config() }, goto_event:{id:'_POSE_',branch_index:0} } },
+    { key:'B', event_id:{ func:()=>{
+const para = ['Full', '', 'Upper half', 'None'];
+let index = (para.indexOf(MMD_SA.THREEX.shoulder_adjust||'')) + 1;
+if (index >= para.length)
+  index = 0;
+MMD_SA.THREEX.shoulder_adjust = para[index];
+System._browser.camera.DEBUG_show('NOTE: Restart the app for changes to apply to existing motions and poses.', 5);
+      }, goto_event:{id:'_POSE_',branch_index:0} }
+    },
     { key:'C', event_id:{ func:()=>{ push_motion_to_list_front() }, goto_event:{id:'_POSE_',branch_index:0} } },
     { key:'D', event_id:{ func:()=>{ reset_list_order() }, goto_event:{id:'_POSE_',branch_index:0} } },
     { key:'E', event_id:{
@@ -3946,6 +3955,7 @@ message: {
         },
       }
     },
+    { key:'F', event_id:{ func:()=>{ export_motion_config() }, goto_event:{id:'_POSE_',branch_index:0} } },
     { key:'X', event_id:{ next_step:{} } },
   ]
 }
@@ -7804,7 +7814,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  content: 'XR Animator (v0.9.5)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
+  content: 'XR Animator (v0.9.6)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -8937,6 +8947,8 @@ config.hotkeys = {
 config.camera_face_locking = MMD_SA_options.camera_face_locking;
 config.audio_visualizer = MMD_SA_options.use_CircularSpectrum;
 
+config.shoulder_adjust = MMD_SA.THREEX.shoulder_adjust;
+
 const vc = System._browser.video_capture;
 config.video_capture = {
   target_width: vc.target_width,
@@ -8976,6 +8988,16 @@ System.Gadget.Settings.writeString('LABEL_XRA_settings', JSON.stringify(config))
   });
 
   MMD_SA_options._XRA_settings_import = async (config)=>{
+function shoulder_adjust(p) {
+  MMD_SA.THREEX.shoulder_adjust = config[p];
+
+  const rot_shoulder_axis = MMD_SA.THREEX._rot_shoulder_axis;
+  if (!rot_shoulder_axis[1])
+    rot_shoulder_axis[1] = {};
+  rot_shoulder_axis[1][ 1] = new THREE.Quaternion().setFromEuler(MMD_SA.THREEX.e1.set(0, 0, ((!MMD_SA.THREEX.shoulder_adjust)?12.5*0.5:((MMD_SA.THREEX.shoulder_adjust=='Full')?12.5:0)) /180*Math.PI));
+  rot_shoulder_axis[1][-1] = rot_shoulder_axis[1][ 1].clone().conjugate();
+}
+
 try {
   if (!config) {
     config = System.Gadget.Settings.readString('LABEL_XRA_settings');
@@ -8984,8 +9006,24 @@ try {
     config = JSON.parse(decodeURIComponent(config));
   }
 
+  if (!MMD_SA.MMD_started) {
+    for (const p in config) {
+      switch (p) {
+        case 'shoulder_adjust':
+          shoulder_adjust(p);
+          break;
+      }
+    }
+//shoulder_adjust('shoulder_adjust');
+    return;
+  }
+
   for (const p in config) {
     switch (p) {
+      case 'shoulder_adjust':
+        shoulder_adjust(p);
+        break;
+
       case 'user_camera':
         Object.assign(MMD_SA_options.user_camera.pixel_limit, config[p].pixel_limit);
         MMD_SA_options.user_camera.display.video.hidden = config[p].display.video.hidden;
@@ -9070,6 +9108,10 @@ catch (err) {
   System.Gadget.Settings.writeString('LABEL_XRA_settings', '');
 }
   }
+
+  window.addEventListener('jThree_ready', ()=>{
+MMD_SA_options._XRA_settings_import();
+  });
 
   window.addEventListener('MMDStarted', ()=>{
     System._browser.on_animation_update.add(()=>{
