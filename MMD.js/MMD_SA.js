@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-06-27)
+// (2023-07-06)
 
 var use_full_spectrum = true
 
@@ -7874,8 +7874,16 @@ rot_arm_axis[ 1] = new THREE.Quaternion().setFromEuler(e1.set(0,0,37.4224/180*Ma
 rot_arm_axis[-1] = rot_arm_axis[ 1].clone().conjugate();
 
 // 14.3594, 12.5
-rot_shoulder_axis[ 1] = new THREE.Quaternion().setFromEuler(e1.set(0,0,12.5/180*Math.PI));
-rot_shoulder_axis[-1] = rot_shoulder_axis[ 1].clone().conjugate();
+// convert_T_pose_rotation_to_A_pose
+rot_shoulder_axis[0] = {};
+rot_shoulder_axis[0][ 1] = new THREE.Quaternion().setFromEuler(e1.set(0,0,12.5/180*Math.PI));
+rot_shoulder_axis[0][-1] = rot_shoulder_axis[0][ 1].clone().conjugate();
+// convert_A_pose_rotation_to_T_pose
+if (!rot_shoulder_axis[1]) {
+  rot_shoulder_axis[1] = {};
+  rot_shoulder_axis[1][ 1] = new THREE.Quaternion().setFromEuler(e1.set(0,0,12.5*0.5 /180*Math.PI));
+  rot_shoulder_axis[1][-1] = rot_shoulder_axis[1][ 1].clone().conjugate();
+}
     };
   })();
 
@@ -9550,6 +9558,8 @@ SLX.style.visibility = ( enabled) ? 'inherit' : 'hidden';
 
     get use_OutlineEffect() { return data.OutlineEffect && (use_OutlineEffect || VRM.use_OutlineEffect); },
     set use_OutlineEffect(v) { use_OutlineEffect = v; },
+
+    get _rot_shoulder_axis() { return rot_shoulder_axis; },
 
     get models() { return models; },
     get models_dummy() { return models_dummy; },
@@ -11633,7 +11643,8 @@ if (RegExp.$3.indexOf('捩') != -1) {
 // NOTE: May need to be calculated in the future since this may affect MMD_SA.get_bone_position()/.get_bone_position() calculations...?
 }
 else if (RegExp.$3.indexOf('+') == -1) {
-  const rot_axis = (RegExp.$2 == '肩') ? rot_shoulder_axis : rot_arm_axis;//rot_arm_axis;//
+  const rs = rot_shoulder_axis[(sign_inverted) ? 0 : 1];
+  const rot_axis = (RegExp.$2 == '肩') ? rs : rot_arm_axis;//rot_arm_axis;//
 
 // NOTE: It seems rotating the axis of rot by q is the same as (q x rot x -q)
 //  const aa = q1.toAxisAngle(); q1.setFromAxisAngle(aa[0].applyQuaternion(rot_axis[dir]), aa[1])
@@ -11641,10 +11652,10 @@ else if (RegExp.$3.indexOf('+') == -1) {
 
   if (RegExp.$2 == '腕') {
     q1.premultiply(rot_arm_axis[-dir]);
-    if (!RegExp.$3) q1.premultiply(rot_shoulder_axis[dir]);
+    if (!RegExp.$3) q1.premultiply(rs[dir]);
   }
   else if (RegExp.$2 == '肩') {
-    if (!RegExp.$3) q1.premultiply(rot_shoulder_axis[-dir]);
+    if (!RegExp.$3) q1.premultiply(rs[-dir]);
   }
 }
 
