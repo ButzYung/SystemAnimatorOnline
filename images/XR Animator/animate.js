@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-07-06)
+// (2023-07-07)
 
 var MMD_SA_options = {
 
@@ -7814,7 +7814,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  content: 'XR Animator (v0.9.6)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
+  content: 'XR Animator (v0.9.7)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -7978,8 +7978,8 @@ setTimeout(()=>{
     { key:1, event_index:3 },
     { key:2, event_index:1 },
     { key:3, event_index:2 },
-    { key:4, event_index:5 },
-    { key:5, event_index:6 },
+    { key:4, event_index:6 },
+    { key:5, event_index:7 },
     { key:6, event_index:99 },
   ],
           }
@@ -8059,14 +8059,14 @@ message: {
   ].join('\n')
 }
         },
-
+// 5
         {
           func: ()=>{
 System._browser.hotkeys.register_global();
           },
           goto_event: { event_index:3 },
         },
-// 5
+// 6
         {
           func: ()=>{
 const config = MMD_SA_options._XRA_settings_export();
@@ -8075,18 +8075,18 @@ System._browser.save_file('XRA_settings.json', json, 'application/json');
           },
           ended: true,
         },
-// 6
+// 7
         {
           message: {
   content: 'This will reset all XR Animator settings to the default. Are you sure?\n1. Yes\n2. No',
   bubble_index: 3,
   branch_list: [
-    { key:1, event_index:7 },
+    { key:1, event_index:8 },
     { key:2, event_index:99 },
   ],
           }
         },
-// 7
+// 8
         {
           func: (()=>{
             const XRA_settings_default = {
@@ -8111,6 +8111,7 @@ System._browser.save_file('XRA_settings.json', json, 'application/json');
 			"is_global": true
 		},
 		"audio_visualizer": true,
+		"camera_face_locking": null,
 		"video_capture": {},
 		"pose": {}
 	}
