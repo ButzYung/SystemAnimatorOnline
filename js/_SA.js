@@ -1,6 +1,6 @@
 /*
 
-_SA.js (2023-03-31)
+_SA.js (2023-07-07)
 
 System Animator
 (c) Butz Yung / Anime Theme. All rights reserved.
@@ -372,6 +372,8 @@ sb.onmousemove_custom = this._resize
 sb.onmouseup_custom = this._resize_finish
 sb.showFocus(true)
 
+LbuttonResize._scale = 1;
+
 DEBUG_show("(resizing)", 2)
     }
 
@@ -397,7 +399,7 @@ sb._drag_disabled = false
 sb.showFocus(false)
 
 var use_EQP_size_scale = (self.EQP_size_scale && !self.EQP_video_options)
-var zoom = (use_EQP_size_scale) ? EQP_size_scale : SA_zoom
+var zoom = (use_EQP_size_scale) ? EQP_size_scale : ((self.MMD_SA_options && !Settings.CSSTransformFullscreen) ? Math.max(B_content_width/MMD_SA_options.width, B_content_height/MMD_SA_options.height) : SA_zoom);
 
 var scale = LbuttonResize._scale = Math.round(LbuttonResize._scale*zoom*1000)/1000
 if (is_SA_child_animation_host && is_SA_child_animation) {
@@ -407,7 +409,7 @@ if (is_SA_child_animation_host && is_SA_child_animation) {
   resize(true)
   return
 }
-
+//DEBUG_show(zoom+'=>'+scale)
 System.Gadget.Settings.writeString("CSSTransformScale", scale)
 Settings.CSSTransformScale = SA_zoom = scale
 
