@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-07-06)
+// (2023-07-13)
 
 var use_full_spectrum = true
 
@@ -1707,7 +1707,7 @@ function _finalize() {
 
 function _vmd(vmd_components) {
   function _vmd_loaded( vmd ) {
-    index = MMD_SA_options.motion.length;
+    index = MMD_SA_options.motion_index_by_name[name_new] || MMD_SA_options.motion.length;
     vmd._index = index;
 
     vmd_components && vmd_components.forEach(_vmd=>{
@@ -1737,7 +1737,7 @@ function _vmd(vmd_components) {
   model._VMD(src, _vmd_loaded);
 }
 
-if (MMD_SA_options.motion_index_by_name[name_new] != null) {
+if (MMD_SA.motion[MMD_SA_options.motion_index_by_name[name_new]]) {
   resolve_func();
 }
 //else if (MMD_SA.vmd_by_filename[name_new]) { _finalize(); }
