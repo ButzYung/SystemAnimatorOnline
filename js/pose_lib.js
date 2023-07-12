@@ -123,9 +123,6 @@ postMessageAT('OK')
 
   var posenet_initialized, handpose_initialized, holistic_initialized, human_initialized;
   async function load_lib(options) {
-if (options.model_quality != null)
-  pose_model_quality = options.model_quality || '';
-
 if (options.use_holistic && !holistic_initialized) {
   await load_scripts('@mediapipe/holistic/holistic.js');
 
@@ -135,6 +132,7 @@ return _PoseAT.path_adjusted('@mediapipe/holistic/' + file);
 //return `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`;
     }});
 
+    pose_model_quality = options.model_quality || '';
     holistic.setOptions({
 modelComplexity: (pose_model_quality == 'Best') ? 2 : 1,
 smoothLandmarks: true,
@@ -263,6 +261,7 @@ const timerID = setInterval(()=>{
 path_adjusted('@mediapipe/tasks/tasks-vision/wasm')
     );
 
+    pose_model_quality = options.model_quality || '';
     pose_landmarker = await PoseLandmarker.createFromOptions(
 vision,
 {
