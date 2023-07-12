@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-07-07)
+// (2023-07-13)
 
 var MMD_SA_options = {
 
@@ -3544,6 +3544,17 @@ if (mf) {
 //DEBUG_show(Date.now()+":"+MMD_SA._custom_morph.length)
       }
 
+      let motion_loading = false;
+      async function load_motion(index) {
+// save some headaches and not using motion_loading to avoid using nested error handling if file loading fails
+//motion_loading = true;
+if (!MMD_SA.motion[index]) {
+  const m = MMD_SA_options.motion[index];
+  await MMD_SA.load_external_motion(m.path, false);
+}
+//motion_loading = false;
+      }
+
       function change_motion(motion_index_absolute, ignore_event) {
 const model_mesh = THREE.MMD.getModels()[0].mesh;
 if (!model_mesh.visible) return true;
@@ -3563,7 +3574,7 @@ else if ((motion_index_absolute != null) && (MMD_SA_options.Dungeon._event_activ
 
 //DEBUG_show(MMD_SA.MMD.motionManager.filename)
 
-if (1) {//MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle_list_default.indexOf(MMD_SA.MMD.motionManager._index) != -1)) {
+if (!motion_loading) {//MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_shuffle_list_default.indexOf(MMD_SA.MMD.motionManager._index) != -1)) {
   if (!morph_event_registered) {
     morph_event_registered = true
     window.addEventListener("SA_MMD_model0_process_morphs", morph_event)
@@ -3611,16 +3622,18 @@ if (1) {//MMD_SA_options.motion_shuffle_list_default && (MMD_SA_options.motion_s
     return;
   }
 
-  MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name[motion_name]]
+  const index = MMD_SA_options.motion_index_by_name[motion_name];
+  load_motion(index).then(()=>{
+    MMD_SA_options._motion_shuffle_list_default = [index];
+    MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice();
+    MMD_SA._force_motion_shuffle = true;
 
-  MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice()
-  MMD_SA._force_motion_shuffle = true
-
-  MMD_SA_options.Dungeon_options.item_base.social_distancing && MMD_SA_options.Dungeon_options.item_base.social_distancing.reset()
-
-  if (System._browser.camera.initialized) System._browser.on_animation_update.add(()=>{System._browser.camera._camera_reset = MMD_SA._trackball_camera.object.clone()},1,1)
+    MMD_SA_options.Dungeon_options.item_base.social_distancing && MMD_SA_options.Dungeon_options.item_base.social_distancing.reset();
+    if (System._browser.camera.initialized) System._browser.on_animation_update.add(()=>{System._browser.camera._camera_reset = MMD_SA._trackball_camera.object.clone()},1,1);
+  });
 }
 else {
+  System._browser.camera.DEBUG_show('(motion still loading)', 3);
   return true
 }
       }
@@ -3650,12 +3663,16 @@ else if (MMD_animation_customized) {
   animation_on = !MMD_animation_on;
   if (!animation_on) {
     MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice();
+    MMD_SA._force_motion_shuffle = true;
   }
   else {
-    MMD_SA_options.motion_shuffle = [MMD_SA_options.motion.length-1];
-    MMD_SA_options.motion_shuffle_list_default = null;
+    const index = MMD_SA_options.motion.length-1;
+    load_motion(index).then(()=>{
+      MMD_SA_options.motion_shuffle = [index];
+      MMD_SA_options.motion_shuffle_list_default = null;
+      MMD_SA._force_motion_shuffle = true;
+    });
   }
-  MMD_SA._force_motion_shuffle = true;
 }
 
 return animation_on;
@@ -3751,12 +3768,14 @@ window.addEventListener('SA_on_external_motion_loaded', (e)=>{
   const path = e.detail.path;
   if (/\.zip\#/i.test(path)) return;
 
+  if (_motion_list[0].some(m=>m.path==path)) return;
+
   const motion_id = path.replace(/^.+[\/\\]/, '').replace(/\.\w{3,4}$/, '');
   const para = MMD_SA_options.motion_para[motion_id];
 
   const m = { is_custom_motion:true, path:path, name:motion_id, info:'Custom: '+motion_id.substring(0,20)+' (🙋)' };
 
-  const i = _motion_list[0].length;
+  const i = e.detail.index || _motion_list[0].length;
   m.index_default = i;
   m.index = i;
   if (para && !para.motion_blending) {
@@ -4157,10 +4176,10 @@ else if (System._browser.camera.motion_recorder.speed) {
 else if (System._browser.camera.ML_enabled) {
   if (!System._browser.camera.visible) {
     info +=
-  '- To choose a video input, double-click the "Selfie camera" item. You can use a webcam, or drop a local video/picture file.\n';
+  '- To choose a video input, double-click the "Webcam/Media" item. You can use a webcam, or drop a local video/picture file.\n';
   }
     info +=
-  '- To record motion while capturing, change options or turn it off, double-click this item.\n'
+  '- To record motion while capturing, change options or turn mocap off, double-click this item.\n'
 + '- Press Pause to pause/resume mocap';
 }
 else {
@@ -7814,7 +7833,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  content: 'XR Animator (v0.9.7)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
+  content: 'XR Animator (v0.10.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -8207,35 +8226,66 @@ DEBUG_show('(Motion recording STARTED / x0.25 speed)', 3)
 // 29
      ,[
         {
-          func: function () {
-System._browser.camera._info =
-  '- Enable "Leg IK" to record motion in VMD with leg IK output.\n'
-+ '- "Leg scale adjustment" adjust rotations by adapting the leg length difference between source and 3D model.\n'
-+ '- Turn auto-grounding on if the target person is always grounding with a fixed horizontal camera angle.'
-          }
-         ,message: {
-  get content() { return '1. Leg IK: ' + ((MMD_SA_options.user_camera.ML_models.pose.use_legIK)?'ON':'OFF') + '\n2. Leg scale adjustment: ' + ((!System._browser.camera.poseNet.leg_scale_adjustment)?'OFF':((System._browser.camera.poseNet.leg_scale_adjustment>0 && '+')||'')+System._browser.camera.poseNet.leg_scale_adjustment) + '\n3. Auto-grounding (Ctrl+G): ' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON') + '\n4. Hip adjustment: ' + ((System._browser.camera.poseNet.hip_adjustment_weight == 1) ? 'ON' : (System._browser.camera.poseNet.hip_adjustment_weight == 0) ? 'OFF' : Math.round(System._browser.camera.poseNet.hip_adjustment_weight*100) + '%') + '\n5. Clear bounding box\n6. Facemesh options\n7. Done'; }
+          message: {
+  content: '1. Body pose options\n2. Facemesh options\n3. Clear bounding box\n4. Done'
  ,bubble_index: 3
  ,branch_list: [
-  { key:1, branch_index:mocap_options_branch+1 },
-  { key:2, branch_index:mocap_options_branch+2 },
-  { key:3, branch_index:mocap_options_branch+3 },
-  { key:4, event_id: {
+  { key:1, event_index:1 },
+  { key:2, branch_index:facemesh_options_branch },
+  { key:3, branch_index:mocap_options_branch+4 },
+  { key:4, branch_index:done_branch }
+  ]
+          }
+        },
+        {
+          func: function () {
+System._browser.camera._info =
+  '- "Best" AI model quality loads a heavier model with improved body pose mocap at the expense of extra GPU usage.\n'
++ '- Enable "Leg IK" to record motion in VMD with leg IK output.\n'
++ '- "Leg scale" adapts leg length diff between source and avatar.\n'
++ '- Turn auto-grounding on to fix avatar\'s feet on the ground.\n'
++ '- Hip adjustment controls hip\'s reaction to upper body motion.'
+          }
+         ,message: {
+  get content() { return '1. AI model quality: ' + (MMD_SA_options.user_camera.ML_models.pose.model_quality || 'Normal') + '\n2. Z-depth scale: ' + ((MMD_SA_options.user_camera.ML_models.pose.model_quality == 'Best') ? ((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale)?((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale<3)?'Max':'Min'):'Medium') : 'N/A') + '\n3. Leg IK: ' + ((MMD_SA_options.user_camera.ML_models.pose.use_legIK)?'ON':'OFF') + '\n4. Leg scale adjustment: ' + ((!System._browser.camera.poseNet.leg_scale_adjustment)?'OFF':((System._browser.camera.poseNet.leg_scale_adjustment>0 && '+')||'')+System._browser.camera.poseNet.leg_scale_adjustment) + '\n5. Auto-grounding (Ctrl+G): ' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON') + '\n6. Hip adjustment: ' + ((System._browser.camera.poseNet.hip_adjustment_weight == 1) ? 'ON' : (System._browser.camera.poseNet.hip_adjustment_weight == 0) ? 'OFF' : Math.round(System._browser.camera.poseNet.hip_adjustment_weight*100) + '%') + '\n7. Done'; }
+ ,bubble_index: 3
+ ,branch_list: [
+  { key:1, event_index:2 },
+  { key:2, event_index:3 },
+  { key:3, branch_index:mocap_options_branch+1 },
+  { key:4, branch_index:mocap_options_branch+2 },
+  { key:5, branch_index:mocap_options_branch+3 },
+  { key:6, event_id: {
       func:()=>{
 let hip_adjustment_weight = Math.min(Math.round(System._browser.camera.poseNet.hip_adjustment_weight * 4)/4, 1) - 0.25;
 if (hip_adjustment_weight < 0)
   hip_adjustment_weight = 1;
 System._browser.camera.poseNet.hip_adjustment_weight = hip_adjustment_weight;
       },
-      goto_branch: mocap_options_branch,
+      goto_event: { branch_index:mocap_options_branch, step:1 },
     }
   },
-  { key:5, branch_index:mocap_options_branch+4 },
-  { key:6, branch_index:facemesh_options_branch },
   { key:7, branch_index:done_branch }
   ]
           }
-        }
+        },
+        {
+          func: function () {
+MMD_SA_options.user_camera.ML_models.pose.model_quality = (!MMD_SA_options.user_camera.ML_models.pose.model_quality) ? 'Best' : undefined;
+          },
+          goto_event: { branch_index:mocap_options_branch, step:1 },
+        },
+        {
+          func: function () {
+if (MMD_SA_options.user_camera.ML_models.pose.z_depth_scale < 3)
+  MMD_SA_options.user_camera.ML_models.pose.z_depth_scale = undefined;
+else if (MMD_SA_options.user_camera.ML_models.pose.z_depth_scale > 3)
+  MMD_SA_options.user_camera.ML_models.pose.z_depth_scale = 2;
+else
+  MMD_SA_options.user_camera.ML_models.pose.z_depth_scale = 4.5;
+          },
+          goto_event: { branch_index:mocap_options_branch, step:1 },
+        },
       ]
 // 30
      ,[
@@ -8247,7 +8297,7 @@ if (MMD_SA_options.user_camera.ML_models.pose.use_legIK) {
   System._browser.camera.poseNet.frames.remove('skin', '右ひざ');
 }
           }
-         ,goto_branch: mocap_options_branch
+         ,goto_event: { branch_index:mocap_options_branch, step:1 }
         }
       ]
 // 31
@@ -8256,7 +8306,7 @@ if (MMD_SA_options.user_camera.ML_models.pose.use_legIK) {
           func: function () {
 if (++System._browser.camera.poseNet.leg_scale_adjustment > 5) System._browser.camera.poseNet.leg_scale_adjustment = -5;
           }
-         ,goto_branch: mocap_options_branch
+         ,goto_event: { branch_index:mocap_options_branch, step:1 }
         }
       ]
 // 32
@@ -8265,7 +8315,7 @@ if (++System._browser.camera.poseNet.leg_scale_adjustment > 5) System._browser.c
           func: function () {
 System._browser.camera.poseNet.auto_grounding = !System._browser.camera.poseNet.auto_grounding;
           }
-         ,goto_branch: mocap_options_branch
+         ,goto_event: { branch_index:mocap_options_branch, step:1 }
         }
       ]
 // 33
@@ -8912,6 +8962,11 @@ if (expression_active.length && !MMD_SA.THREEX.enabled)
   });
 
   MMD_SA_options._XRA_settings_export = ()=>{
+function custom_motion() {
+  const cm = (webkit_electron_mode) ? MMD_SA_options._XRA_pose_list[0].filter(m=>m.is_custom_motion).map(m=>m.path) : [];
+  return cm.slice(Math.max(cm.length-10,0));
+}
+
 const config = {};
 
 config.user_camera = {
@@ -8927,6 +8982,8 @@ config.user_camera = {
 
   ML_models: {
     pose: {
+      model_quality: MMD_SA_options.user_camera.ML_models.pose.model_quality,
+      z_depth_scale: MMD_SA_options.user_camera.ML_models.pose.z_depth_scale, 
       use_legIK: MMD_SA_options.user_camera.ML_models.pose.use_legIK,
       leg_scale_adjustment: System._browser.camera.poseNet.leg_scale_adjustment,
       auto_grounding: System._browser.camera.poseNet.auto_grounding,
@@ -8960,7 +9017,7 @@ config.video_capture = {
 
 config.pose = {
   order: MMD_SA_options._XRA_pose_list[0].map(m=>m.index_default),
-  custom_motion: MMD_SA_options._XRA_pose_list[0].filter(m=>m.is_custom_motion).map(m=>m.path).slice(0,10),
+  custom_motion: custom_motion(),
 };
 
 config.PPE = {
@@ -9030,6 +9087,8 @@ try {
         MMD_SA_options.user_camera.display.video.hidden = config[p].display.video.hidden;
         MMD_SA_options.user_camera.display.wireframe.hidden = config[p].display.wireframe.hidden;
         MMD_SA_options.user_camera.ML_models.debug_hidden = config[p].ML_models.debug_hidden;
+        MMD_SA_options.user_camera.ML_models.pose.model_quality = config[p].ML_models.pose.model_quality;
+        MMD_SA_options.user_camera.ML_models.pose.z_depth_scale = config[p].ML_models.pose.z_depth_scale;
         MMD_SA_options.user_camera.ML_models.pose.use_legIK = config[p].ML_models.pose.use_legIK;
         System._browser.camera.poseNet.leg_scale_adjustment = config[p].ML_models.pose.leg_scale_adjustment;
         System._browser.camera.poseNet.auto_grounding = config[p].ML_models.pose.auto_grounding;
@@ -9061,8 +9120,17 @@ try {
 
       case 'pose':
         if (config[p].custom_motion) {
-          for (let i = 0; i < config[p].custom_motion.length; i++)
-            await MMD_SA.load_external_motion(config[p].custom_motion[i], false);
+          for (let i = 0; i < config[p].custom_motion.length; i++) {
+
+            const path = config[p].custom_motion[i];
+            const name = path.replace(/^.+[\/\\]/, "").replace(/\.([a-z0-9]{1,4})$/i, "");
+            const index = MMD_SA_options.motion.length;
+            MMD_SA_options.motion_index_by_name[name] = index;
+            MMD_SA_options.motion.push({ path:path });
+            window.dispatchEvent(new CustomEvent("SA_on_external_motion_loaded", { detail:{ path:path, index:index, result:{ return_value:false } } }));
+
+//            await MMD_SA.load_external_motion(config[p].custom_motion[i], false);
+          }
         }
         MMD_SA_options._XRA_pose_reset(config[p].order);
         break;
