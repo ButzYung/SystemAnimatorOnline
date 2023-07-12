@@ -1,4 +1,4 @@
-// (2023-05-12)
+// (2023-07-13)
 
 var FacemeshAT = (function () {
 
@@ -357,14 +357,14 @@ const timerID = setInterval(()=>{
       const vision = await FilesetResolver.forVisionTasks(
 // path/to/wasm/root
 //"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
-'@mediapipe/tasks/tasks-vision/wasm'
+path_adjusted('@mediapipe/tasks/tasks-vision/wasm')
       );
 
       const f = await FaceLandmarker.createFromOptions(
 vision,
 {
   baseOptions: {
-    modelAssetPath: '@mediapipe/tasks/face_landmarker.task',
+    modelAssetPath: path_adjusted('@mediapipe/tasks/face_landmarker.task'),
     delegate: "GPU"
   },
   outputFaceBlendshapes: true,
