@@ -1,13 +1,19 @@
-// 2023-05-12
+// 2023-07-11
 
-if (typeof window !== "object") {
-  import('./vision_bundle.js').then((m)=>{
+(()=>{
+  function load_module(m) {
 //    console.log(m);
     for (const name of ['FilesetResolver', 'FaceLandmarker', 'PoseLandmarker', 'HandLandmarker'])
       self[name] = m[name];
-  });
-}
-else {
-  System._browser.load_script('js/@mediapipe/tasks/tasks-vision/vision_bundle.js');
-}
+  }
+
+  if (typeof window !== "object") {
+    import('./vision_bundle.mjs').then(load_module);
+  }
+  else {
+    import('./vision_bundle.mjs').then(load_module);
+//https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.1
+//    System._browser.load_script('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js');//, true).then(load_module);
+  }
+})();
 

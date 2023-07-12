@@ -1375,7 +1375,7 @@ export declare class ImageSegmenter extends VisionTaskRunner {
     /**
      * Performs image segmentation on the provided video frame and returns the
      * segmentation result. This method creates a copy of the resulting masks and
-     * should not be used in high-throughput applictions. Only use this method
+     * should not be used in high-throughput applications. Only use this method
      * when the ImageSegmenter is created with running mode `video`.
      *
      * @param videoFrame A video frame to process.
@@ -1583,7 +1583,7 @@ export declare class InteractiveSegmenter extends VisionTaskRunner {
     /**
      * Performs interactive segmentation on the provided video frame and returns
      * the segmentation result. This method creates a copy of the resulting masks
-     * and should not be used in high-throughput applictions. The `roi` parameter
+     * and should not be used in high-throughput applications. The `roi` parameter
      * is used to represent a user's region of interest for segmentation.
      *
      * @param image An image to process.
@@ -1595,7 +1595,7 @@ export declare class InteractiveSegmenter extends VisionTaskRunner {
     /**
      * Performs interactive segmentation on the provided video frame and returns
      * the segmentation result. This method creates a copy of the resulting masks
-     * and should not be used in high-throughput applictions. The `roi` parameter
+     * and should not be used in high-throughput applications. The `roi` parameter
      * is used to represent a user's region of interest for segmentation.
      *
      * The 'image_processing_options' parameter can be used to specify the
@@ -2082,7 +2082,7 @@ export declare class PoseLandmarker extends VisionTaskRunner {
     /**
      * Performs pose detection on the provided single image and waits
      * synchronously for the response. This method creates a copy of the resulting
-     * masks and should not be used in high-throughput applictions. Only
+     * masks and should not be used in high-throughput applications. Only
      * use this method when the PoseLandmarker is created with running mode
      * `image`.
      *
@@ -2095,7 +2095,7 @@ export declare class PoseLandmarker extends VisionTaskRunner {
     /**
      * Performs pose detection on the provided single image and waits
      * synchronously for the response. This method creates a copy of the resulting
-     * masks and should not be used in high-throughput applictions. Only
+     * masks and should not be used in high-throughput applications. Only
      * use this method when the PoseLandmarker is created with running mode
      * `image`.
      *
@@ -2136,7 +2136,7 @@ export declare class PoseLandmarker extends VisionTaskRunner {
     /**
      * Performs pose detection on the provided video frame and returns the result.
      * This method creates a copy of the resulting masks and should not be used
-     * in high-throughput applictions. Only use this method when the
+     * in high-throughput applications. Only use this method when the
      * PoseLandmarker is created with running mode `video`.
      *
      * @param videoFrame A video frame to process.
@@ -2148,7 +2148,7 @@ export declare class PoseLandmarker extends VisionTaskRunner {
     /**
      * Performs pose detection on the provided video frame and returns the result.
      * This method creates a copy of the resulting masks and should not be used
-     * in high-throughput applictions. The method returns synchronously once the
+     * in high-throughput applications. The method returns synchronously once the
      * callback returns. Only use this method when the PoseLandmarker is created
      * with running mode `video`.
      *
