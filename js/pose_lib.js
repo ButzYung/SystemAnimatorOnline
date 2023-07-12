@@ -1,4 +1,4 @@
-// (2023-06-15)
+// (2023-07-13)
 
 var PoseAT = (function () {
 
@@ -123,6 +123,9 @@ postMessageAT('OK')
 
   var posenet_initialized, handpose_initialized, holistic_initialized, human_initialized;
   async function load_lib(options) {
+if (options.model_quality != null)
+  pose_model_quality = options.model_quality || '';
+
 if (options.use_holistic && !holistic_initialized) {
   await load_scripts('@mediapipe/holistic/holistic.js');
 
@@ -133,7 +136,7 @@ return _PoseAT.path_adjusted('@mediapipe/holistic/' + file);
     }});
 
     holistic.setOptions({
-modelComplexity: 1,
+modelComplexity: (pose_model_quality == 'Best') ? 2 : 1,
 smoothLandmarks: true,
 minDetectionConfidence: 0.5,
 minTrackingConfidence: 0.5,
@@ -234,7 +237,9 @@ minConfidence: 0.2
   human_initialized = true
 }
 
-if (!options.use_holistic && !use_human_pose && !posenet_initialized) {
+if (!options.use_holistic && !use_human_pose) {
+
+if (!posenet_initialized) {
 /*
   await load_scripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tf-backend-wasm.js');
   tf.wasm.setWasmPaths('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/');
@@ -255,20 +260,21 @@ const timerID = setInterval(()=>{
     const vision = await FilesetResolver.forVisionTasks(
 // path/to/wasm/root
 //"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
-'@mediapipe/tasks/tasks-vision/wasm'
+path_adjusted('@mediapipe/tasks/tasks-vision/wasm')
     );
 
-    const f = await PoseLandmarker.createFromOptions(
+    pose_landmarker = await PoseLandmarker.createFromOptions(
 vision,
 {
   baseOptions: {
-    modelAssetPath: '@mediapipe/tasks/pose_landmarker_full.task',
+    modelAssetPath: path_adjusted('@mediapipe/tasks/pose_landmarker_' + ((pose_model_quality == 'Best') ? 'heavy' : 'full') + '.task'),
     delegate: "GPU"
   },
   runningMode: 'VIDEO',
   numPoses: 1
 }
     );
+    console.log('Pose model quality:' + (pose_model_quality||'Normal'));
 
     data_filter = [
       {
@@ -285,7 +291,7 @@ vision,
 
     posenet = {
 estimatePoses: function (video, dummy, nowInMs) {
-  const result = f.detectForVideo(video, nowInMs);
+  const result = pose_landmarker.detectForVideo(video, nowInMs);
 
   for (const p of ['landmarks', 'worldLandmarks']) {
     const c = result[p]?.[0];
@@ -362,6 +368,20 @@ estimatePoses: function (video, dummy, nowInMs) {
 
   posenet_initialized = true
 }
+else {
+  if (use_mediapipe_pose_landmarker && (options.model_quality != null) && (pose_model_quality != options.model_quality)) {
+    pose_model_quality = options.model_quality;
+    pose_landmarker.setOptions({
+      baseOptions: {
+        modelAssetPath: path_adjusted('@mediapipe/tasks/pose_landmarker_' + ((pose_model_quality == 'Best') ? 'heavy' : 'full') + '.task'),
+        delegate: "GPU"
+      },
+    });
+    console.log('Pose model quality:' + (pose_model_quality||'Normal'));
+  }
+}
+
+}
 
 if (!options.use_holistic && !use_human_hands && options.use_handpose && !handpose_initialized) {
   if (use_mediapipe_hand_landmarker) {
@@ -379,14 +399,14 @@ const timerID = setInterval(()=>{
     const vision = await FilesetResolver.forVisionTasks(
 // path/to/wasm/root
 //"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
-'@mediapipe/tasks/tasks-vision/wasm'
+path_adjusted('@mediapipe/tasks/tasks-vision/wasm')
     );
 
     const f = await HandLandmarker.createFromOptions(
 vision,
 {
   baseOptions: {
-    modelAssetPath: '@mediapipe/tasks/hand_landmarker.task',
+    modelAssetPath: path_adjusted('@mediapipe/tasks/hand_landmarker.task'),
     delegate: "GPU"
   },
   runningMode: 'VIDEO',
@@ -450,6 +470,8 @@ var use_mixed_human;
 var use_tfjs, use_tfjs_posenet, use_mediapipe, use_blazepose, use_movenet, use_holistic, use_mediapipe_hands;
 
 var use_mediapipe_hand_landmarker, use_mediapipe_pose_landmarker;
+var pose_landmarker;
+var pose_model_quality, pose_model_z_depth_scale;
 
 var use_human_only, use_human_pose, use_human_hands;
 
@@ -513,10 +535,12 @@ async function process_video_buffer(rgba, w,h, options) {
       return pose;
     }
 
+    let _keypoints3D;
+    let assign_keypoints3D;
     if (options.use_holistic || use_mediapipe_pose_landmarker) {
       const _result = pose
 //console.log(_result)
-      const _keypoints3D = _result.ea || _result.za;
+      _keypoints3D = _result.ea || _result.za;
       if (_keypoints3D?.length && _result.poseLandmarks?.length) {
 // https://github.com/tensorflow/tfjs-models/blob/master/pose-detection/src/blazepose_mediapipe/detector.ts
 
@@ -531,12 +555,6 @@ y: landmark.y * ih,
 z: landmark.z * iw,
 name: BLAZEPOSE_KEYPOINTS[i]
   })),
-  keypoints3D: _keypoints3D.map((landmark, i) => ({
-x: landmark.x,
-y: landmark.y,
-z: landmark.z,
-name: BLAZEPOSE_KEYPOINTS[i]
-   })),
         }];
       }
       else {
@@ -586,6 +604,56 @@ return score;
       });
 
       pose[0].keypoints.forEach((p,i)=>{p.score=score[i]});
+
+      if (_keypoints3D) {
+        if (pose_model_quality == 'Best') {
+const z_scale = 1 / pose_model_z_depth_scale;
+
+const hipL = pose[0].keypoints[23];
+const hipR = pose[0].keypoints[24];
+const hip = {
+  x:(hipL.x+hipR.x)/2,
+  y:(hipL.y+hipR.y)/2,
+  z:(hipL.z+hipR.z)/2
+};
+const hip_dis = {
+  x:(hipL.x-hipR.x),
+  y:(hipL.y-hipR.y),
+  z:(hipL.z-hipR.z)*z_scale
+};
+const hip3D_dis = {
+  x:(_keypoints3D[23].x-_keypoints3D[24].x),
+  y:(_keypoints3D[23].y-_keypoints3D[24].y),
+  z:(_keypoints3D[23].z-_keypoints3D[24].z)
+};
+const scale = Math.sqrt(Math.sqrt(hip3D_dis.x*hip3D_dis.x + hip3D_dis.y*hip3D_dis.y + hip3D_dis.z*hip3D_dis.z)) / Math.sqrt(hip_dis.x*hip_dis.x + hip_dis.y*hip_dis.y + hip_dis.z*hip_dis.z);
+
+pose[0].keypoints3D = pose[0].keypoints.map((landmark, i)=>({
+  x: (landmark.x - hip.x) * scale,
+  y: (landmark.y - hip.y) * scale,
+  z: (landmark.z - hip.z) * scale * z_scale,
+  name: BLAZEPOSE_KEYPOINTS[i]
+}));
+
+//console.log((pose[0].keypoints3D[23].z-pose[0].keypoints3D[24].z)/(_keypoints3D[23].z-_keypoints3D[24].z), hipL.name,hipR.name);
+
+pose[0].keypoints3D_raw = _keypoints3D.map((landmark, i) => ({
+  x: landmark.x,
+  y: landmark.y,
+  z: landmark.z,
+  name: BLAZEPOSE_KEYPOINTS[i]
+}));
+        }
+        else {
+          pose[0].keypoints3D = _keypoints3D.map((landmark, i) => ({
+x: landmark.x,
+y: landmark.y,
+z: landmark.z,
+name: BLAZEPOSE_KEYPOINTS[i]
+          }));
+        }
+      }
+
       pose[0].keypoints3D?.forEach((p,i)=>{p.score=score[i]});
     }
 
@@ -606,6 +674,8 @@ return score;
     let result = { score:pose[0].score, keypoints:keypoints_movenet };
     if (pose[0].keypoints3D)
       result.keypoints3D = pose[0].keypoints3D
+    if (pose[0].keypoints3D_raw)
+      result.keypoints3D_raw = pose[0].keypoints3D_raw
 
 //console.log(result)
     return result;
@@ -1024,6 +1094,8 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
 
   let use_mediapipe_facemesh = true
   let use_faceLandmarksDetection = true
+
+  pose_model_z_depth_scale = options.z_depth_scale || 3;
 
   if (options.use_holistic) {
     const result = await holistic_model.predict(rgba, {}, vt);
