@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-07-13)
+// (2023-07-16)
 
 var use_full_spectrum = true
 
@@ -608,6 +608,7 @@ MMD_SA._click_to_reset = null;
   }
   else if (item.isFileSystem && /([^\/\\]+)\.(vrm)$/i.test(src)) {
     if (!MMD_SA_options.use_THREEX) return;
+    if (!MMD_SA.jThree_ready) return;
 
     MMD_SA._init_my_model = null;
 
@@ -5732,28 +5733,36 @@ if (navigator.xr) {
  ,get_bone_axis_rotation: (function () {
     var RE_arm = new RegExp("^(" + toRegExp(["左","右"],"|") + ")(" + toRegExp(["肩","腕","ひじ","手首"],"|") + "|." + toRegExp("指") + ".)");
 
-    return function (mesh, name_full, enforced) {
+    return function (mesh, name_full, use_THREEX_bone) {
+function bone_origin(name) {
+  return (use_THREEX_bone) ? modelX.get_bone_origin_by_MMD_name(name): bones_by_name[name].pmxBone.origin;
+}
+
 var d = name_full.charAt(0)
 var sign_LR = (d=="左") ? 1 : -1
 
 var bones_by_name = mesh.bones_by_name
 
+const modelX = MMD_SA.THREEX.get_model(mesh._model_index);
+if (MMD_SA.THREEX.enabled && !bone_origin(name_full))
+  use_THREEX_bone = false;
+
 var x_axis, y_axis, z_axis;
 
-var model_para = MMD_SA_options.model_para_obj_all[mesh._model_index];
+const model_para = MMD_SA_options.model_para_obj_all[mesh._model_index];
 // Not using .localCoordinate by default as it can be screwed up for some models
 if (model_para.use_bone_localCoordinate && bones_by_name[name_full].pmxBone.localCoordinate) {
 // z from .localCoordinate is already inverted
   x_axis = MMD_SA._v3a.fromArray(bones_by_name[name_full].pmxBone.localCoordinate[0]);
-// z-axis inverted
-  z_axis = MMD_SA._v3b.fromArray(bones_by_name[name_full].pmxBone.localCoordinate[1]).negate();
+// z-axis inverted (?)
+  z_axis = MMD_SA._v3b.fromArray(bones_by_name[name_full].pmxBone.localCoordinate[1])//.negate();
   if (sign_LR == -1) { x_axis.x *= -1; z_axis.x *= -1; }
 
   y_axis = MMD_SA.TEMP_v3.crossVectors(x_axis, z_axis).normalize().negate();
 }
 else {
   const axis_end = bones_by_name[name_full].pmxBone.end;
-  const axis = (typeof axis_end == 'number') ? ((axis_end == -1) ? MMD_SA._v3a.fromArray(bones_by_name[name_full].pmxBone.origin).sub(MMD_SA._v3a_.fromArray(bones_by_name[name_full].parent.pmxBone.origin)) : MMD_SA._v3a.fromArray(mesh.bones[axis_end].pmxBone.origin).sub(MMD_SA._v3a_.fromArray(bones_by_name[name_full].pmxBone.origin))).normalize() : MMD_SA._v3a.fromArray(axis_end).normalize();
+  const axis = (use_THREEX_bone || (typeof axis_end == 'number')) ? (((axis_end == -1) || !bone_origin(mesh.bones[axis_end]?.name)) ? MMD_SA._v3a.fromArray(bone_origin(name_full)).sub(MMD_SA._v3a_.fromArray(bone_origin(bones_by_name[name_full].parent.name))) : MMD_SA._v3a.fromArray(bone_origin(mesh.bones[axis_end].name)).sub(MMD_SA._v3a_.fromArray(bone_origin(name_full)))).normalize() : MMD_SA._v3a.fromArray(axis_end).normalize();
 
   if (RE_arm.test(name_full)) {
     x_axis = axis;
@@ -5794,7 +5803,7 @@ r.setFromEuler(a, 'ZYX')
 //console.log(name_full, x_axis.clone(), y_axis.clone(), z_axis.clone(), x_axis.angleTo(z_axis))
 //console.log(name_full, new THREE.Vector3().setEulerFromQuaternion(r, 'ZYX').multiplyScalar(180/Math.PI));
 
-if (MMD_SA.THREEX.enabled && !enforced) {
+if (MMD_SA.THREEX.enabled && !use_THREEX_bone) {
   if (name_full.indexOf('指') != -1) {
     const r_v3 = MMD_SA.TEMP_v3.setEulerFromQuaternion(r, 'ZYX');
     r_v3.z -= Math.sign(r_v3.z) * 37.4224/180*Math.PI;
@@ -8996,10 +9005,14 @@ if (MMD_SA.OSC.VMC.sender_enabled && MMD_SA.OSC.VMC.ready) {
   ));
 
   const bone_msgs = [];
-  for (const name_VMC in VRMSchema.HumanoidBoneName) {
+  for (let name_VMC in VRMSchema.HumanoidBoneName) {
     const name = VRMSchema.HumanoidBoneName[name_VMC];
     const bone = this.getBoneNode(name);
     if (!bone) continue;
+    if (!this.is_VRM1) {
+      name_VMC = name_VMC.replace(/ThumbProximal/, 'ThumbIntermediate');
+//name_VMC.replace(/ThumbMetacarpal/, 'ThumbProximal');
+    }
     bone_msgs.push(MMD_SA.OSC.VMC.Message("/VMC/Ext/Bone/Pos",
       [
 name_VMC,
@@ -13722,21 +13735,24 @@ System._browser.camera.facemesh.MMD_morph_list.forEach(function (m) {
   if (!facemesh_morph[m]) {
     const morph_alt = [];
     switch (m) {
+case "びっくり":
+  morph_alt.push(m, '驚き');
+  break;
 case "にやり":
-  morph_alt.push('横伸ばし', '口幅大', m);
+  morph_alt.push('横伸ばし', '口幅大', m, '←→');
   break;
 case "ω":
-  morph_alt.push('横潰し', '口幅小', m);
+  morph_alt.push('横潰し', '口幅小', m, '→←');
   break;
 case "口角上げ":
-  morph_alt.push(m, '∪');
+  morph_alt.push(m, '∪', 'スマイル');
   break;
 case "口角下げ":
-  morph_alt.push(m, '∩');
+  morph_alt.push(m, '∩', 'む');
   break;
 case "上":
 case "下":
-  morph_alt.push(m, 'まゆ'+m);
+  morph_alt.push(m, 'まゆ'+m, '眉'+((m=='上')?'↑':'↓'));
   break
 default:
   morph_alt.push(m);
