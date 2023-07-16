@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-07-13)
+// (2023-07-16)
 
 var MMD_SA_options = {
 
@@ -3083,6 +3083,7 @@ video:{
 //  hidden:true,
 //  hidden_on_webcam: true,
   scale:0.4, top:-0.5,
+//left:-0.4,
 //scale:0.4,top:-0.8,left:-0.4,
 //scale:0.4*1,top:0,left:-3,
 //scale:0.4*2,top:0,left:-1,
@@ -3091,6 +3092,7 @@ wireframe:{
 //  hidden:true,
 //  align_with_video:true,
   top:0.5,
+//left:+0.4,
 //top:0.8,left:0.4,
 //top:0,left:3,
 //top:0.5,left:1,
@@ -3627,6 +3629,7 @@ if (!motion_loading) {//MMD_SA_options.motion_shuffle_list_default && (MMD_SA_op
     MMD_SA_options._motion_shuffle_list_default = [index];
     MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice();
     MMD_SA._force_motion_shuffle = true;
+    window.addEventListener('SA_MMD_model0_onmotionchange', ()=>{ MMD_SA.WebXR.ground_plane.visible=System._browser.camera.poseNet.ground_plane_visible }, {once:true});
 
     MMD_SA_options.Dungeon_options.item_base.social_distancing && MMD_SA_options.Dungeon_options.item_base.social_distancing.reset();
     if (System._browser.camera.initialized) System._browser.on_animation_update.add(()=>{System._browser.camera._camera_reset = MMD_SA._trackball_camera.object.clone()},1,1);
@@ -3671,6 +3674,7 @@ else if (MMD_animation_customized) {
       MMD_SA_options.motion_shuffle = [index];
       MMD_SA_options.motion_shuffle_list_default = null;
       MMD_SA._force_motion_shuffle = true;
+      window.addEventListener('SA_MMD_model0_onmotionchange', ()=>{ MMD_SA.WebXR.ground_plane.visible=System._browser.camera.poseNet.ground_plane_visible }, {once:true});
     });
   }
 }
@@ -7833,7 +7837,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  content: 'XR Animator (v0.10.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
+  content: 'XR Animator (v0.10.1)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
