@@ -7837,7 +7837,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  content: 'XR Animator (v0.10.1)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
+  content: 'XR Animator (v0.10.1b)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
