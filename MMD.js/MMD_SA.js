@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-07-16)
+// (2023-07-17)
 
 var use_full_spectrum = true
 
@@ -8995,27 +8995,20 @@ if (MMD_SA.OSC.VMC.sender_enabled && MMD_SA.OSC.VMC.ready) {
   if (!turned_around ^ !!this.is_VRM1) model_rot.premultiply(q2.set(0,1,0,0));
 //DEBUG_show(mesh.quaternion.toArray())
 
-  MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/Root/Pos",
-    [
+  const pos_msgs = [
 'root',
 ...((MMD_SA.OSC.VMC.VSeeFace_mode) ? ((System._browser.camera.poseNet.enabled && MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only && MMD_SA.MMD.motionManager.para_SA.center_view_enforced) ? [0,0,-5/10] : [0, 5/10, -60/10]) : [model_position_offset.x, model_position_offset.y, -model_position_offset.z]),
 -model_rot.x, -model_rot.y, model_rot.z, model_rot.w,
-    ],
-    'sfffffff'
-  ));
+  ];
 
   const bone_msgs = [];
   for (let name_VMC in VRMSchema.HumanoidBoneName) {
     const name = VRMSchema.HumanoidBoneName[name_VMC];
     const bone = this.getBoneNode(name);
     if (!bone) continue;
-    if (!this.is_VRM1) {
-      name_VMC = name_VMC.replace(/ThumbProximal/, 'ThumbIntermediate');
-//name_VMC.replace(/ThumbMetacarpal/, 'ThumbProximal');
-    }
     bone_msgs.push(MMD_SA.OSC.VMC.Message("/VMC/Ext/Bone/Pos",
       [
-name_VMC,
+(this.is_VRM1)?name_VMC:bone_map_VRM0[name_VMC],
 // TODO: support VRM1 in VNyan
 bone.position.x, bone.position.y, -bone.position.z,
 -bone.quaternion.x, -bone.quaternion.y, bone.quaternion.z, bone.quaternion.w,
@@ -9023,7 +9016,6 @@ bone.position.x, bone.position.y, -bone.position.z,
       'sfffffff'
     ));
   }
-  MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Bundle(...bone_msgs));
 
   const morph_msgs = [];
   for (const name of ['lookUp', 'lookDown', 'lookLeft', 'lookRight']) {
@@ -9045,8 +9037,8 @@ blendshape_weight[name],
     ));
   }
   morph_msgs.push(MMD_SA.OSC.VMC.Message("/VMC/Ext/Blend/Apply"));
-  MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Bundle(...morph_msgs));
 
+  let camera_msgs;
   if (MMD_SA.OSC.VMC.send_camera_data) {
     const camera = MMD_SA.THREEX.camera.obj;
     const camera_pos = v1.copy(camera.position).sub(mesh.position).multiplyScalar(model_pos_scale);
@@ -9055,23 +9047,44 @@ blendshape_weight[name],
     const camera_rot = q1.copy(camera.quaternion);
     if (!turned_around) camera_rot.premultiply(q2.set(0,1,0,0));
 
-    MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/Cam",
-      [
+    camera_msgs = [
 'Camera',
 camera_pos.x*((!turned_around)?-1:1), camera_pos.y, -camera_pos.z*((!turned_around)?-1:1),
 -camera_rot.x, -camera_rot.y, camera_rot.z, camera_rot.w,
 //0,0,0,
 //0,1,0,0,
 camera.fov,
-      ],
+    ];
+//DEBUG_show(camera.fov);
+  }
+
+setTimeout(()=>{
+//let _t=performance.now()
+  MMD_SA.OSC.VMC.ready = false;
+
+  MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/Root/Pos",
+    pos_msgs,
+    'sfffffff'
+  ));
+
+  MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Bundle(...bone_msgs));
+
+  MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Bundle(...morph_msgs));
+
+  if (camera_msgs) {
+    MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/Cam",
+      camera_msgs,
       'sffffffff'
     ));
-//DEBUG_show(camera.fov);
   }
 
   MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/OK", [1], 'i'));
 
 //  MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/T", [Date.now()], 't'));
+
+  MMD_SA.OSC.VMC.ready = true;
+//System._browser.camera.DEBUG_show(performance.now()-_t);
+}, 0);
 
 }
 
@@ -9100,6 +9113,7 @@ if (!mesh.matrixAutoUpdate) {
     const is_MMD_bone_motion_face = new RegExp(toRegExp(['頭','目'],'|'));
 
     let bone_map_MMD_to_VRM, bone_map_VRM_to_MMD;
+    const bone_map_VRM0 = {};
 
     let MMD_bone_list = [];
     window.addEventListener('jThree_ready', ()=>{
@@ -9164,6 +9178,10 @@ if (!mesh.matrixAutoUpdate) {
       Object.entries(bone_map_MMD_to_VRM).forEach(([MMD_name, VRM_name])=>{ bone_map_VRM_to_MMD[VRM_name] = MMD_name; });
 
       MMD_bone_list = Object.keys(bone_map_MMD_to_VRM);
+
+      for (let name_VMC in VRM.VRMSchema.HumanoidBoneName) {
+        bone_map_VRM0[name_VMC] = name_VMC.replace(/ThumbProximal/, 'ThumbIntermediate').replace(/ThumbMetacarpal/, 'ThumbProximal');
+      }
     });
 
 // three-vrm 1.0
@@ -12752,6 +12770,7 @@ else {
         },
 
         get ready() { return VMC_enabled && VMC_ready; },
+        set ready(v) { VMC_ready = v; },
 
         Message: function (address, args=[], types) {
 const msg = new OSC.Message(address, ...args);
