@@ -9091,6 +9091,7 @@ setTimeout(()=>{
 
 if (this._reset_physics_) { delete this._reset_physics_; this.resetPhysics(); }
 
+if (MMD_SA.hide_3D_avatar) { vrm._update_core(time_delta) } else
 vrm.update(time_delta);
 
 if (!mesh.matrixAutoUpdate) {
@@ -9445,6 +9446,19 @@ if (data.OutlineEffect && VRM.use_OutlineEffect) {
     if (obj.isMesh) obj.userData.outlineParameters = { visible: true };
   });
 }
+
+vrm._update_core = function (delta) {
+// https://github.com/pixiv/three-vrm/blob/3cfe3003a55e2617e9f1767934ac0aaa01c6f775/packages/three-vrm-core/src/VRMCore.ts
+  this.humanoid.update();
+
+  if (this.lookAt) {
+    this.lookAt.update(delta);
+  }
+
+  if (this.expressionManager) {
+    this.expressionManager.update();
+  }
+};
 
 // fix bugs in VRM physics/MToon material outline when the mesh is scaled
 if (vrm_scale != 1) {
