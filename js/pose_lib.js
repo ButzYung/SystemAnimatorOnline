@@ -1,4 +1,4 @@
-// (2023-07-13)
+// (2023-07-22)
 
 var PoseAT = (function () {
 
@@ -382,8 +382,41 @@ else {
 
 }
 
+use_hands_worker = options.use_hands_worker;// = true;
+if (use_hands_worker) {
+  if (!hands_worker)
+    handpose_initialized = false;
+}
+else {
+  hands_worker_ready = hands_worker_data = null;
+  if (!handpose_model)
+    handpose_initialized = false;
+}
+
 if (!options.use_holistic && !use_human_hands && options.use_handpose && !handpose_initialized) {
-  if (use_mediapipe_hand_landmarker) {
+  if (use_hands_worker) {
+    await new Promise((resolve)=>{
+      hands_worker = new Worker('hands_worker.js');
+      hands_worker.onmessage = function (e) {
+var data = ((typeof e.data == "string") && (e.data.charAt(0) === "{")) ? JSON.parse(e.data) : e.data;
+
+if (typeof data === "string") {
+  if (data == 'OK') {
+    hands_worker_ready = true;
+    resolve();
+  }
+  else {
+    postMessageAT(data);
+  }
+}
+else {
+  hands_worker_ready = true;
+  hands_worker_data = data;
+}
+      };
+    });
+  }
+  else if (use_mediapipe_hand_landmarker) {
     await load_scripts('@mediapipe/tasks/tasks-vision/XRA_module_loader.js');
 
     await new Promise((resolve)=>{
@@ -472,6 +505,10 @@ var use_mediapipe_hand_landmarker, use_mediapipe_pose_landmarker;
 var pose_landmarker;
 var pose_model_quality, pose_model_z_depth_scale;
 
+var hands_worker, hands_worker_data;
+var hands_worker_ready;
+var use_hands_worker// = true;
+
 var use_human_only, use_human_pose, use_human_hands;
 
 var human;
@@ -496,6 +533,10 @@ function _onmessage(e) {
   if (data.canvas_hands)
     _canvas_hands = data.canvas_hands;
   canvas_hands = (data.options.use_canvas_hands) ? _canvas_hands : null;
+  if (data.canvas_hands) console.log('(Transferred - canvas_hands)');
+
+  if (data.canvas_hands_worker)
+    _canvas_hands_worker = data.canvas_hands_worker;
 
   if (data.rgba) {
     process_video_buffer(data.rgba, data.w,data.h, data.options);
@@ -512,7 +553,7 @@ var eyes_xy_last = [[0,0],[0,0]];
 
 var vt, vt_offset=0, vt_last=-1;
 
-let _canvas_hands;
+let _canvas_hands, _canvas_hands_worker;
 let canvas_hands;// = new OffscreenCanvas(1,1);
 
 let shoulder_width;
@@ -1131,10 +1172,37 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
     pose = await ((use_human_pose) ? human.detect(rgba) : ((use_movenet) ? posenet.estimatePoses(rgba, {}, vt) : posenet_model.estimateSinglePose(rgba, {})));
     pose = pose_adjust((use_human_pose) ? pose.body[0] : pose)
 
-    if (options.use_handpose && (handpose_model || use_human_hands) && (skip_hand_countdown-- <= 0)) {
-      skip_hand_countdown = options.skip_hand_countdown_max||0
+    if (options.use_handpose && (use_hands_worker || ((handpose_model || use_human_hands) && (use_hands_worker || (skip_hand_countdown-- <= 0))))) {
+      skip_hand_countdown = options.skip_hand_countdown_max||0;
       if (is_hand_visible(pose)) {
-        if (handpose_model) {
+        if (use_hands_worker) {
+          if (!hands_worker_ready) await new Promise((resolve)=>{ setTimeout(resolve, 0); });
+
+          if (hands_worker_ready) {
+options.pose = pose;
+options.shoulder_width = shoulder_width;
+
+if (!(rgba instanceof ImageBitmap)) rgba = rgba.data.buffer;
+
+let data_to_transfer = [rgba];
+let data = { w:w, h:h, options:options, rgba:rgba };
+if (_canvas_hands_worker) {
+  data.canvas_hands = _canvas_hands_worker;
+  data_to_transfer.push(_canvas_hands_worker);
+}
+
+hands_worker.postMessage(data, data_to_transfer);
+
+_canvas_hands_worker = null;
+
+data_to_transfer.length = 0;
+data_to_transfer = undefined;
+data.rgba = rgba = undefined;
+
+hands_worker_ready = false;
+          }
+        }
+        else if (handpose_model) {
           hands = await handpose_model.estimateHands(get_hand_canvas(pose), vt);
           hands = hands_adjust(hands)
         }
@@ -1145,7 +1213,9 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
         no_hand_countdown = no_hand_countdown_max
       }
       else {
-        no_hand_countdown--
+        no_hand_countdown--;
+// discard outdated data when hands are hidden
+        hands_worker_data = null;
       }
     }
   }
@@ -1180,16 +1250,27 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
     fps_count = fps_ms = 0
   }
 
-  if (hands) {
+  let _t_hands, fps_hands;
+
+  if (hands_worker_data) {
+//console.log(hands_worker_data)
+    _t_hands = hands_worker_data._t;
+    fps_hands = hands_worker_data.fps;
+    hands = hands_worker_data.handpose;
+    hands_worker_data = null;
+  }
+  else if (hands) {
+    _t_hands = _t;
+    fps_hands = fps;
     hands = hands.filter((h)=>h.annotations&&Object.keys(h.annotations).length);
   }
-
+ 
   if (facemesh) {
     facemesh._t = _t
     facemesh.fps = fps
   }
 
-  postMessageAT(JSON.stringify({ posenet:pose, handpose:hands, facemesh:facemesh, _t:_t, fps:fps }));
+  postMessageAT(JSON.stringify({ posenet:pose, handpose:hands, facemesh:facemesh, _t:_t, fps:fps, _t_hands:_t_hands, fps_hands:fps_hands }));
 
   if (rgba instanceof ImageBitmap) rgba.close();
 //rgba.dispose();
