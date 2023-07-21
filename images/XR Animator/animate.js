@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-07-16)
+// (2023-07-22)
 
 var MMD_SA_options = {
 
@@ -3099,7 +3099,8 @@ wireframe:{
 }
     },
     preference: {
-      label: /OBS/
+      label: /Iriun/,
+//      label: /OBS/,
     },
     ML_models: {
       enabled: true,
@@ -3119,6 +3120,8 @@ wireframe:{
           enabled:  ()=>{ MMD_SA.WebXR.ground_plane.visible=System._browser.camera.poseNet.ground_plane_visible; },
           disabled: ()=>{ MMD_SA.WebXR.ground_plane.visible=System._browser.camera.poseNet.ground_plane_visible; },
         }
+      },
+      hands: {
       }
     }
   }
@@ -3532,6 +3535,29 @@ else {
   }
     }
 
+   ,"streamer_mode": (()=>{
+      const streamer_mode = {
+  icon_path: Settings.f_path + '/assets/assets.zip#/icon/streamer_64x64.png'
+ ,info_short: "Streamer Mode"
+// ,is_base_inventory: true
+
+ ,index_default: (is_mobile) ? undefined : 0
+
+ ,stock_max: 1
+ ,stock_default: 1
+
+ ,action: {
+    func: function () { System._browser.camera.streamer_mode.start(); }
+//    ,muted: true
+//   ,anytime: true
+  }
+
+ ,info: 'Double-click to start "Streamer mode", a one-take shortcut that automatically enables everything you need to start your mocap session, including selecting a webcam, changing your avatar\'s pose, loading the mocap AI, and turning on VMC protocol (if enabled in last session). Your preferences in webcam, pose, mocap and VMC will be saved and applied automatically.'
+      };
+
+      return streamer_mode;
+    })()
+
    ,"pose": (function () {
       function morph_event(e) {
 var mf = morph_form[morph_form_index]
@@ -3888,6 +3914,7 @@ _motion_list[0].forEach((m,i)=>{
 
 MMD_SA_options._XRA_pose_list = _motion_list;
 MMD_SA_options._XRA_pose_reset = reset_list_order;
+MMD_SA_options._XRA_clear_custom_motion = clear_custom_motion;
 
 let _motion_page = 0;
 
@@ -4051,6 +4078,8 @@ return info;
 
  ,action: {
     func: function (item) {
+if (System._browser.camera.streamer_mode.running) return true;
+
 if (MMD_SA.WebXR.session && !MMD_SA.WebXR.user_camera.initialized) {
   DEBUG_show("(You need to activate it before entering AR mode.)", 3)
   return true
@@ -4575,7 +4604,7 @@ window.addEventListener('SA_MMD_before_render', ()=>{
  ,info_short: "Hand camera"
 // ,is_base_inventory: true
 
- ,index_default: (is_mobile) ? undefined : 5
+ ,get index_default() { return (is_mobile) ? undefined : MMD_SA_options.Dungeon.inventory.max_base+1; }
 // ,get index_default() { return (is_mobile) ? undefined : (browser_native_mode) ? 4 : 6;}//MMD_SA_options.Dungeon.inventory.max_base+4; }
 
  ,stock_max: 1
@@ -4812,7 +4841,7 @@ return info;
  ,info_short: "UI/Options"
 // ,is_base_inventory: true
 
- ,index_default: (is_mobile) ? 4 : 4
+ ,index_default: (is_mobile) ? 4 : 5
 
  ,stock_max: 1
  ,stock_default: 1
@@ -4836,7 +4865,7 @@ MMD_SA_options.Dungeon.run_event("_FACEMESH_OPTIONS_",0);
  ,info_short: "VMC-protocol"
 // ,is_base_inventory: true
 
- ,index_default: (is_mobile) ? undefined : 3
+ ,index_default: (is_mobile) ? undefined : 4
  ,stock_default: (is_mobile) ? 0 : 1
 
  ,stock_max: 1
@@ -5137,7 +5166,7 @@ else {
      ,[
         {
           func: function () {
-MMD_SA.WebXR.user_camera.video_flipped=false;
+MMD_SA.WebXR.user_camera.video_flipped=MMD_SA_options.user_camera.streamer_mode.camera_preference.video_flipped=false;
 MMD_SA.WebXR.user_camera.start((0&&webkit_electron_mode) ? toFileProtocol("C:\\Users\\user\\Documents\\_.mp4") : null);
           }
          ,ended: "_SELFIE_"
@@ -5147,7 +5176,7 @@ MMD_SA.WebXR.user_camera.start((0&&webkit_electron_mode) ? toFileProtocol("C:\\U
      ,[
         {
           func: function () {
-MMD_SA.WebXR.user_camera.video_flipped=true;
+MMD_SA.WebXR.user_camera.video_flipped=MMD_SA_options.user_camera.streamer_mode.camera_preference.video_flipped=true;
 MMD_SA.WebXR.user_camera.start((0&&webkit_electron_mode) ? toFileProtocol("C:\\Users\\user\\Documents\\_.mp4") : null);
           }
          ,ended: "_SELFIE_"
@@ -5267,12 +5296,7 @@ return [
      ,[
         {
           func: function () {
-MMD_SA.WebXR.user_camera.poseNet.use_holistic = false
-
-MMD_SA.WebXR.user_camera.facemesh.enabled = true
-MMD_SA.WebXR.user_camera.poseNet.enabled = false
-MMD_SA.WebXR.user_camera.handpose.enabled = false
-DEBUG_show("Facemesh AI:ON", 2)
+System._browser.camera.streamer_mode.init_mocap('Face');
           }
          ,ended: true
         }
@@ -5281,16 +5305,7 @@ DEBUG_show("Facemesh AI:ON", 2)
      ,[
         {
           func: function () {
-MMD_SA.WebXR.user_camera.poseNet.use_holistic = false
-
-MMD_SA.WebXR.user_camera.poseNet.enabled = true
-MMD_SA.WebXR.user_camera.handpose.enabled = false
-MMD_SA.WebXR.user_camera.facemesh.enabled = false
-
-if (!MMD_SA.MMD.motionManager.para_SA.motion_tracking_enabled)
-  MMD_SA_options.Dungeon_options.item_base['pose'].action.func();
-
-DEBUG_show("Pose AI:ON", 3)
+System._browser.camera.streamer_mode.init_mocap('Body');
           }
          ,ended: true
         }
@@ -5299,16 +5314,7 @@ DEBUG_show("Pose AI:ON", 3)
      ,[
         {
           func: function () {
-MMD_SA.WebXR.user_camera.poseNet.use_holistic = false
-
-MMD_SA.WebXR.user_camera.poseNet.enabled = true
-MMD_SA.WebXR.user_camera.handpose.enabled = true
-MMD_SA.WebXR.user_camera.facemesh.enabled = false
-
-if (!MMD_SA.MMD.motionManager.para_SA.motion_tracking_enabled)
-  MMD_SA_options.Dungeon_options.item_base['pose'].action.func();
-
-DEBUG_show("Pose/Hands AI:ON", 3)
+System._browser.camera.streamer_mode.init_mocap('Body+Hands');
           }
          ,ended: true
         }
@@ -5317,16 +5323,7 @@ DEBUG_show("Pose/Hands AI:ON", 3)
      ,[
         {
           func: function () {
-MMD_SA.WebXR.user_camera.poseNet.use_holistic = false
-
-MMD_SA.WebXR.user_camera.facemesh.enabled = true
-MMD_SA.WebXR.user_camera.poseNet.enabled = true
-MMD_SA.WebXR.user_camera.handpose.enabled = false
-
-if (!MMD_SA.MMD.motionManager.para_SA.motion_tracking_enabled)
-  MMD_SA_options.Dungeon_options.item_base['pose'].action.func();
-
-DEBUG_show("Facemesh/Pose AI:ON", 3)
+System._browser.camera.streamer_mode.init_mocap('Face+Body');
           }
          ,ended: true
         }
@@ -5335,16 +5332,7 @@ DEBUG_show("Facemesh/Pose AI:ON", 3)
      ,[
         {
           func: function () {
-MMD_SA.WebXR.user_camera.poseNet.use_holistic = false
-
-MMD_SA.WebXR.user_camera.facemesh.enabled = true
-MMD_SA.WebXR.user_camera.poseNet.enabled = true
-MMD_SA.WebXR.user_camera.handpose.enabled = true
-
-if (!MMD_SA.MMD.motionManager.para_SA.motion_tracking_enabled)
-  MMD_SA_options.Dungeon_options.item_base['pose'].action.func();
-
-DEBUG_show("Facemesh/Pose/Hands AI:ON", 4)
+System._browser.camera.streamer_mode.init_mocap('Full Body');
           }
          ,ended: true
         }
@@ -5353,16 +5341,7 @@ DEBUG_show("Facemesh/Pose/Hands AI:ON", 4)
      ,[
         {
           func: function () {
-MMD_SA.WebXR.user_camera.poseNet.use_holistic = true
-
-MMD_SA.WebXR.user_camera.facemesh.enabled = true
-MMD_SA.WebXR.user_camera.poseNet.enabled = true
-MMD_SA.WebXR.user_camera.handpose.enabled = true
-
-if (!MMD_SA.MMD.motionManager.para_SA.motion_tracking_enabled)
-  MMD_SA_options.Dungeon_options.item_base['pose'].action.func();
-
-DEBUG_show("Facemesh/Pose/Hands AI:ON", 4)
+System._browser.camera.streamer_mode.init_mocap('Full Body Holistic');
           }
          ,ended: true
         }
@@ -5385,9 +5364,9 @@ return 'VMC-protocol parameters\n- port: ' + MMD_SA_options.OSC.VMC.send.port + 
   }
  ,bubble_index: 3
  ,branch_list: [
-    { key:1, event_id:{ func:()=>{ MMD_SA.OSC.VMC.sender_enabled=!MMD_SA.OSC.VMC.sender_enabled; System._browser.update_tray(); }, goto_event: { id:"_VMC_PROTOCOL_", branch_index:0 } } },
-    { key:2, event_id:{ func:()=>{ MMD_SA.OSC.VMC.send_camera_data=!MMD_SA.OSC.VMC.send_camera_data; System._browser.update_tray(); }, goto_event: { id:"_VMC_PROTOCOL_", branch_index:0 } } },
-    { key:3, event_id:{ func:()=>{ MMD_SA.OSC.VMC.VSeeFace_mode=!MMD_SA.OSC.VMC.VSeeFace_mode; System._browser.update_tray(); }, goto_event: { id:"_VMC_PROTOCOL_", branch_index:0 } } },
+    { key:1, event_id:{ func:()=>{ MMD_SA.OSC.VMC.sender_enabled   = MMD_SA_options.user_camera.streamer_mode.VMC_sender_enabled   = !MMD_SA.OSC.VMC.sender_enabled; System._browser.update_tray(); }, goto_event: { id:"_VMC_PROTOCOL_", branch_index:0 } } },
+    { key:2, event_id:{ func:()=>{ MMD_SA.OSC.VMC.send_camera_data = MMD_SA_options.user_camera.streamer_mode.VMC_send_camera_data = !MMD_SA.OSC.VMC.send_camera_data; System._browser.update_tray(); }, goto_event: { id:"_VMC_PROTOCOL_", branch_index:0 } } },
+    { key:3, event_id:{ func:()=>{ MMD_SA.OSC.VMC.VSeeFace_mode    = MMD_SA_options.user_camera.streamer_mode.VMC_VSeeFace_mode    = !MMD_SA.OSC.VMC.VSeeFace_mode; System._browser.update_tray(); }, goto_event: { id:"_VMC_PROTOCOL_", branch_index:0 } } },
     { key:4, event_id:{ func:()=>{ MMD_SA.hide_3D_avatar=!MMD_SA.hide_3D_avatar; System._browser.update_tray(); }, goto_event: { id:"_VMC_PROTOCOL_", branch_index:0 } } },
     { key:5 },
   ]
@@ -8125,9 +8104,13 @@ System._browser.save_file('XRA_settings.json', json, 'application/json');
 					"leg_scale_adjustment": 0,
 					"hip_adjustment_weight": 1
 				},
+				"hands": {},
 				"facemesh": {
 					"eye_tracking": true
 				}
+			},
+			"streamer_mode": {
+				"camera_preference": {}
 			}
 		},
 		"hotkeys": {
@@ -8142,6 +8125,10 @@ System._browser.save_file('XRA_settings.json', json, 'application/json');
 
             return ()=>{
 System.Gadget.Settings.writeString('LABEL_XRA_settings', '');
+
+MMD_SA_options._XRA_pose_reset();
+MMD_SA_options._XRA_clear_custom_motion();
+
 MMD_SA_options._XRA_settings_import(XRA_settings_default.XR_Animator_settings);
 DEBUG_show('✅Settings reset', 3);
             };
@@ -8251,7 +8238,7 @@ System._browser.camera._info =
 + '- Hip adjustment controls hip\'s reaction to upper body motion.'
           }
          ,message: {
-  get content() { return '1. AI model quality: ' + (MMD_SA_options.user_camera.ML_models.pose.model_quality || 'Normal') + '\n2. Z-depth scale: ' + ((MMD_SA_options.user_camera.ML_models.pose.model_quality == 'Best') ? ((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale)?((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale<3)?'Max':'Min'):'Medium') : 'N/A') + '\n3. Leg IK: ' + ((MMD_SA_options.user_camera.ML_models.pose.use_legIK)?'ON':'OFF') + '\n4. Leg scale adjustment: ' + ((!System._browser.camera.poseNet.leg_scale_adjustment)?'OFF':((System._browser.camera.poseNet.leg_scale_adjustment>0 && '+')||'')+System._browser.camera.poseNet.leg_scale_adjustment) + '\n5. Auto-grounding (Ctrl+G): ' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON') + '\n6. Hip adjustment: ' + ((System._browser.camera.poseNet.hip_adjustment_weight == 1) ? 'ON' : (System._browser.camera.poseNet.hip_adjustment_weight == 0) ? 'OFF' : Math.round(System._browser.camera.poseNet.hip_adjustment_weight*100) + '%') + '\n7. Done'; }
+  get content() { return '1. AI model quality: ' + (MMD_SA_options.user_camera.ML_models.pose.model_quality || 'Normal') + '\n2. Z-depth scale: ' + ((MMD_SA_options.user_camera.ML_models.pose.model_quality == 'Best') ? ((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale)?((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale<3)?'Max':'Min'):'Medium') : 'N/A') + '\n3. Leg IK: ' + ((MMD_SA_options.user_camera.ML_models.pose.use_legIK)?'ON':'OFF') + '\n4. Leg scale adjustment: ' + ((!System._browser.camera.poseNet.leg_scale_adjustment)?'OFF':((System._browser.camera.poseNet.leg_scale_adjustment>0 && '+')||'')+System._browser.camera.poseNet.leg_scale_adjustment) + '\n5. Auto-grounding (Ctrl+G): ' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON') + '\n6. Hip adjustment: ' + ((System._browser.camera.poseNet.hip_adjustment_weight == 1) ? 'ON' : (System._browser.camera.poseNet.hip_adjustment_weight == 0) ? 'OFF' : Math.round(System._browser.camera.poseNet.hip_adjustment_weight*100) + '%') + '\n7. Hands web worker (BETA): ' + ((System._browser.camera.handpose.use_hands_worker) ? 'ON' : 'OFF') + '\n8. Done'; }
  ,bubble_index: 3
  ,branch_list: [
   { key:1, event_index:2 },
@@ -8269,7 +8256,14 @@ System._browser.camera.poseNet.hip_adjustment_weight = hip_adjustment_weight;
       goto_event: { branch_index:mocap_options_branch, step:1 },
     }
   },
-  { key:7, branch_index:done_branch }
+  { key:7, event_id: {
+      func:()=>{
+System._browser.camera.handpose.use_hands_worker = !System._browser.camera.handpose.use_hands_worker;
+      },
+      goto_event: { branch_index:mocap_options_branch, step:1 },
+    }
+  },
+  { key:8, branch_index:done_branch }
   ]
           }
         },
@@ -8993,6 +8987,9 @@ config.user_camera = {
       auto_grounding: System._browser.camera.poseNet.auto_grounding,
       hip_adjustment_weight: System._browser.camera.poseNet.hip_adjustment_weight,
     },
+    hands: {
+      use_hands_worker: System._browser.camera.handpose.use_hands_worker,
+    },
     facemesh: {
       eye_tracking: System._browser.camera.facemesh.eye_tracking,
       blink_sync: System._browser.camera.facemesh.blink_sync,
@@ -9001,6 +8998,8 @@ config.user_camera = {
     },
     debug_hidden: MMD_SA_options.user_camera.ML_models.debug_hidden,
   },
+
+  streamer_mode: MMD_SA_options.user_camera.streamer_mode,
 };
 
 config.hotkeys = {
@@ -9094,9 +9093,11 @@ try {
         MMD_SA_options.user_camera.ML_models.pose.model_quality = config[p].ML_models.pose.model_quality;
         MMD_SA_options.user_camera.ML_models.pose.z_depth_scale = config[p].ML_models.pose.z_depth_scale;
         MMD_SA_options.user_camera.ML_models.pose.use_legIK = config[p].ML_models.pose.use_legIK;
+        MMD_SA_options.user_camera.streamer_mode = config[p].streamer_mode || { camera_preference:{} };
         System._browser.camera.poseNet.leg_scale_adjustment = config[p].ML_models.pose.leg_scale_adjustment;
         System._browser.camera.poseNet.auto_grounding = config[p].ML_models.pose.auto_grounding;
         System._browser.camera.poseNet.hip_adjustment_weight = config[p].ML_models.pose.hip_adjustment_weight;
+        System._browser.camera.handpose.use_hands_worker = config[p].ML_models.hands?.use_hands_worker;
         System._browser.camera.facemesh.eye_tracking = config[p].ML_models.facemesh.eye_tracking;
         System._browser.camera.facemesh.blink_sync = config[p].ML_models.facemesh.blink_sync;
         System._browser.camera.facemesh.auto_blink = config[p].ML_models.facemesh.auto_blink;
@@ -9199,6 +9200,19 @@ window.addEventListener('SA_dragdrop_JSON', (e)=>{
 
 MMD_SA_options._XRA_settings_import();
     }, 0,0);
+
+    window.addEventListener("SA_MMD_model0_onmotionchange", (e)=>{
+//{ detail:{ motion_old:mm_old, motion_new:mmd.motionManager } }));
+if (!System._browser.camera.ML_enabled) return;
+
+const mm = e.detail.motion_new;
+if (mm.filename == 'stand_simple') {
+  MMD_SA_options.user_camera.streamer_mode.motion_id = (mm.para_SA.motion_tracking_upper_body_only) ? 1 : 0;
+}
+else if (mm.para_SA.motion_tracking_enabled) {
+  MMD_SA_options.user_camera.streamer_mode.motion_id = mm.filename;
+}
+    });
   });
 
 
