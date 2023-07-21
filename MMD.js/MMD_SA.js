@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-07-17)
+// (2023-07-22)
 
 var use_full_spectrum = true
 
@@ -3122,6 +3122,8 @@ window.addEventListener('MMDStarted', ()=>{
     if (d_target.style.cursor != 'pointer') return;
 
     const sb = bb_list.find(sb=>sb._branch_key_!=null);
+    if (!sb) return;
+
     const ev = {};
     const num = parseInt(sb._branch_key_);
     if (num >= 0) {
@@ -13008,6 +13010,11 @@ MMD_SA_options.texture_resolution_limit=2048
     if (!m.events)
       m.events = {}
   });
+
+  if (!MMD_SA_options.user_camera.streamer_mode)
+    MMD_SA_options.user_camera.streamer_mode = {};
+  if (!MMD_SA_options.user_camera.streamer_mode.camera_preference)
+    MMD_SA_options.user_camera.streamer_mode.camera_preference = {};
 
   if (MMD_SA_options.user_camera.ML_models.facemesh.use_mediapipe == null)
     MMD_SA_options.user_camera.ML_models.facemesh.use_mediapipe = true//System._browser.url_search_params.use_mediapipe_facemesh
