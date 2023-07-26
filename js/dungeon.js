@@ -1,4 +1,4 @@
-// (2023-06-15)
+// (2023-07-26)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -6398,7 +6398,8 @@ key_map.down = 0
 
   d.SA_keydown = function (e) {
 const k = e.detail.keyCode;
-const k_code = e.detail.e.code;
+const _e = e.detail.e;
+const k_code = _e.code;
 
 // use RAF_timestamp instead, making it easier to track if a key is pressed in the same frame
 var t = RAF_timestamp//performance.now()
@@ -6414,6 +6415,17 @@ if (msg_branch_list) {
     const branch = msg_branch_list[i]
     const sb_index = branch.sb_index || 0;
     const sb = MMD_SA.SpeechBubble.list[sb_index];
+
+    if (branch.key == 'any') {
+      const result = branch.func(e.detail.e);
+      if (result) {
+        e.detail.result.return_value = true;
+        break;
+      }
+    }
+
+    if (_e.ctrlKey || _e.shiftKey || _e.altKey) break;
+
     if ((typeof branch.key == 'number') ? ((k == 96+branch.key) || (k == 48+branch.key)) : (k_code == 'Key'+branch.key)) {
       e.detail.result.return_value = true;
 
