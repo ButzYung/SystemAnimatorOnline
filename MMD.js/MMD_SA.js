@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-07-22)
+// (2023-07-26)
 
 var use_full_spectrum = true
 
@@ -3106,39 +3106,7 @@ MMD_SA.THREEX.mesh_obj.get( "SpeechBubbleMESH" + this.index ).hide();
 
     if (self.MMD_SA_options?.Dungeon_options && (MMD_SA_options.SpeechBubble_branch?.use_cursor !== false)) {
 window.addEventListener('MMDStarted', ()=>{
-//  const THREE = MMD_SA.THREEX.THREE;
-  const SL = MMD_SA.THREEX.SL;
-
-  const v1 = new THREE.Vector3();
-  const v2 = new THREE.Vector3();
-
-  let mouse_x, mouse_y;
-  const d_target = document.getElementById('SL_Host');
-  d_target.addEventListener('mousemove', (e)=>{
-    mouse_x = e.clientX;
-    mouse_y = e.clientY;
-  });
-  d_target.addEventListener('click', (e)=>{
-    if (d_target.style.cursor != 'pointer') return;
-
-    const sb = bb_list.find(sb=>sb._branch_key_!=null);
-    if (!sb) return;
-
-    const ev = {};
-    const num = parseInt(sb._branch_key_);
-    if (num >= 0) {
-      ev.keyCode = 96+num;
-    }
-    else {
-      ev.code = 'Key'+sb._branch_key_;
-    }
-
-    SA_OnKeyDown(ev);
-  });
-
-// https://stackoverflow.com/questions/11586527/converting-world-coordinates-to-screen-coordinates-in-three-js-using-projection
-
-  System._browser.on_animation_update.add(()=>{
+  function highlight() {
     function clear_highlight(sb) {
       if (sb._branch_key_ != null) {
         sb._branch_key_ = null;
@@ -3167,12 +3135,14 @@ window.addEventListener('MMDStarted', ()=>{
       const w = b.image.width;
       const h = b.image.height;
 
-      const scale = v2.copy(sb._mesh.scale).multiplyScalar(Math.min(SL.width/w, SL.height/h));
+      const scale = v2.copy(sb._mesh.scale).multiplyScalar(SL.height/h);//(Math.min(SL.width/w, SL.height/h));
       pos.x /= scale.x;
       pos.y /= scale.y;
 
       pos.x += w/2;
       pos.y += h/2;
+
+//DEBUG_show('scale:'+scale.x+'\n'+mouse_x+','+mouse_y+'\n'+ (~~pos.x) +','+ (~~pos.y)+'\n\n'+sb.msg_obj.map((o,i)=>i+':'+ ~~o.x + 'x' + ~~o.y + '/' + ~~o.w + 'x' + ~~o.h).join('\n'))
 
       if ((pos.x < 0) || (pos.x > w) || (pos.y < 0) || (pos.y > h)) {
         clear_highlight(sb);
@@ -3200,7 +3170,67 @@ window.addEventListener('MMDStarted', ()=>{
     });
 
     d_target.style.cursor = (is_pointer) ? 'pointer' : 'auto';
-  }, 0,0,-1);
+  }
+
+//  const THREE = MMD_SA.THREEX.THREE;
+  const SL = MMD_SA.THREEX.SL;
+
+  const v1 = new THREE.Vector3();
+  const v2 = new THREE.Vector3();
+
+  let mouse_x, mouse_y;
+
+  const d_target = document.getElementById('SL_Host');
+  d_target.addEventListener('mousemove', (e)=>{
+    mouse_x = e.clientX;
+    mouse_y = e.clientY;
+  });
+  d_target.addEventListener('click', (e)=>{
+    if (!is_mobile && (d_target.style.cursor != 'pointer')) return;
+
+    let sb = bb_list.find(sb=>sb._branch_key_!=null);
+    if (!sb) {
+      if (is_mobile) {
+        mouse_x = e.clientX * window.devicePixelRatio;
+        mouse_y = e.clientY * window.devicePixelRatio;
+        highlight(); sb = bb_list.find(sb=>sb._branch_key_!=null);
+        if (!sb) {
+          mouse_x = mouse_y = null;
+          return;
+        }
+      }
+      else
+        return;
+    }
+/*
+    if (is_mobile) {
+      mouse_x = e.clientX * window.devicePixelRatio;
+      mouse_y = e.clientY * window.devicePixelRatio;
+      highlight();
+      const sb_confirm = bb_list.find(sb=>sb._branch_key_!=null);
+      if ((sb != sb_confirm) || (sb._branch_key_ != sb_confirm._branch_key_)) {
+        mouse_x = mouse_y = null;
+        return;
+      }
+    }
+*/
+    mouse_x = mouse_y = null;
+
+    const ev = {};
+    const num = parseInt(sb._branch_key_);
+    if (num >= 0) {
+      ev.keyCode = 96+num;
+    }
+    else {
+      ev.code = 'Key'+sb._branch_key_;
+    }
+
+    SA_OnKeyDown(ev);
+  });
+
+// https://stackoverflow.com/questions/11586527/converting-world-coordinates-to-screen-coordinates-in-three-js-using-projection
+
+  System._browser.on_animation_update.add(highlight, 0,0,-1);
 });
     }
 
@@ -7885,14 +7915,15 @@ rot_arm_axis[ 1] = new THREE.Quaternion().setFromEuler(e1.set(0,0,37.4224/180*Ma
 rot_arm_axis[-1] = rot_arm_axis[ 1].clone().conjugate();
 
 // 14.3594, 12.5
+const shoulder_mod = (threeX.enabled) ? 0.5 : 1;
 // convert_T_pose_rotation_to_A_pose
 rot_shoulder_axis[0] = {};
-rot_shoulder_axis[0][ 1] = new THREE.Quaternion().setFromEuler(e1.set(0,0,12.5/180*Math.PI));
+rot_shoulder_axis[0][ 1] = new THREE.Quaternion().setFromEuler(e1.set(0,0,12.5*shoulder_mod/180*Math.PI));
 rot_shoulder_axis[0][-1] = rot_shoulder_axis[0][ 1].clone().conjugate();
 // convert_A_pose_rotation_to_T_pose
 if (!rot_shoulder_axis[1]) {
   rot_shoulder_axis[1] = {};
-  rot_shoulder_axis[1][ 1] = new THREE.Quaternion().setFromEuler(e1.set(0,0,12.5*0.5 /180*Math.PI));
+  rot_shoulder_axis[1][ 1] = new THREE.Quaternion().setFromEuler(e1.set(0,0,12.5*shoulder_mod/180*Math.PI));
   rot_shoulder_axis[1][-1] = rot_shoulder_axis[1][ 1].clone().conjugate();
 }
     };
@@ -8576,6 +8607,11 @@ if (!MMD_SA.MMD_started)
         value: true
       },
 
+      use_faceBlendshapes: {
+        get: function () { return this._use_faceBlendshapes && !this._disable_faceBlendshapes; },
+        set: function (v) { this._use_faceBlendshapes=v; },
+      },
+
       bone_map_MMD_to_VRM: {
         get: ()=>{ return bone_map_MMD_to_VRM; }
       },
@@ -8918,12 +8954,13 @@ const mouth_open = Math.max(
   blendshape_weight[blendshape_map_name('e', use_VRM1)]||0,
   blendshape_weight[blendshape_map_name('o', use_VRM1)]||0
 );
-[{n:'u', w:MMD_morph_weight['にやり']}, {n:'e', w:MMD_morph_weight['ω']}].forEach(obj => {
+[{n:'e', w:MMD_morph_weight['にやり']}, {n:'u', w:MMD_morph_weight['ω']}].forEach(obj => {
   if (!obj.w) return
 
   const name = blendshape_map_name(obj.n, use_VRM1);
   const w = blendshape_weight[name] || 0;
   blendshape_weight[name] = w + (1-w) * obj.w * (mouth_open*0.8 + (1-mouth_open)*0.2);
+//System._browser.camera.DEBUG_show(name+','+obj.n+':'+blendshape_weight[name]);
 });
 
 // should be safe to reset geometry.morphs_weight_by_name after blendshape update, when MMD is not used
@@ -8939,8 +8976,10 @@ const facemesh = System._browser.camera.facemesh;
 if (this.use_faceBlendshapes && facemesh.enabled) {
   use_faceBlendshapes = facemesh.use_faceBlendshapes && System._browser.camera.initialized && facemesh.eye_tracking;
   if (use_faceBlendshapes) {
-    for (const name in blendshape_weight)
-      blendshape_weight[name] = 0;
+    for (const name in blendshape_weight) {
+      if (this.emotion_list.indexOf(name) == -1)
+        blendshape_weight[name] = 0;
+    }
   }
 
   if (System._browser.camera.facemesh.auto_look_at_camera && facemesh.use_faceBlendshapes && System._browser.camera.initialized) {
@@ -9214,11 +9253,11 @@ if (!mesh.matrixAutoUpdate) {
 "ウィンク右": "blinkRight",
 "ｳｨﾝｸ２右": "blinkRight",
 
-"照れ": "relaxed",
+"にこり": "relaxed",
 "困る": "sad",
 "怒り": "angry",
 "笑い": "happy",
-"びっくり": "Surprise",
+//"びっくり": "Surprise",
     };
 
     const blendshape_map_by_MMD_name_VRM0 = {
@@ -9245,15 +9284,14 @@ if (!mesh.matrixAutoUpdate) {
 "ウィンク右": "blink_r",
 "ｳｨﾝｸ２右": "blink_r",
 
-"照れ": "fun",
+"にこり": "fun",
 "困る": "sorrow",
 "怒り": "angry",
 "笑い": "joy",
-"びっくり": "Surprise",
+//"びっくり": "Surprise",
     };
 
-    const blendshape_map_by_MMD_name = (use_VRM1) ? blendshape_map_by_MMD_name_VRM1 : blendshape_map_by_MMD_name_VRM0;
-    const MMD_morph_list = Object.keys(blendshape_map_by_MMD_name);
+    let blendshape_map_by_MMD_name, MMD_morph_list;
 
     const blendshape_map_name = (function () {
 const map_to_v = [{}, {}];
@@ -9415,19 +9453,19 @@ data.scene.add(mesh_obj);
 var vrm_obj = new VRM_object(para.vrm_index, vrm, { url:url_raw });
 
 vrm_obj.faceBlendshapes_map = {};
-if (vrm.expressionManager.expressionMap['CheekPuff']) {
+if (vrm.expressionManager.customExpressionMap['CheekPuff']) {
   vrm_obj.use_faceBlendshapes = true;
   System._browser.camera.facemesh.faceBlendshapes_list.map(b=>{
     vrm_obj.faceBlendshapes_map[b] = b;
   });
 }
-else if (vrm.expressionManager.expressionMap['BlendShape.CheekPuff']) {
+else if (vrm.expressionManager.customExpressionMap['BlendShape.CheekPuff']) {
   vrm_obj.use_faceBlendshapes = true;
   System._browser.camera.facemesh.faceBlendshapes_list.map(b=>{
     vrm_obj.faceBlendshapes_map[b] = 'BlendShape.' + b;
   });
 }
-else if (vrm.expressionManager.expressionMap['cheekPuff']) {
+else if (vrm.expressionManager.customExpressionMap['cheekPuff']) {
   vrm_obj.use_faceBlendshapes = true;
   System._browser.camera.facemesh.faceBlendshapes_list.map(b=>{
     vrm_obj.faceBlendshapes_map[b] = b.charAt(0).toLowerCase() + b.substring(1);
@@ -9440,6 +9478,21 @@ if (vrm_obj.use_faceBlendshapes) {
     vrm_obj.faceBlendshapes_map_reversed[e[1]] = e[0];
   });
 }
+
+vrm_obj.emotion_list = (use_VRM1) ? ['relaxed','happy','sad','angry'] : ['fun','joy','sorrow','angry'];
+for (const name in vrm.expressionManager.customExpressionMap) {
+  if (/surprise/i.test(name)) {
+    blendshape_map_by_MMD_name_VRM0['びっくり'] = blendshape_map_by_MMD_name_VRM1['びっくり'] = name;
+    vrm_obj.emotion_list.push(name);
+  }
+  else if (/blush|shy/i.test(name)) {
+    blendshape_map_by_MMD_name_VRM0['照れ'] = blendshape_map_by_MMD_name_VRM1['照れ'] = name;
+    vrm_obj.emotion_list.push(name);
+  }
+}
+blendshape_map_by_MMD_name = (use_VRM1) ? blendshape_map_by_MMD_name_VRM1 : blendshape_map_by_MMD_name_VRM0;
+MMD_morph_list = Object.keys(blendshape_map_by_MMD_name);
+console.log(vrm_obj.emotion_list, MMD_morph_list);
 
 if (!vrm_obj.is_VRM1) mesh_obj.quaternion.set(0,1,0,0);
 
