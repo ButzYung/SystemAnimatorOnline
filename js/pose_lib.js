@@ -1,4 +1,4 @@
-// (2023-07-22)
+// (2023-07-26)
 
 var PoseAT = (function () {
 
@@ -388,7 +388,7 @@ if (use_hands_worker) {
     handpose_initialized = false;
 }
 else {
-  hands_worker_ready = hands_worker_data = null;
+  hands_worker_data = null;
   if (!handpose_model)
     handpose_initialized = false;
 }
