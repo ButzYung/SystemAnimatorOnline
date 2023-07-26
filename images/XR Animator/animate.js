@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-07-22)
+// (2023-07-26)
 
 var MMD_SA_options = {
 
@@ -4058,7 +4058,7 @@ else {
  info =
   '- Double-click to change the pose of the avatar.\n'
 + '- Choose a suitable pose depending on whether you want a full-body💃 or upper-body🙋 mocap.\n'
-+ '- 🦶denotes the support of arm-to-leg🙋↔️🦶control mode by pressing Ctrl+Z. Repeat to return to normal mode.\n'
++ '- 🦶denotes the support of arm-to-leg🙋↔️🦶control mode by pressing ' + (System._browser.hotkeys.config_by_id['arm_to_leg_control_mode']?.accelerator[0]||'') + '. Repeat to return to normal mode.\n'
 + '- Use mouse or keys to pick an alphanumeric option.';
 }
 
@@ -4647,11 +4647,12 @@ else {
    ,anytime: true
   }
 
- ,info: [
-'- Ctrl+H / double-click to use your hand as camera during mocap.',
+ ,get info() { return [
+'- ' + (System._browser.hotkeys.config_by_id['hand_camera']?.accelerator[0]||'') + ' / double-click to use your hand as camera during mocap.',
 '- Repeat to switch from left to right hand.',
 '- Repeat to disable it.',
-  ].join('\n')
+  ].join('\n');
+  }
       };
     })()
 
@@ -5166,7 +5167,7 @@ else {
      ,[
         {
           func: function () {
-MMD_SA.WebXR.user_camera.video_flipped=MMD_SA_options.user_camera.streamer_mode.camera_preference.video_flipped=false;
+MMD_SA.WebXR.user_camera.video_flipped=false;
 MMD_SA.WebXR.user_camera.start((0&&webkit_electron_mode) ? toFileProtocol("C:\\Users\\user\\Documents\\_.mp4") : null);
           }
          ,ended: "_SELFIE_"
@@ -5176,7 +5177,7 @@ MMD_SA.WebXR.user_camera.start((0&&webkit_electron_mode) ? toFileProtocol("C:\\U
      ,[
         {
           func: function () {
-MMD_SA.WebXR.user_camera.video_flipped=MMD_SA_options.user_camera.streamer_mode.camera_preference.video_flipped=true;
+MMD_SA.WebXR.user_camera.video_flipped=true;
 MMD_SA.WebXR.user_camera.start((0&&webkit_electron_mode) ? toFileProtocol("C:\\Users\\user\\Documents\\_.mp4") : null);
           }
          ,ended: "_SELFIE_"
@@ -7816,7 +7817,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  content: 'XR Animator (v0.11.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
+  content: 'XR Animator (v0.12.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -8009,8 +8010,22 @@ MMD_SA_options.use_CircularSpectrum = !MMD_SA_options.use_CircularSpectrum;
         },
 // 3
         {
-          message: {
-  get content() {
+message: {
+  index: 1,
+  bubble_index: 3,
+  content: [
+'・✔️Ctrl+L to toggle 3D camera lock',
+'・✔️Pause to pause/resume mocap',
+'・✔️F9 to start video capture',
+'・✔️F10 to stop video capture',
+'・✔️F12 to capture still shot',
+
+  ].join('\n')
+},
+next_step: {},
+        },
+
+        ...(()=>{
 function get_state(id) {
   const hotkeys = System._browser.hotkeys
 
@@ -8026,48 +8041,209 @@ function get_state(id) {
   return state;
 }
 
+function check_hotkey(acc) {
+  if (!acc) {
+    if (!hotkey_combo || !hotkey_combo[0] || !hotkey_combo[1]) return false;
+    acc = hotkey_combo.join('+');
+  }
+
+  let state;
+  if (System._browser.hotkeys._hotkey_reserved.indexOf(acc) != -1) {
+    state = false;
+    hotkey_info = '❌Reserved';
+  }
+  else {
+    state = browser_native_mode || !webkit_electron_remote.globalShortcut.isRegistered(acc);
+    hotkey_info = (state) ? '✔️OK' : '❌Not usable';
+  }
+
+  return state;
+}
+
+          var hotkey_id, hotkey_combo, hotkey_info, hotkey_acc;
+
+          var branch_list = [
+    { key:'any', func:(e)=>{
+if (!hotkey_id) return false;
+if (!hotkey_combo) return false;
+if (hotkey_acc) return false;
+
+if (e.code == 'Escape') {
+  hotkey_acc = hotkey_combo = null;
+  MMD_SA_options.Dungeon.run_event(null,null,5);
+  return true;
+}
+
+if (/Alt|Control|Shift/.test(e.key)) {
+  hotkey_combo[0] = e.key.replace(/Control/, 'Ctrl');
+}
+else if (/Key([A-Z])/.test(e.code)) {
+  hotkey_combo[1] = RegExp.$1;
+}
+
+for (let i = 0; i < 2; i++) {
+  if (!hotkey_combo[i])
+    hotkey_combo[i] = '';
+}
+
+if (check_hotkey()) {
+  hotkey_acc = hotkey_combo.join('+');
+  hotkey_combo = null;
+}
+
+MMD_SA_options.Dungeon.run_event(null,null,5);
+
+return true;
+    } },
+    ...['switch_motion','arm_to_leg_control_mode','mocap_auto_grounding','hand_camera','auto_look_at_camera'].map((id,i)=>{
+      return { key:i+1, event_id:{ func:()=>{
+hotkey_id = id;
+hotkey_combo = hotkey_info = hotkey_acc = null;
+        }, goto_event:{event_index:5} }
+      };
+    }),
+
+    { key:'D', event_id:{ func:()=>{
+if (!hotkey_id) return;
+
+const hotkeys = System._browser.hotkeys
+const config = hotkeys.config_by_id[hotkey_id];
+hotkeys.enable_global(hotkey_id, !!hotkeys.accelerators[config.accelerator[0]].config.global_disabled);
+    }, goto_event:{event_index:4} } },
+
+    { key:'C', event_id:{ func:()=>{
+if (!hotkey_id) return;
+if (hotkey_id == 'switch_motion') return;
+
+hotkey_combo = [];
+hotkey_info = hotkey_acc = null;
+    }, goto_event:{event_index:4} } },
+
+    { key:'R', event_id:{ func:()=>{
+if (!hotkey_id) return;
+if (hotkey_id == 'switch_motion') return;
+
+const hotkeys = System._browser.hotkeys;
+const acc_default = hotkeys._hotkey_config.find(c=>c.id==hotkey_id).accelerator;
+
+if (acc_default[0] == hotkeys.config_by_id[hotkey_id].accelerator[0]) {
+  hotkey_info = (hotkey_acc) ? '✔️Hotkey reset (' + acc_default[0] + ')' : '(Hotkey already in default state)';
+}
+else {
+  hotkeys.register(hotkey_id, acc_default);
+  hotkey_info = '✔️Hotkey reset (' + acc_default[0] + ')';
+}
+
+hotkey_combo = hotkey_acc = null;
+    }, goto_event:{event_index:4} } },
+
+    { key:'F', event_id:{ func:()=>{
+if (!hotkey_id) return;
+
+const hotkeys = System._browser.hotkeys;
+if (hotkey_acc) {
+  const acc_default = hotkeys._hotkey_config.find(c=>c.id==hotkey_id).accelerator;
+  if (!hotkeys.register(hotkey_id, [hotkey_acc])) {
+    hotkeys.register(hotkey_id, acc_default);
+    DEBUG_show('❌Hotkey not registered, restoring default (' + acc_default[0] + ')', 5);
+  }
+  else {
+    DEBUG_show('✔️Hotkey registered (' + hotkey_acc + ')', 5);
+  }
+}
+
+hotkey_id = hotkey_combo = hotkey_info = hotkey_acc = null;
+    }, goto_event:{event_index:3} } },
+
+    { key:'G', event_id:{ func:()=>{System._browser.hotkeys.register_global(!System._browser.hotkeys.is_global)}, goto_event:{event_index:3} } },
+    { key:'X', event_id:{ func:()=>{
+hotkey_id = hotkey_combo = hotkey_info = hotkey_acc = null;
+    }, goto_event:{event_index:99} } },
+          ];
+
+          return [
+// 4
+            {
+              func: ()=>{
+if (hotkey_id) MMD_SA_options.Dungeon.run_event();
+              },
+              message: {
+  get content() {
+const hotkeys = System._browser.hotkeys;
+
 return [
-  '・' + get_state('switch_motion') + 'Alt/Ctrl+Num0-9 to switch motion',
-  '・' + get_state('switch_motion_control_mode') + 'Ctrl+Z to toggle🙋↔️🦶control mode',
-  '・' + get_state('mocap_auto_grounding') + 'Ctrl+G to toggle mocap auto-grounding',
+  '1. ' + get_state('switch_motion') + 'Alt/Ctrl+Num0-9 to switch motion',
+  '2. ' + get_state('arm_to_leg_control_mode') + hotkeys.config_by_id['arm_to_leg_control_mode'].accelerator[0] + ' to toggle🙋↔️🦶control mode',
+  '3. ' + get_state('mocap_auto_grounding') + hotkeys.config_by_id['mocap_auto_grounding'].accelerator[0] + ' to toggle mocap auto-grounding',
 //  '・' + get_state('camera_3D_lock') + 'Ctrl+L to toggle 3D camera lock',
-  '・' + get_state('hand_camera') + 'Ctrl+H to toggle hand camera mode',
-  '・' + get_state('auto_look_at_camera') + 'Ctrl+E to toggle auto "look at camera"',
-  '1. 🌐Global hotkey mode: ' + ((System._browser.hotkeys.is_global) ? 'ON' : 'OFF'),
-  '2. Done',
+  '4. ' + get_state('hand_camera') + hotkeys.config_by_id['hand_camera'].accelerator[0] + ' to toggle hand camera mode',
+  '5. ' + get_state('auto_look_at_camera') + hotkeys.config_by_id['auto_look_at_camera'].accelerator[0] + ' to toggle auto "look at camera"',
+  'G. Global hotkey mode🌐: ' + ((System._browser.hotkeys.is_global) ? 'ON' : 'OFF'),
+  'X. Done',
 ].join('\n');
   },
   bubble_index: 3,
-  para: { no_word_break:true },
-  branch_list: [
-    { key:1, event_index:5 },
-    { key:2, event_index:99 },
-  ]
-          },
-          next_step: {},
-        },
+  para: { no_word_break:true, font_scale:0.9 },
+  branch_list: branch_list,
+              },
+            },
 
-        {
-message: {
+// 5
+            {
+              message: {
+  get content() {
+const hotkeys = System._browser.hotkeys
+const config = hotkeys.config_by_id[hotkey_id];
+
+return [
+  get_state(hotkey_id) + hotkey_id,
+
+  ...(()=>{
+if (hotkey_id == 'switch_motion') return ['Hotkey: Alt/Ctrl+Num0-9'];
+
+if (!hotkey_combo) return ['Hotkey: ' + (hotkey_acc||config.accelerator[0])];
+
+let info = 'Valid keys:\n・Alt/Ctrl/Shift\n・A-Z\nPress Esc to cancel.';
+
+if (!hotkey_combo.length) {
+  return [
+'Current hotkey: ' + config.accelerator[0],
+info,
+  ];
+}
+
+return [
+  'Current hotkey: ' + hotkey_combo.join('+'),
+  info,
+];
+  })(),
+
+  ...((hotkey_info)?[hotkey_info]:[]),
+
+  ...((hotkey_combo || browser_native_mode) ? [] : ['D. Disable global hotkey: ' + ((hotkeys.accelerators[config.accelerator[0]].config.global_disabled) ? 'YES' : 'NO')]),
+
+  ...(()=>{
+if ((hotkey_id == 'switch_motion') || hotkey_combo) return [];
+
+if (!hotkey_combo) {
+  return [
+    'C. Change hotkey',
+    'R. Reset hotkey',
+  ];
+}
+  })(),
+
+  ...((hotkey_combo) ? [] : ['F. Finish']),
+].join('\n');
+  },
   index: 1,
   bubble_index: 3,
-  content: [
-'・✔️Ctrl+L to toggle 3D camera lock',
-'・✔️Pause to pause/resume mocap',
-'・✔️F9 to start video capture',
-'・✔️F10 to stop video capture',
-'・✔️F12 to capture still shot',
-
-  ].join('\n')
-}
-        },
-// 5
-        {
-          func: ()=>{
-System._browser.hotkeys.register_global();
-          },
-          goto_event: { event_index:3 },
-        },
+  para: { font_scale:1 },
+  branch_list: branch_list,
+              },
+            },
+          ];
+        })(),
 // 6
         {
           func: ()=>{
@@ -8238,7 +8414,7 @@ System._browser.camera._info =
 + '- Hip adjustment controls hip\'s reaction to upper body motion.'
           }
          ,message: {
-  get content() { return '1. AI model quality: ' + (MMD_SA_options.user_camera.ML_models.pose.model_quality || 'Normal') + '\n2. Z-depth scale: ' + ((MMD_SA_options.user_camera.ML_models.pose.model_quality == 'Best') ? ((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale)?((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale<3)?'Max':'Min'):'Medium') : 'N/A') + '\n3. Leg IK: ' + ((MMD_SA_options.user_camera.ML_models.pose.use_legIK)?'ON':'OFF') + '\n4. Leg scale adjustment: ' + ((!System._browser.camera.poseNet.leg_scale_adjustment)?'OFF':((System._browser.camera.poseNet.leg_scale_adjustment>0 && '+')||'')+System._browser.camera.poseNet.leg_scale_adjustment) + '\n5. Auto-grounding (Ctrl+G): ' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON') + '\n6. Hip adjustment: ' + ((System._browser.camera.poseNet.hip_adjustment_weight == 1) ? 'ON' : (System._browser.camera.poseNet.hip_adjustment_weight == 0) ? 'OFF' : Math.round(System._browser.camera.poseNet.hip_adjustment_weight*100) + '%') + '\n7. Hands web worker (BETA): ' + ((System._browser.camera.handpose.use_hands_worker) ? 'ON' : 'OFF') + '\n8. Done'; }
+  get content() { return '1. AI model quality: ' + (MMD_SA_options.user_camera.ML_models.pose.model_quality || 'Normal') + '\n2. Z-depth scale: ' + ((MMD_SA_options.user_camera.ML_models.pose.model_quality == 'Best') ? ((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale)?((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale<3)?'Max':'Min'):'Medium') : 'N/A') + '\n3. Leg IK: ' + ((MMD_SA_options.user_camera.ML_models.pose.use_legIK)?'ON':'OFF') + '\n4. Leg scale adjustment: ' + ((!System._browser.camera.poseNet.leg_scale_adjustment)?'OFF':((System._browser.camera.poseNet.leg_scale_adjustment>0 && '+')||'')+System._browser.camera.poseNet.leg_scale_adjustment) + '\n5. Auto-grounding (' + (System._browser.hotkeys.config_by_id['mocap_auto_grounding']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON') + '\n6. Hip adjustment: ' + ((System._browser.camera.poseNet.hip_adjustment_weight == 1) ? 'ON' : (System._browser.camera.poseNet.hip_adjustment_weight == 0) ? 'OFF' : Math.round(System._browser.camera.poseNet.hip_adjustment_weight*100) + '%') + '\n7. Hands web worker (BETA): ' + ((System._browser.camera.handpose.use_hands_worker) ? 'ON' : 'OFF') + '\n8. Done'; }
  ,bubble_index: 3
  ,branch_list: [
   { key:1, event_index:2 },
@@ -8347,7 +8523,7 @@ System._browser.camera.poseNet.bb_clear = 15
   get content() {
 const camera = System._browser.camera;
 
-return '1. Eye tracking: ' + ((!System._browser.camera.facemesh.eye_tracking)?'OFF':'ON') + '\n2. Blink LR sync: ' + ((!System._browser.camera.facemesh.blink_sync)?'OFF':'ON') + '\n3. Auto blink: ' + ((!System._browser.camera.facemesh.auto_blink)?'OFF':'ON') + '\n4. Auto "look at camera" (Ctrl+E): ' + ((!System._browser.camera.facemesh.auto_look_at_camera)?'OFF':'ON') + ((camera.facemesh.enabled && camera.video) ? '\n5. Reset calibration\n6. Import calibration\n7. Export calibration\n8. Done' : '\n5. Done');
+return '1. Eye tracking: ' + ((!System._browser.camera.facemesh.eye_tracking)?'OFF':'ON') + '\n2. Blink LR sync: ' + ((!System._browser.camera.facemesh.blink_sync)?'OFF':'ON') + '\n3. Auto blink: ' + ((!System._browser.camera.facemesh.auto_blink)?'OFF':'ON') + '\n4. Auto "look at camera" (' + (System._browser.hotkeys.config_by_id['auto_look_at_camera']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.facemesh.auto_look_at_camera)?'OFF':'ON') + '\n5. Emotion tracking weight: ' + (Math.round(((System._browser.camera.facemesh.emotion_weight == null) ? 0.75 : System._browser.camera.facemesh.emotion_weight) * 100) + '%') + ((camera.facemesh.enabled && camera.video) ? '\n6. Reset calibration\n7. Import calibration\n8. Export calibration\n9. Done' : '\n6. Done');
   }
  ,bubble_index: 3
  ,get branch_list() {
@@ -8358,13 +8534,20 @@ return [
   { key:2, branch_index:facemesh_options_branch+1 },
   { key:3, event_id:{ func:()=>{ System._browser.camera.facemesh.auto_blink = !System._browser.camera.facemesh.auto_blink; }, goto_branch:facemesh_options_branch } },
   { key:4, event_id:{ func:()=>{ System._browser.camera.facemesh.auto_look_at_camera = !System._browser.camera.facemesh.auto_look_at_camera; }, goto_branch:facemesh_options_branch } },
+  { key:5, event_id:{ func:()=>{
+let w = System._browser.camera.facemesh.emotion_weight;
+if (w == null) w = 0.75;
+w += 0.25;
+if (w > 1) w = 0;
+System._browser.camera.facemesh.emotion_weight = w;
+  }, goto_branch:facemesh_options_branch } },
 ].concat((camera.facemesh.enabled && camera.video) ? [
-  { key:5, branch_index:facemesh_options_branch+3 },
-  { key:6, branch_index:facemesh_options_branch+4 },
-  { key:7, branch_index:facemesh_options_branch+5 },
-  { key:8, branch_index:done_branch }
+  { key:6, branch_index:facemesh_options_branch+3 },
+  { key:7, branch_index:facemesh_options_branch+4 },
+  { key:8, branch_index:facemesh_options_branch+5 },
+  { key:9, branch_index:done_branch }
 ] : [
-  { key:5, branch_index:done_branch }
+  { key:6, branch_index:done_branch }
 ]);
   }
           }
@@ -8945,12 +9128,19 @@ if (expression_active.length && !MMD_SA.THREEX.enabled)
     },
   ];
 
-  hotkey_config.forEach(config=>{
-    System._browser.hotkeys.add(config);
+  const hotkey_reserved = [];
+  hotkey_config.forEach(k=>k.accelerator.forEach(a=>{ hotkey_reserved.push(a) }));
+
+  System._browser.hotkeys._hotkey_config = System._browser.hotkeys._hotkey_config.concat(hotkey_config);
+  System._browser.hotkeys._hotkey_reserved = hotkey_reserved;
+//console.log(System._browser.hotkeys._hotkey_config, hotkey_reserved)
+
+  System._browser.hotkeys._hotkey_config.forEach(config=>{
+    const _config = MMD_SA_options._XRA_settings_imported?.hotkeys?.configs?.find(c=>c.id==config.id);
+    System._browser.hotkeys.add(Object.assign({}, config, _config||{}));
   });
 
-  if (!browser_native_mode && (System._browser.hotkeys.is_global !== false))
-    System._browser.hotkeys.register_global(true);
+//  if (webkit_electron_mode && (System._browser.hotkeys.is_global !== false)) System._browser.hotkeys.register_global(true);
 })();
 
 
@@ -8958,6 +9148,8 @@ if (expression_active.length && !MMD_SA.THREEX.enabled)
 
 //console.log(ground,material)
   });
+
+  System._browser.hotkeys._hotkey_config = [];
 
   MMD_SA_options._XRA_settings_export = ()=>{
 function custom_motion() {
@@ -8995,6 +9187,7 @@ config.user_camera = {
       blink_sync: System._browser.camera.facemesh.blink_sync,
       auto_blink: System._browser.camera.facemesh.auto_blink,
       auto_look_at_camera: System._browser.camera.facemesh.auto_look_at_camera,
+      emotion_weight: System._browser.camera.facemesh.emotion_weight,
     },
     debug_hidden: MMD_SA_options.user_camera.ML_models.debug_hidden,
   },
@@ -9002,8 +9195,22 @@ config.user_camera = {
   streamer_mode: MMD_SA_options.user_camera.streamer_mode,
 };
 
+const hotkeys = System._browser.hotkeys;
 config.hotkeys = {
-  is_global: System._browser.hotkeys.is_global,
+  is_global: hotkeys.is_global,
+
+  configs: hotkeys._hotkey_config.map(c=>{
+    const _config = { id:c.id };
+
+    const config = hotkeys.config_by_id[c.id];
+    const global_disabled = hotkeys.accelerators[config.accelerator[0]].config.global_disabled;
+    if (!!global_disabled !== !!c.global_disabled)
+      _config.global_disabled = global_disabled;
+    if ((c.accelerator.length == 1) && (config.accelerator[0] != c.accelerator[0]))
+      _config.accelerator = config.accelerator;
+
+    return _config;
+  }),
 };
 config.camera_face_locking = MMD_SA_options.camera_face_locking;
 config.audio_visualizer = MMD_SA_options.use_CircularSpectrum;
@@ -9052,11 +9259,21 @@ System.Gadget.Settings.writeString('LABEL_XRA_settings', JSON.stringify(config))
 function shoulder_adjust(p) {
   MMD_SA.THREEX.shoulder_adjust = config[p];
 
+// always use the default (12.5) for MMD shoulder axis
+  if (!MMD_SA.THREEX.enabled) return;
+
   const rot_shoulder_axis = MMD_SA.THREEX._rot_shoulder_axis;
   if (!rot_shoulder_axis[1])
     rot_shoulder_axis[1] = {};
   rot_shoulder_axis[1][ 1] = new THREE.Quaternion().setFromEuler(MMD_SA.THREEX.e1.set(0, 0, ((!MMD_SA.THREEX.shoulder_adjust)?12.5*0.5:((MMD_SA.THREEX.shoulder_adjust=='Full')?12.5:0)) /180*Math.PI));
   rot_shoulder_axis[1][-1] = rot_shoulder_axis[1][ 1].clone().conjugate();
+
+// save some headaches and use the same shoulder adjust for convert_T_pose_rotation_to_A_pose
+  if (!rot_shoulder_axis[0])
+    rot_shoulder_axis[0] = {};
+  rot_shoulder_axis[0][ 1] = rot_shoulder_axis[1][ 1]
+  rot_shoulder_axis[0][-1] = rot_shoulder_axis[1][-1]
+
 }
 
 try {
@@ -9066,6 +9283,8 @@ try {
 
     config = JSON.parse(decodeURIComponent(config));
   }
+
+  MMD_SA_options._XRA_settings_imported = config;
 
   if (!MMD_SA.MMD_started) {
     for (const p in config) {
@@ -9102,15 +9321,24 @@ try {
         System._browser.camera.facemesh.blink_sync = config[p].ML_models.facemesh.blink_sync;
         System._browser.camera.facemesh.auto_blink = config[p].ML_models.facemesh.auto_blink;
         System._browser.camera.facemesh.auto_look_at_camera = config[p].ML_models.facemesh.auto_look_at_camera;
+        System._browser.camera.facemesh.emotion_weight = config[p].ML_models.facemesh.emotion_weight;
         break;
 
         System._browser.camera.poseNet.leg_scale_adjustment
 
       case 'hotkeys':
-        const is_global_now = System._browser.hotkeys.is_global;
-        System._browser.hotkeys.is_global = config[p].is_global;
-        if (MMD_SA_options.Dungeon.started && (is_global_now != System._browser.hotkeys.is_global))
-          System._browser.hotkeys.register_global(System._browser.hotkeys.is_global);
+        if (!MMD_SA_options.Dungeon.started) break;
+
+        const hotkeys = System._browser.hotkeys;
+        const is_global_now = hotkeys.is_global;
+        hotkeys.is_global = config[p].is_global;
+//        if (MMD_SA_options.Dungeon.started && (is_global_now != hotkeys.is_global)) System._browser.hotkeys.register_global(hotkeys.is_global);
+
+        hotkeys.configs?.forEach(config=>{
+          const config_default = hotkeys._hotkey_config.find(c=>c.id==config.id);
+          if (config_default)
+            hotkeys.add(Object.assign({}, config_default, config));
+        });
         break;
       case 'camera_face_locking':
         MMD_SA_options.camera_face_locking = config[p];
