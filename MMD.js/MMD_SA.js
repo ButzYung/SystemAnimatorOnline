@@ -9064,6 +9064,7 @@ bone.position.x, bone.position.y, -bone.position.z,
     if (v != null)
       blendshape_weight[name] = v;
   }
+
   for (const name in blendshape_weight) {
     const name_for_blendshapes = (use_faceBlendshapes && this.faceBlendshapes_map_reversed[name]) || name;
     morph_msgs.push(MMD_SA.OSC.VMC.Message("/VMC/Ext/Blend/Val",
@@ -9293,19 +9294,19 @@ if (!mesh.matrixAutoUpdate) {
 
     let blendshape_map_by_MMD_name, MMD_morph_list;
 
-    const blendshape_map_name = (function () {
-const map_to_v = [{}, {}];
+    let _map_to_v;
+    function build_blendshape_map_name() {
+_map_to_v = [{}, {}];
 for (const name in blendshape_map_by_MMD_name) {
-  map_to_v[1][blendshape_map_by_MMD_name_VRM0[name]] = blendshape_map_by_MMD_name_VRM1[name];
-  map_to_v[0][blendshape_map_by_MMD_name_VRM1[name]] = blendshape_map_by_MMD_name_VRM0[name];
+  _map_to_v[1][blendshape_map_by_MMD_name_VRM0[name]] = blendshape_map_by_MMD_name_VRM1[name];
+  _map_to_v[0][blendshape_map_by_MMD_name_VRM1[name]] = blendshape_map_by_MMD_name_VRM0[name];
 }
+    }
 
-return function (name, is_VRM1) {
-  const v = (is_VRM1) ? 1 : 0;
-  return map_to_v[v][name] || name;
-};
-    })();
-
+    function blendshape_map_name(name, is_VRM1) {
+const v = (is_VRM1) ? 1 : 0;
+return _map_to_v[v][name] || name;
+    }
 
     const finger_list = {"親":0, "人":1, "中":2, "薬":3, "小":4};
     const finger_list_en = ["Thumb", "Index", "Middle", "Ring", "Little"];
@@ -9492,6 +9493,7 @@ for (const name in vrm.expressionManager.customExpressionMap) {
 }
 blendshape_map_by_MMD_name = (use_VRM1) ? blendshape_map_by_MMD_name_VRM1 : blendshape_map_by_MMD_name_VRM0;
 MMD_morph_list = Object.keys(blendshape_map_by_MMD_name);
+build_blendshape_map_name();
 console.log(vrm_obj.emotion_list, MMD_morph_list);
 
 if (!vrm_obj.is_VRM1) mesh_obj.quaternion.set(0,1,0,0);
