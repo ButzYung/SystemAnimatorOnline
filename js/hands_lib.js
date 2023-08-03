@@ -1,4 +1,4 @@
-// (2023-07-22)
+// (2023-08-04)
 
 var HandsAT = (function () {
 
@@ -51,7 +51,7 @@ else {
   param = new URLSearchParams(self.location.search.substring(1));
 }
 
-//if (is_worker) importScripts('./one_euro_filter.js');
+if (is_worker) importScripts('./one_euro_filter.js');
 
 postMessageAT('(Hands worker initialized)')
 postMessageAT('OK')
@@ -89,6 +89,20 @@ vision,
 }
   );
 
+    data_filter[1] = {
+      Left: {
+        landmarks: [],
+      },
+      Right: {
+        landmarks: [],
+      },
+    };
+    for (const d of ['Left', 'Right']) {
+      for (let i = 0; i < 21; i++) {
+        data_filter[1][d].landmarks[i] = new OneEuroFilter(30, 1,1/1000,1, 3);
+      }
+    }
+
   handpose_model = {
 estimateHands: function (video, nowInMs) {
   const result = f.detectForVideo(video, nowInMs);
@@ -107,6 +121,8 @@ estimateHands: function (video, nowInMs) {
 handpose_initialized = true
   }
 
+
+var use_human_hands;
 
 var handpose_model;
 
@@ -140,10 +156,10 @@ let canvas_hands;// = new OffscreenCanvas(1,1);
 
 let shoulder_width;
 
-let data_filter;
+let data_filter = [];
 
 async function process_video_buffer(rgba, w,h, options) {
-  function hands_adjust(hands, pose) {
+  function hands_adjust(hands, nowInMs) {
     function landmark_adjust(h, clip) {
 const scale = clip[8];
 const cw = canvas_hands.width;
@@ -155,7 +171,20 @@ return [
 ];
     }
 
-    if (!hands) return hands
+    if (!hands || use_human_hands) return hands
+
+    if (options.use_holistic) {
+      const _result = hands
+      hands = { image:_result.image, multiHandedness:[], multiHandLandmarks:[] }
+      if (_result.leftHandLandmarks && _result.leftHandLandmarks.length) {
+        hands.multiHandLandmarks.push(_result.leftHandLandmarks)
+        hands.multiHandedness.push({score:1})
+      }
+      if (_result.rightHandLandmarks && _result.rightHandLandmarks.length) {
+        hands.multiHandLandmarks.push(_result.rightHandLandmarks)
+        hands.multiHandedness.push({score:1})
+      }
+    }
 
     if (!hands.multiHandedness || !hands.multiHandedness.length)
       return []
@@ -218,18 +247,60 @@ else {
 score: hands.multiHandedness[i].score,
 label: hands.multiHandedness[i].label || hands.multiHandedness[i].categoryName,
 keypoints: h,
+      });
+    }
+//console.log(_hands)
+
+
+    _hands.forEach(hand=>{
+const h = hand.keypoints;
+
+//[0,1,5,9,13,17]
+let palm_width, palm_height;
+palm_width  = [h[1][0]-h[17][0], h[1][1]-h[17][1], h[1][2]-h[17][2]];
+palm_height = [h[0][0]-h[9][0],  h[0][1]-h[9][1],  h[0][2]-h[9][2]];
+
+const w_palm = Math.sqrt(palm_width[0]*palm_width[0] + palm_width[1]*palm_width[1] + palm_width[2]*palm_width[2]);
+const h_palm = Math.sqrt(palm_height[0]*palm_height[0] + palm_height[1]*palm_height[1] + palm_height[2]*palm_height[2]);
+
+let _adjust_ratio = h_palm / w_palm;
+
+_adjust_ratio = (_adjust_ratio < 1.25) ? 1.25 : ((_adjust_ratio > 1.75) ? 1.75 : 1);
+if (_adjust_ratio != 1) {
+  const adjust_max = Math.max(Math.abs(palm_height[2]/h_palm), Math.abs(palm_width[2]/w_palm));
+
+  const s = _adjust_ratio * _adjust_ratio;
+  palm_width  = [h[1][0]-h[17][0], h[1][1]-h[17][1], h[1][2]-h[17][2]];
+  palm_height = [h[0][0]-h[9][0],  h[0][1]-h[9][1],  h[0][2]-h[9][2]];
+/*
+1.5 * (x1*x1 + y1*y1 + (z1*s)*(z1*s)) = x2*x2 + y2*y2 + (z2*s)*(z2*s)
+(z1*s)*(z1*s) - (z2*s)*(z2*s)/1.5 = (x2*x2 + y2*y2)/1.5 - (x1*x1 + y1*y1)
+s*s = ((x2*x2 + y2*y2)/1.5 - (x1*x1 + y1*y1))/(z1*z1 - z2*z2/1.5)
+*/
+  _adjust_ratio = Math.min(Math.sqrt(Math.abs(((palm_height[0]*palm_height[0] + palm_height[1]*palm_height[1])/s - (palm_width[0]*palm_width[0] + palm_width[1]*palm_width[1])) / (palm_width[2]*palm_width[2] - palm_height[2]*palm_height[2]/s))), 1.5 + 1.5*adjust_max);
+//console.log(adjust_max)
+  h.forEach(j=>{j[2] *= _adjust_ratio});
+}
+
+const d = hand.label;
+const palm0 = h[0].slice();
+h.forEach((j,idx)=>{
+  j.forEach((v,i)=>{j[i] -= palm0[i]});
+  const j_new = data_filter[1][d].landmarks[idx].filter(j, nowInMs);
+  j.forEach((v,i)=>{j[i] = j_new[i] + palm0[i]});
+});
+
 // ["thumb", "index", "middle", "ring", "pinky"]
-annotations: {
+hand.annotations = {
   "palm":   [h[0]],
   "thumb":  [h[1], h[2], h[3], h[4]],
   "index":  [h[5], h[6], h[7], h[8]],
   "middle": [h[9], h[10],h[11],h[12]],
   "ring":   [h[13],h[14],h[15],h[16]],
   "pinky":  [h[17],h[18],h[19],h[20]]
-}
-      });
-    }
-//console.log(_hands)
+};
+    });
+
     return _hands;
   }
 
@@ -355,7 +426,7 @@ return (clip.length) ? canvas_hands : rgba;
   shoulder_width = options.shoulder_width;
 
   hands = await handpose_model.estimateHands(get_hand_canvas(pose), vt);
-  hands = hands_adjust(hands);
+  hands = hands_adjust(hands, vt);
 
   _t = performance.now() - _t +(options._t||0);
 

@@ -1,4 +1,4 @@
-// (2023-07-26)
+// (2023-08-04)
 
 var PoseAT = (function () {
 
@@ -275,18 +275,14 @@ vision,
     );
     console.log('Pose model quality:' + (pose_model_quality||'Normal'));
 
-    data_filter = [
-      {
-        landmarks: [],
-        worldLandmarks: [],
-      }
-    ];
-    data_filter.forEach(df=>{
-      for (let i = 0; i < 33; i++) {
-        df.landmarks[i] = new OneEuroFilter(30, 1,1,2, 3);
-        df.worldLandmarks[i] = new OneEuroFilter(30, 1,1,2, 3);
-      }
-    });
+    data_filter[0] = {
+      landmarks: [],
+      worldLandmarks: [],
+    };
+    for (let i = 0; i < 33; i++) {
+      data_filter[0].landmarks[i] = new OneEuroFilter(30, 1,1,2, 3);
+      data_filter[0].worldLandmarks[i] = new OneEuroFilter(30, 1,1,2, 3);
+    }
 
     posenet = {
 estimatePoses: function (video, dummy, nowInMs) {
@@ -446,6 +442,20 @@ vision,
 }
     );
 
+    data_filter[1] = {
+      Left: {
+        landmarks: [],
+      },
+      Right: {
+        landmarks: [],
+      },
+    };
+    for (const d of ['Left', 'Right']) {
+      for (let i = 0; i < 21; i++) {
+        data_filter[1][d].landmarks[i] = new OneEuroFilter(30, 1,1/1000,1, 3);
+      }
+    }
+
     handpose_model = {
 estimateHands: function (video, nowInMs) {
   const result = f.detectForVideo(video, nowInMs);
@@ -558,7 +568,7 @@ let canvas_hands;// = new OffscreenCanvas(1,1);
 
 let shoulder_width;
 
-let data_filter;
+let data_filter = [];
 
 async function process_video_buffer(rgba, w,h, options) {
   function pose_adjust(pose) {
@@ -607,12 +617,12 @@ name: BLAZEPOSE_KEYPOINTS[i]
 
     const armL_pos = pose[0].keypoints[get_pose_index(5)];
     const armR_pos = pose[0].keypoints[get_pose_index(6)];
-    const arm_diff = [armL_pos.x-armR_pos.x, armL_pos.y-armR_pos.y, armL_pos.z-armR_pos.z];
+    const arm_diff = [armL_pos.x-armR_pos.x, armL_pos.y-armR_pos.y, (armL_pos.z-armR_pos.z)/3];
     shoulder_width = Math.sqrt(arm_diff[0]*arm_diff[0] + arm_diff[1]*arm_diff[1] + arm_diff[2]*arm_diff[2]);
 
     if (data_filter) {
-      let filter_factor = Math.min(w,h)/shoulder_width;
-      filter_factor = (filter_factor < 3) ? 1 : Math.max(filter_factor/3, 3);
+      let filter_factor = Math.max(w,h)/shoulder_width;
+      filter_factor = (filter_factor < 5) ? 1 : Math.max(filter_factor/5, 3);
       for (const p of ['landmarks', 'worldLandmarks']) {
         for (let i = 0; i < 33; i++) {
           const f = data_filter[0][p][i];
@@ -721,7 +731,7 @@ name: BLAZEPOSE_KEYPOINTS[i]
     return result;
   }
 
-  function hands_adjust(hands, pose) {
+  function hands_adjust(hands, nowInMs) {
     function landmark_adjust(h, clip) {
 const scale = clip[8];
 const cw = canvas_hands.width;
@@ -809,18 +819,60 @@ else {
 score: hands.multiHandedness[i].score,
 label: hands.multiHandedness[i].label || hands.multiHandedness[i].categoryName,
 keypoints: h,
+      });
+    }
+//console.log(_hands)
+
+
+    _hands.forEach(hand=>{
+const h = hand.keypoints;
+
+//[0,1,5,9,13,17]
+let palm_width, palm_height;
+palm_width  = [h[1][0]-h[17][0], h[1][1]-h[17][1], h[1][2]-h[17][2]];
+palm_height = [h[0][0]-h[9][0],  h[0][1]-h[9][1],  h[0][2]-h[9][2]];
+
+const w_palm = Math.sqrt(palm_width[0]*palm_width[0] + palm_width[1]*palm_width[1] + palm_width[2]*palm_width[2]);
+const h_palm = Math.sqrt(palm_height[0]*palm_height[0] + palm_height[1]*palm_height[1] + palm_height[2]*palm_height[2]);
+
+let _adjust_ratio = h_palm / w_palm;
+
+_adjust_ratio = (_adjust_ratio < 1.25) ? 1.25 : ((_adjust_ratio > 1.75) ? 1.75 : 1);
+if (_adjust_ratio != 1) {
+  const adjust_max = Math.max(Math.abs(palm_height[2]/h_palm), Math.abs(palm_width[2]/w_palm));
+
+  const s = _adjust_ratio * _adjust_ratio;
+  palm_width  = [h[1][0]-h[17][0], h[1][1]-h[17][1], h[1][2]-h[17][2]];
+  palm_height = [h[0][0]-h[9][0],  h[0][1]-h[9][1],  h[0][2]-h[9][2]];
+/*
+1.5 * (x1*x1 + y1*y1 + (z1*s)*(z1*s)) = x2*x2 + y2*y2 + (z2*s)*(z2*s)
+(z1*s)*(z1*s) - (z2*s)*(z2*s)/1.5 = (x2*x2 + y2*y2)/1.5 - (x1*x1 + y1*y1)
+s*s = ((x2*x2 + y2*y2)/1.5 - (x1*x1 + y1*y1))/(z1*z1 - z2*z2/1.5)
+*/
+  _adjust_ratio = Math.min(Math.sqrt(Math.abs(((palm_height[0]*palm_height[0] + palm_height[1]*palm_height[1])/s - (palm_width[0]*palm_width[0] + palm_width[1]*palm_width[1])) / (palm_width[2]*palm_width[2] - palm_height[2]*palm_height[2]/s))), 1.5 + 1.5*adjust_max);
+//console.log(adjust_max)
+  h.forEach(j=>{j[2] *= _adjust_ratio});
+}
+
+const d = hand.label;
+const palm0 = h[0].slice();
+h.forEach((j,idx)=>{
+  j.forEach((v,i)=>{j[i] -= palm0[i]});
+  const j_new = data_filter[1][d].landmarks[idx].filter(j, nowInMs);
+  j.forEach((v,i)=>{j[i] = j_new[i] + palm0[i]});
+});
+
 // ["thumb", "index", "middle", "ring", "pinky"]
-annotations: {
+hand.annotations = {
   "palm":   [h[0]],
   "thumb":  [h[1], h[2], h[3], h[4]],
   "index":  [h[5], h[6], h[7], h[8]],
   "middle": [h[9], h[10],h[11],h[12]],
   "ring":   [h[13],h[14],h[15],h[16]],
   "pinky":  [h[17],h[18],h[19],h[20]]
-}
-      });
-    }
-//console.log(_hands)
+};
+    });
+
     return _hands;
   }
 
@@ -1141,8 +1193,8 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
     const result = await holistic_model.predict(rgba, {}, vt);
 //console.log(result)
 
-    pose = pose_adjust(result)
-    hands = hands_adjust(result)
+    pose = pose_adjust(result);
+    hands = hands_adjust(result, vt);
 
     if (result.faceLandmarks && result.faceLandmarks.length) {
       faces = process_facemesh({multiFaceLandmarks:[result.faceLandmarks]}, w,h, {x:0, y:0, w:w, h:h, ratio:0, scale:1});
@@ -1204,7 +1256,7 @@ hands_worker_ready = false;
         }
         else if (handpose_model) {
           hands = await handpose_model.estimateHands(get_hand_canvas(pose), vt);
-          hands = hands_adjust(hands)
+          hands = hands_adjust(hands, vt);
         }
         else {
           const result = await human.detect(rgba)
