@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-07-26)
+// (2023-08-04)
 
 var use_full_spectrum = true
 
@@ -2871,6 +2871,8 @@ this._txr.needsUpdate = true
     };
 
     SB.prototype.message = function (bubble_index, msg, duration, para) {
+this._duration = duration;
+
 if (!para)
   para = {};
 this.para = para;
@@ -3013,11 +3015,11 @@ this._mesh.scale.set(1,1,1).multiplyScalar(this.scale * scale * ((is_landscape &
 //this.pos_base.copy(this._mesh.position).sub(this.pos_base_ref.character_pos_ref)
    };
 
-    SB.prototype.update_placement = function () {
+    SB.prototype.update_placement = function (enforced) {
 if (!MMD_SA_options.use_speech_bubble)
   return
 
-bb_list.forEach(b=>{b._update_placement()});
+bb_list.forEach(b=>{b._update_placement(enforced)});
     };
 
     SB.prototype._update_placement = function (enforced) {
@@ -3032,7 +3034,7 @@ if (1) {//!this.index) {
   let sight_v3 = MMD_SA._v3a.copy(MMD_SA._trackball_camera.object._lookAt).sub(MMD_SA._trackball_camera.object.position).normalize()
   let PC_v3 = MMD_SA._v3b.copy(this.pos_base_ref.center).sub(MMD_SA._trackball_camera.object.position).normalize()
   if ((dis < 20) || (sight_v3.angleTo(PC_v3) > Math.PI/4)) {
-    this.pos_base_ref.center.copy(sight_v3).multiplyScalar(30).add(MMD_SA._trackball_camera.object.position)
+    this.pos_base_ref.center.copy(sight_v3).multiplyScalar(30+MMD_SA.center_view[2]*1).add(MMD_SA._trackball_camera.object.position);
   }
 }
 
@@ -3099,6 +3101,20 @@ if (this.visible) {
 
 MMD_SA.THREEX.mesh_obj.get( "SpeechBubbleMESH" + this.index ).hide();
     };
+
+    window.addEventListener('SA_MMD_model0_onmotionchange', (e)=>{
+if ((e.detail.motion_old == e.detail.motion_new) && !MMD_SA._force_motion_shuffle) return;
+//DEBUG_show(Date.now())
+
+System._browser.on_animation_update.add(()=>{
+  bb_list.forEach(b=>{
+    if (b._mesh.visible) {
+      b.message(b.bubble_index, b.msg, b._duration, b.para);
+    }
+  });
+// delay for motion transition
+}, 20,0);
+    });
 
     new SB();
 
@@ -3172,6 +3188,10 @@ window.addEventListener('MMDStarted', ()=>{
     d_target.style.cursor = (is_pointer) ? 'pointer' : 'auto';
   }
 
+  function get_target_sb() {
+    return bb_list.slice().sort((a,b)=>a._mesh.position.distanceToSquared(MMD_SA.THREEX.camera.obj.position) - b._mesh.position.distanceToSquared(MMD_SA.THREEX.camera.obj.position)).find(sb=>sb._branch_key_!=null);
+  }
+
 //  const THREE = MMD_SA.THREEX.THREE;
   const SL = MMD_SA.THREEX.SL;
 
@@ -3188,12 +3208,12 @@ window.addEventListener('MMDStarted', ()=>{
   d_target.addEventListener('click', (e)=>{
     if (!is_mobile && (d_target.style.cursor != 'pointer')) return;
 
-    let sb = bb_list.find(sb=>sb._branch_key_!=null);
+    let sb = get_target_sb();
     if (!sb) {
       if (is_mobile) {
         mouse_x = e.clientX * window.devicePixelRatio;
         mouse_y = e.clientY * window.devicePixelRatio;
-        highlight(); sb = bb_list.find(sb=>sb._branch_key_!=null);
+        highlight(); sb = get_target_sb();
         if (!sb) {
           mouse_x = mouse_y = null;
           return;
@@ -9031,14 +9051,16 @@ if (MMD_SA.OSC.VMC.sender_enabled && MMD_SA.OSC.VMC.ready) {
   const model_position0 = MMD_SA_options.Dungeon_options.options_by_area_id[MMD_SA_options.Dungeon.area_id]._startup_position_;
   const model_position_offset = v4.copy(mesh.position).sub(model_position0).multiplyScalar(model_pos_scale);
 
+  const warudo_mode = MMD_SA.OSC.VMC.warudo_mode;
+
   const model_rot = q4.copy(mesh.quaternion);
-  const turned_around = MMD_SA.OSC.VMC.send_camera_data;
+  const turned_around = !warudo_mode && MMD_SA.OSC.VMC.send_camera_data;
   if (!turned_around ^ !!this.is_VRM1) model_rot.premultiply(q2.set(0,1,0,0));
 //DEBUG_show(mesh.quaternion.toArray())
 
   const pos_msgs = [
 'root',
-...((MMD_SA.OSC.VMC.VSeeFace_mode) ? ((System._browser.camera.poseNet.enabled && MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only && MMD_SA.MMD.motionManager.para_SA.center_view_enforced) ? [0,0,-5/10] : [0, 5/10, -60/10]) : [model_position_offset.x, model_position_offset.y, -model_position_offset.z]),
+...((MMD_SA.OSC.VMC.VSeeFace_mode) ? ((System._browser.camera.poseNet.enabled && MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only && MMD_SA.MMD.motionManager.para_SA.center_view_enforced) ? [0,0,-5/10] : [0, 5/10, -60/10]) : [model_position_offset.x*((warudo_mode)?-1:1), model_position_offset.y, -model_position_offset.z*((warudo_mode)?-1:1)]),
 -model_rot.x, -model_rot.y, model_rot.z, model_rot.w,
   ];
 
@@ -9084,10 +9106,17 @@ blendshape_weight[name],
   if (MMD_SA.OSC.VMC.send_camera_data) {
     const camera = MMD_SA.THREEX.camera.obj;
     const camera_pos = v1.copy(camera.position).sub(mesh.position).multiplyScalar(model_pos_scale);
-    camera_pos.add(model_position_offset);
 
     const camera_rot = q1.copy(camera.quaternion);
     if (!turned_around) camera_rot.premultiply(q2.set(0,1,0,0));
+
+    if (warudo_mode) {
+      q3.setFromUnitVectors(MMD_SA.TEMP_v3.copy(camera_pos).setY(0).normalize(), MMD_SA._v3a.set(0,0,1));
+      camera_pos.add(MMD_SA.TEMP_v3.set(0,0.15,0.15).applyQuaternion(q3.conjugate()));
+//System._browser.camera.DEBUG_show(MMD_SA.TEMP_v3.toArray().join('\n'));
+    }
+
+    camera_pos.add(model_position_offset);
 
     camera_msgs = [
 'Camera',
@@ -9097,7 +9126,7 @@ camera_pos.x*((!turned_around)?-1:1), camera_pos.y, -camera_pos.z*((!turned_arou
 //0,1,0,0,
 camera.fov,
     ];
-//DEBUG_show(camera.fov);
+//DEBUG_show(camera_rot.toArray().join('\n')+'\n'+camera.fov);
   }
 
 setTimeout(()=>{
@@ -9114,7 +9143,9 @@ setTimeout(()=>{
   MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Bundle(...morph_msgs));
 
   if (camera_msgs) {
-    MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/Cam",
+// Warudo camera TEST
+    MMD_SA.OSC.VMC_camera.sender_enabled = true;
+    MMD_SA.OSC.VMC_camera.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/Cam",
       camera_msgs,
       'sffffffff'
     ));
@@ -12667,7 +12698,7 @@ return head_pos.add(pos).multiplyScalar(0.75);
 
         var target_data;
         window.addEventListener('jThree_ready', ()=>{
-target_data = new System._browser.data_filter([{ type:'average', para:[200, 'vector3'] }]);
+target_data = new System._browser.data_filter([{ type:'one_euro', id:'camera_face_locking', transition_time:0.5, para:[30, 1,0.1/5,1, 3] }]);
         });
 
 //window.addEventListener('MMDStarted', ()=>{ System._browser.on_animation_update.add(()=>{DEBUG_show(MMD_SA.THREEX.get_model(0).get_bone_position_by_MMD_name('上半身').toArray().join('\n')+'\n'+Date.now())},0,1,-1) });
@@ -12751,7 +12782,100 @@ console.log('geo_disposed:' + geo_disposed, 'map_disposed:' + map_disposed, 'mtr
 
 MMD_SA.OSC = (function () {
 
-  function init() {
+  class VMC {
+    constructor(options={}) {
+if (!options.plugin) {
+  options.plugin = {
+    open: MMD_SA_options.OSC.VMC.open,
+    send: MMD_SA_options.OSC.VMC.send,
+  };
+}
+
+//options.plugin.send.port = 19190;
+
+this.options = options;
+    }
+
+    #VMC_enabled=false;
+    #VMC_initialized;
+    #VMC_ready;
+    #VMC_sender_enabled=false;
+    #VMC_receiver_enabled=false;
+
+    get enabled() { return this.#VMC_enabled; }
+    set enabled(v) {
+if (this.#VMC_enabled == !!v) return;
+
+this.#VMC_enabled = !!v;
+
+if (this.#VMC_enabled) {
+  _OSC.enabled = true;
+  this.init();
+  DEBUG_show('(OSC/VMC client:ON/Port:' + this.options.plugin.send.port + ')', 5)
+}
+else {
+  this.#VMC_sender_enabled = this.#VMC_receiver_enabled = false;
+  DEBUG_show('(OSC/VMC client:OFF)', 3)
+}
+
+// Warudo camera TEST (not enabling it here as they it seems you can't enable 2 VMC instances with different ports at the same time)
+//_OSC.VMC_camera.sender_enabled = v;
+    }
+
+    get sender_enabled() { return this.#VMC_sender_enabled; }
+    set sender_enabled(v) {
+if (this.#VMC_sender_enabled == !!v) return;
+
+this.#VMC_sender_enabled = !!v;
+
+if (this.#VMC_sender_enabled) {
+  this.enabled = true;
+}
+else {
+  if (!this.#VMC_receiver_enabled) this.enabled = false;
+}
+    }
+
+    get ready() { return this.#VMC_enabled && this.#VMC_ready; }
+    set ready(v) { this.#VMC_ready = v; }
+
+    init() {
+if (this.#VMC_initialized) return;
+this.#VMC_initialized = true;
+
+OSC_init();
+
+const plugin = new OSC.DatagramPlugin(this.options.plugin);
+this.vmc = new OSC({ plugin: plugin });
+
+this.vmc.on('open', () => {
+  this.#VMC_ready = true;
+//  console.log(this.#vmc);
+});
+
+this.vmc.on('*', (msg) => {
+  if (!this.#VMC_receiver_enabled) return;
+});
+
+this.vmc.open();
+    }
+
+    Message(address, args=[], types) {
+const msg = new OSC.Message(address, ...args);
+if (types) msg.types = types;
+return msg;
+    }
+
+    Bundle(...args) {
+return new OSC.Bundle(...args);
+    }
+
+    send(...args) {
+this.vmc.send(...args);
+    }
+  }
+
+  function OSC_init() {
 if (initialized) return;
 initialized = true;
 
@@ -12763,8 +12887,6 @@ ready = true;
 
   var OSC;
   var enabled=false, initialized, ready;
-  var VMC_enabled=false, VMC_initialized, VMC_ready;
-  var VMC_sender_enabled=false, VMC_receiver_enabled=false;
 
   var _OSC = {
     get enabled() { return enabled; },
@@ -12774,91 +12896,22 @@ if (enabled == !!v) return;
 enabled = !!v;
 
 if (enabled) {
-  init();
+  OSC_init();
 }
     },
 
     get ready() { return enabled && ready; },
 
-    VMC: (function () {
-      function VMC_init() {
-if (VMC_initialized) return;
-VMC_initialized = true;
+    VMC_class: VMC,
 
-init();
-
-const plugin = new OSC.DatagramPlugin({
-  open: MMD_SA_options.OSC.VMC.open,
-  send: MMD_SA_options.OSC.VMC.send,
-});
-vmc = new OSC({ plugin: plugin })
-
-vmc.on('open', () => {
-  VMC_ready = true;
-//  console.log(vmc);
-});
-
-vmc.on('*', (msg) => {
-  if (!VMC_receiver_enabled) return;
-//  console.log(39540);
-});
-
-vmc.open();
-      }
-
-      var vmc
-
-      return  {
-        get enabled() { return VMC_enabled; },
-        set enabled(v) {
-if (VMC_enabled == !!v) return;
-
-VMC_enabled = !!v;
-
-if (VMC_enabled) {
-  _OSC.enabled = true;
-  VMC_init();
-  DEBUG_show('(OSC/VMC client:ON)', 3)
-}
-else {
-  VMC_sender_enabled = VMC_receiver_enabled = false;
-  DEBUG_show('(OSC/VMC client:OFF)', 3)
-}
-        },
-
-        get sender_enabled() { return VMC_sender_enabled; },
-        set sender_enabled(v) {
-if (VMC_sender_enabled == !!v) return;
-
-VMC_sender_enabled = !!v;
-
-if (VMC_sender_enabled) {
-  this.enabled = true;
-}
-else {
-  if (!VMC_receiver_enabled) this.enabled = false;
-}
-        },
-
-        get ready() { return VMC_enabled && VMC_ready; },
-        set ready(v) { VMC_ready = v; },
-
-        Message: function (address, args=[], types) {
-const msg = new OSC.Message(address, ...args);
-if (types) msg.types = types;
-return msg;
-        },
-
-        Bundle: function (...args) {
-return new OSC.Bundle(...args);
-        },
-
-        send: function (...args) {
-vmc.send(...args);
-        },
-      };
-    })(),
+    VMC: new VMC(),
   };
+
+  _OSC.VMC_camera = _OSC.VMC;
+
+// Warudo camera TEST
+//_OSC.VMC.warudo_mode = true;
+if (_OSC.VMC.warudo_mode) _OSC.VMC_camera = new VMC({ plugin:{ send: { port:19190, host:'localhost' } } });
 
   return _OSC;
 
