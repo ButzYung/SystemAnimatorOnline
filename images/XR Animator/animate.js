@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-07-26)
+// (2023-08-04)
 
 var MMD_SA_options = {
 
@@ -4505,8 +4505,7 @@ if (System._browser.camera.handpose.enabled) {
 }
 
 System._browser.camera.poseNet._arm_IK_scale[hand_camera_side] = 1.5;
-if (frames.skin[d+'腕ＩＫ'])
-  frames.skin[d+'腕ＩＫ'][0].data_filter = {};
+if (frames.skin[d+'腕ＩＫ']) frames.skin[d+'腕ＩＫ'][0].data_filter = {};
 
 const model = THREE.MMD.getModels()[0];
 const mesh = model.mesh;
@@ -4612,6 +4611,7 @@ window.addEventListener('SA_MMD_before_render', ()=>{
 
  ,get _hand_camera_enabled() { return hand_camera_enabled; }
  ,get _hand_camera_active() { return hand_camera_enabled && hand_camera_active; }
+ ,get _hand_camera_side() { return hand_camera_enabled && hand_camera_side; }
 
  ,action: {
     func: function (item) {
@@ -7730,26 +7730,28 @@ if (explorer_mode) {
   return;
 }
 
-if (!object3d_cache.size) {
-  speech_bubble2('There is no 3D object in this scene.', 3, { no_word_break:true });
-  MMD_SA_options.Dungeon.run_event("_FACEMESH_OPTIONS_", object3D_branch, 0);
-  return;
-}
-
-let obj_count = 0;
-for (const value of object3d_cache.values()) {
-  if (!value) {
-    speech_bubble2('Please wait until all 3D objects are fully loaded.', 3);
+if (!MMD_SA.OSC.VMC.sender_enabled) {
+  if (!object3d_cache.size) {
+    speech_bubble2('There is no 3D object in this scene.', 3, { no_word_break:true });
     MMD_SA_options.Dungeon.run_event("_FACEMESH_OPTIONS_", object3D_branch, 0);
     return;
   }
-  if (!value.parent_bone) obj_count++;
-}
 
-if (!obj_count) {
-  speech_bubble2('There is no explorable 3D object in this scene.', 3);
-  MMD_SA_options.Dungeon.run_event("_FACEMESH_OPTIONS_", object3D_branch, 0);
-  return;
+  let obj_count = 0;
+  for (const value of object3d_cache.values()) {
+    if (!value) {
+      speech_bubble2('Please wait until all 3D objects are fully loaded.', 3);
+      MMD_SA_options.Dungeon.run_event("_FACEMESH_OPTIONS_", object3D_branch, 0);
+      return;
+    }
+    if (!value.parent_bone) obj_count++;
+  }
+
+  if (!obj_count) {
+    speech_bubble2('There is no explorable 3D object in this scene.', 3);
+    MMD_SA_options.Dungeon.run_event("_FACEMESH_OPTIONS_", object3D_branch, 0);
+    return;
+  }
 }
 
 MMD_SA_options.Dungeon.run_event();
@@ -7817,7 +7819,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  content: 'XR Animator (v0.12.0b)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
+  content: 'XR Animator (v0.13.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -8294,6 +8296,7 @@ System._browser.save_file('XRA_settings.json', json, 'application/json');
 		},
 		"audio_visualizer": true,
 		"camera_face_locking": null,
+		"shoulder_adjust": null,
 		"video_capture": {},
 		"pose": {}
 	}
@@ -8394,16 +8397,18 @@ DEBUG_show('(Motion recording STARTED / x0.25 speed)', 3)
      ,[
         {
           message: {
-  content: '1. Body pose options\n2. Facemesh options\n3. Clear bounding box\n4. Done'
+  content: '1. Body pose options\n2. Hands options\n3. Facemesh options\n4. Clear bounding box\n5. Done'
  ,bubble_index: 3
  ,branch_list: [
   { key:1, event_index:1 },
-  { key:2, branch_index:facemesh_options_branch },
-  { key:3, branch_index:mocap_options_branch+4 },
-  { key:4, branch_index:done_branch }
+  { key:2, event_index:4 },
+  { key:3, branch_index:facemesh_options_branch },
+  { key:4, branch_index:mocap_options_branch+4 },
+  { key:5, branch_index:done_branch }
   ]
           }
         },
+
         {
           func: function () {
 System._browser.camera._info =
@@ -8414,7 +8419,7 @@ System._browser.camera._info =
 + '- Hip adjustment controls hip\'s reaction to upper body motion.'
           }
          ,message: {
-  get content() { return '1. AI model quality: ' + (MMD_SA_options.user_camera.ML_models.pose.model_quality || 'Normal') + '\n2. Z-depth scale: ' + ((MMD_SA_options.user_camera.ML_models.pose.model_quality == 'Best') ? ((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale)?((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale<3)?'Max':'Min'):'Medium') : 'N/A') + '\n3. Leg IK: ' + ((MMD_SA_options.user_camera.ML_models.pose.use_legIK)?'ON':'OFF') + '\n4. Leg scale adjustment: ' + ((!System._browser.camera.poseNet.leg_scale_adjustment)?'OFF':((System._browser.camera.poseNet.leg_scale_adjustment>0 && '+')||'')+System._browser.camera.poseNet.leg_scale_adjustment) + '\n5. Auto-grounding (' + (System._browser.hotkeys.config_by_id['mocap_auto_grounding']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON') + '\n6. Hip adjustment: ' + ((System._browser.camera.poseNet.hip_adjustment_weight == 1) ? 'ON' : (System._browser.camera.poseNet.hip_adjustment_weight == 0) ? 'OFF' : Math.round(System._browser.camera.poseNet.hip_adjustment_weight*100) + '%') + '\n7. Hands web worker (BETA): ' + ((System._browser.camera.handpose.use_hands_worker) ? 'ON' : 'OFF') + '\n8. Done'; }
+  get content() { return '1. AI model quality: ' + (MMD_SA_options.user_camera.ML_models.pose.model_quality || 'Normal') + '\n2. ┗ Z-depth scale: ' + ((MMD_SA_options.user_camera.ML_models.pose.model_quality == 'Best') ? ((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale)?((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale<3)?'Max':'Min'):'Medium') : 'N/A') + '\n3. Leg IK: ' + ((MMD_SA_options.user_camera.ML_models.pose.use_legIK)?'ON':'OFF') + '\n4. Leg scale adjustment: ' + ((!System._browser.camera.poseNet.leg_scale_adjustment)?'OFF':((System._browser.camera.poseNet.leg_scale_adjustment>0 && '+')||'')+System._browser.camera.poseNet.leg_scale_adjustment) + '\n5. Auto-grounding (' + (System._browser.hotkeys.config_by_id['mocap_auto_grounding']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON') + '\n6. Hip adjustment: ' + ((System._browser.camera.poseNet.hip_adjustment_weight == 1) ? 'ON' : (System._browser.camera.poseNet.hip_adjustment_weight == 0) ? 'OFF' : Math.round(System._browser.camera.poseNet.hip_adjustment_weight*100) + '%') + '\n7. Done'; }
  ,bubble_index: 3
  ,branch_list: [
   { key:1, event_index:2 },
@@ -8432,14 +8437,7 @@ System._browser.camera.poseNet.hip_adjustment_weight = hip_adjustment_weight;
       goto_event: { branch_index:mocap_options_branch, step:1 },
     }
   },
-  { key:7, event_id: {
-      func:()=>{
-System._browser.camera.handpose.use_hands_worker = !System._browser.camera.handpose.use_hands_worker;
-      },
-      goto_event: { branch_index:mocap_options_branch, step:1 },
-    }
-  },
-  { key:8, branch_index:done_branch }
+  { key:7, branch_index:done_branch }
   ]
           }
         },
@@ -8459,6 +8457,129 @@ else
   MMD_SA_options.user_camera.ML_models.pose.z_depth_scale = 4.5;
           },
           goto_event: { branch_index:mocap_options_branch, step:1 },
+        },
+
+        {
+          message: {
+  get content() {
+function depth_adjustment() {
+  const v = MMD_SA_options.user_camera.ML_models.hands.depth_adjustment;
+
+  if (v < -9) {
+    return 'OFF';
+  }
+  if (v == -2) {
+    return 'Min';
+  }
+  if (v == -1) {
+    return 'Small';
+  }
+  if (v == 1) {
+    return 'Large';
+  }
+  if (v == 2) {
+    return 'Max';
+  }
+  return 'Normal';
+}
+
+function palm_shoulder_scale() {
+  if (MMD_SA_options.user_camera.ML_models.hands.depth_adjustment < -9) return 'N/A';
+
+  const v = MMD_SA_options.user_camera.ML_models.hands.palm_shoulder_scale;
+  if (v == -2) {
+    return 'Small+ hand/wide+ shoulder';
+  }
+  if (v == -1) {
+    return 'Small hand/wide shoulder';
+  }
+  if (v == 1) {
+    return 'Big hand/narrow shoulder';
+  }
+  if (v == 2) {
+    return 'Big+ hand/narrow+ shoulder';
+  }
+  return 'Normal';
+}
+
+function depth_scale() {
+  if (MMD_SA_options.user_camera.ML_models.hands.depth_adjustment < -9) return 'N/A';
+
+  const v = MMD_SA_options.user_camera.ML_models.hands.depth_scale;
+  if (v == -3) {
+    return 'Min';
+  }
+  if (v == -2) {
+    return 'Small+';
+  }
+  if (v == -1) {
+    return 'Small';
+  }
+  if (v == 1) {
+    return 'Large';
+  }
+  if (v == 2) {
+    return 'Large+';
+  }
+  if (v == 3) {
+    return 'Max';
+  }
+  return 'Normal';
+}
+
+return '\n1. Depth adjustment: ' + depth_adjustment() + '\n2. ┣ IRL hand/shoulder scale:\n' + '        ' + '┗ ' + palm_shoulder_scale() + '\n3. ┗ Depth scale: ' + depth_scale() + '\n4. Standalone web worker (BETA): ' + ((System._browser.camera.handpose.use_hands_worker) ? 'ON' : 'OFF') + '\n5. Done';
+  }
+ ,bubble_index: 3
+ ,branch_list: [
+  { key:1, event_id: {
+      func:()=>{
+let v = MMD_SA_options.user_camera.ML_models.hands.depth_adjustment || 0;
+if (++v > 2) {
+  v = -99;
+}
+else if (v < -9) {
+  v = -2;
+}
+
+MMD_SA_options.user_camera.ML_models.hands.depth_adjustment = v;
+      },
+      goto_event: { branch_index:mocap_options_branch, step:4 },
+    }
+  },
+  { key:2, event_id: {
+      func:()=>{
+if (MMD_SA_options.user_camera.ML_models.hands.depth_adjustment == 0) return;
+
+let v = MMD_SA_options.user_camera.ML_models.hands.palm_shoulder_scale || 0;
+if (++v > 2) v = -2;
+
+MMD_SA_options.user_camera.ML_models.hands.palm_shoulder_scale = v;
+      },
+      goto_event: { branch_index:mocap_options_branch, step:4 },
+    }
+  },
+  { key:3, event_id: {
+      func:()=>{
+if (MMD_SA_options.user_camera.ML_models.hands.depth_adjustment == 0) return;
+
+let v = MMD_SA_options.user_camera.ML_models.hands.depth_scale || 0;
+if (++v > 3) v = -3;
+
+MMD_SA_options.user_camera.ML_models.hands.depth_scale = v;
+      },
+      goto_event: { branch_index:mocap_options_branch, step:4 },
+    }
+  },
+  { key:4, event_id: {
+      func:()=>{
+System._browser.camera.handpose.use_hands_worker = !System._browser.camera.handpose.use_hands_worker;
+      },
+      goto_event: { branch_index:mocap_options_branch, step:4 },
+    }
+  },
+  { key:5, branch_index:done_branch }
+  ]
+          }
         },
       ]
 // 30
@@ -9181,6 +9302,9 @@ config.user_camera = {
     },
     hands: {
       use_hands_worker: System._browser.camera.handpose.use_hands_worker,
+      depth_adjustment: MMD_SA_options.user_camera.ML_models.hands.depth_adjustment,
+      palm_shoulder_scale: MMD_SA_options.user_camera.ML_models.hands.palm_shoulder_scale,
+      depth_scale: MMD_SA_options.user_camera.ML_models.hands.depth_scale,
     },
     facemesh: {
       eye_tracking: System._browser.camera.facemesh.eye_tracking,
@@ -9312,6 +9436,9 @@ try {
         MMD_SA_options.user_camera.ML_models.pose.model_quality = config[p].ML_models.pose.model_quality;
         MMD_SA_options.user_camera.ML_models.pose.z_depth_scale = config[p].ML_models.pose.z_depth_scale;
         MMD_SA_options.user_camera.ML_models.pose.use_legIK = config[p].ML_models.pose.use_legIK;
+        MMD_SA_options.user_camera.ML_models.hands.depth_adjustment = config[p].ML_models.hands.depth_adjustment;
+        MMD_SA_options.user_camera.ML_models.hands.palm_shoulder_scale = config[p].ML_models.hands.palm_shoulder_scale;
+        MMD_SA_options.user_camera.ML_models.hands.depth_scale = config[p].ML_models.hands.depth_scale;
         MMD_SA_options.user_camera.streamer_mode = config[p].streamer_mode || { camera_preference:{} };
         System._browser.camera.poseNet.leg_scale_adjustment = config[p].ML_models.pose.leg_scale_adjustment;
         System._browser.camera.poseNet.auto_grounding = config[p].ML_models.pose.auto_grounding;
