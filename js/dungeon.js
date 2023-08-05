@@ -1,4 +1,4 @@
-// (2023-07-26)
+// (2023-08-05)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -6424,7 +6424,7 @@ if (msg_branch_list) {
       }
     }
 
-    if (_e.ctrlKey || _e.shiftKey || _e.altKey) break;
+    if (!is_mobile && (_e.ctrlKey || _e.shiftKey || _e.altKey)) break;
 
     if ((typeof branch.key == 'number') ? ((k == 96+branch.key) || (k == 48+branch.key)) : (k_code == 'Key'+branch.key)) {
       e.detail.result.return_value = true;
