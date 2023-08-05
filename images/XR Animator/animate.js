@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-08-04)
+// (2023-08-05)
 
 var MMD_SA_options = {
 
@@ -9620,7 +9620,7 @@ console.log(999,'TEST');
 })();
 
 
-if (webkit_electron_mode) document.write('<script language="JavaScript" src="' + toFileProtocol(Settings.f_path + '/animate_customized.js') + '"></scr'+'ipt>');;
+document.write('<script language="JavaScript" src="' + toFileProtocol(Settings.f_path + '/animate_customized.js') + '"></scr'+'ipt>');;
 
 // main js
 if (MMD_SA_options.Dungeon_options)
