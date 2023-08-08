@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-08-04)
+// (2023-08-09)
 
 var use_full_spectrum = true
 
@@ -9143,8 +9143,6 @@ setTimeout(()=>{
   MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Bundle(...morph_msgs));
 
   if (camera_msgs) {
-// Warudo camera TEST
-    MMD_SA.OSC.VMC_camera.sender_enabled = true;
     MMD_SA.OSC.VMC_camera.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/Cam",
       camera_msgs,
       'sffffffff'
@@ -9786,6 +9784,8 @@ this.gui.controllers[0].updateDisplay();
 if (v && !PPE_list.some(n=>PPE[n].enabled)) {
   PPE['UnrealBloom'].enabled = true;
 }
+
+PPE['UnrealBloom'].setup_rim_light();
         },
 
         get initialized() { return PPE_initialized; },
@@ -10741,6 +10741,48 @@ data.renderer.toneMapping = THREE.NoToneMapping;//LinearToneMapping;//ACESFilmic
 return true;
             },
 
+            setup_rim_light: function () {
+const enabled = PPE.enabled && this.enabled;
+if (enabled) {
+  vrm_bloom_factor = params_vrm.bloom_factor;
+  MMD_SA.THREEX.get_model(0).model.materials.forEach(m=>{
+    const p = m.userData.gltfExtensions.VRMC_materials_mtoon;
+    if ('parametricRimFresnelPowerFactor' in p) {
+      m.parametricRimFresnelPowerFactor = p.parametricRimFresnelPowerFactor * params_vrm.RimFresnelPower;
+    }
+    else {
+      const c = 0.25;//Math.min(threeX.light.obj.DirectionalLight[0].intensity/20, 1);
+      m.parametricRimColorFactor.setRGB(c,c,c);
+      m.parametricRimFresnelPowerFactor = 5 * params_vrm.RimFresnelPower;
+    }
+
+    m.parametricRimLiftFactor = (('parametricRimLiftFactor' in p) ? p.parametricRimLiftFactor : 0.1) * params_vrm.RimLift;
+
+//m.matcapFactor.set('white')
+//m.parametricRimColorFactor.setRGB(0.1,0.1,0.1)
+//m.rimLightingMixFactor=1
+//m.parametricRimFresnelPowerFactor=5
+//m.parametricRimLiftFactor=1
+  });
+}
+else {
+  vrm_bloom_factor = params_vrm_default.bloom_factor;
+  MMD_SA.THREEX.get_model(0).model.materials.forEach(m=>{
+// https://github.com/pixiv/three-vrm/blob/dev/packages/three-vrm-materials-mtoon/src/MToonMaterial.ts#L411
+    const p = m.userData.gltfExtensions.VRMC_materials_mtoon;
+    if ('parametricRimFresnelPowerFactor' in p) {
+      m.parametricRimFresnelPowerFactor =  p.parametricRimFresnelPowerFactor;
+    }
+    else {
+      m.parametricRimColorFactor.setRGB(0,0,0);
+      m.parametricRimFresnelPowerFactor = 1;
+    }
+
+    m.parametricRimLiftFactor = (('parametricRimLiftFactor' in p) ? p.parametricRimLiftFactor : 0);
+  });
+}
+            },
+
             get enabled() { return params.enabled; },
             set enabled(v) {
 params.enabled = !!v;
@@ -10757,44 +10799,7 @@ else {
     PPE.enabled = false;
 }
 
-if (v) {
-  vrm_bloom_factor = params_vrm.bloom_factor;
-  MMD_SA.THREEX.get_model(0).model.materials.forEach(m=>{
-const p = m.userData.gltfExtensions.VRMC_materials_mtoon;
-if ('parametricRimFresnelPowerFactor' in p) {
-  m.parametricRimFresnelPowerFactor = p.parametricRimFresnelPowerFactor * params_vrm.RimFresnelPower;
-}
-else {
-  const c = 0.25;//Math.min(threeX.light.obj.DirectionalLight[0].intensity/20, 1);
-  m.parametricRimColorFactor.setRGB(c,c,c);
-  m.parametricRimFresnelPowerFactor = 5 * params_vrm.RimFresnelPower;
-}
-
-m.parametricRimLiftFactor = (('parametricRimLiftFactor' in p) ? p.parametricRimLiftFactor : 0.1) * params_vrm.RimLift;
-
-//m.matcapFactor.set('white')
-//m.parametricRimColorFactor.setRGB(0.1,0.1,0.1)
-//m.rimLightingMixFactor=1
-//m.parametricRimFresnelPowerFactor=5
-//m.parametricRimLiftFactor=1
-  });
-}
-else {
-  vrm_bloom_factor = params_vrm_default.bloom_factor;
-  MMD_SA.THREEX.get_model(0).model.materials.forEach(m=>{
-// https://github.com/pixiv/three-vrm/blob/dev/packages/three-vrm-materials-mtoon/src/MToonMaterial.ts#L411
-const p = m.userData.gltfExtensions.VRMC_materials_mtoon;
-if ('parametricRimFresnelPowerFactor' in p) {
-  m.parametricRimFresnelPowerFactor =  p.parametricRimFresnelPowerFactor;
-}
-else {
-  m.parametricRimColorFactor.setRGB(0,0,0);
-  m.parametricRimFresnelPowerFactor = 1;
-}
-
-m.parametricRimLiftFactor = (('parametricRimLiftFactor' in p) ? p.parametricRimLiftFactor : 0);
-  });
-}
+this.setup_rim_light();
             },
 
           };
@@ -12791,9 +12796,8 @@ if (!options.plugin) {
   };
 }
 
-//options.plugin.send.port = 19190;
-
 this.options = options;
+this.options_default = Object.clone(options);
     }
 
     #VMC_enabled=false;
@@ -12818,8 +12822,8 @@ else {
   DEBUG_show('(OSC/VMC client:OFF)', 3)
 }
 
-// Warudo camera TEST (not enabling it here as they it seems you can't enable 2 VMC instances with different ports at the same time)
-//_OSC.VMC_camera.sender_enabled = v;
+// Warudo camera TEST
+_OSC.VMC_camera.sender_enabled = v;
     }
 
     get sender_enabled() { return this.#VMC_sender_enabled; }
@@ -12845,8 +12849,8 @@ this.#VMC_initialized = true;
 
 OSC_init();
 
-const plugin = new OSC.DatagramPlugin(this.options.plugin);
-this.vmc = new OSC({ plugin: plugin });
+this.plugin = new OSC.DatagramPlugin(this.options.plugin);
+this.vmc = new OSC({ plugin:this.plugin });
 
 this.vmc.on('open', () => {
   this.#VMC_ready = true;
@@ -12857,7 +12861,8 @@ this.vmc.on('*', (msg) => {
   if (!this.#VMC_receiver_enabled) return;
 });
 
-this.vmc.open();
+//this.vmc.open();
+this.#VMC_ready = true;
     }
 
     Message(address, args=[], types) {
