@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-08-05)
+// (2023-08-09)
 
 var MMD_SA_options = {
 
@@ -4857,7 +4857,7 @@ MMD_SA_options.Dungeon.run_event("_FACEMESH_OPTIONS_",0);
 
  ,info: [
   '- Double-click for UI settings and other options.',
-  '- Use mouse or keys to pick a numbered option.',
+  '- Use mouse or keys to pick an alphanumeric option.',
   ].join('\n')
     }
 
@@ -4883,8 +4883,8 @@ MMD_SA_options.Dungeon.run_event("_VMC_PROTOCOL_",0);
   }
 
  ,info: [
-  '- Double-click to configure VMC-protocol, which allows beaming 3D motion data in real time to other supported apps, such as VSeeFace, VNyan, Unity and Unreal Engine.',
-  '- Use mouse or keys to pick a numbered option.',
+  '- Double-click to configure VMC-protocol, which allows beaming 3D motion data in real time to other supported apps, such as VSeeFace, VNyan, Warudo, Unity and Unreal Engine.',
+  '- Use mouse or keys to pick an alphanumeric option.',
   ].join('\n')
     }
 
@@ -5355,26 +5355,169 @@ System._browser.camera.streamer_mode.init_mocap('Full Body Holistic');
       ]
     ]
 
-   ,"_VMC_PROTOCOL_": [
+   ,"_VMC_PROTOCOL_": (()=>{
+const branch_list = [
+ { key:'any', func:(e)=>{
+let cancel_default = true;
+
+if (change_port) {
+  if (/^\d$/.test(e.key)) {
+    if (port.length == 5) port = '';
+    port += e.key;
+    MMD_SA_options.Dungeon.run_event(null,null,0);
+  }
+  else if (e.key == 'Enter') {
+    const port_number = parseInt(port);    
+    if ((port_number > 9999) && (port_number < 65536)) {
+      MMD_SA.OSC.VMC.options.plugin.send.port = port_number;
+      if (MMD_SA.OSC.VMC.plugin)
+        MMD_SA.OSC.VMC.plugin.options.send.port = port_number;
+
+      MMD_SA_options.Dungeon.run_event(null,0,0);
+    }
+    else {
+      msg = (port_number <= 9999) ? '(❌5-digit number only)' : '(❌No bigger than 65535)';
+      port = '';
+      MMD_SA_options.Dungeon.run_event(null,null,0);
+    }
+  }
+  else if (e.code == 'KeyR') {
+    port = MMD_SA.OSC.VMC.options_default.plugin.send.port;
+    msg = '';
+    MMD_SA_options.Dungeon.run_event(null,null,0);
+  }
+  else if (e.code == 'Escape') {
+    port = '';
+    MMD_SA_options.Dungeon.run_event(null,0,0);
+  }
+  else {
+    cancel_default = false;
+  }
+}
+else if (change_host) {
+  if (/^[\d\.]$/.test(e.key)) {
+    host += e.key;
+    MMD_SA_options.Dungeon.run_event(null,null,0);
+  }
+  else if (e.key == 'Enter') {
+    let valid_host;
+    if (host == MMD_SA.OSC.VMC.options_default.plugin.send.host) {
+      valid_host = true;
+    }
+    else if (/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.test(host)) {
+      valid_host = [RegExp.$1, RegExp.$2, RegExp.$3, RegExp.$4].every(d=>parseInt(d) < 256);
+    }
+
+    if (valid_host) {
+      MMD_SA.OSC.VMC.options.plugin.send.host = host;
+      if (MMD_SA.OSC.VMC.plugin)
+        MMD_SA.OSC.VMC.plugin.options.send.host = host;
+
+      MMD_SA_options.Dungeon.run_event(null,0,0);
+    }
+    else {
+      msg = '(❌Invalid IP address)';
+      host = '';
+      MMD_SA_options.Dungeon.run_event(null,null,0);
+    }
+  }
+  else if (e.code == 'KeyR') {
+    host = MMD_SA.OSC.VMC.options_default.plugin.send.host;
+    msg = '';
+    MMD_SA_options.Dungeon.run_event(null,null,0);
+  }
+  else if (e.code == 'Escape') {
+    host = '';
+    MMD_SA_options.Dungeon.run_event(null,0,0);
+  }
+  else {
+    cancel_default = false;
+  }
+}
+else {
+  cancel_default = false;
+}
+
+return cancel_default;
+  } },
+  { key:'A', branch_index:1 },
+  { key:'B', branch_index:2 },
+  { key:1, event_id:{ func:()=>{ MMD_SA.OSC.VMC.sender_enabled   = MMD_SA_options.user_camera.streamer_mode.VMC_sender_enabled   = !MMD_SA.OSC.VMC.sender_enabled; System._browser.update_tray(); }, goto_event: { id:"_VMC_PROTOCOL_", branch_index:0 } } },
+  { key:2, event_id:{ func:()=>{ MMD_SA.OSC.VMC.send_camera_data = MMD_SA_options.user_camera.streamer_mode.VMC_send_camera_data = !MMD_SA.OSC.VMC.send_camera_data; System._browser.update_tray(); }, goto_event: { id:"_VMC_PROTOCOL_", branch_index:0 } } },
+  { key:3, event_id:{ func:()=>{ MMD_SA.OSC.VMC.VSeeFace_mode    = MMD_SA_options.user_camera.streamer_mode.VMC_VSeeFace_mode    = !MMD_SA.OSC.VMC.VSeeFace_mode; System._browser.update_tray(); }, goto_event: { id:"_VMC_PROTOCOL_", branch_index:0 } } },
+  { key:4, event_id:{ func:()=>{ MMD_SA.hide_3D_avatar=!MMD_SA.hide_3D_avatar; System._browser.update_tray(); }, goto_event: { id:"_VMC_PROTOCOL_", branch_index:0 } } },
+  { key:'X' },
+];
+
+let change_port, change_host;
+let port, host;
+let msg;
+
+return [
 //0
       [
         {
+          func: function () {
+change_port = false;
+change_host = false;
+
+MMD_SA.SpeechBubble.list[1].hide();
+          },
           message: {
   get content() {
-return 'VMC-protocol parameters\n- port: ' + MMD_SA_options.OSC.VMC.send.port + '\n- host: ' + MMD_SA_options.OSC.VMC.send.host + '\n1. VMC-protocol: ' + ((MMD_SA.OSC.VMC.sender_enabled) ? 'ON' : 'OFF') + '\n2. Send camera data: ' + ((MMD_SA.OSC.VMC.send_camera_data) ? 'ON':  'OFF') + '\n3. VSeeFace mode: ' + ((MMD_SA.OSC.VMC.VSeeFace_mode) ? 'ON' : 'OFF') + '\n4. 3D Avatar: ' + ((MMD_SA.hide_3D_avatar) ? 'HIDDEN' : 'VISIBLE') + '\n5. Done';
+return 'VMC-protocol parameters\nA. ┣ port: ' + MMD_SA.OSC.VMC.options.plugin.send.port + '\nB. ┗ host: ' + MMD_SA.OSC.VMC.options.plugin.send.host + '\n1. VMC-protocol: ' + ((MMD_SA.OSC.VMC.sender_enabled) ? 'ON' : 'OFF') + '\n2. Send camera data: ' + ((MMD_SA.OSC.VMC.send_camera_data) ? 'ON':  'OFF') + '\n3. VSeeFace mode: ' + ((MMD_SA.OSC.VMC.VSeeFace_mode) ? 'ON' : 'OFF') + '\n4. 3D Avatar: ' + ((MMD_SA.hide_3D_avatar) ? 'HIDDEN' : 'VISIBLE') + '\nX. Done';
   }
  ,bubble_index: 3
- ,branch_list: [
-    { key:1, event_id:{ func:()=>{ MMD_SA.OSC.VMC.sender_enabled   = MMD_SA_options.user_camera.streamer_mode.VMC_sender_enabled   = !MMD_SA.OSC.VMC.sender_enabled; System._browser.update_tray(); }, goto_event: { id:"_VMC_PROTOCOL_", branch_index:0 } } },
-    { key:2, event_id:{ func:()=>{ MMD_SA.OSC.VMC.send_camera_data = MMD_SA_options.user_camera.streamer_mode.VMC_send_camera_data = !MMD_SA.OSC.VMC.send_camera_data; System._browser.update_tray(); }, goto_event: { id:"_VMC_PROTOCOL_", branch_index:0 } } },
-    { key:3, event_id:{ func:()=>{ MMD_SA.OSC.VMC.VSeeFace_mode    = MMD_SA_options.user_camera.streamer_mode.VMC_VSeeFace_mode    = !MMD_SA.OSC.VMC.VSeeFace_mode; System._browser.update_tray(); }, goto_event: { id:"_VMC_PROTOCOL_", branch_index:0 } } },
-    { key:4, event_id:{ func:()=>{ MMD_SA.hide_3D_avatar=!MMD_SA.hide_3D_avatar; System._browser.update_tray(); }, goto_event: { id:"_VMC_PROTOCOL_", branch_index:0 } } },
-    { key:5 },
-  ]
+ ,branch_list: branch_list
           }
         }
-      ]
-    ]
+      ],
+//1
+      [
+        {
+          func: function () {
+if (!change_port) {
+  msg = '';
+  port = '';
+}
+
+change_port = true;
+change_host = false;
+          },
+          message: {
+  get content() {
+return 'Current port: ' + (port||MMD_SA.OSC.VMC.options.plugin.send.port) + ((msg) ? '\n'+msg : '') + '\n・Enter a 5-digit port number\n・Press R to reset to default\n・Press enter to apply\n・Press Esc to cancel';
+  }
+ ,index: 1
+ ,bubble_index: 3
+ ,branch_list: branch_list
+          }
+        }
+      ],
+//2
+      [
+        {
+          func: function () {
+if (!change_host) {
+  msg = '';
+  host = '';
+}
+
+change_port = false;
+change_host = true;
+          },
+          message: {
+  get content() {
+return 'Current host: ' + (host||MMD_SA.OSC.VMC.options.plugin.send.host) + ((msg) ? '\n'+msg : '') + '\n・Enter a valid IP address\n・Press R to reset to default\n・Press enter to apply\n・Press Esc to cancel';
+  }
+ ,index: 1
+ ,bubble_index: 3
+ ,branch_list: branch_list
+          }
+        }
+      ],
+];
+    })()
 
    ,"_MEDIA_RECORDER_OPTIONS_": (()=>{
 
@@ -7819,7 +7962,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  content: 'XR Animator (v0.13.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
+  content: 'XR Animator (v0.13.2)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -8298,7 +8441,8 @@ System._browser.save_file('XRA_settings.json', json, 'application/json');
 		"camera_face_locking": null,
 		"shoulder_adjust": null,
 		"video_capture": {},
-		"pose": {}
+		"pose": {},
+		"VMC": {}
 	}
             };
 
@@ -8307,6 +8451,33 @@ System.Gadget.Settings.writeString('LABEL_XRA_settings', '');
 
 MMD_SA_options._XRA_pose_reset();
 MMD_SA_options._XRA_clear_custom_motion();
+
+if (MMD_SA.THREEX.enabled) {
+  for (const PPE of ['UnrealBloom', 'N8AO', 'DOF']) {
+    let param;
+    switch (PPE) {
+      case 'UnrealBloom':
+        param = ['params', 'params_vrm'];
+        break;
+      case 'N8AO':
+        param = ['effectController', 'effectController_vrm'];
+        break;
+      case 'DOF':
+        param = ['effectController'];
+        break;
+    }
+
+    param?.forEach(p=>{
+      if (MMD_SA.THREEX.PPE.initialized) {
+        MMD_SA.THREEX.PPE[PPE][p].reset?.();
+        MMD_SA.THREEX.PPE[PPE].enabled = false;
+      }
+      else {
+        MMD_SA.THREEX.PPE[PPE][p] = null;
+      }
+    });
+  }
+}
 
 MMD_SA_options._XRA_settings_import(XRA_settings_default.XR_Animator_settings);
 DEBUG_show('✅Settings reset', 3);
@@ -8449,6 +8620,8 @@ MMD_SA_options.user_camera.ML_models.pose.model_quality = (!MMD_SA_options.user_
         },
         {
           func: function () {
+if (MMD_SA_options.user_camera.ML_models.pose.model_quality != 'Best') return;
+
 if (MMD_SA_options.user_camera.ML_models.pose.z_depth_scale < 3)
   MMD_SA_options.user_camera.ML_models.pose.z_depth_scale = undefined;
 else if (MMD_SA_options.user_camera.ML_models.pose.z_depth_scale > 3)
@@ -8548,7 +8721,7 @@ MMD_SA_options.user_camera.ML_models.hands.depth_adjustment = v;
   },
   { key:2, event_id: {
       func:()=>{
-if (MMD_SA_options.user_camera.ML_models.hands.depth_adjustment == 0) return;
+if (MMD_SA_options.user_camera.ML_models.hands.depth_adjustment < -9) return;
 
 let v = MMD_SA_options.user_camera.ML_models.hands.palm_shoulder_scale || 0;
 if (++v > 2) v = -2;
@@ -8560,7 +8733,7 @@ MMD_SA_options.user_camera.ML_models.hands.palm_shoulder_scale = v;
   },
   { key:3, event_id: {
       func:()=>{
-if (MMD_SA_options.user_camera.ML_models.hands.depth_adjustment == 0) return;
+if (MMD_SA_options.user_camera.ML_models.hands.depth_adjustment < -9) return;
 
 let v = MMD_SA_options.user_camera.ML_models.hands.depth_scale || 0;
 if (++v > 3) v = -3;
@@ -9368,6 +9541,13 @@ config.PPE = {
   },
 };
 
+config.VMC = {
+  send: {
+    port: MMD_SA.OSC.VMC.options.plugin.send.port,
+    host: MMD_SA.OSC.VMC.options.plugin.send.host,
+  },
+};
+
 return config;
   };
 
@@ -9528,6 +9708,15 @@ try {
               break;
           }
         });
+        break;
+
+      case 'VMC':
+        MMD_SA.OSC.VMC.options.plugin.send.port = parseInt(config[p].send?.port) || MMD_SA.OSC.VMC.options_default.plugin.send.port;
+        MMD_SA.OSC.VMC.options.plugin.send.host = config[p].send?.host || MMD_SA.OSC.VMC.options_default.plugin.send.host;
+        if (MMD_SA.OSC.VMC.plugin) {
+          MMD_SA.OSC.VMC.plugin.options.send.port = MMD_SA.OSC.VMC.options.plugin.send.port;
+          MMD_SA.OSC.VMC.plugin.options.send.host = MMD_SA.OSC.VMC.options.plugin.send.host;
+        }
         break;
     }
   }
