@@ -1,4 +1,4 @@
-// (2023-08-04)
+// (2023-08-14)
 
 var PoseAT = (function () {
 
@@ -515,7 +515,7 @@ var use_mediapipe_hand_landmarker, use_mediapipe_pose_landmarker;
 var pose_landmarker;
 var pose_model_quality, pose_model_z_depth_scale;
 
-var hands_worker, hands_worker_data;
+var hands_worker, hands_worker_data, hands_worker_pose;
 var hands_worker_ready;
 var use_hands_worker// = true;
 
@@ -1231,6 +1231,8 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
           if (!hands_worker_ready) await new Promise((resolve)=>{ setTimeout(resolve, 0); });
 
           if (hands_worker_ready) {
+hands_worker_pose = pose;
+
 options.pose = pose;
 options.shoulder_width = shoulder_width;
 
@@ -1308,7 +1310,26 @@ hands_worker_ready = false;
 //console.log(hands_worker_data)
     _t_hands = hands_worker_data._t;
     fps_hands = hands_worker_data.fps;
+
     hands = hands_worker_data.handpose;
+    for (const id of [9,10]) {
+      const hand = hands.find(h=>h.label==((id==9)?'Left':'Right'));
+      if (!hand) continue;
+
+      const kp = pose.keypoints[get_pose_index(id)];
+      if (kp.score < score_threshold) continue;
+
+      const kp_hands = hands_worker_pose.keypoints[get_pose_index(id)];
+      if (kp_hands.score < score_threshold) continue;
+
+      const x_offset = kp.position.x - kp_hands.position.x;
+      const y_offset = kp.position.y - kp_hands.position.y;
+      hand.keypoints.forEach(k=>{
+        k[0] += x_offset;
+        k[1] += y_offset;
+      });
+    }
+
     hands_worker_data = null;
   }
   else if (hands) {
