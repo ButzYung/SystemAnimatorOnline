@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-08-09)
+// (2023-08-12)
 
 var use_full_spectrum = true
 
@@ -661,7 +661,7 @@ MMD_SA._click_to_reset = null;
 
     load_motion(async ()=>{
       const index = MMD_SA_options.motion_index_by_name[filename];
-      if (index != null) {
+      if ((index != null) && MMD_SA.motion[index]) {
         MMD_SA_options.motion_shuffle = [index];
         MMD_SA_options.motion_shuffle_list_default = null;
         MMD_SA._force_motion_shuffle = true;
