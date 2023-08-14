@@ -1,4 +1,4 @@
-// (2023-08-04)
+// (2023-08-14)
 
 var HandsAT = (function () {
 
@@ -173,16 +173,17 @@ return [
 
     if (!hands || use_human_hands) return hands
 
-    if (options.use_holistic) {
+   if (options.use_holistic) {
       const _result = hands
       hands = { image:_result.image, multiHandedness:[], multiHandLandmarks:[] }
       if (_result.leftHandLandmarks && _result.leftHandLandmarks.length) {
         hands.multiHandLandmarks.push(_result.leftHandLandmarks)
-        hands.multiHandedness.push({score:1})
+// LR inverted
+        hands.multiHandedness.push({score:1, categoryName:'Right'})
       }
       if (_result.rightHandLandmarks && _result.rightHandLandmarks.length) {
         hands.multiHandLandmarks.push(_result.rightHandLandmarks)
-        hands.multiHandedness.push({score:1})
+        hands.multiHandedness.push({score:1, categoryName:'Left'})
       }
     }
 
@@ -282,13 +283,15 @@ s*s = ((x2*x2 + y2*y2)/1.5 - (x1*x1 + y1*y1))/(z1*z1 - z2*z2/1.5)
   h.forEach(j=>{j[2] *= _adjust_ratio});
 }
 
-const d = hand.label;
-const palm0 = h[0].slice();
-h.forEach((j,idx)=>{
-  j.forEach((v,i)=>{j[i] -= palm0[i]});
-  const j_new = data_filter[1][d].landmarks[idx].filter(j, nowInMs);
-  j.forEach((v,i)=>{j[i] = j_new[i] + palm0[i]});
-});
+if (data_filter[1]) {
+  const d = hand.label;
+  const palm0 = h[0].slice();
+  h.forEach((j,idx)=>{
+    j.forEach((v,i)=>{j[i] -= palm0[i]});
+    const j_new = data_filter[1][d].landmarks[idx].filter(j, nowInMs);
+    j.forEach((v,i)=>{j[i] = j_new[i] + palm0[i]});
+  });
+}
 
 // ["thumb", "index", "middle", "ring", "pinky"]
 hand.annotations = {
