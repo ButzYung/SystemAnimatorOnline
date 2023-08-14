@@ -4458,7 +4458,24 @@ if (!System._browser.camera.poseNet.enabled) {
 
 const d = hand_camera_side;
 const motion_para = MMD_SA.MMD.motionManager.para_SA;
-if (!System._browser.camera.poseNet.data_detected || !motion_para.motion_tracking_enabled || motion_para.motion_tracking?.hand_camera_disabled || (motion_para.motion_tracking?.arm_as_leg?.enabled && (motion_para.motion_tracking.arm_as_leg.linked_side != ((d=='左')?'right':'left'))) || (System._browser.camera.poseNet.frames.get_blend_default_motion('skin', d+'手首') > 0.5)) {
+
+const model = THREE.MMD.getModels()[0];
+const mesh = model.mesh;
+const modelX = MMD_SA.THREEX.get_model(0);
+const hand_pos = modelX.get_bone_position_by_MMD_name(d+'手首');//MMD_SA.get_bone_position(mesh, d+'手首');//
+
+let camera_off = !System._browser.camera.poseNet.data_detected || !motion_para.motion_tracking_enabled || motion_para.motion_tracking?.hand_camera_disabled || (motion_para.motion_tracking?.arm_as_leg?.enabled && (motion_para.motion_tracking.arm_as_leg.linked_side != ((d=='左')?'right':'left')));
+if (motion_para.motion_tracking_upper_body_only) {
+  camera_off = camera_off || (System._browser.camera.poseNet.frames.get_blend_default_motion('skin', d+'手首') > 0.5);
+}
+else {
+  camera_off = camera_off || ((modelX.get_bone_position_by_MMD_name(d+'腕').y - hand_pos.y) > v1.fromArray(modelX.get_bone_origin_by_MMD_name(d+'手首')).distanceTo(v2.fromArray(modelX.get_bone_origin_by_MMD_name(d+'腕')))/2);
+  if (System._browser.camera.poseNet._upper_body_only_mode) {
+    camera_off = camera_off || ((System._browser.camera.handpose.hand_visible_session[d]||0) < 1000);
+  }
+}
+
+if (camera_off) {
   System._browser.camera.poseNet._arm_IK_scale[hand_camera_side] = null;
   MMD_SA.Camera_MOD.adjust_camera('hand_camera', v1.set(0,0,0), v2.set(0,0,0), null);
 
@@ -4507,10 +4524,6 @@ if (System._browser.camera.handpose.enabled) {
 System._browser.camera.poseNet._arm_IK_scale[hand_camera_side] = 1.5;
 if (frames.skin[d+'腕ＩＫ']) frames.skin[d+'腕ＩＫ'][0].data_filter = {};
 
-const model = THREE.MMD.getModels()[0];
-const mesh = model.mesh;
-const modelX = MMD_SA.THREEX.get_model(0);
-const hand_pos = modelX.get_bone_position_by_MMD_name(d+'手首');//MMD_SA.get_bone_position(mesh, d+'手首');//
 const hand_rot = modelX.get_bone_rotation_by_MMD_name(d+'手首');//MMD_SA.get_bone_rotation(mesh, d+'手首');//
 //hand_rot.multiply(MMD_SA.TEMP_q.copy(mesh.quaternion).conjugate());
 
@@ -7962,7 +7975,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  content: 'XR Animator (v0.13.4)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
+  content: 'XR Animator (v0.13.5)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -8700,7 +8713,7 @@ function depth_scale() {
   return 'Normal';
 }
 
-return '\n1. Depth adjustment: ' + depth_adjustment() + '\n2. ┣ IRL hand/shoulder scale:\n' + '        ' + '┗ ' + palm_shoulder_scale() + '\n3. ┗ Depth scale: ' + depth_scale() + '\n4. Stabilize arm: ' + ((System._browser.camera.handpose.stabilize_arm == 2) ? 'ON' : ((System._browser.camera.handpose.stabilize_arm == 1) ? 'Upper body mode only' : 'OFF')) + '\n5. Standalone web worker (BETA): ' + ((System._browser.camera.handpose.use_hands_worker) ? 'ON' : 'OFF') + '\n6. Done';
+return '\n1. Depth adjustment: ' + depth_adjustment() + '\n2. ┣ IRL hand/shoulder scale:\n' + '        ' + '┗ ' + palm_shoulder_scale() + '\n3. ┗ Depth scale: ' + depth_scale() + '\n4. Stabilize arm: ' + ((System._browser.camera.handpose.stabilize_arm == 2) ? 'ON' : ((System._browser.camera.handpose.stabilize_arm == 1) ? 'Upper body mode only' : 'OFF')) + '\n5. ┗ Time to stabilize: ' + ((System._browser.camera.handpose.stabilize_arm) ? ((System._browser.camera.handpose.stabilize_arm_time) ? ((System._browser.camera.handpose.stabilize_arm_time == 1) ? '1 frame' : System._browser.camera.handpose.stabilize_arm_time + 'ms') : '0 frame') : 'N/A') + '\n6. Standalone web worker (BETA): ' + ((System._browser.camera.handpose.use_hands_worker) ? 'ON' : 'OFF') + '\n7. Done';
   }
  ,bubble_index: 3
  ,branch_list: [
@@ -8753,12 +8766,30 @@ if (--System._browser.camera.handpose.stabilize_arm < 0)
   },
   { key:5, event_id: {
       func:()=>{
+if (!System._browser.camera.handpose.stabilize_arm_time) {
+  System._browser.camera.handpose.stabilize_arm_time = 1;
+}
+else if (System._browser.camera.handpose.stabilize_arm_time == 1) {
+  System._browser.camera.handpose.stabilize_arm_time = 100;
+}
+else if (System._browser.camera.handpose.stabilize_arm_time == 100) {
+  System._browser.camera.handpose.stabilize_arm_time = 200;
+}
+else {
+  System._browser.camera.handpose.stabilize_arm_time = 0;
+}
+      },
+      goto_event: { branch_index:mocap_options_branch, step:4 },
+    }
+  },
+  { key:6, event_id: {
+      func:()=>{
 System._browser.camera.handpose.use_hands_worker = !System._browser.camera.handpose.use_hands_worker;
       },
       goto_event: { branch_index:mocap_options_branch, step:4 },
     }
   },
-  { key:6, branch_index:done_branch }
+  { key:7, branch_index:done_branch }
   ]
           }
         },
@@ -9483,6 +9514,7 @@ config.user_camera = {
     },
     hands: {
       stabilize_arm: System._browser.camera.handpose.stabilize_arm,
+      stabilize_arm_time: System._browser.camera.handpose.stabilize_arm_time,
       use_hands_worker: System._browser.camera.handpose.use_hands_worker,
       depth_adjustment: MMD_SA_options.user_camera.ML_models.hands.depth_adjustment,
       palm_shoulder_scale: MMD_SA_options.user_camera.ML_models.hands.palm_shoulder_scale,
@@ -9632,7 +9664,8 @@ try {
         System._browser.camera.poseNet.leg_scale_adjustment = config[p].ML_models.pose.leg_scale_adjustment;
         System._browser.camera.poseNet.auto_grounding = config[p].ML_models.pose.auto_grounding;
         System._browser.camera.poseNet.hip_adjustment_weight = config[p].ML_models.pose.hip_adjustment_weight;
-        System._browser.camera.handpose.stabilize_arm = (config[p].ML_models.hands?.stabilize_arm != null) ? config[p].ML_models.hands.stabilize_arm : 2;
+        System._browser.camera.handpose.stabilize_arm = config[p].ML_models.hands?.stabilize_arm;
+        System._browser.camera.handpose.stabilize_arm_time = config[p].ML_models.hands?.stabilize_arm_time;
         System._browser.camera.handpose.use_hands_worker = config[p].ML_models.hands?.use_hands_worker;
         System._browser.camera.facemesh.eye_tracking = config[p].ML_models.facemesh.eye_tracking;
         System._browser.camera.facemesh.blink_sync = config[p].ML_models.facemesh.blink_sync;
