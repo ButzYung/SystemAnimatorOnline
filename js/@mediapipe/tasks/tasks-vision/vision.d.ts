@@ -54,6 +54,12 @@ export declare interface BoundingBox {
     width: number;
     /** The height of the bounding box, in pixels. */
     height: number;
+    /**
+     * Angle of rotation of the original non-rotated box around the top left
+     * corner of the original non-rotated box, in clockwise degrees from the
+     * horizontal.
+     */
+    angle: number;
 }
 
 /**
@@ -2281,8 +2287,14 @@ declare interface VisionTaskOptions extends TaskRunnerOptions {
 /** Base class for all MediaPipe Vision Tasks. */
 declare abstract class VisionTaskRunner extends TaskRunner {
     protected constructor();
-    /** Configures the shared options of a vision task. */
-    applyOptions(options: VisionTaskOptions): Promise<void>;
+    /**
+     * Configures the shared options of a vision task.
+     *
+     * @param options The options for the task.
+     * @param loadTfliteModel Whether to load the model specified in
+     *     `options.baseOptions`.
+     */
+    applyOptions(options: VisionTaskOptions, loadTfliteModel?: boolean): Promise<void>;
     /** Closes and cleans up the resources held by this task. */
     close(): void;
 }
@@ -2308,6 +2320,8 @@ declare interface WasmFileset {
     wasmLoaderPath: string;
     /** The path to the Wasm binary. */
     wasmBinaryPath: string;
+    /** The optional path to the asset loader script. */
+    assetLoaderPath?: string;
 }
 
 export { }
