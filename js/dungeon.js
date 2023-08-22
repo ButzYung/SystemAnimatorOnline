@@ -1,4 +1,4 @@
-// (2023-08-05)
+// (2023-08-23)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -11484,8 +11484,10 @@ if (mf) {
   let model = e.detail.model
   for (const morph_name in mf) {
     let _m_idx = model.pmx.morphs_index_by_name[morph_name]
-    let _m = model.pmx.morphs[_m_idx]
-    MMD_SA._custom_morph.push({ key:{ weight:mf[morph_name], morph_type:_m.type, morph_index:_m_idx }, idx:model.morph.target_index_by_name[morph_name] })
+    if (_m_idx != null) {
+      let _m = model.pmx.morphs[_m_idx]
+      MMD_SA._custom_morph.push({ key:{ weight:mf[morph_name], morph_type:_m.type, morph_index:_m_idx }, idx:model.morph.target_index_by_name[morph_name] })
+    }
   }
 }
 //DEBUG_show(Date.now()+":"+MMD_SA._custom_morph.length)
@@ -11506,9 +11508,10 @@ if (!mf) {
 morph_form = [null].concat(Object.values(mf))
 
 if (++morph_form_index >= morph_form.length) {
-  morph_form_index = 0
-  window.removeEventListener("SA_MMD_model0_process_morphs", morph_event)
-  DEBUG_show("Character form:DEFAULT", 3)
+  morph_form_index = 0;
+  morph_event_registered = false;
+  window.removeEventListener("SA_MMD_model0_process_morphs", morph_event);
+  DEBUG_show("Character form:DEFAULT", 3);
 }
 else {
   if (!morph_event_registered) {
