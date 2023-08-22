@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-08-12)
+// (2023-08-23)
 
 var use_full_spectrum = true
 
@@ -12673,27 +12673,25 @@ MMD_SA.Camera_MOD.adjust_camera(target_current.id, null, target_pos);
         var target_face = {
   id: 'face',
   get_target_position: ()=>{
-var model = threeX.get_model(0);
+const model = threeX.get_model(0);
+const model_MMD = MMD_SA.THREEX._THREE.MMD.getModels()[0];
 
 var head_pos;
 var pos = v3.set(0,0,0);
-const head_pos_ref = (threeX.enabled) ? v1.fromArray(model.para.pos0['head']).sub(v2.fromArray(model.para.pos0['hips'])).multiplyScalar(model.model_scale) : v1.fromArray(model.mesh.bones_by_name["頭"].pmxBone.origin).sub(v2.fromArray(model.mesh.bones_by_name["上半身"].pmxBone.origin));
-head_pos_ref.y += 0.8;
+
+const head_pos_ref = v1.fromArray(model.get_bone_origin_by_MMD_name('頭')).sub(v2.fromArray(model.get_bone_origin_by_MMD_name('上半身')));
+const neck_y = model.get_bone_origin_by_MMD_name('頭')[1] - model.get_bone_origin_by_MMD_name('首')[1];
+head_pos_ref.y += neck_y;
+
 const camera_lookAt = v4.fromArray(MMD_SA_options.camera_lookAt).add(v2.fromArray(MMD_SA.center_view_lookAt));
-if (1) {
-  pos.add(MMD_SA.THREEX._THREE.MMD.getModels()[0].mesh.position);
-  pos.add(camera_lookAt);
-  pos.add((MMD_SA.THREEX.enabled) ? model.process_position(v2.copy(model.getBoneNode('hips').position).setY(0)).multiplyScalar(model.model_scale) : model.mesh.bones_by_name['センター'].skinMatrix.decompose()[0].setY(0));
 
-  head_pos = model.get_bone_position_by_MMD_name('頭').sub(model.get_bone_position_by_MMD_name('上半身')).add(v2.set(0,0.8,0).applyQuaternion(model.get_bone_rotation_by_MMD_name('頭')));
-  head_pos.sub(head_pos_ref);
-}
-else {
-  pos.sub(camera_lookAt);
+pos.add(model_MMD.mesh.position);
+pos.add(camera_lookAt);
+pos.add(model.get_bone_position_by_MMD_name('センター',true).setY(0).applyQuaternion(model_MMD.mesh.quaternion));
 
-  head_pos = model.get_bone_position_by_MMD_name('頭').add(v3.set(0,0.8,0).applyQuaternion(model.get_bone_rotation_by_MMD_name('頭')));
-  head_pos.y -= head_pos_ref.y/2;
-}
+head_pos = model.get_bone_position_by_MMD_name('頭').sub(model.get_bone_position_by_MMD_name('上半身')).add(v2.set(0,neck_y,0).applyQuaternion(model.get_bone_rotation_by_MMD_name('頭')));
+head_pos.sub(head_pos_ref);
+
 const c_base = MMD_SA.Camera_MOD.get_camera_base(['camera_lock']);
 pos.sub(c_base.target);
 
