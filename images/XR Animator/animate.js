@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-08-14)
+// (2023-08-23)
 
 var MMD_SA_options = {
 
@@ -3092,7 +3092,7 @@ wireframe:{
 //  hidden:true,
 //  align_with_video:true,
   top:0.5,
-//left:+(0.4+0.1),
+left:+(0.4+0.3),
 //top:0.8,left:0.4,
 //top:0,left:3,
 //top:0.5,left:1,
@@ -4051,16 +4051,16 @@ if (System._browser.camera.ML_enabled) {
   info =
   '- The current pose '
 + ((MMD_SA.MMD.motionManager.para_SA.motion_tracking_enabled) ? 'supports ' + ((MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only) ? 'upper-body🙋' : 'full-body💃') + ' motion tracking.' : 'does not support motion tracking.') + '\n'
-+ '- Double-click to change the pose of the avatar.\n'
-+ '- Use mouse or keys to pick an alphanumeric option.';
 }
 else {
  info =
-  '- Double-click to change the pose of the avatar.\n'
-+ '- Choose a suitable pose depending on whether you want a full-body💃 or upper-body🙋 mocap.\n'
-+ '- 🦶denotes the support of arm-to-leg🙋↔️🦶control mode by pressing ' + (System._browser.hotkeys.config_by_id['arm_to_leg_control_mode']?.accelerator[0]||'') + '. Repeat to return to normal mode.\n'
-+ '- Use mouse or keys to pick an alphanumeric option.';
+  '- Double-click to change your avatar\'s pose, supporting either full-body💃 or upper-body🙋 mocap.\n'
 }
+
+info += 
+  '- Hotkeys Alt/Ctrl+Num0-9 for pose 1-18 (0 for custom pose)\n'
++ '- 🦶denotes the support of arm-to-leg🙋↔️🦶control mode by pressing ' + (System._browser.hotkeys.config_by_id['arm_to_leg_control_mode']?.accelerator[0]||'') + ' to toggle.\n'
++ '- Use mouse or keys to pick an alphanumeric option.';
 
 return info;
   }
@@ -4445,6 +4445,8 @@ MMD_SA._force_motion_shuffle = true
       let no_camera_collision;
       let avatar_visible_distance;
 
+      let selfie_mode;
+
       function hand_camera() {
 const _hand_camera_active = hand_camera_active;
 hand_camera_active = false;
@@ -4464,19 +4466,19 @@ const mesh = model.mesh;
 const modelX = MMD_SA.THREEX.get_model(0);
 const hand_pos = modelX.get_bone_position_by_MMD_name(d+'手首');//MMD_SA.get_bone_position(mesh, d+'手首');//
 
+let selfie_mode = _hand_camera.selfie_mode;
+
 let camera_off = !System._browser.camera.poseNet.data_detected || !motion_para.motion_tracking_enabled || motion_para.motion_tracking?.hand_camera_disabled || (motion_para.motion_tracking?.arm_as_leg?.enabled && (motion_para.motion_tracking.arm_as_leg.linked_side != ((d=='左')?'right':'left')));
 if (motion_para.motion_tracking_upper_body_only) {
   camera_off = camera_off || (System._browser.camera.poseNet.frames.get_blend_default_motion('skin', d+'手首') > 0.5);
 }
 else {
-  camera_off = camera_off || ((modelX.get_bone_position_by_MMD_name(d+'腕').y - hand_pos.y) > v1.fromArray(modelX.get_bone_origin_by_MMD_name(d+'手首')).distanceTo(v2.fromArray(modelX.get_bone_origin_by_MMD_name(d+'腕')))/2);
-  if (System._browser.camera.poseNet._upper_body_only_mode) {
-    camera_off = camera_off || ((System._browser.camera.handpose.hand_visible_session[d]||0) < 1000);
-  }
+  camera_off = camera_off || ((modelX.get_bone_position_by_MMD_name(d+'腕').y - hand_pos.y) > v1.fromArray(modelX.get_bone_origin_by_MMD_name(d+'手首')).distanceTo(v2.fromArray(modelX.get_bone_origin_by_MMD_name(d+'腕'))) * 0.5);
+//  if (System._browser.camera.poseNet._upper_body_only_mode && !selfie_mode) camera_off = camera_off || ((System._browser.camera.handpose.hand_visible_session[d]||0) < 1000);
 }
 
 if (camera_off) {
-  System._browser.camera.poseNet._arm_IK_scale[hand_camera_side] = null;
+  System._browser.camera.poseNet._arm_IK_adjust[hand_camera_side] = null;
   MMD_SA.Camera_MOD.adjust_camera('hand_camera', v1.set(0,0,0), v2.set(0,0,0), null);
 
   restore_camera();
@@ -4509,39 +4511,70 @@ if (MMD_SA.THREEX.enabled) {
 
 const frames = System._browser.camera.poseNet.frames;
 if (System._browser.camera.handpose.enabled) {
-  System._browser.on_animation_update.add(()=>{
+  window.addEventListener('SA_camera_poseNet_process_bones_onended', ()=>{
     finger_list.forEach((f,i)=>{
       let ini = (i == 0) ? 0 : 1;
       for (let n = ini; n < ini+3; n++) {
         const f_name = d+f+'指'+nj_list[n];
-        if (frames.skin[f_name])
-          frames.skin[f_name][0].rot.set(0,0,0,1);
+        mesh.bones_by_name[f_name]?.quaternion.set(0,0,0,1);
       }
     });
-  }, 0,0);
+  }, {once:true});
 }
 
-System._browser.camera.poseNet._arm_IK_scale[hand_camera_side] = 1.5;
+System._browser.camera.poseNet._arm_IK_adjust[hand_camera_side] = { min:{z:0.25}, scale:{x:1.5,y:1,z:2} };
 if (frames.skin[d+'腕ＩＫ']) frames.skin[d+'腕ＩＫ'][0].data_filter = {};
 
-const hand_rot = modelX.get_bone_rotation_by_MMD_name(d+'手首');//MMD_SA.get_bone_rotation(mesh, d+'手首');//
+const sign_LR = (d=='左')?1:-1;
+let target = v1;
+if (selfie_mode) {
+  const head_target = modelX.get_bone_position_by_MMD_name('首');
+  const neck_y = modelX.get_bone_origin_by_MMD_name('頭')[1] - modelX.get_bone_origin_by_MMD_name('首')[1];
+  head_target.y += neck_y*2;
+
+  const arm_axis = modelX.get_bone_position_by_MMD_name(d+'ひじ').sub(hand_pos).negate().normalize();
+  const arm_rot = q1.setFromUnitVectors(MMD_SA.TEMP_v3.set(sign_LR,0,0), arm_axis);
+  hand_pos.add(v3.set(0,0.4,0).applyQuaternion(arm_rot));
+  hand_pos.y += neck_y*2;
+
+  window.addEventListener('SA_camera_poseNet_process_bones_onended', ()=>{
+    mesh.bones_by_name[d+'手首'].quaternion.set(0,0,0,1);
+    mesh.bones_by_name[d+'手捩']?.quaternion.set(0,0,0,1);
+  }, {once:true});
+
+  target.copy(head_target.sub(hand_pos)).normalize();
+}
+else {
+  const hand_rot = modelX.get_bone_rotation_by_MMD_name(d+'手首');
 //hand_rot.multiply(MMD_SA.TEMP_q.copy(mesh.quaternion).conjugate());
 
-const sign_LR = (d=='左')?1:-1;
-const target = v1.set(0,-sign_LR,0);
-if (!MMD_SA.THREEX.enabled && MMD_SA_options.model_para_obj.rot_arm_adjust) target.applyQuaternion(MMD_SA_options.model_para_obj.rot_arm_adjust[d+'腕'].axis_rot);
-target.applyQuaternion(hand_rot).multiplyScalar(sign_LR);
+  target.set(0,-sign_LR,0);
+  if (!MMD_SA.THREEX.enabled && MMD_SA_options.model_para_obj.rot_arm_adjust) target.applyQuaternion(MMD_SA_options.model_para_obj.rot_arm_adjust[d+'腕'].axis_rot);
+  target.applyQuaternion(hand_rot).multiplyScalar(sign_LR);
 //target.applyQuaternion(mesh.quaternion);
 //hand_rot.multiply(mesh.quaternion);
 
 //v2.setEulerFromQuaternion(hand_rot, 'ZYX').multiplyScalar(180/Math.PI);
 //System._browser.camera.DEBUG_show(v2.toArray().join('\n')+'\n\n'+target.toArray().join('\n'))
 
-hand_shift = v3.set(1*((MMD_SA.THREEX.enabled)?-1:1),0,0);
-if (!MMD_SA.THREEX.enabled && MMD_SA_options.model_para_obj.rot_arm_adjust) hand_shift.applyQuaternion(MMD_SA_options.model_para_obj.rot_arm_adjust[d+'腕'].axis_rot);
-hand_shift.applyQuaternion(hand_rot).multiplyScalar(sign_LR);
+  const hand_shift = v3.set(1*((MMD_SA.THREEX.enabled)?-1:1),0,0);
+  if (!MMD_SA.THREEX.enabled && MMD_SA_options.model_para_obj.rot_arm_adjust) hand_shift.applyQuaternion(MMD_SA_options.model_para_obj.rot_arm_adjust[d+'腕'].axis_rot);
+  hand_shift.applyQuaternion(hand_rot).multiplyScalar(sign_LR);
 
-hand_pos.add(v2.copy(target).multiplyScalar(0.4)).add(hand_shift);
+  hand_pos.add(v2.copy(target).multiplyScalar(0.4)).add(hand_shift);
+}
+
+const filter = target_filter[d].filters[0].filter;
+if (selfie_mode) {
+  filter.minCutOff = 0.1;
+  filter.beta = 0.2;
+}
+else {
+  filter.minCutOff = 0.25;
+  filter.beta = 0.5;
+}
+target.fromArray(target_filter[d].filter(target.toArray()));
+
 target.multiplyScalar(30).add(hand_pos);
 
 const c_base = MMD_SA.Camera_MOD.get_camera_base(['camera_lock']);
@@ -4572,7 +4605,7 @@ if (MMD_SA.THREEX.enabled) {
       function disable_hand_camera() {
 hand_camera_enabled = false;
 hand_camera_active = false;
-System._browser.camera.poseNet._arm_IK_scale = {};
+System._browser.camera.poseNet._arm_IK_adjust = {};
 
 MMD_SA_options.look_at_screen = returnBoolean("MMDLookAtCamera");
 
@@ -4592,12 +4625,17 @@ System._browser.camera.DEBUG_show('Hand camera:OFF', 3);
       let hand_camera_enabled, hand_camera_active;
       let hand_camera_side;
 
+      const target_filter = {};
+
       let v1, v2, v3;
-//      let q1;
+      let q1;
       window.addEventListener('SA_Dungeon_onstart', ()=>{
 v1 = new THREE.Vector3();
 v2 = new THREE.Vector3();
 v3 = new THREE.Vector3();
+q1 = new THREE.Quaternion();
+
+for (const d of ['左', '右']) target_filter[d] = new System._browser.data_filter([{ type:'one_euro', id:'target_filter', para:[30, 0.5,0.5,1, 3] }]);
 
 window.addEventListener('MMDCameraReset', (e)=>{
   if (System._browser.camera.poseNet.frames._reset_disabled)
@@ -4611,16 +4649,19 @@ window.addEventListener('SA_MMD_before_render', ()=>{
 //}, 0,1,-1);
       });
 
-      return {
+      const _hand_camera = {
   icon_path: Settings.f_path + '/assets/assets.zip#/icon/hand_camera_64x64.png'
  ,info_short: "Hand camera"
 // ,is_base_inventory: true
 
- ,get index_default() { return (is_mobile) ? undefined : MMD_SA_options.Dungeon.inventory.max_base+1; }
+ ,get index_default() { return (is_mobile) ? undefined : 6; }
 // ,get index_default() { return (is_mobile) ? undefined : (browser_native_mode) ? 4 : 6;}//MMD_SA_options.Dungeon.inventory.max_base+4; }
 
  ,stock_max: 1
  ,stock_default: 1
+
+ ,get selfie_mode() { return selfie_mode; }
+ ,set selfie_mode(v) { selfie_mode = v; }
 
  ,get _hand_camera_enabled() { return hand_camera_enabled; }
  ,get _hand_camera_active() { return hand_camera_enabled && hand_camera_active; }
@@ -4638,7 +4679,7 @@ if (!hand_camera_enabled) {
   hand_camera_enabled = true;
   hand_camera_side = '右';
 
-  System._browser.camera.poseNet._arm_IK_scale = {};
+  System._browser.camera.poseNet._arm_IK_adjust = {};
 
   MMD_SA_options.look_at_screen = false;
 
@@ -4648,7 +4689,7 @@ else {
   if (hand_camera_side == '右') {
     hand_camera_side = '左';
 
-    System._browser.camera.poseNet._arm_IK_scale = {};
+    System._browser.camera.poseNet._arm_IK_adjust = {};
 
     c.DEBUG_show('Hand camera:ON (right hand)', 5);
   }
@@ -4661,12 +4702,15 @@ else {
   }
 
  ,get info() { return [
-'- ' + (System._browser.hotkeys.config_by_id['hand_camera']?.accelerator[0]||'') + ' / double-click to use your hand as camera during mocap.',
-'- Repeat to switch from left to right hand.',
-'- Repeat to disable it.',
+'- Press ' + (System._browser.hotkeys.config_by_id['hand_camera']?.accelerator[0]||'') + ' / double-click to use your hand as camera during mocap (status: ' + ((hand_camera_enabled) ? ((hand_camera_side == '左') ? 'left hand' : 'right hand') : 'OFF') + ').',
+'- Repeat to switch among left hand, right hand, and OFF.',
+'- Press ' + (System._browser.hotkeys.config_by_id['selfie_mode']?.accelerator[0]||'') + ' to toggle "Selfie mode" which automatically focuses on your face (status: ' + ((_hand_camera.selfie_mode) ? 'ON' : 'OFF') + ').',
+'- Press ' + (System._browser.hotkeys.config_by_id['auto_look_at_camera']?.accelerator[0]||'') + ' to toggle auto "look at camera" (status: ' + ((System._browser.camera.facemesh.auto_look_at_camera) ? 'ON' : 'OFF') + ').',
   ].join('\n');
   }
       };
+
+      return _hand_camera;
     })()
 
    ,"body_pix" : {
@@ -4816,7 +4860,7 @@ e.detail.result.return_value = true;
  ,info_short: "Media recorder"
 // ,is_base_inventory: true
 
- ,index_default: (is_mobile) ? undefined : 6
+ ,get index_default() { return (is_mobile) ? undefined : MMD_SA_options.Dungeon.inventory.max_base+1; }
 
  ,stock_max: 1
  ,stock_default: 1
@@ -5499,7 +5543,7 @@ change_host = false;
           },
           message: {
   get content() {
-return 'Current port: ' + (port||MMD_SA.OSC.VMC.options.plugin.send.port) + ((msg) ? '\n'+msg : '') + '\n・Enter a 5-digit port number\n・Press R to reset to default\n・Press enter to apply\n・Press Esc to cancel';
+return 'Current port: ' + (port||MMD_SA.OSC.VMC.options.plugin.send.port) + ((msg) ? '\n'+msg : '') + '\n・Enter a 5-digit port number\n・Press R to reset to default\n・Press Enter to apply\n・Press Esc to cancel';
   }
  ,index: 1
  ,bubble_index: 3
@@ -5521,7 +5565,7 @@ change_host = true;
           },
           message: {
   get content() {
-return 'Current host: ' + (host||MMD_SA.OSC.VMC.options.plugin.send.host) + ((msg) ? '\n'+msg : '') + '\n・Enter a valid IP address\n・Press R to reset to default\n・Press enter to apply\n・Press Esc to cancel';
+return 'Current host: ' + (host||MMD_SA.OSC.VMC.options.plugin.send.host) + ((msg) ? '\n'+msg : '') + '\n・Enter a valid IP address\n・Press R to reset to default\n・Press Enter to apply\n・Press Esc to cancel';
   }
  ,index: 1
  ,bubble_index: 3
@@ -7975,7 +8019,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  content: 'XR Animator (v0.13.5)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
+  content: 'XR Animator (v0.14.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -8253,7 +8297,7 @@ MMD_SA_options.Dungeon.run_event(null,null,5);
 
 return true;
     } },
-    ...['switch_motion','arm_to_leg_control_mode','mocap_auto_grounding','hand_camera','auto_look_at_camera'].map((id,i)=>{
+    ...['switch_motion','arm_to_leg_control_mode','mocap_auto_grounding','hand_camera','selfie_mode','auto_look_at_camera'].map((id,i)=>{
       return { key:i+1, event_id:{ func:()=>{
 hotkey_id = id;
 hotkey_combo = hotkey_info = hotkey_acc = null;
@@ -8335,7 +8379,8 @@ return [
   '3. ' + get_state('mocap_auto_grounding') + hotkeys.config_by_id['mocap_auto_grounding'].accelerator[0] + ' to toggle mocap auto-grounding',
 //  '・' + get_state('camera_3D_lock') + 'Ctrl+L to toggle 3D camera lock',
   '4. ' + get_state('hand_camera') + hotkeys.config_by_id['hand_camera'].accelerator[0] + ' to toggle hand camera mode',
-  '5. ' + get_state('auto_look_at_camera') + hotkeys.config_by_id['auto_look_at_camera'].accelerator[0] + ' to toggle auto "look at camera"',
+  '5. ' + get_state('selfie_mode') + hotkeys.config_by_id['selfie_mode'].accelerator[0] + ' to toggle hand camera\'s selfie mode',
+  '6. ' + get_state('auto_look_at_camera') + hotkeys.config_by_id['auto_look_at_camera'].accelerator[0] + ' to toggle auto "look at camera"',
   'G. Global hotkey mode🌐: ' + ((System._browser.hotkeys.is_global) ? 'ON' : 'OFF'),
   'X. Done',
 ].join('\n');
@@ -8441,7 +8486,8 @@ System._browser.save_file('XRA_settings.json', json, 'application/json');
 				"hands": {},
 				"facemesh": {
 					"eye_tracking": true
-				}
+				},
+                "tilt_adjustment": Object.assign({}, System._browser.camera.tilt_adjustment),
 			},
 			"streamer_mode": {
 				"camera_preference": {}
@@ -8453,6 +8499,7 @@ System._browser.save_file('XRA_settings.json', json, 'application/json');
 		"audio_visualizer": true,
 		"camera_face_locking": null,
 		"shoulder_adjust": null,
+        "selfie_mode": false,
 		"video_capture": {},
 		"pose": {},
 		"VMC": {}
@@ -8581,14 +8628,15 @@ DEBUG_show('(Motion recording STARTED / x0.25 speed)', 3)
      ,[
         {
           message: {
-  content: '1. Body pose options\n2. Hands options\n3. Facemesh options\n4. Clear bounding box\n5. Done'
+  content: '1. Body pose options\n2. Hands options\n3. Facemesh options\n4. Webcam angle adjustment\n5. Clear bounding box\n6. Done'
  ,bubble_index: 3
  ,branch_list: [
   { key:1, event_index:1 },
   { key:2, event_index:4 },
   { key:3, branch_index:facemesh_options_branch },
-  { key:4, branch_index:mocap_options_branch+4 },
-  { key:5, branch_index:done_branch }
+  { key:4, event_index:5 },
+  { key:5, branch_index:mocap_options_branch+4 },
+  { key:6, branch_index:done_branch }
   ]
           }
         },
@@ -8793,6 +8841,55 @@ System._browser.camera.handpose.use_hands_worker = !System._browser.camera.handp
   ]
           }
         },
+
+        {
+          message: {
+get content() {
+  const tilt_adjustment = System._browser.camera.tilt_adjustment;
+  return [
+    'If your webcam is angled up or down, offset it to cancel avatar\'s tilting.',
+    ((tilt_adjustment.enabled) ? '- Press ⬆️⬇️ to adjust offset angle' : ''),
+    ((tilt_adjustment.enabled) ? '- Press ⬅️➡️ to adjust weighting applied' : ''),
+    '1. Tilt adjustment: ' + ((tilt_adjustment.enabled) ? 'ON' : 'OFF'),
+    ((tilt_adjustment.enabled) ? '    ┣ Angle: ' + (tilt_adjustment.angle) + '°' : ''),
+    ((tilt_adjustment.enabled) ? '    ┗ Weighting (body pose): ' + Math.round(tilt_adjustment.pose_weight * 100) + '%' : ''),
+    '2. Done',
+  ].filter(v=>v).join('\n');
+},
+bubble_index: 3,
+branch_list: [
+  { key:'any', func:(e)=>{
+if (/Arrow(Up|Down)/.test(e.code)) {
+  let a = System._browser.camera.tilt_adjustment.angle;
+  a += (e.code == 'ArrowUp') ? 1 : -1;
+  if (Math.abs(a) > 90)
+    a = Math.sign(a) * 90;
+  System._browser.camera.tilt_adjustment.angle = a;
+}
+else if (/Arrow(Left|Right)/.test(e.code)) {
+  let p = Math.round(System._browser.camera.tilt_adjustment.pose_weight * 100);
+  p += (e.code == 'ArrowRight') ? 1 : -1;
+  System._browser.camera.tilt_adjustment.pose_weight = Math.min(Math.max(p,0),100)/100;
+}
+else {
+  return false;
+}
+
+MMD_SA_options.Dungeon.run_event(null,null,5);
+
+return true;
+  } },
+  { key:1, event_id: {
+      func:()=>{
+System._browser.camera.tilt_adjustment.enabled = !System._browser.camera.tilt_adjustment.enabled;
+      },
+      goto_event: { branch_index:mocap_options_branch, step:5 },
+    }
+  },
+  { key:2, branch_index:done_branch }
+],
+          }
+        }
       ]
 // 30
      ,[
@@ -9380,20 +9477,6 @@ window.addEventListener("SA_AR_onARFrame", (function () {
     DEBUG_show('Camera lock: ON', 3);
   }
 
-  let expression_active = [];
-  window.addEventListener('SA_MMD_model0_process_morphs', (e)=>{
-//detail:{ model:this, morph:this.morph }
-const model = e.detail.model;
-
-expression_active.forEach(ex=>{
-  var _m_idx = model.pmx.morphs_index_by_name[ex];
-  if (_m_idx != null) {
-    let _m = model.pmx.morphs[_m_idx];
-    MMD_SA._custom_morph.push({ key:{ name:ex, weight:1, morph_type:_m.type, morph_index:_m_idx, override_weight:true }, idx:model.morph.target_index_by_name[ex] });
-  }
-});
-  });
-
   const hotkey_config = [
     {
       id: 'switch_motion',
@@ -9442,21 +9525,21 @@ MMD_SA_options.Dungeon.item_base.hand_camera.action.func();
     },
 
     {
+      id: 'selfie_mode',
+      accelerator: ['Alt+S'],
+      process: (e)=>{
+const m = !MMD_SA_options.Dungeon_options.item_base.hand_camera.selfie_mode;
+MMD_SA_options.Dungeon_options.item_base.hand_camera.selfie_mode = m;
+System._browser.camera.DEBUG_show('Selfie mode: ' + ((m)?'ON':'OFF'), 5);
+      }
+    },
+
+    {
       id: 'auto_look_at_camera',
       accelerator: ['Ctrl+E'],
       process: (e)=>{
 System._browser.camera.facemesh.auto_look_at_camera = !System._browser.camera.facemesh.auto_look_at_camera;
 DEBUG_show('Auto "look at camera":' + ((System._browser.camera.facemesh.auto_look_at_camera) ? 'ON' : 'OFF'), 3);
-      }
-    },
-
-    {
-      id: 'expression_sad',
-      accelerator: ['Alt+S'],
-      process: (e)=>{
-expression_active = (expression_active[0] == '困る') ? [] : ['困る'];
-if (expression_active.length && !MMD_SA.THREEX.enabled)
-  expression_active.push('照れ');
       }
     },
   ];
@@ -9527,6 +9610,7 @@ config.user_camera = {
       auto_look_at_camera: System._browser.camera.facemesh.auto_look_at_camera,
       emotion_weight: System._browser.camera.facemesh.emotion_weight,
     },
+    tilt_adjustment: Object.assign({}, System._browser.camera.tilt_adjustment),
     debug_hidden: MMD_SA_options.user_camera.ML_models.debug_hidden,
   },
 
@@ -9554,6 +9638,8 @@ config.camera_face_locking = MMD_SA_options.camera_face_locking;
 config.audio_visualizer = MMD_SA_options.use_CircularSpectrum;
 
 config.shoulder_adjust = MMD_SA.THREEX.shoulder_adjust;
+
+config.selfie_mode = MMD_SA_options.Dungeon_options.item_base.hand_camera.selfie_mode;
 
 const vc = System._browser.video_capture;
 config.video_capture = {
@@ -9672,6 +9758,7 @@ try {
         System._browser.camera.facemesh.auto_blink = config[p].ML_models.facemesh.auto_blink;
         System._browser.camera.facemesh.auto_look_at_camera = config[p].ML_models.facemesh.auto_look_at_camera;
         System._browser.camera.facemesh.emotion_weight = config[p].ML_models.facemesh.emotion_weight;
+        Object.assign(System._browser.camera.tilt_adjustment, config[p].ML_models.tilt_adjustment||{});
         break;
 
         System._browser.camera.poseNet.leg_scale_adjustment
@@ -9699,6 +9786,10 @@ try {
 
       case 'video_capture':
         Object.assign(System._browser.video_capture, config[p]);
+        break;
+
+      case 'selfie_mode':
+        MMD_SA_options.Dungeon_options.item_base.hand_camera.selfie_mode = config[p];
         break;
 
       case 'pose':
