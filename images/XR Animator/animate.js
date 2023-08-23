@@ -3092,7 +3092,7 @@ wireframe:{
 //  hidden:true,
 //  align_with_video:true,
   top:0.5,
-left:+(0.4+0.3),
+//left:+(0.4+0.3),
 //top:0.8,left:0.4,
 //top:0,left:3,
 //top:0.5,left:1,
@@ -4445,6 +4445,8 @@ MMD_SA._force_motion_shuffle = true
       let no_camera_collision;
       let avatar_visible_distance;
 
+      let camera_toggle_timestamp = 0;
+
       let selfie_mode;
 
       function hand_camera() {
@@ -4475,6 +4477,15 @@ if (motion_para.motion_tracking_upper_body_only) {
 else {
   camera_off = camera_off || ((modelX.get_bone_position_by_MMD_name(d+'腕').y - hand_pos.y) > v1.fromArray(modelX.get_bone_origin_by_MMD_name(d+'手首')).distanceTo(v2.fromArray(modelX.get_bone_origin_by_MMD_name(d+'腕'))) * 0.5);
 //  if (System._browser.camera.poseNet._upper_body_only_mode && !selfie_mode) camera_off = camera_off || ((System._browser.camera.handpose.hand_visible_session[d]||0) < 1000);
+}
+
+if (!motion_para.motion_tracking_upper_body_only && System._browser.camera.poseNet.data_detected && !(_hand_camera_active ^ camera_off)) {
+  if (RAF_timestamp > camera_toggle_timestamp + 500) {
+    camera_toggle_timestamp = RAF_timestamp;
+  }
+  else {
+    camera_off = !_hand_camera_active;
+  }
 }
 
 if (camera_off) {
@@ -4522,7 +4533,7 @@ if (System._browser.camera.handpose.enabled) {
   }, {once:true});
 }
 
-System._browser.camera.poseNet._arm_IK_adjust[hand_camera_side] = { min:{z:0.25}, scale:{x:1.5,y:1,z:2} };
+System._browser.camera.poseNet._arm_IK_adjust[hand_camera_side] = { min:{z:0.25}, scale:{x:1.25,y:1,z:1.5} };
 if (frames.skin[d+'腕ＩＫ']) frames.skin[d+'腕ＩＫ'][0].data_filter = {};
 
 const sign_LR = (d=='左')?1:-1;
