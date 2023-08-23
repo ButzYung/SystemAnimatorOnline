@@ -2936,7 +2936,7 @@ if (para_SA.SpeechBubble_flipH)
 this.flipH_side = !!flipH_side
 
 var pos_mod = (para.pos_mod) || para_SA.SpeechBubble_pos_mod || b.pos_mod || ((MMD_SA_options.model_para_obj_all.length>1) ? [-2,2,-5] : [0,0,0])
-var x_mod = ((flipH_side && !left_sided) || (!flipH_side && left_sided)) ? -10 : 10
+var x_mod = ((flipH_side && !left_sided) || (!flipH_side && left_sided)) ? -12.5 : 12.5
 
 this.distance_scale = (para.distance_scale || 1) * Math.min(Math.pow(MMD_SA.camera_position.distanceTo(THREE.MMD.getModels()[0].mesh.position)/30,2), 1);
 this.scale = (para.scale || 1) * (MMD_SA_options.SpeechBubble_scale||1)
