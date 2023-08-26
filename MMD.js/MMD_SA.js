@@ -3202,8 +3202,8 @@ window.addEventListener('MMDStarted', ()=>{
 
   const d_target = document.getElementById('SL_Host');
   d_target.addEventListener('mousemove', (e)=>{
-    mouse_x = e.clientX;
-    mouse_y = e.clientY;
+    mouse_x = e.clientX * window.devicePixelRatio;
+    mouse_y = e.clientY * window.devicePixelRatio;
   });
   d_target.addEventListener('click', (e)=>{
     if (!is_mobile && (d_target.style.cursor != 'pointer')) return;
