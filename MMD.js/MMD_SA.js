@@ -12789,8 +12789,8 @@ MMD_SA.OSC = (function () {
     constructor(options={}) {
 if (!options.plugin) {
   options.plugin = {
-    open: MMD_SA_options.OSC.VMC.open,
-    send: MMD_SA_options.OSC.VMC.send,
+    open: MMD_SA_options.OSC?.VMC.open,
+    send: MMD_SA_options.OSC?.VMC.send,
   };
 }
 
