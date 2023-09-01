@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-08-23)
+// (2023-09-02)
 
 var MMD_SA_options = {
 
@@ -3173,6 +3173,9 @@ wireframe:{
 
 //  RAF_animation_frame_unlimited = true
 
+// always restart the electron app by complete relaunching instead of just reloading the page
+  System._restart_full = true;
+
   Settings_default._custom_.EventToMonitor = "SOUND_ALL"
   Settings_default._custom_.Use30FPS = "non_default"
 //  Settings_default._custom_.Use60FPS = "non_default"
@@ -3583,6 +3586,16 @@ if (!MMD_SA.motion[index]) {
 //motion_loading = false;
       }
 
+      function load_motion_on_finish(index) {
+MMD_SA_options._motion_shuffle_list_default = [index];
+MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice();
+MMD_SA._force_motion_shuffle = true;
+window.addEventListener('SA_MMD_model0_onmotionchange', ()=>{ MMD_SA.WebXR.ground_plane.visible=System._browser.camera.poseNet.ground_plane_visible }, {once:true});
+
+MMD_SA_options.Dungeon_options.item_base.social_distancing && MMD_SA_options.Dungeon_options.item_base.social_distancing.reset();
+if (System._browser.camera.initialized) System._browser.on_animation_update.add(()=>{System._browser.camera._camera_reset = MMD_SA._trackball_camera.object.clone()},1,1);
+      }
+
       function change_motion(motion_index_absolute, ignore_event) {
 const model_mesh = THREE.MMD.getModels()[0].mesh;
 if (!model_mesh.visible) return true;
@@ -3652,13 +3665,7 @@ if (!motion_loading) {//MMD_SA_options.motion_shuffle_list_default && (MMD_SA_op
 
   const index = MMD_SA_options.motion_index_by_name[motion_name];
   load_motion(index).then(()=>{
-    MMD_SA_options._motion_shuffle_list_default = [index];
-    MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice();
-    MMD_SA._force_motion_shuffle = true;
-    window.addEventListener('SA_MMD_model0_onmotionchange', ()=>{ MMD_SA.WebXR.ground_plane.visible=System._browser.camera.poseNet.ground_plane_visible }, {once:true});
-
-    MMD_SA_options.Dungeon_options.item_base.social_distancing && MMD_SA_options.Dungeon_options.item_base.social_distancing.reset();
-    if (System._browser.camera.initialized) System._browser.on_animation_update.add(()=>{System._browser.camera._camera_reset = MMD_SA._trackball_camera.object.clone()},1,1);
+    load_motion_on_finish(index);
   });
 }
 else {
@@ -3697,10 +3704,7 @@ else if (MMD_animation_customized) {
   else {
     const index = MMD_SA_options.motion.length-1;
     load_motion(index).then(()=>{
-      MMD_SA_options.motion_shuffle = [index];
-      MMD_SA_options.motion_shuffle_list_default = null;
-      MMD_SA._force_motion_shuffle = true;
-      window.addEventListener('SA_MMD_model0_onmotionchange', ()=>{ MMD_SA.WebXR.ground_plane.visible=System._browser.camera.poseNet.ground_plane_visible }, {once:true});
+      load_motion_on_finish(index);
     });
   }
 }
@@ -3765,10 +3769,12 @@ function push_motion_to_list_front() {
   _motion_page = 0;
 }
 
+let motion_list_length_default;
 function reset_list_order(order) {
   if (order) {
     _motion_list[0].sort((a,b)=>a.index_default-b.index_default);
     order.forEach((index,i)=>{
+      if (index >= 1000) index = motion_list_length_default + (index - 1000);
       if (_motion_list[0][index])
         _motion_list[0][index].index = i;
     });
@@ -3796,7 +3802,7 @@ function clear_custom_motion() {
 
 window.addEventListener('SA_on_external_motion_loaded', (e)=>{
   const path = e.detail.path;
-  if (/\.zip\#/i.test(path)) return;
+  if (/\.zip\#/i.test(path) || /_(camera|morph)\.vmd$/i.test(path)) return;
 
   if (_motion_list[0].some(m=>m.path==path)) return;
 
@@ -3891,7 +3897,7 @@ _motion_list[0] = [
 
 ].filter(m=>m!=null);
 
-const motion_list_length_default = _motion_list[0].length;
+motion_list_length_default = _motion_list[0].length;
 
 _motion_list[0].forEach(m=>{
   MMD_SA_options.motion_para[m.name].adjustment_by_scale = { 'センター':{ reference_value:11.36464 } };
@@ -4449,6 +4455,14 @@ MMD_SA._force_motion_shuffle = true
 
       let selfie_mode;
 
+      let fov_last;
+      function update_fov(fov) {
+if (MMD_SA._trackball_camera.object.fov != fov) {
+  MMD_SA._trackball_camera.object.fov = fov;
+  MMD_SA._trackball_camera.object.updateProjectionMatrix();
+}
+      }
+
       function hand_camera() {
 const _hand_camera_active = hand_camera_active;
 hand_camera_active = false;
@@ -4519,6 +4533,9 @@ if (MMD_SA.THREEX.enabled) {
   avatar_visible_distance = MMD_SA_options.avatar_visible_distance;
   MMD_SA_options.avatar_visible_distance = 1;
 }
+
+if (!fov_last) fov_last = MMD_SA._trackball_camera.object.fov;
+update_fov(_hand_camera.fov);
 
 const frames = System._browser.camera.poseNet.frames;
 if (System._browser.camera.handpose.enabled) {
@@ -4611,6 +4628,10 @@ if (MMD_SA.THREEX.enabled) {
   }
   MMD_SA_options.avatar_visible_distance = avatar_visible_distance;
 }
+
+if (fov_last)
+  update_fov(fov_last);
+fov_last = null;
       }
 
       function disable_hand_camera() {
@@ -6266,7 +6287,7 @@ else {
 
 if (!MMD_SA.THREEX.enabled) mesh.useQuaternion = true;
 
-if (MMD_SA.THREEX.enabled && MMD_SA.THREEX.use_sRGBEncoding) texture.encoding = THREE.sRGBEncoding;
+if (MMD_SA.THREEX.enabled && MMD_SA.THREEX.use_sRGBEncoding) texture.colorSpace = THREE.SRGBColorSpace;
 texture.needsUpdate = true;
 
 const obj_all = { scene:mesh };
@@ -6600,6 +6621,12 @@ e.detail.result.return_value = true;
 })();
 
 var explorer_mode = false;
+window.addEventListener('jThree_ready', ()=>{
+  Object.defineProperty(MMD_SA_options, '_XRA_explorer_mode', {
+    get: ()=>explorer_mode,
+  });
+});
+
 function build_octree(object3d) {
   object3d.no_collision = !explorer_mode || !!object3d.parent_bone;
 
@@ -8030,7 +8057,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  content: 'XR Animator (v0.14.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
+  content: 'XR Animator (v0.14.5)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -8964,35 +8991,46 @@ System._browser.camera.poseNet.bb_clear = 15
   get content() {
 const camera = System._browser.camera;
 
-return '1. Eye tracking: ' + ((!System._browser.camera.facemesh.eye_tracking)?'OFF':'ON') + '\n2. Blink LR sync: ' + ((!System._browser.camera.facemesh.blink_sync)?'OFF':'ON') + '\n3. Auto blink: ' + ((!System._browser.camera.facemesh.auto_blink)?'OFF':'ON') + '\n4. Auto "look at camera" (' + (System._browser.hotkeys.config_by_id['auto_look_at_camera']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.facemesh.auto_look_at_camera)?'OFF':'ON') + '\n5. Emotion tracking weight: ' + (Math.round(((System._browser.camera.facemesh.emotion_weight == null) ? 0.75 : System._browser.camera.facemesh.emotion_weight) * 100) + '%') + ((camera.facemesh.enabled && camera.video) ? '\n6. Reset calibration\n7. Import calibration\n8. Export calibration\n9. Done' : '\n6. Done');
+return '1. Eye tracking: ' + ((!System._browser.camera.facemesh.eye_tracking)?'OFF':'ON') + '\n2. Blink LR sync: ' + ((!System._browser.camera.facemesh.blink_sync)?'OFF':'ON') + '\n3. Auto blink: ' + ((!System._browser.camera.facemesh.auto_blink)?'OFF':'ON') + '\n4. Auto "look at camera" (' + (System._browser.hotkeys.config_by_id['auto_look_at_camera']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.facemesh.auto_look_at_camera)?'OFF':'ON') + '\n5. Emotion tracking weight: ' + (Math.round(((System._browser.camera.facemesh.emotion_weight == null) ? 0.75 : System._browser.camera.facemesh.emotion_weight) * 100) + '%') + '\n6. "Tongue out" tracking: ' + ((System._browser.camera.facemesh.use_tongue_out) ? 'ON' : 'OFF') + '\nX. Done';
   }
  ,bubble_index: 3
- ,get branch_list() {
-const camera = System._browser.camera;
-
-return [
-  { key:1, branch_index:facemesh_options_branch+2 },
-  { key:2, branch_index:facemesh_options_branch+1 },
-  { key:3, event_id:{ func:()=>{ System._browser.camera.facemesh.auto_blink = !System._browser.camera.facemesh.auto_blink; }, goto_branch:facemesh_options_branch } },
-  { key:4, event_id:{ func:()=>{ System._browser.camera.facemesh.auto_look_at_camera = !System._browser.camera.facemesh.auto_look_at_camera; }, goto_branch:facemesh_options_branch } },
-  { key:5, event_id:{ func:()=>{
+ ,branch_list: [
+    { key:1, branch_index:facemesh_options_branch+2 },
+    { key:2, branch_index:facemesh_options_branch+1 },
+    { key:3, event_id:{ func:()=>{ System._browser.camera.facemesh.auto_blink = !System._browser.camera.facemesh.auto_blink; }, goto_branch:facemesh_options_branch } },
+    { key:4, event_id:{ func:()=>{ System._browser.camera.facemesh.auto_look_at_camera = !System._browser.camera.facemesh.auto_look_at_camera; }, goto_branch:facemesh_options_branch } },
+    { key:5, event_id:{ func:()=>{
 let w = System._browser.camera.facemesh.emotion_weight;
 if (w == null) w = 0.75;
 w += 0.25;
 if (w > 1) w = 0;
 System._browser.camera.facemesh.emotion_weight = w;
-  }, goto_branch:facemesh_options_branch } },
-].concat((camera.facemesh.enabled && camera.video) ? [
-  { key:6, branch_index:facemesh_options_branch+3 },
-  { key:7, branch_index:facemesh_options_branch+4 },
-  { key:8, branch_index:facemesh_options_branch+5 },
-  { key:9, branch_index:done_branch }
-] : [
-  { key:6, branch_index:done_branch }
-]);
-  }
+    }, goto_branch:facemesh_options_branch } },
+    { key:6, event_id:{ func:()=>{ System._browser.camera.facemesh.use_tongue_out = (System._browser.camera.facemesh.use_tongue_out) ? 0 : 1; }, goto_branch:facemesh_options_branch } },
+    { key:'X', branch_index:done_branch },
+  ]
+          },
+          next_step: {},
+        },
+
+        {
+          func: ()=>{
+if (System._browser.camera.facemesh.enabled && System._browser.camera.video) MMD_SA_options.Dungeon.run_event();
+          },
+        },
+
+        {
+          message: {
+content: 'A. Reset calibration\nB. Import calibration\nC. Export calibration',
+index: 1,
+bubble_index: 3,
+branch_list: [
+  { key:'A', branch_index:facemesh_options_branch+3 },
+  { key:'B', branch_index:facemesh_options_branch+4 },
+  { key:'C', branch_index:facemesh_options_branch+5 },
+]
           }
-        }
+        },
       ]
 // 35
      ,[
@@ -9025,6 +9063,7 @@ MMD_SA_options.Dungeon.run_event(null,done_branch,0);
      ,[
         {
           func: function () {
+MMD_SA.SpeechBubble.list[1].hide();
 window.addEventListener('SA_dragdrop_JSON', onDrop_JSON_change_facemesh_calibration);
           }
          ,message: {
@@ -9043,7 +9082,8 @@ window.addEventListener('SA_dragdrop_JSON', onDrop_JSON_change_facemesh_calibrat
 const facemesh = System._browser.camera.facemesh;
 
 if (!facemesh.calibrated) {
-  MMD_SA.SpeechBubble.message(0, 'Calibration needs to be complete before it can be exported.', 3*1000);
+//  System._browser.on_animation_update.add(()=>{MMD_SA.SpeechBubble.message(0, 'Calibration needs to be complete before it can be exported.', 3*1000);}, 0,0);
+  System._browser.camera.DEBUG_show('(Calibration needs to be complete before it can be exported.)', 5); MMD_SA_options.Dungeon.run_event(null, facemesh_options_branch, 0); return;
 }
 else {
   facemesh.export_calibration();
@@ -9620,6 +9660,7 @@ config.user_camera = {
       auto_blink: System._browser.camera.facemesh.auto_blink,
       auto_look_at_camera: System._browser.camera.facemesh.auto_look_at_camera,
       emotion_weight: System._browser.camera.facemesh.emotion_weight,
+      use_tongue_out: System._browser.camera.facemesh.use_tongue_out,
     },
     tilt_adjustment: Object.assign({}, System._browser.camera.tilt_adjustment),
     debug_hidden: MMD_SA_options.user_camera.ML_models.debug_hidden,
@@ -9651,6 +9692,7 @@ config.audio_visualizer = MMD_SA_options.use_CircularSpectrum;
 config.shoulder_adjust = MMD_SA.THREEX.shoulder_adjust;
 
 config.selfie_mode = MMD_SA_options.Dungeon_options.item_base.hand_camera.selfie_mode;
+config.hand_camera_fov = MMD_SA_options.Dungeon_options.item_base.hand_camera.fov;
 
 const vc = System._browser.video_capture;
 config.video_capture = {
@@ -9734,6 +9776,9 @@ try {
         case 'shoulder_adjust':
           shoulder_adjust(p);
           break;
+        case 'hand_camera_fov':
+          MMD_SA_options.Dungeon_options.item_base.hand_camera.fov = config[p];
+          break;
       }
     }
 //shoulder_adjust('shoulder_adjust');
@@ -9769,15 +9814,19 @@ try {
         System._browser.camera.facemesh.auto_blink = config[p].ML_models.facemesh.auto_blink;
         System._browser.camera.facemesh.auto_look_at_camera = config[p].ML_models.facemesh.auto_look_at_camera;
         System._browser.camera.facemesh.emotion_weight = config[p].ML_models.facemesh.emotion_weight;
+        System._browser.camera.facemesh.use_tongue_out = config[p].ML_models.facemesh.use_tongue_out;
         Object.assign(System._browser.camera.tilt_adjustment, config[p].ML_models.tilt_adjustment||{});
         break;
 
         System._browser.camera.poseNet.leg_scale_adjustment
 
       case 'hotkeys':
-        if (!MMD_SA_options.Dungeon.started) break;
-
         const hotkeys = System._browser.hotkeys;
+        if (!MMD_SA_options.Dungeon.started) {
+          hotkeys.is_global = config[p].is_global;
+          break;
+        }
+
         const is_global_now = hotkeys.is_global;
         hotkeys.is_global = config[p].is_global;
 //        if (MMD_SA_options.Dungeon.started && (is_global_now != hotkeys.is_global)) System._browser.hotkeys.register_global(hotkeys.is_global);
@@ -9802,19 +9851,22 @@ try {
       case 'selfie_mode':
         MMD_SA_options.Dungeon_options.item_base.hand_camera.selfie_mode = config[p];
         break;
+      case 'hand_camera_fov':
+        MMD_SA_options.Dungeon_options.item_base.hand_camera.fov = config[p];
+        break;
 
       case 'pose':
         if (config[p].custom_motion) {
           for (let i = 0; i < config[p].custom_motion.length; i++) {
-
             const path = config[p].custom_motion[i];
             const name = path.replace(/^.+[\/\\]/, "").replace(/\.([a-z0-9]{1,4})$/i, "");
-            const index = MMD_SA_options.motion.length;
-            MMD_SA_options.motion_index_by_name[name] = index;
-            MMD_SA_options.motion.push({ path:path });
-            window.dispatchEvent(new CustomEvent("SA_on_external_motion_loaded", { detail:{ path:path, index:index, result:{ return_value:false } } }));
-
-//            await MMD_SA.load_external_motion(config[p].custom_motion[i], false);
+            if (MMD_SA_options.motion_index_by_name[name] == null) {
+              const index = MMD_SA_options.motion.length;
+              MMD_SA_options.motion_index_by_name[name] = index;
+              MMD_SA_options.motion.push({ path:path });
+              window.dispatchEvent(new CustomEvent("SA_on_external_motion_loaded", { detail:{ path:path, index:1000+(index-MMD_SA.motion_max_default), result:{ return_value:false } } }));
+//          await MMD_SA.load_external_motion(config[p].custom_motion[i], false);
+            }
           }
         }
         MMD_SA_options._XRA_pose_reset(config[p].order);
@@ -9942,7 +9994,7 @@ window.addEventListener('jThree_ready', ()=>{
   new THREE.TextureLoader().load( toFileProtocol('C:\\Users\\user\\Downloads\\equirectangular.png'), function ( texture ) {
 
 					texture.mapping = THREE.EquirectangularReflectionMapping;
-					texture.encoding = THREE.sRGBEncoding;
+					texture.colorSpace = THREE.SRGBColorSpace;
 
 					MMD_SA.THREEX.scene.environment = pmremGenerator.fromEquirectangular( texture ).texture;
 console.log(999,'TEST');
