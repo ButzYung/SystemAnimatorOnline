@@ -1,4 +1,5 @@
-// Gadget settings emulation (v1.4.5)
+// Gadget settings emulation
+// 2023-08-29
 
 var use_SA_browser_mode
 var use_SA_system_emulation, use_SA_gimage_emulation
@@ -8,6 +9,8 @@ var xul_mode, webkit_mode
 var SA_HTA_folder
 
 var return_window, parent_window
+
+var form_updated = false;
 
 if (!self.System) {
   use_SA_browser_mode = true
@@ -21,6 +24,17 @@ if (!self.System) {
   self.SystemEXT = parent_window.SystemEXT
 
   System.Gadget.settings_window = self
+
+  window.addEventListener('load', ()=>{
+    function update_form() {
+      form_updated = true;
+    }
+
+    const inputs = document.getElementsByTagName('input');
+    for (let i = 0, i_max = inputs.length; i < i_max; i++) {
+      inputs[i].addEventListener('change', update_form);
+    }
+  });
 }
 else {
   parent_window = System.Gadget.document.parentWindow
@@ -43,6 +57,11 @@ function title_onmouseout(event) {
 }
 
 function SA_Settings_OK() {
+  if (!form_updated) {
+    SA_Settings_Cancel()
+    return;
+  }
+
   if (use_inline_dialog) {
     self.returnValue = true
     self.location.replace("z_blank2.html")
