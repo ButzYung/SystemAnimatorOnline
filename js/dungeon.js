@@ -4010,7 +4010,7 @@ parseInt(result[3], 16)
 const THREE = MMD_SA.THREEX.THREE;
 
 var dome_tex = MMD_SA.THREEX.mesh_obj.get_three('DomeMESH').material.map;
-if (MMD_SA.THREEX.enabled && MMD_SA.THREEX.use_sRGBEncoding) dome_tex.encoding = THREE.sRGBEncoding;
+if (MMD_SA.THREEX.enabled && MMD_SA.THREEX.use_sRGBEncoding) dome_tex.colorSpace = THREE.SRGBColorSpace;
 dome_tex.needsUpdate = true
 
 var img = MMD_SA_options.Dungeon_options.skydome.texture_cache_list[this.texture_index||0]
