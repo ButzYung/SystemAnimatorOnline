@@ -1,6 +1,6 @@
 /*
 
-_SA.js (2023-07-07)
+_SA.js (2023-09-02)
 
 System Animator
 (c) Butz Yung / Anime Theme. All rights reserved.
@@ -1167,12 +1167,11 @@ if (RAF_timerID) {
 
 if (!self.oHTA) {
   if (webkit_electron_mode) {
-    if ((app_path != app_path_current) || WMI_perfmon.loaded || !webkit_version_milestone["1.4.11"] || (!WallpaperEngine_mode && ((!linux_mode && (path_to_launch != Settings.f_path)) || System.Gadget.Settings._changed["DisableTransparency"])) || (!WallpaperEngine_mode && System.Gadget.Settings._changed["AutoItStayOnDesktop"] && webkit_transparent_mode)) {
+    if (System._restart_full || (app_path != app_path_current) || WMI_perfmon.loaded || !webkit_version_milestone["1.4.11"] || (!WallpaperEngine_mode && ((!linux_mode && (path_to_launch != Settings.f_path)) || System.Gadget.Settings._changed["DisableTransparency"])) || (!WallpaperEngine_mode && System.Gadget.Settings._changed["AutoItStayOnDesktop"] && webkit_transparent_mode))
       restart_app = true
-    }
 
     if (WallpaperEngine_mode) {
-      var fs = SA_require('fs')
+      const fs = SA_require('fs')
       fs.writeFileSync(System.Gadget.path + '\\TEMP\\animation_path_default.txt', path_demo_by_url[path_to_launch]||path_to_launch)
     }
 
@@ -1191,7 +1190,7 @@ if (!self.oHTA) {
     }
   }
 
-  var cmd_line = []
+  const cmd_line = []
   args.forEach(function (v) {
 // use encodeURI instead of encodeURIComponent
     cmd_line.push(encodeURI(v))
