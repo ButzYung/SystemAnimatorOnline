@@ -8320,7 +8320,7 @@ else {
     },
 
     use_tongue_out: {
-      get: function () { return (MMD_SA_options.model_para_obj.facemesh_morph['ぺろっ'].name in this.model.pmx.morphs_index_by_name); },
+      get: function () { return (MMD_SA_options.model_para_obj.facemesh_morph['ぺろっ']?.name in this.model.pmx.morphs_index_by_name); },
     },
 
     model: {
