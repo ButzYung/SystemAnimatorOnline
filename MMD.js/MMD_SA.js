@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-08-23)
+// (2023-09-02)
 
 var use_full_spectrum = true
 
@@ -2603,7 +2603,7 @@ if (!MMD_SA.THREEX.enabled) {
   material.scaleByViewport = false;
 }
 else {
-  material.map.encoding = THREE.sRGBEncoding;
+  material.map.colorSpace = THREE.SRGBColorSpace;
 //  material.depthWrite = false;
 }
 
@@ -6906,7 +6906,7 @@ function TextureObject(texture_obj) {
 
   this.texture = new THREE.Texture(this.canvas)
 //  if (use_THREEX) this.texture.wrapS = this.texture.wrapT = THREE.RepeatWrapping;
-  if (use_THREEX && MMD_SA.THREEX.use_sRGBEncoding) this.texture.encoding = THREE.sRGBEncoding;
+  if (use_THREEX && MMD_SA.THREEX.use_sRGBEncoding) this.texture.colorSpace = THREE.SRGBColorSpace;
   this.texture.needsUpdate = true
 }
 
@@ -8097,6 +8097,7 @@ this.animation = new Animation(this);
  define the following properties on each inherited class
 .mesh
 .is_T_pose
+.use_tongue_out
 .get_bone_by_MMD_name()
 .update_model()
 */
@@ -8318,6 +8319,10 @@ else {
       value: false
     },
 
+    use_tongue_out: {
+      get: function () { return (MMD_SA_options.model_para_obj.facemesh_morph['ぺろっ'].name in this.model.pmx.morphs_index_by_name); },
+    },
+
     model: {
       get: function () { return _THREE.MMD.getModels()[this.index]; }
     },
@@ -8490,7 +8495,9 @@ MMD_SA.fn.setupUI()
 if (use_VRM1) {
 // https://github.com/pixiv/three-vrm/blob/dev/docs/migration-guide-1.0.md
 // In VRM1.0, linear workflow is explicitly recommended, as GLTFLoader recommends.
-  data.renderer.outputEncoding = THREEX.sRGBEncoding;
+// https://github.com/mrdoob/three.js/wiki/Migration-Guide#151--152
+// WebGLRenderer.outputEncoding has been replaced with WebGLRenderer.outputColorSpace with THREE.SRGBColorSpace as the default value.
+//  data.renderer.outputEncoding = THREEX.sRGBEncoding;
 
 // https://threejs.org/docs/#manual/en/introduction/Color-management
 // r149 => r150
@@ -8632,6 +8639,10 @@ if (!MMD_SA.MMD_started)
         set: function (v) { this._use_faceBlendshapes=v; },
       },
 
+      use_tongue_out: {
+        get: function () { return this.use_faceBlendshapes; },
+      },
+
       bone_map_MMD_to_VRM: {
         get: ()=>{ return bone_map_MMD_to_VRM; }
       },
@@ -8669,6 +8680,23 @@ this.model.springBoneManager.joints.forEach( e => {
 
 this.model.springBoneManager.reset();
 //this.model.springBoneManager.setInitState();
+        }
+      },
+
+      build_blendshape_map_name: {
+        value: function (map0, map1) {
+this._map_to_v = [{}, {}];
+for (const name in map0) {
+  this._map_to_v[1][map0[name]] = map1[name];
+  this._map_to_v[0][map1[name]] = map0[name];
+}
+        }
+      },
+
+      blendshape_map_name: {
+        value: function (name, is_VRM1) {
+const v = (is_VRM1) ? 1 : 0;
+return this._map_to_v[v][name] || name;
         }
       },
 
@@ -8934,20 +8962,20 @@ if (!animation_enabled || System._browser.camera.poseNet.enabled) {
 const blendshape_weight = {};
 
 const MMD_morph_weight = mesh_MMD.geometry.morphs_weight_by_name;
-MMD_morph_list.forEach(name => {
+this.MMD_morph_list.forEach(name => {
   const w = MMD_morph_weight[name]
   if (w == null) return
 
-  const blendshape_name = blendshape_map_by_MMD_name[name]
+  const blendshape_name = this.blendshape_map_by_MMD_name[name]
   blendshape_weight[blendshape_name] = Math.max(blendshape_weight[blendshape_name]||0, w)
 });
 
-const name_blink = blendshape_map_name('blink', use_VRM1);
-const name_blink_l = blendshape_map_name('blink_l', use_VRM1);
-const name_blink_r = blendshape_map_name('blink_r', use_VRM1);
+const name_blink = this.blendshape_map_name('blink', use_VRM1);
+const name_blink_l = this.blendshape_map_name('blink_l', use_VRM1);
+const name_blink_r = this.blendshape_map_name('blink_r', use_VRM1);
 
 const blink = blendshape_weight[name_blink] || 0;
-const blink_factor = 1 - (blendshape_weight[blendshape_map_name('fun', use_VRM1)]||0) * 0.25;
+const blink_factor = 1 - (blendshape_weight[this.blendshape_map_name('fun', use_VRM1)]||0) * 0.25;
 blendshape_weight[name_blink_l] = Math.max(blendshape_weight[name_blink_l]||0, blink) * blink_factor;
 blendshape_weight[name_blink_r] = Math.max(blendshape_weight[name_blink_r]||0, blink) * blink_factor;
 blendshape_weight[name_blink] = 0;
@@ -8968,16 +8996,16 @@ if (MMD_morph_weight['びっくり']) {
 
 // にやり, ω
 const mouth_open = Math.max(
-  blendshape_weight[blendshape_map_name('a', use_VRM1)]||0,
-  blendshape_weight[blendshape_map_name('i', use_VRM1)]||0,
-  blendshape_weight[blendshape_map_name('u', use_VRM1)]||0,
-  blendshape_weight[blendshape_map_name('e', use_VRM1)]||0,
-  blendshape_weight[blendshape_map_name('o', use_VRM1)]||0
+  blendshape_weight[this.blendshape_map_name('a', use_VRM1)]||0,
+  blendshape_weight[this.blendshape_map_name('i', use_VRM1)]||0,
+  blendshape_weight[this.blendshape_map_name('u', use_VRM1)]||0,
+  blendshape_weight[this.blendshape_map_name('e', use_VRM1)]||0,
+  blendshape_weight[this.blendshape_map_name('o', use_VRM1)]||0
 );
 [{n:'e', w:MMD_morph_weight['にやり']}, {n:'u', w:MMD_morph_weight['ω']}].forEach(obj => {
   if (!obj.w) return
 
-  const name = blendshape_map_name(obj.n, use_VRM1);
+  const name = this.blendshape_map_name(obj.n, use_VRM1);
   const w = blendshape_weight[name] || 0;
   blendshape_weight[name] = w + (1-w) * obj.w * (mouth_open*0.8 + (1-mouth_open)*0.2);
 //System._browser.camera.DEBUG_show(name+','+obj.n+':'+blendshape_weight[name]);
@@ -9054,7 +9082,7 @@ if (MMD_SA.OSC.VMC.sender_enabled && MMD_SA.OSC.VMC.ready) {
   const warudo_mode = MMD_SA.OSC.VMC.warudo_mode;
 
   const model_rot = q4.copy(mesh.quaternion);
-  const turned_around = !warudo_mode && MMD_SA.OSC.VMC.send_camera_data;
+  const turned_around = MMD_SA.OSC.VMC.send_camera_data && !warudo_mode;// && MMD_SA_options._XRA_explorer_mode;
   if (!turned_around ^ !!this.is_VRM1) model_rot.premultiply(q2.set(0,1,0,0));
 //DEBUG_show(mesh.quaternion.toArray())
 
@@ -9093,7 +9121,7 @@ bone.position.x, bone.position.y, -bone.position.z,
       [
 // three-vrm 1.0
 // use VRM0 name
-blendshape_map_name(name_for_blendshapes, false),
+this.blendshape_map_name(name_for_blendshapes, false),
 
 blendshape_weight[name],
       ],
@@ -9321,22 +9349,6 @@ if (!mesh.matrixAutoUpdate) {
 //"びっくり": "Surprise",
     };
 
-    let blendshape_map_by_MMD_name, MMD_morph_list;
-
-    let _map_to_v;
-    function build_blendshape_map_name() {
-_map_to_v = [{}, {}];
-for (const name in blendshape_map_by_MMD_name) {
-  _map_to_v[1][blendshape_map_by_MMD_name_VRM0[name]] = blendshape_map_by_MMD_name_VRM1[name];
-  _map_to_v[0][blendshape_map_by_MMD_name_VRM1[name]] = blendshape_map_by_MMD_name_VRM0[name];
-}
-    }
-
-    function blendshape_map_name(name, is_VRM1) {
-const v = (is_VRM1) ? 1 : 0;
-return _map_to_v[v][name] || name;
-    }
-
     const finger_list = {"親":0, "人":1, "中":2, "薬":3, "小":4};
     const finger_list_en = ["Thumb", "Index", "Middle", "Ring", "Little"];
     const nj_list = ["０","１","２","３"];
@@ -9510,20 +9522,26 @@ if (vrm_obj.use_faceBlendshapes) {
 }
 
 vrm_obj.emotion_list = (use_VRM1) ? ['relaxed','happy','sad','angry'] : ['fun','joy','sorrow','angry'];
+const _blendshape_map_by_MMD_name = {};
 for (const name in vrm.expressionManager.customExpressionMap) {
   if (/surprise/i.test(name)) {
-    blendshape_map_by_MMD_name_VRM0['びっくり'] = blendshape_map_by_MMD_name_VRM1['びっくり'] = name;
+    _blendshape_map_by_MMD_name['びっくり'] = name;
     vrm_obj.emotion_list.push(name);
   }
   else if (/blush|shy/i.test(name)) {
-    blendshape_map_by_MMD_name_VRM0['照れ'] = blendshape_map_by_MMD_name_VRM1['照れ'] = name;
+    _blendshape_map_by_MMD_name['照れ'] = name;
+    vrm_obj.emotion_list.push(name);
+  }
+  else if (!/tongueout/i.test(name) && /tongue|scornful/i.test(name)) {
+    _blendshape_map_by_MMD_name['ぺろっ'] = name;
     vrm_obj.emotion_list.push(name);
   }
 }
-blendshape_map_by_MMD_name = (use_VRM1) ? blendshape_map_by_MMD_name_VRM1 : blendshape_map_by_MMD_name_VRM0;
-MMD_morph_list = Object.keys(blendshape_map_by_MMD_name);
-build_blendshape_map_name();
-console.log(vrm_obj.emotion_list, MMD_morph_list);
+const blendshape_map_by_MMD_name = (use_VRM1) ? blendshape_map_by_MMD_name_VRM1 : blendshape_map_by_MMD_name_VRM0;
+vrm_obj.blendshape_map_by_MMD_name = Object.assign({}, blendshape_map_by_MMD_name, _blendshape_map_by_MMD_name);
+vrm_obj.MMD_morph_list = Object.keys(vrm_obj.blendshape_map_by_MMD_name);
+vrm_obj.build_blendshape_map_name(Object.assign({}, blendshape_map_by_MMD_name_VRM0, _blendshape_map_by_MMD_name), Object.assign({}, blendshape_map_by_MMD_name_VRM1, _blendshape_map_by_MMD_name));
+console.log(vrm_obj.emotion_list, vrm_obj.MMD_morph_list);
 
 if (!vrm_obj.is_VRM1) mesh_obj.quaternion.set(0,1,0,0);
 
@@ -9798,7 +9816,10 @@ const _Pass = await import(System.Gadget.path + '/three.js/postprocessing/Pass.j
 Pass = _Pass.Pass;
 
 const EffectComposer = await import(System.Gadget.path + '/three.js/postprocessing/EffectComposer.js');
+
+// not using commit from Aug 23, 2023 as it breaks MSAA
 const RenderPass = await import(System.Gadget.path + '/three.js/postprocessing/RenderPass.js');
+
 const ShaderPass = await import(System.Gadget.path + '/three.js/postprocessing/ShaderPass.js');
 
 THREE.EffectComposer = EffectComposer.EffectComposer;
@@ -10559,9 +10580,9 @@ no_bloom_layer.set( NO_BLOOM );
 params_default = {
   enabled: false,//true,
 //  exposure: 1,
-  bloomStrength: 0.8,
+  bloomStrength: 0.4,//0.8,
   bloomRadius: 0.4,
-  bloomThreshold: 0.3,
+  bloomThreshold: 0.43,//0.3,
 };
 
 params = Object.assign({
@@ -10731,7 +10752,9 @@ function restoreMaterial( obj ) {
 
 //return false;
 
-data.renderer.toneMapping = THREE.ReinhardToneMapping;
+// https://github.com/mrdoob/three.js/wiki/Migration-Guide#154--155
+// The inline tone mapping controlled via WebGLRenderer.toneMapping only works when rendering to screen now (similar to WebGLRenderer.outputColorSpace). In context of post processing, use OutputPass to apply tone mapping and color space conversion.
+// data.renderer.toneMapping = THREE.ReinhardToneMapping;
 
 // render scene with bloom
 renderBloom( true );
@@ -10919,18 +10942,36 @@ const params_camera = Object.assign({
   reset: function () {
     gui_camera.controllers.forEach(c=>{c.reset()});
   },
-}, { fov:50 });
+}, {
+  'FOV (main camera)': 50,
+  'FOV (hand camera)': 60,
+});
+
+const hand_camera = MMD_SA_options.Dungeon_options?.item_base.hand_camera;
 
 const gui_camera = gui_light_and_camera.addFolder( 'Camera' );
-gui_camera.add( params_camera, 'fov', 40, 120, 1 ).onChange( function ( value ) {
+gui_camera.add( params_camera, 'FOV (main camera)', 30, 120, 1 ).onChange( function ( value ) {
   System.Gadget.Settings.writeString('LABEL_CameraFOV', (value==50)?'':value);
   MMD_SA._trackball_camera.object.fov = value;
   MMD_SA._trackball_camera.object.updateProjectionMatrix();
 });
+gui_camera.add( params_camera, 'FOV (hand camera)', 30, 120, 1 ).onChange( function ( value ) {
+  if (hand_camera)
+    hand_camera.fov = value;
+});
 gui_camera.add( params_camera, 'reset' );
 gui_camera.close();
 
-params_camera.fov = parseInt(System.Gadget.Settings.readString('LABEL_CameraFOV')||50);
+if (System.Gadget.Settings.readString('LABEL_CameraFOV'))
+  params_camera['FOV (main camera)'] = parseInt(System.Gadget.Settings.readString('LABEL_CameraFOV'));
+if (hand_camera) {
+  if (hand_camera.fov) {
+    params_camera['FOV (hand camera)'] = hand_camera.fov;
+  }
+  else {
+    hand_camera.fov = params_camera['FOV (hand camera)'];
+  }
+}
 threeX.GUI.update(gui_camera);
   };
 })());
@@ -10969,7 +11010,8 @@ if (MMD_SA_options.THREEX_options.use_MMD) {
   }
 }
 
-// Mar 30, 2023
+// Jul 22, 2023 (r155)
+// not using commit from Aug 6, 2023 as it causes error
 const GLTFLoader_module = await import(System.Gadget.path + '/three.js/loaders/GLTFLoader.js');
 Object.assign(self.THREE, GLTFLoader_module);
 
@@ -11291,7 +11333,7 @@ MMD_SA.GOML_head_list.forEach(obj=>{
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.RepeatWrapping;
     if (obj.para.repeat) tex.repeat.set(...obj.para.repeat);
-    if (MMD_SA.THREEX.enabled) tex.encoding = THREE.sRGBEncoding;
+    if (MMD_SA.THREEX.enabled) tex.colorSpace = THREE.SRGBColorSpace;
 
     const img = new Image();
     img.onload = ()=>{
@@ -11667,8 +11709,11 @@ c_max = Math.max(c.color.r, c.color.g, c.color.b);
 // https://github.com/mrdoob/three.js/wiki/Migration-Guide#r149--r150
 //threeX.renderer.obj.physicallyCorrectLights=true;
 //if (threeX.renderer.obj.physicallyCorrectLights) c_max *= 5;
-threeX.renderer.obj.useLegacyLights = false;
-if (!threeX.renderer.obj.useLegacyLights) c_max *= 5;
+
+// .useLegacyLights is obsolete
+//threeX.renderer.obj.useLegacyLights = false;
+//if (!threeX.renderer.obj.useLegacyLights)
+c_max *= 5;
 
 if (c.type == 'DirectionalLight') {
   if (use_VRM1)
