@@ -2,6 +2,8 @@ import {
 	Vector2
 } from 'three';
 
+// AT: Jun 10, 2023 (last commit)
+
 /**
  * Depth-of-field shader with bokeh
  * ported from GLSL shader by Martins Upitis
@@ -353,7 +355,7 @@ vec4 dColor = texture2D(tColor, vUv.xy);
 			gl_FragColor.a = dColor.a;//1.0;
 
 			#include <tonemapping_fragment>
-			#include <encodings_fragment>
+			#include <colorspace_fragment>
 		}`
 
 };

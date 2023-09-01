@@ -39,7 +39,7 @@ import {
 	Vector3,
 	Vector4,
 	VectorKeyframeTrack,
-	sRGBEncoding
+	SRGBColorSpace
 } from 'three';
 import * as fflate from '../libs/fflate.module.js';
 import { NURBSCurve } from '../curves/NURBSCurve.js';
@@ -629,7 +629,7 @@ class FBXTreeParser {
 					parameters.map = scope.getTexture( textureMap, child.ID );
 					if ( parameters.map !== undefined ) {
 
-						parameters.map.encoding = sRGBEncoding;
+						parameters.map.colorSpace = SRGBColorSpace;
 
 					}
 
@@ -643,7 +643,7 @@ class FBXTreeParser {
 					parameters.emissiveMap = scope.getTexture( textureMap, child.ID );
 					if ( parameters.emissiveMap !== undefined ) {
 
-						parameters.emissiveMap.encoding = sRGBEncoding;
+						parameters.emissiveMap.colorSpace = SRGBColorSpace;
 
 					}
 
@@ -659,7 +659,7 @@ class FBXTreeParser {
 					if ( parameters.envMap !== undefined ) {
 
 						parameters.envMap.mapping = EquirectangularReflectionMapping;
-						parameters.envMap.encoding = sRGBEncoding;
+						parameters.envMap.colorSpace = SRGBColorSpace;
 
 					}
 
@@ -669,7 +669,7 @@ class FBXTreeParser {
 					parameters.specularMap = scope.getTexture( textureMap, child.ID );
 					if ( parameters.specularMap !== undefined ) {
 
-						parameters.specularMap.encoding = sRGBEncoding;
+						parameters.specularMap.colorSpace = SRGBColorSpace;
 
 					}
 
@@ -961,6 +961,7 @@ class FBXTreeParser {
 				}
 
 				model.name = node.attrName ? PropertyBinding.sanitizeNodeName( node.attrName ) : '';
+				model.userData.originalName = node.attrName;
 
 				model.ID = id;
 
@@ -997,6 +998,7 @@ class FBXTreeParser {
 						// set name and id here - otherwise in cases where "subBone" is created it will not have a name / id
 
 						bone.name = name ? PropertyBinding.sanitizeNodeName( name ) : '';
+						bone.userData.originalName = name;
 						bone.ID = id;
 
 						skeleton.bones[ i ] = bone;
@@ -1270,7 +1272,10 @@ class FBXTreeParser {
 
 		} else {
 
-			material = new MeshPhongMaterial( { color: 0xcccccc } );
+			material = new MeshPhongMaterial( {
+				name: Loader.DEFAULT_MATERIAL_NAME,
+				color: 0xcccccc
+			} );
 			materials.push( material );
 
 		}
@@ -1311,7 +1316,11 @@ class FBXTreeParser {
 		}, null );
 
 		// FBX does not list materials for Nurbs lines, so we'll just put our own in here.
-		const material = new LineBasicMaterial( { color: 0x3300ff, linewidth: 1 } );
+		const material = new LineBasicMaterial( {
+			name: Loader.DEFAULT_MATERIAL_NAME,
+			color: 0x3300ff,
+			linewidth: 1
+		} );
 		return new Line( geometry, material );
 
 	}
@@ -1635,15 +1644,7 @@ class GeometryParser {
 
 		buffers.uvs.forEach( function ( uvBuffer, i ) {
 
-			// subsequent uv buffers are called 'uv1', 'uv2', ...
-			let name = 'uv' + ( i + 1 ).toString();
-
-			// the first uv buffer is just called 'uv'
-			if ( i === 0 ) {
-
-				name = 'uv';
-
-			}
+			const name = i === 0 ? 'uv' : `uv${ i }`;
 
 			geo.setAttribute( name, new Float32BufferAttribute( buffers.uvs[ i ], 2 ) );
 
@@ -2447,7 +2448,7 @@ class AnimationParser {
 
 					curveNodesMap.get( animationCurveID ).curves[ 'z' ] = animationCurve;
 
-				} else if ( animationCurveRelationship.match( /d|DeformPercent/ ) && curveNodesMap.has( animationCurveID ) ) {
+				} else if ( animationCurveRelationship.match( /DeformPercent/ ) && curveNodesMap.has( animationCurveID ) ) {
 
 					curveNodesMap.get( animationCurveID ).curves[ 'morph' ] = animationCurve;
 
