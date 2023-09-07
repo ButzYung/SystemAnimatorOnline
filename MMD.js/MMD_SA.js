@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-09-02)
+// (2023-09-07)
 
 var use_full_spectrum = true
 
@@ -2936,7 +2936,8 @@ if (para_SA.SpeechBubble_flipH)
 this.flipH_side = !!flipH_side
 
 var pos_mod = (para.pos_mod) || para_SA.SpeechBubble_pos_mod || b.pos_mod || ((MMD_SA_options.model_para_obj_all.length>1) ? [-2,2,-5] : [0,0,0])
-var x_mod = ((flipH_side && !left_sided) || (!flipH_side && left_sided)) ? -12.5 : 12.5
+var x_mod = ((flipH_side && !left_sided) || (!flipH_side && left_sided)) ? -13 : 13;
+x_mod /= this.get_fov_factor(true);
 
 this.distance_scale = (para.distance_scale || 1) * Math.min(Math.pow(MMD_SA.camera_position.distanceTo(THREE.MMD.getModels()[0].mesh.position)/30,2), 1);
 this.scale = (para.scale || 1) * (MMD_SA_options.SpeechBubble_scale||1)
@@ -2948,6 +2949,20 @@ this.pos_base_ref.dir.set(
  ,pos_mod[2]
 );
 this.pos_base_ref.character_pos_ref.copy(THREE.MMD.getModels()[0].mesh.position)
+
+if (para.pos_fixed || MMD_SA_options.SpeechBubble_pos_fixed) {
+  let pos_fixed;
+  if (para.pos_fixed) {
+    this._pos_fixed = para.pos_fixed;
+  }
+  else {
+    const xy = (Array.isArray(MMD_SA_options.SpeechBubble_pos_fixed)) ? MMD_SA_options.SpeechBubble_pos_fixed : ((SL.width > SL.height)  ? [[-0.4,0.2], [0.4,0.2]] : [[-0.2,0.4], [0.2,-0.4]]);
+    this._pos_fixed = xy[this.index||0];
+  }
+}
+else {
+  this._pos_fixed = null;
+}
 
 this.update_position()
 
@@ -2991,6 +3006,12 @@ if (our_group) {
 }
     };
 
+    Object.defineProperty(SB.prototype, 'pos_fixed', {
+      get: function () {
+return this.para?.pos_fixed || (MMD_SA_options.Dungeon?.dialogue_branch_mode && this._pos_fixed);
+      }
+    });
+
     SB.prototype.update_position = function (scale) {
 if (!scale)
   scale = 1
@@ -3003,11 +3024,28 @@ if (is_mobile && screen.orientation) {
     is_portrait = true
 }
 
-this._mesh.position.copy(this.pos_base_ref.dir).multiplyScalar(this.distance_scale * ((is_portrait && 0.25) || 1) * scale).add(this.pos_base_ref._v3.copy(this.pos_base_ref.center).sub(this.pos_base_ref.character_pos_ref).add(THREE.MMD.getModels()[0].mesh.position));
+if (this.pos_fixed) {
+  const v3_screen = MMD_SA.TEMP_v3.set(
+    this._pos_fixed[0]
+   ,this._pos_fixed[1]
+   ,0.5
+  );
 
-if (MMD_SA.THREEX.enabled && MMD_SA.THREEX._object3d_list_) {
-  this._pos0 = (this._pos0||new THREE.Vector3()).copy(this._mesh.position);
-  this._mesh.position.sub(MMD_SA._trackball_camera.object.position).normalize().multiplyScalar(2).add(MMD_SA._trackball_camera.object.position);
+  const camera = MMD_SA._trackball_camera.object;
+  v3_screen.unproject(camera).sub(camera.position).normalize();
+  const v3_look_at = MMD_SA._v3a.copy(v3_screen).applyQuaternion(MMD_SA.TEMP_q.copy(camera.quaternion).conjugate());
+//DEBUG_show(this.index||0+':\n'+v3_look_at.toArray().join('\n'));
+  v3_screen.multiplyScalar(10/Math.abs(v3_look_at.z)).add(camera.position);
+
+  this._mesh.position.copy(v3_screen);
+}
+else {
+  this._mesh.position.copy(this.pos_base_ref.dir).multiplyScalar(this.distance_scale * ((is_portrait && 0.25) || 1) * scale).add(this.pos_base_ref._v3.copy(this.pos_base_ref.center).sub(this.pos_base_ref.character_pos_ref).add(THREE.MMD.getModels()[0].mesh.position));
+
+  if (MMD_SA.THREEX.enabled && MMD_SA.THREEX._object3d_list_) {
+    this._pos0 = (this._pos0||new THREE.Vector3()).copy(this._mesh.position);
+    this._mesh.position.sub(MMD_SA._trackball_camera.object.position).normalize().multiplyScalar(2).add(MMD_SA._trackball_camera.object.position);
+  }
 }
 
 this._mesh.scale.set(1,1,1).multiplyScalar(this.scale * scale * ((is_landscape && 1.5) || 1) * ((this.use_sprite)?1/3:1))
@@ -3016,10 +3054,19 @@ this._mesh.scale.set(1,1,1).multiplyScalar(this.scale * scale * ((is_landscape &
    };
 
     SB.prototype.update_placement = function (enforced) {
+function update_placement() {
+  if (bb_list.some(b=>b._pos_fixed)) {
+    MMD_SA._trackball_camera.object.updateMatrixWorld();
+  }
+
+  bb_list.forEach(b=>{b._update_placement(enforced)});
+}
+
 if (!MMD_SA_options.use_speech_bubble)
   return
 
-bb_list.forEach(b=>{b._update_placement(enforced)});
+window.removeEventListener('SA_MMD_before_render', update_placement);
+window.addEventListener('SA_MMD_before_render', update_placement, {once:true});
     };
 
     SB.prototype._update_placement = function (enforced) {
@@ -3027,14 +3074,20 @@ var mesh = this._mesh
 if (!mesh.visible)
   return
 
-var dis = ((MMD_SA.THREEX.enabled && MMD_SA.THREEX._object3d_list_ && this._pos0) || this._mesh.position).distanceTo(MMD_SA._trackball_camera.object.position);
-var scale = (!this.use_sprite && (dis > 32)) ? 1 + (dis-32)/64 : 1;
+let scale;
+if (this.pos_fixed) {
+  scale = 1;
+}
+else {
+  let dis = ((MMD_SA.THREEX.enabled && MMD_SA.THREEX._object3d_list_ && this._pos0) || this._mesh.position).distanceTo(MMD_SA._trackball_camera.object.position);
+  scale = (!this.use_sprite && (dis > 32)) ? 1 + (dis-32)/64 : 1;
 
-if (1) {//!this.index) {
-  let sight_v3 = MMD_SA._v3a.copy(MMD_SA._trackball_camera.object._lookAt).sub(MMD_SA._trackball_camera.object.position).normalize()
-  let PC_v3 = MMD_SA._v3b.copy(this.pos_base_ref.center).sub(MMD_SA._trackball_camera.object.position).normalize()
-  if ((dis < 20) || (sight_v3.angleTo(PC_v3) > Math.PI/4)) {
-    this.pos_base_ref.center.copy(sight_v3).multiplyScalar(30+MMD_SA.center_view[2]*1).add(MMD_SA._trackball_camera.object.position);
+  if (1) {//!this.index) {
+    let sight_v3 = MMD_SA._v3a.copy(MMD_SA._trackball_camera.object._lookAt).sub(MMD_SA._trackball_camera.object.position).normalize()
+    let PC_v3 = MMD_SA._v3b.copy(this.pos_base_ref.center).sub(MMD_SA._trackball_camera.object.position).normalize()
+    if ((dis < 20) || (sight_v3.angleTo(PC_v3) > Math.PI/4)) {
+      this.pos_base_ref.center.copy(sight_v3).multiplyScalar(30+MMD_SA.center_view[2]*1).add(MMD_SA._trackball_camera.object.position);
+    }
   }
 }
 
@@ -3048,11 +3101,6 @@ var flipH_bubble = this.get_flipH_bubble()
 if (enforced || (flipH_bubble != this.flipH_bubble)) {
   this.update_bubble(flipH_bubble)
 }
-/*
-var dis = MMD_SA._trackball_camera.object.position.distanceTo(mesh.position)
-if (dis > 128)
-  mesh.scale.set(2,2,2)
-*/
     };
 
     Object.defineProperty(SB.prototype, 'position', {
@@ -3100,6 +3148,11 @@ if (this.visible) {
 }
 
 MMD_SA.THREEX.mesh_obj.get( "SpeechBubbleMESH" + this.index ).hide();
+    };
+
+    SB.prototype.get_fov_factor = function (enforced=MMD_SA.THREEX.enabled) {
+// https://github.com/mrdoob/three.js/issues/12150
+      return (enforced) ? 1 / (Math.tan(MMD_SA.THREEX.camera.obj.fov/2 * Math.PI/180)*2) : 1;
     };
 
     window.addEventListener('SA_MMD_model0_onmotionchange', (e)=>{
@@ -3151,7 +3204,7 @@ window.addEventListener('MMDStarted', ()=>{
       const w = b.image.width;
       const h = b.image.height;
 
-      const scale = v2.copy(sb._mesh.scale).multiplyScalar(SL.height/h);//(Math.min(SL.width/w, SL.height/h));
+      const scale = v2.copy(sb._mesh.scale).multiplyScalar(SL.height/h * MMD_SA.SpeechBubble.get_fov_factor());//(Math.min(SL.width/w, SL.height/h));
       pos.x /= scale.x;
       pos.y /= scale.y;
 
