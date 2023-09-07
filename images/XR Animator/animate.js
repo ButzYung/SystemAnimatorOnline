@@ -2813,7 +2813,7 @@ if (z_para) {
       linked_side: 'right',
       transformation: {
         position: {
-          x: { scale:1.5 },
+          x: { add:0.2, scale:1.5 },
           y: { add:0.4, scale:1.5 },
           z: { add:0.4, scale:2 },
           camera_weight: 0.75,
