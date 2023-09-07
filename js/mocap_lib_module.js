@@ -1,4 +1,4 @@
-// 2023-08-23
+// 2023-09-07
 
 const is_worker = (typeof window !== "object");
 
@@ -87,7 +87,7 @@ function _onmessage(e) {
 // common
 param = init_common.call(this, _worker, param, _onmessage);
 
-//if (is_worker) _PoseAT._canvas_for_imagedata = new OffscreenCanvas(1,1);
+//if (is_worker) this.AT._canvas_for_imagedata = new OffscreenCanvas(1,1);
 
 if (use_human || param.get('use_human')) {
   use_human_only = true
@@ -194,9 +194,9 @@ function _onmessage(e) {
 if (options.use_holistic && !holistic_initialized) {
   await load_scripts('@mediapipe/holistic/holistic.js');
 
-  await (async function () {
+  await (async ()=>{
     var holistic = new Holistic({locateFile: (file) => {
-return _PoseAT.path_adjusted('@mediapipe/holistic/' + file);
+return this.AT.path_adjusted('@mediapipe/holistic/' + file);
 //return `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`;
     }});
 
@@ -486,9 +486,9 @@ else {
   else {
     await load_scripts('@mediapipe/hands/hands.js');//'https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js');//
 
-    await (async function () {
+    await (async ()=>{
       var hands = new Hands({locateFile: (file) => {
-return _PoseAT.path_adjusted('@mediapipe/hands/' + file);
+return this.AT.path_adjusted('@mediapipe/hands/' + file);
 //return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
       }});
 
@@ -1225,6 +1225,9 @@ return (clip.length) ? canvas_hands : rgba;
   }
 
 
+let use_mediapipe_facemesh = true;
+let use_faceLandmarksDetection = true;
+
 function process_facemesh(faces, w,h, bb) {
   let sx = bb.x
   let sy = bb.y
@@ -1438,8 +1441,8 @@ async function PoseAT_process_video_buffer() {
   let pose, hands, facemesh;
   score_threshold = (use_movenet) ? 0.3 : 0.5;
 
-  let use_mediapipe_facemesh = true
-  let use_faceLandmarksDetection = true
+//  use_mediapipe_facemesh = true
+//  use_faceLandmarksDetection = true
 
   pose_model_z_depth_scale = options.z_depth_scale || 3;
 
@@ -1451,7 +1454,7 @@ async function PoseAT_process_video_buffer() {
     hands = hands_adjust(result, vt, pose);
 
     if (result.faceLandmarks && result.faceLandmarks.length) {
-      faces = process_facemesh({multiFaceLandmarks:[result.faceLandmarks]}, w,h, {x:0, y:0, w:w, h:h, ratio:0, scale:1});
+      let faces = process_facemesh({multiFaceLandmarks:[result.faceLandmarks]}, w,h, {x:0, y:0, w:w, h:h, ratio:0, scale:1});
 
       let face = faces[0]
       let sm = face.scaledMesh;
