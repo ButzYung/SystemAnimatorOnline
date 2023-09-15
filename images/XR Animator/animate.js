@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-09-07)
+// (2023-09-16)
 
 var MMD_SA_options = {
 
@@ -8227,7 +8227,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  content: 'XR Animator (v0.14.6)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
+  content: 'XR Animator (v0.15.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -8689,13 +8689,14 @@ System._browser.save_file('XRA_settings.json', json, 'application/json');
 			"ML_models": {
 				"pose": {
 					"leg_scale_adjustment": 0,
-					"hip_adjustment_weight": 1
+					"hip_adjustment_weight": 1,
+					"shoulder_tracking": System._browser.camera.poseNet.shoulder_tracking,
 				},
 				"hands": {},
 				"facemesh": {
 					"eye_tracking": true
 				},
-                "tilt_adjustment": Object.assign({}, System._browser.camera.tilt_adjustment),
+				"tilt_adjustment": Object.assign({}, System._browser.camera.tilt_adjustment),
 			},
 			"streamer_mode": {
 				"camera_preference": {}
@@ -8852,22 +8853,35 @@ DEBUG_show('(Motion recording STARTED / x0.25 speed)', 3)
         {
           func: function () {
 System._browser.camera._info =
-  '- "Best" AI model quality loads a heavier model with improved body pose mocap at the expense of extra GPU usage.\n'
-+ '- Enable "Leg IK" to record motion in VMD with leg IK output.\n'
+  '- "Best" AI model uses more GPU to improve mocap quality.\n'
++ '- "Shoulder tracking" tracks shoulder motion and shrugging.\n'
++ '- Enable "Leg IK" to output leg IK during VMD recording.\n'
 + '- "Leg scale" adapts leg length diff between source and avatar.\n'
 + '- Turn auto-grounding on to fix avatar\'s feet on the ground.\n'
 + '- Hip adjustment controls hip\'s reaction to upper body motion.'
           }
          ,message: {
-  get content() { return '1. AI model quality: ' + (MMD_SA_options.user_camera.ML_models.pose.model_quality || 'Normal') + '\n2. ┗ Z-depth scale: ' + ((MMD_SA_options.user_camera.ML_models.pose.model_quality == 'Best') ? ((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale)?((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale<3)?'Max':'Min'):'Medium') : 'N/A') + '\n3. Leg IK: ' + ((MMD_SA_options.user_camera.ML_models.pose.use_legIK)?'ON':'OFF') + '\n4. Leg scale adjustment: ' + ((!System._browser.camera.poseNet.leg_scale_adjustment)?'OFF':((System._browser.camera.poseNet.leg_scale_adjustment>0 && '+')||'')+System._browser.camera.poseNet.leg_scale_adjustment) + '\n5. Auto-grounding (' + (System._browser.hotkeys.config_by_id['mocap_auto_grounding']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON') + '\n6. Hip adjustment: ' + ((System._browser.camera.poseNet.hip_adjustment_weight == 1) ? 'ON' : (System._browser.camera.poseNet.hip_adjustment_weight == 0) ? 'OFF' : Math.round(System._browser.camera.poseNet.hip_adjustment_weight*100) + '%') + '\n7. Done'; }
+  get content() {
+    return [
+'1. AI model quality: ' + (MMD_SA_options.user_camera.ML_models.pose.model_quality || 'Normal'),
+'2. ┗ Z-depth scale: ' + ((MMD_SA_options.user_camera.ML_models.pose.model_quality == 'Best') ? ((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale)?((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale<3)?'Max':'Min'):'Medium') : 'N/A'),
+'3. Shoulder tracking: ' + ((System._browser.camera.poseNet.shoulder_tracking) ? 'ON' : 'OFF'),
+'4. Leg IK: ' + ((MMD_SA_options.user_camera.ML_models.pose.use_legIK)?'ON':'OFF'),
+'5. Leg scale adjustment: ' + ((!System._browser.camera.poseNet.leg_scale_adjustment)?'OFF':((System._browser.camera.poseNet.leg_scale_adjustment>0 && '+')||'')+System._browser.camera.poseNet.leg_scale_adjustment),
+'6. Auto-grounding (' + (System._browser.hotkeys.config_by_id['mocap_auto_grounding']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON'),
+'7. Hip adjustment: ' + ((System._browser.camera.poseNet.hip_adjustment_weight == 1) ? 'ON' : (System._browser.camera.poseNet.hip_adjustment_weight == 0) ? 'OFF' : Math.round(System._browser.camera.poseNet.hip_adjustment_weight*100) + '%'),
+'8. Done',
+    ].join('\n');
+  }
  ,bubble_index: 3
  ,branch_list: [
   { key:1, event_index:2 },
   { key:2, event_index:3 },
-  { key:3, branch_index:mocap_options_branch+1 },
-  { key:4, branch_index:mocap_options_branch+2 },
-  { key:5, branch_index:mocap_options_branch+3 },
-  { key:6, event_id: {
+  { key:3, event_index:6 },
+  { key:4, branch_index:mocap_options_branch+1 },
+  { key:5, branch_index:mocap_options_branch+2 },
+  { key:6, branch_index:mocap_options_branch+3 },
+  { key:7, event_id: {
       func:()=>{
 let hip_adjustment_weight = Math.min(Math.round(System._browser.camera.poseNet.hip_adjustment_weight * 4)/4, 1) - 0.25;
 if (hip_adjustment_weight < 0)
@@ -8877,7 +8891,7 @@ System._browser.camera.poseNet.hip_adjustment_weight = hip_adjustment_weight;
       goto_event: { branch_index:mocap_options_branch, step:1 },
     }
   },
-  { key:7, branch_index:done_branch }
+  { key:8, branch_index:done_branch }
   ]
           }
         },
@@ -8900,8 +8914,16 @@ else
           },
           goto_event: { branch_index:mocap_options_branch, step:1 },
         },
-
+// 4
         {
+          func: function () {
+System._browser.camera._info =
+  '- "Depth adjustment" improves the sense of depth of hands tracking during upper body mocap.\n'
++ '- Adjust hand/shoulder scale for accurate depth adjustment.\n'
++ '- "Depth scale" controls the extension of arm\'s reach.\n'
++ '- "Stabilize arm" reduces false positives of arm tracking.\n'
++ '- "Time to stabilize" improves stability with extra lag.'
+          },
           message: {
   get content() {
 function depth_adjustment() {
@@ -9049,7 +9071,7 @@ System._browser.camera.handpose.use_hands_worker = !System._browser.camera.handp
   ]
           }
         },
-
+// 5
         {
           message: {
 get content() {
@@ -9097,7 +9119,14 @@ System._browser.camera.tilt_adjustment.enabled = !System._browser.camera.tilt_ad
   { key:2, branch_index:done_branch }
 ],
           }
-        }
+        },
+// 6
+        {
+          func: function () {
+System._browser.camera.poseNet.shoulder_tracking = (System._browser.camera.poseNet.shoulder_tracking) ? 0 : null;
+          },
+          goto_event: { branch_index:mocap_options_branch, step:1 },
+        },
       ]
 // 30
      ,[
@@ -9157,6 +9186,13 @@ System._browser.camera.poseNet.bb_clear = 15
 // 34
      ,[
         {
+          func: function () {
+System._browser.camera._info =
+  '- Turn eye tracking off if eyes are covered (e.g. sunglasses).\n'
++ '- "Blink LR sync" synchronize blinks of both eyes.\n'
++ '- Turn on auto blink on if blink tracking doesn\'t work.\n'
++ '- Turn auto "look at camera" on if you want avatar\'s eyes to always look at the camera.\n'
+          },
           message: {
   get content() {
 const camera = System._browser.camera;
@@ -9815,6 +9851,7 @@ config.user_camera = {
       leg_scale_adjustment: System._browser.camera.poseNet.leg_scale_adjustment,
       auto_grounding: System._browser.camera.poseNet.auto_grounding,
       hip_adjustment_weight: System._browser.camera.poseNet.hip_adjustment_weight,
+      shoulder_tracking: System._browser.camera.poseNet.shoulder_tracking,
     },
     hands: {
       stabilize_arm: System._browser.camera.handpose.stabilize_arm,
@@ -9976,6 +10013,7 @@ try {
         System._browser.camera.poseNet.leg_scale_adjustment = config[p].ML_models.pose.leg_scale_adjustment;
         System._browser.camera.poseNet.auto_grounding = config[p].ML_models.pose.auto_grounding;
         System._browser.camera.poseNet.hip_adjustment_weight = config[p].ML_models.pose.hip_adjustment_weight;
+        System._browser.camera.poseNet.shoulder_tracking = config[p].ML_models.pose.shoulder_tracking;
         System._browser.camera.handpose.stabilize_arm = config[p].ML_models.hands?.stabilize_arm;
         System._browser.camera.handpose.stabilize_arm_time = config[p].ML_models.hands?.stabilize_arm_time;
         System._browser.camera.handpose.use_hands_worker = config[p].ML_models.hands?.use_hands_worker;
