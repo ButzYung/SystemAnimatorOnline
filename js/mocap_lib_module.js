@@ -1,4 +1,4 @@
-// 2023-09-07
+// 2023-09-16
 
 const is_worker = (typeof window !== "object");
 
@@ -727,7 +727,8 @@ name: BLAZEPOSE_KEYPOINTS[i]
 
     if (data_filter[0]) {
       let filter_factor = Math.max(w,h)/shoulder_width;
-      filter_factor = (filter_factor < 5) ? 1 : Math.max(filter_factor/5, 3);
+      filter_factor = (filter_factor < 5) ? 1 : Math.min(filter_factor/5, 3);
+//console.log(filter_factor)
       for (const p of ['landmarks', 'worldLandmarks']) {
         for (let i = 0; i < 33; i++) {
           const f = data_filter[0][p][i];
