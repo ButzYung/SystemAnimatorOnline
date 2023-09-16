@@ -4647,7 +4647,7 @@ const _idx = inv.get_inventory_index(idx);
 e.stopPropagation();
 if (is_mobile) {
   e.preventDefault()
-
+/*
   if (inv.item_selected_index != null) {
     if (Date.now() > _touchstart+500) {
       drop_item(inv.item_selected_index, _idx)
@@ -4658,6 +4658,7 @@ if (is_mobile) {
     inv.item_selected_index = _idx
     _touchstart = Date.now()
   }
+*/
 }
   }, true);
   d.addEventListener("dblclick", function (e) {
@@ -4687,6 +4688,14 @@ if (inv_item.item.stock_max != 1) {
     document.getElementById("Ldungeon_inventory_item" + idx + "_stock").textContent = inv_item.stock
 }
   }, true);
+/*
+  if (is_mobile) {
+    d.addEventListener("touchstart", (e)=>{});
+    d.addEventListener("drag", (e)=>{});
+// https://github.com/timruffles/mobile-drag-drop#polyfill-requires-dragenter-listener
+    d.addEventListener("dragenter", (e)=>{ e.preventDefault(); });
+  }
+*/
   d.addEventListener("dragstart", function (e) {
 const _idx = inv.get_inventory_index(idx);
 if (!inv.list[_idx].item_id)
