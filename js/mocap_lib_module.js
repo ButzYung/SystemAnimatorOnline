@@ -626,7 +626,14 @@ estimateHands: (()=>{
     }
 //console.log(result)
 
-    return Promise.resolve(Object.assign({ multiHandLandmarks:result.landmarks, multiHandedness:result.handednesses?.map(h=>h[0]) }, result));
+// left and right hand labels swapped/handednesses=>handedness in v0.10.5
+    result.handedness?.forEach(hand=>{hand.forEach(h=>{
+const label = (h.categoryName == 'Left') ? 'Right' : 'Left';
+h.categoryName = h.displayName = label;
+    })});
+    return Promise.resolve(Object.assign({ multiHandLandmarks:result.landmarks, multiHandedness:result.handedness?.map(h=>h[0]) }, result));
+
+//    return Promise.resolve(Object.assign({ multiHandLandmarks:result.landmarks, multiHandedness:result.handednesses?.map(h=>h[0]) }, result));
   };
 })(),
   };
