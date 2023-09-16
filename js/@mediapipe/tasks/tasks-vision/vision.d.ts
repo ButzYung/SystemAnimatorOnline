@@ -224,6 +224,7 @@ export declare class DrawingUtils {
     /**
      * Restricts a number between two endpoints (order doesn't matter).
      *
+     * @export
      * @param x The number to clamp.
      * @param x0 The first boundary.
      * @param x1 The second boundary.
@@ -234,6 +235,7 @@ export declare class DrawingUtils {
      * Linearly interpolates a value between two points, clamping that value to
      * the endpoints.
      *
+     * @export
      * @param x The number to interpolate.
      * @param x0 The x coordinate of the start value.
      * @param x1 The x coordinate of the end value.
@@ -245,6 +247,7 @@ export declare class DrawingUtils {
     /**
      * Draws circles onto the provided landmarks.
      *
+     * @export
      * @param landmarks The landmarks to draw.
      * @param style The style to visualize the landmarks.
      */
@@ -252,6 +255,7 @@ export declare class DrawingUtils {
     /**
      * Draws lines between landmarks (given a connection graph).
      *
+     * @export
      * @param landmarks The landmarks to draw.
      * @param connections The connections array that contains the start and the
      *     end indices for the connections to draw.
@@ -261,6 +265,7 @@ export declare class DrawingUtils {
     /**
      * Draws a bounding box.
      *
+     * @export
      * @param boundingBox The bounding box to draw.
      * @param style The style to visualize the boundin box.
      */
@@ -350,6 +355,8 @@ export declare class FaceDetector extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new face detector from the
      * provided options.
+     *
+     * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
      * @param faceDetectorOptions The options for the FaceDetector. Note that
@@ -360,6 +367,8 @@ export declare class FaceDetector extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new face detector based on the
      * provided model asset buffer.
+     *
+     * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
      * @param modelAssetBuffer A binary representation of the model.
@@ -368,6 +377,8 @@ export declare class FaceDetector extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new face detector based on the
      * path to the model asset.
+     *
+     * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
      * @param modelAssetPath The path to the model asset.
@@ -381,6 +392,7 @@ export declare class FaceDetector extends VisionTaskRunner {
      * You can reset an option back to its default value by explicitly setting it
      * to `undefined`.
      *
+     * @export
      * @param options The options for the FaceDetector.
      */
     setOptions(options: FaceDetectorOptions): Promise<void>;
@@ -400,6 +412,7 @@ export declare class FaceDetector extends VisionTaskRunner {
      * synchronously for the response. Only use this method when the
      * FaceDetector is created with running mode `video`.
      *
+     * @export
      * @param videoFrame A video frame to process.
      * @param timestamp The timestamp of the current frame, in ms.
      * @param imageProcessingOptions the `ImageProcessingOptions` specifying how
@@ -432,6 +445,7 @@ export declare class FaceLandmarker extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new `FaceLandmarker` from the
      * provided options.
+     * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
      * @param faceLandmarkerOptions The options for the FaceLandmarker.
@@ -442,6 +456,7 @@ export declare class FaceLandmarker extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new `FaceLandmarker` based on
      * the provided model asset buffer.
+     * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
      * @param modelAssetBuffer A binary representation of the model.
@@ -450,37 +465,72 @@ export declare class FaceLandmarker extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new `FaceLandmarker` based on
      * the path to the model asset.
+     * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
      * @param modelAssetPath The path to the model asset.
      */
     static createFromModelPath(wasmFileset: WasmFileset, modelAssetPath: string): Promise<FaceLandmarker>;
-    /** Landmark connections to draw the connection between a face's lips. */
+    /**
+     * Landmark connections to draw the connection between a face's lips.
+     * @export
+     * @nocollapse
+     */
     static FACE_LANDMARKS_LIPS: Connection[];
-    /** Landmark connections to draw the connection between a face's left eye. */
+    /**
+     * Landmark connections to draw the connection between a face's left eye.
+     * @export
+     * @nocollapse
+     */
     static FACE_LANDMARKS_LEFT_EYE: Connection[];
     /**
      * Landmark connections to draw the connection between a face's left eyebrow.
+     * @export
+     * @nocollapse
      */
     static FACE_LANDMARKS_LEFT_EYEBROW: Connection[];
-    /** Landmark connections to draw the connection between a face's left iris. */
+    /**
+     * Landmark connections to draw the connection between a face's left iris.
+     * @export
+     * @nocollapse
+     */
     static FACE_LANDMARKS_LEFT_IRIS: Connection[];
-    /** Landmark connections to draw the connection between a face's right eye. */
+    /**
+     * Landmark connections to draw the connection between a face's right eye.
+     * @export
+     * @nocollapse
+     */
     static FACE_LANDMARKS_RIGHT_EYE: Connection[];
     /**
      * Landmark connections to draw the connection between a face's right
      * eyebrow.
+     * @export
+     * @nocollapse
      */
     static FACE_LANDMARKS_RIGHT_EYEBROW: Connection[];
     /**
      * Landmark connections to draw the connection between a face's right iris.
+     * @export
+     * @nocollapse
      */
     static FACE_LANDMARKS_RIGHT_IRIS: Connection[];
-    /** Landmark connections to draw the face's oval. */
+    /**
+     * Landmark connections to draw the face's oval.
+     * @export
+     * @nocollapse
+     */
     static FACE_LANDMARKS_FACE_OVAL: Connection[];
-    /** Landmark connections to draw the face's contour. */
+    /**
+     * Landmark connections to draw the face's contour.
+     * @export
+     * @nocollapse
+     */
     static FACE_LANDMARKS_CONTOURS: Connection[];
-    /** Landmark connections to draw the face's tesselation. */
+    /**
+     * Landmark connections to draw the face's tesselation.
+     * @export
+     * @nocollapse
+     */
     static FACE_LANDMARKS_TESSELATION: Connection[];
     private constructor();
     /**
@@ -490,6 +540,7 @@ export declare class FaceLandmarker extends VisionTaskRunner {
      * You can reset an option back to its default value by explicitly setting it
      * to `undefined`.
      *
+     * @export
      * @param options The options for the face landmarker.
      */
     setOptions(options: FaceLandmarkerOptions): Promise<void>;
@@ -498,6 +549,7 @@ export declare class FaceLandmarker extends VisionTaskRunner {
      * synchronously for the response. Only use this method when the
      * FaceLandmarker is created with running mode `image`.
      *
+     * @export
      * @param image An image to process.
      * @param imageProcessingOptions the `ImageProcessingOptions` specifying how
      *    to process the input image before running inference.
@@ -509,6 +561,7 @@ export declare class FaceLandmarker extends VisionTaskRunner {
      * synchronously for the response. Only use this method when the
      * FaceLandmarker is created with running mode `video`.
      *
+     * @export
      * @param videoFrame A video frame to process.
      * @param timestamp The timestamp of the current frame, in ms.
      * @param imageProcessingOptions the `ImageProcessingOptions` specifying how
@@ -571,6 +624,7 @@ export declare class FaceStylizer extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new Face Stylizer from the
      * provided options.
+     * @export
      * @param wasmFileset A configuration object that provides the location of
      *     the Wasm binary and its loader.
      * @param faceStylizerOptions The options for the Face Stylizer. Note
@@ -581,6 +635,7 @@ export declare class FaceStylizer extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new Face Stylizer based on
      * the provided model asset buffer.
+     * @export
      * @param wasmFileset A configuration object that provides the location of
      *     the Wasm binary and its loader.
      * @param modelAssetBuffer A binary representation of the model.
@@ -589,6 +644,7 @@ export declare class FaceStylizer extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new Face Stylizer based on
      * the path to the model asset.
+     * @export
      * @param wasmFileset A configuration object that provides the location of
      *     the Wasm binary and its loader.
      * @param modelAssetPath The path to the model asset.
@@ -602,6 +658,7 @@ export declare class FaceStylizer extends VisionTaskRunner {
      * options. You can reset an option back to its default value by
      * explicitly setting it to `undefined`.
      *
+     * @export
      * @param options The options for the Face Stylizer.
      */
     setOptions(options: FaceStylizerOptions): Promise<void>;
@@ -673,94 +730,6 @@ export declare class FaceStylizer extends VisionTaskRunner {
      *     copied to avoid lifetime issues.
      */
     stylize(image: ImageSource, imageProcessingOptions: ImageProcessingOptions): MPImage | null;
-    /**
-     * Performs face stylization on the provided video frame and invokes the
-     * callback with result. The method returns synchronously once the callback
-     * returns. Only use this method when the FaceStylizer is created with the
-     * video running mode.
-     *
-     * The input frame can be of any size. It's required to provide the video
-     * frame's timestamp (in milliseconds). The input timestamps must be
-     * monotonically increasing.
-     *
-     * @param videoFrame A video frame to process.
-     * @param timestamp The timestamp of the current frame, in ms.
-     * @param callback The callback that is invoked with the stylized image or
-     *   `null` if no face was detected. The lifetime of the returned data is only
-     *   guaranteed for the duration of the callback.
-     */
-    stylizeForVideo(videoFrame: ImageSource, timestamp: number, callback: FaceStylizerCallback): void;
-    /**
-     * Performs face stylization on the provided video frame and invokes the
-     * callback with result. The method returns synchronously once the callback
-     * returns. Only use this method when the FaceStylizer is created with the
-     * video running mode.
-     *
-     * The 'imageProcessingOptions' parameter can be used to specify one or all
-     * of:
-     *  - the rotation to apply to the image before performing stylization, by
-     *    setting its 'rotationDegrees' property.
-     *  - the region-of-interest on which to perform stylization, by setting its
-     *   'regionOfInterest' property. If not specified, the full image is used.
-     *  If both are specified, the crop around the region-of-interest is
-     * extracted first, then the specified rotation is applied to the crop.
-     *
-     * The input frame can be of any size. It's required to provide the video
-     * frame's timestamp (in milliseconds). The input timestamps must be
-     * monotonically increasing.
-     *
-     * @param videoFrame A video frame to process.
-     * @param timestamp The timestamp of the current frame, in ms.
-     * @param imageProcessingOptions the `ImageProcessingOptions` specifying how
-     *    to process the input image before running inference.
-     * @param callback The callback that is invoked with the stylized image or
-     *   `null` if no face was detected. The lifetime of the returned data is only
-     *   guaranteed for the duration of the callback.
-     */
-    stylizeForVideo(videoFrame: ImageSource, timestamp: number, imageProcessingOptions: ImageProcessingOptions, callback: FaceStylizerCallback): void;
-    /**
-     * Performs face stylization on the provided video frame. This method creates
-     * a copy of the resulting image and should not be used in high-throughput
-     * applications. Only use this method when the FaceStylizer is created with the
-     * video running mode.
-     *
-     * The input frame can be of any size. It's required to provide the video
-     * frame's timestamp (in milliseconds). The input timestamps must be
-     * monotonically increasing.
-     *
-     * @param videoFrame A video frame to process.
-     * @param timestamp The timestamp of the current frame, in ms.
-     * @return A stylized face or `null` if no face was detected. The result is
-     *     copied to avoid lifetime issues.
-     */
-    stylizeForVideo(videoFrame: ImageSource, timestamp: number): MPImage | null;
-    /**
-     * Performs face stylization on the provided video frame. This method creates
-     * a copy of the resulting image and should not be used in high-throughput
-     * applictions. Only use this method when the FaceStylizer is created with the
-     * video running mode.
-     *
-     * The 'imageProcessingOptions' parameter can be used to specify one or all
-     * of:
-     *  - the rotation to apply to the image before performing stylization, by
-     *    setting its 'rotationDegrees' property.
-     *  - the region-of-interest on which to perform stylization, by setting its
-     *   'regionOfInterest' property. If not specified, the full image is used.
-     *  If both are specified, the crop around the region-of-interest is
-     * extracted first, then the specified rotation is applied to the crop.
-     *
-     * The input frame can be of any size. It's required to provide the video
-     * frame's timestamp (in milliseconds). The input timestamps must be
-     * monotonically increasing.
-     *
-     * @param videoFrame A video frame to process.
-     * @param timestamp The timestamp of the current frame, in ms.
-     * @param imageProcessingOptions the `ImageProcessingOptions` specifying how
-     *    to process the input image before running inference.
-     * @return A stylized face or `null` if no face was detected. The result is
-     *     copied to avoid lifetime issues.
-     */
-    stylizeForVideo(videoFrame: ImageSource, timestamp: number, imageProcessingOptions: ImageProcessingOptions): MPImage | null;
 }
 
 /**
@@ -793,12 +762,14 @@ export declare class FilesetResolver {
      * you can use `isSimdSupported()` to decide whether to load the SIMD-based
      * assets.
      *
+     * @export
      * @return Whether SIMD support was detected in the current environment.
      */
     static isSimdSupported(): Promise<boolean>;
     /**
      * Creates a fileset for the MediaPipe Audio tasks.
      *
+     * @export
      * @param basePath An optional base path to specify the directory the Wasm
      *    files should be loaded from. If not specified, the Wasm files are
      *    loaded from the host's root directory.
@@ -809,6 +780,7 @@ export declare class FilesetResolver {
     /**
      * Creates a fileset for the MediaPipe Text tasks.
      *
+     * @export
      * @param basePath An optional base path to specify the directory the Wasm
      *    files should be loaded from. If not specified, the Wasm files are
      *    loaded from the host's root directory.
@@ -819,6 +791,7 @@ export declare class FilesetResolver {
     /**
      * Creates a fileset for the MediaPipe Vision tasks.
      *
+     * @export
      * @param basePath An optional base path to specify the directory the Wasm
      *    files should be loaded from. If not specified, the Wasm files are
      *    loaded from the host's root directory.
@@ -833,11 +806,14 @@ export declare class GestureRecognizer extends VisionTaskRunner {
     /**
      * An array containing the pairs of hand landmark indices to be rendered with
      * connections.
+     * @export
+     * @nocollapse
      */
     static HAND_CONNECTIONS: Connection[];
     /**
      * Initializes the Wasm runtime and creates a new gesture recognizer from the
      * provided options.
+     * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
      * @param gestureRecognizerOptions The options for the gesture recognizer.
@@ -848,6 +824,7 @@ export declare class GestureRecognizer extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new gesture recognizer based on
      * the provided model asset buffer.
+     * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
      * @param modelAssetBuffer A binary representation of the model.
@@ -856,6 +833,7 @@ export declare class GestureRecognizer extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new gesture recognizer based on
      * the path to the model asset.
+     * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
      * @param modelAssetPath The path to the model asset.
@@ -869,6 +847,7 @@ export declare class GestureRecognizer extends VisionTaskRunner {
      * You can reset an option back to its default value by explicitly setting it
      * to `undefined`.
      *
+     * @export
      * @param options The options for the gesture recognizer.
      */
     setOptions(options: GestureRecognizerOptions): Promise<void>;
@@ -877,6 +856,7 @@ export declare class GestureRecognizer extends VisionTaskRunner {
      * synchronously for the response. Only use this method when the
      * GestureRecognizer is created with running mode `image`.
      *
+     * @export
      * @param image A single image to process.
      * @param imageProcessingOptions the `ImageProcessingOptions` specifying how
      *    to process the input image before running inference.
@@ -888,6 +868,7 @@ export declare class GestureRecognizer extends VisionTaskRunner {
      * synchronously for the response. Only use this method when the
      * GestureRecognizer is created with running mode `video`.
      *
+     * @export
      * @param videoFrame A video frame to process.
      * @param timestamp The timestamp of the current frame, in ms.
      * @param imageProcessingOptions the `ImageProcessingOptions` specifying how
@@ -943,6 +924,11 @@ export declare interface GestureRecognizerResult {
     /** Hand landmarks in world coordniates of detected hands. */
     worldLandmarks: Landmark[][];
     /** Handedness of detected hands. */
+    handedness: Category[][];
+    /**
+     * Handedness of detected hands.
+     * @deprecated Use `.handedness` instead.
+     */
     handednesses: Category[][];
     /**
      * Recognized hand gestures of detected hands. Note that the index of the
@@ -957,11 +943,14 @@ export declare class HandLandmarker extends VisionTaskRunner {
     /**
      * An array containing the pairs of hand landmark indices to be rendered with
      * connections.
+     * @export
+     * @nocollapse
      */
     static HAND_CONNECTIONS: Connection[];
     /**
      * Initializes the Wasm runtime and creates a new `HandLandmarker` from the
      * provided options.
+     * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
      * @param handLandmarkerOptions The options for the HandLandmarker.
@@ -972,6 +961,7 @@ export declare class HandLandmarker extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new `HandLandmarker` based on
      * the provided model asset buffer.
+     * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
      * @param modelAssetBuffer A binary representation of the model.
@@ -980,6 +970,7 @@ export declare class HandLandmarker extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new `HandLandmarker` based on
      * the path to the model asset.
+     * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
      * @param modelAssetPath The path to the model asset.
@@ -993,6 +984,7 @@ export declare class HandLandmarker extends VisionTaskRunner {
      * You can reset an option back to its default value by explicitly setting it
      * to `undefined`.
      *
+     * @export
      * @param options The options for the hand landmarker.
      */
     setOptions(options: HandLandmarkerOptions): Promise<void>;
@@ -1001,6 +993,7 @@ export declare class HandLandmarker extends VisionTaskRunner {
      * synchronously for the response. Only use this method when the
      * HandLandmarker is created with running mode `image`.
      *
+     * @export
      * @param image An image to process.
      * @param imageProcessingOptions the `ImageProcessingOptions` specifying how
      *    to process the input image before running inference.
@@ -1012,6 +1005,7 @@ export declare class HandLandmarker extends VisionTaskRunner {
      * synchronously for the response. Only use this method when the
      * HandLandmarker is created with running mode `video`.
      *
+     * @export
      * @param videoFrame A video frame to process.
      * @param timestamp The timestamp of the current frame, in ms.
      * @param imageProcessingOptions the `ImageProcessingOptions` specifying how
@@ -1053,8 +1047,13 @@ export declare interface HandLandmarkerResult {
     landmarks: NormalizedLandmark[][];
     /** Hand landmarks in world coordinates of detected hands. */
     worldLandmarks: Landmark[][];
-    /** Handedness of detected hands. */
+    /**
+     * Handedness of detected hands.
+     * @deprecated Use `.handedness` instead.
+     */
     handednesses: Category[][];
+    /** Handedness of detected hands. */
+    handedness: Category[][];
 }
 
 /** Performs classification on images. */
@@ -1062,6 +1061,7 @@ export declare class ImageClassifier extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new image classifier from the
      * provided options.
+     * @export
      * @param wasmFileset A configuration object that provides the location
      *     Wasm binary and its loader.
      * @param imageClassifierOptions The options for the image classifier. Note
@@ -1072,6 +1072,7 @@ export declare class ImageClassifier extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new image classifier based on
      * the provided model asset buffer.
+     * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
      * @param modelAssetBuffer A binary representation of the model.
@@ -1080,6 +1081,7 @@ export declare class ImageClassifier extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new image classifier based on
      * the path to the model asset.
+     * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
      * @param modelAssetPath The path to the model asset.
@@ -1093,6 +1095,7 @@ export declare class ImageClassifier extends VisionTaskRunner {
      * You can reset an option back to its default value by explicitly setting it
      * to `undefined`.
      *
+     * @export
      * @param options The options for the image classifier.
      */
     setOptions(options: ImageClassifierOptions): Promise<void>;
@@ -1101,6 +1104,7 @@ export declare class ImageClassifier extends VisionTaskRunner {
      * synchronously for the response. Only use this method when the
      * ImageClassifier is created with running mode `image`.
      *
+     * @export
      * @param image An image to process.
      * @param imageProcessingOptions the `ImageProcessingOptions` specifying how
      *    to process the input image before running inference.
@@ -1112,6 +1116,7 @@ export declare class ImageClassifier extends VisionTaskRunner {
      * synchronously for the response. Only use this method when the
      * ImageClassifier is created with running mode `video`.
      *
+     * @export
      * @param videoFrame A video frame to process.
      * @param timestamp The timestamp of the current frame, in ms.
      * @param imageProcessingOptions the `ImageProcessingOptions` specifying how
@@ -1146,6 +1151,7 @@ export declare class ImageEmbedder extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new image embedder from the
      * provided options.
+     * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
      * @param imageEmbedderOptions The options for the image embedder. Note that
@@ -1156,6 +1162,7 @@ export declare class ImageEmbedder extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new image embedder based on the
      * provided model asset buffer.
+     * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
      * @param modelAssetBuffer A binary representation of the TFLite model.
@@ -1164,6 +1171,7 @@ export declare class ImageEmbedder extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new image embedder based on the
      * path to the model asset.
+     * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
      * @param modelAssetPath The path to the TFLite model.
@@ -1177,6 +1185,7 @@ export declare class ImageEmbedder extends VisionTaskRunner {
      * You can reset an option back to its default value by explicitly setting it
      * to `undefined`.
      *
+     * @export
      * @param options The options for the image embedder.
      */
     setOptions(options: ImageEmbedderOptions): Promise<void>;
@@ -1185,6 +1194,7 @@ export declare class ImageEmbedder extends VisionTaskRunner {
      * synchronously for the response. Only use this method when the
      * ImageEmbedder is created with running mode `image`.
      *
+     * @export
      * @param image The image to process.
      * @param imageProcessingOptions the `ImageProcessingOptions` specifying how
      *    to process the input image before running inference.
@@ -1196,6 +1206,7 @@ export declare class ImageEmbedder extends VisionTaskRunner {
      * synchronously for the response. Only use this method when the
      * ImageEmbedder is created with running mode `video`.
      *
+     * @export
      * @param imageFrame The image frame to process.
      * @param timestamp The timestamp of the current frame, in ms.
      * @param imageProcessingOptions the `ImageProcessingOptions` specifying how
@@ -1209,6 +1220,7 @@ export declare class ImageEmbedder extends VisionTaskRunner {
      *
      * [1]: https://en.wikipedia.org/wiki/Cosine_similarity
      *
+     * @export
      * @throws if the embeddings are of different types(float vs. quantized), have
      *     different sizes, or have an L2-norm of 0.
      */
@@ -1266,6 +1278,7 @@ export declare class ImageSegmenter extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new image segmenter from the
      * provided options.
+     * @export
      * @param wasmFileset A configuration object that provides the location of
      *     the Wasm binary and its loader.
      * @param imageSegmenterOptions The options for the Image Segmenter. Note
@@ -1276,6 +1289,7 @@ export declare class ImageSegmenter extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new image segmenter based on
      * the provided model asset buffer.
+     * @export
      * @param wasmFileset A configuration object that provides the location of
      *     the Wasm binary and its loader.
      * @param modelAssetBuffer A binary representation of the model.
@@ -1284,6 +1298,7 @@ export declare class ImageSegmenter extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new image segmenter based on
      * the path to the model asset.
+     * @export
      * @param wasmFileset A configuration object that provides the location of
      *     the Wasm binary and its loader.
      * @param modelAssetPath The path to the model asset.
@@ -1297,6 +1312,7 @@ export declare class ImageSegmenter extends VisionTaskRunner {
      * options. You can reset an option back to its default value by
      * explicitly setting it to `undefined`.
      *
+     * @export
      * @param options The options for the image segmenter.
      */
     setOptions(options: ImageSegmenterOptions): Promise<void>;
@@ -1412,6 +1428,7 @@ export declare class ImageSegmenter extends VisionTaskRunner {
      * If there is no labelmap provided in the model file, empty label array is
      * returned.
      *
+     * @export
      * @return The labels used by the current model.
      */
     getLabels(): string[];
@@ -1444,18 +1461,21 @@ export declare class ImageSegmenterResult {
      * Multiple masks represented as `Float32Array` or `WebGLTexture`-backed
      * `MPImage`s where, for each mask, each pixel represents the prediction
      * confidence, usually in the [0, 1] range.
+     * @export
      */
     readonly confidenceMasks?: MPMask[] | undefined;
     /**
      * A category mask represented as a `Uint8ClampedArray` or
      * `WebGLTexture`-backed `MPImage` where each pixel represents the class
      * which the pixel in the original image was predicted to belong to.
+     * @export
      */
     readonly categoryMask?: MPMask | undefined;
     /**
      * The quality scores of the result masks, in the range of [0, 1].
      * Defaults to `1` if the model doesn't output quality scores. Each
      * element corresponds to the score of the category in the model outputs.
+     * @export
      */
     readonly qualityScores?: number[] | undefined;
     constructor(
@@ -1463,21 +1483,27 @@ export declare class ImageSegmenterResult {
      * Multiple masks represented as `Float32Array` or `WebGLTexture`-backed
      * `MPImage`s where, for each mask, each pixel represents the prediction
      * confidence, usually in the [0, 1] range.
+     * @export
      */
     confidenceMasks?: MPMask[] | undefined, 
     /**
      * A category mask represented as a `Uint8ClampedArray` or
      * `WebGLTexture`-backed `MPImage` where each pixel represents the class
      * which the pixel in the original image was predicted to belong to.
+     * @export
      */
     categoryMask?: MPMask | undefined, 
     /**
      * The quality scores of the result masks, in the range of [0, 1].
      * Defaults to `1` if the model doesn't output quality scores. Each
      * element corresponds to the score of the category in the model outputs.
+     * @export
      */
     qualityScores?: number[] | undefined);
-    /** Frees the resources held by the category and confidence masks. */
+    /**
+     * Frees the resources held by the category and confidence masks.
+     * @export
+     */
     close(): void;
 }
 
@@ -1514,6 +1540,7 @@ export declare class InteractiveSegmenter extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new interactive segmenter from
      * the provided options.
+     * @export
      * @param wasmFileset A configuration object that provides the location of
      *     the Wasm binary and its loader.
      * @param interactiveSegmenterOptions The options for the Interactive
@@ -1525,6 +1552,7 @@ export declare class InteractiveSegmenter extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new interactive segmenter based
      * on the provided model asset buffer.
+     * @export
      * @param wasmFileset A configuration object that provides the location of
      *     the Wasm binary and its loader.
      * @param modelAssetBuffer A binary representation of the model.
@@ -1534,6 +1562,7 @@ export declare class InteractiveSegmenter extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new interactive segmenter based
      * on the path to the model asset.
+     * @export
      * @param wasmFileset A configuration object that provides the location of
      *     the Wasm binary and its loader.
      * @param modelAssetPath The path to the model asset.
@@ -1548,6 +1577,7 @@ export declare class InteractiveSegmenter extends VisionTaskRunner {
      * options. You can reset an option back to its default value by
      * explicitly setting it to `undefined`.
      *
+     * @export
      * @param options The options for the interactive segmenter.
      * @return A Promise that resolves when the settings have been applied.
      */
@@ -1642,18 +1672,21 @@ export declare class InteractiveSegmenterResult {
      * Multiple masks represented as `Float32Array` or `WebGLTexture`-backed
      * `MPImage`s where, for each mask, each pixel represents the prediction
      * confidence, usually in the [0, 1] range.
+     * @export
      */
     readonly confidenceMasks?: MPMask[] | undefined;
     /**
      * A category mask represented as a `Uint8ClampedArray` or
      * `WebGLTexture`-backed `MPImage` where each pixel represents the class
      * which the pixel in the original image was predicted to belong to.
+     * @export
      */
     readonly categoryMask?: MPMask | undefined;
     /**
      * The quality scores of the result masks, in the range of [0, 1].
      * Defaults to `1` if the model doesn't output quality scores. Each
      * element corresponds to the score of the category in the model outputs.
+     * @export
      */
     readonly qualityScores?: number[] | undefined;
     constructor(
@@ -1661,21 +1694,27 @@ export declare class InteractiveSegmenterResult {
      * Multiple masks represented as `Float32Array` or `WebGLTexture`-backed
      * `MPImage`s where, for each mask, each pixel represents the prediction
      * confidence, usually in the [0, 1] range.
+     * @export
      */
     confidenceMasks?: MPMask[] | undefined, 
     /**
      * A category mask represented as a `Uint8ClampedArray` or
      * `WebGLTexture`-backed `MPImage` where each pixel represents the class
      * which the pixel in the original image was predicted to belong to.
+     * @export
      */
     categoryMask?: MPMask | undefined, 
     /**
      * The quality scores of the result masks, in the range of [0, 1].
      * Defaults to `1` if the model doesn't output quality scores. Each
      * element corresponds to the score of the category in the model outputs.
+     * @export
      */
     qualityScores?: number[] | undefined);
-    /** Frees the resources held by the category and confidence masks. */
+    /**
+     * Frees the resources held by the category and confidence masks.
+     * @export
+     */
     close(): void;
 }
 
@@ -1753,17 +1792,27 @@ export declare class MPImage {
     /** Returns the height of the image. */
     readonly height: number;
     private constructor();
-    /** Returns whether this `MPImage` contains a mask of type `ImageData`. */
+    /**
+     * Returns whether this `MPImage` contains a mask of type `ImageData`.
+     * @export
+     */
     hasImageData(): boolean;
-    /** Returns whether this `MPImage` contains a mask of type `ImageBitmap`. */
+    /**
+     * Returns whether this `MPImage` contains a mask of type `ImageBitmap`.
+     * @export
+     */
     hasImageBitmap(): boolean;
-    /** Returns whether this `MPImage` contains a mask of type `WebGLTexture`. */
+    /**
+     * Returns whether this `MPImage` contains a mask of type `WebGLTexture`.
+     * @export
+     */
     hasWebGLTexture(): boolean;
     /**
      * Returns the underlying image as an `ImageData` object. Note that this
      * involves an expensive GPU to CPU transfer if the current image is only
      * available as an `ImageBitmap` or `WebGLTexture`.
      *
+     * @export
      * @return The current image as an ImageData object.
      */
     getAsImageData(): ImageData;
@@ -1777,6 +1826,7 @@ export declare class MPImage {
      * https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas/getContext
      * for a list of supported platforms.
      *
+     * @export
      * @return The current image as an ImageBitmap object.
      */
     getAsImageBitmap(): ImageBitmap;
@@ -1786,6 +1836,7 @@ export declare class MPImage {
      * an `ImageData` object. The returned texture is bound to the current
      * canvas (see `.canvas`).
      *
+     * @export
      * @return The current image as a WebGLTexture.
      */
     getAsWebGLTexture(): WebGLTexture;
@@ -1795,6 +1846,8 @@ export declare class MPImage {
      * Task. Note that performance critical applications should aim to only use
      * the `MPImage` within the MediaPipe Task callback so that copies can be
      * avoided.
+     *
+     * @export
      */
     clone(): MPImage;
     /**
@@ -1804,6 +1857,8 @@ export declare class MPImage {
      * Task, as these are freed automatically once you leave the MediaPipe
      * callback. Additionally, some shared state is freed only once you invoke the
      * Task's `close()` method.
+     *
+     * @export
      */
     close(): void;
 }
@@ -1831,17 +1886,27 @@ export declare class MPMask {
     /** Returns the height of the mask. */
     readonly height: number;
     private constructor();
-    /** Returns whether this `MPMask` contains a mask of type `Uint8Array`. */
+    /**
+     * Returns whether this `MPMask` contains a mask of type `Uint8Array`.
+     * @export
+     */
     hasUint8Array(): boolean;
-    /** Returns whether this `MPMask` contains a mask of type `Float32Array`. */
+    /**
+     * Returns whether this `MPMask` contains a mask of type `Float32Array`.
+     * @export
+     */
     hasFloat32Array(): boolean;
-    /** Returns whether this `MPMask` contains a mask of type `WebGLTexture`. */
+    /**
+     * Returns whether this `MPMask` contains a mask of type `WebGLTexture`.
+     * @export
+     */
     hasWebGLTexture(): boolean;
     /**
      * Returns the underlying mask as a Uint8Array`. Note that this involves an
      * expensive GPU to CPU transfer if the current mask is only available as a
      * `WebGLTexture`.
      *
+     * @export
      * @return The current data as a Uint8Array.
      */
     getAsUint8Array(): Uint8Array;
@@ -1850,6 +1915,7 @@ export declare class MPMask {
      * this involves an expensive GPU to CPU transfer if the current mask is
      * only available as a `WebGLTexture`.
      *
+     * @export
      * @return The current mask as a Float32Array.
      */
     getAsFloat32Array(): Float32Array;
@@ -1859,20 +1925,18 @@ export declare class MPMask {
      * a CPU array. The returned texture is bound to the current canvas (see
      * `.canvas`).
      *
+     * @export
      * @return The current mask as a WebGLTexture.
      */
     getAsWebGLTexture(): WebGLTexture;
-    /**
-     * Returns the texture format used for writing float textures on this
-     * platform.
-     */
-    getTexImage2DFormat(): GLenum;
     /**
      * Creates a copy of the resources stored in this `MPMask`. You can
      * invoke this method to extend the lifetime of a mask returned by a
      * MediaPipe Task. Note that performance critical applications should aim to
      * only use the `MPMask` within the MediaPipe Task callback so that
      * copies can be avoided.
+     *
+     * @export
      */
     clone(): MPMask;
     /**
@@ -1882,6 +1946,8 @@ export declare class MPMask {
      * Task, as these are freed automatically once you leave the MediaPipe
      * callback. Additionally, some shared state is freed only once you invoke
      * the Task's `close()` method.
+     *
+     * @export
      */
     close(): void;
 }
@@ -1947,11 +2013,14 @@ export declare interface NormalizedLandmark {
     z: number;
 }
 
-/** Performs object detection on images. */
+/**
+ * Performs object detection on images.
+ */
 export declare class ObjectDetector extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new object detector from the
      * provided options.
+     * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
      * @param objectDetectorOptions The options for the Object Detector. Note that
@@ -1962,6 +2031,7 @@ export declare class ObjectDetector extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new object detector based on the
      * provided model asset buffer.
+     * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
      * @param modelAssetBuffer A binary representation of the model.
@@ -1970,6 +2040,7 @@ export declare class ObjectDetector extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new object detector based on the
      * path to the model asset.
+     * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
      * @param modelAssetPath The path to the model asset.
@@ -1983,6 +2054,7 @@ export declare class ObjectDetector extends VisionTaskRunner {
      * You can reset an option back to its default value by explicitly setting it
      * to `undefined`.
      *
+     * @export
      * @param options The options for the object detector.
      */
     setOptions(options: ObjectDetectorOptions): Promise<void>;
@@ -1991,6 +2063,7 @@ export declare class ObjectDetector extends VisionTaskRunner {
      * synchronously for the response. Only use this method when the
      * ObjectDetector is created with running mode `image`.
      *
+     * @export
      * @param image An image to process.
      * @param imageProcessingOptions the `ImageProcessingOptions` specifying how
      *    to process the input image before running inference.
@@ -2002,6 +2075,7 @@ export declare class ObjectDetector extends VisionTaskRunner {
      * synchronously for the response. Only use this method when the
      * ObjectDetector is created with running mode `video`.
      *
+     * @export
      * @param videoFrame A video frame to process.
      * @param timestamp The timestamp of the current frame, in ms.
      * @param imageProcessingOptions the `ImageProcessingOptions` specifying how
@@ -2020,11 +2094,14 @@ export declare class PoseLandmarker extends VisionTaskRunner {
     /**
      * An array containing the pairs of pose landmark indices to be rendered with
      * connections.
+     * @export
+     * @nocollapse
      */
     static POSE_CONNECTIONS: Connection[];
     /**
      * Initializes the Wasm runtime and creates a new `PoseLandmarker` from the
      * provided options.
+     * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
      * @param poseLandmarkerOptions The options for the PoseLandmarker.
@@ -2035,6 +2112,7 @@ export declare class PoseLandmarker extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new `PoseLandmarker` based on
      * the provided model asset buffer.
+     * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
      * @param modelAssetBuffer A binary representation of the model.
@@ -2043,6 +2121,7 @@ export declare class PoseLandmarker extends VisionTaskRunner {
     /**
      * Initializes the Wasm runtime and creates a new `PoseLandmarker` based on
      * the path to the model asset.
+     * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
      * @param modelAssetPath The path to the model asset.
@@ -2056,6 +2135,7 @@ export declare class PoseLandmarker extends VisionTaskRunner {
      * You can reset an option back to its default value by explicitly setting it
      * to `undefined`.
      *
+     * @export
      * @param options The options for the pose landmarker.
      */
     setOptions(options: PoseLandmarkerOptions): Promise<void>;
@@ -2256,7 +2336,10 @@ declare abstract class TaskRunner {
     protected constructor();
     /** Configures the task with custom options. */
     abstract setOptions(options: TaskRunnerOptions): Promise<void>;
-    /** Closes and cleans up the resources held by this task. */
+    /**
+     * Closes and cleans up the resources held by this task.
+     * @export
+     */
     close(): void;
 }
 
@@ -2288,14 +2371,9 @@ declare interface VisionTaskOptions extends TaskRunnerOptions {
 declare abstract class VisionTaskRunner extends TaskRunner {
     protected constructor();
     /**
-     * Configures the shared options of a vision task.
-     *
-     * @param options The options for the task.
-     * @param loadTfliteModel Whether to load the model specified in
-     *     `options.baseOptions`.
+     * Closes and cleans up the resources held by this task.
+     * @export
      */
-    applyOptions(options: VisionTaskOptions, loadTfliteModel?: boolean): Promise<void>;
-    /** Closes and cleans up the resources held by this task. */
     close(): void;
 }
 
@@ -2322,6 +2400,8 @@ declare interface WasmFileset {
     wasmBinaryPath: string;
     /** The optional path to the asset loader script. */
     assetLoaderPath?: string;
+    /** The optional path to the assets binary. */
+    assetBinaryPath?: string;
 }
 
 export { }
