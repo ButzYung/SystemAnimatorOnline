@@ -1,4 +1,4 @@
-// (2023-08-23)
+// (2023-09-21)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -689,6 +689,36 @@ this.update_UI()
  ,stock_add: function (num) {
   }
 
+ ,update_info: function (info, display, page_index=inventory.get_page_index(this.index), index) {
+if ((page_index > -1) && (page_index != inventory.page_index)) return;
+
+if (index == null)
+  index = inventory.get_UI_index(this.index);
+
+const d = document.getElementById("Ldungeon_inventory_item" + index);
+
+let className;
+if (info) {
+  inventory._item_updated = this;
+  className = (display) ? 'Dungeon_inventory_item_info_display' : 'Dungeon_inventory_item_info';
+  d.setAttribute("data-info", info);
+}
+else {
+  inventory._item_updated = null;
+// not accessing .info directly as it may be a getter function
+  if ("info" in this.item) {
+    className = 'Dungeon_inventory_item_info';
+    d.setAttribute("data-info", this.item.info_short + ':\n' + this.item.info);
+  }
+  else {
+    className = 'Dungeon_inventory_item_info_short';
+  }
+}
+d.setAttribute("data-info_short", this.item.info_short||("Item"+index));
+
+d.className = className;
+  }
+
  ,update_UI: function () {
 const page_index = inventory.get_page_index(this.index);
 if ((page_index > -1) && (page_index != inventory.page_index)) return;
@@ -707,15 +737,7 @@ d_stock.style.visibility = (this.stock && (this.item.stock_max != 1)) ? "inherit
 
 const d = document.getElementById("Ldungeon_inventory_item" + index)
 
-// not accessing .info directly as it may be a getter function
-if ("info" in this.item) {
-  d.className = 'Dungeon_inventory_item_info';
-  d.setAttribute("data-info", this.item.info_short + ':\n' + this.item.info);
-}
-else {
-  d.className = 'Dungeon_inventory_item_info_short';
-}
-d.setAttribute("data-info_short", this.item.info_short||("Item"+index));
+this.update_info(null, false, page_index,index);
 
 d.style.visibility = (this.item.is_always_visible) ? "visible" : "inherit"
   }
@@ -4455,7 +4477,7 @@ document.head.appendChild(ss)
 
 ss.sheet.insertRule([
   '.Dungeon_inventory_item_info_short:hover:after{'
- ,'background: #333;'
+// ,'background: #333;'
  ,'background: rgba(0,0,0,.8);'
  ,'border-radius: 5px;'
  ,'color: #fff;'
@@ -4473,7 +4495,7 @@ ss.sheet.insertRule([
 
 ss.sheet.insertRule([
   '.Dungeon_inventory_item_info:hover:after{'
- ,'background: #333;'
+// ,'background: #333;'
  ,'background: rgba(0,0,0,.8);'
  ,'border-radius: 5px;'
  ,'color: #fff;'
@@ -4494,6 +4516,52 @@ ss.sheet.insertRule([
  ,'transform: scale(' + MMD_SA_options.Dungeon.inventory.UI.info.scale + ');'
  ,'}'
 ].join('\n'), 0);
+
+ss.sheet.insertRule([
+  '.Dungeon_inventory_item_info_display::after{'
+// ,'background: #333;'
+ ,'background: rgba(0,0,0,.8);'
+ ,'border-radius: 5px;'
+ ,'color: #fff;'
+ ,'padding: 5px 5px;'
+ ,'position: absolute;'
+ ,'top: ' + ((is_mobile) ? -(5+5+12*7) : 'calc(-50vh + ' + (5+5+12*7 +50) + 'px)') + ';'
+ ,'left: -16px;'
+ ,'z-index: 999;'
+ ,'width: 280px;'
+ ,'height: ' + (5+5+12*7) + 'px;'
+ ,'font-size: 10px;'
+ ,'content: attr(data-info);'//"' + this.item.info + '";'//
+// https://www.digitalocean.com/community/tutorials/css-line-break-content-property
+// https://developer.mozilla.org/en-US/docs/Web/CSS/white-space
+ ,'white-space: pre-wrap;'
+
+ ,'transform-origin: bottom center;'
+ ,'transform: scale(' + MMD_SA_options.Dungeon.inventory.UI.info.scale + ');'
+ ,'}'
+].join('\n'), 0);
+
+
+const SB_tooltip = document.createElement('div');
+SB_tooltip.id = 'SB_tooltip';
+const _s = SB_tooltip.style;
+_s.background = 'rgba(0,0,0,.8)';
+_s.borderRadius = '5px';
+_s.color = '#fff';
+_s.padding = '5px 5px';
+_s.position = 'absolute';
+_s.zIndex = 999;
+_s.width = '280px';
+_s.height = (5+5+12*7) + 'px';
+_s.fontSize = '10px';
+_s.whiteSpace = 'pre-wrap';
+_s.visibility = 'hidden';
+
+_s.transformOrigin = 'top left';
+_s.transform = 'scale(' + MMD_SA_options.Dungeon.inventory.UI.info.scale + ')';
+
+document.getElementById('SL_Host').appendChild(SB_tooltip);
+
 
 var d, ds;
 
@@ -12262,6 +12330,9 @@ if (e.next_step) {
 if (e.ended) {
   if ((typeof e.ended == 'string') && (e.ended != this._event_active.id)) return;
 
+  document.getElementById('SB_tooltip').style.visibility = 'hidden';
+//  MMD_SA_options.Dungeon.inventory._item_updated?.update_info(null, true);
+
   const sb_index = e.sb_index || 0;
   if (sb_index == 0) {
     MMD_SA.SpeechBubble.list.forEach(sb=>{
@@ -13599,6 +13670,15 @@ if (!model_para.is_object && !model_para.use_default_boundingBox) {
   geo.boundingSphere = geo.boundingBox.getBoundingSphere(new THREE.Sphere())
   geo.boundingSphere.radius *= 0.5
 }
+    }
+
+   ,tooltip: function (x,y, content) {
+const SB_tooltip = document.getElementById('SB_tooltip');
+if (content)
+  SB_tooltip.textContent = content;
+SB_tooltip.style.left = ((x > MMD_SA.THREEX.SL.width/2) ? x/window.devicePixelRatio - 40 - (280+5+5) * MMD_SA_options.Dungeon.inventory.UI.info.scale : x/window.devicePixelRatio + 40) + 'px';
+SB_tooltip.style.top  = (y/window.devicePixelRatio + 40) + 'px';
+SB_tooltip.style.visibility = 'inherit';
     }
 
   }
