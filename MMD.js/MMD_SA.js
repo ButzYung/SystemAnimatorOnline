@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-09-07)
+// (2023-09-21)
 
 var use_full_spectrum = true
 
@@ -3228,10 +3228,25 @@ window.addEventListener('MMDStarted', ()=>{
         }
       }
 
+      let mouseover = msg_obj?.branch_key != null;
       if ((msg_obj?.branch_key != null) ? sb._branch_key_ != msg_obj.branch_key : sb._branch_key_ != null) {
         sb._branch_key_ = (msg_obj?.branch_key != null) ? msg_obj.branch_key : null;
         sb._update_placement(true);
+
+        if (sb._branch_key_) {
+          const msg_branch_list = MMD_SA_options.Dungeon.dialogue_branch_mode;
+          const branch = msg_branch_list?.find(b=>((b.sb_index||0)==(sb.index||0)) && (b.key==sb._branch_key_));
+          if (branch) {
+            mouseover = branch.onmouseover;
+            mouseover?.({ clientX:mouse_x, clientY:mouse_y });
+          }
+        }
 //DEBUG_show(Date.now())
+      }
+
+      if (!mouseover) {
+        document.getElementById('SB_tooltip').style.visibility = 'hidden';
+//MMD_SA_options.Dungeon.inventory._item_updated?.update_info(null, true);
       }
 
       is_pointer = is_pointer || (sb._branch_key_ != null);
