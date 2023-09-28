@@ -1,6 +1,6 @@
 /*
 
-_SA.js (2023-09-02)
+_SA.js (2023-09-29)
 
 System Animator
 (c) Butz Yung / Anime Theme. All rights reserved.
@@ -2967,7 +2967,7 @@ if (func)
     EV_sync_update.RAF_func = [];
 
 // Electron cursor/window data START
-var _b, _top_b, _cursor, _window, _window_top, opacity_on_hover, IgnoreMouseEventsPartial, capture_pixel, use_screen_data
+let _b, _top_b, _cursor, _window, _window_top, opacity_on_hover, IgnoreMouseEventsPartial, capture_pixel, use_screen_data
 if (webkit_electron_mode) {
   _b = System._browser
   _top_b = SA_topmost_window.System._browser
@@ -2975,25 +2975,25 @@ if (webkit_electron_mode) {
     opacity_on_hover = System.Gadget.Settings.readString("OpacityOnHover")
     IgnoreMouseEventsPartial = SA_topmost_window.returnBoolean("IgnoreMouseEventsPartial")
   }
-  capture_pixel = opacity_on_hover || IgnoreMouseEventsPartial
-  use_screen_data = opacity_on_hover || self.MMD_SA
-  _cursor = _b._electron_cursor_pos = _top_b._electron_cursor_pos = (use_screen_data) ? ((is_SA_child_animation && _top_b._electron_cursor_pos) || SA_top_window.getCursorPos()) : null
-  _window = _b._electron_window_pos = _top_b._electron_window_pos = (use_screen_data) ? ((is_SA_child_animation && _top_b._electron_window_pos) || SA_top_window.getPos()) : null
+  capture_pixel = opacity_on_hover || IgnoreMouseEventsPartial;
+  use_screen_data = System._browser.use_screen_data;
+  _cursor = _b._electron_cursor_pos = _top_b._electron_cursor_pos = (use_screen_data) ? ((is_SA_child_animation && _top_b._electron_cursor_pos) || SA_top_window.getCursorPos()) : null;
+  _window = _b._electron_window_pos = _top_b._electron_window_pos = (use_screen_data) ? ((is_SA_child_animation && _top_b._electron_window_pos) || SA_top_window.getPos()) : null;
 }
 
 if (use_screen_data) {
   _window_top = _window.slice(0)
   if (is_SA_child_animation) {
-    var ani = parent.SA_child_animation[SA_child_animation_id]
+    let ani = parent.SA_child_animation[SA_child_animation_id]
     _window[0] += ani.x
     _window[1] += ani.y
   }
 
-  var _x = _cursor.x - _window[0]
-  var _y = _cursor.y - _window[1]
-  var mk = _top_b._wallpaper_mousekey
-  var mouse_over_old = !!_b._electron_mouse_over
-  var mouse_over_new = ((_x >= 0) && (_x < B_content_width) && (_y >= 0) && (_y < B_content_height))
+  let _x = _cursor.x - _window[0]
+  let _y = _cursor.y - _window[1]
+  let mk = _top_b._wallpaper_mousekey
+  let mouse_over_old = !!_b._electron_mouse_over
+  let mouse_over_new = ((_x >= 0) && (_x < B_content_width) && (_y >= 0) && (_y < B_content_height))
   if (mouse_over_new) {
     if (_top_b.capturePage_pixel && (_top_b.capturePage_pixel[3] == 0))
       mouse_over_new = false
@@ -3012,7 +3012,7 @@ NOTE: For performance reason, capturePage is used only when "opacity on hover" i
     }
 
     if (!capture_pixel && (self.MMD_SA && MMD_SA.MMD_started) && !WallpaperEngine_mode && SA_topmost_window.returnBoolean("AutoItStayOnDesktop")) {
-      var evt
+      let evt
       if (!_b._wallpaper_mousedown || (mk && (_b._wallpaper_mousedown != mk))) {
 if (mk==1 || mk==2 || mk==4) _b._wallpaper_outside_clicked = false
 // mouseclick
