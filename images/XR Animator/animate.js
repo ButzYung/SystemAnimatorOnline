@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-09-21)
+// (2023-09-29)
 
 var MMD_SA_options = {
 
@@ -3244,8 +3244,8 @@ video:{
 wireframe:{
 //  hidden:true,
 //  align_with_video:true,
-  top:0.5,
-//left:+(0.4+0.2),
+  top:(0.5-0.0),
+//left:+(0.4+0.0),
 //top:0.8,left:0.4,
 //top:0,left:3,
 //top:0.5,left:1,
@@ -3760,6 +3760,8 @@ window.addEventListener('SA_MMD_model0_onmotionchange', ()=>{ MMD_SA.WebXR.groun
 
 MMD_SA_options.Dungeon_options.item_base.social_distancing && MMD_SA_options.Dungeon_options.item_base.social_distancing.reset();
 if (System._browser.camera.initialized) System._browser.on_animation_update.add(()=>{System._browser.camera._camera_reset = MMD_SA._trackball_camera.object.clone()},1,1);
+
+if (MMD_SA_options.Dungeon._event_active.id == '_POSE_') MMD_SA_options.Dungeon.run_event(null,null,0);
       }
 
       function change_motion(motion_index_absolute, ignore_event) {
@@ -3975,7 +3977,9 @@ window.addEventListener('SA_on_external_motion_loaded', (e)=>{
   const motion_id = path.replace(/^.+[\/\\]/, '').replace(/\.\w{3,4}$/, '');
   const para = MMD_SA_options.motion_para[motion_id];
 
-  const m = { is_custom_motion:true, path:path, name:motion_id, info:'👤'+motion_id.substring(0,20)+' (🙋)' };
+  let info = motion_id.substring(0,20);
+  info = info.substring(0, 10+Math.round(info.replace(/[^\u0000-\u00ff]/s, '').length/2));
+  const m = { is_custom_motion:true, path:path, name:motion_id, info:'👤'+info+' (🙋)' };
 
   const i = e.detail.index || _motion_list[0].length;
   m.index_default = i;
@@ -4118,12 +4122,17 @@ let ini = _motion_page * 9;
 
 const content =  _motion_list[index].slice(ini, ini+9).map((m,i)=>{
   const motion_para = MMD_SA_options.motion_para[m.name];
-  let info_extra = '';
+  let info_prefix = '';
+  let info_suffix = '';
+  if (motion_para == MMD_SA.MMD.motionManager.para_SA) {
+    if ((m.name != 'stand_simple') || (!motion_para.motion_tracking_upper_body_only == (m.info.indexOf('full-body mocap') != -1)))
+      info_prefix = '✔️';
+  }
   if (motion_para?._speed && (MMD_SA_options.Dungeon.motion['PC movement forward'].name == m.name)) {
-    info_extra = '🏃';
+    info_suffix = '🏃';
   }
 
-  return (i+1)+'. ' + (m.info||m.name) + info_extra;
+  return (i+1)+'. ' + info_prefix + (m.info||m.name) + info_suffix;
 }).join('\n')
 + ((_has_custom_animation_) ? '\n0. (👤Custom motion)' : '');
 //+ ((_has_custom_animation_) ? ('\n0. (👤Custom motion: ' + (((this._animation_on_ != null) ? this._animation_on_ : (MMD_SA.THREEX.enabled && MMD_SA.THREEX.get_model(0).animation.enabled) || (THREE.MMD.getModels()[0].skin._motion_index >= MMD_SA.motion_max_default))?'ON':'OFF') + ') (🙋)') : '');
@@ -4137,7 +4146,7 @@ return content;
   },
 
   bubble_index: 3,
-  para: { row_max:11, font_size:17 },
+  para: { row_max:11, font_size:17, no_word_break:true },
 
   get branch_list() {
 const index = (System._browser.camera.poseNet.enabled) ? 2 : 1;
@@ -4157,7 +4166,7 @@ message: {
   index: 1,
   bubble_index: 3,
   para: { row_max:11 },
-  get content() { return ((_motion_page <= 1) ? '・Hotkeys: ' + ((_motion_page == 0) ? 'Alt' : 'Ctrl') + '+Numpad' + ((_has_custom_animation_) ? 0 : 1) + '-9\n' : '・Drop motion config JSON to apply changes to parameters.') + '\nA. Next 9 motions\nB. Shoulder adjust: ' + (MMD_SA.THREEX.shoulder_adjust||'Default') + '\nC. Push motion to list front\nD. Reset list order\nE. Clear custom motion\nF. Export motion config JSON\n\nX. Done'; },
+  get content() { return 'Motion ' + (_motion_page*9+1) + '-' + (_motion_page*9+9) + ' (page ' + (_motion_page+1) + ')\n' + ((_motion_page <= 1) ? '・Hotkeys: ' + ((_motion_page == 0) ? 'Alt' : 'Ctrl') + '+Numpad' + ((_has_custom_animation_) ? 0 : 1) + '-9\n' : '・Hotkeys: N/A') + '\nA. Next 9 motions\nB. Shoulder adjust: ' + (MMD_SA.THREEX.shoulder_adjust||'Default') + '\nC. Push motion to list front\nD. Reset list order\nE. Clear custom motion\nF. Export motion config JSON\n\nX. Done'; },
   branch_list: [
     { key:'A', event_id:{ func:()=>{ _motion_page++ }, goto_event:{id:'_POSE_',branch_index:0} } },
     { key:'B', event_id:{ func:()=>{
@@ -5477,14 +5486,32 @@ MMD_SA.WebXR.user_camera.start((0&&webkit_electron_mode) ? toFileProtocol("C:\\U
          ,ended: "_SELFIE_"
         }
       ]
+
+     ,...(()=>{
+        var options;
+
+        return [
 //3
-     ,[
+      [
+        {
+          func: function () {
+options = {
+  pixel_limit: {
+    disabled: MMD_SA_options.user_camera.pixel_limit.disabled,
+    current: MMD_SA_options.user_camera.pixel_limit.current?.slice(),
+  },
+  fps: MMD_SA_options.user_camera.fps
+};
+          },
+          next_step: {}
+        },
+
         {
           message: {
   get content() {
     return [
-'Resolution limit: ' + ((MMD_SA_options.user_camera.pixel_limit.disabled) ? 'Auto / No limit' : (MMD_SA_options.user_camera.pixel_limit.current||MMD_SA_options.user_camera.pixel_limit._default_).join('x') + ((!MMD_SA_options.user_camera.pixel_limit.current) ? ' (Default)' : '')),
-'Frame rate: ' + (MMD_SA_options.user_camera.fps || 'Default'),
+'Resolution limit: ' + ((options.pixel_limit.disabled) ? 'Auto / No limit' : (options.pixel_limit.current||MMD_SA_options.user_camera.pixel_limit._default_).join('x') + ((!options.pixel_limit.current) ? ' (Default)' : '')),
+'Frame rate: ' + (options.fps || 'Default'),
 '1. Change resolution limit',
 '2. Change frame rate',
 '3. Return',
@@ -5508,54 +5535,68 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
       }
     }
-   ,{ key:3, branch_index:0 }
+   ,{ key:3, branch_index:0,
+      func: ()=>{
+Object.assign(MMD_SA_options.user_camera.pixel_limit, options.pixel_limit);
+MMD_SA_options.user_camera.fps = options.fps;
+
+const camera = System._browser.camera;
+camera.video_track?.applyConstraints(camera.set_constraints()).then(function () {
+  camera.DEBUG_show("(camera size updated)", 3);
+}).catch(function (err) {
+  camera.DEBUG_show("ERROR:camera size failed to update", 5);
+});
+      }
+    }
   ]
           }
         }
-      ]
+      ],
 // 4
-     ,[
+      [
         {
           func: function () {
-let index = (MMD_SA_options.user_camera.pixel_limit.disabled) ? 4 : ((MMD_SA_options.user_camera.pixel_limit.current) ? [[640,480], [1280,960], [1920,1080]].findIndex(r=>r.every((v,i)=>v==MMD_SA_options.user_camera.pixel_limit.current[i]))+1 : 0);
+let index = (options.pixel_limit.disabled) ? 4 : ((options.pixel_limit.current) ? [[640,480], [1280,960], [1920,1080]].findIndex(r=>r.every((v,i)=>v==options.pixel_limit.current[i]))+1 : 0);
 if (++index > 4)
   index = 0;
 
 switch (index) {
   case 1:
-    MMD_SA_options.user_camera.pixel_limit.disabled = false;
-    MMD_SA_options.user_camera.pixel_limit.current = [640,480];
+    options.pixel_limit.disabled = false;
+    options.pixel_limit.current = [640,480];
     break;
   case 2:
-    MMD_SA_options.user_camera.pixel_limit.disabled = false;
-    MMD_SA_options.user_camera.pixel_limit.current = [1280,960];
+    options.pixel_limit.disabled = false;
+    options.pixel_limit.current = [1280,960];
     break;
   case 3:
-    MMD_SA_options.user_camera.pixel_limit.disabled = false;
-    MMD_SA_options.user_camera.pixel_limit.current = [1920,1080];
+    options.pixel_limit.disabled = false;
+    options.pixel_limit.current = [1920,1080];
     break;
   case 4:
-    MMD_SA_options.user_camera.pixel_limit.disabled = true;
-    MMD_SA_options.user_camera.pixel_limit.current = null;
+    options.pixel_limit.disabled = true;
+    options.pixel_limit.current = null;
     break;
   default:
-    MMD_SA_options.user_camera.pixel_limit.disabled = false;
-    MMD_SA_options.user_camera.pixel_limit.current = null;
+    options.pixel_limit.disabled = false;
+    options.pixel_limit.current = null;
     break;
 }
           }
-         ,goto_branch: 3
+         ,goto_event: { branch_index:3, step:1 }
         }
-      ]
+      ],
 // 5
-     ,[
+      [
         {
           func: function () {
-MMD_SA_options.user_camera.fps = (MMD_SA_options.user_camera.fps) ? null : 30;
+options.fps = (MMD_SA_options.user_camera.fps) ? null : 30;
           }
-         ,goto_branch: 3
+         ,goto_event: { branch_index:3, step:1 }
         }
-      ]
+      ],
+        ];
+      })()
     ]
 
    ,"_ENTER_AR_": [
@@ -5781,7 +5822,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Send camera data:\nWhen VMC-protocol is on, this option sends 3D camera data as well. Some VTubing apps such as VNyan and Warudo supports reading VMC camera data. This virtually allows a complete synchronization of motion and camera visual between XR Animator and external app. Default is "OFF".'
+  'Send camera data:\nWhen VMC-protocol is on, this option sends 3D camera data as well. Some VTubing apps such as VNyan and Warudo support reading VMC camera data. This virtually allows a complete synchronization of motion and camera visual between XR Animator and external app. Default is "OFF".'
 );
     }
   },
@@ -5797,7 +5838,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  '3D avatar visibility:\nThis option determines whether to hide the 3D avatar on XR Animator during VMC-protocol to save CPU/GPU usage. Default is "ON".'
+  '3D avatar display:\nThis option determines whether to hide the 3D avatar on XR Animator during VMC-protocol. Turn off your avatar display to save some CPU/GPU usage. Default is "ON".'
 );
     }
   },
@@ -5820,7 +5861,7 @@ MMD_SA.SpeechBubble.list[1].hide();
           },
           message: {
   get content() {
-return 'VMC-protocol parameters\nA. ┣ port: ' + MMD_SA.OSC.VMC.options.plugin.send.port + '\nB. ┗ host: ' + MMD_SA.OSC.VMC.options.plugin.send.host + '\n1. VMC-protocol: ' + ((MMD_SA.OSC.VMC.sender_enabled) ? 'ON' : 'OFF') + '\n2. Send camera data: ' + ((MMD_SA.OSC.VMC.send_camera_data) ? 'ON':  'OFF') + '\n3. VSeeFace mode: ' + ((MMD_SA.OSC.VMC.VSeeFace_mode) ? 'ON' : 'OFF') + '\n4. 3D avatar visibility: ' + ((MMD_SA.hide_3D_avatar) ? 'OFF' : 'ON') + '\nX. Done';
+return 'VMC-protocol parameters\nA. ┣ port: ' + MMD_SA.OSC.VMC.options.plugin.send.port + '\nB. ┗ host: ' + MMD_SA.OSC.VMC.options.plugin.send.host + '\n1. VMC-protocol: ' + ((MMD_SA.OSC.VMC.sender_enabled) ? 'ON' : 'OFF') + '\n2. Send camera data: ' + ((MMD_SA.OSC.VMC.send_camera_data) ? 'ON':  'OFF') + '\n3. VSeeFace mode: ' + ((MMD_SA.OSC.VMC.VSeeFace_mode) ? 'ON' : 'OFF') + '\n4. 3D avatar display: ' + ((MMD_SA.hide_3D_avatar) ? 'OFF' : 'ON') + '\nX. Done';
   }
  ,bubble_index: 3
  ,branch_list: branch_list
@@ -7791,7 +7832,7 @@ return [
           _show_other_options_: false,
 
           message: {
-  get content() { this._motion_for_export_ = /\.(bvh|fbx)$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd; return (!MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_ && System._browser.camera.ML_enabled) ? ((this._motion_for_export_) ? '1. Export motion to file\n2. Record motion\n3. Mocap options\n4. Mocap OFF' : '1. Record motion\n2. Mocap options\n3. Mocap OFF\n4. Enable motion control') + /*'\n5. Other options*/ '\n5. Cancel' : '1. Overlay & UI\n2. BG/Scene/3D\n3. Visual effects\n4. Miscellaneous options\n5. Export motion to file\n6. About XR Animator\n7. Cancel'; }
+  get content() { this._motion_for_export_ = /\.(bvh|fbx)$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd; return (!MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_ && System._browser.camera.ML_enabled) ? ((this._motion_for_export_) ? '1. Export motion to file\n2. 🔴Record motion\n3. Mocap options\n4. Mocap OFF' : '1. 🔴Record motion\n2. Mocap options\n3. Mocap OFF\n4. Enable motion control') + /*'\n5. Other options*/ '\n5. Cancel' : '1. Overlay & UI\n2. BG/Scene/3D\n3. Visual effects\n4. Miscellaneous options\n5. Export motion to file\n6. About XR Animator\n7. Cancel'; }
  ,bubble_index: 3
  ,get branch_list() {
 return (!MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_ && System._browser.camera.ML_enabled) ? ((this._motion_for_export_) ? [
@@ -8349,7 +8390,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  content: 'XR Animator (v0.15.2)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
+  content: 'XR Animator (v0.16.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -8831,7 +8872,10 @@ System._browser.save_file('XRA_settings.json', json, 'application/json');
             const XRA_settings_default = {
 	"XR_Animator_settings": {
 		"user_camera": {
-			"pixel_limit": {},
+			"pixel_limit": {
+				"disabled": false,
+				"current": null
+			},
 			"display": {
 				"video": {},
 				"wireframe": {}
@@ -8839,8 +8883,13 @@ System._browser.save_file('XRA_settings.json', json, 'application/json');
 			"ML_models": {
 				"pose": {
 					"leg_scale_adjustment": 0,
-					"hip_adjustment_weight": 1,
 					"shoulder_tracking": System._browser.camera.poseNet.shoulder_tracking,
+					"hip_adjustment_weight_percent": System._browser.camera.poseNet.hip_adjustment_weight_percent,
+					"hip_adjustment_head_weight_percent": System._browser.camera.poseNet.hip_adjustment_head_weight_percent,
+					"hip_adjustment_scale_x_percent": System._browser.camera.poseNet.hip_adjustment_scale_x_percent,
+					"hip_adjustment_scale_y_percent": System._browser.camera.poseNet.hip_adjustment_scale_y_percent,
+					"hip_adjustment_scale_z_percent": System._browser.camera.poseNet.hip_adjustment_scale_z_percent,
+					"hip_adjustment_adjust_y_axis_percent": System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent,
 				},
 				"hands": {},
 				"facemesh": {
@@ -9016,8 +9065,8 @@ System._browser.camera._info =
 + '- "Leg scale" adapts leg length diff between source and avatar.\n'
 + '- Turn auto-grounding on to fix avatar\'s feet on the ground.\n'
 + '- Hip adjustment controls hip\'s reaction to upper body motion.'
-          }
-         ,message: {
+          },
+          message: {
   get content() {
     return [
 '1. AI model quality: ' + (MMD_SA_options.user_camera.ML_models.pose.model_quality || 'Normal'),
@@ -9026,13 +9075,17 @@ System._browser.camera._info =
 '4. Leg IK: ' + ((MMD_SA_options.user_camera.ML_models.pose.use_legIK)?'ON':'OFF'),
 '5. Leg scale adjustment: ' + ((!System._browser.camera.poseNet.leg_scale_adjustment)?'OFF':((System._browser.camera.poseNet.leg_scale_adjustment>0 && '+')||'')+System._browser.camera.poseNet.leg_scale_adjustment),
 '6. Auto-grounding (' + (System._browser.hotkeys.config_by_id['mocap_auto_grounding']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON'),
-'7. Hip adjustment: ' + ((System._browser.camera.poseNet.hip_adjustment_weight == 1) ? 'ON' : (System._browser.camera.poseNet.hip_adjustment_weight == 0) ? 'OFF' : Math.round(System._browser.camera.poseNet.hip_adjustment_weight*100) + '%'),
-'8. Done',
+'X. Done',
     ].join('\n');
-  }
- ,bubble_index: 3
- ,branch_list: [
-  { key:1, event_index:2,
+  },
+  bubble_index: 3,
+  branch_list: [
+  { key:1, event_id: {
+      func: function () {
+MMD_SA_options.user_camera.ML_models.pose.model_quality = (!MMD_SA_options.user_camera.ML_models.pose.model_quality) ? 'Best' : undefined;
+      },
+      goto_event: { branch_index:mocap_options_branch, step:1 },
+    },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
@@ -9080,32 +9133,165 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
     }
   },
-  { key:7, event_id: {
+  { key:'X', branch_index:done_branch }
+  ]
+          },
+          next_step: {}
+        },
+// 2
+        (()=>{
+          let option_active = 'General weighting';
+
+          const options = ['General weighting', 'Head motion weight', 'Adjust Y axis', 'Scale X', 'Scale Y', 'Scale Z'];
+
+          return {
+            message: {
+  get content() {
+    return [
+'Hip adjustment (upper body mocap)',
+//'・Press ⬆️⬇️ to switch option',
+'・Press ⬅️➡️ to change value',
+'A. General weighting: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'OFF' : System._browser.camera.poseNet.hip_adjustment_weight_percent + '%') + ((option_active=='General weighting')?'⬅️➡️':''),
+'B. ┣ Head motion weight: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_head_weight_percent + '%') + ((option_active=='Head motion weight')?'⬅️➡️':''),,
+'C. ┣ Adjust Y axis: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent + '%') + ((option_active=='Adjust Y axis')?'⬅️➡️':''),,
+'D. ┣ Scale X: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_x_percent + '%') + ((option_active=='Scale X')?'⬅️➡️':''),,
+'E. ┣ Scale Y: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_y_percent + '%') + ((option_active=='Scale Y')?'⬅️➡️':''),,
+'F. ┗ Scale Z: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_z_percent + '%') + ((option_active=='Scale Z')?'⬅️➡️':''),,
+    ].join('\n');
+  },
+  index: 1,
+  bubble_index: 3,
+  para: { row_max:10 },
+  branch_list: [
+  { key:'any', func:(e)=>{
+if (/Arrow(Up|Down)/.test(e.code)) {
+  let index = options.findIndex(v=>v==option_active);
+  index -= (e.code == 'ArrowUp') ? 1 : -1;
+  if (index < 0) {
+    index = options.length-1;
+  }
+  else if (index > options.length-1) {
+    index = 0;
+  }
+  option_active = options[index];
+}
+else if (/Arrow(Left|Right)/.test(e.code)) {
+  const v = (e.code == 'ArrowRight') ? 1 : -1;
+  switch (option_active) {
+    case 'General weighting':
+System._browser.camera.poseNet.hip_adjustment_weight_percent = THREE.Math.clamp(System._browser.camera.poseNet.hip_adjustment_weight_percent + v, 0,100);
+      break;
+    case 'Head motion weight':
+System._browser.camera.poseNet.hip_adjustment_head_weight_percent = THREE.Math.clamp(System._browser.camera.poseNet.hip_adjustment_head_weight_percent + v, 0,100);
+      break;
+    case 'Adjust Y axis':
+System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent = THREE.Math.clamp(System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent + v, 0,100);
+      break;
+    case 'Scale X':
+System._browser.camera.poseNet.hip_adjustment_scale_x_percent = THREE.Math.clamp(System._browser.camera.poseNet.hip_adjustment_scale_x_percent + v*5, -300,300);
+      break;
+    case 'Scale Y':
+System._browser.camera.poseNet.hip_adjustment_scale_y_percent = THREE.Math.clamp(System._browser.camera.poseNet.hip_adjustment_scale_y_percent + v*5, -300,300);
+      break;
+    case 'Scale Z':
+System._browser.camera.poseNet.hip_adjustment_scale_z_percent = THREE.Math.clamp(System._browser.camera.poseNet.hip_adjustment_scale_z_percent + v*5, -300,300);
+      break;
+    default:
+      return false;
+  }
+}
+else {
+  return false;
+}
+
+MMD_SA_options.Dungeon.run_event(null,mocap_options_branch,2);
+
+return true;
+  } },
+  { key:'A', event_id: {
       func:()=>{
-let hip_adjustment_weight = Math.min(Math.round(System._browser.camera.poseNet.hip_adjustment_weight * 4)/4, 1) - 0.25;
-if (hip_adjustment_weight < 0)
-  hip_adjustment_weight = 1;
-System._browser.camera.poseNet.hip_adjustment_weight = hip_adjustment_weight;
+option_active = 'General weighting';
       },
-      goto_event: { branch_index:mocap_options_branch, step:1 },
+      goto_event: { branch_index:mocap_options_branch, step:2 },
     },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Hip adjustment:\nBy default, when using upper body mocap with poses, hip position will be adjusted according to your upper body motion. This option determines the percentage of the hip adjustment applied. Default is "ON" (100%).'
+  'General weighting' + ((option_active=='General weighting')?' (press ⬅️➡️ to change value)':'') + ':\nBy default, when using upper body mocap with poses, hip position and rotation will be adjusted according to your upper body motion. This option determines the general weighting of the hip adjustment applied. Default is "100%".'
 );
     }
   },
-  { key:8, branch_index:done_branch }
+  { key:'B', event_id: {
+      func:()=>{
+option_active = 'Head motion weight';
+      },
+      goto_event: { branch_index:mocap_options_branch, step:2 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  'Head motion weight' + ((option_active=='Head motion weight')?' (press ⬅️➡️ to change value)':'') + ':\nThis option determines the weighting of head motion to be considered as part of the upper body motion. Default is "100%".'
+);
+    }
+  },
+  { key:'C', event_id: {
+      func:()=>{
+option_active = 'Adjust Y axis';
+      },
+      goto_event: { branch_index:mocap_options_branch, step:2 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  'Adjust Y axis' + ((option_active=='Adjust Y axis')?' (press ⬅️➡️ to change value)':'') + ':\nWhen this option is "100%", hip moves downwards when you lean forward, upwards when you lean backward, and sideways when you turn sideways. When this option is "0%", hip moves downwards no matter you lean forward or backward, there is no hip movement when you turn sideways. Default is "66%".'
+);
+    }
+  },
+  { key:'D', event_id: {
+      func:()=>{
+option_active = 'Scale X';
+      },
+      goto_event: { branch_index:mocap_options_branch, step:2 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  'Scale X' + ((option_active=='Scale X')?' (press ⬅️➡️ to change value)':'') + ':\nThis option determines the scaling of movement along the X axis. By default, hip moves to the left when you leans to the right (or turns right when "Adjust Y axis" is on), and vice versa. A negative value inverts this behavior. Default is "100%".'
+);
+    }
+  },
+  { key:'E', event_id: {
+      func:()=>{
+option_active = 'Scale Y';
+      },
+      goto_event: { branch_index:mocap_options_branch, step:2 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  'Scale Y' + ((option_active=='Scale Y')?' (press ⬅️➡️ to change value)':'') + ':\nThis option determines the scaling of movement along the Y axis. By default, hip moves downwards when you leans forward, and vice versa (when "Adjust Y axis" is on). A negative value inverts this behavior. Default is "100%".'
+);
+    }
+  },
+  { key:'F', event_id: {
+      func:()=>{
+option_active = 'Scale Z';
+      },
+      goto_event: { branch_index:mocap_options_branch, step:2 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  'Scale Z' + ((option_active=='Scale Z')?' (press ⬅️➡️ to change value)':'') + ':\nThis option determines the scaling of movement along the Z axis. By default, hip moves backwards when you leans forward, and vice versa. A negative value inverts this behavior. Default is "100%".'
+);
+    }
+  },
   ]
-          }
-        },
-        {
-          func: function () {
-MMD_SA_options.user_camera.ML_models.pose.model_quality = (!MMD_SA_options.user_camera.ML_models.pose.model_quality) ? 'Best' : undefined;
-          },
-          goto_event: { branch_index:mocap_options_branch, step:1 },
-        },
+            }
+          };
+        })(),
+
+// 3
         {
           func: function () {
 if (MMD_SA_options.user_camera.ML_models.pose.model_quality != 'Best') return;
@@ -9322,8 +9508,8 @@ get content() {
     ((tilt_adjustment.enabled) ? '- Press ⬆️⬇️ to adjust offset angle' : ''),
     ((tilt_adjustment.enabled) ? '- Press ⬅️➡️ to adjust weighting applied' : ''),
     '1. Tilt adjustment: ' + ((tilt_adjustment.enabled) ? 'ON' : 'OFF'),
-    ((tilt_adjustment.enabled) ? '    ┣ Angle: ' + (tilt_adjustment.angle) + '°' : ''),
-    ((tilt_adjustment.enabled) ? '    ┗ Weighting (body pose): ' + Math.round(tilt_adjustment.pose_weight * 100) + '%' : ''),
+    ((tilt_adjustment.enabled) ? '    ┣ Angle: ' + (tilt_adjustment.angle) + '° ⬆️⬇️' : ''),
+    ((tilt_adjustment.enabled) ? '    ┗ Weighting (body): ' + Math.round(tilt_adjustment.pose_weight * 100) + '% ⬅️➡️' : ''),
     '2. Done',
   ].filter(v=>v).join('\n');
 },
@@ -9355,6 +9541,12 @@ return true;
 System._browser.camera.tilt_adjustment.enabled = !System._browser.camera.tilt_adjustment.enabled;
       },
       goto_event: { branch_index:mocap_options_branch, step:5 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  'Tilt adjustment:\nIf your webcam is angled up or down, enable this option to apply an angle offset to cancel avatar\'s tilting. Angle offset is fully applied to face. A smaller weighting can be applied to body pose ("50%" by default), as body mocap is usually less sensitive to webcam tilting. Default is "OFF".'
+);
     }
   },
   { key:2, branch_index:done_branch }
@@ -10135,8 +10327,13 @@ config.user_camera = {
       use_legIK: MMD_SA_options.user_camera.ML_models.pose.use_legIK,
       leg_scale_adjustment: System._browser.camera.poseNet.leg_scale_adjustment,
       auto_grounding: System._browser.camera.poseNet.auto_grounding,
-      hip_adjustment_weight: System._browser.camera.poseNet.hip_adjustment_weight,
       shoulder_tracking: System._browser.camera.poseNet.shoulder_tracking,
+      hip_adjustment_weight_percent: System._browser.camera.poseNet.hip_adjustment_weight_percent,
+      hip_adjustment_head_weight_percent: System._browser.camera.poseNet.hip_adjustment_head_weight_percent,
+      hip_adjustment_adjust_y_axis_percent: System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent,
+      hip_adjustment_scale_x_percent: System._browser.camera.poseNet.hip_adjustment_scale_x_percent,
+      hip_adjustment_scale_y_percent: System._browser.camera.poseNet.hip_adjustment_scale_y_percent,
+      hip_adjustment_scale_z_percent: System._browser.camera.poseNet.hip_adjustment_scale_z_percent,
     },
     hands: {
       stabilize_arm: System._browser.camera.handpose.stabilize_arm,
@@ -10298,8 +10495,13 @@ try {
         MMD_SA_options.user_camera.streamer_mode = config[p].streamer_mode || { camera_preference:{} };
         System._browser.camera.poseNet.leg_scale_adjustment = config[p].ML_models.pose.leg_scale_adjustment;
         System._browser.camera.poseNet.auto_grounding = config[p].ML_models.pose.auto_grounding;
-        System._browser.camera.poseNet.hip_adjustment_weight = config[p].ML_models.pose.hip_adjustment_weight;
         System._browser.camera.poseNet.shoulder_tracking = config[p].ML_models.pose.shoulder_tracking;
+        System._browser.camera.poseNet.hip_adjustment_weight_percent = config[p].ML_models.pose.hip_adjustment_weight_percent;
+        System._browser.camera.poseNet.hip_adjustment_head_weight_percent = config[p].ML_models.pose.hip_adjustment_head_weight_percent;
+        System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent = config[p].ML_models.pose.hip_adjustment_adjust_y_axis_percent;
+        System._browser.camera.poseNet.hip_adjustment_scale_x_percent = config[p].ML_models.pose.hip_adjustment_scale_x_percent;
+        System._browser.camera.poseNet.hip_adjustment_scale_y_percent = config[p].ML_models.pose.hip_adjustment_scale_y_percent;
+        System._browser.camera.poseNet.hip_adjustment_scale_z_percent = config[p].ML_models.pose.hip_adjustment_scale_z_percent;
         System._browser.camera.handpose.stabilize_arm = config[p].ML_models.hands?.stabilize_arm;
         System._browser.camera.handpose.stabilize_arm_time = config[p].ML_models.hands?.stabilize_arm_time;
         System._browser.camera.handpose.use_hands_worker = config[p].ML_models.hands?.use_hands_worker;
