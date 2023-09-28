@@ -1,4 +1,4 @@
-// (2023-09-21)
+// (2023-09-29)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -4557,7 +4557,7 @@ _s.fontSize = '10px';
 _s.whiteSpace = 'pre-wrap';
 _s.visibility = 'hidden';
 
-_s.transformOrigin = 'top left';
+_s.transformOrigin = 'top center';
 _s.transform = 'scale(' + MMD_SA_options.Dungeon.inventory.UI.info.scale + ')';
 
 document.getElementById('SL_Host').appendChild(SB_tooltip);
@@ -6514,6 +6514,8 @@ if (msg_branch_list) {
         sb._branch_key_ = null;
         if (!branch.keep_dialogue_branch_list)
           d.dialogue_branch_mode = sb_index;
+
+        branch.func?.();
         if ((branch.event_id != null) || (branch.branch_index != null) || (branch.event_index != null))
           d.run_event(branch.event_id, branch.branch_index, branch.event_index||0)
         else
@@ -13672,14 +13674,25 @@ if (!model_para.is_object && !model_para.use_default_boundingBox) {
 }
     }
 
-   ,tooltip: function (x,y, content) {
+   ,tooltip: (()=>{
+      let scale;
+      return function (x,y, content) {
 const SB_tooltip = document.getElementById('SB_tooltip');
 if (content)
   SB_tooltip.textContent = content;
-SB_tooltip.style.left = ((x > MMD_SA.THREEX.SL.width/2) ? x/window.devicePixelRatio - 40 - (280+5+5) * MMD_SA_options.Dungeon.inventory.UI.info.scale : x/window.devicePixelRatio + 40) + 'px';
+
+let _scale = MMD_SA_options.Dungeon.inventory.UI.info.scale / window.devicePixelRatio;
+if (scale != _scale) {
+  scale = _scale;
+  SB_tooltip.style.transform = 'scale(' + scale + ')';
+}
+
+const w = 280+5+5;
+SB_tooltip.style.left = ((x > MMD_SA.THREEX.SL.width/2) ? x/window.devicePixelRatio - 40 - w * (1+(scale-1)/2) : x/window.devicePixelRatio + 40 + w * (scale-1)/2) + 'px';
 SB_tooltip.style.top  = (y/window.devicePixelRatio + 40) + 'px';
 SB_tooltip.style.visibility = 'inherit';
-    }
+      };
+    })()
 
   }
 };
