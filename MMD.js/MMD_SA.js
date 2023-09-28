@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-09-21)
+// (2023-09-29)
 
 var use_full_spectrum = true
 
@@ -2717,7 +2717,7 @@ if (font_scale != 1) {
   column_max = parseInt(column_max/font_scale)
 }
 
-context.globalAlpha = MMD_SA_options.SpeechBubble_opacity || ((MMD_SA_options.WebXR && (System._browser.overlay_mode > 1) && 0.75) || 1);
+context.globalAlpha = MMD_SA_options.SpeechBubble_opacity || ((System._browser.overlay_mode > 1) && 1) || ((Math.max(MMD_SA.THREEX.SL.width, MMD_SA.THREEX.SL.height) < 1280) ? 0.9 : 0.8);
 context.font = "bold " + font_size + 'px ' + font
 context.textBaseline = 'top'
 
@@ -6106,8 +6106,9 @@ return obj.geometry || ((obj.children.length==1) && (obj.children[0].children.le
   }
 
  ,mouse_to_ray: function (mirrored, clamp_dimension) {
-const _cursor = (webkit_electron_mode) ? System._browser._electron_cursor_pos : { x:System._browser._WE_mouse_x, y:System._browser._WE_mouse_y };
-const _window = (webkit_electron_mode) ? System._browser._electron_window_pos.slice(0) : [Lbody_host.style.posLeft, Lbody_host.style.posTop];
+const use_screen_data = System._browser.use_screen_data;
+const _cursor = (use_screen_data && System._browser._electron_cursor_pos) || { x:System._browser._WE_mouse_x, y:System._browser._WE_mouse_y };
+const _window = (use_screen_data && System._browser._electron_window_pos?.slice(0)) || [Lbody_host.style.posLeft, Lbody_host.style.posTop];
 if (is_SA_child_animation) {
   const ani = parent.SA_child_animation[SA_child_animation_id]
   _window[0] += ani.x
@@ -11194,83 +11195,6 @@ THREE.Matrix4.decompose = (function () {
 })();
 
 THREE.BufferGeometry.prototype.applyMatrix = THREEX.BufferGeometry.prototype.applyMatrix4;
-
-// the following functions have been removed since r144 (mainly needed by XLoader)
-// https://raw.githubusercontent.com/mrdoob/three.js/r143/build/three.module.js
-THREE.BufferAttribute.prototype.copyVector3sArray = function ( vectors ) {
-
-		const array = this.array;
-		let offset = 0;
-
-		for ( let i = 0, l = vectors.length; i < l; i ++ ) {
-
-			let vector = vectors[ i ];
-
-			if ( vector === undefined ) {
-
-				console.warn( 'THREE.BufferAttribute.copyVector3sArray(): vector is undefined', i );
-				vector = new Vector3();
-
-			}
-
-			array[ offset ++ ] = vector.x;
-			array[ offset ++ ] = vector.y;
-			array[ offset ++ ] = vector.z;
-
-		}
-
-		return this;
-
-	};
-THREE.BufferAttribute.prototype.copyVector2sArray = function ( vectors ) {
-
-		const array = this.array;
-		let offset = 0;
-
-		for ( let i = 0, l = vectors.length; i < l; i ++ ) {
-
-			let vector = vectors[ i ];
-
-			if ( vector === undefined ) {
-
-				console.warn( 'THREE.BufferAttribute.copyVector2sArray(): vector is undefined', i );
-				vector = new Vector2();
-
-			}
-
-			array[ offset ++ ] = vector.x;
-			array[ offset ++ ] = vector.y;
-
-		}
-
-		return this;
-
-	};
-THREE.BufferAttribute.prototype.copyColorsArray = function ( colors ) {
-
-		const array = this.array;
-		let offset = 0;
-
-		for ( let i = 0, l = colors.length; i < l; i ++ ) {
-
-			let color = colors[ i ];
-
-			if ( color === undefined ) {
-
-				console.warn( 'THREE.BufferAttribute.copyColorsArray(): color is undefined', i );
-				color = new Color();
-
-			}
-
-			array[ offset ++ ] = color.r;
-			array[ offset ++ ] = color.g;
-			array[ offset ++ ] = color.b;
-
-		}
-
-		return this;
-
-	};
 
 THREE.Math = THREE.MathUtils;
 
