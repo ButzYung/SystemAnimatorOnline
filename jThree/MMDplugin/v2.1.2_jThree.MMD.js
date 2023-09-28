@@ -1,4 +1,4 @@
-// (2023-06-15)
+// (2023-09-29)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -2749,6 +2749,17 @@ if (motion_para && motion_para.IK_disabled && motion_para.IK_disabled._IK_name_l
     console.log("IK disabled auto:", decodeURIComponent(that.url.replace(/^.+[\/\\]/, "").replace(/\.([a-z0-9]{1,4})$/i, "")))
 }
 
+if (motion_para) {
+  if (motion_para.has_leg_IK == null) {
+    motion_para.has_leg_IK = !motion_para.IK_disabled?.test('左足ＩＫ') && (targets.findIndex(t=>t.keys[0] && t.keys[0].name.indexOf('足ＩＫ')!=-1) != -1);
+//if (motion_para.has_leg_IK) console.log('has_leg_IK', decodeURIComponent(that.url.replace(/^.+[\/\\]/, "").replace(/\.([a-z0-9]{1,4})$/i, "")))
+  }
+  if (motion_para.has_arm_IK == null) {
+    motion_para.has_arm_IK = targets.findIndex(t=>t.keys[0] && t.keys[0].name.indexOf('腕ＩＫ')!=-1) != -1;
+//if (motion_para.has_arm_IK) console.log('has_arm_IK', decodeURIComponent(that.url.replace(/^.+[\/\\]/, "").replace(/\.([a-z0-9]{1,4})$/i, "")))
+  }
+}
+
 // AT: _timeMax
 	return { _timeMax:_timeMax, duration:timeMax, targets:targets };
 };
@@ -3935,8 +3946,8 @@ if (mm) {
     const frames = System._browser.camera.poseNet.frames;
     const bones_by_name = mesh.bones_by_name;
 
-    const mocap_IK = System._browser.camera.poseNet.enabled && (frames.skin[d+'腕ＩＫ'] || (System._browser.camera.poseNet.IK_disabled_check(target.name) === false));
-// save some headaches and discard any non-arm-IK motion when arm IK　mocap is not used, as even when arm-IK is at default, any shoulder rotation will still affect the output
+    const mocap_IK = (System._browser.camera.poseNet.enabled || System._browser.camera.facemesh.enabled) && (frames.skin[d+'腕ＩＫ'] || (System._browser.camera.poseNet.IK_disabled_check(target.name) === false));
+// save some headaches and discard any non-arm-IK motion when arm IK mocap is not used, as even when arm-IK is at default, any shoulder rotation will still affect the output
     if (!_vmd.use_armIK && !mocap_IK) {
       continue;
     }
