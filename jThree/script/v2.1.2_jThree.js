@@ -1102,6 +1102,7 @@ THREE.Quaternion.prototype.setFromVectorSpherical = (function () {
   window.addEventListener('jThree_ready', ()=>{ v3_euler=new THREE.Vector3() });
   return function (axis, v3) {
     var euler_order = (axis.y) ? 'XZY' : 'YZX';
+//v3_euler.setEulerFromQuaternion(this.setFromUnitVectors(axis, v3), euler_order); if (axis.y) { v3_euler.setY(0) } else { v3_euler.setX(0) }; return this.setFromEuler(v3_euler, euler_order);
     return this.setFromEuler(v3_euler.setFromVectorSpherical(axis, v3), euler_order);
   };
 })();
@@ -2263,8 +2264,9 @@ THREE.Euler.prototype.setFromQuaternion = THREE.Euler.prototype.setEulerFromQuat
 // AT: spherical coordinate system
 THREE.Vector3.prototype.setFromVectorSpherical = (function () {
   var v3_scs = new THREE.Vector3();
-
+//var q1 = new THREE.Quaternion();
   return function (axis, v3) {
+//var euler_order = (axis.y) ? 'XZY' : 'YZX'; this.setEulerFromQuaternion(q1.setFromUnitVectors(axis, v3), euler_order); if (axis.y) { this.setY(0) } else { this.setX(0) }; return this;
     var sc;
     if (axis.y) {
       v3_scs.set(-v3.z, v3.x, -v3.y)
