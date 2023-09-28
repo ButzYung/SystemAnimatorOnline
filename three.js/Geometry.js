@@ -14,6 +14,89 @@ import {
 	Vector3
 } from 'three';
 
+
+/*
+// AT: For some unknown reasons, when SA path contains parentheses, imported three.js is considered a DIFFERENT instance, which doesn't inherit anything added to the original three.js (MMD_SA.THREEX.THREEX) prototypes.
+// As a workaround, the following prototype extensions have to be added here.
+// the following functions have been removed since r144 (mainly needed by XLoader)
+// https://raw.githubusercontent.com/mrdoob/three.js/r143/build/three.module.js
+*/
+BufferAttribute.prototype.copyVector3sArray = function ( vectors ) {
+
+		const array = this.array;
+		let offset = 0;
+
+		for ( let i = 0, l = vectors.length; i < l; i ++ ) {
+
+			let vector = vectors[ i ];
+
+			if ( vector === undefined ) {
+
+				console.warn( 'THREE.BufferAttribute.copyVector3sArray(): vector is undefined', i );
+				vector = new Vector3();
+
+			}
+
+			array[ offset ++ ] = vector.x;
+			array[ offset ++ ] = vector.y;
+			array[ offset ++ ] = vector.z;
+
+		}
+
+		return this;
+
+	};
+BufferAttribute.prototype.copyVector2sArray = function ( vectors ) {
+
+		const array = this.array;
+		let offset = 0;
+
+		for ( let i = 0, l = vectors.length; i < l; i ++ ) {
+
+			let vector = vectors[ i ];
+
+			if ( vector === undefined ) {
+
+				console.warn( 'THREE.BufferAttribute.copyVector2sArray(): vector is undefined', i );
+				vector = new Vector2();
+
+			}
+
+			array[ offset ++ ] = vector.x;
+			array[ offset ++ ] = vector.y;
+
+		}
+
+		return this;
+
+	};
+BufferAttribute.prototype.copyColorsArray = function ( colors ) {
+
+		const array = this.array;
+		let offset = 0;
+
+		for ( let i = 0, l = colors.length; i < l; i ++ ) {
+
+			let color = colors[ i ];
+
+			if ( color === undefined ) {
+
+				console.warn( 'THREE.BufferAttribute.copyColorsArray(): color is undefined', i );
+				color = new Color();
+
+			}
+
+			array[ offset ++ ] = color.r;
+			array[ offset ++ ] = color.g;
+			array[ offset ++ ] = color.b;
+
+		}
+
+		return this;
+
+	};
+
+
 const _m1 = new Matrix4();
 const _obj = new Object3D();
 const _offset = new Vector3();
