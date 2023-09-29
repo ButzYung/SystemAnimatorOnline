@@ -3245,7 +3245,7 @@ wireframe:{
 //  hidden:true,
 //  align_with_video:true,
   top:(0.5-0.0),
-//left:+(0.4+0.0),
+//left:+(0.4+0.2),
 //top:0.8,left:0.4,
 //top:0,left:3,
 //top:0.5,left:1,
@@ -8886,10 +8886,11 @@ System._browser.save_file('XRA_settings.json', json, 'application/json');
 					"shoulder_tracking": System._browser.camera.poseNet.shoulder_tracking,
 					"hip_adjustment_weight_percent": System._browser.camera.poseNet.hip_adjustment_weight_percent,
 					"hip_adjustment_head_weight_percent": System._browser.camera.poseNet.hip_adjustment_head_weight_percent,
+					"hip_adjustment_adjust_y_axis_percent": System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent,
 					"hip_adjustment_scale_x_percent": System._browser.camera.poseNet.hip_adjustment_scale_x_percent,
 					"hip_adjustment_scale_y_percent": System._browser.camera.poseNet.hip_adjustment_scale_y_percent,
 					"hip_adjustment_scale_z_percent": System._browser.camera.poseNet.hip_adjustment_scale_z_percent,
-					"hip_adjustment_adjust_y_axis_percent": System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent,
+					"hip_adjustment_smoothing_percent": System._browser.camera.poseNet.hip_adjustment_smoothing_percent,
 				},
 				"hands": {},
 				"facemesh": {
@@ -9142,7 +9143,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
         (()=>{
           let option_active = 'General weighting';
 
-          const options = ['General weighting', 'Head motion weight', 'Adjust Y axis', 'Scale X', 'Scale Y', 'Scale Z'];
+          const options = ['General weighting', 'Head motion weight', 'Adjust Y axis', 'Scale X', 'Scale Y', 'Scale Z', 'Smoothing'];
 
           return {
             message: {
@@ -9152,11 +9153,12 @@ MMD_SA_options.Dungeon.utils.tooltip(
 //'・Press ⬆️⬇️ to switch option',
 '・Press ⬅️➡️ to change value',
 'A. General weighting: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'OFF' : System._browser.camera.poseNet.hip_adjustment_weight_percent + '%') + ((option_active=='General weighting')?'⬅️➡️':''),
-'B. ┣ Head motion weight: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_head_weight_percent + '%') + ((option_active=='Head motion weight')?'⬅️➡️':''),,
-'C. ┣ Adjust Y axis: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent + '%') + ((option_active=='Adjust Y axis')?'⬅️➡️':''),,
-'D. ┣ Scale X: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_x_percent + '%') + ((option_active=='Scale X')?'⬅️➡️':''),,
-'E. ┣ Scale Y: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_y_percent + '%') + ((option_active=='Scale Y')?'⬅️➡️':''),,
-'F. ┗ Scale Z: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_z_percent + '%') + ((option_active=='Scale Z')?'⬅️➡️':''),,
+'B. ┣ Head motion weight: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_head_weight_percent + '%') + ((option_active=='Head motion weight')?'⬅️➡️':''),
+'C. ┣ Adjust Y axis: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent + '%') + ((option_active=='Adjust Y axis')?'⬅️➡️':''),
+'D. ┣ Scale X: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_x_percent + '%') + ((option_active=='Scale X')?'⬅️➡️':''),
+'E. ┣ Scale Y: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_y_percent + '%') + ((option_active=='Scale Y')?'⬅️➡️':''),
+'F. ┣ Scale Z: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_z_percent + '%') + ((option_active=='Scale Z')?'⬅️➡️':''),
+'G. ┗ Smoothing: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_smoothing_percent + '%') + ((option_active=='Smoothing')?'⬅️➡️':''),
     ].join('\n');
   },
   index: 1,
@@ -9195,6 +9197,9 @@ System._browser.camera.poseNet.hip_adjustment_scale_y_percent = THREE.Math.clamp
       break;
     case 'Scale Z':
 System._browser.camera.poseNet.hip_adjustment_scale_z_percent = THREE.Math.clamp(System._browser.camera.poseNet.hip_adjustment_scale_z_percent + v*5, -300,300);
+      break;
+    case 'Smoothing':
+System._browser.camera.poseNet.hip_adjustment_smoothing_percent = THREE.Math.clamp(System._browser.camera.poseNet.hip_adjustment_smoothing_percent + v, 0,100);
       break;
     default:
       return false;
@@ -9243,7 +9248,7 @@ option_active = 'Adjust Y axis';
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Adjust Y axis' + ((option_active=='Adjust Y axis')?' (press ⬅️➡️ to change value)':'') + ':\nWhen this option is "100%", hip moves downwards when you lean forward, upwards when you lean backward, and sideways when you turn sideways. When this option is "0%", hip moves downwards no matter you lean forward or backward, there is no hip movement when you turn sideways. Default is "66%".'
+  'Adjust Y axis' + ((option_active=='Adjust Y axis')?' (press ⬅️➡️ to change value)':'') + ':\nWhen this option is "100%", hip moves downwards when you lean forward, upwards when you lean backward, and sideways when you turn sideways. When this option is "0%", hip moves downwards no matter you lean forward or backward, and there is no hip movement when you turn sideways. Default is "66%".'
 );
     }
   },
@@ -9283,6 +9288,19 @@ option_active = 'Scale Z';
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
   'Scale Z' + ((option_active=='Scale Z')?' (press ⬅️➡️ to change value)':'') + ':\nThis option determines the scaling of movement along the Z axis. By default, hip moves backwards when you leans forward, and vice versa. A negative value inverts this behavior. Default is "100%".'
+);
+    }
+  },
+  { key:'G', event_id: {
+      func:()=>{
+option_active = 'Smoothing';
+      },
+      goto_event: { branch_index:mocap_options_branch, step:2 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  'Smoothing' + ((option_active=='Smoothing')?' (press ⬅️➡️ to change value)':'') + ':\nThis option determines how much you want the hip motion to be smoothened. Default is "0%".'
 );
     }
   },
@@ -10334,6 +10352,7 @@ config.user_camera = {
       hip_adjustment_scale_x_percent: System._browser.camera.poseNet.hip_adjustment_scale_x_percent,
       hip_adjustment_scale_y_percent: System._browser.camera.poseNet.hip_adjustment_scale_y_percent,
       hip_adjustment_scale_z_percent: System._browser.camera.poseNet.hip_adjustment_scale_z_percent,
+      hip_adjustment_smoothing_percent: System._browser.camera.poseNet.hip_adjustment_smoothing_percent,
     },
     hands: {
       stabilize_arm: System._browser.camera.handpose.stabilize_arm,
@@ -10502,6 +10521,7 @@ try {
         System._browser.camera.poseNet.hip_adjustment_scale_x_percent = config[p].ML_models.pose.hip_adjustment_scale_x_percent;
         System._browser.camera.poseNet.hip_adjustment_scale_y_percent = config[p].ML_models.pose.hip_adjustment_scale_y_percent;
         System._browser.camera.poseNet.hip_adjustment_scale_z_percent = config[p].ML_models.pose.hip_adjustment_scale_z_percent;
+        System._browser.camera.poseNet.hip_adjustment_smoothing_percent = config[p].ML_models.pose.hip_adjustment_smoothing_percent;
         System._browser.camera.handpose.stabilize_arm = config[p].ML_models.hands?.stabilize_arm;
         System._browser.camera.handpose.stabilize_arm_time = config[p].ML_models.hands?.stabilize_arm_time;
         System._browser.camera.handpose.use_hands_worker = config[p].ML_models.hands?.use_hands_worker;
