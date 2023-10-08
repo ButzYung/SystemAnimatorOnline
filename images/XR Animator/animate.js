@@ -8390,7 +8390,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  content: 'XR Animator (v0.16.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
+  content: 'XR Animator (v0.16.2)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -8502,17 +8502,16 @@ if (/\.(bvh|fbx)$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filenam
           func: function () {
           }
          ,message: {
-  get content() { return 'Choose a motion format to export.\n1. VMD\n2. Cancel'; } 
+  get content() {
+return 'Choose a motion format to export.\n1. VMD' + ((MMD_SA.THREEX.enabled) ? '\n2. BVH' : '') + '\nX. Cancel';
+  } 
  ,bubble_index: 3
  ,get branch_list() {
 return [
-  { key:1, event_index:2 }
-].concat((0) ? [
-  { key:2, event_index:3 }
- ,{ key:3 }
-] : [
-  { key:2 }
-]);
+  { key:1, event_index:2 },
+  ...((MMD_SA.THREEX.enabled) ? [{ key:2, event_index:3 }] : []),
+  { key:'X', event_index:99 },
+];
   }
           }
         },
@@ -8531,7 +8530,32 @@ else {
 setTimeout(()=>{
   MMD_SA.VMD_FileWriter().then(()=>{
     VMD_FileWriter(filename, vmd.boneKeys,vmd.morphKeys);
-    System._browser.camera.motion_recorder.vmd = null
+//    System._browser.camera.motion_recorder.vmd = null;
+  });
+}, 0);
+          }
+         ,message: {
+  content: 'Please wait while the file is being generated for saving.'
+ ,duration: 3
+          }
+         ,ended: true
+        },
+        {
+          func: function () {
+var filename;
+var vmd = System._browser.camera.motion_recorder.vmd;
+if (vmd) {
+  filename = 'motion.bvh'
+}
+else {
+  vmd = System._browser.camera.motion_recorder.vmd || MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename];
+  filename = MMD_SA.MMD.motionManager.filename + '.bvh'
+}
+
+setTimeout(()=>{
+  System._browser.load_script(toFileProtocol(System.Gadget.path + '/js/BVH_filewriter.js')).then(()=>{
+    BVH_FileWriter(filename, vmd.boneKeys);
+//    System._browser.camera.motion_recorder.vmd = null;
   });
 }, 0);
           }
@@ -8894,7 +8918,13 @@ System._browser.save_file('XRA_settings.json', json, 'application/json');
 				},
 				"hands": {},
 				"facemesh": {
-					"eye_tracking": true
+					"eye_tracking": true,
+					"emotion_weight_percent": System._browser.camera.facemesh.emotion_weight_percent,
+					"emotion_joy_fun_percent": System._browser.camera.facemesh.emotion_joy_fun_percent,
+					"emotion_angry_percent": System._browser.camera.facemesh.emotion_angry_percent,
+					"emotion_sorrow_percent": System._browser.camera.facemesh.emotion_sorrow_percent,
+					"emotion_surprised_percent": System._browser.camera.facemesh.emotion_surprised_percent,
+					"emotion_others_percent": System._browser.camera.facemesh.emotion_others_percent,
 				},
 				"tilt_adjustment": Object.assign({}, System._browser.camera.tilt_adjustment),
 			},
@@ -9635,23 +9665,8 @@ System._browser.camera.poseNet.bb_clear = 15
       ]
 
 // 34
-     ,[
-        {
-          func: function () {
-System._browser.camera._info =
-  '- Turn eye tracking off if eyes are covered (e.g. sunglasses).\n'
-+ '- "Blink LR sync" synchronize blinks of both eyes.\n'
-+ '- Turn on auto blink on if blink tracking doesn\'t work.\n'
-+ '- Turn auto "look at camera" on if you want avatar\'s eyes to always look at the camera.\n'
-          },
-          message: {
-  get content() {
-const camera = System._browser.camera;
-
-return '1. Eye tracking: ' + ((!System._browser.camera.facemesh.eye_tracking)?'OFF':'ON') + '\n2. Blink LR sync: ' + ((!System._browser.camera.facemesh.blink_sync)?'OFF':'ON') + '\n3. Auto blink: ' + ((!System._browser.camera.facemesh.auto_blink)?'OFF':'ON') + '\n4. Auto "look at camera" (' + (System._browser.hotkeys.config_by_id['auto_look_at_camera']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.facemesh.auto_look_at_camera)?'OFF':'ON') + '\n5. Emotion tracking weight: ' + (Math.round(((System._browser.camera.facemesh.emotion_weight == null) ? 0.75 : System._browser.camera.facemesh.emotion_weight) * 100) + '%') + '\n6. "Tongue out" tracking: ' + ((System._browser.camera.facemesh.use_tongue_out) ? 'ON' : 'OFF') + '\nX. Done';
-  }
- ,bubble_index: 3
- ,branch_list: [
+     ,(()=>{
+        const branch_list_common = [
     { key:1, branch_index:facemesh_options_branch+2,
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
@@ -9684,21 +9699,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
       }
     },
-    { key:5, event_id:{ func:()=>{
-let w = System._browser.camera.facemesh.emotion_weight;
-if (w == null) w = 0.75;
-w += 0.25;
-if (w > 1) w = 0;
-System._browser.camera.facemesh.emotion_weight = w;
-    }, goto_branch:facemesh_options_branch },
-      onmouseover: function (e) {
-MMD_SA_options.Dungeon.utils.tooltip(
-  e.clientX, e.clientY,
-  'Emotion tracking weight:\nBy default, face tracking reads your facial expressions and attempts to match some standard expressions from your avatar model, such as joy/fun, sorrow, angry, and optionally surprise and blush. Sometimes you may want to adjust the weighting of emotion tracking for best results. Default is "75%".'
-);
-      }
-    },
-    { key:6, event_id:{ func:()=>{ System._browser.camera.facemesh.use_tongue_out = (System._browser.camera.facemesh.use_tongue_out) ? 0 : 1; }, goto_branch:facemesh_options_branch },
+    { key:5, event_id:{ func:()=>{ System._browser.camera.facemesh.use_tongue_out = (System._browser.camera.facemesh.use_tongue_out) ? 0 : 1; }, goto_branch:facemesh_options_branch },
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
@@ -9706,31 +9707,237 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
       }
     },
+    { key:6, event_index:2,
+      onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  'Emotion tracking weight:\nBy default, face tracking reads your facial expressions and attempts to match some standard expressions from your avatar model, such as joy/fun, sorrow, angry, and optionally surprise and blush. Adjust the general weighting or weighting of each individual expression to suit your taste.'
+);
+      }
+    },
+        ];
+
+        function branch_list() {
+return [
+    ...branch_list_common,
+    ...((System._browser.camera.facemesh.enabled && System._browser.camera.video) ? [{
+  key:7, event_index:1,
+  onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  'Calibration options:\nWhenever face tracking starts, mocap data from the first few seconds will be analyzed and calibrated to better fit the user\'s face. These options allow you to reset the calibration, export the current calibration to an external JSON file, or import a previously exported calibration.'
+);
+  }
+    }] : []),
     { key:'X', branch_index:done_branch },
-  ]
-          },
-          next_step: {},
-        },
+];
+        }
 
+        return [
+// 0
         {
-          func: ()=>{
-if (System._browser.camera.facemesh.enabled && System._browser.camera.video) MMD_SA_options.Dungeon.run_event();
+          func: function () {
+System._browser.camera._info =
+  '- Turn eye tracking off if eyes are covered (e.g. sunglasses).\n'
++ '- "Blink LR sync" synchronize blinks of both eyes.\n'
++ '- Turn auto blink on if blink tracking doesn\'t work.\n'
++ '- Turn auto "look at camera" on if you want avatar\'s eyes to always look at the camera.\n'
           },
-        },
+          message: {
+  get content() {
+const camera = System._browser.camera;
 
+return [
+  '1. Eye tracking: ' + ((!System._browser.camera.facemesh.eye_tracking)?'OFF':'ON'),
+  '2. Blink LR sync: ' + ((!System._browser.camera.facemesh.blink_sync)?'OFF':'ON'),
+  '3. Auto blink: ' + ((!System._browser.camera.facemesh.auto_blink)?'OFF':'ON'),
+  '4. Auto "look at camera" (' + (System._browser.hotkeys.config_by_id['auto_look_at_camera']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.facemesh.auto_look_at_camera)?'OFF':'ON'),
+  '5. "Tongue out" tracking: ' + ((System._browser.camera.facemesh.use_tongue_out) ? 'ON' : 'OFF'),
+  '6. Emotion tracking options',
+  ...((System._browser.camera.facemesh.enabled && System._browser.camera.video) ? ['7. Calibration options'] : []),
+  'X. Done',
+].join('\n');
+  }
+ ,bubble_index: 3
+ ,get branch_list() {
+return branch_list();
+  },
+          }
+        },
+// 1
         {
           message: {
 content: 'A. Reset calibration\nB. Import calibration\nC. Export calibration',
 index: 1,
 bubble_index: 3,
-branch_list: [
+get branch_list() {
+  return branch_list().concat([
   { key:'A', branch_index:facemesh_options_branch+3 },
   { key:'B', branch_index:facemesh_options_branch+4 },
   { key:'C', branch_index:facemesh_options_branch+5 },
-]
+  ]);
+},
           }
         },
-      ]
+// 2
+        (()=>{
+          let option_active = 'General weighting';
+
+          const options = ['General weighting', 'Joy/Fun', 'Angry', 'Sorrow', 'Surprised', 'Others'];
+
+          const _branch_list = [
+  { key:'any', func:(e)=>{
+if (/Arrow(Up|Down)/.test(e.code)) {
+  let index = options.findIndex(v=>v==option_active);
+  index -= (e.code == 'ArrowUp') ? 1 : -1;
+  if (index < 0) {
+    index = options.length-1;
+  }
+  else if (index > options.length-1) {
+    index = 0;
+  }
+  option_active = options[index];
+}
+else if (/Arrow(Left|Right)/.test(e.code)) {
+  const v = (e.code == 'ArrowRight') ? 1 : -1;
+  switch (option_active) {
+    case 'General weighting':
+System._browser.camera.facemesh.emotion_weight_percent = THREE.Math.clamp(System._browser.camera.facemesh.emotion_weight_percent + v, 0,100);
+      break;
+    case 'Joy/Fun':
+System._browser.camera.facemesh.emotion_joy_fun_percent = THREE.Math.clamp(System._browser.camera.facemesh.emotion_joy_fun_percent + v, 0,100);
+      break;
+    case 'Angry':
+System._browser.camera.facemesh.emotion_angry_percent = THREE.Math.clamp(System._browser.camera.facemesh.emotion_angry_percent + v, 0,100);
+      break;
+    case 'Sorrow':
+System._browser.camera.facemesh.emotion_sorrow_percent = THREE.Math.clamp(System._browser.camera.facemesh.emotion_sorrow_percent + v, 0,100);
+      break;
+    case 'Surprised':
+System._browser.camera.facemesh.emotion_surprised_percent = THREE.Math.clamp(System._browser.camera.facemesh.emotion_surprised_percent + v, 0,100);
+      break;
+    case 'Others':
+System._browser.camera.facemesh.emotion_others_percent = THREE.Math.clamp(System._browser.camera.facemesh.emotion_others_percent + v, 0,100);
+      break;
+    default:
+      return false;
+  }
+}
+else {
+  return false;
+}
+
+MMD_SA_options.Dungeon.run_event(null,facemesh_options_branch,2);
+
+return true;
+  } },
+  { key:'A', event_id: {
+      func:()=>{
+option_active = 'General weighting';
+      },
+      goto_event: { branch_index:facemesh_options_branch, step:2 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  'General weighting' + ((option_active=='General weighting')?' (press ⬅️➡️ to change value)':'') + ':\nThis option determines the general weighting of all expressions detected via emotion tracking. Default is "75%".'
+);
+    }
+  },
+  { key:'B', event_id: {
+      func:()=>{
+option_active = 'Joy/Fun';
+      },
+      goto_event: { branch_index:facemesh_options_branch, step:2 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  'Joy/Fun' + ((option_active=='Joy/Fun')?' (press ⬅️➡️ to change value)':'') + ':\nActivate the Joy/Fun expression simply by making a smiling face. This is natural, straight forward and you probably want to keep this expression detection on all the time. Default is "100%".'
+);
+    }
+  },
+  { key:'C', event_id: {
+      func:()=>{
+option_active = 'Angry';
+      },
+      goto_event: { branch_index:facemesh_options_branch, step:2 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  'Angry' + ((option_active=='Angry')?' (press ⬅️➡️ to change value)':'') + ':\nActiavte the Angry expression by making a side pout on either left or right side. Lower the percentage if it is often misactivated. Default is "100%".'
+);
+    }
+  },
+  { key:'D', event_id: {
+      func:()=>{
+option_active = 'Sorrow';
+      },
+      goto_event: { branch_index:facemesh_options_branch, step:2 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  'Sorrow' + ((option_active=='Sorrow')?' (press ⬅️➡️ to change value)':'') + ':\nActivate the Sorrow expression by pulling your lower lip upward and make a standard sad face. Lower the percentage if it is often misactivated. Default is "100%".'
+);
+    }
+  },
+  { key:'E', event_id: {
+      func:()=>{
+option_active = 'Surprised';
+      },
+      goto_event: { branch_index:facemesh_options_branch, step:2 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  'Surprised' + ((option_active=='Surprised')?' (press ⬅️➡️ to change value)':'') + ':\nActivate the Surprised expression by raising your eyebrows and lower your jaw. Note that not all 3D models have this expression. Lower the percentage if it is often misactivated. Default is "100%".'
+);
+    }
+  },
+  { key:'F', event_id: {
+      func:()=>{
+option_active = 'Others';
+      },
+      goto_event: { branch_index:facemesh_options_branch, step:2 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  'Others' + ((option_active=='Others')?' (press ⬅️➡️ to change value)':'') + ':\nDepending on each individual avatar model\'s settings, some models may have other detectable expressions. Lower the percentage if they are often misactivated. Default is "100%".'
+);
+    }
+  },
+          ];
+
+          return {
+            message: {
+  get content() {
+    return [
+'Emotion tracking',
+//'・Press ⬆️⬇️ to switch option',
+'・Press ⬅️➡️ to change value',
+'A. General weighting: ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'OFF' : System._browser.camera.facemesh.emotion_weight_percent + '%') + ((option_active=='General weighting')?'⬅️➡️':''),
+'B. ┣ Joy/Fun: ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'N/A' : System._browser.camera.facemesh.emotion_joy_fun_percent + '%') + ((option_active=='Joy/Fun')?'⬅️➡️':''),
+'C. ┣ Angry: ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'N/A' : System._browser.camera.facemesh.emotion_angry_percent + '%') + ((option_active=='Angry')?'⬅️➡️':''),
+'D. ┣ Sorrow: ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'N/A' : System._browser.camera.facemesh.emotion_sorrow_percent + '%') + ((option_active=='Sorrow')?'⬅️➡️':''),
+'E. ┣ Surprised: ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'N/A' : System._browser.camera.facemesh.emotion_surprised_percent + '%') + ((option_active=='Surprised')?'⬅️➡️':''),
+'F. ┗ Others: ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'N/A' : System._browser.camera.facemesh.emotion_others_percent + '%') + ((option_active=='Others')?'⬅️➡️':''),
+    ].join('\n');
+  },
+  index: 1,
+  bubble_index: 3,
+  para: { row_max:10 },
+  get branch_list() {
+    return _branch_list.concat(branch_list());
+  },
+            }
+          };
+        })(),
+
+        ];
+      })()
 // 35
      ,[
         {
@@ -10367,8 +10574,13 @@ config.user_camera = {
       blink_sync: System._browser.camera.facemesh.blink_sync,
       auto_blink: System._browser.camera.facemesh.auto_blink,
       auto_look_at_camera: System._browser.camera.facemesh.auto_look_at_camera,
-      emotion_weight: System._browser.camera.facemesh.emotion_weight,
       use_tongue_out: System._browser.camera.facemesh.use_tongue_out,
+      emotion_weight_percent: System._browser.camera.facemesh.emotion_weight_percent,
+      emotion_joy_fun_percent: System._browser.camera.facemesh.emotion_joy_fun_percent,
+      emotion_angry_percent: System._browser.camera.facemesh.emotion_angry_percent,
+      emotion_sorrow_percent: System._browser.camera.facemesh.emotion_sorrow_percent,
+      emotion_surprised_percent: System._browser.camera.facemesh.emotion_surprised_percent,
+      emotion_others_percent: System._browser.camera.facemesh.emotion_others_percent,
     },
     tilt_adjustment: Object.assign({}, System._browser.camera.tilt_adjustment),
     debug_hidden: MMD_SA_options.user_camera.ML_models.debug_hidden,
@@ -10529,8 +10741,13 @@ try {
         System._browser.camera.facemesh.blink_sync = config[p].ML_models.facemesh.blink_sync;
         System._browser.camera.facemesh.auto_blink = config[p].ML_models.facemesh.auto_blink;
         System._browser.camera.facemesh.auto_look_at_camera = config[p].ML_models.facemesh.auto_look_at_camera;
-        System._browser.camera.facemesh.emotion_weight = config[p].ML_models.facemesh.emotion_weight;
         System._browser.camera.facemesh.use_tongue_out = config[p].ML_models.facemesh.use_tongue_out;
+        System._browser.camera.facemesh.emotion_weight_percent = config[p].ML_models.facemesh.emotion_weight_percent;
+        System._browser.camera.facemesh.emotion_joy_fun_percent = config[p].ML_models.facemesh.emotion_joy_fun_percent;
+        System._browser.camera.facemesh.emotion_angry_percent = config[p].ML_models.facemesh.emotion_angry_percent;
+        System._browser.camera.facemesh.emotion_sorrow_percent = config[p].ML_models.facemesh.emotion_sorrow_percent;
+        System._browser.camera.facemesh.emotion_surprised_percent = config[p].ML_models.facemesh.emotion_surprised_percent;
+        System._browser.camera.facemesh.emotion_others_percent = config[p].ML_models.facemesh.emotion_others_percent;
         Object.assign(System._browser.camera.tilt_adjustment, config[p].ML_models.tilt_adjustment||{});
         break;
 
