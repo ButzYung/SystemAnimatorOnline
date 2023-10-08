@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-09-29)
+// (2023-10-08)
 
 var use_full_spectrum = true
 
@@ -8624,8 +8624,9 @@ this.is_VRM1 = (parseInt(vrm.meta.metaVersion) > 0);
 var para = Object.assign({ pos0:{}, q0:{}, name_parent0:{} }, para);
 var humanBones = vrm.humanoid.humanBones;
 var bone_three_to_vrm_name = this.bone_three_to_vrm_name = {};
+var bone_vrm_to_three_name = this.bone_vrm_to_three_name = {};
 for (const name in humanBones) {
-  let bone_array = vrm.humanoid.humanBones[name];
+  let bone_array = humanBones[name];
 // three-vrm 1.0
   if (!use_VRM1) bone_array = bone_array[0];
 
@@ -8633,6 +8634,7 @@ for (const name in humanBones) {
 
   let bone =  bone_array.node;
   bone_three_to_vrm_name[bone.name] = name;
+  bone_vrm_to_three_name[name] = bone.name;
   const pos = v1.set(0,0,0);
   const q = q1.set(0,0,0,1);
 
@@ -8656,7 +8658,7 @@ for (const name in humanBones) {
 }
 
 for (const name in humanBones) {
-  let bone_array = vrm.humanoid.humanBones[name];
+  let bone_array = humanBones[name];
 // three-vrm 1.0
   if (!use_VRM1) bone_array = bone_array[0];
 
@@ -9017,7 +9019,7 @@ if (!animation_enabled || System._browser.camera.poseNet.enabled) {
       const dir = (d == 0) ? 1 : -1;
       const sign = (Math.sign(axis.x) == dir) ? 1 : -1;
       const name = ((dir==1)?'left':'right') + ((b_i==0)?'Upper':'Lower') + 'Arm';
-      that.getBoneNode(name).quaternion.multiply(that.process_rotation(q1.setFromAxisAngle(v1.set(dir*sign,0,0), angle), name));
+      this.getBoneNode(name).quaternion.multiply(this.process_rotation(q1.setFromAxisAngle(v1.set(dir*sign,0,0), angle), name));
 //DEBUG_show(Date.now()+'/'+angle)
     }
   })});
@@ -9142,6 +9144,13 @@ if (!use_faceBlendshapes || System._browser.camera.facemesh.auto_look_at_camera)
 }
 
 
+// update BEFORE VMC (especially for lookAt)
+if (this._reset_physics_) { delete this._reset_physics_; this.resetPhysics(); }
+
+if (MMD_SA.hide_3D_avatar) { vrm._update_core(time_delta) } else
+vrm.update(time_delta);
+
+
 if (MMD_SA.OSC.VMC.sender_enabled && MMD_SA.OSC.VMC.ready) {
   const model_pos_scale = 1/vrm_scale;
 
@@ -9256,11 +9265,6 @@ setTimeout(()=>{
 
 }
 
-
-if (this._reset_physics_) { delete this._reset_physics_; this.resetPhysics(); }
-
-if (MMD_SA.hide_3D_avatar) { vrm._update_core(time_delta) } else
-vrm.update(time_delta);
 
 if (!mesh.matrixAutoUpdate) {
   mesh.updateMatrix()
