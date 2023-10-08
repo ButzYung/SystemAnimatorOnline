@@ -79,8 +79,16 @@ boneKeys.forEach(k => {
   k.pos.map((f,idx)=>(idx==2)?-f:f).forEach(f => { bs.setFloat32(f) });
 
 // 4*4 (rot, -x/-y)
-  is_T_pose && MMD_SA.THREEX.utils.convert_T_pose_rotation_to_A_pose(k.name, k.rot);
-  k.rot.map((f,idx)=>(idx==0||idx==1)?-f:f).forEach(f => { bs.setFloat32(f) });
+  let rot;
+  if (is_T_pose) {
+// not changing the original boneKey
+    rot = k.rot.slice();
+    MMD_SA.THREEX.utils.convert_T_pose_rotation_to_A_pose(k.name, rot);
+  }
+  else {
+    rot = k.rot;
+  }
+  rot.map((f,idx)=>(idx==0||idx==1)?-f:f).forEach(f => { bs.setFloat32(f) });
 
 // 64 (16*4 interp)
   for (let i = 0; i < 4; i++) {
