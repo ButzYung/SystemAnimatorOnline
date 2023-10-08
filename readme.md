@@ -22,9 +22,11 @@ The Windows/Linux app version (powered by [Electron](https://www.electronjs.org/
 
 - Support full-body AI motion tracking using a single webcam or media file (image/video)
 
+- Support "Perfect Sync"/ARKit-compatible 52 blendshapes for realistic face tracking
+
 - Support using any MMD/VRM model as your 3D avatar
 
-- Record mocap motion and export it to VMD motion format
+- Record mocap motion and export it to BVH or VMD motion format
 
 - Support loading VMD/FBX/BVH format 3D motions
 
