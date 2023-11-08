@@ -1,6 +1,6 @@
 {
   "name": "@mediapipe/tasks-vision",
-  "version": "0.10.6",
+  "version": "0.10.7",
   "description": "MediaPipe Vision Tasks",
   "main": "vision_bundle.cjs",
   "browser": "vision_bundle.mjs",
@@ -9,7 +9,7 @@
     "import":  "./vision_bundle.mjs",
     "require": "./vision_bundle.cjs",
     "default":  "./vision_bundle.mjs",
-    "types":  "./vision_.d.ts"
+    "types":  "./vision.d.ts"
   },
   "author": "mediapipe@google.com",
   "license": "Apache-2.0",

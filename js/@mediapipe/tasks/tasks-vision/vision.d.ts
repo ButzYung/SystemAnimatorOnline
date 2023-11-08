@@ -401,6 +401,7 @@ export declare class FaceDetector extends VisionTaskRunner {
      * synchronously for the response. Only use this method when the
      * FaceDetector is created with running mode `image`.
      *
+     * @export
      * @param image An image to process.
      * @param imageProcessingOptions the `ImageProcessingOptions` specifying how
      *    to process the input image before running inference.
