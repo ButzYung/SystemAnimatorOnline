@@ -1,4 +1,4 @@
-// (2023-09-02)
+// (2023-11-09)
 
 /*!
  * jThree.XFile.js JavaScript Library v1.1
@@ -301,6 +301,7 @@ const material_para = this.material_para[this.mtrs.materials.length] || this.mat
 
 		if ( this.n === 1 ) {
 // AT: ignore ambient as it no longer exists in newer three.js
+//if (MMD_SA.THREEX.enabled) { this.mtr = new THREE.MeshStandardMaterial( { /*ambient: "#444",*/ color: this.toRgb( row[ 0 ], row[ 1 ], row[ 2 ] ), opacity: +row[ 3 ] } ); } else
 			this.mtr = new THREE.MeshPhongMaterial( { /*ambient: "#444",*/ color: this.toRgb( row[ 0 ], row[ 1 ], row[ 2 ] ), opacity: +row[ 3 ] } );
 
 if (material_para.side == 2)
@@ -334,7 +335,7 @@ else {
 			this.mtr.shininess = (+ row[ 0 ]) || 5;
 		} else if ( this.n === 3 ) {
 //this.mtr.specular.setStyle("rgb(100%,100%,100%)")
-			this.mtr.specular.setStyle('#000');// this.toRgb( row[ 0 ], row[ 1 ], row[ 2 ] ) );
+			this.mtr.specular?.setStyle('#000');// this.toRgb( row[ 0 ], row[ 1 ], row[ 2 ] ) );
 //console.log([row[ 0 ], row[ 1 ], row[ 2 ]].join(","))
 		} else if ( this.n === 4 ) {
 const ambient = new THREE.Color()
