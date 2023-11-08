@@ -1,5 +1,5 @@
 // SA Electron - Main EXTENDED
-// (2023-06-27)
+// (2023-11-09)
 
 /*
 eval on Electron v1.6.x has some scope issues/bugs which makes the global variables on this script inaccessible inside functions.
@@ -333,7 +333,6 @@ if (parseInt(process.versions.electron) >= 14) {
  ,'OSC/VMC Protocol': 7
 
  ,'Send camera data': 2
- ,'VSeeFace mode': 3
  ,'Hide 3D Avatar': 5
   };
 
@@ -621,11 +620,18 @@ webContents.send('tray_menu', 'OPACITY:apply_to_child')
    ,{label: 'Override default', type: 'checkbox', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'MMD:MODEL|override_default|' + ((menuItem.checked)?1:0)) }}
   ]);
 
+  contextMenu_MMD_OSC_VMC_app_mode = Menu.buildFromTemplate([
+    {label: 'Warudo', type: 'radio', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'MMD:OSC_VMC_CLIENT|app_mode|Warudo') }},
+    {label: 'VNyan', type: 'radio', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'MMD:OSC_VMC_CLIENT|app_mode|VNyan') }},
+    {label: 'VSeeFace', type: 'radio', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'MMD:OSC_VMC_CLIENT|app_mode|VSeeFace') }},
+    {label: 'Others', type: 'radio', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'MMD:OSC_VMC_CLIENT|app_mode|Others') }},
+  ]);
+
   contextMenu_MMD_OSC_VMC_client = Menu.buildFromTemplate([
     {label: 'Enabled', type: 'checkbox', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'MMD:OSC_VMC_CLIENT|enabled|' + ((menuItem.checked)?1:0)) }}
    ,{type: 'separator'}
    ,{label: 'Send camera data', type: 'checkbox', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'MMD:OSC_VMC_CLIENT|send_camera_data|' + ((menuItem.checked)?1:0)) }}
-   ,{label: 'VSeeFace mode', type: 'checkbox', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'MMD:OSC_VMC_CLIENT|VSeeFace_mode|' + ((menuItem.checked)?1:0)) }}
+   ,{label: 'App mode', submenu: contextMenu_MMD_OSC_VMC_app_mode}
    ,{type: 'separator'}
    ,{label: 'Hide 3D avatar', type: 'checkbox', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'MMD:OSC_VMC_CLIENT|hide_3D_avatar|' + ((menuItem.checked)?1:0)) }}
   ]);
@@ -1048,7 +1054,18 @@ return function (menuItem, browserWindow) {
       if (_MMD.use_THREEX) {
         contextMenu_MMD_OSC_VMC_client.items[0].checked = _MMD.VMC_sender_enabled;
         contextMenu_MMD_OSC_VMC_client.items[menu_item_index['Send camera data']].checked = _MMD.VMC_send_camera_data;
-        contextMenu_MMD_OSC_VMC_client.items[menu_item_index['VSeeFace mode']].checked = _MMD.VMC_VSeeFace_mode;
+
+        const app_mode = [
+  'Warudo',
+  'VNyan',
+  'VSeeFace',
+  'Others',
+        ];
+        let app_index = app_mode.indexOf(_MMD.VMC_app_mode);
+        if (app_index == -1)
+          app_index = app_mode.length - 1;
+        contextMenu_MMD_OSC_VMC_app_mode.items[app_index].checked = true;
+
         contextMenu_MMD_OSC_VMC_client.items[menu_item_index['Hide 3D Avatar']].checked = _MMD.VMC_hide_3D_avatar;
       }
 
