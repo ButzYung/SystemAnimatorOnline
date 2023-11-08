@@ -1,4 +1,5 @@
-// System object emultaion - extension (2021-08-06)
+// System object emultaion - extension
+// (2021-11-09)
 
 var xul_mode
 
@@ -198,7 +199,10 @@ return this._default[path_user]
 if (!FSO_OBJ)
   FSO_OBJ = new ActiveXObject("Scripting.FileSystemObject");
 
-var path_default = "WebKit_path_default"
+var path_default = "WebKit_path_default";
+if (!(path_default in this._default))
+  this._default[path_default] = webkit_path;
+
 if (path && (path != this._default[path_default])) {
   this._default[path_default] = null
 }
