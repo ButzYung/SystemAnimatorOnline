@@ -817,12 +817,12 @@ mc.gestures.custom.finger2_up = finger2_up;
 
 
 GE = new fp.GestureEstimator(ge_list.map(ge=>mc.gestures.custom[ge[0]]));
-
+/*
 window.addEventListener('SA_MMD_model0_onmotionchange', (e)=>{
   if (e.detail.motion_old != e.detail.motion_new)
     gesture_plugin.user_data = {};
 });
-
+*/
 initialized = true;
   }
 
