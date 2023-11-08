@@ -1,4 +1,4 @@
-// (2023-06-15)
+// (2023-11-09)
 
 MMD_SA.fn = {
 /*
@@ -522,14 +522,13 @@ x_object.parent_bone.attached = true;
 
 var pos, rot;
 var model_mesh, modelX;
+modelX = MMD_SA.THREEX.get_model(model_index);
 if (is_root) {
   model_mesh = MMD_SA.THREEX._THREE.MMD.getModels()[model_index].mesh;
   rot = model_mesh.quaternion;
 }
 
 if (MMD_SA.THREEX.enabled) {
-  modelX = MMD_SA.THREEX.get_model(model_index)
-
   if (is_root) {
     pos = modelX.process_position(MMD_SA.THREEX.v1.copy(modelX.getBoneNode('hips').position).setY(0)).multiplyScalar(MMD_SA.THREEX.VRM.vrm_scale);
   }
@@ -583,13 +582,74 @@ if (p_bone.position) {
 
 obj.quaternion.copy(rot);
 if (p_bone.rotation) {
-  const obj_rot = MMD_SA._q1.setFromEuler(MMD_SA.TEMP_v3.set(-p_bone.rotation.x, -p_bone.rotation.y, p_bone.rotation.z).multiplyScalar(Math.PI/180), 'YXZ');
+  let obj_rot;
+  if (p_bone.rotation.fixed) {
+    obj.quaternion.set(0,0,0,1);
+    obj_rot = MMD_SA._q1.setFromEuler(MMD_SA.TEMP_v3.set(-p_bone.rotation.fixed.x, -p_bone.rotation.fixed.y, p_bone.rotation.fixed.z).multiplyScalar(Math.PI/180), 'YXZ');
+  }
+  else {
+    obj_rot = MMD_SA._q1.setFromEuler(MMD_SA.TEMP_v3.set(-p_bone.rotation.x, -p_bone.rotation.y, p_bone.rotation.z).multiplyScalar(Math.PI/180), 'YXZ');
+  }
   obj.quaternion.multiply(obj_rot);
 }
 
 var m4_objs = MMD_SA.TEMP_m4.makeFromPositionQuaternionScale( obj.position, obj.quaternion, obj.scale ).multiplyMatrices(mesh.matrixWorld, MMD_SA.TEMP_m4).decompose()
 obj.position.copy(m4_objs[0])
 obj.quaternion.copy(m4_objs[1])
+
+if (p_bone.rotation) {
+  const rot_adjust = p_bone.rotation?.align_with_external_point;
+  if (rot_adjust) {
+    let axis_origin = MMD_SA._v3a_;
+    if (rot_adjust.reference_origin) {
+      axis_origin.copy(rot_adjust.reference_origin).multiplyScalar(x_object.placement.scale).applyQuaternion(obj.quaternion).add(obj.position);
+    }
+    else {
+      axis_origin.copy(obj.position);
+    }
+
+    let axis_ext;
+    if (rot_adjust.external_point.type == 'bone') {
+      let d;
+      let bone_pos;
+      let bone_ext;
+      if (rot_adjust.external_point.name.indexOf('hand') != -1) {
+        d = (rot_adjust.external_point.name.indexOf('left') != -1) ? '左' : '右';
+        if (System._browser.camera.poseNet.enabled && (!MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only || !System._browser.camera.poseNet.frames.get_blend_default_motion('skin', d+'腕ＩＫ'))) {
+          bone_pos = modelX.get_bone_position_by_MMD_name(d+'手首');
+          bone_ext = MMD_SA.TEMP_v3.set(0,0,0);//((d=='左')?1:-1)*0.5, 0, 0);
+          if (rot_adjust.external_point.offset)
+            bone_ext.add(rot_adjust.external_point.offset);
+          bone_ext.applyQuaternion(MMD_SA_options.model_para_obj.rot_arm_adjust[d+'ひじ'].axis_rot).applyQuaternion(modelX.get_bone_rotation_by_MMD_name(d+'手首'));
+        }
+      }
+
+      if (bone_pos) {
+        if (bone_ext) bone_pos.add(bone_ext);
+        axis_ext = bone_pos.sub(axis_origin);
+      }
+    }
+    else if (rot_adjust.external_point.type == 'object3D') {
+      const object3d = MMD_SA.THREEX._XR_Animator_scene_.object3D_list.find(obj=>obj.id==rot_adjust.external_point.name);
+      if (object3d) {
+        const x_object = MMD_SA.THREEX._object3d_list_.find(obj=>obj.uuid==object3d._object3d_uuid);
+        axis_ext = MMD_SA._v3b.copy(rot_adjust.external_point.reference_point).multiplyScalar(x_object.placement.scale).applyQuaternion(x_object._mesh.quaternion).add(x_object._mesh.position).sub(axis_origin);
+      }
+    }
+
+    if (axis_ext) {
+      let axis_ref = MMD_SA._v3a.copy(rot_adjust.reference_point)
+      if (rot_adjust.reference_origin) axis_ref.sub(MMD_SA.TEMP_v3.copy(rot_adjust.reference_origin));
+      axis_ref.normalize().applyQuaternion(obj.quaternion);
+
+      axis_ref.multiplyScalar(axis_ext.length()).add(axis_origin).sub(obj.position);
+      axis_ext = axis_ext.add(axis_origin).sub(obj.position)
+
+      obj.quaternion.premultiply(MMD_SA.TEMP_q.setFromUnitVectors(axis_ref.normalize(), axis_ext.normalize()));
+    }
+  }
+}
+
 //DEBUG_show(obj.position.toArray())
 // Object3D_Proxy has no updateMatrix function
 if (obj.updateMatrix) {
