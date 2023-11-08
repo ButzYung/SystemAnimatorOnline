@@ -1,4 +1,4 @@
-// 2023-09-16
+// 2023-11-09
 
 const is_worker = (typeof window !== "object");
 
@@ -362,12 +362,16 @@ estimatePoses: function (video, dummy, nowInMs) {
 
     for (let i = 0; i < 33; i++) {
       const v = c[i];
+/*
       const v3 = data_filter[0][p][i].filter([v.x, v.y, v.z], nowInMs);
       v.x = v3[0];
       v.y = v3[1];
+*/
+      const v3 = data_filter[0][p][i].filter([0, 0, v.z], nowInMs);
       v.z = v3[2];
    }
   }
+
 //console.log(result)
   return Promise.resolve(Object.assign({ poseLandmarks:result.landmarks[0], za:result.worldLandmarks[0] }, result));
 }
@@ -594,11 +598,11 @@ vision,
   return {
 set_score: (()=>{
   let timestamp = 0;
-  return function (w,h) {
+  return function (w,h, options) {
 //f_index=1;return;
 //    let s = Math.min(Math.max(Math.max(w,h)/shoulder_width-5, 0)/5, 2);
     let s = Math.min(Math.max(Math.max(w,h)/shoulder_width-7.5, 0), 1);
-    let index = Math.ceil(s);
+    let index = (options.minHandDetectionConfidence != null) ? ((options.minHandDetectionConfidence < 0.5) ? 1 : 0) : Math.ceil(s);
 //console.log(s, index);
     if (index != f_index) {
       const t = Date.now();
@@ -740,6 +744,7 @@ name: BLAZEPOSE_KEYPOINTS[i]
         for (let i = 0; i < 33; i++) {
           const f = data_filter[0][p][i];
 //          f.minCutOff = 1 * (1 + (filter_factor-1)/2);
+//          f.minCutOff = filter_factor;
           f.beta = filter_factor;
           f.dCutOff = 2 * filter_factor;
         }
@@ -1522,7 +1527,7 @@ hands_worker_ready = false;
           }
         }
         else if (handpose_model) {
-          handpose_model.set_score?.(w,h);
+          handpose_model.set_score?.(w,h, options);
           hands = await handpose_model.estimateHands(get_hand_canvas(pose), vt);
           hands = hands_adjust(hands, vt, pose);
         }
@@ -1638,7 +1643,7 @@ async function HandsAT_process_video_buffer() {
   pose = options.pose;
   shoulder_width = options.shoulder_width;
 
-  handpose_model.set_score?.(w,h);
+  handpose_model.set_score?.(w,h, options);
   hands = await handpose_model.estimateHands(get_hand_canvas(pose), vt);
   hands = hands_adjust(hands, vt, pose);
 
