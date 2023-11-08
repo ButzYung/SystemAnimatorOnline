@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-09-29)
+// (2023-11-09)
 
 var MMD_SA_options = {
 
@@ -4799,7 +4799,7 @@ else {
 //v2.setEulerFromQuaternion(hand_rot, 'ZYX').multiplyScalar(180/Math.PI);
 //System._browser.camera.DEBUG_show(v2.toArray().join('\n')+'\n\n'+target.toArray().join('\n'))
 
-  const hand_shift = v3.set(1*((MMD_SA.THREEX.enabled)?-1:1),0,0);
+  const hand_shift = v3.set(1,0,0);
   if (!MMD_SA.THREEX.enabled && MMD_SA_options.model_para_obj.rot_arm_adjust) hand_shift.applyQuaternion(MMD_SA_options.model_para_obj.rot_arm_adjust[d+'腕'].axis_rot);
   hand_shift.applyQuaternion(hand_rot).multiplyScalar(sign_LR);
 
@@ -5590,7 +5590,7 @@ switch (index) {
       [
         {
           func: function () {
-options.fps = (MMD_SA_options.user_camera.fps) ? null : 30;
+options.fps = (options.fps) ? null : 30;
           }
          ,goto_event: { branch_index:3, step:1 }
         }
@@ -5826,11 +5826,25 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
     }
   },
-  { key:3, event_id:{ func:()=>{ MMD_SA.OSC.VMC.VSeeFace_mode    = MMD_SA_options.user_camera.streamer_mode.VMC_VSeeFace_mode    = !MMD_SA.OSC.VMC.VSeeFace_mode; System._browser.update_tray(); }, goto_event: { id:"_VMC_PROTOCOL_", branch_index:0 } },
+  { key:3, event_id:{ func:()=>{
+const app_mode = [
+  'Others',
+  'Warudo',
+  'VNyan',
+  'VSeeFace',
+];
+
+let app_index = Math.max(app_mode.indexOf(MMD_SA.OSC.app_mode), 0) + 1;
+if (app_index >= app_mode.length)
+  app_index = 0;
+MMD_SA.OSC.app_mode = app_mode[app_index];
+
+System._browser.update_tray();
+    }, goto_event: { id:"_VMC_PROTOCOL_", branch_index:0 } },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'VSeeFace mode:\nVSeeFace does not support the reading of VMC camera data. This workaround allows VSeeFace to display the avatar with a similar 3D camera position as the one used by XR Animator. Default is "OFF".'
+  'App mode:\nThis option determines the configuration applied to VMC when connected to the specified app. Different apps interpret various aspects of VMC protocol differently. Choosing the right app mode ensures that VMC data are sent correctly. Default is "Others".'
 );
     }
   },
@@ -5861,7 +5875,7 @@ MMD_SA.SpeechBubble.list[1].hide();
           },
           message: {
   get content() {
-return 'VMC-protocol parameters\nA. ┣ port: ' + MMD_SA.OSC.VMC.options.plugin.send.port + '\nB. ┗ host: ' + MMD_SA.OSC.VMC.options.plugin.send.host + '\n1. VMC-protocol: ' + ((MMD_SA.OSC.VMC.sender_enabled) ? 'ON' : 'OFF') + '\n2. Send camera data: ' + ((MMD_SA.OSC.VMC.send_camera_data) ? 'ON':  'OFF') + '\n3. VSeeFace mode: ' + ((MMD_SA.OSC.VMC.VSeeFace_mode) ? 'ON' : 'OFF') + '\n4. 3D avatar display: ' + ((MMD_SA.hide_3D_avatar) ? 'OFF' : 'ON') + '\nX. Done';
+return 'VMC-protocol parameters\nA. ┣ port: ' + MMD_SA.OSC.VMC.options.plugin.send.port + '\nB. ┗ host: ' + MMD_SA.OSC.VMC.options.plugin.send.host + '\n1. VMC-protocol: ' + ((MMD_SA.OSC.VMC.sender_enabled) ? 'ON' : 'OFF') + '\n2. Send camera data: ' + ((MMD_SA.OSC.VMC.send_camera_data) ? 'ON':  'OFF') + '\n3. App mode: ' + (MMD_SA.OSC.app_mode||'Others') + '\n4. 3D avatar display: ' + ((MMD_SA.hide_3D_avatar) ? 'OFF' : 'ON') + '\nX. Done';
   }
  ,bubble_index: 3
  ,branch_list: branch_list
@@ -6378,6 +6392,10 @@ if (!object3d.parent_bone) {
 MMD_SA.THREEX.scene.add(mesh);
 
 build_octree(object3d);
+
+if (placement.hidden) {
+  object3d._obj_proxy.hidden = true;
+}
 
 // in explorer mode, make sure that collision is off at the beginning
 //object3d.no_collision = true;
@@ -7427,16 +7445,6 @@ MMD_SA._force_motion_shuffle = true;
     let resolve_func;
     const promise = new Promise((resolve)=>{ resolve_func=resolve; });
 
-    if (json.XR_Animator_scene.on) {
-      scene_json_for_export.XR_Animator_scene.on = json.XR_Animator_scene.on;
-    }
-    else {
-      json.XR_Animator_scene.on = {};
-    }
-
-    if (json.XR_Animator_scene.auto_fit_list)
-      scene_json_for_export.XR_Animator_scene.auto_fit_list = json.XR_Animator_scene.auto_fit_list;
-
     const event_para = { json:json, zip:zip, zip_path:zip_path, locate_file:locate_file };
 
     await parse_event(json.XR_Animator_scene.on, 'init');
@@ -7504,9 +7512,12 @@ MMD_SA._force_motion_shuffle = true;
           if (!await locate_file(zip, obj)) continue;
 
           const filename = obj.path.replace(/^.+[\/\\]/, '');
-          const p_bone = obj.model_para.parent_bone;
-          if (p_bone && (p_bone.is_T_pose != null) && ((p_bone.is_T_pose) ? !is_T_pose : is_T_pose))
-            adjust_parent_bone(p_bone, is_T_pose);
+          const pb_list = [obj.model_para.parent_bone, ...(obj.model_para.parent_bone_list||[])];
+          pb_list.forEach(p_bone=>{
+            if (p_bone && (p_bone.is_T_pose != null) && ((p_bone.is_T_pose) ? !is_T_pose : is_T_pose)) {
+              adjust_parent_bone(p_bone, is_T_pose);
+            }
+          });
 
           if (!obj.id) obj.id = filename.replace(/\.([a-z0-9]{1,4})$/i, '');
 
@@ -7524,8 +7535,6 @@ MMD_SA._force_motion_shuffle = true;
 
     const settings = json.XR_Animator_scene.settings;
     if (settings) {
-      scene_json_for_export.XR_Animator_scene.settings = settings;
-
       explorer_ground_y = settings.explorer_mode?.ground_y || 0;
       if (explorer_mode)
         MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
@@ -7539,7 +7548,55 @@ MMD_SA._force_motion_shuffle = true;
     }
 
     loaded_counting = false;
-    check_loaded();
+    check_loaded().then(()=>{
+if (MMD_SA.THREEX._XR_Animator_scene_) {
+  if (!json.XR_Animator_scene.on) {
+    json.XR_Animator_scene.on = MMD_SA.THREEX._XR_Animator_scene_.on;
+  }
+  else if (!json.XR_Animator_scene.on?.gesture) {
+    if (MMD_SA.THREEX._XR_Animator_scene_.on?.gesture)
+      json.XR_Animator_scene.on.gesture = MMD_SA.THREEX._XR_Animator_scene_.on.gesture;
+  }
+  else {
+    json.XR_Animator_scene.on.gesture = Object.assign(json.XR_Animator_scene.on.gesture||{}, MMD_SA.THREEX._XR_Animator_scene_.on?.gesture);
+  }
+
+  if (!json.XR_Animator_scene.object3D_list) {
+    json.XR_Animator_scene.object3D_list = MMD_SA.THREEX._XR_Animator_scene_.object3D_list;
+  }
+  else {
+    json.XR_Animator_scene.object3D_list = [...(MMD_SA.THREEX._XR_Animator_scene_.object3D_list||[]), ...json.XR_Animator_scene.object3D_list];
+  }
+
+  if (!json.XR_Animator_scene.auto_fit_list) {
+    json.XR_Animator_scene.auto_fit_list = MMD_SA.THREEX._XR_Animator_scene_.auto_fit_list;
+  }
+  else {
+    json.XR_Animator_scene.auto_fit_list = [...(MMD_SA.THREEX._XR_Animator_scene_.auto_fit_list||[]), ...json.XR_Animator_scene.auto_fit_list];
+  }
+
+  if (!json.XR_Animator_scene.settings) {
+    json.XR_Animator_scene.settings = MMD_SA.THREEX._XR_Animator_scene_.settings;
+  }
+}
+
+if (json.XR_Animator_scene.on) {
+  scene_json_for_export.XR_Animator_scene.on = json.XR_Animator_scene.on;
+}
+else {
+  json.XR_Animator_scene.on = {};
+}
+
+if (json.XR_Animator_scene.auto_fit_list) {
+  scene_json_for_export.XR_Animator_scene.auto_fit_list = json.XR_Animator_scene.auto_fit_list;
+}
+
+if (json.XR_Animator_scene.settings) {
+  scene_json_for_export.XR_Animator_scene.settings = settings;
+}
+
+MMD_SA.THREEX._XR_Animator_scene_ = json.XR_Animator_scene;
+    });
 
     return promise;
   }
@@ -7620,9 +7677,20 @@ function export_scene_JSON() {
     const model_para = obj_json.model_para = {};
     const placement = model_para.placement = { scale:mesh.scale.x };
     if (obj.parent_bone) {
-      model_para.parent_bone = { model_index:0, is_T_pose:MMD_SA.THREEX.get_model(0).is_T_pose, name:obj.parent_bone.name, position:obj.parent_bone.position, rotation:obj.parent_bone.rotation };
-      if (obj.parent_bone.disabled)
-        model_para.parent_bone.disabled = true;
+      if (!obj.parent_bone_list) obj.parent_bone_list = [];
+      obj.parent_bone_list[0] = obj.parent_bone;
+
+      const parent_bone_list = [];
+      obj.parent_bone_list.forEach(parent_bone=>{
+        const pb = { model_index:0, is_T_pose:MMD_SA.THREEX.get_model(0).is_T_pose, name:parent_bone.name, position:parent_bone.position, rotation:parent_bone.rotation };
+        if (parent_bone.disabled)
+          pb.disabled = true;
+        parent_bone_list.push(pb);
+      });
+
+      model_para.parent_bone = parent_bone_list[0];
+      if (parent_bone_list.length > 1)
+        model_para.parent_bone_list = parent_bone_list;
     }
     else {
       const c_pos = MMD_SA.THREEX._THREE.MMD.getModels()[0].mesh.position;
@@ -7982,6 +8050,8 @@ remove_object3D();
 scene_json_for_export.XR_Animator_scene = {};
 
 System._browser.camera.display_floating = false
+
+window.dispatchEvent(new CustomEvent("SA_XR_Animator_scene_onunload"));
           }
          ,goto_event: { id:"_FACEMESH_OPTIONS_", branch_index:done_branch }
         }
@@ -8390,7 +8460,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  content: 'XR Animator (v0.16.2)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
+  content: 'XR Animator (v0.17.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -9354,140 +9424,109 @@ else
           goto_event: { branch_index:mocap_options_branch, step:1 },
         },
 // 4
-        {
-          func: function () {
+        (()=>{
+          let option_active = 'Depth adjustment';
+
+          const options = ['Depth adjustment', 'IRL hand/shoulder scale', 'Depth scale'];
+
+          return {
+            func: function () {
 System._browser.camera._info =
   '- "Depth adjustment" improves the sense of depth of hands tracking during upper body mocap.\n'
 + '- Adjust hand/shoulder scale for accurate depth adjustment.\n'
 + '- "Depth scale" controls the extension of arm\'s reach.\n'
 + '- "Stabilize arm" reduces false positives of arm tracking.\n'
 + '- "Time to stabilize" improves stability with extra lag.'
-          },
-          message: {
+            },
+            message: {
   get content() {
-function depth_adjustment() {
-  const v = MMD_SA_options.user_camera.ML_models.hands.depth_adjustment;
-
-  if (v < -9) {
-    return 'OFF';
-  }
-  if (v == -2) {
-    return 'Min';
-  }
-  if (v == -1) {
-    return 'Small';
-  }
-  if (v == 1) {
-    return 'Large';
-  }
-  if (v == 2) {
-    return 'Max';
-  }
-  return 'Normal';
-}
-
-function palm_shoulder_scale() {
-  if (MMD_SA_options.user_camera.ML_models.hands.depth_adjustment < -9) return 'N/A';
-
-  const v = MMD_SA_options.user_camera.ML_models.hands.palm_shoulder_scale;
-  if (v == -2) {
-    return 'Small+ hand/wide+ shoulder';
-  }
-  if (v == -1) {
-    return 'Small hand/wide shoulder';
-  }
-  if (v == 1) {
-    return 'Big hand/narrow shoulder';
-  }
-  if (v == 2) {
-    return 'Big+ hand/narrow+ shoulder';
-  }
-  return 'Normal';
-}
-
-function depth_scale() {
-  if (MMD_SA_options.user_camera.ML_models.hands.depth_adjustment < -9) return 'N/A';
-
-  const v = MMD_SA_options.user_camera.ML_models.hands.depth_scale;
-  if (v == -3) {
-    return 'Min';
-  }
-  if (v == -2) {
-    return 'Small+';
-  }
-  if (v == -1) {
-    return 'Small';
-  }
-  if (v == 1) {
-    return 'Large';
-  }
-  if (v == 2) {
-    return 'Large+';
-  }
-  if (v == 3) {
-    return 'Max';
-  }
-  return 'Normal';
-}
-
-return '\n1. Depth adjustment: ' + depth_adjustment() + '\n2. ┣ IRL hand/shoulder scale:\n' + '        ' + '┗ ' + palm_shoulder_scale() + '\n3. ┗ Depth scale: ' + depth_scale() + '\n4. Stabilize arm: ' + ((System._browser.camera.handpose.stabilize_arm == 2) ? 'ON' : ((System._browser.camera.handpose.stabilize_arm == 1) ? 'Upper body mode only' : 'OFF')) + '\n5. ┗ Time to stabilize: ' + ((System._browser.camera.handpose.stabilize_arm) ? ((System._browser.camera.handpose.stabilize_arm_time) ? ((System._browser.camera.handpose.stabilize_arm_time == 1) ? '1 frame' : System._browser.camera.handpose.stabilize_arm_time + 'ms') : '0 frame') : 'N/A') + '\n6. Standalone web worker (BETA): ' + ((System._browser.camera.handpose.use_hands_worker) ? 'ON' : 'OFF') + '\n7. Done';
+return [
+  '1. Depth adjustment: ' + ((MMD_SA_options.user_camera.ML_models.hands.depth_adjustment_percent == 0) ? 'OFF' : MMD_SA_options.user_camera.ML_models.hands.depth_adjustment_percent + '%') + ((option_active=='Depth adjustment')?'⬅️➡️':''),
+//  '・Press ⬅️➡️ to change value',
+  '2. ┣ IRL hand/shoulder scale: ' + ((MMD_SA_options.user_camera.ML_models.hands.depth_adjustment_percent == 0) ? 'OFF' : MMD_SA_options.user_camera.ML_models.hands.palm_shoulder_scale_percent + '%') + ((option_active=='IRL hand/shoulder scale')?'⬅️➡️':''),
+//\n' + '        ' + '┗ ' + palm_shoulder_scale() + '
+  '3. ┗ Depth scale: ' + ((MMD_SA_options.user_camera.ML_models.hands.depth_adjustment_percent == 0) ? 'OFF' : MMD_SA_options.user_camera.ML_models.hands.depth_scale_percent + '%') + ((option_active=='Depth scale')?'⬅️➡️':''),
+  '4. Stabilize arm: ' + ((System._browser.camera.handpose.stabilize_arm == 2) ? 'ON' : ((System._browser.camera.handpose.stabilize_arm == 1) ? 'Upper body mode only' : 'OFF')),
+  '5. ┗ Time to stabilize: ' + ((System._browser.camera.handpose.stabilize_arm) ? ((System._browser.camera.handpose.stabilize_arm_time) ? ((System._browser.camera.handpose.stabilize_arm_time == 1) ? '1 frame' : System._browser.camera.handpose.stabilize_arm_time + 'ms') : '0 frame') : 'N/A'),
+  '6. Standalone web worker (BETA): ' + ((System._browser.camera.handpose.use_hands_worker) ? 'ON' : 'OFF'),
+  '7. Done',
+].join('\n');
   }
  ,bubble_index: 3
  ,branch_list: [
-  { key:1, event_id: {
-      func:()=>{
-let v = MMD_SA_options.user_camera.ML_models.hands.depth_adjustment || 0;
-if (++v > 2) {
-  v = -99;
+  { key:'any', func:(e)=>{
+if (/Arrow(Up|Down)/.test(e.code)) {
+  let index = options.findIndex(v=>v==option_active);
+  index -= (e.code == 'ArrowUp') ? 1 : -1;
+  if (index < 0) {
+    index = options.length-1;
+  }
+  else if (index > options.length-1) {
+    index = 0;
+  }
+  option_active = options[index];
 }
-else if (v < -9) {
-  v = -2;
+else if (/Arrow(Left|Right)/.test(e.code)) {
+  const v = (e.code == 'ArrowRight') ? 1 : -1;
+  switch (option_active) {
+    case 'Depth adjustment':
+MMD_SA_options.user_camera.ML_models.hands.depth_adjustment_percent = THREE.Math.clamp(MMD_SA_options.user_camera.ML_models.hands.depth_adjustment_percent + v, 0,100);
+      break;
+    case 'IRL hand/shoulder scale':
+MMD_SA_options.user_camera.ML_models.hands.palm_shoulder_scale_percent = THREE.Math.clamp(MMD_SA_options.user_camera.ML_models.hands.palm_shoulder_scale_percent + v, 10,50);
+      break;
+    case 'Depth scale':
+MMD_SA_options.user_camera.ML_models.hands.depth_scale_percent = THREE.Math.clamp(MMD_SA_options.user_camera.ML_models.hands.depth_scale_percent + v, 10,90);
+      break;
+    default:
+      return false;
+  }
+}
+else {
+  return false;
 }
 
-MMD_SA_options.user_camera.ML_models.hands.depth_adjustment = v;
+MMD_SA_options.Dungeon.run_event(null,mocap_options_branch,4);
+
+return true;
+  } },
+
+  { key:1, event_id: {
+      func:()=>{
+option_active = 'Depth adjustment';
       },
       goto_event: { branch_index:mocap_options_branch, step:4 },
     },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Depth adjustment:\nThis option enhances the sense of depth of avatar\'s arms by utilizing the data of hands tracking. Different adjustment values determine how much you want the hands tracking data to override the default arms tracking data from the body pose mocap. This options applies to upper body mocap, or full body mocap when close to the camera. Default is "Normal".'
+  'Depth adjustment' + ' (press ⬅️➡️ to change value)' + ':\nThis option enhances the sense of depth of avatar\'s arms by utilizing the data of hands tracking. This value determines how much you want the hands tracking data to override the default arms tracking data from the body pose mocap. Depth adjustment applies to upper body mocap, or full body mocap when close to the camera. Default is "50%".'
 );
     }
   },
   { key:2, event_id: {
       func:()=>{
-if (MMD_SA_options.user_camera.ML_models.hands.depth_adjustment < -9) return;
-
-let v = MMD_SA_options.user_camera.ML_models.hands.palm_shoulder_scale || 0;
-if (++v > 2) v = -2;
-
-MMD_SA_options.user_camera.ML_models.hands.palm_shoulder_scale = v;
+option_active = 'IRL hand/shoulder scale';
       },
       goto_event: { branch_index:mocap_options_branch, step:4 },
     },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'IRL hand/shoulder scale:\nDepth adjustment is calculated based on the comparison of sizes between your hands and shoulder width. This option lets you change the scale if your hands are relatively big/small, or your shoulder width is relatively wide/narrow. Default is "Normal".'
+  'IRL hand/shoulder scale' + ((option_active=='IRL hand/shoulder scale')?' (press ⬅️➡️ to change value)':'') + ':\nDepth adjustment is calculated based on the comparison of your palm\'s size and shoulder width. Smaller value fits smaller hands/wider shoulder, while large value fits bigger hands/narrower shoulder. Default is "22%".'
 );
     }
   },
   { key:3, event_id: {
       func:()=>{
-if (MMD_SA_options.user_camera.ML_models.hands.depth_adjustment < -9) return;
-
-let v = MMD_SA_options.user_camera.ML_models.hands.depth_scale || 0;
-if (++v > 3) v = -3;
-
-MMD_SA_options.user_camera.ML_models.hands.depth_scale = v;
+option_active = 'Depth scale';
       },
       goto_event: { branch_index:mocap_options_branch, step:4 },
     },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Depth scale:\nThis options determines how much you want to scale the value of depth up or down. Smaller scale draws your hands closer to your body, while larger scale extends your arm\'s reach. Default is "Normal".'
+  'Depth scale' + ((option_active=='Depth scale')?' (press ⬅️➡️ to change value)':'') + ':\nThis options determines how much you want to scale the value of depth up or down. Smaller scale draws your hands closer to your body, while larger scale extends your arm\'s reach. Default is "50%".'
 );
     }
   },
@@ -9544,8 +9583,9 @@ MMD_SA_options.Dungeon.utils.tooltip(
   },
   { key:7, branch_index:done_branch }
   ]
-          }
-        },
+            }
+          };
+        })(),
 // 5
         {
           message: {
@@ -10565,9 +10605,9 @@ config.user_camera = {
       stabilize_arm: System._browser.camera.handpose.stabilize_arm,
       stabilize_arm_time: System._browser.camera.handpose.stabilize_arm_time,
       use_hands_worker: System._browser.camera.handpose.use_hands_worker,
-      depth_adjustment: MMD_SA_options.user_camera.ML_models.hands.depth_adjustment,
-      palm_shoulder_scale: MMD_SA_options.user_camera.ML_models.hands.palm_shoulder_scale,
-      depth_scale: MMD_SA_options.user_camera.ML_models.hands.depth_scale,
+      depth_adjustment_percent: MMD_SA_options.user_camera.ML_models.hands.depth_adjustment_percent,
+      palm_shoulder_scale_percent: MMD_SA_options.user_camera.ML_models.hands.palm_shoulder_scale_percent,
+      depth_scale_percent: MMD_SA_options.user_camera.ML_models.hands.depth_scale_percent,
     },
     facemesh: {
       eye_tracking: System._browser.camera.facemesh.eye_tracking,
@@ -10646,6 +10686,7 @@ config.VMC = {
     port: MMD_SA.OSC.VMC.options.plugin.send.port,
     host: MMD_SA.OSC.VMC.options.plugin.send.host,
   },
+  app_mode: MMD_SA.OSC.app_mode,
 };
 
 return config;
@@ -10699,6 +10740,9 @@ try {
         case 'hand_camera_fov':
           MMD_SA_options.Dungeon_options.item_base.hand_camera.fov = config[p];
           break;
+        case 'VMC':
+          MMD_SA.OSC.app_mode = config[p].app_mode;
+          break;
       }
     }
 //shoulder_adjust('shoulder_adjust');
@@ -10720,9 +10764,12 @@ try {
         MMD_SA_options.user_camera.ML_models.pose.model_quality = config[p].ML_models.pose.model_quality;
         MMD_SA_options.user_camera.ML_models.pose.z_depth_scale = config[p].ML_models.pose.z_depth_scale;
         MMD_SA_options.user_camera.ML_models.pose.use_legIK = config[p].ML_models.pose.use_legIK;
-        MMD_SA_options.user_camera.ML_models.hands.depth_adjustment = config[p].ML_models.hands.depth_adjustment;
-        MMD_SA_options.user_camera.ML_models.hands.palm_shoulder_scale = config[p].ML_models.hands.palm_shoulder_scale;
-        MMD_SA_options.user_camera.ML_models.hands.depth_scale = config[p].ML_models.hands.depth_scale;
+        if (config[p].ML_models.hands.depth_adjustment_percent != null)
+          MMD_SA_options.user_camera.ML_models.hands.depth_adjustment_percent = config[p].ML_models.hands.depth_adjustment_percent;
+        if (config[p].ML_models.hands.palm_shoulder_scale_percent != null)
+          MMD_SA_options.user_camera.ML_models.hands.palm_shoulder_scale_percent = config[p].ML_models.hands.palm_shoulder_scale_percent;
+        if (config[p].ML_models.hands.depth_scale_percent != null)
+          MMD_SA_options.user_camera.ML_models.hands.depth_scale_percent = config[p].ML_models.hands.depth_scale_percent;
         MMD_SA_options.user_camera.streamer_mode = config[p].streamer_mode || { camera_preference:{} };
         System._browser.camera.poseNet.leg_scale_adjustment = config[p].ML_models.pose.leg_scale_adjustment;
         System._browser.camera.poseNet.auto_grounding = config[p].ML_models.pose.auto_grounding;
@@ -10847,6 +10894,8 @@ try {
           MMD_SA.OSC.VMC.plugin.options.send.port = MMD_SA.OSC.VMC.options.plugin.send.port;
           MMD_SA.OSC.VMC.plugin.options.send.host = MMD_SA.OSC.VMC.options.plugin.send.host;
         }
+
+        MMD_SA.OSC.app_mode = config[p].app_mode;
         break;
     }
   }
