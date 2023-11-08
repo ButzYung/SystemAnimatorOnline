@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-10-08)
+// (2023-11-09)
 
 var use_full_spectrum = true
 
@@ -962,12 +962,12 @@ if (!ao.ontimeupdate)
   else if (item.isFileSystem && /([^\/\\]+)\.(png|jpg|jpeg|bmp|webp|mp4|mkv|webm)$/i.test(src)) {
 //console.log(toFileProtocol(item.path), item)
     if (MMD_SA_options.user_camera.enabled || System._browser.camera.ML_enabled) {
-      if (System._browser.camera.initialized && !System._browser.camera.stream) {
+      if (System._browser.camera.initialized && (!System._browser.camera.stream || (System._browser.camera.ML_enabled && 1))) {
         System._browser.camera.init_stream(src)
       }
       else {
-        System._browser.camera.local_src = src
-        DEBUG_show('(local media file assigned)', 3)
+        System._browser.camera.local_src = src;
+        DEBUG_show('(local media file assigned)', 3);
       }
     }
     else {
@@ -4559,8 +4559,8 @@ switch (para[0]) {
       case "send_camera_data":
         MMD_SA.OSC.VMC.send_camera_data = !!parseInt(para[2]);
         break;
-      case "VSeeFace_mode":
-        MMD_SA.OSC.VMC.VSeeFace_mode = !!parseInt(para[2]);
+      case "app_mode":
+        MMD_SA.OSC.app_mode = para[2];
         break;
       case "hide_3D_avatar":
         MMD_SA.hide_3D_avatar = !!parseInt(para[2]);
@@ -8247,6 +8247,8 @@ const is_MMD_dummy = (this.type=='MMD_dummy');
 const bone_matrix = (is_MMD_dummy) ? bone.skinMatrix : bone.matrixWorld;
 
 const rot = new THREE.Quaternion().setFromRotationMatrix(_m1.extractRotation(bone_matrix));
+// multiply, instead of premultiply
+if (!is_MMD_dummy) rot.multiply(_q1.set(0,-1,0,0));
 
 if (local_only) {
   if (!is_MMD_dummy)
@@ -8676,6 +8678,8 @@ for (const name in humanBones) {
     }
   }
 }
+
+para.left_arm_length = v1.fromArray(para.pos0['leftUpperArm']).distanceTo(v2.fromArray(para.pos0['leftHand'])) * vrm_scale;
 
 para.left_leg_length = ((para.pos0['leftUpperLeg'][1] - para.pos0['leftLowerLeg'][1]) + (para.pos0['leftLowerLeg'][1] - para.pos0['leftFoot'][1])) * vrm_scale;
 
@@ -9139,7 +9143,7 @@ if (!use_faceBlendshapes || System._browser.camera.facemesh.auto_look_at_camera)
   }
   else {
     const eye_aa = eye_bone.quaternion.toAxisAngle();
-    lookAt.lookAt(lookAt.getLookAtWorldPosition(v1).add( this.process_position(v2.set(0,0,100)).applyQuaternion(this.get_bone_rotation_by_MMD_name('頭').multiply(q1.setFromAxisAngle(eye_aa[0], eye_aa[1]*5))) ));
+    lookAt.lookAt(lookAt.getLookAtWorldPosition(v1).add( v2.set(0,0,100).applyQuaternion(this.get_bone_rotation_by_MMD_name('頭').multiply(q1.setFromAxisAngle(eye_aa[0], eye_aa[1]*5))) ));
   }
 }
 
@@ -9157,16 +9161,17 @@ if (MMD_SA.OSC.VMC.sender_enabled && MMD_SA.OSC.VMC.ready) {
   const model_position0 = MMD_SA_options.Dungeon_options.options_by_area_id[MMD_SA_options.Dungeon.area_id]._startup_position_;
   const model_position_offset = v4.copy(mesh.position).sub(model_position0).multiplyScalar(model_pos_scale);
 
-  const warudo_mode = MMD_SA.OSC.VMC.warudo_mode;
+  const warudo_mode = MMD_SA.OSC.app_mode == 'Warudo';
+  const VSeeFace_mode = (MMD_SA.OSC.app_mode == 'VSeeFace') && MMD_SA.OSC.VMC.send_camera_data;
 
   const model_rot = q4.copy(mesh.quaternion);
-  const turned_around = MMD_SA.OSC.VMC.send_camera_data && !warudo_mode;// && MMD_SA_options._XRA_explorer_mode;
+  let turned_around = MMD_SA.OSC.VMC.send_camera_data && !VSeeFace_mode && !warudo_mode;// && MMD_SA_options._XRA_explorer_mode;
   if (!turned_around ^ !!this.is_VRM1) model_rot.premultiply(q2.set(0,1,0,0));
 //DEBUG_show(mesh.quaternion.toArray())
 
   const pos_msgs = [
 'root',
-...((MMD_SA.OSC.VMC.VSeeFace_mode) ? ((System._browser.camera.poseNet.enabled && MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only && MMD_SA.MMD.motionManager.para_SA.center_view_enforced) ? [0,0,-5/10] : [0, 5/10, -60/10]) : [model_position_offset.x*((warudo_mode)?-1:1), model_position_offset.y, -model_position_offset.z*((warudo_mode)?-1:1)]),
+...((VSeeFace_mode) ? ((System._browser.camera.poseNet.enabled && MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only && MMD_SA.MMD.motionManager.para_SA.center_view_enforced) ? [0,0,-5/10] : [0, 5/10, -60/10]) : [model_position_offset.x*((warudo_mode)?-1:1), model_position_offset.y, -model_position_offset.z*((warudo_mode)?-1:1)]),
 -model_rot.x, -model_rot.y, model_rot.z, model_rot.w,
   ];
 
@@ -9175,15 +9180,12 @@ if (MMD_SA.OSC.VMC.sender_enabled && MMD_SA.OSC.VMC.ready) {
     const name = VRMSchema.HumanoidBoneName[name_VMC];
     const bone = this.getBoneNode(name);
     if (!bone) continue;
-    bone_msgs.push(MMD_SA.OSC.VMC.Message("/VMC/Ext/Bone/Pos",
-      [
+    bone_msgs.push([
 (this.is_VRM1)?name_VMC:bone_map_VRM0[name_VMC],
 // TODO: support VRM1 in VNyan
 bone.position.x, bone.position.y, -bone.position.z,
 -bone.quaternion.x, -bone.quaternion.y, bone.quaternion.z, bone.quaternion.w,
-      ],
-      'sfffffff'
-    ));
+    ]);
   }
 
   const morph_msgs = [];
@@ -9195,32 +9197,23 @@ bone.position.x, bone.position.y, -bone.position.z,
 
   for (const name in blendshape_weight) {
     const name_for_blendshapes = (use_faceBlendshapes && this.faceBlendshapes_map_reversed[name]) || name;
-    morph_msgs.push(MMD_SA.OSC.VMC.Message("/VMC/Ext/Blend/Val",
-      [
+    morph_msgs.push([
 // three-vrm 1.0
 // use VRM0 name
 this.blendshape_map_name(name_for_blendshapes, false),
 
 blendshape_weight[name],
-      ],
-      'sf'
-    ));
+    ]);
   }
-  morph_msgs.push(MMD_SA.OSC.VMC.Message("/VMC/Ext/Blend/Apply"));
+
 
   let camera_msgs;
-  if (MMD_SA.OSC.VMC.send_camera_data) {
+  if (MMD_SA.OSC.VMC.send_camera_data && !VSeeFace_mode) {
     const camera = MMD_SA.THREEX.camera.obj;
     const camera_pos = v1.copy(camera.position).sub(mesh.position).multiplyScalar(model_pos_scale);
 
     const camera_rot = q1.copy(camera.quaternion);
     if (!turned_around) camera_rot.premultiply(q2.set(0,1,0,0));
-
-    if (warudo_mode) {
-      q3.setFromUnitVectors(MMD_SA.TEMP_v3.copy(camera_pos).setY(0).normalize(), MMD_SA._v3a.set(0,0,1));
-      camera_pos.add(MMD_SA.TEMP_v3.set(0,0.15,0.15).applyQuaternion(q3.conjugate()));
-//System._browser.camera.DEBUG_show(MMD_SA.TEMP_v3.toArray().join('\n'));
-    }
 
     camera_pos.add(model_position_offset);
 
@@ -9235,6 +9228,31 @@ camera.fov,
 //DEBUG_show(camera_rot.toArray().join('\n')+'\n'+camera.fov);
   }
 
+  let tracker_msgs = [];
+  let tracker_index = 0;
+  MMD_SA.THREEX._object3d_list_?.forEach(x_object=>{
+    const p_bone = x_object.parent_bone;
+    if (p_bone) {
+      const obj = x_object._mesh;
+      const obj_pos = (p_bone.disabled) ? v1.set(0,-999,0) : v1.copy(obj.position).sub(mesh.position).multiplyScalar(model_pos_scale);
+
+      const obj_rot = q1.copy(obj.quaternion);
+      let sign = 1;
+      if (warudo_mode) {
+        sign = -1;
+        obj_rot.multiply(q2.set(0,1,0,0));
+      }
+
+      tracker_msgs.push([
+'XRAnimator-tracker-' + ((x_object.VMC_tracker_index != null) ? x_object.VMC_tracker_index : tracker_index),
+obj_pos.x*sign, obj_pos.y, -obj_pos.z*sign,
+-obj_rot.x*sign, -obj_rot.y, obj_rot.z*sign, obj_rot.w,
+      ]);
+
+      tracker_index++;
+    }
+  });
+
 setTimeout(()=>{
 //let _t=performance.now()
   MMD_SA.OSC.VMC.ready = false;
@@ -9244,14 +9262,37 @@ setTimeout(()=>{
     'sfffffff'
   ));
 
-  MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Bundle(...bone_msgs));
+  MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Bundle(
+    ...bone_msgs.map(msg=>MMD_SA.OSC.VMC.Message(
+"/VMC/Ext/Bone/Pos",
+msg,
+'sfffffff'
+    ))
+  ));
 
-  MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Bundle(...morph_msgs));
+  MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Bundle(
+    ...morph_msgs.map(msg=>MMD_SA.OSC.VMC.Message(
+"/VMC/Ext/Blend/Val",
+msg,
+'sf'
+    )),
+    MMD_SA.OSC.VMC.Message("/VMC/Ext/Blend/Apply")
+  ));
 
   if (camera_msgs) {
-    MMD_SA.OSC.VMC_camera.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/Cam",
+    MMD_SA.OSC.VMC_camera.send(MMD_SA.OSC.VMC_camera.Message("/VMC/Ext/Cam",
       camera_msgs,
       'sffffffff'
+    ));
+  }
+
+  if (tracker_msgs.length) {
+    MMD_SA.OSC.VMC_misc.send(MMD_SA.OSC.VMC_misc.Bundle(
+      ...tracker_msgs.map(msg=>MMD_SA.OSC.VMC_misc.Message(
+"/VMC/Ext/Tra/Pos",
+msg,
+'sfffffff'
+      ))
     ));
   }
 
@@ -10246,10 +10287,10 @@ postprocessing.quad_h = h;
 let p, c;
 switch (t) {
   case 'Head':
-    p = modelX.get_bone_position_by_MMD_name('頭').add(v1.set(0,0.8,-1).applyQuaternion(modelX.get_bone_rotation_by_MMD_name('頭')));
+    p = modelX.get_bone_position_by_MMD_name('頭').add(v1.set(0,0.8,1).applyQuaternion(modelX.get_bone_rotation_by_MMD_name('頭')));
     break;
   case 'Chest':
-    p = modelX.get_bone_position_by_MMD_name('上半身2').add(modelX.get_bone_position_by_MMD_name('首')).multiplyScalar(0.5).add(v1.set(0,0,-1.5).applyQuaternion(modelX.get_bone_rotation_by_MMD_name('上半身2')));
+    p = modelX.get_bone_position_by_MMD_name('上半身2').add(modelX.get_bone_position_by_MMD_name('首')).multiplyScalar(0.5).add(v1.set(0,0,1.5).applyQuaternion(modelX.get_bone_rotation_by_MMD_name('上半身2')));
     break;
   case 'Left hand':
     p = modelX.get_bone_position_by_MMD_name('左中指１');
@@ -10258,10 +10299,10 @@ switch (t) {
     p = modelX.get_bone_position_by_MMD_name('右中指１');
     break;
   case 'Left foot':
-    p = modelX.get_bone_position_by_MMD_name('左足首').add(v1.set(0,-0.5,-1).applyQuaternion(modelX.get_bone_rotation_by_MMD_name('左足首')));
+    p = modelX.get_bone_position_by_MMD_name('左足首').add(v1.set(0,-0.5,1).applyQuaternion(modelX.get_bone_rotation_by_MMD_name('左足首')));
     break;
   case 'Right foot':
-    p = modelX.get_bone_position_by_MMD_name('右足首').add(v1.set(0,-0.5,-1).applyQuaternion(modelX.get_bone_rotation_by_MMD_name('右足首')));
+    p = modelX.get_bone_position_by_MMD_name('右足首').add(v1.set(0,-0.5,1).applyQuaternion(modelX.get_bone_rotation_by_MMD_name('右足首')));
     break;
 }
 
@@ -11087,6 +11128,9 @@ if (MMD_SA_options.THREEX_options.use_MMD) {
 // not using commit from Aug 6, 2023 as it causes error
 const GLTFLoader_module = await import(System.Gadget.path + '/three.js/loaders/GLTFLoader.js');
 Object.assign(self.THREE, GLTFLoader_module);
+
+//const GLTFExporter_module = await import(System.Gadget.path + '/three.js/exporters/GLTFExporter.js');
+//Object.assign(self.THREE, GLTFExporter_module);
 
 //const BVHLoader_module = await import(System.Gadget.path + '/three.js/BVHLoader.js'); Object.assign(self.THREE, BVHLoader_module);
 
@@ -12861,8 +12905,9 @@ else {
   DEBUG_show('(OSC/VMC client:OFF)', 3)
 }
 
-// Warudo camera TEST
+// Warudo mode
 _OSC.VMC_camera.sender_enabled = v;
+_OSC.VMC_misc.sender_enabled = v;
     }
 
     get sender_enabled() { return this.#VMC_sender_enabled; }
@@ -12947,15 +12992,41 @@ if (enabled) {
     get ready() { return enabled && ready; },
 
     VMC_class: VMC,
-
-    VMC: new VMC(),
   };
 
-  _OSC.VMC_camera = _OSC.VMC;
+// Warudo mode
+//  _OSC.app_mode = 'Warudo';
 
-// Warudo camera TEST
-//_OSC.VMC.warudo_mode = true;
-if (_OSC.VMC.warudo_mode) _OSC.VMC_camera = new VMC({ plugin:{ send: { port:19190, host:'localhost' } } });
+  _OSC._VMC_warudo = null;
+
+  (()=>{
+    function VMC_warudo() {
+if (_OSC.app_mode == 'Warudo') {
+  _OSC._VMC_warudo = _OSC._VMC_warudo || new VMC({ plugin:{ send: { port:19190, host:_OSC.VMC.options.plugin.send.host||'localhost' } } });
+  if (_OSC.VMC.options.plugin.send.host && _OSC._VMC_warudo.plugin && (_OSC._VMC_warudo.plugin.options.send.host != _OSC.VMC.options.plugin.send.host))
+    _OSC._VMC_warudo.plugin.options.send.host = _OSC.VMC.options.plugin.send.host
+}
+else {
+  _OSC._VMC_warudo = _OSC.VMC;
+}
+
+return _OSC._VMC_warudo;
+    }
+
+    Object.defineProperty(_OSC, 'VMC_camera', {
+      get: ()=>{
+return VMC_warudo();
+      }
+    });
+
+    Object.defineProperty(_OSC, 'VMC_misc', {
+      get: ()=>{
+return VMC_warudo();
+      }
+    });
+  })();
+
+  _OSC.VMC = new VMC();
 
   return _OSC;
 
@@ -13179,6 +13250,13 @@ MMD_SA_options.texture_resolution_limit=2048
     System._browser.camera.facemesh.use_mediapipe = true
   if (typeof MMD_SA_options.user_camera.ML_models.use_holistic == 'boolean')
     System._browser.camera.poseNet._use_holistic_ = MMD_SA_options.user_camera.ML_models.use_holistic
+
+  if (MMD_SA_options.user_camera.ML_models.hands.depth_adjustment_percent == null)
+    MMD_SA_options.user_camera.ML_models.hands.depth_adjustment_percent = 50;
+  if (MMD_SA_options.user_camera.ML_models.hands.palm_shoulder_scale_percent == null)
+    MMD_SA_options.user_camera.ML_models.hands.palm_shoulder_scale_percent = 22;
+  if (MMD_SA_options.user_camera.ML_models.hands.depth_scale_percent == null)
+    MMD_SA_options.user_camera.ML_models.hands.depth_scale_percent = 50;
 
   if (!MMD_SA_options.OSC)
     MMD_SA_options.OSC = {};
