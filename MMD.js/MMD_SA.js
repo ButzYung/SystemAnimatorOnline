@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-11-09)
+// (2023-11-23)
 
 var use_full_spectrum = true
 
@@ -8973,10 +8973,12 @@ if (!animation_enabled) {
 if (!animation_enabled) {
   const root_bone = bones_by_name['全ての親'];
   const root_bone_pos = get_MMD_bone_pos(mesh_MMD, root_bone, v2);
-  center_bone_pos.add(root_bone_pos);
+  center_bone_pos.add(root_bone_pos).applyQuaternion(root_bone.quaternion);
 
   center_bone_pos.multiplyScalar(model_scale);
   this.getBoneNode('hips').position.fromArray(this.para.pos0['hips']).add(this.process_position(center_bone_pos));
+
+  hips_rot.premultiply(root_bone.quaternion);
 }
 
 if (!animation_enabled) {
@@ -9238,7 +9240,7 @@ camera.fov,
 
       const obj_rot = q1.copy(obj.quaternion);
       let sign = 1;
-      if (warudo_mode) {
+      if (!turned_around) {//warudo_mode) {
         sign = -1;
         obj_rot.multiply(q2.set(0,1,0,0));
       }
