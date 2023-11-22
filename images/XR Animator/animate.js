@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-11-09)
+// (2023-11-23)
 
 var MMD_SA_options = {
 
@@ -3236,7 +3236,7 @@ video:{
 //  hidden:true,
 //  hidden_on_webcam: true,
   scale:0.4, top:-0.5,
-//left:-(0.4+0.2),
+//left:-(0.4+0.2),top:-0.8,
 //scale:0.4,top:-0.8,left:-0.4,
 //scale:0.4*1,top:0,left:-3,
 //scale:0.4*2,top:0,left:-1,
@@ -3245,7 +3245,7 @@ wireframe:{
 //  hidden:true,
 //  align_with_video:true,
   top:(0.5-0.0),
-//left:+(0.4+0.2),
+//left:+(0.4+-0.1),top:-0.8,
 //top:0.8,left:0.4,
 //top:0,left:3,
 //top:0.5,left:1,
@@ -7643,7 +7643,7 @@ MMD_SA.THREEX._XR_Animator_scene_ = json.XR_Animator_scene;
     }
     else if (item.isFileSystem && /([^\/\\]+)\.json$/i.test(src)) {
       if (!webkit_electron_mode) {
-        show_status('NOTE: In browser mode, you need to drop the zip including all assets and "scene.json".', 10);
+        speech_bubble2('NOTE: In browser mode, you need to drop the zip including all assets and "scene.json".', 5);
       }
       else {
         window.addEventListener('SA_dragdrop_JSON', (e)=>{
@@ -8460,7 +8460,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  content: 'XR Animator (v0.17.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
+  content: 'XR Animator (v0.17.5)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -9176,6 +9176,7 @@ System._browser.camera._info =
 '4. Leg IK: ' + ((MMD_SA_options.user_camera.ML_models.pose.use_legIK)?'ON':'OFF'),
 '5. Leg scale adjustment: ' + ((!System._browser.camera.poseNet.leg_scale_adjustment)?'OFF':((System._browser.camera.poseNet.leg_scale_adjustment>0 && '+')||'')+System._browser.camera.poseNet.leg_scale_adjustment),
 '6. Auto-grounding (' + (System._browser.hotkeys.config_by_id['mocap_auto_grounding']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON'),
+'7. Upper rotation offset: ' + (MMD_SA_options.user_camera.ML_models.pose.upper_rotation_offset||0) + '°(➕➖)',
 'X. Done',
     ].join('\n');
   },
@@ -9234,6 +9235,17 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
     }
   },
+  { key:7, event_id: {
+      func: function () {},
+      goto_event: { branch_index:mocap_options_branch, step:1 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  'Upper rotation offset (press ➕➖ to change value):\nUse this option to apply a rotation offset to the upper body of your avatar while rotating the root in the opposite direction, as if only your lower body is rotated while the upper body stays still. This can be useful if you are at a certain angle sideway to the camera instead of facing the camera straightly. Press ➕➖ to change value. Default is "0%".'
+);
+    }
+  },
   { key:'X', branch_index:done_branch }
   ]
           },
@@ -9266,6 +9278,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
   para: { row_max:10 },
   branch_list: [
   { key:'any', func:(e)=>{
+let step = 2;
 if (/Arrow(Up|Down)/.test(e.code)) {
   let index = options.findIndex(v=>v==option_active);
   index -= (e.code == 'ArrowUp') ? 1 : -1;
@@ -9305,11 +9318,15 @@ System._browser.camera.poseNet.hip_adjustment_smoothing_percent = THREE.Math.cla
       return false;
   }
 }
+else if ((e.key == '+') || (e.key == '-')) {
+  step = 1;
+  MMD_SA_options.user_camera.ML_models.pose.upper_rotation_offset = ((MMD_SA_options.user_camera.ML_models.pose.upper_rotation_offset||0) + ((e.key == '+')?1:-1)) % 360;
+}
 else {
   return false;
 }
 
-MMD_SA_options.Dungeon.run_event(null,mocap_options_branch,2);
+MMD_SA_options.Dungeon.run_event(null, mocap_options_branch, step);
 
 return true;
   } },
@@ -10600,6 +10617,7 @@ config.user_camera = {
       hip_adjustment_scale_y_percent: System._browser.camera.poseNet.hip_adjustment_scale_y_percent,
       hip_adjustment_scale_z_percent: System._browser.camera.poseNet.hip_adjustment_scale_z_percent,
       hip_adjustment_smoothing_percent: System._browser.camera.poseNet.hip_adjustment_smoothing_percent,
+      upper_rotation_offset: MMD_SA_options.user_camera.ML_models.pose.upper_rotation_offset,
     },
     hands: {
       stabilize_arm: System._browser.camera.handpose.stabilize_arm,
@@ -10764,6 +10782,7 @@ try {
         MMD_SA_options.user_camera.ML_models.pose.model_quality = config[p].ML_models.pose.model_quality;
         MMD_SA_options.user_camera.ML_models.pose.z_depth_scale = config[p].ML_models.pose.z_depth_scale;
         MMD_SA_options.user_camera.ML_models.pose.use_legIK = config[p].ML_models.pose.use_legIK;
+        MMD_SA_options.user_camera.ML_models.pose.upper_rotation_offset = config[p].ML_models.pose.upper_rotation_offset;
         if (config[p].ML_models.hands.depth_adjustment_percent != null)
           MMD_SA_options.user_camera.ML_models.hands.depth_adjustment_percent = config[p].ML_models.hands.depth_adjustment_percent;
         if (config[p].ML_models.hands.palm_shoulder_scale_percent != null)
