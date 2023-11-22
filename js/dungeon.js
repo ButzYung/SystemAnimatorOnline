@@ -1,4 +1,4 @@
-// (2023-09-29)
+// (2023-11-23)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -11238,8 +11238,12 @@ DEBUG_show("3D Resolution:" + (((is_default_res) && (Math.round(MMD_SA._renderer
      ,[
         {
           message: {
-  get content() { return '1. User interface: ' + ((System._browser.overlay_mode == 0) ? 'ON' : (System._browser.overlay_mode == 1) ? 'OFF' : 'OFF + chroma key') + ((MMD_SA_options.user_camera.ML_models.enabled && (System._browser.overlay_mode == 0)) ? '\n2. Camera display: ' + ((MMD_SA_options.user_camera.display.video.hidden) ? 'OFF' : 'ON') + '\n3. Wireframe display: ' + ((MMD_SA_options.user_camera.display.wireframe.hidden) ? 'OFF' : 'ON') + '\n4. Mocap debug display: ' + ((MMD_SA_options.user_camera.ML_models.debug_hidden) ? 'OFF' : 'ON') + '\n5. Done' : '\n2. Done'); }
-// ,para: { no_word_break:true }
+  get content() {
+if (System._browser.overlay_mode)
+  return 'User interface is now OFF. Double-click to toggle the bottom menu display.\n1. ' + ((System._browser.overlay_mode == 2) ? 'UI: OFF + green screen' : 'User interface: OFF') + '\n2. Done';
+return '1. User interface: ON' + ((MMD_SA_options.user_camera.ML_models.enabled && (System._browser.overlay_mode == 0)) ? '\n2. Camera display: ' + ((MMD_SA_options.user_camera.display.video.hidden) ? 'OFF' : ((MMD_SA_options.user_camera.display.video.hidden == null) ? 'Non-webcam' : 'ON')) + '\n3. Wireframe display: ' + ((MMD_SA_options.user_camera.display.wireframe.hidden) ? 'OFF' : 'ON') + '\n4. Mocap debug display: ' + ((MMD_SA_options.user_camera.ML_models.debug_hidden) ? 'OFF' : 'ON') + '\n5. Done' : '\n2. Done');
+  }
+ ,para: { no_word_break:true }
  ,bubble_index: 3
  ,get branch_list() {
 return [
@@ -11272,7 +11276,7 @@ System._browser.overlay_mode = mode;
      ,[
         {
   func: function () {
-MMD_SA_options.user_camera.display.video.hidden = !MMD_SA_options.user_camera.display.video.hidden;
+MMD_SA_options.user_camera.display.video.hidden = (MMD_SA_options.user_camera.display.video.hidden == null) ? false : ((MMD_SA_options.user_camera.display.video.hidden) ? null : true);
   }
  ,goto_branch: 11
         }
