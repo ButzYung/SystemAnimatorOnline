@@ -103,6 +103,12 @@ export declare interface Category {
     displayName: string;
 }
 
+/**
+ * A category to color mapping that uses either a map or an array to assign
+ * category indexes to RGBA colors.
+ */
+export declare type CategoryToColorMap = Map<number, RGBAColor> | RGBAColor[];
+
 /** Classification results for a given classifier head. */
 export declare interface Classifications {
     /**
@@ -171,6 +177,9 @@ declare interface Connection {
     end: number;
 }
 
+/** A color map with 22 classes. Used in our demos. */
+export declare const DEFAULT_CATEGORY_TO_COLOR_MAP: number[][];
+
 /** Represents one detection by a detection task. */
 export declare interface Detection {
     /** A list of `Category` objects. */
@@ -218,9 +227,23 @@ export declare class DrawingUtils {
     /**
      * Creates a new DrawingUtils class.
      *
-     * @param ctx The canvas to render onto.
+     * @param gpuContext The WebGL canvas rendering context to render into. If
+     *     your Task is using a GPU delegate, the context must be obtained from
+     * its canvas (provided via `setOptions({ canvas: .. })`).
      */
-    constructor(ctx: CanvasRenderingContext2D);
+    constructor(gpuContext: WebGL2RenderingContext);
+    /**
+     * Creates a new DrawingUtils class.
+     *
+     * @param cpuContext The 2D canvas rendering context to render into. If
+     *     you are rendering GPU data you must also provide `gpuContext` to allow
+     *     for data conversion.
+     * @param gpuContext A WebGL canvas that is used for GPU rendering and for
+     *     converting GPU to CPU data. If your Task is using a GPU delegate, the
+     *     context must be obtained from  its canvas (provided via
+     *     `setOptions({ canvas: .. })`).
+     */
+    constructor(cpuContext: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, gpuContext?: WebGL2RenderingContext);
     /**
      * Restricts a number between two endpoints (order doesn't matter).
      *
@@ -247,6 +270,9 @@ export declare class DrawingUtils {
     /**
      * Draws circles onto the provided landmarks.
      *
+     * This method can only be used when `DrawingUtils` is initialized with a
+     * `CanvasRenderingContext2D`.
+     *
      * @export
      * @param landmarks The landmarks to draw.
      * @param style The style to visualize the landmarks.
@@ -254,6 +280,9 @@ export declare class DrawingUtils {
     drawLandmarks(landmarks?: NormalizedLandmark[], style?: DrawingOptions): void;
     /**
      * Draws lines between landmarks (given a connection graph).
+     *
+     * This method can only be used when `DrawingUtils` is initialized with a
+     * `CanvasRenderingContext2D`.
      *
      * @export
      * @param landmarks The landmarks to draw.
@@ -265,11 +294,42 @@ export declare class DrawingUtils {
     /**
      * Draws a bounding box.
      *
+     * This method can only be used when `DrawingUtils` is initialized with a
+     * `CanvasRenderingContext2D`.
+     *
      * @export
      * @param boundingBox The bounding box to draw.
      * @param style The style to visualize the boundin box.
      */
     drawBoundingBox(boundingBox: BoundingBox, style?: DrawingOptions): void;
+    /**
+     * Draws a category mask using the provided category-to-color mapping.
+     *
+     * @export
+     * @param mask A category mask that was returned from a segmentation task.
+     * @param categoryToColorMap A map that maps category indices to RGBA
+     *     values. You must specify a map entry for each category.
+     * @param background A color or image to use as the background. Defaults to
+     *     black.
+     */
+    drawCategoryMask(mask: MPMask, categoryToColorMap: Map<number, RGBAColor>, background?: RGBAColor | ImageSource): void;
+    /**
+     * Draws a category mask using the provided color array.
+     *
+     * @export
+     * @param mask A category mask that was returned from a segmentation task.
+     * @param categoryToColorMap An array that maps indices to RGBA values. The
+     *     array's indices must correspond to the category indices of the model
+     *     and an entry must be provided for each category.
+     * @param background A color or image to use as the background. Defaults to
+     *     black.
+     */
+    drawCategoryMask(mask: MPMask, categoryToColorMap: RGBAColor[], background?: RGBAColor | ImageSource): void;
+    /**
+     * Frees all WebGL resources held by this class.
+     * @export
+     */
+    close(): void;
 }
 
 /**
@@ -922,7 +982,7 @@ export declare interface GestureRecognizerOptions extends VisionTaskOptions {
 export declare interface GestureRecognizerResult {
     /** Hand landmarks of detected hands. */
     landmarks: NormalizedLandmark[][];
-    /** Hand landmarks in world coordniates of detected hands. */
+    /** Hand landmarks in world coordinates of detected hands. */
     worldLandmarks: Landmark[][];
     /** Handedness of detected hands. */
     handedness: Category[][];
@@ -2324,6 +2384,17 @@ export declare interface RegionOfInterest {
     /** The ROI as scribbles over the object that the user wants to segment. */
     scribble?: NormalizedKeypoint[];
 }
+
+/**
+ * A four channel color with values for red, green, blue and alpha
+ * respectively.
+ */
+export declare type RGBAColor = [
+number,
+number,
+number,
+number
+] | number[];
 
 /**
  * The two running modes of a vision task.
