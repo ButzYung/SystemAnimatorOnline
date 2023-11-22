@@ -635,6 +635,9 @@ estimateHands: (()=>{
 const label = (h.categoryName == 'Left') ? 'Right' : 'Left';
 h.categoryName = h.displayName = label;
     })});
+
+//    result.worldLandmarks?.forEach((hand,i)=>{ result.worldLandmarks[i] = hand.map(f=>[f.x,f.y,f.z]); });
+
     return Promise.resolve(Object.assign({ multiHandLandmarks:result.landmarks, multiHandedness:result.handedness?.map(h=>h[0]) }, result));
 
 //    return Promise.resolve(Object.assign({ multiHandLandmarks:result.landmarks, multiHandedness:result.handednesses?.map(h=>h[0]) }, result));
@@ -1075,10 +1078,24 @@ else {
 }
       });
 
+      const worldLandmarks = (hands.worldLandmarks?.[i][0].x == null) ? hands.worldLandmarks?.[i] : null;
+
       _hands.push({
 score: hands.multiHandedness[i].score,
 label: hands.multiHandedness[i].label || hands.multiHandedness[i].categoryName,
 keypoints: h,
+
+worldLandmarks: worldLandmarks && {
+  keypoints: worldLandmarks,
+  annotations: {
+    "palm":   [worldLandmarks[0]],
+    "thumb":  [worldLandmarks[1], worldLandmarks[2], worldLandmarks[3], worldLandmarks[4]],
+    "index":  [worldLandmarks[5], worldLandmarks[6], worldLandmarks[7], worldLandmarks[8]],
+    "middle": [worldLandmarks[9], worldLandmarks[10],worldLandmarks[11],worldLandmarks[12]],
+    "ring":   [worldLandmarks[13],worldLandmarks[14],worldLandmarks[15],worldLandmarks[16]],
+    "pinky":  [worldLandmarks[17],worldLandmarks[18],worldLandmarks[19],worldLandmarks[20]]
+  }
+},
       });
     }
 //console.log(_hands)
@@ -1436,7 +1453,7 @@ async function PoseAT_process_video_buffer() {
 
   if (options.timestamp != null) {
     vt = options.timestamp + vt_offset;
-    if (vt <= vt_last) {
+    if (vt <= vt_last + 1) {
       vt_offset = (vt_last - options.timestamp) + 16.6667;
       vt = options.timestamp + vt_offset;;
     }
@@ -1622,7 +1639,7 @@ async function HandsAT_process_video_buffer() {
 
   if (options.timestamp != null) {
     vt = options.timestamp + vt_offset;
-    if (vt <= vt_last) {
+    if (vt <= vt_last + 1) {
       vt_offset = (vt_last - options.timestamp) + 16.6667;
       vt = options.timestamp + vt_offset;;
     }
