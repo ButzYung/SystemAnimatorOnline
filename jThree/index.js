@@ -620,9 +620,18 @@ if (p_bone.rotation) {
   if (rot_adjust && (!rot_adjust.mocap_only || (System._browser.camera.poseNet.enabled && System._browser.camera.ML_warmed_up))) {
     if (rot_adjust.reset_rotation) obj.quaternion.set(0,0,0,1);
 
+    const reference_origin = MMD_SA._v3b_.set(0,0,0);
+
     let axis_origin = MMD_SA._v3a_;
     if (rot_adjust.reference_origin) {
-      axis_origin.copy(rot_adjust.reference_origin).multiplyScalar(x_object.placement.scale).applyQuaternion(obj.quaternion).add(obj.position);
+      const a = MMD_SA._v3a.copy(rot_adjust.reference_origin);
+      const m = MMD_SA._v3b.copy(rot_adjust.reference_point);
+      m.sub(a);
+
+      const t = (0 - (a.x*m.x + a.y*m.y + a.z*m.z)) / m.lengthSq();
+      reference_origin.set(a.x + m.x*t, a.y + m.y*t, a.z + m.z*t);
+//System._browser.camera.DEBUG_show(reference_origin.toArray().join('\n'))
+      axis_origin.copy(reference_origin).multiplyScalar(x_object.placement.scale).applyQuaternion(obj.quaternion).add(obj.position);
     }
     else {
       axis_origin.copy(obj.position);
@@ -673,8 +682,7 @@ if (p_bone.rotation) {
     }
 
     if (axis_ext) {
-      let axis_ref = MMD_SA._v3a.copy(rot_adjust.reference_point)
-      if (rot_adjust.reference_origin) axis_ref.sub(MMD_SA.TEMP_v3.copy(rot_adjust.reference_origin));
+      let axis_ref = MMD_SA._v3a.copy(rot_adjust.reference_point).sub(reference_origin);
       axis_ref.normalize().applyQuaternion(obj.quaternion);
 
       axis_ref.multiplyScalar(axis_ext.length()).add(axis_origin).sub(obj.position);
