@@ -721,7 +721,7 @@ System._browser.camera.DEBUG_show(condition.contact_target.name+':'+dis)
             for (const p in g.action.motion_tracking) {
               const p_obj = g.action.motion_tracking[p];
               if (p_obj != null) {
-                if (motion_tracking._default_[p] == null)
+                if (!(p in motion_tracking._default_))
                   motion_tracking._default_[p] = motion_tracking[p];
                 motion_tracking[p] = p_obj;
               }
