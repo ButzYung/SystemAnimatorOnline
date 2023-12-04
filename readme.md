@@ -129,17 +129,17 @@ All demos support the use of custom MMD (MikuMikuDance) model. Drop a zip of you
 
 # Copyright/License/Credits
 
+### General license:
+- License (CC BY-NC-SA 4.0) - http://creativecommons.org/licenses/by-nc-sa/4.0/
+  - This license applies if you are adapting XR Animator's source code for your own purpose, such as building another software or service.
+  - This license does not cover any third-party assets which may have incompatible licenses of their own.
+  - This license does not apply to content generated from the functionality of XR Animator, such as video content generated from the motion capture feature of System Animator using your own assets. XR Animator claims no right or responsibility over such content.
+
 ### Core apps/libraries:
 
-- System Animator © Butz Yung/Anime Theme
-    http://www.animetheme.com/sidebar/
-    - License (CC BY-NC-SA 4.0):
-      http://creativecommons.org/licenses/by-nc-sa/4.0/
-      - This license does NOT cover any third-party assets which may have incompatible licenses of their own.
-      - This license applies if you are adapting System Animator's source code for your own purpose, such as building another software or service.
-      - This license does not apply to content generated from the functionality of System Animator, such as video content generated from the motion capture feature of System Animator using your own assets. System Animator claims no right or responsibility over such content.
-    - Disclaimer:
-      http://www.animetheme.com/system_animator_online/docs/disclaimer.txt
+- System Animator © Butz Yung/Anime Theme - http://www.animetheme.com/sidebar/
+  - Disclaimer:
+    http://www.animetheme.com/system_animator_online/docs/disclaimer.txt
 
 - [Electron](https://www.electronjs.org/)
 
