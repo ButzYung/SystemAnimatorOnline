@@ -1,5 +1,5 @@
 // auto fit
-// (2023-11-23)
+// (2023-12-20)
 
 const v1 = new THREE.Vector3();
 const v2 = new THREE.Vector3();
@@ -177,7 +177,8 @@ function auto_fit_core() {
 
 //DEBUG_show(type+'/'+Date.now())
 //DEBUG_show(scale_offset,0,1)
-  const _scale_offset = scale_offset;
+  let _scale_offset = scale_offset;
+//  if (object_3d.placement.scale_offset) _scale_offset *= object_3d.placement.scale_offset;
   if (af.transform_avatar) scale_offset = 1;
 
   position_offset.add(model_position_offset).sub(v4.copy(ref_pt_core).multiplyScalar(scale_offset)).sub(v4.copy(ref_pt_shift));
@@ -196,8 +197,10 @@ function auto_fit_core() {
 
   const transform_list = (af.global_transform) ? MMD_SA.THREEX._object3d_list_ : [object_3d];
   transform_list.forEach(obj=>{
-    if (obj.parent_bone?.attached) return;
-    if (obj.parent_bone && obj._on_gesture) return;
+    if (obj != object_3d) {
+      if (obj.parent_bone?.attached) return;
+      if (obj.parent_bone && obj._on_gesture) return;
+    }
 
     const mesh_pos = v2.copy(obj._mesh.position).sub(model_position0);
     const _position_offset = v1.copy(position_offset);
@@ -233,6 +236,14 @@ function auto_fit_core() {
     for (const d of ['x','y','z'])
       obj.user_data._rotation_[d] += rotation_offset[d];
     obj._mesh.quaternion.multiply(q_offset);
+
+    if (obj.parent_bone?.attached) {
+// assumed ROOT for now
+// for simplicity, only adjust scale for now, so no extra calculations
+      obj.placement.scale = obj._mesh.scale.x;
+    }
+
+    if (obj.placement.scale_offset) obj._mesh.scale.multiplyScalar(obj.placement.scale_offset);
 
     if (!obj.user_data._auto_fit_)
       obj.user_data._auto_fit_ = {};
@@ -344,7 +355,9 @@ function auto_fit(list) {
 
       const transform_list = (af.global_transform) ? MMD_SA.THREEX._object3d_list_ : [object_3d];
       transform_list.forEach(obj=>{
-        if (obj.parent_bone?.attached) return;
+        if (obj != object_3d) {
+          if (obj.parent_bone?.attached) return;
+        }
 
         const _af_ = obj.user_data._auto_fit_;
         if (!_af_) return;
@@ -409,6 +422,115 @@ function morph_event() {
 }
 
 function process_gesture() {
+  function transform_property(para, obj, p) {
+    if (p.indexOf('.') != -1) {
+      const ps = p.split('.');
+      p = ps.pop();
+      ps.forEach(_p=>{
+        obj = obj[_p];
+      });
+    }
+
+    let v_default = obj['_'+p+'_'];
+    if (typeof obj[p] == 'number') {
+      if (v_default == null)
+        v_default = obj['_'+p+'_'] = obj[p];
+    }
+
+    const p_offset = '_'+p+'_offset_';
+
+    if (para.mirror) {
+      const _left = obj[p].left;
+      obj[p].left  = obj[p].right;
+      obj[p].right = _left;
+    }
+    if (para.assign) {
+      if (typeof para.assign == 'number') {
+        obj[p] = para.assign;
+      }
+      else {
+        if (para.assign == 'default')
+          obj[p] = v_default;
+      }
+    }
+    if (para.multiply) {
+      let multiply = para.multiply;
+      if (typeof multiply == 'number') {
+        if (multiply > 1) {
+          if (obj[p_offset] < 0) {
+            obj[p_offset] += obj[p] * (multiply-1);
+            if (obj[p_offset] > 0) {
+              multiply = 1 + obj[p_offset] / obj[p];
+              obj[p_offset] = 0;
+            }
+          }
+        }
+        else {
+          if (obj[p_offset] > 0) {
+            obj[p_offset] += obj[p] * (multiply-1);
+            if (obj[p_offset] < 0) {
+              multiply = 1 + obj[p_offset] / obj[p];
+              obj[p_offset] = 0;
+            }
+          }
+        }
+
+        obj[p] *= multiply;
+
+        if (para.limit != null) {
+          let limit = (typeof para.limit == 'number') ? para.limit : v_default;
+          if ((multiply > 1) ? obj[p] > limit : obj[p] < limit) {
+            obj[p_offset] = (obj[p_offset]||0) + (obj[p] - limit);
+            obj[p] = limit;
+          }
+        }
+      }
+      else {
+        obj[p].x *= multiply.x;
+        obj[p].y *= multiply.y;
+        obj[p].z *= multiply.z;
+      }
+    }
+    if (para.add) {
+      let add = para.add;
+      if (typeof add == 'number') {
+        if (add > 0) {
+          if (obj[p_offset] < 0) {
+            obj[p_offset] += add;
+            if (obj[p_offset] > 0) {
+              add = obj[p_offset];
+              obj[p_offset] = 0;
+            }
+          }
+        }
+        else {
+          if (obj[p_offset] > 0) {
+            obj[p_offset] += add;
+            if (obj[p_offset] < 0) {
+              add = obj[p_offset];
+              obj[p_offset] = 0;
+            }
+          }
+        }
+
+        obj[p] += para.add;
+
+        if (para.limit != null) {
+          let limit = (typeof para.limit == 'number') ? para.limit : v_default;
+          if ((add > 0) ? obj[p] > limit : obj[p] < limit) {
+            obj[p_offset] = (obj[p_offset]||0) + (obj[p] - limit);
+            obj[p] = limit;
+          }
+        }
+      }
+      else {
+        obj[p].x += add.x;
+        obj[p].y += add.y;
+        obj[p].z += add.z;
+      }
+    }
+  }
+
   if (!para.json.XR_Animator_scene.on.gesture) return;
 
   const mc = System._browser.motion_control;
@@ -437,11 +559,39 @@ function process_gesture() {
       }
       gestures = [...gestures.filter(name=>name.indexOf('OTHERS')==-1), ...gestures.filter(name=>name.indexOf('OTHERS')!=-1)];
 
-      for (const key in key_state) {
-        const state = key_state[key];
-        const k_name = 'key_' + ((state)?'on':'off') + '|' + key;
-        if (g_event[k_name])
-          gestures.push(k_name);
+      for (const key in key_pressed) {
+        const key_paras = key.split('+');
+        const k = key_paras[key_paras.length-1] || '+';
+
+        const pressed = key_pressed[k];
+        if (!pressed) continue;
+
+        let commands = [];
+        let timestamp_match;
+        for (const type of ['Ctrl', 'Alt', 'Shift', 'raw']) {
+//if (pressed[type]) DEBUG_show(EV_sync_update.count_frame+'\n'+pressed[type])
+          if (pressed[type] && (EV_sync_update.count_frame == pressed[type]+1)) {
+            timestamp_match = true;
+            if (type != 'raw')
+              commands.push(type);
+          }
+        }
+
+        if (timestamp_match) {
+          const k_name = 'key' + '|' + ((commands.length) ? commands.join('+') + '+' : '') + key;
+//DEBUG_show(k_name,0,1)
+          if (g_event[k_name]) {
+            if ((typeof g_event[k_name] == 'string') ? g_event[k_name].indexOf(dir) == -1 : d != '右') continue;
+            gestures.push(k_name);
+            for (let i = 0; i <= 3; i++) {
+              const name_ext = k_name + '#' + i;
+              if (g_event[name_ext]) {
+                if ((typeof g_event[name_ext] == 'string') ? g_event[name_ext].indexOf(dir) == -1 : d != '右') continue;
+                gestures.push(name_ext);
+              }
+            }
+          }
+        }
       }
 
       if (!para.json.XR_Animator_scene._gesture_initialized_) {
@@ -517,16 +667,20 @@ function process_gesture() {
             if (!user_data_matched) return false;
           }
 
-          if (condition.key_state) {
-            let key_state_passed = true;
-            for (const key in condition.key_state) {
-              if (condition.key_state[key] !== key_state[key]) {
-                key_state_passed = false;
+          if (condition.key_pressed) {
+            let key_pressed_passed = true;
+            for (const key in condition.key_pressed) {
+              const key_paras = key.split('+');
+              const k = key_paras[key_paras.length-1] || '+';
+              const pressed = key_pressed[k];
+//if (pressed) DEBUG_show(k+'/'+key_paras.join(',')+'/'+Date.now())
+              if (!pressed || !key_paras.every(p=>EV_sync_update.count_frame == pressed[(p==k)?'raw':(p||'raw')]+1)) {
+                key_pressed_passed = false;
                 break;
               }
             }
 
-            if (!key_state_passed) return false;
+            if (!key_pressed_passed) return false;
           }
 
           if (condition.hand_hidden) {
@@ -542,6 +696,7 @@ function process_gesture() {
           }
 
           if (!hand_pos && (condition.distance_limit || condition.angle_factor || condition.contact_target)) {
+            if (!System._browser.camera.poseNet.enabled) return false;
             hand_pos = model.get_bone_position_by_MMD_name(d+'手首');
             const hand_ext = v1.set(((d=='左')?1:-1)*0.5, 0, 0).applyQuaternion(MMD_SA_options.model_para_obj.rot_arm_adjust[d+'ひじ'].axis_rot).applyQuaternion(model.get_bone_rotation_by_MMD_name(d+'手首'));
             hand_pos.add(hand_ext);
@@ -655,6 +810,9 @@ System._browser.camera.DEBUG_show(condition.contact_target.name+':'+dis)
             x_object.parent_bone = p_bone;
             p_bone.disabled = false;
 
+// for simplicity
+            x_object.placement.hidden = true;
+
             let attached_side = g.action.attach[object_id].attached_side;
             if (attached_side) {
               attached_side = (attached_side == 'left') ? '左' : '右';
@@ -693,10 +851,89 @@ System._browser.camera.DEBUG_show(condition.contact_target.name+':'+dis)
 
             p_bone.disabled = true;
             if (x_object.placement.hidden) {
-// check x_object.parent_bone?.disabled in case detach and attach occur at the same time frame
-              System._browser.on_animation_update.add(()=>{ if (x_object.parent_bone?.disabled) x_object._obj_proxy.hidden = true; }, 1,0);
+// check conditions in case detach and attach/place occur at the same time frame
+              System._browser.on_animation_update.add(()=>{ if (x_object.placement.hidden && x_object.parent_bone?.disabled) x_object._obj_proxy.hidden = true; }, 1,0);
             }
           });
+        }
+
+        if (g.action.place) {
+          Object.keys(g.action.place).forEach((object_id, i)=>{
+            const object3d = para.json.XR_Animator_scene.object3D_list.find(obj=>obj.id==object_id);
+            if (!object3d) return;
+
+            const x_object = MMD_SA.THREEX._object3d_list_.find(obj=>obj.uuid==object3d._object3d_uuid);
+
+            let p_bone = x_object.parent_bone;
+            if (p_bone) {
+              p_bone.disabled = true;
+              p_bone.attached = false;
+              x_object._mesh.matrixAutoUpdate = true;
+            }
+
+            x_object.placement.hidden = false;
+
+            if (!x_object.placement.position) x_object.placement.position = { x:0, y:0, z:0 };
+            if (!x_object.placement.rotation) x_object.placement.rotation = { x:0, y:0, z:0 };
+
+            const place = g.action.place[object_id];
+
+            const rot = MMD_SA.TEMP_v3.set(0,0,0);
+            for (const a of ['x','y','z']) {
+              let p = place.position?.[a];
+              if (p == null)
+                p = x_object._mesh.position[a] - model.mesh.position[a];
+              x_object.placement.position[a] = p;
+              x_object._mesh.position[a] = p + model.mesh.position[a];
+
+              let r = place.rotation?.[a] || 0;
+              x_object.placement.rotation[a] = r;
+              rot[a] = r * Math.PI/180;
+            }
+
+            if (place.rotation) {
+// THREEX
+              x_object._mesh.quaternion.copy(MMD_SA.TEMP_q.setFromEuler(rot));
+            }
+
+            x_object._obj_proxy.hidden = false;
+            x_object._obj_proxy.visible = true;
+          });
+        }
+
+        if (g.action.transform) {
+          if (g.action.transform.object3D) {
+            for (const id in g.action.transform.object3D) {
+              const object3d = para.json.XR_Animator_scene.object3D_list.find(obj=>obj.id==id);
+              if (!object3d) continue;
+
+              const obj = g.action.transform.object3D[id];
+              const x_object = MMD_SA.THREEX._object3d_list_.find(obj=>obj.uuid==object3d._object3d_uuid);
+              if (obj.scale) {
+                const scale_p = (x_object.placement.scale_offset == null) ? 'scale' : 'scale_offset';
+                transform_property(obj.scale, x_object.placement, scale_p);
+                const s = x_object.placement.scale * (x_object.placement.scale_offset||1);
+                x_object._mesh.scale.set(s,s,s);
+              }
+              if (obj.position) {
+                const pos_host = x_object.parent_bone || x_object.placement;
+                const pos_offset = MMD_SA._v3a.copy(pos_host.position);
+                transform_property(obj.position, pos_host, 'position');
+                pos_offset.negate().add(pos_host.position);
+                x_object._mesh.position.add(pos_offset);
+              }
+              if (obj.model_para) {
+                for (const p in obj.model_para) {
+                  transform_property(obj.model_para[p], x_object, p);
+                }
+              }
+            }
+          }
+          if (g.action.transform.motion_tracking) {
+            for (const p in g.action.transform.motion_tracking) {
+              transform_property(g.action.transform.motion_tracking[p], MMD_SA.MMD.motionManager.para_SA.motion_tracking, p);
+            }
+          }
         }
 
         if (g_parent.action.cooldown) {
@@ -840,6 +1077,18 @@ for (let finger of [fp.Finger.Ring, fp.Finger.Pinky]) {
 }
 mc.gestures.custom.finger2_horizontal = finger2_horizontal;
 
+const horns_horizontal = new fp.GestureDescription('horns_horizontal');
+for (let finger of [fp.Finger.Index, fp.Finger.Pinky]) {
+  horns_horizontal.addCurl(finger, fp.FingerCurl.NoCurl, 1.0);
+  horns_horizontal.addDirection(finger, fp.FingerDirection.HorizontalLeft,  1.0);
+  horns_horizontal.addDirection(finger, fp.FingerDirection.HorizontalRight, 1.0);
+}
+for (let finger of [fp.Finger.Middle, fp.Finger.Ring]) {
+  horns_horizontal.addCurl(finger, fp.FingerCurl.FullCurl, 1.0);
+  horns_horizontal.addCurl(finger, fp.FingerCurl.HalfCurl, 0.9);
+}
+mc.gestures.custom.horns_horizontal = horns_horizontal;
+
 const finger1_down = new fp.GestureDescription('finger1_down');
 finger1_down.addCurl(fp.Finger.Index, fp.FingerCurl.NoCurl, 1.0);
 finger1_down.addDirection(fp.Finger.Index, fp.FingerDirection.VerticalDown,  1.0);
@@ -893,6 +1142,8 @@ initialized = true;
 
 [ 'finger1_horizontal' ],
 [ 'finger2_horizontal' ],
+
+[ 'horns_horizontal' ],
 
 [ 'finger1_down' ],
 [ 'finger2_down' ],
@@ -1003,7 +1254,7 @@ const model_position_offset = new THREE.Vector3();
 
 const fadeout_disabled = { condition:()=>false };
 
-let key_state = {};
+let key_pressed = {};
 
 function load(p) {
   function onmotionchange(e) {
@@ -1086,31 +1337,52 @@ function load(p) {
 
     window.removeEventListener('SA_MMD_model0_onmotionchange', onmotionchange);
 
-    key_state = {};
-    window.removeEventListener('SA_keydown', change_key_state); 
+    key_pressed = {};
+    window.removeEventListener('SA_Dungeon_keydown', process_key_press);
   }
 
-  function change_key_state(e) {
+  function process_key_press(e) {
+//if (MMD_SA_options.Dungeon?._3D_scene_builder_mode_) return;
+if (MMD_SA_options.Dungeon?.dialogue_branch_mode) return;
+
 const ev = e.detail.e;
-if (/Key([A-Z])/.test(ev.code)) {
-  let command;
-  if (ev.shiftKey) {
-    command = 'Shift';
-  }
-  else if (ev.ctrlKey) {
-    command = 'Ctrl';
-  }
-  else if (ev.altKey) {
-    command = 'Alt';
-  }
 
-  if (command) {
-    command += '+' + RegExp.$1;
-    key_state[command] = !key_state[command];
-  }
+let commands = [];
+if (ev.ctrlKey) {
+  commands.push('Ctrl');
+}
+if (ev.altKey) {
+  commands.push('Alt');
+}
+if (ev.shiftKey) {
+  commands.push('Shift');
 }
 
-e.detail.result.return_value = true;
+// https://www.electronjs.org/docs/latest/api/accelerator
+let return_value;
+let key;
+if (/Key([A-Z])/.test(ev.code)) {
+  key = RegExp.$1;
+}
+else if ((ev.key == '+') || (ev.key == '-')) {
+  key = ev.key;
+}
+else if (/^Arrow(.+)$/.test(ev.key)) {
+  return_value = true;
+  key = RegExp.$1;
+}
+
+if (key != null) {
+  if (!key_pressed[key]) key_pressed[key] = {};
+  if (commands.length) {
+    commands.forEach(c=>{
+      key_pressed[key][c] = EV_sync_update.count_frame;
+    });
+  }
+  key_pressed[key].raw = EV_sync_update.count_frame;
+}
+
+e.detail.result.return_value = return_value;
   }
 
   para = p;
@@ -1142,8 +1414,8 @@ e.detail.result.return_value = true;
     System._browser.on_animation_update.remove(process_gesture, 0);
     System._browser.on_animation_update.add(process_gesture, 0,0,-1);
 
-    window.removeEventListener('SA_keydown', change_key_state);
-    window.addEventListener('SA_keydown', change_key_state);
+    window.removeEventListener('SA_Dungeon_keydown', process_key_press);
+    window.addEventListener('SA_Dungeon_keydown', process_key_press);
   }
 
   height_offset_by_bone = [];
