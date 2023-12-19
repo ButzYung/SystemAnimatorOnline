@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-11-23)
+// (2023-12-20)
 
 var MMD_SA_options = {
 
@@ -170,6 +170,7 @@ var MMD_SA_options = {
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/i-shaped_balance/i-shaped_balance_TDA_f0-50.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/leg_hold.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/stand_simple.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/sit_simple.vmd' }
 
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/Mixamo - Sitting02.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/Mixamo - Sitting Idle01.vmd' }
@@ -1486,6 +1487,26 @@ this.center_view = (this.center_view_enforced) ? [0, (head_y)*1.025-11.4, -20*MM
 //(name.indexOf('腕ＩＫ') != -1) && System._browser.camera.poseNet.IK_disabled
 
 // ,get look_at_screen() { return !System._browser.camera.facemesh.enabled; }
+    }
+
+   ,"sit_simple": {
+  look_at_screen_bone_list: [
+    { name:"首", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
+    { name:"頭", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
+    { name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+    { name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
+  ],
+
+  center_view: [0,-3.5,5],
+
+//  look_at_screen: true,
+  motion_tracking_enabled: true,
+  motion_tracking_upper_body_only: true,
+  motion_tracking: {
+    look_at_screen: true,
+    hip_adjustment: {
+    }
+  }
     }
 
    ,"i-shaped_balance_TDA_f0-50": {
@@ -3236,8 +3257,8 @@ video:{
 //  hidden:true,
 //  hidden_on_webcam: true,
   scale:0.4, top:-0.5,
-//left:-(0.4+0.2),top:-0.8,
-//scale:0.4,top:-0.8,left:-0.4,
+//left:-(0.8),top:-0.8,
+//left:0,//top:-0.9,
 //scale:0.4*1,top:0,left:-3,
 //scale:0.4*2,top:0,left:-1,
 },
@@ -3246,6 +3267,7 @@ wireframe:{
 //  align_with_video:true,
   top:(0.5-0.0),
 //left:+(0.4+-0.1),top:-0.8,
+//left:1,
 //top:0.8,left:0.4,
 //top:0,left:3,
 //top:0.5,left:1,
@@ -4069,6 +4091,8 @@ _motion_list[0] = [
 
   {name:"sitting_sexy10", info:"Sit 15 (🙋/🦶)"},
 
+  {name:"sit_simple", info:"Sit simple (🙋)"},
+
 ].filter(m=>m!=null);
 
 motion_list_length_default = _motion_list[0].length;
@@ -4226,7 +4250,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
       }
     },
-    { key:'X', event_id:{ next_step:{} } },
+    { key:'X', is_closing_event:true, event_id:{ next_step:{} } },
   ]
 }
         },
@@ -4253,7 +4277,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
     set _motion_list_index(v) { _motion_list_index = v; },
     func: function () { change_motion() }
 //    ,muted: true
-   ,anytime: true
+//   ,anytime: true
   }
  ,reset: function () {
 if (morph_event_registered) {
@@ -4306,15 +4330,14 @@ if (MMD_SA.WebXR.session && !MMD_SA.WebXR.user_camera.initialized) {
 }
 
 if (!MMD_SA.WebXR.user_camera.initialized || !MMD_SA.WebXR.user_camera.visible) {
-  if (MMD_SA_options.Dungeon.inventory.action_disabled)
-    return true
+//  if (MMD_SA_options.Dungeon.inventory.action_disabled) return true
   MMD_SA_options.Dungeon.run_event("_SELFIE_",0)
 }
 else {
   MMD_SA.WebXR.user_camera.start()
 }
     }
-   ,anytime: true
+//   ,anytime: true
   }
 
  ,get info() {
@@ -5460,7 +5483,7 @@ else {
  ,branch_list: [
     { key:1, branch_index:1 }
    ,{ key:2, branch_index:2 }
-   ,{ key:3 }
+   ,{ key:3, is_closing_event:true }
    ,{ key:4, branch_index:3 }
   ]
           }
@@ -5535,7 +5558,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
       }
     }
-   ,{ key:3, branch_index:0,
+   ,{ key:[3,'Esc'], branch_index:0,
       func: ()=>{
 Object.assign(MMD_SA_options.user_camera.pixel_limit, options.pixel_limit);
 MMD_SA_options.user_camera.fps = options.fps;
@@ -5608,7 +5631,7 @@ options.fps = (options.fps) ? null : 30;
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:1 }
-   ,{ key:2 }
+   ,{ key:2, is_closing_event:true }
   ]
           }
         }
@@ -5654,7 +5677,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
       }
     }
    ,{ key:7, branch_index:7 }
-   ,{ key:8 }
+   ,{ key:8, is_closing_event:true }
 ];
   }
           }
@@ -5856,7 +5879,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
     }
   },
-  { key:'X' },
+  { key:'X', is_closing_event:true },
 ];
 
 let change_port, change_host;
@@ -5955,9 +5978,9 @@ return 'Video capture options\n(' + (specs.width+'x'+specs.height + '/' + ((spec
     { key:2, branch_index:2 },
   ].concat((System._browser.video_capture.FFmpeg.enabled) ? [
     { key:3, branch_index:3 },
-    { key:4 },
+    { key:4, is_closing_event:true },
   ] : [
-    { key:3 },
+    { key:3, is_closing_event:true },
   ])},
        }
     }
@@ -6284,6 +6307,7 @@ if (MMD_SA.THREEX.enabled) {
 else {
   ((this._parent._obj.children[0]?.isMesh) ? this._parent._obj.children[0] : this._parent._obj).visible = !v;
 }
+if (this._parent.parent_bone) this._parent.parent_bone.disabled = v;
       }
     };
   });
@@ -6825,7 +6849,7 @@ message: {
   para: { scale:0.75 },
   branch_list: [
     { key:8, event_id:{ sb_index:1, func:()=>{setTimeout(()=>{adjust_object3D({detail:{reset_confirmed:true,keyCode:82,ev:{},result:{}}})},0)}, ended:true } },
-    { key:9, event_id:{ sb_index:1, ended:true } },
+    { key:[9,'Esc'], event_id:{ sb_index:1, ended:true } },
   ]
 }
       });
@@ -6872,7 +6896,7 @@ message: {
   para: { scale:0.75 },
   branch_list: [
     { key:8, event_id:{ sb_index:1, func:()=>{setTimeout(()=>{adjust_object3D({detail:{remove_confirmed:true,keyCode:88,ev:{},result:{}}})},0)}, ended:true } },
-    { key:9, event_id:{ sb_index:1, ended:true } },
+    { key:[9,'Esc'], event_id:{ sb_index:1, ended:true } },
   ]
 }
       });
@@ -7306,26 +7330,30 @@ const scene_json_for_export = {
 };
 
 const onDrop_scene_JSON = (function () {
-  const RE_arm = new RegExp("^(" + toRegExp(["左","右"],"|") + ")(" + toRegExp(["腕","ひじ","手"],"|") + ")(.*)$");
+  const RE_arm = new RegExp("^(" + toRegExp(["左","右"],"|") + ")(" + toRegExp(["肩","腕","ひじ","手"],"|") + "|." + toRegExp("指") + ")(.*)$");
 
   function adjust_parent_bone(p_bone, is_T_pose) {
-if (RE_arm.test(p_bone.name)) {
-  const pos_vector = MMD_SA.TEMP_v3.set(p_bone.position.x, p_bone.position.y, -p_bone.position.z);
-  const dir = (RegExp.$1 == '左') ? 1 : -1;
-  const rot_axis = MMD_SA.THREEX.rot_arm_axis[dir * ((is_T_pose) ? 1 : -1)];
-  pos_vector.applyQuaternion(rot_axis);
-  p_bone.position.x =  pos_vector.x;
-  p_bone.position.y =  pos_vector.y;
-  p_bone.position.z = -pos_vector.z;
-}
+if (!RE_arm.test(p_bone.name)) return;
+
+const pos_vector = MMD_SA.TEMP_v3.set(p_bone.position.x, p_bone.position.y, -p_bone.position.z);
+const dir = (RegExp.$1 == '左') ? 1 : -1;
+const rot_axis = MMD_SA.THREEX.rot_arm_axis[dir * ((is_T_pose) ? 1 : -1)];
+pos_vector.applyQuaternion(rot_axis);
+p_bone.position.x =  pos_vector.x;
+p_bone.position.y =  pos_vector.y;
+p_bone.position.z = -pos_vector.z;
 
 const obj_rot = MMD_SA._q1.setFromEuler(MMD_SA.TEMP_v3.set(-p_bone.rotation.x, -p_bone.rotation.y, p_bone.rotation.z).multiplyScalar(Math.PI/180), 'YXZ');
+/*
 if (is_T_pose) {
   obj_rot.fromArray(MMD_SA.THREEX.utils.convert_A_pose_rotation_to_T_pose(p_bone.name, obj_rot.toArray()));
 }
 else {
   obj_rot.fromArray(MMD_SA.THREEX.utils.convert_T_pose_rotation_to_A_pose(p_bone.name, obj_rot.toArray()));
 }
+*/
+obj_rot.premultiply(rot_axis);
+
 const obj_rot_euler = MMD_SA.TEMP_v3.setEulerFromQuaternion(obj_rot, 'YXZ').multiplyScalar(180/Math.PI);
 p_bone.rotation.x = -obj_rot_euler.x;
 p_bone.rotation.y = -obj_rot_euler.y;
@@ -7373,23 +7401,39 @@ p_bone.is_T_pose = is_T_pose;
       let load_count = 0
       const _motion_list = [];
       for (const motion of motion_list) {
-        if (await locate_file(zip, motion))
+        const filename = motion.path.replace(/^.+[\/\\]/, "").replace(/\.([a-z0-9]{1,4})$/i, "");
+        if (MMD_SA_options.motion_index_by_name[filename] || MMD_SA_options._XRA_pose_list[0].find(m=>m.name==filename) || await locate_file(zip, motion))
           _motion_list.push(motion);
       }
 
       const promise_list = [];
       _motion_list.forEach((motion)=>{
+        let p;
         const filename = motion.path.replace(/^.+[\/\\]/, "").replace(/\.([a-z0-9]{1,4})$/i, "");
-        if (motion.para)
-          MMD_SA_options.motion_para[filename] = Object.assign(MMD_SA_options.motion_para||{}, motion.para);
+        const motion_index = MMD_SA_options._XRA_pose_list[0].findIndex(m=>m.name==filename);
+        if (motion_index != -1) {
+          p = Promise.resolve(true);//new Promise((resolve)=>{ System._browser.on_animation_update.add(resolve, 1,0); });
+          if (motion.play_on_ready) {
+            p.then(()=>{ MMD_SA_options.Dungeon_options.item_base.pose._change_motion_(motion_index, true); });
+          }
+        }
+        else {
+          if (MMD_SA_options.motion_index_by_name[filename]) {
+            p = Promise.resolve(true);
+          }
+          else {
+            if (motion.para)
+              MMD_SA_options.motion_para[filename] = Object.assign(MMD_SA_options.motion_para||{}, motion.para);
+            p = MMD_SA.load_external_motion(motion.path, false);
+          }
 
-        const p = MMD_SA.load_external_motion(motion.path, false);
-        if (motion.load_on_ready) {
-          p.then(()=>{
+          if (motion.play_on_ready) {
+            p.then(()=>{
 MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_name[filename]];
 MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice();
 MMD_SA._force_motion_shuffle = true;
-          });
+            });
+          }
         }
         promise_list.push(p);
       });
@@ -7412,9 +7456,11 @@ MMD_SA._force_motion_shuffle = true;
       if (e.motion) {
         await parse_motion(e.motion);
 
-        MMD_SA_options._motion_shuffle_list_default = e.motion.map(motion=>MMD_SA_options.motion_index_by_name[motion.path.replace(/^.+[\/\\]/, "").replace(/\.([a-z0-9]{1,4})$/i, "")]);
-        MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice();
-        MMD_SA._force_motion_shuffle = true;
+        if (!e.motion.find(m=>m.play_on_ready)) {
+          MMD_SA_options._motion_shuffle_list_default = e.motion.map(motion=>MMD_SA_options.motion_index_by_name[motion.path.replace(/^.+[\/\\]/, "").replace(/\.([a-z0-9]{1,4})$/i, "")]);
+          MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list_default.slice();
+          MMD_SA._force_motion_shuffle = true;
+        }
       }
     }
 
@@ -7512,6 +7558,7 @@ MMD_SA._force_motion_shuffle = true;
           if (!await locate_file(zip, obj)) continue;
 
           const filename = obj.path.replace(/^.+[\/\\]/, '');
+          if (typeof obj.model_para.parent_bone == 'number') obj.model_para.parent_bone = obj.model_para.parent_bone_list[obj.model_para.parent_bone];
           const pb_list = [obj.model_para.parent_bone, ...(obj.model_para.parent_bone_list||[])];
           pb_list.forEach(p_bone=>{
             if (p_bone && (p_bone.is_T_pose != null) && ((p_bone.is_T_pose) ? !is_T_pose : is_T_pose)) {
@@ -7675,7 +7722,10 @@ function export_scene_JSON() {
 
     const obj_json = { type:'object3D', path:obj.user_data.path.replace(/(\.zip)\#[^\#]+$/i, '$1') }
     const model_para = obj_json.model_para = {};
-    const placement = model_para.placement = { scale:mesh.scale.x };
+    if (obj.VMC_tracker_index != null)
+      model_para.VMC_tracker_index = obj.VMC_tracker_index;
+    const placement = model_para.placement = (obj.placement?.scale_offset) ? { scale:obj.placement.scale, scale_offset:obj.placement.scale_offset } : { scale:mesh.scale.x };
+
     if (obj.parent_bone) {
       if (!obj.parent_bone_list) obj.parent_bone_list = [];
       obj.parent_bone_list[0] = obj.parent_bone;
@@ -7916,7 +7966,7 @@ return (!MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_opti
   { key:3, branch_index:2 },
   { key:4, branch_index:motion_control_branch },
 //  { key:5, event_id:{ func:()=>{MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_=true;setTimeout(()=>{MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_=false},0);}, goto_event: { id:"_FACEMESH_OPTIONS_", branch_index:0 } } },
-  { key:5 }
+  { key:5, is_closing_event:true }
 ]) : [
   { key:1, branch_index:1 },
   { key:2, branch_index:3 },
@@ -7956,7 +8006,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
     }
   },
   { key:6, branch_index:about_branch },
-  { key:7 }
+  { key:7, is_closing_event:true }
 ];
   }
           }
@@ -8005,7 +8055,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
       }
     }
    ,{ key:5, branch_index:4 }//keep_dialogue_branch_list:true, 
-   ,{ key:6 }
+   ,{ key:6, is_closing_event:true }
   ]
           }
         }
@@ -8022,7 +8072,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 //    { key:8, event_index:1 },
 //    { key:9, event_id:{ sb_index:1, ended:true } },
     { key:1, event_index:1 },
-    { key:2, event_index:999 },
+    { key:2, is_closing_event:true, event_index:999 },
   ]
           }
         },
@@ -8071,7 +8121,7 @@ DragDrop.onDrop_finish = onDrop_change_wallpaper;
    ,{ key:3, branch_index:bg_branch+3 }
    ,{ key:4, branch_index:bg_branch+4 }
    ,{ key:5, branch_index:bg_branch+5 }
-   ,{ key:6, branch_index:bg_branch+6 }
+   ,{ key:6, is_closing_event:true, branch_index:bg_branch+6 }
   ]
           }
         }
@@ -8190,7 +8240,7 @@ else
   window.open(url)
       }, goto_branch:done_branch }
     }
-   ,{ key:7, branch_index:done_branch }
+   ,{ key:7, is_closing_event:true, branch_index:done_branch }
   ]
           }
         }
@@ -8265,6 +8315,8 @@ DEBUG_show('Dome rotation angle: ' + dome_axis_angle + '°', 2)
      ,[
         {
           func: function () {
+MMD_SA_options.Dungeon._3D_scene_builder_mode_ = true;
+
 if (_overlay_mode > -1)
   System._browser.overlay_mode = _overlay_mode;
 _overlay_mode = -1;
@@ -8329,7 +8381,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
       }
     },
-    { key:5, branch_index:done_branch }
+    { key:5, is_closing_event:true, func:()=>{MMD_SA_options.Dungeon._3D_scene_builder_mode_ = false}, branch_index:done_branch }
   ]; }
 //  ].concat((explorer_mode) ? [] : [{ key:5, branch_index:done_branch }]); }
           }
@@ -8352,7 +8404,7 @@ DEBUG_show((object3d_list.length) ? (object3d_index+1) + ': ' + object3d_list[ob
  ,duration: 3
  ,bubble_index: 3
  ,branch_list: [
-    { key:1, branch_index:object3D_branch }
+    { key:[1,'Esc'], branch_index:object3D_branch }
   ]
           }
         }
@@ -8404,7 +8456,7 @@ MMD_SA_options.Dungeon.run_event();
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_index:2 },
-    { key:2, branch_index:object3D_branch }
+    { key:[2,'Esc'], branch_index:object3D_branch }
   ]
           }
         },
@@ -8426,7 +8478,7 @@ System._browser.on_animation_update.add(()=>{MMD_SA_options.Dungeon.run_event()}
   content: 'Building an explorable scene...\nNOTE: Depending on the complexity of the 3D scene, it may take more than a few seconds.'
  ,bubble_index: 3
  ,branch_list: [
-    { key:1, event_index:3 },
+    { key:[1,'Esc'], event_index:3 },
   ]
           }
         },
@@ -8460,7 +8512,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  content: 'XR Animator (v0.17.5)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
+  content: 'XR Animator (v0.18.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -8508,7 +8560,7 @@ else
        ,ended: true
       }
     }
-   ,{ key:6, event_index:99 }
+   ,{ key:6, is_closing_event:true, event_index:99 }
   ]
           }
         },
@@ -8549,9 +8601,9 @@ navigator.clipboard.writeText('1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p').then(()=>{
        ,ended: true
       }
     },
-    { key:4 }
+    { key:4, is_closing_event:true }
   ] : [
-    { key:3 }
+    { key:3, is_closing_event:true }
   ]); }
           }
         }
@@ -8580,7 +8632,7 @@ return 'Choose a motion format to export.\n1. VMD' + ((MMD_SA.THREEX.enabled) ? 
 return [
   { key:1, event_index:2 },
   ...((MMD_SA.THREEX.enabled) ? [{ key:2, event_index:3 }] : []),
-  { key:'X', event_index:99 },
+  { key:'X', is_closing_event:true, event_index:99 },
 ];
   }
           }
@@ -8671,7 +8723,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
       }
     },
     { key:5, event_index:7 },
-    { key:6, event_index:99 },
+    { key:6, is_closing_event:true, event_index:99 },
   ],
           }
         },
@@ -8851,7 +8903,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
       }
     },
-    { key:'X', event_id:{ func:()=>{
+    { key:'X', is_closing_event:true, event_id:{ func:()=>{
 hotkey_id = hotkey_combo = hotkey_info = hotkey_acc = null;
     }, goto_event:{event_index:99} } },
           ];
@@ -8956,7 +9008,7 @@ System._browser.save_file('XRA_settings.json', json, 'application/json');
   bubble_index: 3,
   branch_list: [
     { key:1, event_index:8 },
-    { key:2, event_index:99 },
+    { key:2, is_closing_event:true, event_index:99 },
   ],
           }
         },
@@ -9092,7 +9144,7 @@ System._browser.camera._info =
   { key:1, branch_index:record_motion_branch+1 },
   { key:2, branch_index:record_motion_branch+2 },
   { key:3, branch_index:record_motion_branch+3 },
-  { key:4, branch_index:done_branch }
+  { key:4, is_closing_event:true, branch_index:done_branch }
   ]
           }
         }
@@ -9152,7 +9204,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
     }
   },
-  { key:6, branch_index:done_branch }
+  { key:6, is_closing_event:true, branch_index:done_branch }
   ]
           }
         },
@@ -9176,7 +9228,7 @@ System._browser.camera._info =
 '4. Leg IK: ' + ((MMD_SA_options.user_camera.ML_models.pose.use_legIK)?'ON':'OFF'),
 '5. Leg scale adjustment: ' + ((!System._browser.camera.poseNet.leg_scale_adjustment)?'OFF':((System._browser.camera.poseNet.leg_scale_adjustment>0 && '+')||'')+System._browser.camera.poseNet.leg_scale_adjustment),
 '6. Auto-grounding (' + (System._browser.hotkeys.config_by_id['mocap_auto_grounding']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON'),
-'7. Upper rotation offset: ' + (MMD_SA_options.user_camera.ML_models.pose.upper_rotation_offset||0) + '°(➕➖)',
+'7. Upper rotation offset: ' + ((MMD_SA.MMD.motionManager.para_SA.motion_tracking?.ML_models?.pose || MMD_SA_options.user_camera.ML_models.pose).upper_rotation_offset||0) + '°(➕➖)',
 'X. Done',
     ].join('\n');
   },
@@ -9246,7 +9298,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
     }
   },
-  { key:'X', branch_index:done_branch }
+  { key:'X', is_closing_event:true, branch_index:done_branch }
   ]
           },
           next_step: {}
@@ -9319,8 +9371,9 @@ System._browser.camera.poseNet.hip_adjustment_smoothing_percent = THREE.Math.cla
   }
 }
 else if ((e.key == '+') || (e.key == '-')) {
+  const _pose = (MMD_SA.MMD.motionManager.para_SA.motion_tracking?.ML_models?.pose || MMD_SA_options.user_camera.ML_models.pose);
   step = 1;
-  MMD_SA_options.user_camera.ML_models.pose.upper_rotation_offset = ((MMD_SA_options.user_camera.ML_models.pose.upper_rotation_offset||0) + ((e.key == '+')?1:-1)) % 360;
+  _pose.upper_rotation_offset = ((_pose.upper_rotation_offset||0) + ((e.key == '+')?1:-1)) % 360;
 }
 else {
   return false;
@@ -9598,7 +9651,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
     }
   },
-  { key:7, branch_index:done_branch }
+  { key:7, is_closing_event:true, branch_index:done_branch }
   ]
             }
           };
@@ -9607,7 +9660,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
         {
           message: {
 get content() {
-  const tilt_adjustment = System._browser.camera.tilt_adjustment;
+  const tilt_adjustment = MMD_SA.MMD.motionManager.para_SA.motion_tracking?.camera?.tilt_adjustment || System._browser.camera.tilt_adjustment;
   return [
     'If your webcam is angled up or down, offset it to cancel avatar\'s tilting.',
     ((tilt_adjustment.enabled) ? '- Press ⬆️⬇️ to adjust offset angle' : ''),
@@ -9621,17 +9674,18 @@ get content() {
 bubble_index: 3,
 branch_list: [
   { key:'any', func:(e)=>{
+const tilt_adjustment = MMD_SA.MMD.motionManager.para_SA.motion_tracking?.camera?.tilt_adjustment || System._browser.camera.tilt_adjustment;
 if (/Arrow(Up|Down)/.test(e.code)) {
-  let a = System._browser.camera.tilt_adjustment.angle;
+  let a = tilt_adjustment.angle;
   a += (e.code == 'ArrowUp') ? 1 : -1;
   if (Math.abs(a) > 90)
     a = Math.sign(a) * 90;
-  System._browser.camera.tilt_adjustment.angle = a;
+  tilt_adjustment.angle = a;
 }
 else if (/Arrow(Left|Right)/.test(e.code)) {
-  let p = Math.round(System._browser.camera.tilt_adjustment.pose_weight * 100);
+  let p = Math.round(tilt_adjustment.pose_weight * 100);
   p += (e.code == 'ArrowRight') ? 1 : -1;
-  System._browser.camera.tilt_adjustment.pose_weight = Math.min(Math.max(p,0),100)/100;
+  tilt_adjustment.pose_weight = Math.min(Math.max(p,0),100)/100;
 }
 else {
   return false;
@@ -9643,7 +9697,8 @@ return true;
   } },
   { key:1, event_id: {
       func:()=>{
-System._browser.camera.tilt_adjustment.enabled = !System._browser.camera.tilt_adjustment.enabled;
+const tilt_adjustment = MMD_SA.MMD.motionManager.para_SA.motion_tracking?.camera?.tilt_adjustment || System._browser.camera.tilt_adjustment;
+tilt_adjustment.enabled = !tilt_adjustment.enabled;
       },
       goto_event: { branch_index:mocap_options_branch, step:5 },
     },
@@ -9654,7 +9709,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
     }
   },
-  { key:2, branch_index:done_branch }
+  { key:2, is_closing_event:true, branch_index:done_branch }
 ],
           }
         },
@@ -9786,7 +9841,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
   }
     }] : []),
-    { key:'X', branch_index:done_branch },
+    { key:'X', is_closing_event:true, branch_index:done_branch },
 ];
         }
 
@@ -10033,7 +10088,7 @@ window.addEventListener('SA_dragdrop_JSON', onDrop_JSON_change_facemesh_calibrat
   content: 'Drop a JSON file containing the facemesh calibration data.\n1. Cancel'
  ,bubble_index: 3
  ,branch_list: [
-    { key:1, branch_index:done_branch }
+    { key:1, is_closing_event:true, branch_index:done_branch }
   ]
           }
         }
@@ -10080,7 +10135,7 @@ else {
  ,branch_list: [
   { key:1, branch_index:motion_control_branch+1 },
   { key:2, branch_index:motion_control_branch+2 },
-  { key:3, branch_index:done_branch }
+  { key:3, is_closing_event:true, branch_index:done_branch }
   ]
           }
         }
