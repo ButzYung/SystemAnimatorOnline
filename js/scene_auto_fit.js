@@ -80,7 +80,9 @@ function auto_fit_core() {
     const legL0 = model.get_bone_origin_by_MMD_name('左足');
     const af_motion_para = motion_para.auto_fit?.chair;
     if (!af_motion_para) {
-      const leg_angle = Math.min(Math.abs(model.get_bone_by_MMD_name('左足').quaternion.toAxisAngle()[1]), Math.abs(model.get_bone_by_MMD_name('右足').quaternion.toAxisAngle()[1]));
+// use dummy q1 as a workaround for multiple three.js instance issue when URL contains parentheses
+      const leg_angle = Math.min(Math.abs(q1.copy(model.get_bone_by_MMD_name('左足').quaternion).toAxisAngle()[1]), Math.abs(q1.copy(model.get_bone_by_MMD_name('右足').quaternion).toAxisAngle()[1]));
+//      const leg_angle = Math.min(Math.abs(model.get_bone_by_MMD_name('左足').quaternion.toAxisAngle()[1]), Math.abs(model.get_bone_by_MMD_name('右足').quaternion.toAxisAngle()[1]));
       if (leg_angle < Math.PI/4) return false;
       if ((hip.y > legL0[1]*2/3) || (hip.y < legL0[1]*0.4)) return false;
     }
