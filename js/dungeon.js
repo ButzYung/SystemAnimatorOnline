@@ -1,4 +1,4 @@
-// (2023-11-23)
+// (2023-12-20)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -744,7 +744,7 @@ d.style.visibility = (this.item.is_always_visible) ? "visible" : "inherit"
 
  ,action_check: (function () {
     var sound_item_deny = { name:"interface_item_deny" };
-    return function () {
+    return async function () {
 var action = this.item.action
 if (!action) {
   MMD_SA_options.Dungeon.sound.audio_object_by_name[((this.item.sound && this.item.sound.find(function(i){return i.is_no_action})) || sound_item_deny).name].play()
@@ -752,10 +752,31 @@ if (!action) {
 }
 
 if (!action.anytime && inventory.action_disabled) {
-  MMD_SA_options.Dungeon.sound.audio_object_by_name[sound_item_deny.name].play()
-  return false
+  const branch = MMD_SA_options.Dungeon.dialogue_branch_mode?.find(b=>b.is_closing_event);
+  if (!branch) {
+    MMD_SA_options.Dungeon.sound.audio_object_by_name[sound_item_deny.name].play();
+    return false;
+  }
+
+  const key = (Array.isArray(branch.key)) ? branch.key[0] : branch.key;
+  let code, keyCode;
+  if (typeof key == 'number') {
+    keyCode = key + 96;
+  }
+  else if (key == 'Esc') {
+    code = 'Escape';
+  }
+  else {
+    code = 'Key' + key;
+  }
+
+  document.dispatchEvent(new KeyboardEvent('keydown', { code:code, keyCode:keyCode }));
+
+  await new Promise((resolve)=>{
+    System._browser.on_animation_update.add(resolve, 0,0);
+  });
 }
-return true
+return true;
     };
   })()
 };
@@ -4729,14 +4750,14 @@ if (is_mobile) {
 */
 }
   }, true);
-  d.addEventListener("dblclick", function (e) {
+  d.addEventListener("dblclick", async function (e) {
 const _idx = inv.get_inventory_index(idx);
 e.stopPropagation();
 
 inv.item_selected_index = null
 
 var inv_item = inv.list[_idx]
-if (!inv_item.action_check()) {
+if (!await inv_item.action_check()) {
   return
 }
 
@@ -6478,6 +6499,13 @@ const k = e.detail.keyCode;
 const _e = e.detail.e;
 const k_code = _e.code;
 
+const result = {};
+window.dispatchEvent(new CustomEvent("SA_Dungeon_keydown", { detail:{ e:_e, result:result } }));
+if (result.return_value) {
+  e.detail.result.return_value = true;
+  return;
+}
+
 // use RAF_timestamp instead, making it easier to track if a key is pressed in the same frame
 var t = RAF_timestamp//performance.now()
 // Raw key press data. Avoid altering it besides keyboard events.
@@ -6503,11 +6531,20 @@ if (msg_branch_list) {
 
     if (!is_mobile && (_e.ctrlKey || _e.shiftKey || _e.altKey)) break;
 
-    if ((typeof branch.key == 'number') ? ((k == 96+branch.key) || (k == 48+branch.key)) : (k_code == 'Key'+branch.key)) {
+    const keys = (Array.isArray(branch.key)) ? branch.key : [branch.key];
+    if (branch.is_closing_event) keys.push('Esc');
+
+    const key_matched = keys.find(key=>{
+if (typeof key == 'number') return (k == 96+key) || (k == 48+key);
+if (key == 'Esc') return k_code == 'Escape';
+return k_code == 'Key'+branch.key;
+    });
+
+    if (key_matched != null) {
       e.detail.result.return_value = true;
 
-      if (MMD_SA_options.SpeechBubble_branch && MMD_SA_options.SpeechBubble_branch.confirm_keydown && (branch.key != sb._branch_key_) && (sb.msg_line.some(msg=>MMD_SA_options.SpeechBubble_branch.RE.test(msg)&&(RegExp.$1==branch.key)))) {
-        sb._branch_key_ = branch.key
+      if (MMD_SA_options.SpeechBubble_branch && MMD_SA_options.SpeechBubble_branch.confirm_keydown && (key_matched != sb._branch_key_) && (sb.msg_line.some(msg=>MMD_SA_options.SpeechBubble_branch.RE.test(msg)&&(RegExp.$1==key_matched)))) {
+        sb._branch_key_ = key_matched
         sb._update_placement(true)
       }
       else {
@@ -6527,6 +6564,21 @@ if (msg_branch_list) {
 
   if (e.detail.result.return_value)
     return;
+}
+else {
+  if (k_code == 'Escape') {
+    if (System._browser.overlay_mode == 0) {
+      System._browser.overlay_mode = System._browser.overlay_mode_TEMP = 1;
+    }
+    else if (System._browser.overlay_mode_TEMP) {
+      System._browser.overlay_mode = System._browser.overlay_mode_TEMP = 0;
+    }
+    else {
+      document.getElementById('Ldungeon_inventory').style.visibility = (document.getElementById('Ldungeon_inventory').style.visibility == 'hidden') ? 'inherit' : 'hidden';
+    }
+    e.detail.result.return_value = true;
+    return;
+  }
 }
 
 var key_map = d.key_map[k]
@@ -11252,9 +11304,9 @@ return [
   { key:2, branch_index:13 },
   { key:3, branch_index:14 },
   { key:4, branch_index:15 },
-  { key:5 }
+  { key:5, is_closing_event:true }
 ] : [
-  { key:2 }
+  { key:2, is_closing_event:true }
 ]);
   }
           }
