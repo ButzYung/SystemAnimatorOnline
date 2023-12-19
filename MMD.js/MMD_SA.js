@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-11-23)
+// (2023-12-20)
 
 var use_full_spectrum = true
 
@@ -577,6 +577,21 @@ else if (vrm_list.length) {
 
   if (sb) {
     let info_extra = ''
+    let model_json = zip.file(/model\.json$/i);
+    if (model_json.length) {
+      info_extra = "(+config)";
+      const json = await model_json[0].async("text");
+MMD_SA_options.model_para = Object.assign(MMD_SA_options.model_para, JSON.parse(json, function (key, value) {
+  if (typeof value == "string") {
+    if (/^eval\((.+)\)$/.test(value)) {
+      value = eval(decodeURIComponent(RegExp.$1))
+    }
+  }
+  return value
+}));
+console.log("(model.json updated)");
+    }
+
     sb._msg_mouseover = [
   model_filename + info_extra
  ,"Press START to begin with your custom 3D model."
@@ -7999,6 +8014,9 @@ m2 = new THREE.Matrix4();
 m3 = new THREE.Matrix4();
 m4 = new THREE.Matrix4();
 
+p1 = new THREE.Plane();
+l1 = new THREE.Line3();
+
 // 37.4224, 35
 rot_arm_axis[ 1] = new THREE.Quaternion().setFromEuler(e1.set(0,0,37.4224/180*Math.PI));
 rot_arm_axis[-1] = rot_arm_axis[ 1].clone().conjugate();
@@ -8248,7 +8266,7 @@ const bone_matrix = (is_MMD_dummy) ? bone.skinMatrix : bone.matrixWorld;
 
 const rot = new THREE.Quaternion().setFromRotationMatrix(_m1.extractRotation(bone_matrix));
 // multiply, instead of premultiply
-if (!is_MMD_dummy) rot.multiply(_q1.set(0,-1,0,0));
+if (!is_MMD_dummy && !this.is_VRM1) rot.multiply(_q1.set(0,-1,0,0));
 
 if (local_only) {
   if (!is_MMD_dummy)
@@ -9164,6 +9182,7 @@ if (MMD_SA.OSC.VMC.sender_enabled && MMD_SA.OSC.VMC.ready) {
   const model_position_offset = v4.copy(mesh.position).sub(model_position0).multiplyScalar(model_pos_scale);
 
   const warudo_mode = MMD_SA.OSC.app_mode == 'Warudo';
+  const VNyan_mode = MMD_SA.OSC.app_mode == 'VNyan';
   const VSeeFace_mode = (MMD_SA.OSC.app_mode == 'VSeeFace') && MMD_SA.OSC.VMC.send_camera_data;
 
   const model_rot = q4.copy(mesh.quaternion);
@@ -9182,11 +9201,25 @@ if (MMD_SA.OSC.VMC.sender_enabled && MMD_SA.OSC.VMC.ready) {
     const name = VRMSchema.HumanoidBoneName[name_VMC];
     const bone = this.getBoneNode(name);
     if (!bone) continue;
+
+    let b_pos, b_rot;
+    if (this.is_VRM1 && VNyan_mode) {
+      b_pos = v1.copy(bone.position);
+      b_pos.x *= -1;
+      b_pos.z *= -1;
+      b_rot = q1.copy(bone.quaternion);
+      b_rot.x *= -1;
+      b_rot.z *= -1;
+    }
+    else {
+      b_pos = bone.position;
+      b_rot = bone.quaternion;
+    }
+
     bone_msgs.push([
 (this.is_VRM1)?name_VMC:bone_map_VRM0[name_VMC],
-// TODO: support VRM1 in VNyan
-bone.position.x, bone.position.y, -bone.position.z,
--bone.quaternion.x, -bone.quaternion.y, bone.quaternion.z, bone.quaternion.w,
+b_pos.x, b_pos.y, -b_pos.z,
+-b_rot.x, -b_rot.y, b_rot.z, b_rot.w,
     ]);
   }
 
@@ -9201,8 +9234,8 @@ bone.position.x, bone.position.y, -bone.position.z,
     const name_for_blendshapes = (use_faceBlendshapes && this.faceBlendshapes_map_reversed[name]) || name;
     morph_msgs.push([
 // three-vrm 1.0
-// use VRM0 name
-this.blendshape_map_name(name_for_blendshapes, false),
+// use VRM0 name unless VRM1 model is used (with VNyan mode)
+this.blendshape_map_name(name_for_blendshapes, this.is_VRM1 && VNyan_mode),
 
 blendshape_weight[name],
     ]);
@@ -9708,9 +9741,16 @@ if (vrm_scale != 1) {
     }
   }
 
-  vrm.materials.forEach(m=>{
-    if (m.isMToonMaterial && (m.outlineWidthMode != 'screenCoordinates') && m.outlineWidthFactor != null)
-      m.outlineWidthFactor *= vrm_scale;
+  vrm.materials.forEach((m,i)=>{
+    const model_para = MMD_SA_options.model_para[vrm.meta.title];
+    const outlineWidthFactor = (model_para?.material_para?.[i] || model_para?.material_para?.[m.name])?.outlineWidthFactor;
+    if (outlineWidthFactor != null) {
+      m.outlineWidthFactor = outlineWidthFactor;
+    }
+    else {
+      if (m.isMToonMaterial && (m.outlineWidthMode != 'screenCoordinates') && m.outlineWidthFactor != null)
+        m.outlineWidthFactor *= vrm_scale;
+    }
   });
 }
 
@@ -9779,6 +9819,9 @@ else {
   var e1, e2, e3, e4;
   var m1, m2, m3, m4;
 
+  var p1, p2;
+  var l1, l2;
+
   var rot_arm_axis = {};
   var rot_shoulder_axis = {};
 
@@ -9794,6 +9837,9 @@ else {
     get q1(){return q1},get q2(){return q2},get q3(){return q3},get q4(){return q4},
     get e1(){return e1},get e2(){return e2},get e3(){return e3},get e4(){return e4},
     get m1(){return m1},get m2(){return m2},get m3(){return m3},get m4(){return m4},
+
+    get p1(){return p1},
+    get l1(){return l1},
 
     get enabled() { return MMD_SA_options.use_THREEX && enabled; },
     set enabled(v) {
