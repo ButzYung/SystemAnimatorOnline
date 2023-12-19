@@ -1,4 +1,4 @@
-// (2023-11-23)
+// (2023-12-20)
 
 MMD_SA.fn = {
 /*
@@ -593,14 +593,19 @@ else {
 
 obj.position.copy(pos);
 if (p_bone.position) {
-  const pos_offset = MMD_SA.TEMP_v3.set(p_bone.position.x, p_bone.position.y, -p_bone.position.z);
-//console.log(pos_offset.toArray().join(','))
-  obj.position.add(pos_offset.applyQuaternion(rot));
+  const obj_pos_offset = MMD_SA.TEMP_v3.set(p_bone.position.x, p_bone.position.y, -p_bone.position.z);
+  if (p_bone.position.scale_base)
+    obj_pos_offset.multiply(obj.scale).multiplyScalar(1/p_bone.position.scale_base);
+  if (is_root && System._browser.camera.poseNet.enabled && System._browser.camera.poseNet.frames.skin['センター']?.[0]._hip_adjustment_offset) {
+    obj_pos_offset.sub(MMD_SA._v3a.copy(System._browser.camera.poseNet.frames.skin['センター'][0]._hip_adjustment_offset).setY(0));
+  }
+  obj_pos_offset.applyQuaternion(rot);
+  obj.position.add(obj_pos_offset);
 }
 
 obj.quaternion.copy(rot);
+let obj_rot;
 if (p_bone.rotation) {
-  let obj_rot;
   if (p_bone.rotation.fixed) {
     obj.quaternion.set(0,0,0,1);
     obj_rot = MMD_SA._q1.setFromEuler(MMD_SA.TEMP_v3.set(-p_bone.rotation.fixed.x, -p_bone.rotation.fixed.y, p_bone.rotation.fixed.z).multiplyScalar(Math.PI/180), 'YXZ');
@@ -616,84 +621,149 @@ obj.position.copy(m4_objs[0])
 obj.quaternion.copy(m4_objs[1])
 
 if (p_bone.rotation) {
+  let transfer_to_parent_bone;
   const rot_adjust = p_bone.rotation.align_with_external_point;
   if (rot_adjust && (!rot_adjust.mocap_only || (System._browser.camera.poseNet.enabled && System._browser.camera.ML_warmed_up))) {
-    if (rot_adjust.reset_rotation) obj.quaternion.set(0,0,0,1);
+    const rot_original = MMD_SA._q2.copy(obj.quaternion);
 
-    const reference_origin = MMD_SA._v3b_.set(0,0,0);
+    transfer_to_parent_bone = rot_adjust.transfer_to_parent_bone && (System._browser.camera.poseNet.enabled && System._browser.camera.ML_warmed_up);
 
-    let axis_origin = MMD_SA._v3a_;
+    if (transfer_to_parent_bone) {
+      const aa = obj_rot.toAxisAngle();
+      obj.quaternion.setFromAxisAngle(aa[0].applyQuaternion(MMD_SA.TEMP_q.copy(MMD_SA_options.model_para_obj.rot_hand_adjust_base[(p_bone.name.charAt(0)=="左")?1:-1]).conjugate() ), -aa[1]);
+    }
+    else if (rot_adjust.reset_rotation) {
+      obj.quaternion.set(0,0,0,1);
+    }
+
+    let reference_origin = MMD_SA._v3b_.set(0,0,0);
+    let axis_origin = MMD_SA._v3a_.copy(obj.position);
     if (rot_adjust.reference_origin) {
-      const a = MMD_SA._v3a.copy(rot_adjust.reference_origin);
-      const m = MMD_SA._v3b.copy(rot_adjust.reference_point);
-      m.sub(a);
+      if (rot_adjust.reference_origin == 'parent_bone') {
+//        reference_origin.set(p_bone.position.x, p_bone.position.y, -p_bone.position.z).multiply(MMD_SA.TEMP_v3.set(1/x_object._mesh.scale.x, 1/x_object._mesh.scale.y, 1/x_object._mesh.scale.z)).applyQuaternion(obj_rot)//.negate();
+        axis_origin = modelX.get_bone_position_by_MMD_name(p_bone.name);
+      }
+      else {
+        const a = MMD_SA._v3a.copy(rot_adjust.reference_origin);
+        const m = MMD_SA._v3b.copy(rot_adjust.reference_point);
+        m.sub(a);
 
-      const t = (0 - (a.x*m.x + a.y*m.y + a.z*m.z)) / m.lengthSq();
-      reference_origin.set(a.x + m.x*t, a.y + m.y*t, a.z + m.z*t);
+        const t = (0 - (a.x*m.x + a.y*m.y + a.z*m.z)) / m.lengthSq();
+        reference_origin.set(a.x + m.x*t, a.y + m.y*t, a.z + m.z*t);
 //System._browser.camera.DEBUG_show(reference_origin.toArray().join('\n'))
-      axis_origin.copy(reference_origin).multiplyScalar(x_object.placement.scale).applyQuaternion(obj.quaternion).add(obj.position);
-    }
-    else {
-      axis_origin.copy(obj.position);
+        axis_origin.copy(reference_origin).multiply(x_object._mesh.scale).applyQuaternion(obj.quaternion).add(obj.position);
+      }
     }
 
-    let axis_ext;
+    let axis_ext, bone_rot, d;
     if (rot_adjust.external_point.type == 'bone') {
-      let d;
+      d = (rot_adjust.external_point.name.indexOf('left') != -1) ? '左' : ((rot_adjust.external_point.name.indexOf('right') != -1) ? '右' : '');
       let bone_pos;
       let bone_ext;
       if (rot_adjust.external_point.name.indexOf('hand') != -1) {
-        d = (rot_adjust.external_point.name.indexOf('left') != -1) ? '左' : '右';
         if (System._browser.camera.poseNet.enabled && (!MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only || !System._browser.camera.poseNet.frames.get_blend_default_motion('skin', d+'腕ＩＫ'))) {
           bone_pos = modelX.get_bone_position_by_MMD_name(d+'手首');
           bone_ext = MMD_SA.TEMP_v3.set(0,0,0);//((d=='左')?1:-1)*0.5, 0, 0);
           if (rot_adjust.external_point.offset)
             bone_ext.add(rot_adjust.external_point.offset);
-          bone_ext.applyQuaternion(MMD_SA_options.model_para_obj.rot_arm_adjust[d+'腕'].axis_rot).applyQuaternion(modelX.get_bone_rotation_by_MMD_name(d+'手首'));
+          bone_rot = modelX.get_bone_rotation_by_MMD_name(d+'手首');
+          bone_ext.applyQuaternion(MMD_SA_options.model_para_obj.rot_arm_adjust[d+'腕'].axis_rot).applyQuaternion(bone_rot);
         }
       }
       else if (rot_adjust.external_point.name.indexOf('arm') != -1) {
-        d = (rot_adjust.external_point.name.indexOf('left') != -1) ? '左' : '右';
         bone_pos = modelX.get_bone_position_by_MMD_name(d+'腕');
         bone_ext = MMD_SA.TEMP_v3.set(0,0,0);
         if (rot_adjust.external_point.offset)
           bone_ext.add(rot_adjust.external_point.offset);
-        bone_ext.applyQuaternion(modelX.get_bone_rotation_by_MMD_name((!rot_adjust.external_point.offset?.ignore_local_rotation) ? d+'腕' : '上半身2'));
+        bone_rot = modelX.get_bone_rotation_by_MMD_name((!rot_adjust.external_point.offset?.ignore_local_rotation) ? d+'腕' : '上半身2');
+        bone_ext.applyQuaternion(bone_rot);
       }
       else if (rot_adjust.external_point.name == 'head') {
         bone_pos = modelX.get_bone_position_by_MMD_name('頭');
         bone_ext = MMD_SA.TEMP_v3.set(0,0,0);
         if (rot_adjust.external_point.offset)
           bone_ext.add(rot_adjust.external_point.offset);
-        bone_ext.applyQuaternion(modelX.get_bone_rotation_by_MMD_name('頭'));
+        bone_rot = modelX.get_bone_rotation_by_MMD_name('頭')
+        bone_ext.applyQuaternion(bone_rot);
       }
 
       if (bone_pos) {
         if (bone_ext) bone_pos.add(bone_ext);
-        axis_ext = bone_pos.sub(axis_origin);
+        axis_ext = bone_pos;
       }
     }
     else if (rot_adjust.external_point.type == 'object3D') {
       const object3d = MMD_SA.THREEX._XR_Animator_scene_.object3D_list.find(obj=>obj.id==rot_adjust.external_point.name);
       if (object3d) {
-        const x_object = MMD_SA.THREEX._object3d_list_.find(obj=>obj.uuid==object3d._object3d_uuid);
-        axis_ext = MMD_SA._v3b.copy(rot_adjust.external_point.reference_point).multiplyScalar(x_object.placement.scale).applyQuaternion(x_object._mesh.quaternion).add(x_object._mesh.position).sub(axis_origin);
+        const _x_object = MMD_SA.THREEX._object3d_list_.find(obj=>obj.uuid==object3d._object3d_uuid);
+        axis_ext = MMD_SA._v3b.copy(rot_adjust.external_point.reference_point).multiply(_x_object._mesh.scale).applyQuaternion(_x_object._mesh.quaternion).add(_x_object._mesh.position);
       }
     }
 
     if (axis_ext) {
+      let weight = 1;
+      if (rot_adjust.weight_by_distance) {
+        const v_ref = MMD_SA._v3a.copy(rot_adjust.reference_point).multiply(x_object._mesh.scale).applyQuaternion(rot_original).add(obj.position).sub(axis_ext);
+        let v_ext = MMD_SA.THREEX.v3.copy(rot_adjust.external_point.normal||{x:0,y:0,z:1});
+        if (bone_rot)
+          v_ext.applyQuaternion(bone_rot);
+
+        let dis = v_ref.length();
+
+        let power = 1 - (rot_adjust.weight_by_distance.power||0);
+        let v_dot = v_ref.normalize().dot(v_ext);
+        if (v_dot < 0) {
+          power *= 1 - Math.min(-v_dot*2, 1);
+        }
+
+        let dis_ratio = 1 - dis/rot_adjust.weight_by_distance.radius;
+        if (power) {
+          weight = (dis_ratio < 0) ? 0 : Math.pow(dis_ratio, power);
+        }
+
+        axis_ext.sub(axis_origin);
+        if (transfer_to_parent_bone) {
+          let v_dot2 = MMD_SA.TEMP_v3.copy(axis_ext).normalize().dot(v_ext);
+          let dis2 = axis_ext.length();
+//System._browser.camera.DEBUG_show(axis_ext.clone().normalize().toArray().join('\n'));
+/*
+          let ratio = 0;
+          if ((dis2 < 1) || (v_dot2 > 0)) {
+            ratio = (v_dot2 > 0) ? 1 : 1-dis/1;
+            let axis_length = axis_ext.length();
+            axis_ext.lerp(axis_ext.clone().add(axis_origin).sub(modelX.get_bone_position_by_MMD_name(d+'手首')), ratio).normalize().multiplyScalar(axis_length);
+          }
+*/
+//System._browser.camera.DEBUG_show('dis2:'+dis2+'\n'+'dot2:'+v_dot2);
+        }
+
+//System._browser.camera.DEBUG_show('dis:'+dis+'\n'+'dot:'+v_dot+'\n'+'weight:'+weight);
+      }
+      else {
+        axis_ext.sub(axis_origin);
+      }
+
       let axis_ref = MMD_SA._v3a.copy(rot_adjust.reference_point).sub(reference_origin);
       axis_ref.normalize().applyQuaternion(obj.quaternion);
-
       axis_ref.multiplyScalar(axis_ext.length()).add(axis_origin).sub(obj.position);
-      axis_ext = axis_ext.add(axis_origin).sub(obj.position)
+
+      axis_ext = axis_ext.add(axis_origin).sub(obj.position);
 
       axis_ref.normalize();
       axis_ext.normalize();
-      const obj_rot = MMD_SA.TEMP_q.setFromUnitVectors(axis_ref, axis_ext);
-//      obj_rot.setFromEuler(MMD_SA.TEMP_v3.setEulerFromQuaternion(obj_rot, 'YZX').setX(0), 'YZX');
+      const obj_rot_aligned = MMD_SA.TEMP_q.setFromUnitVectors(axis_ref, axis_ext);
+//      obj_rot_aligned.setFromEuler(MMD_SA.TEMP_v3.setEulerFromQuaternion(obj_rot_aligned, 'YZX').setX(0), 'YZX');
 
-      obj.quaternion.premultiply(obj_rot);
+//      const rot_base = MMD_SA._q1.copy(obj.quaternion);
+      obj.quaternion.premultiply(obj_rot_aligned);
+
+      if (transfer_to_parent_bone) {
+//        obj.quaternion.copy(obj_rot_aligned.multiply(rot_base));
+        x_object._rot_aligned_ = obj_rot_aligned.clone();
+        x_object._rot_aligned_weight_ = weight;
+        obj.quaternion.copy(rot_original);
+
+      }
     }
   }
 
@@ -705,7 +775,13 @@ if (p_bone.rotation) {
     if (!_rot_filter)
       _rot_filter = rot_filter[x_object.uuid] = new System._browser.data_filter([{ type:'one_euro', id:'propr_rot', para:[30, 1,1,1, 4] }]);
     Object.assign(_rot_filter.filters[0].filter, rot_filter_para, data_filter);
-    obj.quaternion.fromArray(_rot_filter.filter(obj.quaternion.toArray()));
+
+    if (transfer_to_parent_bone && x_object._rot_aligned_) {
+      x_object._rot_aligned_.fromArray(_rot_filter.filter(x_object._rot_aligned_.toArray()));
+    }
+    else {
+      obj.quaternion.fromArray(_rot_filter.filter(obj.quaternion.toArray()));
+    }
   }
 }
 
