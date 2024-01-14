@@ -1,4 +1,4 @@
-// (2023-12-20)
+// (2024-01-15)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -792,7 +792,7 @@ var UI_muted;
 inventory = {
   max_row: 4
  ,max_base: 8
- ,max_page: 2
+ ,max_page: 3
  ,list: []
 
  ,page_index: 0
@@ -802,6 +802,7 @@ inventory = {
       scale: 1.5
     },
 
+    get _muted() { return UI_muted; },
     get muted() { return UI_muted || System._browser.overlay_mode; },
     set muted(v) { UI_muted = v; },
   }
@@ -3455,6 +3456,189 @@ for (var i = 1, i_max = MMD_SA.light_list.length; i < i_max; i++) {
  ,init: function () {
 var that = this
 
+System._browser.translation.dictionary = {
+	"Dungeon": {
+		"UI": {
+			"backpack": {
+				"_translation_": {
+					"_default_": "Backpack",
+					"ja": "バックパック"
+				}
+			},
+			"tome": {
+				"settings": {
+					"UI_and_overlays": {
+						"user_interface": {
+							"_translation_": {
+								"_default_": "User interface",
+								"ja": "ユーザーインターフェース"
+							},
+							"UI_off": {
+								"_translation_": {
+									"_default_": "User interface is now OFF. Press Esc to toggle the bottom menu display.",
+									"ja": "ユーザーインターフェースはオフになりました。 Esc キーを押すと、下部のメニュー表示が切り替わります。"
+								},
+								"green_screen": {
+									"_translation_": {
+										"_default_": "green screen",
+										"ja": "グリーンスクリーン"
+									}
+								}
+							}
+						},
+						"camera_display": {
+							"_translation_": {
+								"_default_": "User interface",
+								"ja": "カメラ表示"
+							},
+							"non_webcam": {
+								"_translation_": {
+									"_default_": "Non-webcam",
+									"ja": "非ウェブカメラ"
+								}
+							}
+						},
+						"wireframe_display": {
+							"_translation_": {
+								"_default_": "Wireframe display",
+								"ja": "ワイヤーフレーム表示"
+							}
+						},
+						"mocap_debug_display": {
+							"_translation_": {
+								"_default_": "Mocap debug display",
+								"ja": "モーキャプのデバッグ表示"
+							}
+						},
+						"UI_sound_effects": {
+							"_translation_": {
+								"_default_": "UI sound effects",
+								"ja": "UI音響効果"
+							}
+						},
+						"UI_language": {
+							"_translation_": {
+								"_default_": "UI language",
+								"ja": "UI言語"
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+	"Misc": {
+		"done": {
+			"_translation_": {
+				"_default_": "Done",
+				"ja": "終了"
+			}
+		},
+		"finish": {
+			"_translation_": {
+				"_default_": "Finish",
+				"ja": "終了"
+			}
+		},
+		"cancel": {
+			"_translation_": {
+				"_default_": "Cancel",
+				"ja": "キャンセル"
+			}
+		},
+		"default": {
+			"_translation_": {
+				"_default_": "Default",
+				"ja": "デフォルト"
+			}
+		},
+		"none": {
+			"_translation_": {
+				"_default_": "None",
+				"ja": "なし"
+			}
+		},
+		"full": {
+			"_translation_": {
+				"_default_": "Full",
+				"ja": "フル"
+			}
+		},
+		"yes": {
+			"_translation_": {
+				"_default_": "Yes",
+				"ja": "はい"
+			}
+		},
+		"no": {
+			"_translation_": {
+				"_default_": "No",
+				"ja": "いいえ"
+			}
+		},
+		"others": {
+			"_translation_": {
+				"_default_": "Others",
+				"ja": "その他"
+			}
+		},
+		"auto": {
+			"_translation_": {
+				"_default_": "Auto",
+				"ja": "自動"
+			}
+		},
+		"Normal": {
+			"_translation_": {
+				"_default_": "Normal",
+				"ja": "普通"
+			}
+		},
+		"Medium": {
+			"_translation_": {
+				"_default_": "Medium",
+				"ja": "中"
+			}
+		},
+		"Max": {
+			"_translation_": {
+				"_default_": "Max",
+				"ja": "最大"
+			}
+		},
+		"Min": {
+			"_translation_": {
+				"_default_": "Min",
+				"ja": "最小"
+			}
+		},
+		"Best": {
+			"_translation_": {
+				"_default_": "Best",
+				"ja": "最高"
+			}
+		},
+		"Small": {
+			"_translation_": {
+				"_default_": "Small",
+				"ja": "小"
+			}
+		},
+		"Large": {
+			"_translation_": {
+				"_default_": "Large",
+				"ja": "大"
+			}
+		},
+		"Full": {
+			"_translation_": {
+				"_default_": "Full",
+				"ja": "フル"
+			}
+		}
+	}
+};
+
 // Dungeon
 var options = MMD_SA_options.Dungeon_options// && Object.clone(MMD_SA_options.Dungeon_options)
 if (!options)
@@ -4182,7 +4366,7 @@ this.item_base._empty_ = Object.assign({
 
 this.item_base._backpack_ = Object.assign({
   icon_path: System.Gadget.path + '/images/_dungeon/item_icon.zip#/fantasy_icon/backpack_64x64.png'
- ,info_short: "Backpack"
+ ,get info_short() { return System._browser.translation.get('Dungeon.UI.backpack'); }
  ,index_default: MMD_SA_options.Dungeon.inventory.max_base-1
  ,is_base_inventory: true
 // ,is_always_visible: true
@@ -4221,44 +4405,22 @@ if (MMD_SA_options.Dungeon.nipplejs_manager)
   }
 }, this.item_base._backpack_||{});
 
-this.item_base.bag01 = Object.assign((()=>{
-  const page_index = 1;
-
+const Bag = (()=>{
   function clone(inv) {
+const page_index = this._page_index;
+
 const inventory = MMD_SA_options.Dungeon.inventory;
-const _inv = inventory.find('bag01', page_index)
+const _inv = inventory.find('bag'+addZero(page_index), page_index)
 //DEBUG_show(_inv?.index||-1,0,1)
 if (!_inv) {
   inventory.copy(inv.index, inventory.max_base + page_index * inventory.max_base * (inventory.max_row-1));
 }
   }
 
-  const bag = {
-    icon_path: System.Gadget.path + '/images/_dungeon/item_icon.zip#/misc_icon/bag_64x64.png'
-   ,info_short: "Bag"
-//   ,index_default: MMD_SA_options.Dungeon.inventory.max_base
-   ,stock_max: 1
-   ,sound: [
-      {
-    url: System.Gadget.path + "/sound/SFX_pack01.zip#/RPG Sound Pack/interface/interface2.aac",
-    name: "item_backpack",
-    is_drag: true,
-      }
-    ]
-   ,on_drop: function (item, inv) {
-clone(inv);
+  function action(item, inv) {
+const page_index = this._page_index;
 
-const inventory = MMD_SA_options.Dungeon.inventory;
-inventory.unshift(inv.index, (inventory.page_index != page_index) ? page_index : this._page_index_);
-return;
-System._browser.on_animation_update.add(()=>{
-  item.update_UI();
-  inv.update_UI();
-},0,0);
-    }
-   ,action: {
-      func: function (item, inv) {
-clone(inv);
+clone.call(this, inv);
 
 Ldungeon_inventory_backpack.style.visibility = 'inherit';
 
@@ -4270,13 +4432,47 @@ if (inventory.page_index != page_index) {
 else {
   MMD_SA_options.Dungeon.inventory.update_page(Math.max(this._page_index_,0));
 }
-      },
-      anytime: true,
-    }
+  }
+
+  const Bag = function (page_index) {
+this._page_index = page_index;
+
+this.icon_path = System.Gadget.path + '/images/_dungeon/item_icon.zip#/misc_icon/bag_64x64.png';
+this.info_short = "Bag";
+//   ,index_default: MMD_SA_options.Dungeon.inventory.max_base
+this.stock_max = 1;
+this.sound = [{
+  url: System.Gadget.path + "/sound/SFX_pack01.zip#/RPG Sound Pack/interface/interface2.aac",
+  name: "item_backpack",
+  is_drag: true,
+}];
+
+this.action = {
+  func: (item, inv)=>{ return action.call(this, item, inv); },
+  anytime: true,
+}
   };
 
-  return bag;
-})(), this.item_base.bag01||{});
+  Bag.prototype.on_drop = function (item, inv) {
+const page_index = this._page_index;
+
+clone.call(this, inv);
+
+const inventory = MMD_SA_options.Dungeon.inventory;
+inventory.unshift(inv.index, (inventory.page_index != page_index) ? page_index : this._page_index_);
+/*
+System._browser.on_animation_update.add(()=>{
+  item.update_UI();
+  inv.update_UI();
+},0,0);
+*/
+  };
+
+  return Bag;
+})();
+
+this.item_base.bag01 = Object.assign(new Bag(1), this.item_base.bag01||{});
+this.item_base.bag02 = Object.assign(new Bag(2), this.item_base.bag02||{});
 
 this.item_base._map_ = Object.assign({
   icon_path: System.Gadget.path + '/images/_dungeon/item_icon.zip#/fantasy_icon/map_64x64.png'
@@ -11137,7 +11333,7 @@ for (let name in this.character.states) {
       [
         {
           message: {
-  content: "1. Graphics Presets (PC)\n2. Graphics Effects (Scene)\n3. WebXR Options\n4. Overlay Mode\n5. Cancel"
+  content: "1. Graphics Presets (PC)\n2. Graphics Effects (Scene)\n3. WebXR Options\n4. UI and Overlays\n5. Cancel"
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:1 }
@@ -11292,8 +11488,8 @@ DEBUG_show("3D Resolution:" + (((is_default_res) && (Math.round(MMD_SA._renderer
           message: {
   get content() {
 if (System._browser.overlay_mode)
-  return 'User interface is now OFF. Double-click to toggle the bottom menu display.\n1. ' + ((System._browser.overlay_mode == 2) ? 'UI: OFF + green screen' : 'User interface: OFF') + '\n2. Done';
-return '1. User interface: ON' + ((MMD_SA_options.user_camera.ML_models.enabled && (System._browser.overlay_mode == 0)) ? '\n2. Camera display: ' + ((MMD_SA_options.user_camera.display.video.hidden) ? 'OFF' : ((MMD_SA_options.user_camera.display.video.hidden == null) ? 'Non-webcam' : 'ON')) + '\n3. Wireframe display: ' + ((MMD_SA_options.user_camera.display.wireframe.hidden) ? 'OFF' : 'ON') + '\n4. Mocap debug display: ' + ((MMD_SA_options.user_camera.ML_models.debug_hidden) ? 'OFF' : 'ON') + '\n5. Done' : '\n2. Done');
+  return System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.user_interface.UI_off') + '\n1. ' + ((System._browser.overlay_mode == 2) ? 'UI: OFF + ' + System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.user_interface.UI_off.green_screen') : System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.user_interface') + ': OFF') + '\n2. ' + System._browser.translation.get('Misc.done');
+return '1. ' + System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.user_interface') + ': ON' + ((MMD_SA_options.user_camera.ML_models.enabled && (System._browser.overlay_mode == 0)) ? '\n2. ' + System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.camera_display') + ': ' + ((MMD_SA_options.user_camera.display.video.hidden) ? 'OFF' : ((MMD_SA_options.user_camera.display.video.hidden == null) ? System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.camera_display.non_webcam') : 'ON')) + '\n3. ' + System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.wireframe_display') + ': ' + ((MMD_SA_options.user_camera.display.wireframe.hidden) ? 'OFF' : 'ON') + '\n4. ' + System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.mocap_debug_display') + ': ' + ((MMD_SA_options.user_camera.ML_models.debug_hidden) ? 'OFF' : 'ON') + '\n5. ' + System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.UI_sound_effects') + ': ' + ((MMD_SA_options.Dungeon.inventory.UI.muted)?'OFF':'ON') + '\n6. ' + System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.UI_language') + ': ' + System._browser.translation.language_info + '\n7. ' + System._browser.translation.get('Misc.done') : '\n2. ' + System._browser.translation.get('Misc.done'));
   }
  ,para: { no_word_break:true }
  ,bubble_index: 3
@@ -11304,7 +11500,9 @@ return [
   { key:2, branch_index:13 },
   { key:3, branch_index:14 },
   { key:4, branch_index:15 },
-  { key:5, is_closing_event:true }
+  { key:5, branch_index:16 },
+  { key:6, branch_index:17 },
+  { key:7, is_closing_event:true }
 ] : [
   { key:2, is_closing_event:true }
 ]);
@@ -11348,6 +11546,33 @@ MMD_SA_options.user_camera.display.wireframe.hidden = !MMD_SA_options.user_camer
   func: function () {
 MMD_SA_options.user_camera.ML_models.debug_hidden = !MMD_SA_options.user_camera.ML_models.debug_hidden;
 DEBUG_show();
+  }
+ ,goto_branch: 11
+        }
+      ]
+// 16
+     ,[
+        {
+  func: function () {
+MMD_SA_options.Dungeon.inventory.UI.muted = !MMD_SA_options.Dungeon.inventory.UI.muted;
+  }
+ ,goto_branch: 11
+        }
+      ]
+// 17
+     ,[
+        {
+  func: function () {
+const language = ['', 'en', 'ja'];
+let index = language.indexOf(System._browser.translation.language_full);
+if (index == -1) {
+  index = 1;
+}
+else if (++index >= language.length) {
+  index = 0;
+}
+
+System._browser.translation.language = language[index];
   }
  ,goto_branch: 11
         }

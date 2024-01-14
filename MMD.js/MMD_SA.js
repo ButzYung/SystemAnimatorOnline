@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2023-12-20)
+// (2024-01-15)
 
 var use_full_spectrum = true
 
@@ -541,9 +541,7 @@ console.log("(model.json updated)");
 
     sb._msg_mouseover = [
   model_filename + info_extra
- ,"Press START to begin with your custom 3D model."
- ,""
- ,"(Click here to reset to the default model.)"
+ ,System._browser.translation.get('MMD.start.custom_model')
     ].join("\n");
     DEBUG_show(sb._msg_mouseover, -1);
 
@@ -594,9 +592,7 @@ console.log("(model.json updated)");
 
     sb._msg_mouseover = [
   model_filename + info_extra
- ,"Press START to begin with your custom 3D model."
- ,""
- ,"(Click here to reset to the default model.)"
+ ,System._browser.translation.get('MMD.start.custom_model')
     ].join("\n");
     DEBUG_show(sb._msg_mouseover, -1);
 
@@ -638,9 +634,7 @@ MMD_SA._click_to_reset = null;
       let info_extra = ''
       sb._msg_mouseover = [
   model_filename + info_extra
- ,"Press START to begin with your custom 3D model."
- ,""
- ,"(Click here to reset to the default model.)"
+ ,System._browser.translation.get('MMD.start.custom_model')
       ].join("\n");
       DEBUG_show(sb._msg_mouseover, -1);
 
@@ -1156,7 +1150,7 @@ const sb_func = async function () {
 
       await init();
     }, true);
-    sb._msg_mouseover = sb._msg_mouseover_default = 'Press START to begin loading.\n\n- Drop a MMD model zip' + ((MMD_SA_options.use_THREEX) ? '/VRM' : '') + ' to use your 3D model.\n- Drop a VMD/FBX motion to convert 3D to video file.';
+    sb._msg_mouseover = sb._msg_mouseover_default = System._browser.translation.get('MMD.start').replace(/\<VRM\>/, ((MMD_SA_options.use_THREEX) ? '/VRM ' : ' '));
     sb.addEventListener("mouseover", function () {
       DEBUG_show(this._msg_mouseover, -1);
     }, true);
@@ -2538,7 +2532,7 @@ this.bubbles = [
    ,row_max: 8
    ,auto_wrap: true
 
-   ,bounding_box: [43,123, 452,252]
+   ,bounding_box: [43-4,123-8, 452,252]
    ,left_sided: true
   },
 
@@ -2552,7 +2546,7 @@ this.bubbles = [
    ,row_max: 8
    ,auto_wrap: true
 
-   ,bounding_box: [135,144, 313,221]
+   ,bounding_box: [135-4,144-8, 313,221]
   },
 
   {
@@ -2565,7 +2559,7 @@ this.bubbles = [
    ,row_max: 8
    ,auto_wrap: true
 
-   ,bounding_box: [87,133, 373,233]
+   ,bounding_box: [87-4,133-8, 373,233]
    ,left_sided: true
   },
 
@@ -2579,7 +2573,7 @@ this.bubbles = [
    ,row_max: 8
    ,auto_wrap: true
 
-   ,bounding_box: [87,133, 373,233]
+   ,bounding_box: [87-4,133-8, 373,233]
    ,left_sided: true
   }
 ];
@@ -2701,7 +2695,7 @@ else {
 // http://stackoverflow.com/questions/1366068/whats-the-complete-range-for-chinese-characters-in-unicode
 // http://kourge.net/projects/regexp-unicode-block
 
-var use_ascii = /^[\x00-\x7F]+$/.test(msg) || !/[^\x00-\x7F]{5}.*[^\x00-\x7F]{5}/.test(msg)
+var use_ascii = !/^(ja)/.test(System._browser.translation.language) && (/^[\x00-\x7F]+$/.test(msg) || !/[^\x00-\x7F]{5}.*[^\x00-\x7F]{5}/.test(msg));
 //DEBUG_show((!b.column_max_unicode && !para.column_max_unicode)+'/'+use_ascii+"",0,1)
 var font = para.font || b.font
 var font_size = para.font_size || b.font_size
@@ -2709,9 +2703,9 @@ var column_max = para.column_max || b.column_max || parseInt(b.bounding_box[2]/f
 var column_max_ascii = column_max
 var row_max = para.row_max || b.row_max || 10
 if (!use_ascii) {
-  font = para.font_unicode || b.font_unicode || font
-  column_max = para.column_max_unicode || b.column_max_unicode || Math.round(column_max*0.5)
-  row_max = para.row_max_unicode || b.row_max_unicode || row_max
+  font = para.font_unicode || System._browser.translation.font || b.font_unicode || font;
+  column_max = para.column_max_unicode || b.column_max_unicode || column_max;//Math.round(column_max*0.5);
+  row_max = para.row_max_unicode || b.row_max_unicode || row_max;
 }
 var column_unicode_scale = column_max_ascii / column_max
 
@@ -2795,7 +2789,7 @@ if ((msg.length > column_max) && ((para.auto_wrap || b.auto_wrap) || (msg.indexO
       end -= s_length
     }
 
-    if (para.no_word_break && (ini+end < msg.length)) {
+    if (para.no_word_break && use_ascii && (ini+end < msg.length)) {
       if (/^([^\s]+)/.test(msg.substring(ini+end-1))) {
         end += RegExp.$1.length;
       }
@@ -9144,6 +9138,8 @@ if (this.use_faceBlendshapes && facemesh.enabled) {
   facemesh.faceBlendshapes_list.forEach(b=>{
     blendshape_weight[this.faceBlendshapes_map[b]] = (use_faceBlendshapes && f.morph[b]) ? f.morph[b][0].weight : 0;
   });
+  this.getBoneNode('leftEye').quaternion.set(0,0,0,1);
+  this.getBoneNode('rightEye').quaternion.set(0,0,0,1);
 }
 
 for (const name in blendshape_weight) {
@@ -9186,7 +9182,7 @@ if (MMD_SA.OSC.VMC.sender_enabled && MMD_SA.OSC.VMC.ready) {
   const VSeeFace_mode = (MMD_SA.OSC.app_mode == 'VSeeFace') && MMD_SA.OSC.VMC.send_camera_data;
 
   const model_rot = q4.copy(mesh.quaternion);
-  let turned_around = MMD_SA.OSC.VMC.send_camera_data && !VSeeFace_mode && !warudo_mode;// && MMD_SA_options._XRA_explorer_mode;
+  let turned_around = MMD_SA.OSC.VMC.send_camera_data && VNyan_mode;// && MMD_SA_options._XRA_explorer_mode;
   if (!turned_around ^ !!this.is_VRM1) model_rot.premultiply(q2.set(0,1,0,0));
 //DEBUG_show(mesh.quaternion.toArray())
 
@@ -9217,7 +9213,7 @@ if (MMD_SA.OSC.VMC.sender_enabled && MMD_SA.OSC.VMC.ready) {
     }
 
     bone_msgs.push([
-(this.is_VRM1)?name_VMC:bone_map_VRM0[name_VMC],
+(this.is_VRM1 && !VNyan_mode)?name_VMC:bone_map_VRM0[name_VMC],
 b_pos.x, b_pos.y, -b_pos.z,
 -b_rot.x, -b_rot.y, b_rot.z, b_rot.w,
     ]);
@@ -14544,6 +14540,23 @@ Array.prototype.shuffle = function () {
   return this;
 };
   }
+
+  System._browser.translation.dictionary = {
+	"MMD": {
+		"start": {
+			"_translation_": {
+				"_default_": "Press START to begin loading.\n\n- Drop a MMD model zip<VRM>to use your 3D model.\n- Drop a VMD/FBX motion to convert 3D to video file.",
+				"ja": "START を押してロードを開始します。\n\n- 3D モデルを使用するには、MMD モデルの zip<VRM>をドロップします。\n- VMD/FBX モーションをドロップして 3D をビデオ ファイルに変換します。"
+			},
+			"custom_model": {
+				"_translation_": {
+					"_default_": "Press START to begin with your custom 3D model.\n\n(Click here to reset to the default model.)",
+					"ja": "START を押してカスタム 3D モデルを開始します。\n\n(ここをクリックしてデフォルトのモデルにリセットします。)"
+				}
+			}
+		}
+	}
+  };
 
 // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap
   const import_map = {

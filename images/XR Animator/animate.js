@@ -1,5 +1,5 @@
 // XR Animator
-// (2023-12-20)
+// (2024-01-15)
 
 var MMD_SA_options = {
 
@@ -1297,6 +1297,8 @@ MMD_SA.WebXR.ground_plane.visible = false
 
  ,center_view: [0,-7.5,7.5]
 
+ ,mirror_disabled: true
+
  ,motion_tracking_enabled: true, motion_tracking_upper_body_only: true
 
  ,motion_tracking: {
@@ -2429,6 +2431,8 @@ if (z_para) {
 
   center_view: [0,-6,7.5],
 
+  mirror_disabled: true,
+
   motion_tracking_enabled: true,
   motion_tracking_upper_body_only: true,
   motion_tracking: {
@@ -3161,18 +3165,19 @@ MMD_SA.SpeechBubble.hide();
     }
 
     return ()=>{
-MMD_SA.SpeechBubble.message(0, "Welcome to XR Animator~!", 3*1000, {group_index:0, group:{name:"onstart", loop:2}});
-MMD_SA.SpeechBubble.message(0, "Drag the mouse to rotate the camera. Press and hold Ctrl key to pan.", 4*1000, {group:{name:"onstart"}});
-MMD_SA.SpeechBubble.message(0, "Enable motion capture to control the avatar with your body!", 4*1000, {group:{name:"onstart"}});
-MMD_SA.SpeechBubble.message(0, "Use your webcam, or drop a local pic/video instead.", 4*1000, {no_word_break:true, group:{name:"onstart"}});
-MMD_SA.SpeechBubble.message(0, "Drop a VMD/FBX motion, and animate your avatar!", 4*1000, {group:{name:"onstart"}});
-MMD_SA.SpeechBubble.message(0, "You can enable AR mode if you are on an Android mobile!", 4*1000, {group:{name:"onstart"}});
-
-document.body.addEventListener('drop', cancel_intro, {once:true});
-document.addEventListener('dblclick', cancel_intro, {once:true});
-document.addEventListener('keydown', cancel_intro, {once:true});
-
 window.addEventListener('SA_Dungeon_onstart', ()=>{
+  document.body.addEventListener('drop', cancel_intro, {once:true});
+  document.addEventListener('dblclick', cancel_intro, {once:true});
+  document.addEventListener('keydown', cancel_intro, {once:true});
+
+  MMD_SA.SpeechBubble.message(0, System._browser.translation.get('XR_Animator.intro.welcome'), 3*1000, {group_index:0, group:{name:"onstart", loop:2}});
+  MMD_SA.SpeechBubble.message(0, System._browser.translation.get('XR_Animator.intro.camera'), 5*1000, {group:{name:"onstart"}});
+  if (webkit_electron_mode) MMD_SA.SpeechBubble.message(0, System._browser.translation.get('XR_Animator.intro.move'), 4*1000, {group:{name:"onstart"}});
+  MMD_SA.SpeechBubble.message(0, System._browser.translation.get('XR_Animator.intro.mocap'), 4*1000, {group:{name:"onstart"}});
+  MMD_SA.SpeechBubble.message(0, System._browser.translation.get('XR_Animator.intro.webcam'), 4*1000, {no_word_break:true, group:{name:"onstart"}});
+  MMD_SA.SpeechBubble.message(0, System._browser.translation.get('XR_Animator.intro.motion'), 4*1000, {group:{name:"onstart"}});
+  MMD_SA.SpeechBubble.message(0, System._browser.translation.get('XR_Animator.intro.AR'), 4*1000, {group:{name:"onstart"}});
+
   System._browser.on_animation_update.add(()=>{
     window.addEventListener('MMDCameraReset_after', cancel_intro, {once:true});
   },1,0);
@@ -3257,16 +3262,15 @@ video:{
 //  hidden:true,
 //  hidden_on_webcam: true,
   scale:0.4, top:-0.5,
-//left:-(0.8),top:-0.8,
-//left:0,//top:-0.9,
+//left:-0.4,top:-1,
 //scale:0.4*1,top:0,left:-3,
 //scale:0.4*2,top:0,left:-1,
 },
 wireframe:{
 //  hidden:true,
 //  align_with_video:true,
-  top:(0.5-0.0),
-//left:+(0.4+-0.1),top:-0.8,
+  top:0.5,
+//left:+(0.4),top:-1,
 //left:1,
 //top:0.8,left:0.4,
 //top:0,left:3,
@@ -3378,6 +3382,13 @@ wireframe:{
     self.SA_wallpaper_src = System.Gadget.path + "/images/wood_wallpaper_flip-h.jpg";
 
   MMD_SA_options.WebXR.AR._adult_mode = !!System._browser.url_search_params.adult_mode || webkit_electron_mode;
+
+  fetch(toFileProtocol(Settings.f_path + '/translation.json')).then(response=>{
+    response.json().then(json=>{
+      System._browser.translation.dictionary = json;
+console.log(json);
+    });
+  });
 
 
 // roomba
@@ -3729,7 +3740,7 @@ else {
    ,"streamer_mode": (()=>{
       const streamer_mode = {
   icon_path: Settings.f_path + '/assets/assets.zip#/icon/streamer_64x64.png'
- ,info_short: "Streamer Mode"
+ ,get info_short() { return System._browser.translation.get('XR_Animator.UI.streamer_mode.info_short'); }
 // ,is_base_inventory: true
 
  ,index_default: (is_mobile) ? undefined : 0
@@ -3743,7 +3754,7 @@ else {
 //   ,anytime: true
   }
 
- ,info: 'Double-click to start "Streamer mode", a one-take shortcut that automatically enables everything you need to start your mocap session, including selecting a webcam, changing your avatar\'s pose, loading the mocap AI, and turning on VMC protocol (if enabled in last session). Your preferences in webcam, pose, mocap and VMC will be saved and applied automatically.'
+ ,get info() { return System._browser.translation.get('XR_Animator.UI.streamer_mode.info'); }
       };
 
       return streamer_mode;
@@ -4027,12 +4038,12 @@ _motion_list[0] = [
   {name:"standmix2_modified", info:"Stand relaxed"},
 
   {
-    name:"stand_simple", info:"Stand simple (💃➔full-body mocap)",
+    name:"stand_simple", get info() { return 'Stand simple (💃➔' + System._browser.translation.get('XR_Animator.UI.pose.full_body_mocap') + ')'; },
     action: (name)=>{ MMD_SA_options.motion_para[name].center_view_enforced = false },
   },
 
   {
-    name:"stand_simple", info:"Stand simple (🙋➔upper-only mocap)",
+    name:"stand_simple", get info() { return 'Stand simple (🙋➔' + System._browser.translation.get('XR_Animator.UI.pose.upper_body_mocap') + ')'; },
     action: (name)=>{ MMD_SA_options.motion_para[name].center_view_enforced = true },
   },
 
@@ -4149,7 +4160,7 @@ const content =  _motion_list[index].slice(ini, ini+9).map((m,i)=>{
   let info_prefix = '';
   let info_suffix = '';
   if (motion_para == MMD_SA.MMD.motionManager.para_SA) {
-    if ((m.name != 'stand_simple') || (!motion_para.motion_tracking_upper_body_only == (m.info.indexOf('full-body mocap') != -1)))
+    if ((m.name != 'stand_simple') || (!motion_para.motion_tracking_upper_body_only == (m.info.indexOf(System._browser.translation.get('XR_Animator.UI.pose.full_body_mocap')) != -1)))
       info_prefix = '✔️';
   }
   if (motion_para?._speed && (MMD_SA_options.Dungeon.motion['PC movement forward'].name == m.name)) {
@@ -4158,7 +4169,7 @@ const content =  _motion_list[index].slice(ini, ini+9).map((m,i)=>{
 
   return (i+1)+'. ' + info_prefix + (m.info||m.name) + info_suffix;
 }).join('\n')
-+ ((_has_custom_animation_) ? '\n0. (👤Custom motion)' : '');
++ ((_has_custom_animation_) ? '\n0. (👤カスタムポーズ)' : '');
 //+ ((_has_custom_animation_) ? ('\n0. (👤Custom motion: ' + (((this._animation_on_ != null) ? this._animation_on_ : (MMD_SA.THREEX.enabled && MMD_SA.THREEX.get_model(0).animation.enabled) || (THREE.MMD.getModels()[0].skin._motion_index >= MMD_SA.motion_max_default))?'ON':'OFF') + ') (🙋)') : '');
 
 //DEBUG_show(''+this._animation_on_,0,1)
@@ -4190,7 +4201,7 @@ message: {
   index: 1,
   bubble_index: 3,
   para: { row_max:11 },
-  get content() { return 'Motion ' + (_motion_page*9+1) + '-' + (_motion_page*9+9) + ' (page ' + (_motion_page+1) + ')\n' + ((_motion_page <= 1) ? '・Hotkeys: ' + ((_motion_page == 0) ? 'Alt' : 'Ctrl') + '+Numpad' + ((_has_custom_animation_) ? 0 : 1) + '-9\n' : '・Hotkeys: N/A') + '\nA. Next 9 motions\nB. Shoulder adjust: ' + (MMD_SA.THREEX.shoulder_adjust||'Default') + '\nC. Push motion to list front\nD. Reset list order\nE. Clear custom motion\nF. Export motion config JSON\n\nX. Done'; },
+  get content() { return System._browser.translation.get('XR_Animator.UI.pose.pose') + (_motion_page*9+1) + '-' + (_motion_page*9+9) + ' (' + System._browser.translation.get('XR_Animator.UI.pose.page') + (_motion_page+1) + ')\n' + ((_motion_page <= 1) ? '・' + System._browser.translation.get('XR_Animator.UI.pose.hotkey') + ': ' + ((_motion_page == 0) ? 'Alt' : 'Ctrl') + '+Numpad' + ((_has_custom_animation_) ? 0 : 1) + '-9\n' : '・' + System._browser.translation.get('XR_Animator.UI.pose.hotkey') + ': N/A') + '\nA. ' + System._browser.translation.get('XR_Animator.UI.pose.next_poses') + '\nB. ' + System._browser.translation.get('XR_Animator.UI.pose.shoulder_adjust') + ': ' + System._browser.translation.get('XR_Animator.UI.pose.shoulder_adjust.' + (MMD_SA.THREEX.shoulder_adjust||'Default')) + '\n' + System._browser.translation.get('XR_Animator.UI.pose.extra'); },
   branch_list: [
     { key:'A', event_id:{ func:()=>{ _motion_page++ }, goto_event:{id:'_POSE_',branch_index:0} } },
     { key:'B', event_id:{ func:()=>{
@@ -4204,31 +4215,179 @@ System._browser.camera.DEBUG_show('NOTE: Restart the app for changes to apply to
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Shoulder adjust:\nThis option determines the resting angle of shoulder and how the shoulder angle responds to arm mocap. "Full" has the lowest reseting angle for VRM. "Upper half" doesn\'t change the resting angle and shoulder angle changes only if arms are raised above the shoulder. "None" disables any shoulder angle adjustment.'
+  System._browser.translation.get('XR_Animator.UI.pose.shoulder_adjust.tooltip')
 );
       }
     },
-    { key:'C', event_id:{ func:()=>{ push_motion_to_list_front() }, goto_event:{id:'_POSE_',branch_index:0} },
+    { key:'C', event_id:{ func:()=>{
+function swap_LR(p, LR=['left','right']) {
+  if ((p != null) && ((p[LR[0]] != null) || (p[LR[1]] != null))) {
+    const _left = p[LR[0]];
+    p[LR[0]] = p[LR[1]];
+    p[LR[1]] = _left;
+  }
+}
+
+const model_para = MMD_SA.MMD.motionManager.para_SA;
+if (model_para.mirror_disabled) return;
+
+const model = THREE.MMD.getModels()[0];
+const mirror_scale = MMD_SA._v3a.set(1,-1,-1);
+model.skin.targets.forEach(t=>{
+  let b_name, b_idx;
+  const k0 = t.keys[0];
+  const is_LR = k0.name.charAt(0)=='左' || k0.name.charAt(0)=='右';
+  if (is_LR) {
+    b_name = ((k0.name.charAt(0)=='左')?'右':'左') + k0.name.substring(1);
+    t.i = model.pmx.bones.findIndex(b=>b.name==b_name);
+  }
+
+  const k_length = t.keys.length;
+  t.keys.forEach((k,i)=>{
+    if (is_LR)
+      k.name = b_name;
+// skip cloned key
+    if ((k_length > 1) && (i == k_length-1) && (t.keys[i-1].pos == k.pos)) return;
+
+    k.pos[0] *= -1;
+
+    MMD_SA.TEMP_v3.setEulerFromQuaternion(MMD_SA.TEMP_q.fromArray(k.rot), 'YXZ').multiply(mirror_scale);
+    const rot = MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3, 'YXZ');
+    k.rot[0] = rot.x;
+    k.rot[1] = rot.y;
+    k.rot[2] = rot.z;
+    k.rot[3] = rot.w;
+  });
+});
+
+if (model_para.center_view) {
+  model_para.center_view[0] *= -1;
+  MMD_SA.reset_camera();
+}
+
+const motion_tracking = [model_para.motion_tracking];
+
+motion_tracking.forEach(mt=>{
+  if (!mt) return;
+
+  const hip_adjustment = mt.hip_adjustment;
+  if (hip_adjustment) {
+    swap_LR(hip_adjustment);
+  }
+
+  const arm_default_stickiness = mt.arm_default_stickiness;
+  if (arm_default_stickiness) {
+    if (arm_default_stickiness.left || arm_default_stickiness.right) {
+      swap_LR(arm_default_stickiness);
+    }
+    for (const p of [arm_default_stickiness, arm_default_stickiness.left, arm_default_stickiness.right]) {
+      const weight_x = p?.parent?.weight?.x;
+      if (weight_x != null) {
+        swap_LR(weight_x);
+      }
+    }
+  }
+
+  const arm_tracking = mt.arm_tracking;
+  if (arm_tracking) {
+    if (arm_tracking.elbow_lock) {
+      swap_LR(arm_tracking.elbow_lock);
+    }
+  }
+
+  const arm_as_leg = mt.arm_as_leg;
+  if (arm_as_leg) {
+    if (arm_as_leg.linked_side)
+      arm_as_leg.linked_side = (arm_as_leg.linked_side == 'left') ? 'right' : 'left';
+    const position = arm_as_leg.transformation?.position;
+    if (position) {
+      for (const a of ['x','y','z']) {
+        if ((a == 'x') && position.x) {
+          for (const m of ['min','max']) {
+            const v = position.x[m];
+            if (typeof v == 'number')
+              position.x[m] = { left:v, right:v };
+          }
+          const L = { min:position.x?.max?.right, max:position.x?.min?.right };
+          const R = { min:position.x?.max?.left,  max:position.x?.min?.left  };
+          for (const m of ['min','max']) {
+            if ((L[m] != null) && (R[m] != null)) {
+              position.x[m] = { left:-L[m], right:-R[m] };
+            }
+            else if ((L[m] != null) || (R[m] != null)) {
+              const v = (L[m] != null) ? L[m] : R[m];
+              position.x[m] = { left:-v, right:-v };
+            }
+            else {
+              delete position.x[m];
+            }
+          }
+        }
+        for (const p of ['add','scale']) {
+          const para = position[a]?.[p];
+          if (para != null) {
+            swap_LR(para);
+            if (a == 'x') {
+              if (p == 'add') {
+                if (typeof para == 'number') {
+                  position.x.add *= -1;
+                }
+                else {
+                  if (para.left != null)
+                    para.left *= -1;
+                  if (para.right != null)
+                    para.right *= -1;
+                }
+              }
+             }
+          }
+        }
+      }
+
+      const rotation = position.rotation;
+      if (rotation && (rotation.y != null))
+        rotation.y *= -1;
+
+      const position_to_rotation = position.position_to_rotation;
+      if (position_to_rotation) {
+        for (const p of ['upper','lower']) {
+          for (const a of ['x','y','z']) {
+            swap_LR(position_to_rotation[p]?.[a]?.curve);
+          }
+        }
+      }
+    }
+  }
+});
+      }, goto_event:{id:'_POSE_',branch_index:0} },
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Push motion to list front:\nThis option pushes the current pose/motion to the front of the list, mainly for the convenience to use hotkeys (Alt/Ctrl+Num1-9) to activate it when motion hotkeys can only cover the first 18 motions.'
+  System._browser.translation.get('XR_Animator.UI.pose.mirror_current_pose.tooltip')
 );
       }
     },
-    { key:'D', event_id:{ func:()=>{ reset_list_order() }, goto_event:{id:'_POSE_',branch_index:0} },
+    { key:'D', event_id:{ func:()=>{ push_motion_to_list_front(); }, goto_event:{id:'_POSE_',branch_index:0} },
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Reset list order:\nThis option resets the motion list order for any changes you have made with the "Push motion to list front" option.'
+  System._browser.translation.get('XR_Animator.UI.pose.push_current_pose_to_list_top.tooltip')
 );
       }
     },
-    { key:'E', event_id:{
+    { key:'E', event_id:{ func:()=>{ reset_list_order(); DEBUG_show('(pose list reset)',3); }, goto_event:{id:'_POSE_',branch_index:0} },
+      onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.pose.reset_pose_list_order.tooltip')
+);
+      }
+    },
+    { key:'F', event_id:{
         message: {
           index: 1,
           bubble_index: 3,
-          content: 'Are you sure you want to clear all custom motions?\nY. Yes\nN. No',
+          content: System._browser.translation.get('XR_Animator.UI.pose.clear_all_custom_poses.confirm'),
           branch_list: [
             {key:'Y', event_id:{ func:()=>{ clear_custom_motion() }, goto_event:{id:'_POSE_',branch_index:0} } },
             {key:'N', branch_index:0 },
@@ -4238,15 +4397,15 @@ MMD_SA_options.Dungeon.utils.tooltip(
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Clear custom motion:\nBy default, XR Animator saves custom motions (VMD/FBX/BVH) you have dropped to the app within limited capacity. This option clears all saved custom motions.'
+  System._browser.translation.get('XR_Animator.UI.pose.clear_all_custom_poses.tooltip')
 );
       }
     },
-    { key:'F', event_id:{ func:()=>{ export_motion_config() }, goto_event:{id:'_POSE_',branch_index:0} },
+    { key:'G', event_id:{ func:()=>{ export_motion_config() }, goto_event:{id:'_POSE_',branch_index:0} },
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Export motion config JSON:\nThis highly experimental feature allows you to export the config of the current pose/motion as a JSON file. You can then change the JSON to adjust every finest detail, from arm IK anchors, hip adjustment, to arm-as-leg controls. Drop the adjusted JSON file back to the app to apply changes. For now, changes are not saved and will be reset on app start.'
+  System._browser.translation.get('XR_Animator.UI.pose.export_current_pose_config.tooltip') 
 );
       }
     },
@@ -4267,7 +4426,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 
       var pose = {
   icon_path: Settings.f_path + '/assets/assets.zip#/icon/tap-dance_64x64.png'
- ,info_short: "Pose"
+ ,get info_short() { return System._browser.translation.get('XR_Animator.UI.pose.info_short'); }
 // ,is_base_inventory: true
  ,stock_max: 1
  ,stock_default: 1
@@ -4291,20 +4450,10 @@ MMD_SA_options._motion_shuffle_list_default = [MMD_SA_options.motion_index_by_na
  ,get info() {
 let info = '';
 
-if (System._browser.camera.ML_enabled) {
-  info =
-  '- The current pose '
-+ ((MMD_SA.MMD.motionManager.para_SA.motion_tracking_enabled) ? 'supports ' + ((MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only) ? 'upper-body🙋' : 'full-body💃') + ' motion tracking.' : 'does not support motion tracking.') + '\n'
-}
-else {
- info =
-  '- Double-click to change your avatar\'s pose, supporting either full-body💃 or upper-body🙋 mocap.\n'
-}
+info = (System._browser.camera.ML_enabled) ? ((MMD_SA.MMD.motionManager.para_SA.motion_tracking_enabled) ? System._browser.translation.get('XR_Animator.UI.pose.info.ML_on.tracking_on').replace(/\<tracking_mode\>/, System._browser.translation.get('XR_Animator.UI.pose.info.ML_on.tracking_on.' + ((MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only) ? 'upper_body' : 'full_body'))) : System._browser.translation.get('XR_Animator.UI.pose.info.ML_on.tracking_off')) : System._browser.translation.get('XR_Animator.UI.pose.info.ML_off');
+info += '\n';
 
-info += 
-  '- Hotkeys Alt/Ctrl+Num0-9 for pose 1-18 (0 for custom pose)\n'
-+ '- 🦶denotes the support of arm-as-leg🙋↔️🦶control mode by pressing ' + (System._browser.hotkeys.config_by_id['arm_to_leg_control_mode']?.accelerator[0]||'') + ' to toggle.\n'
-+ '- Use mouse or keys to pick an alphanumeric option.';
+info += System._browser.translation.get('XR_Animator.UI.pose.info.extra').replace(/\<hotkey\>/, System._browser.hotkeys.config_by_id['arm_to_leg_control_mode']?.accelerator[0]||'');
 
 return info;
   }
@@ -4315,7 +4464,7 @@ return info;
 
    ,"selfie" : {
   icon_path: Settings.f_path + '/assets/assets.zip#/icon/' + ((is_mobile) ? 'selfie_64x64.png' : 'webcamera_64x64.png')
- ,info_short: (is_mobile) ? 'Selfie camera' : 'Webcam/Media'
+ ,get info_short() { return System._browser.translation.get('XR_Animator.UI.webcam_media.info_short.' + ((is_mobile) ? 'selfie_camera' : 'webcam_media')); }
 // ,is_base_inventory: true
  ,stock_max: 1
  ,stock_default: 1
@@ -4345,19 +4494,14 @@ var info = ''
 
 if (System._browser.camera.visible) {
   if (System._browser.camera.ML_enabled) {
-    info +=
-  '- To hide the video input while keeping the motion capture on, double-click this item.';
+    info += System._browser.translation.get('XR_Animator.UI.webcam_media.info.camera_on.ML_on');
   }
   else {
-    info +=
-  '- To turn the video input off, double-click this item.';
+    info += System._browser.translation.get('XR_Animator.UI.webcam_media.info.camera_on.ML_off');
   }
 }
 else {
-  info +=
-  '- Double-click to choose a webcam or media input.\n'
-+ '- You can use ' + ((is_mobile) ? 'selfie camera' : 'webcam') + ', or drop a local video/picture file.\n'
-+ '- Use mouse or keys to pick a numbered option.';
+  info += System._browser.translation.get('XR_Animator.UI.webcam_media.info.camera_off');
 }
 
 return info;
@@ -4414,7 +4558,7 @@ e.detail.result.return_value = true;
 
       return {
   icon_path: Settings.f_path + '/assets/assets.zip#/icon/motion-capture_64x64.png'
- ,info_short: "Motion capture"
+ ,get info_short() { return System._browser.translation.get('XR_Animator.UI.motion_capture.info_short'); }
 // ,is_base_inventory: true
  ,stock_max: 1
  ,stock_default: 1
@@ -4446,23 +4590,15 @@ if (System._browser.camera._info) {
   info += System._browser.camera._info;
 }
 else if (System._browser.camera.motion_recorder.speed) {
-   info +=
-  '- Double-click to stop motion recording.';
+   info += System._browser.translation.get('XR_Animator.UI.motion_capture.ML_on.record_motion.choose_speed.begin_recording.info');
 }
 else if (System._browser.camera.ML_enabled) {
-  if (!System._browser.camera.visible) {
-    info +=
-  '- To choose a video input, double-click the "Webcam/Media" item. You can use a webcam, or drop a local video/picture file.\n';
-  }
-    info +=
-  '- To record motion while capturing, change options or turn mocap off, double-click this item.\n'
-+ '- Press Pause to pause/resume mocap';
+  if (!System._browser.camera.visible)
+    info += System._browser.translation.get('XR_Animator.UI.motion_capture.info.ML_on.camera_off') + '\n';
+  info += System._browser.translation.get('XR_Animator.UI.motion_capture.info.ML_on');
 }
 else {
-    info +=
-  '- Double-click to enable motion capture to control the avatar.\n'
-+ '- You can track your face, full body, or something in between.\n'
-+ '- Use mouse or keys to pick a numbered option.';
+  info += System._browser.translation.get('XR_Animator.UI.motion_capture.info.ML_off');
 }
 
 return info;
@@ -4920,7 +5056,7 @@ window.addEventListener('SA_MMD_before_render', ()=>{
 
       const _hand_camera = {
   icon_path: Settings.f_path + '/assets/assets.zip#/icon/hand_camera_64x64.png'
- ,info_short: "Hand camera"
+ ,get info_short() { return System._browser.translation.get('XR_Animator.UI.hand_camera.info_short'); }
 // ,is_base_inventory: true
 
  ,get index_default() { return (is_mobile) ? undefined : 6; }
@@ -4970,12 +5106,16 @@ else {
    ,anytime: true
   }
 
- ,get info() { return [
-'- Press ' + (System._browser.hotkeys.config_by_id['hand_camera']?.accelerator[0]||'') + ' / double-click to use your hand as camera during mocap (status: ' + ((hand_camera_enabled) ? ((hand_camera_side == '左') ? 'left hand' : 'right hand') : 'OFF') + ').',
+ ,get info() {
+/*
+return [
+'- Press ' + (System._browser.hotkeys.config_by_id['hand_camera']?.accelerator[0]||'') + ' / double-click to use your hand as camera during mocap (status: ' + ((hand_camera_enabled) ? ((hand_camera_side == '右') ? 'left hand' : 'right hand') : 'OFF') + ').',
 '- Repeat to switch among left hand, right hand, and OFF.',
 '- Press ' + (System._browser.hotkeys.config_by_id['selfie_mode']?.accelerator[0]||'') + ' to toggle "Selfie mode" which automatically focuses on your face (status: ' + ((_hand_camera.selfie_mode) ? 'ON' : 'OFF') + ').',
 '- Press ' + (System._browser.hotkeys.config_by_id['auto_look_at_camera']?.accelerator[0]||'') + ' to toggle auto "look at camera" (status: ' + ((System._browser.camera.facemesh.auto_look_at_camera) ? 'ON' : 'OFF') + ').',
   ].join('\n');
+*/
+return System._browser.translation.get('XR_Animator.UI.hand_camera.info').replace(/\<hand_camera_hotkey\>/, System._browser.hotkeys.config_by_id['hand_camera']?.accelerator[0]||'').replace(/\<hand_camera_status\>/, (hand_camera_enabled) ? ((hand_camera_side == '右') ? System._browser.translation.get('XR_Animator.UI.hand_camera.info.left_hand') : System._browser.translation.get('XR_Animator.UI.hand_camera.info.right_hand')) : 'OFF').replace(/\<selfie_mode_hotkey\>/, System._browser.hotkeys.config_by_id['selfie_mode']?.accelerator[0]||'').replace(/\<selfie_mode_status\>/, (_hand_camera.selfie_mode) ? 'ON' : 'OFF').replace(/\<auto_look_at_camera_hotkey\>/, System._browser.hotkeys.config_by_id['auto_look_at_camera']?.accelerator[0]||'').replace(/\<auto_look_at_camera_status\>/, (System._browser.camera.facemesh.auto_look_at_camera) ? 'ON' : 'OFF');
   }
       };
 
@@ -4988,6 +5128,8 @@ else {
 // ,is_base_inventory: true
 
 // ,index_default: (is_mobile) ? undefined : 5
+// ,get index_default() { return (is_mobile) ? undefined : MMD_SA_options.Dungeon.inventory.max_base + MMD_SA_options.Dungeon.inventory.max_base*(MMD_SA_options.Dungeon.inventory.max_row-1)*2 +3; }
+
 // ,get index_default() { return (is_mobile) ? undefined : (browser_native_mode) ? 4 : 6;}//MMD_SA_options.Dungeon.inventory.max_base+4; }
 
  ,stock_max: 1
@@ -5060,11 +5202,11 @@ else {
 
       return function (item) {
 if (!MMD_SA.WebXR.user_camera.visible) {
-  MMD_SA.SpeechBubble.message(0, 'You need to activate selfie camera first.', 3*1000);
+  MMD_SA.SpeechBubble.message(0, System._browser.translation.get('XR_Animator.UI.segmentation_AI.no_input'), 3*1000);
   return true
 }
 if (MMD_SA.WebXR.user_camera.ML_enabled) {
-  MMD_SA.SpeechBubble.message(0, 'You can\'t enable Selfie Segmentation AI and motion capture at the same time.', 3*1000);
+  MMD_SA.SpeechBubble.message(0, System._browser.translation.get('XR_Animator.UI.segmentation_AI.mocap_on'), 5*1000);
   return true
 }
 if (loading) {
@@ -5079,7 +5221,7 @@ init()
   }
 
  ,get info() {
-    return 'Double-click to ' + ((MMD_SA.WebXR.user_camera.bodyPix.enabled) ? 'disable' : 'enable') + ' Selfie Segmentation AI. When using with a camera or video input, the 3D avatar will be displayed behind the person in the video, allowing some interesting usage such as taking a selfie with your 3D avatar.';
+    return System._browser.translation.get('XR_Animator.UI.segmentation_AI.info').replace(/\<enable\>/, System._browser.translation.get('XR_Animator.UI.segmentation_AI.' + ((MMD_SA.WebXR.user_camera.bodyPix.enabled)?'disable':'enable')));
   }
     }
 
@@ -5126,7 +5268,7 @@ e.detail.result.return_value = true;
 
       const rec = {
   icon_path: Settings.f_path + '/assets/assets.zip#/icon/rec_64x64.png'
- ,info_short: "Media recorder"
+ ,get info_short() { return System._browser.translation.get('XR_Animator.UI.media_recorder.info_short'); }
 // ,is_base_inventory: true
 
  ,get index_default() { return (is_mobile) ? undefined : MMD_SA_options.Dungeon.inventory.max_base+1; }
@@ -5141,23 +5283,7 @@ MMD_SA_options.Dungeon.run_event('_MEDIA_RECORDER_OPTIONS_', 0);
 //   ,anytime: true
   }
 
- ,get info() {
-var info = ''
-
-if (System._browser.camera._info) {
-  info += System._browser.camera._info;
-}
-else {
-  info = [
-  '- Press F12 to capture a still shot of the 3D content.',
-  '- Press F9 to capture a video of the 3D content. Press F10 to stop and return the recorded MP4 file.',
-  '- Double-click for options.',
-  '- Use mouse or keys to pick a numbered option.',
-  ].join('\n');
-}
-
-return info;
-  }
+ ,get info() { return System._browser.translation.get('XR_Animator.UI.media_recorder.info'); }
       };
 
       return rec;
@@ -5165,7 +5291,7 @@ return info;
 
    ,"XR_Animator_options" : {
   icon_path: Settings.f_path + '/assets/assets.zip#/icon/user-experience_64x64.png'
- ,info_short: "UI/Options"
+ ,get info_short() { return System._browser.translation.get('XR_Animator.UI.UI_options.info_short');}
 // ,is_base_inventory: true
 
  ,index_default: (is_mobile) ? 4 : 5
@@ -5181,15 +5307,12 @@ MMD_SA_options.Dungeon.run_event("_FACEMESH_OPTIONS_",0);
 //   ,anytime: true
   }
 
- ,info: [
-  '- Double-click for UI settings and other options.',
-  '- Use mouse or keys to pick an alphanumeric option.',
-  ].join('\n')
+ ,get info() { return System._browser.translation.get('XR_Animator.UI.UI_options.info');}
     }
 
    ,"VMC_protocol" : {
   icon_path: Settings.f_path + '/assets/assets.zip#/icon/vmpc_logo_64x64.png'
- ,info_short: "VMC-protocol"
+ ,get info_short() { return System._browser.translation.get('XR_Animator.UI.VMC_protocol.info_short'); }
 // ,is_base_inventory: true
 
  ,index_default: (is_mobile) ? undefined : 4
@@ -5208,10 +5331,7 @@ MMD_SA_options.Dungeon.run_event("_VMC_PROTOCOL_",0);
 //   ,anytime: true
   }
 
- ,info: [
-  '- Double-click to configure VMC-protocol, which allows beaming 3D motion data in real time to other supported apps, such as VSeeFace, VNyan, Warudo, Unity and Unreal Engine.',
-  '- Use mouse or keys to pick an alphanumeric option.',
-  ].join('\n')
+ ,get info() { return System._browser.translation.get('XR_Animator.UI.VMC_protocol.info'); }
     }
 
    ,"air_blower": (function () {
@@ -5244,7 +5364,7 @@ return MMD_SA.TEMP_v3.copy(camera.position).sub(camera._lookAt).normalize().mult
       let msg = '';
       var air_blower = {
   icon_path: Settings.f_path + '/assets/assets.zip#/icon/hair-dryer_64x64.png'
- ,info_short: "Air blower"
+ ,get info_short() { return System._browser.translation.get('XR_Animator.UI.air_blower.info_short'); }
 // ,is_base_inventory: true
 
  ,index_default: undefined
@@ -5289,13 +5409,7 @@ var gravity = MMD_SA.MMD.motionManager.para_SA.gravity || [0,-1,0]
 THREE.MMD.setGravity( gravity[0]*9.8*10, gravity[1]*9.8*10, gravity[2]*9.8*10 )
   }
 
- ,info: [
-'- Double-click for a camera-oriented wind-blowing effect.',
-'- Repeat to lock the current direction.',
-'- Repeat for a camera-oriented wind-sucking effect.',
-'- Repeat to lock the current direction.',
-'- Repeat to disable it.',
-  ].join('\n')
+ ,get info() { return System._browser.translation.get('XR_Animator.UI.air_blower.info'); }
       };
 
       return air_blower;
@@ -5421,16 +5535,21 @@ MMD_SA._force_motion_shuffle = true
     })()
 
    ,"menu": {
-  get index_default() { return MMD_SA_options.Dungeon.inventory.max_base * MMD_SA_options.Dungeon.inventory.max_row -2; }
+  get index_default() { return MMD_SA_options.Dungeon.inventory.max_base + MMD_SA_options.Dungeon.inventory.max_base*(MMD_SA_options.Dungeon.inventory.max_row-1)*2 +1; }
     }
 
    ,"_map_": {
-  get index_default() { return MMD_SA_options.Dungeon.inventory.max_base * MMD_SA_options.Dungeon.inventory.max_row -1; }
+  get index_default() { return MMD_SA_options.Dungeon.inventory.max_base + MMD_SA_options.Dungeon.inventory.max_base*(MMD_SA_options.Dungeon.inventory.max_row-1)*2 +2; }
     }
 
    ,"bag01": {
-  info_short: 'Bag (AR items)',
+  info_short: 'Bag (AR)',
   get index_default() { return MMD_SA_options.Dungeon.inventory.max_base; },
+    }
+
+  ,"bag02": {
+  info_short: 'Bag (misc)',
+  get index_default() { return MMD_SA_options.Dungeon.inventory.max_base * MMD_SA_options.Dungeon.inventory.max_row -1; },
     }
 
 
@@ -5478,7 +5597,7 @@ else {
       [
         {
           message: {
-  content: "Enable selfie camera, webcam or media file input?\n1. Yes\n2. Yes (flip/mirror video)\n3. No\n4. Options"
+  get content() { return System._browser.translation.get('XR_Animator.UI.webcam_media'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:1 }
@@ -5533,11 +5652,9 @@ options = {
           message: {
   get content() {
     return [
-'Resolution limit: ' + ((options.pixel_limit.disabled) ? 'Auto / No limit' : (options.pixel_limit.current||MMD_SA_options.user_camera.pixel_limit._default_).join('x') + ((!options.pixel_limit.current) ? ' (Default)' : '')),
-'Frame rate: ' + (options.fps || 'Default'),
-'1. Change resolution limit',
-'2. Change frame rate',
-'3. Return',
+System._browser.translation.get('XR_Animator.UI.webcam_media.options.resolution_limit') + ': ' + ((options.pixel_limit.disabled) ? System._browser.translation.get('XR_Animator.UI.webcam_media.options.auto_no_limit') : (options.pixel_limit.current||MMD_SA_options.user_camera.pixel_limit._default_).join('x') + ((!options.pixel_limit.current) ? ' (' + System._browser.translation.get('Misc.default') + ')' : '')),
+System._browser.translation.get('XR_Animator.UI.webcam_media.options.frame_rate') + ': ' + (options.fps || System._browser.translation.get('Misc.default')),
+System._browser.translation.get('XR_Animator.UI.webcam_media.options.extra')
     ].join('\n');
   }
  ,bubble_index: 3
@@ -5546,7 +5663,7 @@ options = {
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Change resolution limit:\nResolution limit determines the target resolution for live webcam, as well as pixel limit for local media source. "Auto / No limit" requests no target resolution for live webcam (sometimes needed for compatibility), and no pixel limit for local media source. Default is 1280x720.'
+  System._browser.translation.get('XR_Animator.UI.webcam_media.options.resolution_limit.tooltip')
 );
       }
     }
@@ -5554,7 +5671,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Change frame rate:\nBy default, XR Animator does not request a specific frame rate from webcam (for better compatibility), which is usually 30 fps, but sometimes you may get a lower than expected frame rate. Change it to 30 to specifically request this frame rate from your webcam.'
+  System._browser.translation.get('XR_Animator.UI.webcam_media.options.frame_rate.tooltip')
 );
       }
     }
@@ -5652,7 +5769,7 @@ MMD_SA.WebXR.enter_AR()
       [
         {
           message: {
-  get content() { return 'Enable face and body tracking?\n1. Face only\n2. Body only\n3. Body + Hands\n4. Face + Body\n5. Full body (MediaPipe Tasks Vision)\n6. Full body (Legacy Holistic)\n7. Mocap options\n8. Cancel'; }
+  get content() { return System._browser.translation.get('XR_Animator.UI.motion_capture.ML_off'); }
  ,bubble_index: 3
  ,get branch_list() {
 return [
@@ -5664,7 +5781,7 @@ return [
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Full body (MediaPipe Tasks Vision):\nMediaPipe Tasks Vision is the latest mocap AI suite from Google MediaPipe. This version of full body tracking uses face, pose and hands tracking at the same time.'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.ML_off.full_body_mediapipe_vision.tooltip')
 );
       }
     }
@@ -5672,7 +5789,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Full body (Legacy Holistic):\nThis version of full body tracking uses the legacy MediaPipe Holistic AI model, which combines face, pose and hands tracking into one model. This requires less system resource and makes it faster in some cases, at the expense of losing some mocap accuracy and features from the latest MediaPipe Tasks Vision.'
+  'Full body (Legacy Holistic):\nThis version of full body tracking uses the legacy MediaPipe Holistic AI model, which combines face, pose and hand tracking into one model. This requires less system resource and makes it faster in some cases, at the expense of losing some mocap accuracy and features from the latest MediaPipe Tasks Vision.'
 );
       }
     }
@@ -5758,8 +5875,9 @@ if (change_port) {
     MMD_SA_options.Dungeon.run_event(null,null,0);
   }
   else if (e.key == 'Enter') {
-    const port_number = parseInt(port);    
-    if ((port_number > 9999) && (port_number < 65536)) {
+    const port_number = parseInt(port);
+    const port_min = 99;
+    if ((port_number > port_min) && (port_number < 65536)) {
       MMD_SA.OSC.VMC.options.plugin.send.port = port_number;
       if (MMD_SA.OSC.VMC.plugin)
         MMD_SA.OSC.VMC.plugin.options.send.port = port_number;
@@ -5767,7 +5885,7 @@ if (change_port) {
       MMD_SA_options.Dungeon.run_event(null,0,0);
     }
     else {
-      msg = (port_number <= 9999) ? '(❌5-digit number only)' : '(❌No bigger than 65535)';
+      msg = (port_number) ? ((port_number <= port_min) ? '(❌' + System._browser.translation.get('XR_Animator.UI.VMC_protocol.port.3_digit_number_at_least') + ')' : '(❌' + System._browser.translation.get('XR_Animator.UI.VMC_protocol.port.no_bigger_than_65535') + ')') : '(❌' + System._browser.translation.get('XR_Animator.UI.VMC_protocol.port.invalid_port_number') + ')';
       port = '';
       MMD_SA_options.Dungeon.run_event(null,null,0);
     }
@@ -5807,7 +5925,7 @@ else if (change_host) {
       MMD_SA_options.Dungeon.run_event(null,0,0);
     }
     else {
-      msg = '(❌Invalid IP address)';
+      msg = '(❌' + System._browser.translation.get('XR_Animator.UI.VMC_protocol.host.invalid_IP_address') + ')';
       host = '';
       MMD_SA_options.Dungeon.run_event(null,null,0);
     }
@@ -5837,7 +5955,7 @@ return cancel_default;
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'VMC-protocol:\nThis option allows you to send mocap and motion data from XR Animator in real time to external apps that support VMC-protocol, such as VSeeFace, VNyan, Warudo, Unity and Unreal. Default is "OFF".'
+  System._browser.translation.get('XR_Animator.UI.VMC_protocol.tooltip')
 );
     }
   },
@@ -5845,7 +5963,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Send camera data:\nWhen VMC-protocol is on, this option sends 3D camera data as well. Some VTubing apps such as VNyan and Warudo support reading VMC camera data. This virtually allows a complete synchronization of motion and camera visual between XR Animator and external app. Default is "OFF".'
+  System._browser.translation.get('XR_Animator.UI.VMC_protocol.send_camera_data.tooltip')
 );
     }
   },
@@ -5867,7 +5985,7 @@ System._browser.update_tray();
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'App mode:\nThis option determines the configuration applied to VMC when connected to the specified app. Different apps interpret various aspects of VMC protocol differently. Choosing the right app mode ensures that VMC data are sent correctly. Default is "Others".'
+  System._browser.translation.get('XR_Animator.UI.VMC_protocol.app_mode.tooltip')
 );
     }
   },
@@ -5875,7 +5993,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  '3D avatar display:\nThis option determines whether to hide the 3D avatar on XR Animator during VMC-protocol. Turn off your avatar display to save some CPU/GPU usage. Default is "ON".'
+  System._browser.translation.get('XR_Animator.UI.VMC_protocol.3D_avatar_display.tooltip')
 );
     }
   },
@@ -5898,7 +6016,16 @@ MMD_SA.SpeechBubble.list[1].hide();
           },
           message: {
   get content() {
-return 'VMC-protocol parameters\nA. ┣ port: ' + MMD_SA.OSC.VMC.options.plugin.send.port + '\nB. ┗ host: ' + MMD_SA.OSC.VMC.options.plugin.send.host + '\n1. VMC-protocol: ' + ((MMD_SA.OSC.VMC.sender_enabled) ? 'ON' : 'OFF') + '\n2. Send camera data: ' + ((MMD_SA.OSC.VMC.send_camera_data) ? 'ON':  'OFF') + '\n3. App mode: ' + (MMD_SA.OSC.app_mode||'Others') + '\n4. 3D avatar display: ' + ((MMD_SA.hide_3D_avatar) ? 'OFF' : 'ON') + '\nX. Done';
+    return [
+System._browser.translation.get('XR_Animator.UI.VMC_protocol.parameters'),
+'A. ┣ ' + System._browser.translation.get('XR_Animator.UI.VMC_protocol.port') + ': ' + MMD_SA.OSC.VMC.options.plugin.send.port,
+'B. ┗ ' + System._browser.translation.get('XR_Animator.UI.VMC_protocol.host') + ': ' + MMD_SA.OSC.VMC.options.plugin.send.host,
+'1. ' + System._browser.translation.get('XR_Animator.UI.VMC_protocol.info_short') + ': ' + ((MMD_SA.OSC.VMC.sender_enabled) ? 'ON' : 'OFF'),
+'2. ' + System._browser.translation.get('XR_Animator.UI.VMC_protocol.send_camera_data') + ': ' + ((MMD_SA.OSC.VMC.send_camera_data) ? 'ON':  'OFF'),
+'3. ' + System._browser.translation.get('XR_Animator.UI.VMC_protocol.app_mode') + ': ' + ((MMD_SA.OSC.app_mode && (MMD_SA.OSC.app_mode != 'Others')) ? MMD_SA.OSC.app_mode : System._browser.translation.get('Misc.others')),
+'4. ' + System._browser.translation.get('XR_Animator.UI.VMC_protocol.3D_avatar_display') + ': ' + ((MMD_SA.hide_3D_avatar) ? 'OFF' : 'ON'),
+'X. ' + System._browser.translation.get('Misc.done')
+    ].join('\n');
   }
  ,bubble_index: 3
  ,branch_list: branch_list
@@ -5919,7 +6046,7 @@ change_host = false;
           },
           message: {
   get content() {
-return 'Current port: ' + (port||MMD_SA.OSC.VMC.options.plugin.send.port) + ((msg) ? '\n'+msg : '') + '\n・Enter a 5-digit port number\n・Press R to reset to default\n・Press Enter to apply\n・Press Esc to cancel';
+return System._browser.translation.get('XR_Animator.UI.VMC_protocol.port.current_port') + ': ' + (port||MMD_SA.OSC.VMC.options.plugin.send.port) + ((msg) ? '\n'+msg : '') + '\n・' + System._browser.translation.get('XR_Animator.UI.VMC_protocol.port.enter_valid_port') + '\n' + System._browser.translation.get('XR_Animator.UI.VMC_protocol.port_host_extra');
   }
  ,index: 1
  ,bubble_index: 3
@@ -5941,7 +6068,7 @@ change_host = true;
           },
           message: {
   get content() {
-return 'Current host: ' + (host||MMD_SA.OSC.VMC.options.plugin.send.host) + ((msg) ? '\n'+msg : '') + '\n・Enter a valid IP address\n・Press R to reset to default\n・Press Enter to apply\n・Press Esc to cancel';
+return System._browser.translation.get('XR_Animator.UI.VMC_protocol.host.current_host') + ': ' + (host||MMD_SA.OSC.VMC.options.plugin.send.host) + ((msg) ? '\n'+msg : '') + '\n・' + System._browser.translation.get('XR_Animator.UI.VMC_protocol.host.enter_valid_IP') + '\n' + System._browser.translation.get('XR_Animator.UI.VMC_protocol.port_host_extra');
   }
  ,index: 1
  ,bubble_index: 3
@@ -5970,7 +6097,7 @@ if (System._browser.video_capture.FFmpeg.enabled && /h264/.test(type))
 console.log(specs)
 type = type.replace(/\;.+$/, '');
 
-return 'Video capture options\n(' + (specs.width+'x'+specs.height + '/' + ((specs.fps==-1)?'unlimited':specs.fps) + ' fps') + '/' + (vc.target_mime_type||type).replace(/video\//, '') + ')\n1. Target resolution: ' + ((!vc.target_width) ? 'AUTO' : vc.target_width+'x'+vc.target_height) + '\n2. Target FPS: ' + ((!vc.fps) ? 'AUTO' : (vc.fps == -1) ? 'UNLIMITED' : vc.fps) + ((webkit_electron_mode) ? '\n3. Output format: ' + (vc.target_mime_type||'AUTO') + '\n4. Done' : '\n3. Done' );
+return System._browser.translation.get('XR_Animator.UI.media_recorder.options') + '\n(' + (specs.width+'x'+specs.height + '/' + ((specs.fps==-1)?System._browser.translation.get('XR_Animator.UI.media_recorder.options.unlimited'):specs.fps) + ' fps') + '/' + (vc.target_mime_type||type).replace(/video\//, '') + ')\n1. ' + System._browser.translation.get('XR_Animator.UI.media_recorder.options.target_resolution') + ': ' + ((!vc.target_width) ? System._browser.translation.get('Misc.auto') : vc.target_width+'x'+vc.target_height) + '\n2. ' + System._browser.translation.get('XR_Animator.UI.media_recorder.options.target_fps') + ': ' + ((!vc.fps) ? System._browser.translation.get('Misc.auto') : (vc.fps == -1) ? System._browser.translation.get('XR_Animator.UI.media_recorder.options.Unlimited') : vc.fps) + ((webkit_electron_mode) ? '\n3. ' + System._browser.translation.get('XR_Animator.UI.media_recorder.options.output_format') + ': ' + (vc.target_mime_type||System._browser.translation.get('Misc.auto')) + '\n4. ' + System._browser.translation.get('Misc.done') : '\n3. ' + System._browser.translation.get('Misc.done'));
   },
   bubble_index: 3,
   get branch_list() { return [
@@ -6564,7 +6691,8 @@ resolve();
         const is_video = /.(mp4|mkv|webm)$/i.test(url);
         const img = (is_video) ? document.createElement('video') : new Image();
         if (is_video) {
-          img.autoplay = img.loop = img.muted = true;
+          img.autoplay = img.loop = true;
+//          img.muted = true;
         }
 
         img.addEventListener((is_video)?'loadeddata':'load', async ()=>{
@@ -6816,15 +6944,15 @@ switch (e.detail.keyCode) {
 // C
   case 67:
     if (obj.parent_bone) {
-      speech_bubble2('(Center is always the object\'s center when it is attached to a bone.)', 3);
+      speech_bubble2(System._browser.translation.get('XR_Animator.UI.UI_options.scene.3D_scene_builder.note_object_fixed_as_center'), 5);
       return;
     }
     if (explorer_mode) {
-      speech_bubble2('(Center is always the avatar\'s center when explorer mode is on and the object is unattached.)', 5);
+      speech_bubble2(System._browser.translation.get('XR_Animator.UI.UI_options.scene.3D_scene_builder.note_avatar_fixed_as_center'), 8);
       return;
     }
     use_avatar_as_center = !use_avatar_as_center;
-    speech_bubble2(((use_avatar_as_center) ? 'Avatar' : 'Object') + ' as center', 2);
+    speech_bubble2(System._browser.translation.get('XR_Animator.UI.UI_options.scene.3D_scene_builder.' + ((use_avatar_as_center) ? 'avatar' : 'object') + '_as_center'), 2);
     break;
 // O
   case 79:
@@ -7365,12 +7493,11 @@ p_bone.is_T_pose = is_T_pose;
   async function parse_scene(json, scene_src) {
     async function locate_file(zip, obj, type) {
       if (!obj || !obj.path) return false;
-      if (/^[\w\-]+$/.test(obj.path)) {
-        switch (obj.path) {
-          case 'scene_auto_fit':
-            obj.path = System.Gadget.path + '\\js\\scene_auto_fit.js';
-            return true;
-        }
+
+      switch (obj.path.replace(/^.+[\/\\]/, '').replace(/\.js$/i, '')) {
+        case 'scene_auto_fit':
+          obj.path = System.Gadget.path + '\\js\\scene_auto_fit.js';
+          return true;
       }
 
       if (!/\.([a-z0-9]{1,4})$/i.test(obj.path))
@@ -7444,14 +7571,19 @@ MMD_SA._force_motion_shuffle = true;
       if (!ev) return;
 
       const e = ev[event_name];
-      if (await locate_file(zip, e, 'text/javascript')) {
-        const filename = e.path.replace(/^.+[\/\\]/, '');
-        const module = await import(toFileProtocol(e.path));
-        await module[event_name](event_para);
-        show_status('✅Event: ' + event_name);
-      }
-
       if (!e) return;
+
+      const module_list = e.module || [e];
+
+      for (let i = 0; i < module_list.length; i++) {
+        const m = module_list[i];
+        if (await locate_file(zip, m, 'text/javascript')) {
+          const filename = m.path.replace(/^.+[\/\\]/, '').replace(/\.js$/i, '');
+          const module = await import(toFileProtocol(m.path));
+          await module[event_name](event_para);
+          show_status('✅Event: ' + event_name + '(' + filename + ')');
+        }
+      }
 
       if (e.motion) {
         await parse_motion(e.motion);
@@ -7950,7 +8082,7 @@ return [
           _show_other_options_: false,
 
           message: {
-  get content() { this._motion_for_export_ = /\.(bvh|fbx)$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd; return (!MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_ && System._browser.camera.ML_enabled) ? ((this._motion_for_export_) ? '1. Export motion to file\n2. 🔴Record motion\n3. Mocap options\n4. Mocap OFF' : '1. 🔴Record motion\n2. Mocap options\n3. Mocap OFF\n4. Enable motion control') + /*'\n5. Other options*/ '\n5. Cancel' : '1. Overlay & UI\n2. BG/Scene/3D\n3. Visual effects\n4. Miscellaneous options\n5. Export motion to file\n6. About XR Animator\n7. Cancel'; }
+  get content() { this._motion_for_export_ = /\.(bvh|fbx)$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd; return (!MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_ && System._browser.camera.ML_enabled) ? ((this._motion_for_export_) ? ['export_motion_to_file','record_motion','mocap_options','mocap_off'].map((node,i)=>(i+1) + '. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.ML_on.'+node)).join('\n') + '\n5. ' + System._browser.translation.get('Misc.cancel') : ['record_motion','mocap_options','mocap_off'].map((node,i)=>(i+1) + '. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.ML_on.'+node)).join('\n') + '\n4. ' + System._browser.translation.get('Misc.cancel') /*\n4. Enable motion control\n5. Other options*/ ) : ['UI_and_overlays','scene','visual_effects','miscellaneous_options','export_motion_to_file','about_XR_Animator'].map((node,i)=>(i+1) + '. ' + System._browser.translation.get('XR_Animator.UI.UI_options.'+node)).join('\n') + '\n7. ' + System._browser.translation.get('Misc.cancel'); }//'1. UI and overlays\n2. BG/Scene/3D\n3. Visual effects\n4. Miscellaneous options\n5. Export motion to file\n6. About XR Animator\n7. Cancel'; }
  ,bubble_index: 3
  ,get branch_list() {
 return (!MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_ && System._browser.camera.ML_enabled) ? ((this._motion_for_export_) ? [
@@ -7959,17 +8091,24 @@ return (!MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_opti
   { key:3, branch_index:mocap_options_branch },
   { key:4, branch_index:2 },
 //  { key:5, event_id:{ func:()=>{MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_=true;setTimeout(()=>{MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_=false},0);}, goto_event: { id:"_FACEMESH_OPTIONS_", branch_index:0 } } },
-  { key:5 }
+  { key:5, is_closing_event:true }
 ] : [
   { key:1, branch_index:record_motion_branch },
   { key:2, branch_index:mocap_options_branch },
   { key:3, branch_index:2 },
-  { key:4, branch_index:motion_control_branch },
+//  { key:4, branch_index:motion_control_branch },
 //  { key:5, event_id:{ func:()=>{MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_=true;setTimeout(()=>{MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_options_=false},0);}, goto_event: { id:"_FACEMESH_OPTIONS_", branch_index:0 } } },
-  { key:5, is_closing_event:true }
+  { key:4, is_closing_event:true }
 ]) : [
   { key:1, branch_index:1 },
-  { key:2, branch_index:3 },
+  { key:2, branch_index:3,
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.UI_options.scene.tooltip')
+);
+    }
+  },
   { key:3, event_id:{
       func:()=>{
         if (MMD_SA.THREEX.enabled) {
@@ -7992,7 +8131,7 @@ return (!MMD_SA_options.Dungeon.events["_FACEMESH_OPTIONS_"][0]._show_other_opti
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Visual effects:\nThis option allows you to customize 3D camera and lighting parameters, as well as add some post-processing effects (e.g. Bloom, SAO, DOF) for VRM.'
+  System._browser.translation.get('XR_Animator.UI.UI_options.visual_effects.tooltip')
 );
     }
   },
@@ -8001,7 +8140,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Export motion to file:\nIf you have finished a mocap recording session, or if you are currently using an imported FBX/BVH motion, this option allows you to export the recorded/imported motion to an external motion file in VMD (MMD) format.'
+  System._browser.translation.get('XR_Animator.UI.UI_options.export_motion_to_file.tooltip')
 );
     }
   },
@@ -8037,7 +8176,7 @@ window.removeEventListener('SA_MMD_before_render', animate_object3D);
 window.addEventListener('SA_MMD_before_render', animate_object3D);
           }
          ,message: {
-  get content() { return 'Choose a feature to change, or drop a scene JSON ' + ((webkit_electron_mode) ? '' : 'zipped with all required models ') + 'to change everything at once.\n1. Background image\n2. 3D panorama/skybox\n3. 3D scene builder (3D object)\n4. Export 3D scene JSON\n5. Back to default\n6. Cancel'; }
+  get content() { return System._browser.translation.get('XR_Animator.UI.UI_options.scene.message').replace(/\<zipped\>/, (webkit_electron_mode) ? '' : System._browser.translation.get('XR_Animator.UI.UI_options.scene.message.zipped')); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:bg_branch }
@@ -8050,7 +8189,7 @@ window.addEventListener('SA_MMD_before_render', animate_object3D);
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Export 3D scene JSON:\nThis option exports all settings of the current 3D scene (background, panorama/skybox, 3D objects) to an extermal JSON file. To load a saved 3D scene, simply drop the scene JSON to the app.'
+  System._browser.translation.get('XR_Animator.UI.UI_options.scene.export_scene_to_file')
 );
       }
     }
@@ -8066,7 +8205,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
           message: {
 //  index: 1,
 //  para: { scale:0.75 },
-  content: 'Are you sure you want to reset the whole scene back to the default status?\n1. Yes\n2. Cancel',
+  get content() { return System._browser.translation.get('XR_Animator.UI.UI_options.scene.reset_scene_to_default'); },
   para: { no_word_break:true },
   branch_list: [
 //    { key:8, event_index:1 },
@@ -8113,7 +8252,7 @@ window.dispatchEvent(new CustomEvent("SA_XR_Animator_scene_onunload"));
 DragDrop.onDrop_finish = onDrop_change_wallpaper;
           }
          ,message: {
-  content: 'Choose a BG option below, or drop an image/video file to change wallpaper.\n1. Default\n2. Black\n3. White\n4. Green\n5. Webcam as BG\n6. Done'
+  get content() { return System._browser.translation.get('XR_Animator.UI.UI_options.scene.background'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:bg_branch+1 }
@@ -8224,7 +8363,7 @@ reset_scene_UI();
 DragDrop.onDrop_finish = onDrop_change_panorama;
           }
          ,message: {
-  content: 'Choose a 3D skybox, or drop a skybox image/zip file.\n1. Blue sky\n2. Angel\'s staircase\n3. Stars & Milky Way\n4. >> Rotation speed+\n5. >> Rotation angle+\n6. 🌎Generate your own skybox\n7. Done'
+  get content() { return System._browser.translation.get('XR_Animator.UI.UI_options.scene.skybox'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, branch_index:panorama_branch+1 }
@@ -8332,13 +8471,17 @@ window.removeEventListener('SA_keydown', adjust_object3D);
 window.addEventListener('SA_keydown', adjust_object3D);
           }
          ,message: {
-  get content() { return 'Drop a ' + ((MMD_SA.THREEX.enabled) ? 'GLB model, ' : '') + 'zipped .X model or image/video file as 3D object. Info about the active object is on the top left corner. Use keyboard for controls.\n1. Show keyboard controls\n2. Hide UI\n3. Export 3D scene JSON\n4. Explorer mode: ' + ((explorer_mode)?'ON':'OFF') + '\n5. Done'; }
+  get content() {
+return System._browser.translation.get('XR_Animator.UI.UI_options.scene.3D_scene_builder').replace(/\<extra_model\>/, System._browser.translation.get('XR_Animator.UI.UI_options.scene.3D_scene_builder.' + ((MMD_SA.THREEX.enabled)?'THREEX':'MMD'))).replace(/\<explorer_mode\>/, (explorer_mode)?'ON':'OFF');
+// return 'Drop a ' + ((MMD_SA.THREEX.enabled) ? 'GLB model, ' : 'zipped PMX model, ') + 'zipped .X model or image/video file as 3D object. Info about the active object is on the top left corner. Use keyboard for controls.\n1. Show keyboard controls\n2. Hide UI\n3. Export 3D scene JSON\n4. Explorer mode: ' + ((explorer_mode)?'ON':'OFF') + '\n5. Done';
+  }
+ ,para: { row_max:10 }
  ,bubble_index: 3
  ,get branch_list() { return [
     { key:1, event_id:[[
         {
           message: {
-  content: '・⬆️⬇️⬅️➡️ to move horizontally\n・Shift+⬆️⬇️ to move vertically\n・Shift+️⬅️➡️ to rotate Z\n・Ctrl+️⬆️⬇️⬅️➡️ to rotate XY\n・➕➖ to scale\n・Ctrl+➕➖ to adjust movement unit\n1. Next'
+  get content() { return System._browser.translation.get('XR_Animator.UI.UI_options.scene.3D_scene_builder.keyboard_controls.1'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_index:1 }
@@ -8347,7 +8490,7 @@ window.addEventListener('SA_keydown', adjust_object3D);
         },
         {
           message: {
-  get content() { return '・O to switch 3D object\n・B to attach 3D object to avatar\'s bone\n・C to change center\n・R to reset 3D object\n・X to remove 3D object' + ((explorer_mode) ? '\n1. Next' : '\n1. Back'); }
+  get content() { return System._browser.translation.get('XR_Animator.UI.UI_options.scene.3D_scene_builder.keyboard_controls.2').replace(/\<\explorer_mode>/, System._browser.translation.get('XR_Animator.UI.UI_options.scene.3D_scene_builder.keyboard_controls.2.' + ((explorer_mode)?'next':'back'))); }
  ,bubble_index: 3
  ,get branch_list() { return (explorer_mode) ? [
     { key:1, event_index:2 },
@@ -8358,7 +8501,7 @@ window.addEventListener('SA_keydown', adjust_object3D);
         },
         {
           message: {
-  content: 'Explorer mode controls:\n・WASD to move\n・SPACE to jump (+Shift for super jump)\n・Alt+⬆️⬇️ to adjust ground Y\n1. Back'
+  get content() { return System._browser.translation.get('XR_Animator.UI.UI_options.scene.3D_scene_builder.keyboard_controls.3'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id:'_FACEMESH_OPTIONS_', branch_index:object3D_branch }
@@ -8377,7 +8520,7 @@ window.addEventListener('SA_keydown', adjust_object3D);
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Explorer mode:\nWhen enabled, mesh colliders are calculated based on the current 3D scene so that you can use the standard WASD and Space controls to navigate on your scene afterwards. This mode is usable when the 3D scene is not empty or VMC-protocol is on. Default is "OFF".'
+  System._browser.translation.get('XR_Animator.UI.UI_options.scene.3D_scene_builder.explorer_mode.tooltip')
 );
       }
     },
@@ -8400,7 +8543,7 @@ DEBUG_show();
 DEBUG_show((object3d_list.length) ? (object3d_index+1) + ': ' + object3d_list[object3d_index].user_data.id : '(Drag and drop a 3D object file to begin.)');
           }
          ,message: {
-  content: 'Press 1 to restore UI.'
+  get content() { return System._browser.translation.get('XR_Animator.UI.UI_options.scene.3D_scene_builder.restore_UI'); }
  ,duration: 3
  ,bubble_index: 3
  ,branch_list: [
@@ -8425,7 +8568,7 @@ if (explorer_mode) {
 
 if (!MMD_SA.OSC.VMC.sender_enabled) {
   if (!object3d_cache.size) {
-    speech_bubble2('There is no 3D object in this scene.', 3, { no_word_break:true });
+    speech_bubble2(System._browser.translation.get('XR_Animator.UI.UI_options.scene.3D_scene_builder.explorer_mode.no_object'), 5, { no_word_break:true });
     MMD_SA_options.Dungeon.run_event("_FACEMESH_OPTIONS_", object3D_branch, 0);
     return;
   }
@@ -8433,7 +8576,7 @@ if (!MMD_SA.OSC.VMC.sender_enabled) {
   let obj_count = 0;
   for (const value of object3d_cache.values()) {
     if (!value) {
-      speech_bubble2('Please wait until all 3D objects are fully loaded.', 3);
+      speech_bubble2(System._browser.translation.get('XR_Animator.UI.UI_options.scene.3D_scene_builder.explorer_mode.still_loading'), 5);
       MMD_SA_options.Dungeon.run_event("_FACEMESH_OPTIONS_", object3D_branch, 0);
       return;
     }
@@ -8441,7 +8584,7 @@ if (!MMD_SA.OSC.VMC.sender_enabled) {
   }
 
   if (!obj_count) {
-    speech_bubble2('There is no explorable 3D object in this scene.', 3);
+    speech_bubble2(System._browser.translation.get('XR_Animator.UI.UI_options.scene.3D_scene_builder.explorer_mode.no_explorable_object'), 5);
     MMD_SA_options.Dungeon.run_event("_FACEMESH_OPTIONS_", object3D_branch, 0);
     return;
   }
@@ -8452,7 +8595,7 @@ MMD_SA_options.Dungeon.run_event();
         },
         {
           message: {
-  content: 'Explorer mode allows you to control your avatar to move through your 3D scene.\n1. START\n2. Cancel'
+  get content() { return System._browser.translation.get('XR_Animator.UI.UI_options.scene.3D_scene_builder.explorer_mode.confirm'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_index:2 },
@@ -8475,7 +8618,7 @@ System._browser.on_animation_update.add(()=>{MMD_SA_options.Dungeon.run_event()}
         },
         {
           message: {
-  content: 'Building an explorable scene...\nNOTE: Depending on the complexity of the 3D scene, it may take more than a few seconds.'
+  get content() { return System._browser.translation.get('XR_Animator.UI.UI_options.scene.3D_scene_builder.explorer_mode.starting'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:[1,'Esc'], event_index:3 },
@@ -8512,7 +8655,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  content: 'XR Animator (v0.18.0)\n1. Video demo\n2. Readme\n3. Download app version\n4. ❤️Sponsor️\n5. Contacts\n6. Cancel'
+  get content() { return 'XR Animator (v0.19.0)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -8548,8 +8691,19 @@ else
        ,ended: true
       }
     }
-   ,{ key:4, event_index:1 }
-   ,{ key:5, event_id: {
+   ,{ key:4, event_id: {
+        func:()=>{
+var url = 'https://ko-fi.com/butzyung/shop'
+if (webkit_electron_mode)
+  webkit_electron_remote.shell.openExternal(url)
+else
+  window.open(url)
+        }
+       ,ended: true
+      }
+    }
+   ,{ key:5, event_index:1 }
+   ,{ key:6, event_id: {
         func:()=>{
 var url = 'https://github.com/ButzYung/SystemAnimatorOnline#contacts'
 if (webkit_electron_mode)
@@ -8560,13 +8714,13 @@ else
        ,ended: true
       }
     }
-   ,{ key:6, is_closing_event:true, event_index:99 }
+   ,{ key:7, is_closing_event:true, event_index:99 }
   ]
           }
         },
         {
           message: {
-  get content() { return 'If you like XR Animator, please consider making a donation and help keep this project running🙏\n1. ☕Buy me a coffee~\n2. 🤝PayPal.Me' + ((webkit_electron_mode) ? '\n3. 🟡Bitcoin\n4. Cancel' : '\n3. Cancel'); }
+  get content() { return System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.support') + ((0&&webkit_electron_mode) ? '\n3. 🟡Bitcoin\n4. Cancel' : '\n3. ' + System._browser.translation.get('Misc.cancel')); }
  ,bubble_index: 3
  ,get branch_list() { return [
     { key:1, event_id: {
@@ -8615,8 +8769,9 @@ navigator.clipboard.writeText('1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p').then(()=>{
 if (/\.(bvh|fbx)$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd) return true;
           }
          ,message: {
-  content: 'There is no motion to export. Enable motion capture and record the motion, or drop a FBX/BVH motion file.',
-  duration: 5
+  get content() { return System._browser.translation.get('XR_Animator.UI.motion_capture.ML_on.export_motion_to_file.no_motion'); },
+  duration: 5,
+  delay: 0.1
           }
          ,ended: true
         },
@@ -8625,7 +8780,7 @@ if (/\.(bvh|fbx)$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filenam
           }
          ,message: {
   get content() {
-return 'Choose a motion format to export.\n1. VMD' + ((MMD_SA.THREEX.enabled) ? '\n2. BVH' : '') + '\nX. Cancel';
+return System._browser.translation.get('XR_Animator.UI.motion_capture.ML_on.export_motion_to_file.choose_format') + '\n1. VMD' + ((MMD_SA.THREEX.enabled) ? '\n2. BVH' : '') + '\nX. ' + System._browser.translation.get('Misc.cancel');
   } 
  ,bubble_index: 3
  ,get branch_list() {
@@ -8693,7 +8848,10 @@ setTimeout(()=>{
      ,[
         {
           message: {
-  get content() { return '1. ⌨️Hotkey list and options\n2. Camera face-locking: ' + ((MMD_SA_options.camera_face_locking==null)?'Auto':(MMD_SA_options.camera_face_locking)?'ON':'OFF') + '\n3. Audio visualizer: ' + ((MMD_SA_options.use_CircularSpectrum) ? 'ON' : 'OFF') + '\n4. Export all settings\n5. Reset all settings\n6. Done'; },
+  get content() {
+return System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.message').replace(/\<camera_face_locking\>/, (MMD_SA_options.camera_face_locking==null)?System._browser.translation.get('Misc.auto'):(MMD_SA_options.camera_face_locking)?'ON':'OFF').replace(/\<audio_visualizer\>/, (MMD_SA_options.use_CircularSpectrum)?'ON':'OFF');
+//return '1. ⌨️Hotkey list and options\n2. Camera face-locking: ' + ((MMD_SA_options.camera_face_locking==null)?'Auto':(MMD_SA_options.camera_face_locking)?'ON':'OFF') + '\n3. Audio visualizer: ' + ((MMD_SA_options.use_CircularSpectrum) ? 'ON' : 'OFF') + '\n4. Export all settings\n5. Reset all settings\n6. Done';
+  },
   bubble_index: 3,
   para: { no_word_break:true },
   branch_list: [
@@ -8702,7 +8860,7 @@ setTimeout(()=>{
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Camera face-locking:\nWhen enabled, the 3D camera will lock your avatar\'s face and move accordingly, resulting in a more dynamic camera effect. "Auto" enables the face-locking effect only when a 3D scene is loaded (e.g. skybox, 3D objects). Default is "Auto".'
+  System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.camera_face_locking.tooltip')
 );
       }
     },
@@ -8710,7 +8868,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Audio visualizer:\nXR Animator supports various audio visualization effects when a music file is dropped to the app. Turn off this option if you don\'t want the default "circular spectrum" audio visualizer to show up when music plays. Default is "ON".'
+  System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.audio_visualizer.tooltip')
 );
       }
     },
@@ -8718,7 +8876,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Export all settings:\nThis option exports all settings of XR Animator to an external JSON file, so that it can be imported back to XR Animator in the future simply by dropping the JSON file to the app.'
+  System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.export_all_settings.tooltip')
 );
       }
     },
@@ -8753,14 +8911,7 @@ MMD_SA_options.use_CircularSpectrum = !MMD_SA_options.use_CircularSpectrum;
 message: {
   index: 1,
   bubble_index: 3,
-  content: [
-'・✔️Ctrl+L to toggle 3D camera lock',
-'・✔️Pause to pause/resume mocap',
-'・✔️F9 to start video capture',
-'・✔️F10 to stop video capture',
-'・✔️F12 to capture still shot',
-
-  ].join('\n')
+  get content() { return System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.extra'); }
 },
 next_step: {},
         },
@@ -8790,11 +8941,11 @@ function check_hotkey(acc) {
   let state;
   if (System._browser.hotkeys._hotkey_reserved.indexOf(acc) != -1) {
     state = false;
-    hotkey_info = '❌Reserved';
+    hotkey_info = '❌' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.reserved');
   }
   else {
     state = browser_native_mode || !webkit_electron_remote.globalShortcut.isRegistered(acc);
-    hotkey_info = (state) ? '✔️OK' : '❌Not usable';
+    hotkey_info = (state) ? '✔️OK' : '❌' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.not_usable');
   }
 
   return state;
@@ -8867,11 +9018,11 @@ const hotkeys = System._browser.hotkeys;
 const acc_default = hotkeys._hotkey_config.find(c=>c.id==hotkey_id).accelerator;
 
 if (acc_default[0] == hotkeys.config_by_id[hotkey_id].accelerator[0]) {
-  hotkey_info = (hotkey_acc) ? '✔️Hotkey reset (' + acc_default[0] + ')' : '(Hotkey already in default state)';
+  hotkey_info = (hotkey_acc) ? '✔️' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.reset') + ' (' + acc_default[0] + ')' : '(' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.already_default') + ')';
 }
 else {
   hotkeys.register(hotkey_id, acc_default);
-  hotkey_info = '✔️Hotkey reset (' + acc_default[0] + ')';
+  hotkey_info = '✔️' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.reset') + ' (' + acc_default[0] + ')';
 }
 
 hotkey_combo = hotkey_acc = null;
@@ -8885,10 +9036,10 @@ if (hotkey_acc) {
   const acc_default = hotkeys._hotkey_config.find(c=>c.id==hotkey_id).accelerator;
   if (!hotkeys.register(hotkey_id, [hotkey_acc])) {
     hotkeys.register(hotkey_id, acc_default);
-    DEBUG_show('❌Hotkey not registered, restoring default (' + acc_default[0] + ')', 5);
+    DEBUG_show('❌' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.not_registered') + ' (' + acc_default[0] + ')', 5);
   }
   else {
-    DEBUG_show('✔️Hotkey registered (' + hotkey_acc + ')', 5);
+    DEBUG_show('✔️' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.registered') + ' (' + hotkey_acc + ')', 5);
   }
 }
 
@@ -8899,7 +9050,7 @@ hotkey_id = hotkey_combo = hotkey_info = hotkey_acc = null;
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Global hotkey mode:\nWhen a hotkey is global, it always works even if XR Animator is out of focus. This option provides a convenient shortcut to toggle the global state of all hotkeys at once, instead of configuring each hotkey separately. Default is "ON".'
+  System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.global_hotkey_mode.tooltip')
 );
       }
     },
@@ -8919,15 +9070,15 @@ if (hotkey_id) MMD_SA_options.Dungeon.run_event();
 const hotkeys = System._browser.hotkeys;
 
 return [
-  '1. ' + get_state('switch_motion') + 'Alt/Ctrl+Num0-9 to switch motion',
-  '2. ' + get_state('arm_to_leg_control_mode') + hotkeys.config_by_id['arm_to_leg_control_mode'].accelerator[0] + ' to toggle🙋↔️🦶control mode',
-  '3. ' + get_state('mocap_auto_grounding') + hotkeys.config_by_id['mocap_auto_grounding'].accelerator[0] + ' to toggle mocap auto-grounding',
+  '1. ' + get_state('switch_motion') + 'Alt/Ctrl+Num0-9' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.switch_motion'),
+  '2. ' + get_state('arm_to_leg_control_mode') + hotkeys.config_by_id['arm_to_leg_control_mode'].accelerator[0] + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.arm_as_leg_control'),
+  '3. ' + get_state('mocap_auto_grounding') + hotkeys.config_by_id['mocap_auto_grounding'].accelerator[0] + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.auto_grounding'),
 //  '・' + get_state('camera_3D_lock') + 'Ctrl+L to toggle 3D camera lock',
-  '4. ' + get_state('hand_camera') + hotkeys.config_by_id['hand_camera'].accelerator[0] + ' to toggle hand camera mode',
-  '5. ' + get_state('selfie_mode') + hotkeys.config_by_id['selfie_mode'].accelerator[0] + ' to toggle hand camera\'s selfie mode',
-  '6. ' + get_state('auto_look_at_camera') + hotkeys.config_by_id['auto_look_at_camera'].accelerator[0] + ' to toggle auto "look at camera"',
-  'G. Global hotkey mode🌐: ' + ((System._browser.hotkeys.is_global) ? 'ON' : 'OFF'),
-  'X. Done',
+  '4. ' + get_state('hand_camera') + hotkeys.config_by_id['hand_camera'].accelerator[0] + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.hand_camera'),
+  '5. ' + get_state('selfie_mode') + hotkeys.config_by_id['selfie_mode'].accelerator[0] + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.selfie_mode'),
+  '6. ' + get_state('auto_look_at_camera') + hotkeys.config_by_id['auto_look_at_camera'].accelerator[0] + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.auto_look_at_camera'),
+  'G. ' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.global_hotkey_mode') + '🌐: ' + ((System._browser.hotkeys.is_global) ? 'ON' : 'OFF'),
+  'X. ' + System._browser.translation.get('Misc.done'),
 ].join('\n');
   },
   bubble_index: 3,
@@ -8947,41 +9098,41 @@ return [
   get_state(hotkey_id) + hotkey_id,
 
   ...(()=>{
-if (hotkey_id == 'switch_motion') return ['Hotkey: Alt/Ctrl+Num0-9'];
+if (hotkey_id == 'switch_motion') return [System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.hotkey') + ': Alt/Ctrl+Num0-9'];
 
-if (!hotkey_combo) return ['Hotkey: ' + (hotkey_acc||config.accelerator[0])];
+if (!hotkey_combo) return [System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.hotkey') + ': ' + (hotkey_acc||config.accelerator[0])];
 
-let info = 'Valid keys:\n・Alt/Ctrl/Shift\n・A-Z\nPress Esc to cancel.';
+let info = System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.valid_keys') + ':\n・Alt/Ctrl/Shift\n・A-Z\n' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.press_to_cancel');
 
 if (!hotkey_combo.length) {
   return [
-'Current hotkey: ' + config.accelerator[0],
+System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.current_hotkey') + ': ' + config.accelerator[0],
 info,
   ];
 }
 
 return [
-  'Current hotkey: ' + hotkey_combo.join('+'),
+  System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.current_hotkey') + ': ' + hotkey_combo.join('+'),
   info,
 ];
   })(),
 
   ...((hotkey_info)?[hotkey_info]:[]),
 
-  ...((hotkey_combo || browser_native_mode) ? [] : ['D. Disable global hotkey: ' + ((hotkeys.accelerators[config.accelerator[0]].config.global_disabled) ? 'YES' : 'NO')]),
+  ...((hotkey_combo || browser_native_mode) ? [] : ['D. ' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.global_hotkey') + ': ' + ((hotkeys.accelerators[config.accelerator[0]].config.global_disabled) ? 'OFF' : 'ON')]),
 
   ...(()=>{
 if ((hotkey_id == 'switch_motion') || hotkey_combo) return [];
 
 if (!hotkey_combo) {
   return [
-    'C. Change hotkey',
-    'R. Reset hotkey',
+    'C. ' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.change_hotkey'),
+    'R. ' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.reset_hotkey'),
   ];
 }
   })(),
 
-  ...((hotkey_combo) ? [] : ['F. Finish']),
+  ...((hotkey_combo) ? [] : ['F. ' + System._browser.translation.get('Misc.finish')]),
 ].join('\n');
   },
   index: 1,
@@ -9004,7 +9155,7 @@ System._browser.save_file('XRA_settings.json', json, 'application/json');
 // 7
         {
           message: {
-  content: 'This will reset all XR Animator settings to the default. Are you sure?\n1. Yes\n2. No',
+  get content() { return System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.reset_all_settings'); },
   bubble_index: 3,
   branch_list: [
     { key:1, event_index:8 },
@@ -9117,7 +9268,7 @@ DEBUG_show('✅Settings reset', 3);
           func: function () {
 if (System._browser.camera.initialized) {
   if (!System._browser.camera.ML_warmed_up) {
-    System._browser.on_animation_update.add(()=>{ MMD_SA.SpeechBubble.message(0, 'Mocap AI models are still warming up. Try again in a few seconds.', 3*1000); }, 0,0);
+    System._browser.on_animation_update.add(()=>{ MMD_SA.SpeechBubble.message(0, System._browser.translation.get('XR_Animator.UI.motion_capture.ML_on.record_motion.model_warming_up'), 4*1000); }, 0,0);
     MMD_SA_options.Dungeon.run_event(null,done_branch,0);
   }
   else {
@@ -9125,20 +9276,17 @@ if (System._browser.camera.initialized) {
   }
 }
 else {
-  System._browser.on_animation_update.add(()=>{ MMD_SA.SpeechBubble.message(0, 'Choose a video input for motion capture first before you can record motion.', 3*1000); }, 0,0);
+  System._browser.on_animation_update.add(()=>{ MMD_SA.SpeechBubble.message(0, System._browser.translation.get('XR_Animator.UI.motion_capture.ML_on.record_motion.choose_input'), 4*1000); }, 0,0);
   MMD_SA_options.Dungeon.run_event(null,done_branch,0);
 }
           }
         },
         {
           func: function () {
-System._browser.camera._info =
-  '- Recording allows motion to be exported to a file later.\n'
-+ '- If your PC is slow, choose a slower speed to ensure that you can capture all the frames.\n'
-+ '- Live camera will always be recorded at normal speed.';
+System._browser.camera._info = System._browser.translation.get('XR_Animator.UI.motion_capture.ML_on.record_motion.choose_speed.info');
           }
          ,message: {
-  content: 'Choose a speed to record motion.\n1. x 1\n2. x 0.5\n3. x 0.25\n4. Cancel'
+  get content() { return System._browser.translation.get('XR_Animator.UI.motion_capture.ML_on.record_motion.choose_speed'); }
  ,bubble_index: 3
  ,branch_list: [
   { key:1, branch_index:record_motion_branch+1 },
@@ -9189,7 +9337,7 @@ DEBUG_show('(Motion recording STARTED / x0.25 speed)', 3)
      ,[
         {
           message: {
-  content: '1. Body pose options\n2. Hands options\n3. Facemesh options\n4. Webcam angle adjustment\n5. Clear bounding box\n6. Done'
+  get content() { return System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options') + '\n6. ' + System._browser.translation.get('Misc.done'); }
  ,bubble_index: 3
  ,branch_list: [
   { key:1, event_index:1 },
@@ -9200,7 +9348,7 @@ DEBUG_show('(Motion recording STARTED / x0.25 speed)', 3)
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Clear bounding box:\nXR Animator mocap can only track one person at the same time. When there are more than one person in the mocap source, sometimes the mocap AI can be tracking the wrong person. In such case, clear the bounding box of the current target to enforce the AI to track another person in the video.'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.clear_bounding_box.tooltip')
 );
     }
   },
@@ -9210,29 +9358,38 @@ MMD_SA_options.Dungeon.utils.tooltip(
         },
 
         {
-          func: function () {
-System._browser.camera._info =
-  '- "Best" AI model uses more GPU to improve mocap quality.\n'
-+ '- "Shoulder tracking" tracks shoulder motion and shrugging.\n'
-+ '- Enable "Leg IK" to output leg IK during VMD recording.\n'
-+ '- "Leg scale" adapts leg length diff between source and avatar.\n'
-+ '- Turn auto-grounding on to fix avatar\'s feet on the ground.\n'
-+ '- Hip adjustment controls hip\'s reaction to upper body motion.'
-          },
           message: {
   get content() {
+    let body_bend_reduction_power;
+    switch (System._browser.camera.poseNet.body_bend_reduction_power) {
+      case 0.25:
+        body_bend_reduction_power = 'Small';
+        break;
+      case 0.5:
+        body_bend_reduction_power = 'Medium';
+        break;
+      case 0.75:
+        body_bend_reduction_power = 'Large';
+        break;
+      case 1:
+        body_bend_reduction_power = 'Full';
+        break;
+    }
+
     return [
-'1. AI model quality: ' + (MMD_SA_options.user_camera.ML_models.pose.model_quality || 'Normal'),
-'2. ┗ Z-depth scale: ' + ((MMD_SA_options.user_camera.ML_models.pose.model_quality == 'Best') ? ((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale)?((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale<3)?'Max':'Min'):'Medium') : 'N/A'),
-'3. Shoulder tracking: ' + ((System._browser.camera.poseNet.shoulder_tracking) ? 'ON' : 'OFF'),
-'4. Leg IK: ' + ((MMD_SA_options.user_camera.ML_models.pose.use_legIK)?'ON':'OFF'),
-'5. Leg scale adjustment: ' + ((!System._browser.camera.poseNet.leg_scale_adjustment)?'OFF':((System._browser.camera.poseNet.leg_scale_adjustment>0 && '+')||'')+System._browser.camera.poseNet.leg_scale_adjustment),
-'6. Auto-grounding (' + (System._browser.hotkeys.config_by_id['mocap_auto_grounding']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON'),
-'7. Upper rotation offset: ' + ((MMD_SA.MMD.motionManager.para_SA.motion_tracking?.ML_models?.pose || MMD_SA_options.user_camera.ML_models.pose).upper_rotation_offset||0) + '°(➕➖)',
-'X. Done',
+'1. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.AI_model_quality') + ': ' + System._browser.translation.get('Misc.' + (MMD_SA_options.user_camera.ML_models.pose.model_quality || 'Normal')),
+'2. ┗ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.AI_model_quality.z_depth_scale') + ': ' + ((MMD_SA_options.user_camera.ML_models.pose.model_quality == 'Best') ? System._browser.translation.get('Misc.' + ((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale) ? ((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale<3)?'Max':'Min'):'Medium')) : 'N/A'),
+'3. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.shoulder_tracking') + ': ' + ((System._browser.camera.poseNet.shoulder_tracking) ? 'ON' : 'OFF'),
+'4. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.leg_IK') + ': ' + ((MMD_SA_options.user_camera.ML_models.pose.use_legIK)?'ON':'OFF'),
+'5. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.leg_scale_adjustment') + ': ' + ((!System._browser.camera.poseNet.leg_scale_adjustment)?'OFF':((System._browser.camera.poseNet.leg_scale_adjustment>0 && '+')||'')+System._browser.camera.poseNet.leg_scale_adjustment),
+'6. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.auto_grounding') + ' (' + (System._browser.hotkeys.config_by_id['mocap_auto_grounding']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON'),
+'7. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.body_bend_reduction') + ': ' + ((body_bend_reduction_power) ? System._browser.translation.get('Misc.' + body_bend_reduction_power) : 'OFF'),
+'8. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.upper_rotation_offset') + ': ' + ((MMD_SA.MMD.motionManager.para_SA.motion_tracking?.ML_models?.pose || MMD_SA_options.user_camera.ML_models.pose).upper_rotation_offset||0) + '°(➕➖)',
+'X. ' + System._browser.translation.get('Misc.done'),
     ].join('\n');
   },
   bubble_index: 3,
+  para: { row_max:10 },
   branch_list: [
   { key:1, event_id: {
       func: function () {
@@ -9243,7 +9400,7 @@ MMD_SA_options.user_camera.ML_models.pose.model_quality = (!MMD_SA_options.user_
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'AI model quality:\nThis option determines the weight of the mocap AI model. "Best" is the heavier version, which provides better mocap accuracy and quality, at the expense of extra GPU usage. Default is "Normal".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.AI_model_quality.tooltip')
 );
     }
   },
@@ -9251,7 +9408,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Z-depth scale:\nThis option determines the z-depth scale when AI model quality is set to "Best". "Min" gives you less sense of depth, while "Max" boosts it. Default is "Medium".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.AI_model_quality.z_depth_scale.tooltip')
 );
     }
   },
@@ -9259,7 +9416,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Shoulder tracking:\nWhen enabled, shoulder motion and shrugging will be tracked. Note that shrug tracking requires face tracking enabled. Default is "ON".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.shoulder_tracking.tooltip')
 );
     }
   },
@@ -9267,7 +9424,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Leg IK:\nWhen enabled, inverse kinematics (IK) will be used to calculate avatar\'s leg motions. When motion recorder is on, IK data will be recorded, which makes editing on MMD easier for exported VMD motion. Default is "OFF".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.leg_IK.tooltip')
 );
     }
   },
@@ -9275,7 +9432,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Leg scale adjustment:\nThis experimental feature adapts the leg length difference between source and avatar to give you a better sense of grounding. You don\'t need this option in most cases, but some nice results can be achieved if you can find a setting that keeps the values of 左/右 on debug between 1 and 0.95 most of the time. Default is "OFF".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.leg_scale_adjustment.tooltip')
 );
     }
   },
@@ -9283,18 +9440,35 @@ MMD_SA_options.Dungeon.utils.tooltip(
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Auto-grounding:\nWhen enabled, your avatar\'s feet will always be grounded during full body mocap. This option can be toggled via hotkey (' + (System._browser.hotkeys.config_by_id['mocap_auto_grounding']?.accelerator[0]||'N/A') + '). Default is "OFF".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.auto_grounding.tooltip').replace(/\<hotkey\>/, System._browser.hotkeys.config_by_id['mocap_auto_grounding']?.accelerator[0]||'N/A')
 );
     }
   },
   { key:7, event_id: {
+      func: function () {
+let v = System._browser.camera.poseNet.body_bend_reduction_power || 0;
+v += 0.25;
+if (v > 1)
+  v = 0;
+System._browser.camera.poseNet.body_bend_reduction_power = v;
+      },
+      goto_event: { branch_index:mocap_options_branch, step:1 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.body_bend_reduction.tooltip')
+);
+    }
+  },
+  { key:8, event_id: {
       func: function () {},
       goto_event: { branch_index:mocap_options_branch, step:1 },
     },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Upper rotation offset (press ➕➖ to change value):\nUse this option to apply a rotation offset to the upper body of your avatar while rotating the root in the opposite direction, as if only your lower body is rotated while the upper body stays still. This can be useful if you are at a certain angle sideway to the camera instead of facing the camera straightly. Press ➕➖ to change value. Default is "0%".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.upper_rotation_offset.tooltip')
 );
     }
   },
@@ -9307,22 +9481,24 @@ MMD_SA_options.Dungeon.utils.tooltip(
         (()=>{
           let option_active = 'General weighting';
 
-          const options = ['General weighting', 'Head motion weight', 'Adjust Y axis', 'Scale X', 'Scale Y', 'Scale Z', 'Smoothing'];
+          const options = ['General weighting', 'Head motion weight', 'Y-axis adjustment', 'Scale X', 'Scale Y', 'Scale Z', 'Smoothing'];
 
           return {
             message: {
   get content() {
+    const scale = System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.scale');
+
     return [
-'Hip adjustment (upper body mocap)',
+System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment'),
 //'・Press ⬆️⬇️ to switch option',
-'・Press ⬅️➡️ to change value',
-'A. General weighting: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'OFF' : System._browser.camera.poseNet.hip_adjustment_weight_percent + '%') + ((option_active=='General weighting')?'⬅️➡️':''),
-'B. ┣ Head motion weight: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_head_weight_percent + '%') + ((option_active=='Head motion weight')?'⬅️➡️':''),
-'C. ┣ Adjust Y axis: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent + '%') + ((option_active=='Adjust Y axis')?'⬅️➡️':''),
-'D. ┣ Scale X: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_x_percent + '%') + ((option_active=='Scale X')?'⬅️➡️':''),
-'E. ┣ Scale Y: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_y_percent + '%') + ((option_active=='Scale Y')?'⬅️➡️':''),
-'F. ┣ Scale Z: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_z_percent + '%') + ((option_active=='Scale Z')?'⬅️➡️':''),
-'G. ┗ Smoothing: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_smoothing_percent + '%') + ((option_active=='Smoothing')?'⬅️➡️':''),
+'・' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value'),
+'A. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.general_weighting') + ': ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'OFF' : System._browser.camera.poseNet.hip_adjustment_weight_percent + '%') + ((option_active=='General weighting')?'⬅️➡️':''),
+'B. ┣ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.head_motion_weight') + ': ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_head_weight_percent + '%') + ((option_active=='Head motion weight')?'⬅️➡️':''),
+'C. ┣ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.y_axis_adjustment') + ': ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent + '%') + ((option_active=='Y-axis adjustment')?'⬅️➡️':''),
+'D. ┣ ' + scale + ' X: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_x_percent + '%') + ((option_active=='Scale X')?'⬅️➡️':''),
+'E. ┣ ' + scale + ' Y: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_y_percent + '%') + ((option_active=='Scale Y')?'⬅️➡️':''),
+'F. ┣ ' + scale + ' Z: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_z_percent + '%') + ((option_active=='Scale Z')?'⬅️➡️':''),
+'G. ┗ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.smoothing') + ': ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_smoothing_percent + '%') + ((option_active=='Smoothing')?'⬅️➡️':''),
     ].join('\n');
   },
   index: 1,
@@ -9351,7 +9527,7 @@ System._browser.camera.poseNet.hip_adjustment_weight_percent = THREE.Math.clamp(
     case 'Head motion weight':
 System._browser.camera.poseNet.hip_adjustment_head_weight_percent = THREE.Math.clamp(System._browser.camera.poseNet.hip_adjustment_head_weight_percent + v, 0,100);
       break;
-    case 'Adjust Y axis':
+    case 'Y-axis adjustment':
 System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent = THREE.Math.clamp(System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent + v, 0,100);
       break;
     case 'Scale X':
@@ -9392,7 +9568,7 @@ option_active = 'General weighting';
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'General weighting' + ((option_active=='General weighting')?' (press ⬅️➡️ to change value)':'') + ':\nBy default, when using upper body mocap with poses, hip position and rotation will be adjusted according to your upper body motion. This option determines the general weighting of the hip adjustment applied. Default is "100%".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.general_weighting') + ((option_active=='General weighting')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.general_weighting.tooltip')
 );
     }
   },
@@ -9405,20 +9581,20 @@ option_active = 'Head motion weight';
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Head motion weight' + ((option_active=='Head motion weight')?' (press ⬅️➡️ to change value)':'') + ':\nThis option determines the weighting of head motion to be considered as part of the upper body motion. Default is "100%".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.head_motion_weight') + ((option_active=='Head motion weight')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.head_motion_weight.tooltip')
 );
     }
   },
   { key:'C', event_id: {
       func:()=>{
-option_active = 'Adjust Y axis';
+option_active = 'Y-axis adjustment';
       },
       goto_event: { branch_index:mocap_options_branch, step:2 },
     },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Adjust Y axis' + ((option_active=='Adjust Y axis')?' (press ⬅️➡️ to change value)':'') + ':\nWhen this option is "100%", hip moves downwards when you lean forward, upwards when you lean backward, and sideways when you turn sideways. When this option is "0%", hip moves downwards no matter you lean forward or backward, and there is no hip movement when you turn sideways. Default is "66%".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.y_axis_adjustment') + ((option_active=='Y-axis adjustment')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.y_axis_adjustment.tooltip')
 );
     }
   },
@@ -9431,7 +9607,7 @@ option_active = 'Scale X';
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Scale X' + ((option_active=='Scale X')?' (press ⬅️➡️ to change value)':'') + ':\nThis option determines the scaling of movement along the X axis. By default, hip moves to the left when you leans to the right (or turns right when "Adjust Y axis" is on), and vice versa. A negative value inverts this behavior. Default is "100%".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.scale') + ' X' + ((option_active=='Scale X')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.scale.x.tooltip')
 );
     }
   },
@@ -9444,7 +9620,7 @@ option_active = 'Scale Y';
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Scale Y' + ((option_active=='Scale Y')?' (press ⬅️➡️ to change value)':'') + ':\nThis option determines the scaling of movement along the Y axis. By default, hip moves downwards when you leans forward, and vice versa (when "Adjust Y axis" is on). A negative value inverts this behavior. Default is "100%".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.scale') + ' Y' + ((option_active=='Scale Y')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.scale.y.tooltip')
 );
     }
   },
@@ -9457,7 +9633,7 @@ option_active = 'Scale Z';
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Scale Z' + ((option_active=='Scale Z')?' (press ⬅️➡️ to change value)':'') + ':\nThis option determines the scaling of movement along the Z axis. By default, hip moves backwards when you leans forward, and vice versa. A negative value inverts this behavior. Default is "100%".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.scale') + ' Z' + ((option_active=='Scale Z')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.scale.z.tooltip')
 );
     }
   },
@@ -9470,7 +9646,8 @@ option_active = 'Smoothing';
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Smoothing' + ((option_active=='Smoothing')?' (press ⬅️➡️ to change value)':'') + ':\nThis option determines how much you want the hip motion to be smoothened. Default is "0%".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.smoothing') + ((option_active=='Smoothing')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.smoothing.tooltip')
+
 );
     }
   },
@@ -9500,26 +9677,19 @@ else
           const options = ['Depth adjustment', 'IRL hand/shoulder scale', 'Depth scale'];
 
           return {
-            func: function () {
-System._browser.camera._info =
-  '- "Depth adjustment" improves the sense of depth of hands tracking during upper body mocap.\n'
-+ '- Adjust hand/shoulder scale for accurate depth adjustment.\n'
-+ '- "Depth scale" controls the extension of arm\'s reach.\n'
-+ '- "Stabilize arm" reduces false positives of arm tracking.\n'
-+ '- "Time to stabilize" improves stability with extra lag.'
-            },
             message: {
   get content() {
 return [
-  '1. Depth adjustment: ' + ((MMD_SA_options.user_camera.ML_models.hands.depth_adjustment_percent == 0) ? 'OFF' : MMD_SA_options.user_camera.ML_models.hands.depth_adjustment_percent + '%') + ((option_active=='Depth adjustment')?'⬅️➡️':''),
+  '1. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.depth_adjustment') + ': ' + ((MMD_SA_options.user_camera.ML_models.hands.depth_adjustment_percent == 0) ? 'OFF' : MMD_SA_options.user_camera.ML_models.hands.depth_adjustment_percent + '%') + ((option_active=='Depth adjustment')?'⬅️➡️':''),
 //  '・Press ⬅️➡️ to change value',
-  '2. ┣ IRL hand/shoulder scale: ' + ((MMD_SA_options.user_camera.ML_models.hands.depth_adjustment_percent == 0) ? 'OFF' : MMD_SA_options.user_camera.ML_models.hands.palm_shoulder_scale_percent + '%') + ((option_active=='IRL hand/shoulder scale')?'⬅️➡️':''),
+  '2. ┣ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.depth_adjustment.IRL_hand_shoulder_scale') + ': ' + ((MMD_SA_options.user_camera.ML_models.hands.depth_adjustment_percent == 0) ? 'OFF' : MMD_SA_options.user_camera.ML_models.hands.palm_shoulder_scale_percent + '%') + ((option_active=='IRL hand/shoulder scale')?'⬅️➡️':''),
 //\n' + '        ' + '┗ ' + palm_shoulder_scale() + '
-  '3. ┗ Depth scale: ' + ((MMD_SA_options.user_camera.ML_models.hands.depth_adjustment_percent == 0) ? 'OFF' : MMD_SA_options.user_camera.ML_models.hands.depth_scale_percent + '%') + ((option_active=='Depth scale')?'⬅️➡️':''),
-  '4. Stabilize arm: ' + ((System._browser.camera.handpose.stabilize_arm == 2) ? 'ON' : ((System._browser.camera.handpose.stabilize_arm == 1) ? 'Upper body mode only' : 'OFF')),
-  '5. ┗ Time to stabilize: ' + ((System._browser.camera.handpose.stabilize_arm) ? ((System._browser.camera.handpose.stabilize_arm_time) ? ((System._browser.camera.handpose.stabilize_arm_time == 1) ? '1 frame' : System._browser.camera.handpose.stabilize_arm_time + 'ms') : '0 frame') : 'N/A'),
-  '6. Standalone web worker (BETA): ' + ((System._browser.camera.handpose.use_hands_worker) ? 'ON' : 'OFF'),
-  '7. Done',
+  '3. ┗ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.depth_adjustment.depth_scale') + ': ' + ((MMD_SA_options.user_camera.ML_models.hands.depth_adjustment_percent == 0) ? 'OFF' : MMD_SA_options.user_camera.ML_models.hands.depth_scale_percent + '%') + ((option_active=='Depth scale')?'⬅️➡️':''),
+  '4. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.arm_stabilization') + ': ' + ((System._browser.camera.handpose.stabilize_arm == 2) ? 'ON' : ((System._browser.camera.handpose.stabilize_arm == 1) ? System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.arm_stabilization.upper_body_mocap') : 'OFF')),
+  '5. ┗ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.arm_stabilization.time_to_stabilize') + ': ' + ((System._browser.camera.handpose.stabilize_arm) ? ((System._browser.camera.handpose.stabilize_arm_time) ? ((System._browser.camera.handpose.stabilize_arm_time == 1) ? '1 ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.arm_stabilization.time_to_stabilize.frame') : System._browser.camera.handpose.stabilize_arm_time + 'ms') : '0') : 'N/A'),
+  '6. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.hand_stabilization') + ': ' + ((System._browser.camera.handpose.stabilize_hand_percent) ? System._browser.camera.handpose.stabilize_hand_percent + '%' : 'OFF') + '(➕➖)',
+  '7. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.standalone_web_worker') + ': ' + ((System._browser.camera.handpose.use_hands_worker) ? 'ON' : 'OFF'),
+  '8. ' + System._browser.translation.get('Misc.done'),
 ].join('\n');
   }
  ,bubble_index: 3
@@ -9552,6 +9722,10 @@ MMD_SA_options.user_camera.ML_models.hands.depth_scale_percent = THREE.Math.clam
       return false;
   }
 }
+else if ((e.key == '+') || (e.key == '-')) {
+  const v = (e.key == '+') ? 1 : -1;
+  System._browser.camera.handpose.stabilize_hand_percent = THREE.Math.clamp(System._browser.camera.handpose.stabilize_hand_percent + v, 0,100);
+}
 else {
   return false;
 }
@@ -9570,7 +9744,7 @@ option_active = 'Depth adjustment';
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Depth adjustment' + ' (press ⬅️➡️ to change value)' + ':\nThis option enhances the sense of depth of avatar\'s arms by utilizing the data of hands tracking. This value determines how much you want the hands tracking data to override the default arms tracking data from the body pose mocap. Depth adjustment applies to upper body mocap, or full body mocap when close to the camera. Default is "50%".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.depth_adjustment') + ((option_active=='Depth adjustment')?' (' +  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.depth_adjustment.press_to_change_value') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.depth_adjustment.tooltip')
 );
     }
   },
@@ -9583,7 +9757,7 @@ option_active = 'IRL hand/shoulder scale';
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'IRL hand/shoulder scale' + ((option_active=='IRL hand/shoulder scale')?' (press ⬅️➡️ to change value)':'') + ':\nDepth adjustment is calculated based on the comparison of your palm\'s size and shoulder width. Smaller value fits smaller hands/wider shoulder, while large value fits bigger hands/narrower shoulder. Default is "22%".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.depth_adjustment.IRL_hand_shoulder_scale') + ((option_active=='IRL hand/shoulder scale')?' (' +  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.depth_adjustment.press_to_change_value') + ')' :'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.depth_adjustment.IRL_hand_shoulder_scale.tooltip')
 );
     }
   },
@@ -9596,7 +9770,7 @@ option_active = 'Depth scale';
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Depth scale' + ((option_active=='Depth scale')?' (press ⬅️➡️ to change value)':'') + ':\nThis options determines how much you want to scale the value of depth up or down. Smaller scale draws your hands closer to your body, while larger scale extends your arm\'s reach. Default is "50%".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.depth_adjustment.depth_scale') + ((option_active=='Depth scale')?' (' +  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.depth_adjustment.press_to_change_value') + ')' :'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.depth_adjustment.depth_scale.tooltip')
 );
     }
   },
@@ -9610,7 +9784,7 @@ if (--System._browser.camera.handpose.stabilize_arm < 0)
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Stabilize arm:\nThis option stabilizes the default arms tracking from body pose mocap and reduces false positive detections when hands are going on and off the screen, by utilizing the hands tracking data. This options applies when you are close to the camera. Default is "ON".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.arm_stabilization') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.arm_stabilization.tooltip')
 );
     }
   },
@@ -9634,11 +9808,21 @@ else {
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Time to stabilize:\nThis option determines the amount of time required to stabilize arms tracking, which improves the result at the expense of increased lag for hands to show up on screen. You can just leave it to the default value in most cases. Default is "0 ms" (no delay).'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.arm_stabilization.time_to_stabilize') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.arm_stabilization.time_to_stabilize.tooltip')
 );
     }
   },
   { key:6, event_id: {
+      goto_event: { branch_index:mocap_options_branch, step:4 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.hand_stabilization') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.hand_stabilization.tooltip')
+);
+    }
+  },
+  { key:7, event_id: {
       func:()=>{
 System._browser.camera.handpose.use_hands_worker = !System._browser.camera.handpose.use_hands_worker;
       },
@@ -9647,11 +9831,11 @@ System._browser.camera.handpose.use_hands_worker = !System._browser.camera.handp
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Standalone web worker:\nWhen enabled, this experimental option separates the processing of hands tracking from body pose tracking, and runs hands tracking mocap on an independent web worker, which aims to give priority for body pose mocap to achieve higher fps (at the expense of possibly lower fps for hands tracking) when system resource is tight. Default is "OFF".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.standalone_web_worker') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.standalone_web_worker.tooltip')
 );
     }
   },
-  { key:7, is_closing_event:true, branch_index:done_branch }
+  { key:8, is_closing_event:true, branch_index:done_branch }
   ]
             }
           };
@@ -9662,13 +9846,13 @@ MMD_SA_options.Dungeon.utils.tooltip(
 get content() {
   const tilt_adjustment = MMD_SA.MMD.motionManager.para_SA.motion_tracking?.camera?.tilt_adjustment || System._browser.camera.tilt_adjustment;
   return [
-    'If your webcam is angled up or down, offset it to cancel avatar\'s tilting.',
-    ((tilt_adjustment.enabled) ? '- Press ⬆️⬇️ to adjust offset angle' : ''),
-    ((tilt_adjustment.enabled) ? '- Press ⬅️➡️ to adjust weighting applied' : ''),
-    '1. Tilt adjustment: ' + ((tilt_adjustment.enabled) ? 'ON' : 'OFF'),
-    ((tilt_adjustment.enabled) ? '    ┣ Angle: ' + (tilt_adjustment.angle) + '° ⬆️⬇️' : ''),
-    ((tilt_adjustment.enabled) ? '    ┗ Weighting (body): ' + Math.round(tilt_adjustment.pose_weight * 100) + '% ⬅️➡️' : ''),
-    '2. Done',
+    System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.webcam_angle_offset'),
+    ((tilt_adjustment.enabled) ? '- ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.webcam_angle_offset.press_to_adjust_offset_angle') : ''),
+    ((tilt_adjustment.enabled) ? '- ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.webcam_angle_offset.press_to_adjust_weighting_applied') : ''),
+    '1. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.webcam_angle_offset.tilt_adjustment') + ': ' + ((tilt_adjustment.enabled) ? 'ON' : 'OFF'),
+    ((tilt_adjustment.enabled) ? '    ┣ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.webcam_angle_offset.angle') + ': ' + (tilt_adjustment.angle) + '° ⬆️⬇️' : ''),
+    ((tilt_adjustment.enabled) ? '    ┗ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.webcam_angle_offset.weighting_body') + ': ' + Math.round(tilt_adjustment.pose_weight * 100) + '% ⬅️➡️' : ''),
+    '2. ' + System._browser.translation.get('Misc.done'),
   ].filter(v=>v).join('\n');
 },
 bubble_index: 3,
@@ -9685,7 +9869,7 @@ if (/Arrow(Up|Down)/.test(e.code)) {
 else if (/Arrow(Left|Right)/.test(e.code)) {
   let p = Math.round(tilt_adjustment.pose_weight * 100);
   p += (e.code == 'ArrowRight') ? 1 : -1;
-  tilt_adjustment.pose_weight = Math.min(Math.max(p,0),100)/100;
+  tilt_adjustment.pose_weight = Math.min(Math.max(p,-100),100)/100;
 }
 else {
   return false;
@@ -9705,7 +9889,7 @@ tilt_adjustment.enabled = !tilt_adjustment.enabled;
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Tilt adjustment:\nIf your webcam is angled up or down, enable this option to apply an angle offset to cancel avatar\'s tilting. Angle offset is fully applied to face. A smaller weighting can be applied to body pose ("50%" by default), as body mocap is usually less sensitive to webcam tilting. Default is "OFF".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.webcam_angle_offset.tooltip')
 );
     }
   },
@@ -9783,7 +9967,7 @@ System._browser.camera.poseNet.bb_clear = 15
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Eye tracking:\nSometimes you may want to turn eye tracking off if eyes are covered (e.g. sunglasses) or the tracking condition is poor, which may lead to some weird tracking results. Auto blink will be on when eye tracking is off. Default is "ON".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.eye_tracking.tooltip')
 );
       }
     },
@@ -9791,7 +9975,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Blink LR sync:\nFor various reasons, blink tracking may not be ideal and lead to some size differences between the eyes that don\'t look good. Turn on this option to synchronize the blink of both eyes, at the expense of losing the ability to wink. Default is "OFF".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.blink_LR_sync.tooltip')
 );
       }
     },
@@ -9799,7 +9983,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Auto blink:\nSometimes blink tracking is hardly noticeable due to poor lighting and various conditions. Turn on this option to allow your avatar to blink automatically. Default is "OFF".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.auto_blink.tooltip')
 );
       }
     },
@@ -9807,7 +9991,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Auto "look at camera":\nSometimes you may want your avatar to look at the camera, as if you are always looking at your audience, regardless of where you are actually looking at. This option can be toggled via hotkey (' + (System._browser.hotkeys.config_by_id['auto_look_at_camera']?.accelerator[0]||'') + '). Default is "OFF".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.auto_look_at_camera.tooltip').replace(/\<hotkey\>/, System._browser.hotkeys.config_by_id['auto_look_at_camera']?.accelerator[0]||'')
 );
       }
     },
@@ -9815,7 +9999,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  '"Tongue out" tracking:\nXR Animatior supports the tracking of ARKit 52 blendshapes, with the exception of a few, including "tongueOut". Turn on this option to allow XR Animator to fill this gap by estimating the tongue out motion by analyzing the other mouth blendshape data. Default is "ON".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.tongue_out_tracking.tooltip')
 );
       }
     },
@@ -9823,7 +10007,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Emotion tracking weight:\nBy default, face tracking reads your facial expressions and attempts to match some standard expressions from your avatar model, such as joy/fun, sorrow, angry, and optionally surprise and blush. Adjust the general weighting or weighting of each individual expression to suit your taste.'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.tooltip')
 );
       }
     },
@@ -9837,7 +10021,7 @@ return [
   onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Calibration options:\nWhenever face tracking starts, mocap data from the first few seconds will be analyzed and calibrated to better fit the user\'s face. These options allow you to reset the calibration, export the current calibration to an external JSON file, or import a previously exported calibration.'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.calibration_options.tooltip')
 );
   }
     }] : []),
@@ -9848,26 +10032,19 @@ MMD_SA_options.Dungeon.utils.tooltip(
         return [
 // 0
         {
-          func: function () {
-System._browser.camera._info =
-  '- Turn eye tracking off if eyes are covered (e.g. sunglasses).\n'
-+ '- "Blink LR sync" synchronize blinks of both eyes.\n'
-+ '- Turn auto blink on if blink tracking doesn\'t work.\n'
-+ '- Turn auto "look at camera" on if you want avatar\'s eyes to always look at the camera.\n'
-          },
           message: {
   get content() {
 const camera = System._browser.camera;
 
 return [
-  '1. Eye tracking: ' + ((!System._browser.camera.facemesh.eye_tracking)?'OFF':'ON'),
-  '2. Blink LR sync: ' + ((!System._browser.camera.facemesh.blink_sync)?'OFF':'ON'),
-  '3. Auto blink: ' + ((!System._browser.camera.facemesh.auto_blink)?'OFF':'ON'),
-  '4. Auto "look at camera" (' + (System._browser.hotkeys.config_by_id['auto_look_at_camera']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.facemesh.auto_look_at_camera)?'OFF':'ON'),
-  '5. "Tongue out" tracking: ' + ((System._browser.camera.facemesh.use_tongue_out) ? 'ON' : 'OFF'),
-  '6. Emotion tracking options',
-  ...((System._browser.camera.facemesh.enabled && System._browser.camera.video) ? ['7. Calibration options'] : []),
-  'X. Done',
+  '1. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.eye_tracking') + ': ' + ((!System._browser.camera.facemesh.eye_tracking)?'OFF':'ON'),
+  '2. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.blink_LR_sync') + ': ' + ((!System._browser.camera.facemesh.blink_sync)?'OFF':'ON'),
+  '3. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.auto_blink') + ': ' + ((!System._browser.camera.facemesh.auto_blink)?'OFF':'ON'),
+  '4. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.auto_look_at_camera') + ' (' + (System._browser.hotkeys.config_by_id['auto_look_at_camera']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.facemesh.auto_look_at_camera)?'OFF':'ON'),
+  '5. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.tongue_out_tracking') + ': ' + ((System._browser.camera.facemesh.use_tongue_out) ? 'ON' : 'OFF'),
+  '6. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options'),
+  ...((System._browser.camera.facemesh.enabled && System._browser.camera.video) ? ['7. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.calibration_options')] : []),
+  'X. ' + System._browser.translation.get('Misc.done'),
 ].join('\n');
   }
  ,bubble_index: 3
@@ -9879,7 +10056,7 @@ return branch_list();
 // 1
         {
           message: {
-content: 'A. Reset calibration\nB. Import calibration\nC. Export calibration',
+get content() { return System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.calibration_options.message'); },
 index: 1,
 bubble_index: 3,
 get branch_list() {
@@ -9952,7 +10129,7 @@ option_active = 'General weighting';
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'General weighting' + ((option_active=='General weighting')?' (press ⬅️➡️ to change value)':'') + ':\nThis option determines the general weighting of all expressions detected via emotion tracking. Default is "75%".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.general_weighting') + ((option_active=='General weighting')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.general_weighting.tooltip')
 );
     }
   },
@@ -9965,7 +10142,7 @@ option_active = 'Joy/Fun';
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Joy/Fun' + ((option_active=='Joy/Fun')?' (press ⬅️➡️ to change value)':'') + ':\nActivate the Joy/Fun expression simply by making a smiling face. This is natural, straight forward and you probably want to keep this expression detection on all the time. Default is "100%".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.joy_fun') + ((option_active=='Joy/Fun')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.joy_fun.tooltip')
 );
     }
   },
@@ -9978,7 +10155,7 @@ option_active = 'Angry';
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Angry' + ((option_active=='Angry')?' (press ⬅️➡️ to change value)':'') + ':\nActiavte the Angry expression by making a side pout on either left or right side. Lower the percentage if it is often misactivated. Default is "100%".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.angry') + ((option_active=='Angry')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.angry.tooltip')
 );
     }
   },
@@ -9991,7 +10168,7 @@ option_active = 'Sorrow';
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Sorrow' + ((option_active=='Sorrow')?' (press ⬅️➡️ to change value)':'') + ':\nActivate the Sorrow expression by pulling your lower lip upward and make a standard sad face. Lower the percentage if it is often misactivated. Default is "100%".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.sorrow') + ((option_active=='Sorrow')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.sorrow.tooltip')
 );
     }
   },
@@ -10004,7 +10181,7 @@ option_active = 'Surprised';
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Surprised' + ((option_active=='Surprised')?' (press ⬅️➡️ to change value)':'') + ':\nActivate the Surprised expression by raising your eyebrows and lower your jaw. Note that not all 3D models have this expression. Lower the percentage if it is often misactivated. Default is "100%".'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.surprised') + ((option_active=='Surprised')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.surprised.tooltip')
 );
     }
   },
@@ -10017,7 +10194,7 @@ option_active = 'Others';
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Others' + ((option_active=='Others')?' (press ⬅️➡️ to change value)':'') + ':\nDepending on each individual avatar model\'s settings, some models may have other detectable expressions. Lower the percentage if they are often misactivated. Default is "100%".'
+  System._browser.translation.get('Misc.others') + ((option_active=='Others')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.others.tooltip')
 );
     }
   },
@@ -10027,15 +10204,15 @@ MMD_SA_options.Dungeon.utils.tooltip(
             message: {
   get content() {
     return [
-'Emotion tracking',
+System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.emotion_tracking'),
 //'・Press ⬆️⬇️ to switch option',
-'・Press ⬅️➡️ to change value',
-'A. General weighting: ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'OFF' : System._browser.camera.facemesh.emotion_weight_percent + '%') + ((option_active=='General weighting')?'⬅️➡️':''),
-'B. ┣ Joy/Fun: ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'N/A' : System._browser.camera.facemesh.emotion_joy_fun_percent + '%') + ((option_active=='Joy/Fun')?'⬅️➡️':''),
-'C. ┣ Angry: ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'N/A' : System._browser.camera.facemesh.emotion_angry_percent + '%') + ((option_active=='Angry')?'⬅️➡️':''),
-'D. ┣ Sorrow: ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'N/A' : System._browser.camera.facemesh.emotion_sorrow_percent + '%') + ((option_active=='Sorrow')?'⬅️➡️':''),
-'E. ┣ Surprised: ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'N/A' : System._browser.camera.facemesh.emotion_surprised_percent + '%') + ((option_active=='Surprised')?'⬅️➡️':''),
-'F. ┗ Others: ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'N/A' : System._browser.camera.facemesh.emotion_others_percent + '%') + ((option_active=='Others')?'⬅️➡️':''),
+'・' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.press_to_change_value'),
+'A. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.general_weighting') + ': ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'OFF' : System._browser.camera.facemesh.emotion_weight_percent + '%') + ((option_active=='General weighting')?'⬅️➡️':''),
+'B. ┣ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.joy_fun') + ': ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'N/A' : System._browser.camera.facemesh.emotion_joy_fun_percent + '%') + ((option_active=='Joy/Fun')?'⬅️➡️':''),
+'C. ┣ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.angry') + ': ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'N/A' : System._browser.camera.facemesh.emotion_angry_percent + '%') + ((option_active=='Angry')?'⬅️➡️':''),
+'D. ┣ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.sorrow') + ': ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'N/A' : System._browser.camera.facemesh.emotion_sorrow_percent + '%') + ((option_active=='Sorrow')?'⬅️➡️':''),
+'E. ┣ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.surprised') + ': ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'N/A' : System._browser.camera.facemesh.emotion_surprised_percent + '%') + ((option_active=='Surprised')?'⬅️➡️':''),
+'F. ┗ ' + System._browser.translation.get('Misc.others') + ': ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'N/A' : System._browser.camera.facemesh.emotion_others_percent + '%') + ((option_active=='Others')?'⬅️➡️':''),
     ].join('\n');
   },
   index: 1,
@@ -10085,7 +10262,7 @@ MMD_SA.SpeechBubble.list[1].hide();
 window.addEventListener('SA_dragdrop_JSON', onDrop_JSON_change_facemesh_calibration);
           }
          ,message: {
-  content: 'Drop a JSON file containing the facemesh calibration data.\n1. Cancel'
+  get content() { return System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.calibration_options.import_calibration'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, is_closing_event:true, branch_index:done_branch }
@@ -10665,6 +10842,7 @@ config.user_camera = {
       leg_scale_adjustment: System._browser.camera.poseNet.leg_scale_adjustment,
       auto_grounding: System._browser.camera.poseNet.auto_grounding,
       shoulder_tracking: System._browser.camera.poseNet.shoulder_tracking,
+      body_bend_reduction_power: System._browser.camera.poseNet.body_bend_reduction_power,
       hip_adjustment_weight_percent: System._browser.camera.poseNet.hip_adjustment_weight_percent,
       hip_adjustment_head_weight_percent: System._browser.camera.poseNet.hip_adjustment_head_weight_percent,
       hip_adjustment_adjust_y_axis_percent: System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent,
@@ -10675,6 +10853,7 @@ config.user_camera = {
       upper_rotation_offset: MMD_SA_options.user_camera.ML_models.pose.upper_rotation_offset,
     },
     hands: {
+      stabilize_hand_percent: System._browser.camera.handpose.stabilize_hand_percent,
       stabilize_arm: System._browser.camera.handpose.stabilize_arm,
       stabilize_arm_time: System._browser.camera.handpose.stabilize_arm_time,
       use_hands_worker: System._browser.camera.handpose.use_hands_worker,
@@ -10734,6 +10913,10 @@ config.video_capture = {
   fps: vc.fps,
   target_mime_type: vc.target_mime_type,
 };
+
+config.UI_muted = MMD_SA_options.Dungeon.inventory.UI._muted;
+
+config.language = (System._browser.translation.language && (System._browser.translation.language != System._browser.translation.language_default)) ? System._browser.translation.language : null;
 
 config.pose = {
   order: MMD_SA_options._XRA_pose_list[0].map(m=>m.index_default),
@@ -10804,6 +10987,17 @@ try {
 
   MMD_SA_options._XRA_settings_imported = config;
 
+  if (!loaded) {
+    for (const p in config) {
+      switch (p) {
+        case 'language':
+          System._browser.translation.language = config[p];
+          break;
+      }
+    }
+    return;
+  }
+
   if (!MMD_SA.MMD_started) {
     for (const p in config) {
       switch (p) {
@@ -10848,6 +11042,7 @@ try {
         System._browser.camera.poseNet.leg_scale_adjustment = config[p].ML_models.pose.leg_scale_adjustment;
         System._browser.camera.poseNet.auto_grounding = config[p].ML_models.pose.auto_grounding;
         System._browser.camera.poseNet.shoulder_tracking = config[p].ML_models.pose.shoulder_tracking;
+        System._browser.camera.poseNet.body_bend_reduction_power = config[p].ML_models.pose.body_bend_reduction_power;
         System._browser.camera.poseNet.hip_adjustment_weight_percent = config[p].ML_models.pose.hip_adjustment_weight_percent;
         System._browser.camera.poseNet.hip_adjustment_head_weight_percent = config[p].ML_models.pose.hip_adjustment_head_weight_percent;
         System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent = config[p].ML_models.pose.hip_adjustment_adjust_y_axis_percent;
@@ -10857,6 +11052,7 @@ try {
         System._browser.camera.poseNet.hip_adjustment_smoothing_percent = config[p].ML_models.pose.hip_adjustment_smoothing_percent;
         System._browser.camera.handpose.stabilize_arm = config[p].ML_models.hands?.stabilize_arm;
         System._browser.camera.handpose.stabilize_arm_time = config[p].ML_models.hands?.stabilize_arm_time;
+        System._browser.camera.handpose.stabilize_hand_percent = config[p].ML_models.hands?.stabilize_hand_percent;
         System._browser.camera.handpose.use_hands_worker = config[p].ML_models.hands?.use_hands_worker;
         System._browser.camera.facemesh.eye_tracking = config[p].ML_models.facemesh.eye_tracking;
         System._browser.camera.facemesh.blink_sync = config[p].ML_models.facemesh.blink_sync;
@@ -10907,6 +11103,10 @@ try {
         break;
       case 'hand_camera_fov':
         MMD_SA_options.Dungeon_options.item_base.hand_camera.fov = config[p];
+        break;
+
+      case 'UI_muted':
+        MMD_SA_options.Dungeon.inventory.UI.muted = config[p];
         break;
 
       case 'pose':
@@ -10979,6 +11179,10 @@ catch (err) {
   System.Gadget.Settings.writeString('LABEL_XRA_settings', '');
 }
   }
+
+  window.addEventListener("load", () => {
+MMD_SA_options._XRA_settings_import();
+  });
 
   window.addEventListener('jThree_ready', ()=>{
 MMD_SA_options._XRA_settings_import();

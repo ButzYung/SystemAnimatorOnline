@@ -1,5 +1,5 @@
 // auto fit
-// (2023-12-20)
+// (2024-01-15)
 
 const v1 = new THREE.Vector3();
 const v2 = new THREE.Vector3();
@@ -583,13 +583,13 @@ function process_gesture() {
           const k_name = 'key' + '|' + ((commands.length) ? commands.join('+') + '+' : '') + key;
 //DEBUG_show(k_name,0,1)
           if (g_event[k_name]) {
-            if ((typeof g_event[k_name] == 'string') ? g_event[k_name].indexOf(dir) == -1 : d != '右') continue;
-            gestures.push(k_name);
+            if ((typeof g_event[k_name] == 'string') ? g_event[k_name].indexOf(dir) != -1 : d == '右')
+              gestures.push(k_name);
             for (let i = 0; i <= 3; i++) {
               const name_ext = k_name + '#' + i;
               if (g_event[name_ext]) {
-                if ((typeof g_event[name_ext] == 'string') ? g_event[name_ext].indexOf(dir) == -1 : d != '右') continue;
-                gestures.push(name_ext);
+                if ((typeof g_event[name_ext] == 'string') ? g_event[name_ext].indexOf(dir) != -1 : d == '右')
+                  gestures.push(name_ext);
               }
             }
           }
@@ -641,7 +641,7 @@ function process_gesture() {
         condition_passed = condition_passed || condition_list.some(condition=>{
           if (condition.duration) {
 //System._browser.camera.DEBUG_show(Object.keys(gesture).join('\n')+'/'+Date.now())
-            if (condition.duration > (ge.search_para?.duration || 0)) return false;
+            if (condition.duration > (ge?.search_para?.duration || 0)) return false;
 //console.log(ge)
           }
 
@@ -866,19 +866,17 @@ System._browser.camera.DEBUG_show(condition.contact_target.name+':'+dis)
 
             const x_object = MMD_SA.THREEX._object3d_list_.find(obj=>obj.uuid==object3d._object3d_uuid);
 
-            let p_bone = x_object.parent_bone;
-            if (p_bone) {
-              p_bone.disabled = true;
-              p_bone.attached = false;
-              x_object._mesh.matrixAutoUpdate = true;
-            }
-
             x_object.placement.hidden = false;
 
             if (!x_object.placement.position) x_object.placement.position = { x:0, y:0, z:0 };
             if (!x_object.placement.rotation) x_object.placement.rotation = { x:0, y:0, z:0 };
 
             const place = g.action.place[object_id];
+            if (!place) {
+              x_object._obj_proxy.hidden = true;
+              x_object._obj_proxy.visible = false;
+              return;
+            }
 
             const rot = MMD_SA.TEMP_v3.set(0,0,0);
             for (const a of ['x','y','z']) {
@@ -900,6 +898,14 @@ System._browser.camera.DEBUG_show(condition.contact_target.name+':'+dis)
 
             x_object._obj_proxy.hidden = false;
             x_object._obj_proxy.visible = true;
+
+// after setting _obj_proxy.hidden
+            let p_bone = x_object.parent_bone;
+            if (p_bone) {
+              p_bone.disabled = true;
+              p_bone.attached = false;
+              x_object._mesh.matrixAutoUpdate = true;
+            }
           });
         }
 
@@ -950,8 +956,8 @@ System._browser.camera.DEBUG_show(condition.contact_target.name+':'+dis)
           if (!motion_tracking) motion_tracking = MMD_SA.MMD.motionManager.para_SA.motion_tracking = {};
           if (!motion_tracking._default_) motion_tracking._default_ = {};
 
+          Object.assign(motion_tracking, motion_tracking._default_);
           if (!Object.keys(g.action.motion_tracking).length) {
-            Object.assign(motion_tracking, motion_tracking._default_);
             delete motion_tracking._default_;
           }
           else {
@@ -1341,6 +1347,8 @@ function load(p) {
 
     key_pressed = {};
     window.removeEventListener('SA_Dungeon_keydown', process_key_press);
+
+    window.removeEventListener('SA_XR_Animator_scene_onunload', scene_onunload);
   }
 
   function process_key_press(e) {

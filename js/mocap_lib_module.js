@@ -1127,9 +1127,10 @@ if (_adjust_ratio != 1) {
 s*s = ((x2*x2 + y2*y2)/1.5 - (x1*x1 + y1*y1))/(z1*z1 - z2*z2/1.5)
 */
   _adjust_ratio = Math.min(Math.sqrt(Math.abs(((palm_height[0]*palm_height[0] + palm_height[1]*palm_height[1])/s - (palm_width[0]*palm_width[0] + palm_width[1]*palm_width[1])) / (palm_width[2]*palm_width[2] - palm_height[2]*palm_height[2]/s))), 1.5 + 1.5*adjust_max);
-//console.log(adjust_max)
+//console.log(_adjust_ratio)
   h.forEach(j=>{j[2] *= _adjust_ratio});
 }
+//hand.z_adjust_ratio = _adjust_ratio;
 
 if (data_filter[1]) {
   const d = hand.label;
