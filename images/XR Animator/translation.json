@@ -1,0 +1,1758 @@
+{
+	"XR_Animator": {
+		"UI": {
+			"streamer_mode": {
+				"info_short": {
+					"_translation_": {
+						"_default_": "Streamer Mode",
+						"ja": "ストリーマーモード"
+					}
+				},
+				"info": {
+					"_translation_": {
+						"_default_": "Double-click to start \"Streamer mode\", a one-take shortcut that automatically enables everything you need to start your mocap session, including selecting a webcam, changing your avatar's pose, loading the mocap AI, and turning on VMC protocol (if enabled in last session). Your preferences in webcam, pose, mocap and VMC will be saved and applied automatically.",
+						"ja": "ダブルクリックして「ストリーマー モード」を開始します。Webカメラの選択、アバターのポーズの変更、モーキャプ AI のロード、VMC プロトコルのオンなど、モーキャプ セッションの開始に必要なすべての操作を 1 回の操作で自動的に有効にするショートカットです。 Webカメラ、ポーズ、モーキャプ、VMC の設定は保存され、自動的に適用されます。"
+					}
+				},
+				"press_x_to_abort": {
+					"_translation_": {
+						"_default_": "Press X to abort",
+						"ja": "中止するには X を押します"
+					}
+				},
+				"mocap_model_loaded": {
+					"_translation_": {
+						"_default_": "Mocap model: LOADED",
+						"ja": "モーキャプ モデル: ロード済み"
+					}
+				},
+				"face_data_calibrating": {
+					"_translation_": {
+						"_default_": "Face data calibrating",
+						"ja": "顔データの調整中"
+					}
+				},
+				"calibrating_face_data": {
+					"_translation_": {
+						"_default_": "Calibrating face data",
+						"ja": "顔データの調整"
+					}
+				},
+				"face_data_calibrated": {
+					"_translation_": {
+						"_default_": "Face data: CALIBRATED",
+						"ja": "顔データ: 校正済み"
+					}
+				},
+				"face_data_calibrating_message": {
+					"_translation_": {
+						"_default_": "Sit back, look straight and keep a calm face for a few seconds while the calibration is in process.",
+						"ja": "調整が行われている間、リラックスしてまっすぐ前を見て、穏やかな顔を数秒間保ちます。"
+					}
+				},
+				"motion_changed": {
+					"_translation_": {
+						"_default_": "Motion changed",
+						"ja": "モーションの変更"
+					}
+				},
+				"webcam_not_accessible": {
+					"_translation_": {
+						"_default_": "Target webcam is not accessible.",
+						"ja": "ターゲットのWebカメラにアクセスできません。"
+					}
+				},
+				"webcam_on": {
+					"_translation_": {
+						"_default_": "Webcam: ON",
+						"ja": "Webカメラ: ON"
+					}
+				},
+				"VMC_protocol_on": {
+					"_translation_": {
+						"_default_": "VMC protocol: ON",
+						"ja": "VMCプロトコル: ON"
+					},
+					"send_camera_data": {
+						"_translation_": {
+							"_default_": "Send camera data",
+							"ja": "カメラデータを送信する"
+						}
+					}
+				},
+				"mocap_initializing": {
+					"_translation_": {
+						"_default_": "Mocap initializing",
+						"ja": "モーキャプの初期化中"
+					},
+					"face": {
+						"_translation_": {
+							"_default_": "Face",
+							"ja": "顔"
+						}
+					},
+					"full_body": {
+						"_translation_": {
+							"_default_": "Full body",
+							"ja": "全身"
+						}
+					}
+				},
+				"finish_VMC": {
+					"_translation_": {
+						"_default_": "XR Animator is now ready with VMC protocol on. You may choose to hide 3D avatar to save extra CPU/GPU usage.\n1. Finish and hide 3D avatar\nX. Finish",
+						"ja": "VMC プロトコルをオンにして XR Animator の準備が整いました。 余分な CPU/GPU 使用量を節約するために、3D アバターを非表示にすることを選択できます。\n1. 3Dアバターを非表示にして終了する\nX. 終了する"
+					}
+				},
+				"finish": {
+					"_translation_": {
+						"_default_": "XR Animator is now ready. You may choose to turn UI off for streaming (press Esc to toggle the bottom UI afterwards).\n1. Finish and turn UI off\nX. Finish",
+						"ja": "XR Animator の準備が整いました。 ストリーミング用に UI をオフにすることもできます (後で Esc キーを押して下部の UI を切り替えます)。\n1. UIをオフにして終了する\nX. 終了する"
+					}
+				}
+			},
+			"pose": {
+				"info_short": {
+					"_translation_": {
+						"_default_": "Pose/Motion",
+						"ja": "ポーズ/モーション"
+					}
+				},
+				"info": {
+					"ML_on": {
+						"tracking_on": {
+							"_translation_": {
+								"_default_": "- The current pose supports <tracking_mode> tracking.",
+								"ja": "- 現在のポーズは<tracking_mode>トラッキングをサポートする。"
+							},
+							"upper_body": {
+								"_translation_": {
+									"_default_": "upper-body🙋",
+									"ja": "上半身🙋"
+								}
+							},
+							"full_body": {
+								"_translation_": {
+									"_default_": "full-body💃",
+									"ja": "全身💃"
+								}
+							}
+						},
+						"tracking_off": {
+							"_translation_": {
+								"_default_": "- The current pose does not support motion tracking.",
+								"ja": "- 現在のポーズはモーション トラッキングをサポートしていません。"
+							}
+						}
+					},
+					"ML_off": {
+						"_translation_": {
+							"_default_": "- Double-click to change your avatar's pose, supporting either full-body💃 or upper-body🙋 mocap.",
+							"ja": "- ダブルクリックしてアバターのポーズを変更し、全身💃または上半身🙋のモーションキャプチャをサポートします。"
+						}
+					},
+					"extra": {
+						"_translation_": {
+							"_default_": "- Hotkeys Alt/Ctrl+Num0-9➡️pose 1-18 (0 for custom pose)\n- 🦶denotes the support of \"arm-as-leg\" control mode by pressing <hotkey> to toggle🙋↔️🦶\n- Use mouse or keys to pick an alphanumeric option.",
+							"ja": "- ホットキーAlt/Ctrl+Num0-9➡️ポーズ1-18 (0はカスタム)\n- 🦶は「手の動きで脚を動かす」モードのサポートを示しています(ホットキー<hotkey>を押して切り替える🙋↔️🦶)。\n- マウスまたは英数字キーを使用してオプションを選択する。"
+						}
+					}
+				},
+				"upper_body_mocap": {
+					"_translation_": {
+						"_default_": "upper-body mocap",
+						"ja": "上半身モーキャプ"
+					}
+				},
+				"full_body_mocap": {
+					"_translation_": {
+						"_default_": "full-body mocap",
+						"ja": "全身モーキャプ"
+					}
+				},
+				"pose": {
+					"_translation_": {
+						"_default_": "Pose",
+						"ja": "ポーズ"
+					}
+				},
+				"page": {
+					"_translation_": {
+						"_default_": "page",
+						"ja": "ページ"
+					}
+				},
+				"hotkey": {
+					"_translation_": {
+						"_default_": "Hotkey",
+						"ja": "ホットキー"
+					}
+				},
+				"next_poses": {
+					"_translation_": {
+						"_default_": "Next 9 poses",
+						"ja": "次の9ポーズ"
+					}
+				},
+				"shoulder_adjust": {
+					"_translation_": {
+						"_default_": "Shoulder adjust",
+						"ja": "肩補正"
+					},
+					"Default": {
+						"_translation_": {
+							"_default_": "Default",
+							"ja": "デフォルト"
+						}
+					},
+					"None": {
+						"_translation_": {
+							"_default_": "None",
+							"ja": "なし"
+						}
+					},
+					"Full": {
+						"_translation_": {
+							"_default_": "Full",
+							"ja": "フル"
+						}
+					},
+					"Upper half": {
+						"_translation_": {
+							"_default_": "Upper half",
+							"ja": "上半"
+						}
+					},
+					"tooltip": {
+						"_translation_": {
+							"_default_": "Shoulder adjust:\nThis option determines the resting angle of shoulder and how the shoulder angle responds to arm mocap. \"Full\" has the lowest resting angle for VRM model. \"Upper half\" doesn't change the resting angle and shoulder angle changes only if arms are raised above the shoulder. \"None\" disables any shoulder angle adjustment.",
+							"ja": "肩補正:\nこのオプションは、肩の静止角度と、肩の角度が腕のモーション キャプチャにどのように反応するかを決定します。 「フル」は VRM モデルの静止角度が最も低くなります。 「上半」では静止角度は変わりませんが、肩の角度は腕を肩より上に上げた場合にのみ変わります。 「なし」を選択すると、肩の角度補正が無効になります。"
+						}
+					}
+				},
+				"mirror_current_pose": {
+					"tooltip": {
+						"_translation_": {
+							"_default_": "Mirror current pose:\nThis option mirrors the current pose/motion. All parameters, including \"arm-as-leg\" control, are also mirrored.",
+							"ja": "現在のポーズをミラーリングする:\nこのオプションは、現在のポーズ/モーションをミラーリングします。 「手の動きで脚を動かす」モードを含むすべてのパラメータもミラーリングされます。"
+						}
+					}
+				},
+				"push_current_pose_to_list_top": {
+					"tooltip": {
+						"_translation_": {
+							"_default_": "Push current pose to list top:\nThis option pushes the current pose/motion to the top of the pose list, mainly for the convenience to use the pose hotkeys (Alt/Ctrl+Num1-9) when they can only cover the first 18 poses.",
+							"ja": "現在のポーズをリストの一番上に置く:\nこのオプションは、現在のポーズ/モーションをポーズ リストの先頭に置きます。これは主に、最初の 18 ポーズしかカバーできないときにポーズ ホットキー (Alt/Ctrl+Num1 ～ 9) を使用するのに便利です。"
+						}
+					}
+				},
+				"reset_pose_list_order": {
+					"tooltip": {
+						"_translation_": {
+							"_default_": "Reset pose list order:\nThis option resets the pose list order for any changes you have made with the \"Push current pose to list top\" option.",
+							"ja": "ポーズリストの順序をリセット:\nこのオプションは、「現在のポーズをリストの一番上に置く」オプションで行った変更に対するポーズ リストの順序をリセットします。"
+						}
+					}
+				},
+				"clear_all_custom_poses": {
+					"confirm": {
+						"_translation_": {
+							"_default_": "Are you sure you want to clear all custom poses?\nY. Yes\nN. No",
+							"ja": "すべてのカスタム ポーズをクリアしてもよろしいですか?\nY. はい\nN. いいえ"
+						}
+					},
+					"tooltip": {
+						"_translation_": {
+							"_default_": "Clear all custom poses:\nXR Animator saves custom poses/motions (VMD/FBX/BVH) you have dropped to the app, which can be mixed with upper body mocap just like those preset poses. However, the number of custom poses you can save is limited. This option clears all saved custom poses and motions.'",
+							"ja": "すべてのカスタムポーズをクリアする:\nXR Animator は、アプリにドロップしたカスタム ポーズ/モーション (VMD/FBX/BVH) を保存し、プリセット ポーズと同様に上半身のモーション キャプチャと混合できます。 ただし、保存できるカスタム ポーズの数には制限があります。 このオプションは、保存されているカスタム ポーズとモーションをすべてクリアします。"
+						}
+					}
+				},
+				"export_current_pose_config": {
+					"tooltip": {
+						"_translation_": {
+							"_default_": "Export current pose config:\nThis experimental feature allows you to export the config of the current pose/motion as a JSON file. You can then change the JSON to adjust every finest detail, from arm IK anchors, hip adjustment, to arm-as-leg control. Drop the adjusted JSON file back to the app to apply changes. For now, changes are not saved and will be reset on app start.",
+							"ja": "現在のポーズ設定をエクスポートする\nこの実験的な機能を使用すると、現在のポーズの構成を JSON ファイルとしてエクスポートできます。 その後、JSON を変更して、腕の IK から脚のコントロールの調整まで、あらゆる詳細を調整できます。 調整した JSON ファイルをアプリにドロップして戻し、変更を適用します。 現時点では、変更は保存されず、アプリの起動時にリセットされます。"
+						}
+					}
+				},
+				"extra": {
+					"_translation_": {
+						"_default_": "C. Mirror current pose\nD. Push current pose to list top\nE. Reset pose list order\nF. Clear all custom poses\nG. Export current pose config\nX. Done",
+						"ja": "C. 現在のポーズをミラーリングする\nD. 現在のポーズをリストの一番上に置く\nE. ポーズリストの順序をリセット\nF. すべてのカスタムポーズをクリアする\nG. 現在のポーズ設定をエクスポートする\nX. 終了"
+					}
+				}
+			},
+			"webcam_media": {
+				"_translation_": {
+					"_default_": "Enable selfie camera, webcam or media file input?\n1. Yes\n2. Yes (flip/mirror image)\n3. No\n4. Options",
+					"ja": "自撮りカメラ、Webカメラ、またはメディア ファイルの入力を有効にしますか?\n1. はい\n2. はい (反転/鏡像)\n3. いいえ\n4. 設定"
+				},
+				"info_short": {
+					"selfie_camera": {
+						"_translation_": {
+							"_default_": "Selfie camera",
+							"ja": "自撮りカメラ"
+						}
+					},
+					"webcam_media": {
+						"_translation_": {
+							"_default_": "Webcam/Media",
+							"ja": "Webカメラ/メディア"
+						}
+					}
+				},
+				"info": {
+					"camera_on": {
+						"ML_on": {
+							"_translation_": {
+								"_default_": "- To hide the media input while keeping the motion capture on, double-click this item.",
+								"ja": "- モーションキャプチャをオンにしたままメディア入力を非表示にするには、この項目をダブルクリックします。"
+							}
+						},
+						"ML_off": {
+							"_translation_": {
+								"_default_": "- To hide the media input, double-click this item.",
+								"ja": "- メディア入力を非表示にするには、この項目をダブルクリックします。"
+							}
+						}
+					},
+					"camera_off": {
+						"_translation_": {
+							"_default_": "- Double-click to choose a webcam or media input.\n- To use local pic/video as input, drop the file to the app.\n- Use mouse or keys to pick an alphanumeric option.",
+							"ja": "- ダブルクリックしてWebカメラまたはメディア入力を選択します。\n- ローカルの画像/ビデオを入力として使用するには、ファイルをアプリにドロップします。\n- マウスまたは英数字キーを使用してオプションを選択する。"
+						}
+					}
+				},
+				"finding_camera": {
+					"_translation_": {
+						"_default_": "(finding camera...)",
+						"ja": "(カメラを探しています...)"
+					}
+				},
+				"choose_an_input": {
+					"_translation_": {
+						"_default_": "Choose an input.",
+						"ja": "入力を選択します。"
+					}
+				},
+				"no_camera": {
+					"_translation_": {
+						"_default_": "No camera is available on this device. Drop a local media file as input instead.",
+						"ja": "このデバイスでは使用できるカメラがありません。 代わりに、ローカル メディア ファイルを入力としてドロップします。"
+					}
+				},
+				"local_media_file": {
+					"_translation_": {
+						"_default_": "Local media file",
+						"ja": "ローカル メディア ファイル"
+					}
+				},
+				"options": {
+					"resolution_limit": {
+						"_translation_": {
+							"_default_": "Resolution limit",
+							"ja": "解像度の制限"
+						},
+						"tooltip": {
+							"_translation_": {
+								"_default_": "Change resolution limit:\nResolution limit determines the target resolution for live webcam, as well as pixel limit for local media file. \"Auto / No limit\" requests no target resolution for live webcam (sometimes needed for compatibility), and no pixel limit for local media file. Default is 1280x720.",
+								"ja": "解像度制限を変更する:\n解像度制限は、ライブ Webカメラのターゲット解像度と、ローカル メディア ファイルのピクセル制限を決定します。 「自動 / 制限なし」は、ライブ Web カメラのターゲット解像度 (互換性のために必要な場合があります) を要求せず、ローカル メディア ファイルのピクセル制限も要求しません。 デフォルトは 1280x720 です。"
+							}
+						}
+					},
+					"auto_no_limit": {
+						"_translation_": {
+							"_default_": "Auto / No limit",
+							"ja": "自動 / 制限なし"
+						}
+					},
+					"frame_rate": {
+						"_translation_": {
+							"_default_": "Frame rate",
+							"ja": "フレームレート"
+						},
+						"tooltip": {
+							"_translation_": {
+								"_default_": "Change frame rate:\nBy default, XR Animator does not request a specific frame rate from webcam (for better compatibility), which is usually 30 fps, but sometimes you may get a lower than expected frame rate. Change it to 30 to specifically request this frame rate from your webcam.",
+								"ja": "フレームレートを変更する:\nデフォルトでは、XR Animator は Web カメラから特定のフレーム レートを要求しません (互換性向上のため)。通常は 30 fps ですが、予想よりも低いフレーム レートが得られる場合があります。 Web カメラからこのフレーム レートを具体的に要求するには、これを 30 に変更します。"
+							}
+						}
+					},
+					"extra": {
+						"_translation_": {
+							"_default_": "'1. Change resolution limit\n2. Change frame rate\n3. Return",
+							"ja": "1. 解像度制限を変更する\n2. フレームレートを変更する\n3. 戻る"
+						}
+					}
+				}
+			},
+			"motion_capture": {
+				"info_short": {
+					"_translation_": {
+						"_default_": "Motion capture",
+						"ja": "モーションキャプチャ"
+					}
+				},
+				"info": {
+					"ML_on": {
+						"_translation_": {
+							"_default_": "- To record motion during mocap, change options or turn mocap off, double-click this item.\n- Press Pause to pause/resume mocap.",
+							"ja": "- モーションを記録したり、オプションを変更したり、モーキャプをオフにしたりするには、ここをダブルクリックします。\n- モーキャプを一時停止/再開するには、Pauseを押します。"
+						},
+						"camera_off": {
+							"_translation_": {
+								"_default_": "- To choose a video input, double-click the \"Webcam/Media\" item. You can use a webcam, or drop a local video/picture file.",
+								"ja": "- 入力を選択するには、「Webカメラ/メディア」項目をダブルクリックします。 Web カメラ、またはローカルのビデオ/画像ファイルを使用できます。"
+							}
+						}
+					},
+					"ML_off": {
+						"_translation_": {
+							"_default_": "- Double-click to enable motion capture to control the avatar.\n- You can track any combination of face, hands and body.\n- Use mouse or keys to pick a numbered option.",
+							"ja": "- ダブルクリックしてモーション キャプチャを有効にしてアバターを制御します。\n- 顔、手、体のあらゆる組み合わせを追跡できます。\n- マウスまたは英数字キーを使用してオプションを選択する。"
+						}
+					}
+				},
+				"ML_off": {
+					"_translation_": {
+						"_default_": "Enable motion capture?\n1. Face only\n2. Body only\n3. Body + Hands\n4. Face + Body\n5. Full body (MediaPipe Vision)\n6. Full body (Legacy Holistic)\n7. Mocap options\n8. Cancel",
+						"ja": "モーションキャプチャを有効にしますか?\n1. 顔だけ\n2. 体だけ\n3. 体と手\n4. 顔と体\n5. 全身 (MediaPipe Vision)\n6. 全身 (レガシー Holistic)\n7. モーションキャプチャ設定\n8. キャンセル"
+					},
+					"full_body_mediapipe_vision": {
+						"tooltip": {
+							"_translation_": {
+								"_default_": "Full body (MediaPipe Vision):\nMediaPipe Vision is the latest mocap AI suite from Google MediaPipe. This version of full body tracking uses face, body and hand tracking models at the same time.",
+								"ja": "全身 (MediaPipe Vision):\nMediaPipe Vision は、Google MediaPipe の最新のモーションキャプチャ AI スイートです。 このバージョンの全身追跡では、顔、体、手の追跡モデルを同時に使用します。"
+							}
+						}
+					}
+				},
+				"ML_on": {
+					"export_motion_to_file": {
+						"_translation_": {
+							"_default_": "Export motion to file",
+							"ja": "モーションをファイルにエクスポートする"
+						},
+						"no_motion": {
+							"_translation_": {
+								"_default_": "There is no motion to export. Enable motion capture and record the motion, or drop a FBX/BVH motion file.",
+								"ja": "エクスポートするモーションはありません。 モーション キャプチャを有効にしてモーションを記録するか、FBX/BVH モーション ファイルをドロップします。"
+							}
+						},
+						"choose_format": {
+							"_translation_": {
+								"_default_": "Choose a motion format to export.",
+								"ja": "エクスポートするモーション形式を選択します。"
+							}
+						}
+					},
+					"record_motion": {
+						"_translation_": {
+							"_default_": "🔴Record motion",
+							"ja": "🔴モーションを記録する"
+						},
+						"choose_input": {
+							"_translation_": {
+								"_default_": "Choose a video input for motion capture first before you can record motion.",
+								"ja": "モーションを記録する前に、まずモーション キャプチャ用のビデオ入力を選択します。"
+							}
+						},
+						"model_warming_up": {
+							"_translation_": {
+								"_default_": "Mocap AI models are still warming up. Try again in a few seconds.",
+								"ja": "モーキャプ AI モデルはまだウォームアップ中です。 数秒後にもう一度試してください。"
+							}
+						},
+						"choose_speed": {
+							"_translation_": {
+								"_default_": "Choose a speed to record motion.\n1. x 1\n2. x 0.5\n3. x 0.25\n4. Cancel",
+								"ja": "モーションを記録する速度を選択してください。\n1. x 1\n2. x 0.5\n3. x 0.25\n4. キャンセル"
+							},
+							"info": {
+								"_translation_": {
+									"_default_": "- Recorded motion can be exported to a file afterwards.\n- If your PC is slow, choose a slower speed to ensure that you can capture all the frames.\n- Live camera will always be recorded at normal speed.",
+									"ja": "- 記録したモーションは後でファイルにエクスポートできます。\n- PC が遅い場合は、すべてのフレームを確実にキャプチャできるように、より遅い速度を選択してください。\n- ライブカメラは常に通常の速度で記録されます。"
+								}
+							},
+							"begin_recording": {
+								"_translation_": {
+									"_default_": "Use the seek bar to go to the desired frame, press the play button and begin recording.",
+									"ja": "シークバーを使用して目的のフレームに移動し、再生ボタンを押して録画を開始します。"
+								},
+								"info": {
+									"_translation_": {
+										"_default_": "- Double-click to stop motion recording.",
+										"ja": "- ダブルクリックしてモーション記録を停止します。"
+									}
+								},
+								"recording_stopped": {
+									"_translation_": {
+										"_default_": "Motion recording has stopped. Double-click and you can export the motion to a file in VMD or BVH format.",
+										"ja": "モーション録画が停止されました。 ダブルクリックすると、モーションを VMD または BVH 形式のファイルにエクスポートできます。"
+									}
+								}
+							}
+						}
+					},
+					"mocap_options": {
+						"_translation_": {
+							"_default_": "Mocap options",
+							"ja": "モーションキャプチャ設定"
+						}
+					},
+					"mocap_off": {
+						"_translation_": {
+							"_default_": "Mocap OFF",
+							"ja": "モーションキャプチャ OFF"
+						}
+					}
+				},
+				"mocap_options": {
+					"_translation_": {
+						"_default_": "1. Body tracking options\n2. Hand tracking options\n3. Face tracking options\n4. Webcam angle offset\n5. Clear bounding box",
+						"ja": "1. ボディトラッキング設定\n2. ハンドトラッキング設定\n3. フェイストラッキング設定\n4. Webカメラの角度オフセット\n5. 境界ボックスをクリアする"
+					},
+					"body_tracking_options": {
+						"AI_model_quality": {
+							"_translation_": {
+								"_default_": "AI model quality",
+								"ja": "AIモデルの品質"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "AI model quality:\nThis option determines the weight of the mocap AI model. \"Best\" is the heavier version, which provides better mocap accuracy and quality, at the expense of extra GPU usage. Default is \"Normal\".",
+									"ja": "AIモデルの品質:\nこのオプションは、モーションキャプチャ AI モデルのウェイトを決定します。 「最高」はより重いバージョンで、追加の GPU 使用率を犠牲にして、モーションキャプチャの精度と品質が向上します。 デフォルトは「普通」です。"
+								}
+							},
+							"z_depth_scale": {
+								"_translation_": {
+									"_default_": "Z-depth scale",
+									"ja": "Z-奥行きスケール"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "Z-depth scale:\nThis option determines the z-depth scale when AI model quality is set to \"Best\". \"Min\" gives you less sense of depth, while \"Max\" boosts it. Default is \"Medium\".",
+										"ja": "Z-奥行きスケール:\nこのオプションは、AI モデルの品質が「最高」に設定されている場合の Z-奥行きスケールを決定します。 「最小」にすると奥行き感が減りますが、「最大」にすると奥行き感が増します。 デフォルトは「中」です。"
+									}
+								}
+							}
+						},
+						"shoulder_tracking": {
+							"_translation_": {
+								"_default_": "Shoulder tracking",
+								"ja": "肩トラッキング"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Shoulder tracking:\nWhen enabled, shoulder motion and shrugging will be tracked. Note that shrug tracking requires face tracking enabled. Default is \"ON\".",
+									"ja": "肩トラッキング:\n有効にすると、肩の動きと肩をすくめる動作が追跡されます。 肩をすくめるトラッキングには顔トラッキングが有効になっている必要があることに注意してください。 デフォルトは「ON」です。"
+								}
+							}
+						},
+						"leg_IK": {
+							"_translation_": {
+								"_default_": "Leg IK",
+								"ja": "足IK"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Leg IK:\nWhen enabled, inverse kinematics (IK) will be used to calculate avatar's leg motions. When motion recording is on, IK data will be recorded, which makes editing on MMD easier for exported VMD motion. Default is \"OFF\".",
+									"ja": "足IK:\n有効にすると、インバースキネマティクス (IK) を使用してアバターの足の動きを計算します。 モーション記録がオンの場合、IK データが記録されるため、エクスポートされた VMD モーションを MMD 上で編集しやすくなります。 デフォルトは「OFF」です。"
+								}
+							}
+						},
+						"leg_scale_adjustment": {
+							"_translation_": {
+								"_default_": "Leg scale adjustment",
+								"ja": "足スケール調整"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Leg scale adjustment:\nThis experimental feature adapts the leg length difference between source and avatar to give you a better sense of grounding. You don't need this option in most cases, but some nice results can be achieved if you can find a setting that keeps the values of 左/右 on debug between 1 and 0.95 often. Default is \"OFF\".",
+									"ja": "足スケール調整:\nこの実験的な機能は、ソースとアバターの間の脚の長さの違いを調整して、接地感を高めます。 ほとんどの場合、このオプションは必要ありませんが、デバッグ時に左/右の値を 1 ～ 0.95 の間に維持する設定を見つけることができれば、良い結果が得られることがあります。 デフォルトは「OFF」です。"
+								}
+							}
+						},
+						"auto_grounding": {
+							"_translation_": {
+								"_default_": "Auto-grounding",
+								"ja": "自動接地"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Auto-grounding:\nWhen enabled, your avatar's feet will always be grounded during full body mocap. This option can be toggled via hotkey (<hotkey>). Default is \"OFF\".",
+									"ja": "自動接地:\n有効にすると、全身モーション キャプチャ中にアバターの足が常に接地されます。 このオプションはホットキー (<hotkey>) で切り替えることができます。 デフォルトは「OFF」です。"
+								}
+							}
+						},
+						"body_bend_reduction": {
+							"_translation_": {
+								"_default_": "Body bend reduction",
+								"ja": "体の曲がりを軽減する"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Body bend reduction:\nSometimes the mocap AI may misrecognize your body gesture as bending forward, especially when you are close to the camera. When enabled, this option reduces the bending of avatar's body by a certain percentage. Default is \"OFF\".",
+									"ja": "体の曲がりを軽減する:\n特にカメラに近い場合、モーションキャプチャ AI が体のジェスチャを前かがみであると誤認識することがあります。 このオプションを有効にすると、アバターの体の曲がりが一定の割合で軽減されます。 デフォルトは「OFF」です。"
+								}
+							}
+						},
+						"upper_rotation_offset": {
+							"_translation_": {
+								"_default_": "Upper rotation offset",
+								"ja": "上半身の回転オフセット"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Upper rotation offset (press ➕➖ to change value):\nUse this option to apply a rotation offset to the upper body of your avatar while rotating the root in the opposite direction, as if only your lower body is rotated while the upper body stays still. This can be useful if you are at a certain angle sideway to the camera instead of facing the camera straightly. Press ➕➖ to change value. Default is \"0°\".",
+									"ja": "上半身の回転オフセット(➕➖で値を変更する):\nこのオプションを使用して、アバターの上半身に回転オフセットを適用しながら、上半身は静止したまま下半身だけを回転させるかのように、ルートを反対方向に回転させます。 これは、カメラに真正面を向くのではなく、カメラに対して一定の角度で横にいる場合に便利です。 ➕➖を押して値を変更します。 デフォルトは「0°」です"
+								}
+							}
+						},
+						"hip_adjustment": {
+							"_translation_": {
+								"_default_": "Hip adjustment (upper body mocap)",
+								"ja": "腰の調整（上半身のモーキャプ）"
+							},
+							"press_to_change_value": {
+								"_translation_": {
+									"_default_": "Press ⬅️➡️ to change value",
+									"ja": "⬅️➡️を押して値を変更します"
+								},
+								"short": {
+									"_translation_": {
+										"_default_": "press ⬅️➡️ to change value",
+										"ja": "⬅️➡️で値を変更する"
+									}
+								}
+							},
+							"general_weighting": {
+								"_translation_": {
+									"_default_": "General weighting",
+									"ja": "一般的な重み付け"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "By default, when using upper body mocap, hip position and rotation will be adjusted according to your upper body motion. This option determines the general weighting of the hip adjustment applied. Default is \"100%\".",
+										"ja": "デフォルトでは、上半身のモーションキャプチャを使用すると、上半身の動きに応じて腰の位置と回転が調整されます。 このオプションは、適用されるヒップ調整の一般的な重み付けを決定します。 デフォルトは「100%」です。"
+									}
+								}
+							},
+							"head_motion_weight": {
+								"_translation_": {
+									"_default_": "Head motion weight",
+									"ja": "頭の動きの重み付け"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "This option determines the weighting of head motion to be included as part of the upper body motion. Default is \"100%\".",
+										"ja": "このオプションは、上半身の動きの一部として含まれる頭の動きの重み付けを決定します。 デフォルトは「100%」です。"
+									}
+								}
+							},
+							"y_axis_adjustment": {
+								"_translation_": {
+									"_default_": "Y-axis adjustment",
+									"ja": "Y軸調整"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "When this option is \"100%\", hip moves downwards when you lean forward, upwards when you lean backward, and sideways when you turn sideways. When this option is \"0%\", hip moves downwards no matter you lean forward or backward, and there is no hip movement when you turn sideways. Default is \"66%\".",
+										"ja": "このオプションが「100%」の場合、前傾すると腰が下に、後傾すると上に、横向きになると横に動きます。 このオプションが「0%」の場合、前かがみでも後傾でも腰が下に移動し、横を向くと腰は動きません。 デフォルトは「66%」です。"
+									}
+								}
+							},
+							"scale": {
+								"_translation_": {
+									"_default_": "Scale",
+									"ja": "スケール"
+								},
+								"x": {
+									"tooltip": {
+										"_translation_": {
+											"_default_": "This option determines the scaling of movement along the X axis. By default, hip moves to the left when you leans to the right (or turns right when \"Y-axis adjustment\" is on), and hip moves to the right when you leans to the left. A negative value inverts this behavior. Default is \"100%\".",
+											"ja": "このオプションは、X 軸に沿った動きのスケーリングを決定します。 デフォルトでは、右に体を傾けると（「Y 軸調整」がオンの場合は右に曲がると）、腰は左に移動します。 左に傾くと腰は右に動きます。 負の値を指定すると、この動作が逆転します。 デフォルトは「100%」です。"
+										}
+									}
+								},
+								"y": {
+									"tooltip": {
+										"_translation_": {
+											"_default_": "This option determines the scaling of movement along the Y axis. By default, hip moves downwards when you leans forward, and hip moves upwards when you leans backward (when \"Y-axis adjustment\" is on). A negative value inverts this behavior. Default is \"100%\".",
+											"ja": "このオプションは、Y 軸に沿った動きのスケーリングを決定します。 デフォルトでは、前傾するとヒップが下に移動し、後傾するとヒップが上に移動します (「Y 軸調整」がオンの場合)。 負の値を指定すると、この動作が逆転します。 デフォルトは「100%」です。"
+										}
+									}
+								},
+								"z": {
+									"tooltip": {
+										"_translation_": {
+											"_default_": "This option determines the scaling of movement along the Z axis. By default, hip moves backwards when you leans forward, and hip moves forward when you leans backward. A negative value inverts this behavior. Default is \"100%\".",
+											"ja": "このオプションは、Z 軸に沿った移動のスケーリングを決定します。 デフォルトでは、前傾すると腰は後方に移動し、後傾すると腰は前に移動します。 負の値を指定すると、この動作が逆転します。 デフォルトは「100%」です。"
+										}
+									}
+								}
+							},
+							"smoothing": {
+								"_translation_": {
+									"_default_": "Smoothing",
+									"ja": "平滑化"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "This option determines how much you want the hip motion to be smoothened. Default is \"0%\".",
+										"ja": "このオプションは、腰の動きをどの程度滑らかにするかを決定します。 デフォルトは「0%」です。"
+									}
+								}
+							}
+						}
+					},
+					"hand_tracking_options": {
+						"depth_adjustment": {
+							"_translation_": {
+								"_default_": "Depth adjustment",
+								"ja": "奥行き調整"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "This option enhances the sense of depth of avatar's arms by utilizing the data of hand tracking. This value determines how much you want the hand tracking data to override arm tracking data from the body mocap. Depth adjustment applies to upper body mocap, or full body mocap when close to the camera. Default is \"50%\".",
+									"ja": "ハンド トラッキングのデータを利用してアバターの腕の奥行き感を強調するオプションです。 この値は、ハンド トラッキング データがボディ モーキャプの腕トラッキング データをどの程度オーバーライドするかを決定します。 奥行き調整は、上半身のモーキャプ、またはカメラに近い場合の全身のモーキャプに適用されます。 デフォルトは「50%」です。"
+								}
+							},
+							"press_to_change_value": {
+								"_translation_": {
+									"_default_": "press ⬅️➡️ to change value",
+									"ja": "⬅️➡️で値を変更する"
+								}
+							},
+							"IRL_hand_shoulder_scale": {
+								"_translation_": {
+									"_default_": "IRL hand/shoulder scale",
+									"ja": "あなたの手/肩の比例"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "Depth adjustment is calculated based on the comparison of your palm's size and shoulder width. Smaller value fits smaller hands/wider shoulder, while large value fits bigger hands/narrower shoulder. Default is \"22%\".",
+										"ja": "奥行き調整は手のひらの大きさと肩幅を比較して計算されます。 小さい値は小さい手/広い肩にフィットし、大きい値は大きい手/狭い肩にフィットします。 デフォルトは「22%」です。"
+									}
+								}
+							},
+							"depth_scale": {
+								"_translation_": {
+									"_default_": "Depth scale",
+									"ja": "奥行きスケール"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "This options determines how much you want to scale the value of depth up or down. Smaller scale draws your hands closer to your body, while larger scale extends your arm's reach. Default is \"50%\".",
+										"ja": "このオプションは、深度の値をどの程度スケールアップまたはスケールダウンするかを決定します。 スケールが小さいと手が体に近づき、スケールが大きいと腕が届く範囲が広がります。 デフォルトは「50%」です。"
+									}
+								}
+							}
+						},
+						"arm_stabilization": {
+							"_translation_": {
+								"_default_": "Arm stabilization",
+								"ja": "腕の安定化"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "This option stabilizes the default arms tracking from body mocap and reduces false positive detections when hands are going on and off the screen, by utilizing the hands tracking data. This options applies when you are close to the camera, or just for upper body mocap. Default is \"ON\".",
+									"ja": "このオプションは、手の追跡データを利用することで、ボディ モーション キャプチャからのデフォルトの腕の追跡を安定させ、手が画面に出入りするときの誤検知を減らします。 このオプションは、カメラに近い場合、または上半身のモーションキャプチャのみに適用されます。 デフォルトは「ON」です。"
+								}
+							},
+							"upper_body_mocap": {
+								"_translation_": {
+									"_default_": "Upper body mocap",
+									"ja": "上半身のモーキャプのみ"
+								}
+							},
+							"time_to_stabilize": {
+								"_translation_": {
+									"_default_": "Time to stabilize",
+									"ja": "安定するまでの時間"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "This option determines the amount of time required to stabilize arm tracking, which improves the result at the expense of increased lag for hands to show up on screen. You can just leave it to the default value in most cases. Default is \"0\" (no delay).",
+										"ja": "このオプションは、腕の追跡を安定させるのに必要な時間を決定します。これにより、手が画面に表示されるまでの遅延が増加しますが、結果は改善されます。 ほとんどの場合、デフォルト値のままで問題ありません。 デフォルトは「0」（遅延なし）です。"
+									}
+								},
+								"frame": {
+									"_translation_": {
+										"_default_": "frame",
+										"ja": "フレーム"
+									}
+								}
+							}
+						},
+						"hand_stabilization": {
+							"_translation_": {
+								"_default_": "Hand stabilization",
+								"ja": "手の位置の安定化"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "When enabled, the hand position from hand tracking will be used in favor of the one from body tracking. Percentage determines the duration to fade out hand tracking when it fails. You may want to lower the percentage if arm motion is vigorous or hand tracking condition is poor. Default is \"20%\".",
+									"ja": "有効にすると、ハンド トラッキングからの手の位置が、ボディ トラッキングからの手の位置を優先して使用されます。 パーセンテージは、ハンド トラッキングが失敗した場合にフェードアウトする時間を決定します。 腕の動きが激しい場合や手の追跡状態が悪い場合は、パーセンテージを下げることをお勧めします。 デフォルトは「20%」です。"
+								}
+							}
+						},
+						"standalone_web_worker": {
+							"_translation_": {
+								"_default_": "Standalone web worker",
+								"ja": "独立したウェブワーカー"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "When enabled, this experimental option separates the processing of hand tracking from body tracking, and runs hand tracking model on an independent web worker, which aims to give priority for body mocap to achieve higher fps, at the expense of possibly lower fps for hand tracking, when system resource is tight. Default is \"OFF\".",
+									"ja": "この実験的オプションを有効にすると、ハンド トラッキングの処理がボディ トラッキングから分離され、独立したウェブワーカーでハンド トラッキング モデルが実行されます。これは、ハンド トラッキングの fps が低下する可能性を犠牲にして、ボディ モーキャプを優先してより高い fps を達成することを目的としています。 デフォルトは「OFF」です。"
+								}
+							}
+						}
+					},
+					"face_tracking_options": {
+						"eye_tracking": {
+							"_translation_": {
+								"_default_": "Eye tracking",
+								"ja": "アイトラッキング"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Eye tracking:\nSometimes you may want to turn eye tracking off if eyes are covered (e.g. sunglasses) or the tracking condition is poor. Otherwise, some bad tracking results can happen. Auto blink will be on when eye tracking is off. Default is \"ON\".",
+									"ja": "アイトラッキング:\n目が覆われている場合（サングラスなど）、または追跡状態が悪い場合は、アイトラッキングをオフにしたい場合があります。 そうしないと、悪い追跡結果が発生する可能性があります。 アイトラッキングがオフの場合、自動まばたきはオンになります。 デフォルトは「ON」です。"
+								}
+							}
+						},
+						"blink_LR_sync": {
+							"_translation_": {
+								"_default_": "Blink LR sync",
+								"ja": "まばたきの左右同期"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Blink LR sync:\nFor various reasons, blink tracking may not be ideal and lead to some size differences between the eyes that don't look good. Turn on this option to synchronize the blink of both eyes, at the expense of losing the ability to wink. Default is \"OFF\".",
+									"ja": "まばたきの左右同期:\nさまざまな理由により、まばたきの追跡は理想的ではない可能性があり、目の大きさに多少の違いが生じ、見栄えが悪くなります。 このオプションをオンにすると、ウィンクする機能が失われますが、両目のまばたきが同期されます。 デフォルトは「OFF」です。"
+								}
+							}
+						},
+						"auto_blink": {
+							"_translation_": {
+								"_default_": "Auto blink",
+								"ja": "自動まばたき"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Auto blink:\nSometimes blink tracking is hardly noticeable due to poor lighting and various conditions. Turn on this option to allow your avatar to blink automatically. Default is \"OFF\".",
+									"ja": "自動まばたき:\n不十分な照明やさまざまな条件により、まばたきの追跡がほとんど目立たない場合があります。 アバターが自動的にまばたきできるようにするには、このオプションをオンにします。 デフォルトは「OFF」です。"
+								}
+							}
+						},
+						"auto_look_at_camera": {
+							"_translation_": {
+								"_default_": "Auto \"look at camera\"",
+								"ja": "自動「カメラを見る」"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Auto \"look at camera\":\nSometimes you may want your avatar to look at the camera, as if you are always looking at your audience, regardless of where you are actually looking at. This option can be toggled via hotkey (<hotkey>). Default is \"OFF\".",
+									"ja": "自動「カメラを見る」:\n場合によっては、実際にどこを見ているかに関係なく、あたかも常に聴衆を見ているかのように、アバターがカメラの方を向いているようにしたい場合があります。 このオプションはホットキー (<hotkey>) で切り替えることができます。 デフォルトは「OFF」です。"
+								}
+							}
+						},
+						"tongue_out_tracking": {
+							"_translation_": {
+								"_default_": "\"Tongue out\" tracking",
+								"ja": "「舌出し」追跡"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "\"Tongue out\" tracking:\nXR Animator supports the tracking of ARKit 52 blendshapes, with the exception of a few, including \"tongueOut\". Turn on this option to allow XR Animator to estimate the tongue out motion by analyzing the other mouth blendshape data. Default is \"ON\".",
+									"ja": "「舌出し」追跡:\nXR Animator は、「tongueOut」などのいくつかの例外を除き、ARKit 52 ブレンドシェイプのトラッキングをサポートしています。 このオプションをオンにすると、XR Animator が他の口のブレンドシェイプ データを分析して舌を出す動きを推定できるようになります。 デフォルトは「ON」です。"
+								}
+							}
+						},
+						"emotion_tracking_options": {
+							"_translation_": {
+								"_default_": "Emotion tracking options",
+								"ja": "感情トラッキング設定"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Emotion tracking options:\nBy default, face tracking reads your facial expressions and attempts to match some standard expressions from your avatar model, such as joy/fun, sorrow, angry, and optionally surprise and blush. Adjust the general weighting or weighting of each individual expression to suit your taste.",
+									"ja": "感情トラッキング設定\nデフォルトでは、フェイストラッキングはユーザーの表情を読み取り、喜び/楽しみ、悲しみ、怒り、驚きや赤面など、アバター モデルの標準的な表情と一致させようとします。 全体的な重み付け、または個々の式の重み付けを好みに合わせて調整します。"
+								}
+							},
+							"emotion_tracking": {
+								"_translation_": {
+									"_default_": "Emotion tracking",
+									"ja": "感情トラッキング"
+								}
+							},
+							"press_to_change_value": {
+								"_translation_": {
+									"_default_": "Press ⬅️➡️ to change value",
+									"ja": "⬅️➡️を押して値を変更します"
+								},
+								"short": {
+									"_translation_": {
+										"_default_": "press ⬅️➡️ to change value",
+										"ja": "⬅️➡️で値を変更する"
+									}
+								}
+							},
+							"general_weighting": {
+								"_translation_": {
+									"_default_": "General weighting",
+									"ja": "一般的な重み付け"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "This option determines the general weighting of all expressions detected via emotion tracking. Default is \"75%\".",
+										"ja": "このオプションは、感情トラッキングによって検出されたすべての表情の一般的な重み付けを決定します。 デフォルトは「75%」です。"
+									}
+								}
+							},
+							"joy_fun": {
+								"_translation_": {
+									"_default_": "Joy/Fun",
+									"ja": "喜び/楽しみ"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "Activate the joy/fun expression simply by making a smiling face. This is natural, straight forward and you probably want to keep this expression detection on all the time. Default is \"100%\".",
+										"ja": "笑顔を作るだけで、アバターの喜び/楽しい表情を有効にします。 これは自然で簡単なことであり、おそらくこの表情検出を常にオンにしておくことが望ましいでしょう。 デフォルトは「100%」です。"
+									}
+								}
+							},
+							"angry": {
+								"_translation_": {
+									"_default_": "Angry",
+									"ja": "怒り"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "Activate the angry expression by making a side pout on either left or right side. Lower the percentage if it is often misactivated. Default is \"100%\".",
+										"ja": "左側または右側のいずれかを口を尖らせると、アバターの怒りの表情を有効にします。 誤ってアクティブ化されることが多い場合は、パーセンテージを下げます。 デフォルトは「100%」です。"
+									}
+								}
+							},
+							"sorrow": {
+								"_translation_": {
+									"_default_": "Sorrow",
+									"ja": "悲しみ"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "Activate the sorrow expression by pulling your lower lip upward and making a standard sad face. Lower the percentage if it is often misactivated. Default is \"100%\".",
+										"ja": "下唇を引き上げて標準的な悲しい顔を作ることで、アバターの悲しみの表情を有効にします。 誤ってアクティブ化されることが多い場合は、パーセンテージを下げます。 デフォルトは「100%」です。"
+									}
+								}
+							},
+							"surprised": {
+								"_translation_": {
+									"_default_": "Surprised",
+									"ja": "驚き"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "Activate the surprised expression by raising your eyebrows and lowering your jaw. Note that not all 3D models have this expression. Lower the percentage if it is often misactivated. Default is \"100%\".",
+										"ja": "眉を上げて顎を下げることで、アバターの驚きの表情を有効にします。 すべての 3D モデルがこの式ブレンドシェイプを持っているわけではないことに注意してください。 誤ってアクティブ化されることが多い場合は、パーセンテージを下げます。 デフォルトは「100%」です。"
+									}
+								}
+							},
+							"others": {
+								"tooltip": {
+									"_translation_": {
+										"_default_": "Depending on each individual avatar model's settings, some models may have other detectable expressions. Lower the percentage if they are often misactivated. Default is \"100%\".",
+										"ja": "個々のアバター モデルの設定に応じて、一部のモデルには他の検出可能な表現がある場合があります。 誤ってアクティブ化されることが多い場合は、パーセンテージを下げます。 デフォルトは「100%」です。"
+									}
+								}
+							}
+						},
+						"calibration_options": {
+							"_translation_": {
+								"_default_": "Calibration options",
+								"ja": "キャリブレーション設定"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Calibration options:\nWhenever face tracking starts, mocap data from the first few seconds will be analyzed and calibrated to better fit the user's face. These options allow you to reset the calibration, export the current calibration to an external JSON file, or import a previously exported calibration.",
+									"ja": "キャリブレーション設定:\nフェイストラッキングが開始されるたびに、最初の数秒間のモーキャプ データが分析され、ユーザーの顔によりよくフィットするように調整されます。 これらのオプションを使用すると、キャリブレーションをリセットしたり、キャリブレーションを外部 JSON ファイルにエクスポートしたり、以前にエクスポートしたキャリブレーションをインポートしたりできます。"
+								}
+							},
+							"import_calibration": {
+								"_translation_": {
+									"_default_": "Drop a JSON file containing face calibration data.\n1. Cancel",
+									"ja": "顔のキャリブレーション データを含む JSON ファイルをドロップします。\n1. キャンセル"
+								}
+							},
+							"message": {
+								"_translation_": {
+									"_default_": "A. Reset calibration\nB. Import calibration\nC. Export calibration",
+									"ja": "A. キャリブレーションをリセットする\nB. キャリブレーションをインポートする\nC. キャリブレーションをエクスポートする"
+								}
+							}
+						}
+					},
+					"webcam_angle_offset": {
+						"_translation_": {
+							"_default_": "If your webcam is angled up or down, offset it to cancel avatar's tilting.",
+							"ja": "Webカメラが上または下に傾いている場合は、それをオフセットしてアバターの傾きをキャンセルします。"
+						},
+						"tooltip": {
+							"_translation_": {
+								"_default_": "Tilt adjustment:\nIf your webcam is angled up or down, enable this option to apply an angle offset to cancel avatar's tilting. Angle offset is fully applied to head. A smaller weighting can be applied to body (\"50%\" by default), as body mocap is usually less sensitive to webcam tilting. Negative weighting means an opposite angle offset for body. Default is \"OFF\".",
+								"ja": "傾き調整:\nWebカメラが上または下に傾いている場合は、このオプションを有効にして角度オフセットを適用し、アバターの傾きをキャンセルします。 角度オフセットがヘッドに完全に適用されます。 ボディ モーキャプは通常、Webカメラの傾きの影響をあまり受けないため、より小さい重み付けをボディに適用できます (デフォルトでは「50%」)。 デフォルトは「OFF」です。"
+							}
+						},
+						"press_to_adjust_offset_angle": {
+							"_translation_": {
+								"_default_": "Press ⬆️⬇️ to adjust offset angle",
+								"ja": "⬆️⬇️を押してオフセット角度を調整する"
+							}
+						},
+						"press_to_adjust_weighting_applied": {
+							"_translation_": {
+								"_default_": "Press ⬅️➡️ to adjust weighting applied",
+								"ja": "⬅️➡️を押して、適用される重み付けを調整する"
+							}
+						},
+						"tilt_adjustment": {
+							"_translation_": {
+								"_default_": "Tilt adjustment",
+								"ja": "傾き調整"
+							}
+						},
+						"angle": {
+							"_translation_": {
+								"_default_": "Angle",
+								"ja": "角度"
+							}
+						},
+						"weighting_body": {
+							"_translation_": {
+								"_default_": "Weighting (body)",
+								"ja": "重み付け（胴体）"
+							}
+						}
+					},
+					"clear_bounding_box": {
+						"tooltip": {
+							"_translation_": {
+								"_default_": "Clear bounding box:\nXR Animator mocap can only track one person at the same time. When there are more than one person in the mocap source, sometimes the mocap AI can be tracking the wrong person. In such case, clear the bounding box of the current target to enforce the AI to track another person in the video.",
+								"ja": "境界ボックスをクリアする:\nXR Animator モーキャップは同時に 1 人の人物のみを追跡できます。 モーキャップ ソースに複数の人物が含まれている場合、モーキャップ AI が間違った人物を追跡することがあります。 このような場合、現在のターゲットの境界ボックスをクリアして、AI がビデオ内の別の人物を追跡するように強制します。"
+							}
+						}
+					}
+				}
+			},
+			"VMC_protocol": {
+				"info_short": {
+					"_translation_": {
+						"_default_": "VMC-protocol",
+						"ja": "VMCプロトコル"
+					}
+				},
+				"info": {
+					"_translation_": {
+						"_default_": "- VMC-protocol allows sending 3D motion data in real time from XR Animator to other supported apps, such as VSeeFace, VNyan, Warudo, Unity and Unreal Engine. Double-click to configure.\n- Use mouse or keys to pick an alphanumeric option.",
+						"ja": "- VMCプロトコルを使用すると、XR Animatorから他のサポートされているアプリ (VSeeFace、VNyan、Warudo、Unity、Unreal Engine など) に 3D モーション データをリアルタイムで送信できます。 ダブルクリックして設定します。\n- マウスまたは英数字キーを使用してオプションを選択する。"
+					}
+				},
+				"tooltip": {
+					"_translation_": {
+						"_default_": "VMC-protocol:\nVMC-protocol allows sending 3D motion data in real time from XR Animator to other supported apps, such as VSeeFace, VNyan, Warudo, Unity and Unreal Engine. Default is \"OFF\".",
+						"ja": "VMCプロトコル:\nVMCプロトコルを使用すると、XR Animatorから他のサポートされているアプリ (VSeeFace、VNyan、Warudo、Unity、Unreal Engine など) に 3D モーション データをリアルタイムで送信できます。 デフォルトは「OFF」です。"
+					}
+				},
+				"parameters": {
+					"_translation_": {
+						"_default_": "VMC-protocol parameters",
+						"ja": "VMCプロトコルのパラメータ"
+					}
+				},
+				"port": {
+					"_translation_": {
+						"_default_": "port",
+						"ja": "ポート"
+					},
+					"current_port": {
+						"_translation_": {
+							"_default_": "Current port",
+							"ja": "現在のポート"
+						}
+					},
+					"enter_valid_port": {
+						"_translation_": {
+							"_default_": "Enter a valid port number",
+							"ja": "有効なポート番号を入力します"
+						}
+					},
+					"3_digit_number_at_least": {
+						"_translation_": {
+							"_default_": "3-digit number at least",
+							"ja": "少なくとも3桁の数字"
+						}
+					},
+					"no_bigger_than_65535": {
+						"_translation_": {
+							"_default_": "No bigger than 65535",
+							"ja": "65535 以下"
+						}
+					},
+					"invalid_port_number": {
+						"_translation_": {
+							"_default_": "Invalid port number",
+							"ja": "無効なポート番号"
+						}
+					}
+				},
+				"host": {
+					"_translation_": {
+						"_default_": "host",
+						"ja": "ホスト"
+					},
+					"current_host": {
+						"_translation_": {
+							"_default_": "Current host",
+							"ja": "現在のホスト"
+						}
+					},
+					"enter_valid_IP": {
+						"_translation_": {
+							"_default_": "Enter a valid IP address",
+							"ja": "有効なIPアドレスを入力します"
+						}
+					},
+					"invalid_IP_address": {
+						"_translation_": {
+							"_default_": "Invalid IP address",
+							"ja": "無効なIPアドレス"
+						}
+					}
+				},
+				"port_host_extra": {
+					"_translation_": {
+						"_default_": "・Press R to reset to default\n・Press Enter to apply changes\n・Press Esc to cancel",
+						"ja": "・Rを押してデフォルトにリセットします\n・Enterを押して変更を適用します\n・Escを押してキャンセルします"
+					}
+				},
+				"send_camera_data": {
+					"_translation_": {
+						"_default_": "Send camera data",
+						"ja": "カメラデータを送信する"
+					},
+					"tooltip": {
+						"_translation_": {
+							"_default_": "Send camera data:\nWhen VMC-protocol is on, this option sends 3D camera data as well. Some VTubing apps such as VNyan and Warudo support reading VMC camera data. This virtually allows a complete synchronization of motion and camera visual between XR Animator and external app. Default is \"OFF\".",
+							"ja": "カメラデータを送信する:\nVMCプロトコルがオンの場合、このオプションは 3D カメラ データも送信します。 VNyan や Warudo などの一部の VTuber アプリは、VMC カメラ データの読み取りをサポートしています。 これにより、XR Animator と外部アプリの間でモーションとカメラのビジュアルを仮想的に完全に同期できます。 デフォルトは「OFF」です。"
+						}
+					}
+				},
+				"app_mode": {
+					"_translation_": {
+						"_default_": "App mode",
+						"ja": "アプリモード"
+					},
+					"tooltip": {
+						"_translation_": {
+							"_default_": "App mode:\nThis option determines the configuration applied to VMC when connected to the specified app. Different apps interpret various features of VMC protocol differently. Choosing the right app mode ensures that VMC data are sent correctly. Default is \"Others\".",
+							"ja": "アプリモード:\nこのオプションは、指定されたアプリに接続したときに VMC に適用される構成を決定します。 アプリが異なれば、VMCプロトコルのさまざまな機能の解釈も異なります。 適切なアプリ モードを選択すると、VMC データが正しく送信されます。 デフォルトは「その他」です。"
+						}
+					}
+				},
+				"3D_avatar_display": {
+					"_translation_": {
+						"_default_": "3D avatar display",
+						"ja": "3Dアバター表示"
+					},
+					"tooltip": {
+						"_translation_": {
+							"_default_": "3D avatar display:\nThis option determines whether to hide the 3D avatar on XR Animator. Turn off your avatar display to save some CPU/GPU usage when using VMC-protocol. Default is \"ON\".",
+							"ja": "3Dアバター表示:\nこのオプションは、XR Animator で 3D アバターを非表示にするかどうかを決定します。 VMCプロトコルを使用する場合は、アバターの表示をオフにして CPU/GPU の使用量を節約します。 デフォルトは「ON」です。"
+						}
+					}
+				}
+			},
+			"UI_options": {
+				"info_short": {
+					"_translation_": {
+						"_default_": "UI/Options",
+						"ja": "UI/オプション"
+					}
+				},
+				"info": {
+					"_translation_": {
+						"_default_": "- Double-click for UI settings and other options.\n- Press Esc key to close speech bubble menu, or toggle UI when no menu is on.\n- Use mouse or keys to pick an alphanumeric option.",
+						"ja": "- ダブルクリックして UI 設定やその他のオプションを変更します。\n- Esc キーを押して吹き出しメニューを閉じるか、メニューが表示されていない場合は UI を切り替えます。\n- マウスまたは英数字キーを使用してオプションを選択する。"
+					}
+				},
+				"UI_and_overlays": {
+					"_translation_": {
+						"_default_": "UI and overlays",
+						"ja": "UIとオーバーレイ"
+					}
+				},
+				"scene": {
+					"_translation_": {
+						"_default_": "Scene (background/3D/etc.)",
+						"ja": "シーン(背景/3Dなど)"
+					},
+					"tooltip": {
+						"_translation_": {
+							"_default_": "Scene (background/3D/etc.):\nIn XR Animator, a scene defines all extra visuals from backdrop to 3D objects, as well as how they interact. A scene can be exported and imported as a JSON file.",
+							"ja": "シーン(背景/3Dなど):\nXR Animator では、シーンは背景から 3D オブジェクトに至るすべての追加ビジュアルと、それらの相互作用方法を定義します。 シーンは JSON ファイルとしてエクスポートおよびインポートできます。"
+						}
+					},
+					"message": {
+						"_translation_": {
+							"_default_": "Choose a feature to change, or drop a scene JSON <zipped>to change everything at once.\n1. Background image\n2. 3D panorama/skybox\n3. 3D scene builder (3D object)\n4. Export scene settings to file\n5. Reset scene to default\n6. Done",
+							"ja": "変更する機能を選択するか、シーン JSON をドロップしてすべてを一度に変更します。\n1. 背景画像\n2. 3Dパノラマ/スカイボックス\n3. 3Dシーンビルダー（3Dオブジェクト）\n4. シーン設定をファイルにエクスポート\n5. シーンを初期設定にリセット\n6. 終了"
+						},
+						"zipped": {
+							"_translation_": {
+								"_default_": "zipped with all required assets ",
+								"ja": "必要なすべてのアセットが圧縮された"
+							}
+						}
+					},
+					"export_scene_to_file": {
+						"_translation_": {
+							"_default_": "Export scene settings to file:\nThis option exports all settings of the current scene (background, panorama/skybox, 3D objects) to an external JSON file. To load a saved scene, simply drop the scene JSON to the app.",
+							"ja": "シーン設定をファイルにエクスポート:\nこのオプションは、現在のシーンのすべての設定 (背景、パノラマ/スカイボックス、3D オブジェクト) を外部 JSON ファイルにエクスポートします。 保存したシーンをロードするには、シーンの JSON をアプリにドロップするだけです。"
+						}
+					},
+					"reset_scene_to_default": {
+						"_translation_": {
+							"_default_": "Are you sure you want to reset the whole scene back to the default status?\n1. Yes\n2. No",
+							"ja": "シーン全体をデフォルトのステータスにリセットしてもよろしいですか?\n1. はい\n2. いいえ"
+						}
+					},
+					"background": {
+						"_translation_": {
+							"_default_": "Choose a background option below, or drop an image/video file to change wallpaper.\n1. Default\n2. Black\n3. White\n4. Green\n5. Webcam as background\n6. Done",
+							"ja": "以下の背景オプションを選択するか、画像/ビデオ ファイルをドロップして壁紙を変更します。\n1. デフォルト\n2. 黑\n3. 白\n4. 緑\n5. 背景としてのWebカメラ\n6. 終了"
+						}
+					},
+					"skybox": {
+						"_translation_": {
+							"_default_": "Choose a 3D skybox, or drop a skybox image/zip file.\n1. Blue sky\n2. Angel's staircase\n3. Stars & Milky Way\n4. >> Rotation speed+\n5. >> Rotation angle+\n6. 🌎Generate your skybox\n7. Done",
+							"ja": "3D スカイボックスを選択するか、スカイボックス画像/zip ファイルをドロップします。\n1. 青空\n2. 天使の階梯\n3. 星と天の川\n4. >> 回転速度+\n5. >> 回転角度+\n6. 🌎スカイボックスを生成する\n7. 終了"
+						}
+					},
+					"3D_scene_builder": {
+						"_translation_": {
+							"_default_": "Drop a <extra_model>zipped .X model or image/video file as 3D object. Info about the active object is on the top left corner. Use keyboard for controls.\n1. Show keyboard controls\n2. Hide UI\n3. Export scene settings to file\n4. Explorer mode: <explorer_mode>\n5. Done",
+							"ja": "<extra_model>圧縮された .X モデル、または画像/ビデオ ファイルを 3D オブジェクトとしてドロップします。 アクティブなオブジェクトに関する情報が左上隅に表示されます。 キーボードを使用して制御します。\n1. キーボードコントロールを表示\n2. ユーザーインターフェースを隠す\n3. シーン設定をファイルにエクスポート\n4. エクスプローラーモード: <explorer_mode>\n5. 終了"
+						},
+						"THREEX": {
+							"_translation_": {
+								"_default_": "GLB model, ",
+								"ja": "GLBモデル、"
+							}
+						},
+						"MMD": {
+							"_translation_": {
+								"_default_": "zipped PMX model, ",
+								"ja": "圧縮されたPMXモデル、"
+							}
+						},
+						"keyboard_controls": {
+							"1": {
+								"_translation_": {
+									"_default_": "・⬆️⬇️⬅️➡️ to move horizontally\n・Shift+⬆️⬇️ to move vertically\n・Shift+️⬅️➡️ to rotate Z\n・Ctrl+️⬆️⬇️⬅️➡️ to rotate XY\n・➕➖ to scale\n・Ctrl+➕➖ to adjust movement unit\n1. Next",
+									"ja": "・⬆️⬇️⬅️➡️で水平方向に移動する\n・Shift+⬆️⬇️で垂直に移動する\n・Shift+️⬅️➡️でZを回転させる\n・Ctrl+️⬆️⬇️⬅️➡️でXYを回転させる\n・➕➖でスケールする\n・Ctrl+➕➖で移動ユニットを調整する\n1. 次"
+								}
+							},
+							"2": {
+								"_translation_": {
+									"_default_": "・O to switch 3D object\n・B to attach 3D object to avatar's bone\n・C to change center of control\n・R to reset 3D object\n・X to remove 3D object<explorer_mode>",
+									"ja": "・Oで3Dオブジェクトを切り替えます\n・Bで3Dオブジェクトをアバターの骨に貼り付ける\n・Cで制御中心を変更する\n・Rで3Dオブジェクトをリセットする\n・Xで3D オブジェクトを削除する<explorer_mode>"
+								},
+								"next": {
+									"_translation_": {
+										"_default_": "\n1. Next",
+										"ja": "\n1. 次"
+									}
+								},
+								"back": {
+									"_translation_": {
+										"_default_": "\n1. Back",
+										"ja": "\n1. 戻る"
+									}
+								}
+							},
+							"3": {
+								"_translation_": {
+									"_default_": "Explorer mode controls:\n・WASD to move\n・SPACE to jump (+Shift for super jump)\n・Alt+⬆️⬇️ to adjust ground level\n1. Back",
+									"ja": "エクスプローラーモードのコントロール:\n・WASDで移動する\n・SPACEでジャンプ（+Shiftでスーパージャンプ）\n・Alt+⬆️⬇️で地面のレベルを調整する\n1. 戻る"
+								}
+							}
+						},
+						"restore_UI": {
+							"_translation_": {
+								"_default_": "Press 1 to restore UI.",
+								"ja": "1 を押して UI を復元します。"
+							}
+						},
+						"avatar_as_center": {
+							"_translation_": {
+								"_default_": "Avatar as center",
+								"ja": "アバターが制御の中心となる"
+							}
+						},
+						"object_as_center": {
+							"_translation_": {
+								"_default_": "3D object as center",
+								"ja": "3Dオブジェクトが制御の中心となる"
+							}
+						},
+						"note_object_fixed_as_center": {
+							"_translation_": {
+								"_default_": "NOTE: Center of control is always the object's center when it is attached to a bone.",
+								"ja": "注: オブジェクトがボーンにアタッチされている場合、コントロールの中心は常にオブジェクトの中心になります。"
+							}
+						},
+						"note_avatar_fixed_as_center": {
+							"_translation_": {
+								"_default_": "NOTE: Center of control is always the avatar's center when explorer mode is on and the object is unattached.",
+								"ja": "注: エクスプローラー モードがオンで、オブジェクトがアタッチされていない場合、コントロールの中心は常にアバターの中心になります。"
+							}
+						},
+						"explorer_mode": {
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Explorer mode:\nWhen enabled, mesh colliders are calculated based on the current 3D scene so that you can use the standard WASD and SPACE key controls to navigate on your scene afterwards. This mode is usable when the 3D scene is not empty or VMC-protocol is on. Default is \"OFF\".",
+									"ja": "エクスプローラーモード:\n有効にすると、現在の 3D シーンに基づいてメッシュ コライダーが計算されるため、後で標準の WASD および SPACE キー コントロールを使用してシーン上を移動できるようになります。 このモードは、3D シーンが空でない場合、または VMCプロトコルがオンの場合に使用できます。 デフォルトは「OFF」です。"
+								}
+							},
+							"no_object": {
+								"_translation_": {
+									"_default_": "There is no 3D object in this scene.",
+									"ja": "このシーンには 3D オブジェクトはありません。"
+								}
+							},
+							"still_loading": {
+								"_translation_": {
+									"_default_": "Please wait until all 3D objects are fully loaded.",
+									"ja": "すべての 3D オブジェクトが完全に読み込まれるまでお待ちください。"
+								}
+							},
+							"no_explorable_object": {
+								"_translation_": {
+									"_default_": "There is no explorable 3D object in this scene.",
+									"ja": "このシーンには探索可能な 3D オブジェクトはありません。"
+								}
+							},
+							"confirm": {
+								"_translation_": {
+									"_default_": "Explorer mode allows you to control your avatar to move through your 3D scene.\n1. START\n2. Cancel",
+									"ja": "エクスプローラー モードでは、アバターを制御して 3D シーン内を移動できます。\n1. 始める\n2. キャンセル"
+								}
+							},
+							"starting": {
+								"_translation_": {
+									"_default_": "Building an explorable scene...\nNOTE: Depending on the complexity of the 3D scene, it may take more than a few seconds.",
+									"ja": "探索可能なシーンを構築中...\n注: 3D シーンの複雑さによっては、数秒以上かかる場合があります。"
+								}
+							}
+						}
+					}
+				},
+				"visual_effects": {
+					"_translation_": {
+						"_default_": "Visual effects",
+						"ja": "視覚効果"
+					},
+					"tooltip": {
+						"_translation_": {
+							"_default_": "Visual effects:\nThis option allows you to customize 3D camera and lighting parameters, as well as add some post-processing effects (e.g. Bloom, SAO, DOF) for VRM avatar and its scene.",
+							"ja": "視覚効果:\nこのオプションを使用すると、3D カメラと照明パラメータをカスタマイズしたり、VRM アバターとそのシーンに後処理効果 (ブルーム、SAO、DOF など) を追加したりできます。"
+						}
+					}
+				},
+				"miscellaneous_options": {
+					"_translation_": {
+						"_default_": "Miscellaneous options",
+						"ja": "その他のオプション"
+					},
+					"message": {
+						"_translation_": {
+							"_default_": "1. ⌨️Hotkey list and options\n2. Camera face-locking: <camera_face_locking>\n3. Audio visualizer: <audio_visualizer>\n4. Export all settings\n5. Reset all settings\n6. Done",
+							"ja": "1. ⌨️ホットキーの一覧とオプション\n2. カメラのフェイスロック: <camera_face_locking>\n3. オーディオ視覚効果: <audio_visualizer>\n4. すべての設定をエクスポートする\n5. すべての設定をリセットする\n6. 終了"
+						}
+					},
+					"hotkey": {
+						"switch_motion": {
+							"_translation_": {
+								"_default_": " to switch motion",
+								"ja": "でモーションを切り替える"
+							}
+						},
+						"arm_as_leg_control": {
+							"_translation_": {
+								"_default_": " to toggle🙋↔️🦶control mode",
+								"ja": "で🙋↔️🦶制御モードを切り替える"
+							}
+						},
+						"auto_grounding": {
+							"_translation_": {
+								"_default_": " to toggle mocap auto-grounding",
+								"ja": "でモーキャプ「自動接地」を切り替える"
+							}
+						},
+						"hand_camera": {
+							"_translation_": {
+								"_default_": " to toggle hand camera mode",
+								"ja": "でハンドカメラを切り替える"
+							}
+						},
+						"selfie_mode": {
+							"_translation_": {
+								"_default_": " to toggle hand camera's selfie mode",
+								"ja": "でハンドカメラ「自撮りモード」を切り替える"
+							}
+						},
+						"auto_look_at_camera": {
+							"_translation_": {
+								"_default_": " to toggle auto \"look at camera\"",
+								"ja": "で自動「カメラを見る」を切り替える"
+							}
+						},
+						"extra": {
+							"_translation_": {
+								"_default_": "・✔️Ctrl+L to toggle 3D camera lock\n・✔️Pause to pause/resume mocap\n・✔️F9 to start video capture\n・✔️F10 to stop video capture\n・✔️F12 to capture still shot",
+								"ja": "・✔️Ctrl+Lで3Dカメラのロックを切り替える\n・✔️Pauseでモーキャプを一時停止/再開する\n・✔️F9でビデオキャプチャを開始する\n・✔️F10でビデオキャプチャを停止する\n・✔️F12で静止画をキャプチャする"
+							}
+						},
+						"hotkey": {
+							"_translation_": {
+								"_default_": "Hotkey",
+								"ja": "ホットキー"
+							}
+						},
+						"current_hotkey": {
+							"_translation_": {
+								"_default_": "Current hotkey",
+								"ja": "現在のホットキー"
+							}
+						},
+						"valid_keys": {
+							"_translation_": {
+								"_default_": "Valid keys",
+								"ja": "有効なキー"
+							}
+						},
+						"press_to_cancel": {
+							"_translation_": {
+								"_default_": "Press Esc to cancel.",
+								"ja": "Escを押してキャンセルします。"
+							}
+						},
+						"global_hotkey": {
+							"_translation_": {
+								"_default_": "Global hotkey",
+								"ja": "グローバルホットキー"
+							}
+						},
+						"change_hotkey": {
+							"_translation_": {
+								"_default_": "Change hotkey",
+								"ja": "ホットキーを変更する"
+							}
+						},
+						"reset_hotkey": {
+							"_translation_": {
+								"_default_": "Reset hotkey",
+								"ja": "ホットキーをリセット"
+							}
+						},
+						"reserved": {
+							"_translation_": {
+								"_default_": "Reserved",
+								"ja": "使用中"
+							}
+						},
+						"not_usable": {
+							"_translation_": {
+								"_default_": "Not usable",
+								"ja": "使用不可"
+							}
+						},
+						"reset": {
+							"_translation_": {
+								"_default_": "Hotkey reset",
+								"ja": "ホットキーがリセットされました"
+							}
+						},
+						"already_default": {
+							"_translation_": {
+								"_default_": "Hotkey already in default state",
+								"ja": "ホットキーはすでにデフォルト状態です"
+							}
+						},
+						"not_registered": {
+							"_translation_": {
+								"_default_": "Hotkey not registered, restoring default",
+								"ja": "ホットキーが登録されていません。デフォルトに戻します"
+							}
+						},
+						"registered": {
+							"_translation_": {
+								"_default_": "Hotkey registered",
+								"ja": "ホットキーが登録されました"
+							}
+						},
+						"global_hotkey_mode": {
+							"_translation_": {
+								"_default_": "Global hotkey mode",
+								"ja": "グローバルホットキーモード"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Global hotkey mode:\nWhen a hotkey is global, it always works even if XR Animator is out of focus. This option provides a convenient shortcut to toggle the global state of all hotkeys at once, instead of configuring each hotkey separately. Default is \"ON\".",
+									"ja": "グローバルホットキーモード:\nホットキーがグローバルの場合、XR Animator がフォーカスされていない場合でも、ホットキーは常に機能します。 このオプションは、各ホットキーを個別に設定するのではなく、すべてのホットキーのグローバル状態を一度に切り替える便利なショートカットを提供します。 デフォルトは「ON」です。"
+								}
+							}
+						}
+					},
+					"camera_face_locking": {
+						"tooltip": {
+							"_translation_": {
+								"_default_": "Camera face-locking:\nWhen enabled, the 3D camera will lock your avatar's face and move accordingly, resulting in a more dynamic camera effect. \"Auto\" enables the face-locking effect only when a 3D scene is loaded (e.g. skybox, 3D objects). Default is \"Auto\".",
+								"ja": "カメラのフェイスロック:\n有効にすると、3D カメラがアバターの顔をロックし、それに応じて移動し、よりダイナミックなカメラ効果が得られます。 「自動」は、3D シーン (スカイボックス、3D オブジェクトなど) がロードされている場合にのみ、フェイス ロック効果を有効にします。 デフォルトは「自動」です。"
+							}
+						}
+					},
+					"audio_visualizer": {
+						"tooltip": {
+							"_translation_": {
+								"_default_": "Audio visualizer:\nXR Animator supports various audio visualization effects when a music file is dropped to the app. Turn off this option if you don't want the default \"circular spectrum\" audio visualizer to show up when music plays. Default is \"ON\".",
+								"ja": "オーディオ視覚効果:\nXR Animator は、音楽ファイルをアプリにドロップしたときのさまざまなオーディオ視覚効果をサポートします。 音楽の再生時にデフォルトの「円形スペクトル」オーディオ ビジュアライザを表示したくない場合は、このオプションをオフにします。 デフォルトは「ON」です。"
+							}
+						}
+					},
+					"export_all_settings": {
+						"tooltip": {
+							"_translation_": {
+								"_default_": "Export all settings:\nThis option exports all settings of XR Animator to an external JSON file, so that it can be imported back to XR Animator in the future simply by dropping the JSON file to the app.",
+								"ja": "すべての設定をエクスポートする:\nこのオプションでは、XR Animator のすべての設定が外部 JSON ファイルにエクスポートされるため、後で JSON ファイルをアプリにドロップするだけで XR Animator にインポートし直すことができます。"
+							}
+						}
+					},
+					"reset_all_settings": {
+						"_translation_": {
+							"_default_": "This will reset all XR Animator settings to the default. Are you sure?\n1. Yes\n2. No",
+							"ja": "これにより、XR Animator のすべての設定がデフォルトにリセットされます。 よろしいですか？\n1. はい\n2. いいえ"
+						}
+					}
+				},
+				"export_motion_to_file": {
+					"_translation_": {
+						"_default_": "Export motion to file",
+						"ja": "モーションをファイルにエクスポートする"
+					},
+					"tooltip": {
+						"_translation_": {
+							"_default_": "Export motion to file:\nIf you have finished a mocap recording session, or if you are currently using an imported FBX/BVH motion, this option allows you to export the recorded/imported motion to an external motion file in VMD (MMD) or BVH format.",
+							"ja": "モーションをファイルにエクスポートする:\nモーションキャプチャの記録セッションが終了している場合、またはインポートされた FBX/BVH モーションを現在使用している場合、このオプションを使用すると、記録/インポートされたモーションを VMD (MMD) または BVH 形式で外部モーション ファイルにエクスポートできます。"
+						}
+					}
+				},
+				"about_XR_Animator": {
+					"_translation_": {
+						"_default_": "About XR Animator",
+						"ja": "XR Animatorについて"
+					},
+					"message": {
+						"_translation_": {
+							"_default_": "1. Video demo\n2. Readme\n3. Download app version\n4. Download add-ons\n5. ❤️Support this project\n6. Contacts\n7. Cancel",
+							"ja": "1. ビデオデモ\n2. リードミー\n3. アプリのバージョンをダウンロード\n4. アドオンをダウンロードする\n5. ❤️このプロジェクトを支援する\n6. 連絡先\n7. キャンセル"
+						}
+					},
+					"support": {
+						"_translation_": {
+							"_default_": "If you like XR Animator, please consider making a donation and help keep this project running🙏\n1. ☕Buy me a coffee\n2. 🤝PayPal.Me",
+							"ja": "XR Animator が気に入ったら、寄付してこのプロジェクトの継続にご協力ください🙏\n1. ☕コーヒーを買ってきてください\n2. 🤝PayPal.Me"
+						}
+					}
+				}
+			},
+			"hand_camera": {
+				"info_short": {
+					"_translation_": {
+						"_default_": "Hand camera",
+						"ja": "ハンドカメラ"
+					}
+				},
+				"info": {
+					"_translation_": {
+						"_default_": "- Press <hand_camera_hotkey> / double-click to use your hand as camera during mocap (status: <hand_camera_status>).\n- Repeat to switch among left hand, right hand, and OFF.- Press <selfie_mode_hotkey> to toggle \"Selfie mode\" which automatically focuses on your face (status: <selfie_mode_status>).\n- Press <auto_look_at_camera_hotkey> to toggle auto \"look at camera\" (status: <auto_look_at_camera_status>).",
+						"ja": "- <hand_camera_hotkey> を押すかダブルクリックすると、モーキャプ中に手をカメラとして使用します (状態: <hand_camera_status>)。\n- 繰り返して左手、右手、OFFを切り替えます。\n- <selfie_mode_hotkey> を押して「自撮りモード」を切り替え、自動的に顔に焦点を合わせます (状態: <selfie_mode_status>)。\n- キー<auto_look_at_camera_hotkey>➡️自動「カメラを見る」を切り替える (状態: <auto_look_at_camera_status>)"
+					},
+					"left_hand": {
+						"_translation_": {
+							"_default_": "left hand",
+							"ja": "左手"
+						}
+					},
+					"right_hand": {
+						"_translation_": {
+							"_default_": "right hand",
+							"ja": "右手"
+						}
+					}
+				}
+			},
+			"media_recorder": {
+				"info_short": {
+					"_translation_": {
+						"_default_": "Media recorder",
+						"ja": "メディアレコーダー"
+					}
+				},
+				"info": {
+					"_translation_": {
+						"_default_": "- Press F12 to capture a still image of the 3D content.\n- Press F9 to capture a video of the 3D content. Press F10 to stop and return the recorded MP4 file.\n- Double-click for settings.\n- Use mouse or keys to pick a numbered option.",
+						"ja": "- F12を押して3Dコンテンツの静止画像をキャプチャします。\n- F9を押して3Dコンテンツのビデオをキャプチャします。 F10を押して停止し、記録された MP4ファイルを戻します。\n- ダブルクリックして設定を行います。\n- マウスまたは英数字キーを使用してオプションを選択する。"
+					}
+				},
+				"options": {
+					"_translation_": {
+						"_default_": "Video capture settings",
+						"ja": "ビデオキャプチャーの設定"
+					},
+					"unlimited": {
+						"_translation_": {
+							"_default_": "unlimited",
+							"ja": "無制限"
+						}
+					},
+					"Unlimited": {
+						"_translation_": {
+							"_default_": "unlimited",
+							"ja": "無制限"
+						}
+					},
+					"target_resolution": {
+						"_translation_": {
+							"_default_": "Target resolution",
+							"ja": "目標解像度"
+						}
+					},
+					"target_fps": {
+						"_translation_": {
+							"_default_": "Target frame rate",
+							"ja": "目標フレームレート"
+						}
+					},
+					"output_format": {
+						"_translation_": {
+							"_default_": "Output format",
+							"ja": "出力フォーマット"
+						}
+					}
+				}
+			},
+			"air_blower": {
+				"info_short": {
+					"_translation_": {
+						"_default_": "Air blower",
+						"ja": "送風機"
+					}
+				},
+				"info": {
+					"_translation_": {
+						"_default_": "- Double-click for a camera-oriented wind-blowing effect.\n- Repeat to lock the current direction.\n- Repeat for a camera-oriented wind-sucking effect.\n- Repeat to lock the current direction.\n- Repeat to disable it.",
+						"ja": "- ダブルクリックで カメラ指向の風が吹く効果が得られます。\n- 繰り返して現在の方向をロックします。\n- 繰り返してカメラ指向の風吸い効果を取得します。\n- 繰り返して現在の方向をロックします。\n- 繰り返して無効にします。"
+					}
+				}
+			},
+			"segmentation_AI": {
+				"info": {
+					"_translation_": {
+						"_default_": "Double-click to <enable> Selfie Segmentation AI. When using with a camera or video input, the 3D avatar will be displayed behind the person in the video, allowing some interesting usage such as taking a selfie with your 3D avatar.",
+						"ja": "ダブルクリックして Selfie Segmentation AI を<enable>にします。 カメラやビデオ入力と併用すると、映像内の人物の後ろに3Dアバターが表示され、3Dアバターで自撮りするなど面白い使い方ができます。"
+					}
+				},
+				"enable": {
+					"_translation_": {
+						"_default_": "enable",
+						"ja": "有効"
+					}
+				},
+				"disable": {
+					"_translation_": {
+						"_default_": "disable",
+						"ja": "無効"
+					}
+				},
+				"no_input": {
+					"_translation_": {
+						"_default_": "You need to enable video input first.",
+						"ja": "まずビデオ入力を有効にしてください。"
+					}
+				},
+				"mocap_on": {
+					"_translation_": {
+						"_default_": "You can't enable Selfie Segmentation AI and motion capture at the same time.",
+						"ja": "Selfie Segmentation AI とモーション キャプチャを同時に有効にすることはできません。"
+					}
+				}
+			}
+		},
+		"settings": {
+			"confirm": {
+				"_translation_": {
+					"_default_": "NOTE: This legacy settings panel was designed for System Animator, with most of the settings now obsolete to XR Animator. This is for advanced user only. Continue?\n1. Yes\n2. No",
+					"ja": "注: このレガシー設定パネルは System Animator 用に設計されており、設定のほとんどは XR Animator では廃止されました。 これは上級ユーザーのみを対象としています。 続く？\n1. はい\n2. いいえ"
+				}
+			}
+		},
+		"intro": {
+			"welcome": {
+				"_translation_": {
+					"_default_": "Welcome to XR Animator~!",
+					"ja": "XR Animatorへようこそ〜！"
+				}
+			},
+			"camera": {
+				"_translation_": {
+					"_default_": "Drag to rotate 3D camera. Hold Ctrl key to pan. Double-click to reset.",
+					"ja": "ドラッグして 3D カメラを回転します。 Ctrl キーを押したままパンします。 ダブルクリックしてリセットします。"
+				}
+			},
+			"move": {
+				"_translation_": {
+					"_default_": "To move the app window, drag with right mouse button.",
+					"ja": "アプリ ウィンドウを移動するには、マウスの右ボタンでドラッグします。"
+				}
+			},
+			"mocap": {
+				"_translation_": {
+					"_default_": "Enable motion capture to control the avatar with your body!",
+					"ja": "モーションキャプチャーを有効にしてアバターを体でコントロール！"
+				}
+			},
+			"webcam": {
+				"_translation_": {
+					"_default_": "Use your webcam, or drop a local pic/video instead.",
+					"ja": "Webカメラを使用するか、代わりにローカルの画像/ビデオをドロップしてください。"
+				}
+			},
+			"motion": {
+				"_translation_": {
+					"_default_": "Drop a VMD/FBX/BVH motion, and animate your avatar!",
+					"ja": "VMD/FBX/BVH モーションをドロップしてアバターを動かしましょう！"
+				}
+			},
+			"AR": {
+				"_translation_": {
+					"_default_": "You can enable AR mode if you are on an Android mobile!",
+					"ja": "Android モバイルを使用している場合は、AR モードを有効にすることができます。"
+				}
+			}
+		}
+	}
+}
