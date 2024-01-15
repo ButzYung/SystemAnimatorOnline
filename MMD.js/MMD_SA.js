@@ -9119,6 +9119,8 @@ if (this.use_faceBlendshapes && facemesh.enabled) {
     }
   }
 
+  const f = facemesh.frames;
+
   if (System._browser.camera.facemesh.auto_look_at_camera && facemesh.use_faceBlendshapes && System._browser.camera.initialized) {
     for (const b of [
 'EyeLookUpLeft',
@@ -9130,16 +9132,16 @@ if (this.use_faceBlendshapes && facemesh.enabled) {
 'EyeLookOutLeft',
 'EyeLookOutRight',
 ]) {
-      blendshape_weight[this.faceBlendshapes_map[b]] = 0;
+      if (f.morph[b]) f.morph[b][0].weight = 0;
     }
   }
 
-  const f = facemesh.frames;
   facemesh.faceBlendshapes_list.forEach(b=>{
     blendshape_weight[this.faceBlendshapes_map[b]] = (use_faceBlendshapes && f.morph[b]) ? f.morph[b][0].weight : 0;
   });
-  this.getBoneNode('leftEye').quaternion.set(0,0,0,1);
-  this.getBoneNode('rightEye').quaternion.set(0,0,0,1);
+//this.getBoneNode('leftEye' ).quaternion.set(0,0,0,1);
+//this.getBoneNode('rightEye').quaternion.set(0,0,0,1);
+//vrm.lookAt.autoUpdate = false;
 }
 
 for (const name in blendshape_weight) {
@@ -9150,8 +9152,8 @@ for (const name in blendshape_weight) {
 // morph END
 
 //両目
-
-if (!use_faceBlendshapes || System._browser.camera.facemesh.auto_look_at_camera) {
+// skip when using ARKit blendshapes
+if (!use_faceBlendshapes) {// || System._browser.camera.facemesh.auto_look_at_camera) {
   const eye_bone = bones_by_name['両目'];
   const lookAt = vrm.lookAt;
   if (System._browser.camera.facemesh.auto_look_at_camera) {

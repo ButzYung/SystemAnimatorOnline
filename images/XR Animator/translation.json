@@ -101,7 +101,7 @@
 				"finish_VMC": {
 					"_translation_": {
 						"_default_": "XR Animator is now ready with VMC protocol on. You may choose to hide 3D avatar to save extra CPU/GPU usage.\n1. Finish and hide 3D avatar\nX. Finish",
-						"ja": "VMC プロトコルをオンにして XR Animator の準備が整いました。 余分な CPU/GPU 使用量を節約するために、3D アバターを非表示にすることを選択できます。\n1. 3Dアバターを非表示にして終了する\nX. 終了する"
+						"ja": "VMCプロトコルをオンにして XR Animator の準備が整いました。 余分な CPU/GPU 使用量を節約するために、3D アバターを非表示にすることを選択できます。\n1. 3Dアバターを非表示にして終了する\nX. 終了する"
 					}
 				},
 				"finish": {
@@ -233,8 +233,8 @@
 				"mirror_current_pose": {
 					"tooltip": {
 						"_translation_": {
-							"_default_": "Mirror current pose:\nThis option mirrors the current pose/motion. All parameters, including \"arm-as-leg\" control, are also mirrored.",
-							"ja": "現在のポーズをミラーリングする:\nこのオプションは、現在のポーズ/モーションをミラーリングします。 「手の動きで脚を動かす」モードを含むすべてのパラメータもミラーリングされます。"
+							"_default_": "Mirror current pose:\nThis option mirrors the current pose/motion. All parameters, including \"arm-as-leg\" control, are also mirrored. Use hotkey Ctrl+M as a shortcut to mirror pose at any time.",
+							"ja": "現在のポーズをミラーリングする:\nこのオプションは、現在のポーズ/モーションをミラーリングします。 「手の動きで脚を動かす」モードを含むすべてのパラメータもミラーリングされます。 ホットキー Ctrl+M をショートカットとして使用すると、いつでもポーズをミラーリングできます。"
 						}
 					}
 				},
@@ -860,6 +860,18 @@
 								}
 							}
 						},
+						"eye_bone_rotation": {
+							"_translation_": {
+								"_default_": "Eye bone rotation",
+								"ja": "目のボーンの回転"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Eye bone rotation (press ➕➖ to change value):\nFor avatar models that use eye bone rotation, sometimes the rotation degree can be either too small or too large. Adjust this setting to fit your taste. In the case of ARKit/PerfectSync model, sometimes you may need to set it to 0% if eye bone rotation is actually redundant. Default is \"100%\".",
+									"ja": "目のボーンの回転(➕➖で値を変更する):\n目のボーンの回転を使用するアバター モデルの場合、回転度が小さすぎるか大きすぎる場合があります。 好みに合わせてこの設定を調整してください。 ARKit/PerfectSync モデルの場合、実際に目のボーンの回転が必要ない場合は、0% に設定する必要がある場合があります。 デフォルトは「100%」です。"
+								}
+							}
+						},
 						"tongue_out_tracking": {
 							"_translation_": {
 								"_default_": "\"Tongue out\" tracking",
@@ -1422,8 +1434,8 @@
 						},
 						"extra": {
 							"_translation_": {
-								"_default_": "・✔️Ctrl+L to toggle 3D camera lock\n・✔️Pause to pause/resume mocap\n・✔️F9 to start video capture\n・✔️F10 to stop video capture\n・✔️F12 to capture still shot",
-								"ja": "・✔️Ctrl+Lで3Dカメラのロックを切り替える\n・✔️Pauseでモーキャプを一時停止/再開する\n・✔️F9でビデオキャプチャを開始する\n・✔️F10でビデオキャプチャを停止する\n・✔️F12で静止画をキャプチャする"
+								"_default_": "・✔️Ctrl+L to toggle 3D camera lock・✔️Ctrl+M to mirror the current pose\n・✔️Pause to pause/resume mocap\n・✔️F9 to start video capture\n・✔️F10 to stop video capture\n・✔️F12 to capture still shot",
+								"ja": "・✔️Ctrl+Lで3Dカメラのロックを切り替える\n・✔️Ctrl+Mで現在のポーズをミラーリングする\n・✔️Pauseでモーキャプを一時停止/再開する\n・✔️F9でビデオキャプチャを開始する\n・✔️F10でビデオキャプチャを停止する\n・✔️F12で静止画をキャプチャする"
 							}
 						},
 						"hotkey": {
