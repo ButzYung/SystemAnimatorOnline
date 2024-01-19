@@ -1,4 +1,4 @@
-// (2023-12-20)
+// (2024-01-19)
 
 MMD_SA.fn = {
 /*
@@ -623,6 +623,8 @@ obj.quaternion.copy(m4_objs[1])
 if (p_bone.rotation) {
   let transfer_to_parent_bone;
   const rot_adjust = p_bone.rotation.align_with_external_point;
+  if (rot_adjust)
+    x_object.user_data._rot_default_ = (x_object.user_data._rot_default_ || new THREE.Quaternion()).copy(obj.quaternion);
   if (rot_adjust && (!rot_adjust.mocap_only || (System._browser.camera.poseNet.enabled && System._browser.camera.ML_warmed_up))) {
     const rot_original = MMD_SA._q2.copy(obj.quaternion);
 
@@ -748,7 +750,7 @@ if (p_bone.rotation) {
       axis_ref.multiplyScalar(axis_ext.length()).add(axis_origin).sub(obj.position);
 
       axis_ext = axis_ext.add(axis_origin).sub(obj.position);
-
+//System._browser.camera.DEBUG_show('axis_ext.length:'+axis_ext.length());
       axis_ref.normalize();
       axis_ext.normalize();
       const obj_rot_aligned = MMD_SA.TEMP_q.setFromUnitVectors(axis_ref, axis_ext);
