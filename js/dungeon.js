@@ -1,4 +1,4 @@
-// (2024-01-15)
+// (2024-01-19)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -3488,7 +3488,7 @@ System._browser.translation.dictionary = {
 						},
 						"camera_display": {
 							"_translation_": {
-								"_default_": "User interface",
+								"_default_": "Camera display",
 								"ja": "カメラ表示"
 							},
 							"non_webcam": {
