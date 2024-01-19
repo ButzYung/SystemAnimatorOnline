@@ -1,5 +1,5 @@
 // SA Electron - Main EXTENDED
-// (2023-11-09)
+// (2024-01-19)
 
 /*
 eval on Electron v1.6.x has some scope issues/bugs which makes the global variables on this script inaccessible inside functions.
@@ -28,6 +28,10 @@ app.commandLine.appendSwitch('disable-site-isolation-trials');
 app.commandLine.appendSwitch('enable-features','SharedArrayBuffer');
 
 app.commandLine.appendSwitch("ignore-gpu-blocklist");
+
+// https://github.com/electron/electron/issues/9842
+// https://www.electronjs.org/docs/latest/api/command-line-switches
+app.commandLine.appendSwitch('force_high_performance_gpu');
 
 //app.commandLine.appendSwitch('js-flags', '--experimental-wasm-simd');
 
