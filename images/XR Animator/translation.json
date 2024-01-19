@@ -278,8 +278,8 @@
 				},
 				"extra": {
 					"_translation_": {
-						"_default_": "C. Mirror current pose\nD. Push current pose to list top\nE. Reset pose list order\nF. Clear all custom poses\nG. Export current pose config\nX. Done",
-						"ja": "C. 現在のポーズをミラーリングする\nD. 現在のポーズをリストの一番上に置く\nE. ポーズリストの順序をリセット\nF. すべてのカスタムポーズをクリアする\nG. 現在のポーズ設定をエクスポートする\nX. 終了"
+						"_default_": "C. Mirror current pose (Ctrl+M)\nD. Push current pose to list top\nE. Reset pose list order\nF. Clear all custom poses\nG. Export current pose config\nX. Done",
+						"ja": "C. 現在のポーズをミラーリングする(Ctrl+M)\nD. 現在のポーズをリストの一番上に置く\nE. ポーズリストの順序をリセット\nF. すべてのカスタムポーズをクリアする\nG. 現在のポーズ設定をエクスポートする\nX. 終了"
 					}
 				}
 			},
@@ -381,7 +381,7 @@
 					},
 					"extra": {
 						"_translation_": {
-							"_default_": "'1. Change resolution limit\n2. Change frame rate\n3. Return",
+							"_default_": "1. Change resolution limit\n2. Change frame rate\n3. Return",
 							"ja": "1. 解像度制限を変更する\n2. フレームレートを変更する\n3. 戻る"
 						}
 					}
@@ -598,6 +598,18 @@
 								}
 							}
 						},
+						"arm_horizontal_offset": {
+							"_translation_": {
+								"_default_": "Arm horizontal offset",
+								"ja": "腕の水平位置オフセット"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "If your avatar's arm/shoulder size proportion is off the average, use this option to apply an offset to the arm's horizontal position, which can be useful if you want some specific actions such as touching both hands. Press ➕➖ key to change value. Default is \"0%\".",
+									"ja": "アバターの腕と肩のサイズの比例が平均から外れている場合は、このオプションを使用して腕の水平位置にオフセットを適用します。これは、両手に触れるなどの特定のアクションが必要な場合に便利です。 ➕➖キーを押して値を変更します。 デフォルトは「0%」です。"
+								}
+							}
+						},
 						"upper_rotation_offset": {
 							"_translation_": {
 								"_default_": "Upper rotation offset",
@@ -605,9 +617,15 @@
 							},
 							"tooltip": {
 								"_translation_": {
-									"_default_": "Upper rotation offset (press ➕➖ to change value):\nUse this option to apply a rotation offset to the upper body of your avatar while rotating the root in the opposite direction, as if only your lower body is rotated while the upper body stays still. This can be useful if you are at a certain angle sideway to the camera instead of facing the camera straightly. Press ➕➖ to change value. Default is \"0°\".",
-									"ja": "上半身の回転オフセット(➕➖で値を変更する):\nこのオプションを使用して、アバターの上半身に回転オフセットを適用しながら、上半身は静止したまま下半身だけを回転させるかのように、ルートを反対方向に回転させます。 これは、カメラに真正面を向くのではなく、カメラに対して一定の角度で横にいる場合に便利です。 ➕➖を押して値を変更します。 デフォルトは「0°」です"
+									"_default_": "Use this option to apply a rotation offset to the upper body of your avatar while rotating the root in the opposite direction, as if only your lower body is rotated while the upper body stays still. This can be useful if you are at a certain angle sideway to the camera instead of facing the camera straightly. Press ➕➖ key to change value. Default is \"0°\".",
+									"ja": "このオプションを使用して、アバターの上半身に回転オフセットを適用しながら、上半身は静止したまま下半身だけを回転させるかのように、ルートを反対方向に回転させます。 これは、カメラに真正面を向くのではなく、カメラに対して一定の角度で横にいる場合に便利です。 ➕➖キーを押して値を変更します。 デフォルトは「0°」です。"
 								}
+							}
+						},
+						"press_to_change_value": {
+							"_translation_": {
+								"_default_": "press ➕➖ key to change value",
+								"ja": "➕➖キーで値を変更する"
 							}
 						},
 						"hip_adjustment": {
@@ -617,13 +635,13 @@
 							},
 							"press_to_change_value": {
 								"_translation_": {
-									"_default_": "Press ⬅️➡️ to change value",
-									"ja": "⬅️➡️を押して値を変更します"
+									"_default_": "Press ⬅️➡️ key to change value",
+									"ja": "⬅️➡️キーを押して値を変更します"
 								},
 								"short": {
 									"_translation_": {
-										"_default_": "press ⬅️➡️ to change value",
-										"ja": "⬅️➡️で値を変更する"
+										"_default_": "press ⬅️➡️ key to change value",
+										"ja": "⬅️➡️キーで値を変更する"
 									}
 								}
 							},
@@ -721,8 +739,8 @@
 							},
 							"press_to_change_value": {
 								"_translation_": {
-									"_default_": "press ⬅️➡️ to change value",
-									"ja": "⬅️➡️で値を変更する"
+									"_default_": "press ⬅️➡️ key to change value",
+									"ja": "⬅️➡️キーで値を変更する"
 								}
 							},
 							"IRL_hand_shoulder_scale": {
@@ -796,6 +814,12 @@
 									"_default_": "When enabled, the hand position from hand tracking will be used in favor of the one from body tracking. Percentage determines the duration to fade out hand tracking when it fails. You may want to lower the percentage if arm motion is vigorous or hand tracking condition is poor. Default is \"20%\".",
 									"ja": "有効にすると、ハンド トラッキングからの手の位置が、ボディ トラッキングからの手の位置を優先して使用されます。 パーセンテージは、ハンド トラッキングが失敗した場合にフェードアウトする時間を決定します。 腕の動きが激しい場合や手の追跡状態が悪い場合は、パーセンテージを下げることをお勧めします。 デフォルトは「20%」です。"
 								}
+							},
+							"press_to_change_value": {
+								"_translation_": {
+									"_default_": "press ➕➖ key to change value",
+									"ja": "➕➖キーで値を変更する"
+								}
 							}
 						},
 						"standalone_web_worker": {
@@ -867,8 +891,8 @@
 							},
 							"tooltip": {
 								"_translation_": {
-									"_default_": "Eye bone rotation (press ➕➖ to change value):\nFor avatar models that use eye bone rotation, sometimes the rotation degree can be either too small or too large. Adjust this setting to fit your taste. In the case of ARKit/PerfectSync model, sometimes you may need to set it to 0% if eye bone rotation is actually redundant. Default is \"100%\".",
-									"ja": "目のボーンの回転(➕➖で値を変更する):\n目のボーンの回転を使用するアバター モデルの場合、回転度が小さすぎるか大きすぎる場合があります。 好みに合わせてこの設定を調整してください。 ARKit/PerfectSync モデルの場合、実際に目のボーンの回転が必要ない場合は、0% に設定する必要がある場合があります。 デフォルトは「100%」です。"
+									"_default_": "Eye bone rotation (press ➕➖ key to change value):\nFor avatar models that use eye bone rotation, sometimes the rotation degree can be either too small or too large. Adjust this setting to fit your taste. In the case of ARKit/PerfectSync model, sometimes you may need to set it to 0% if eye bone rotation is actually redundant. Default is \"100%\".",
+									"ja": "目のボーンの回転(➕➖キーで値を変更する):\n目のボーンの回転を使用するアバター モデルの場合、回転度が小さすぎるか大きすぎる場合があります。 好みに合わせてこの設定を調整してください。 ARKit/PerfectSync モデルの場合、実際に目のボーンの回転が必要ない場合は、0% に設定する必要がある場合があります。 デフォルトは「100%」です。"
 								}
 							}
 						},
@@ -903,13 +927,13 @@
 							},
 							"press_to_change_value": {
 								"_translation_": {
-									"_default_": "Press ⬅️➡️ to change value",
-									"ja": "⬅️➡️を押して値を変更します"
+									"_default_": "Press ⬅️➡️ key to change value",
+									"ja": "⬅️➡️キーを押して値を変更します"
 								},
 								"short": {
 									"_translation_": {
-										"_default_": "press ⬅️➡️ to change value",
-										"ja": "⬅️➡️で値を変更する"
+										"_default_": "press ⬅️➡️ key to change value",
+										"ja": "⬅️➡️キーで値を変更する"
 									}
 								}
 							},
@@ -1332,6 +1356,24 @@
 								"ja": "注: エクスプローラー モードがオンで、オブジェクトがアタッチされていない場合、コントロールの中心は常にアバターの中心になります。"
 							}
 						},
+						"reset": {
+							"_translation_": {
+								"_default_": "Are you sure you want to reset this 3D object to its initial status?\n8. Yes\n9. No",
+								"ja": "この 3D オブジェクトを初期状態にリセットしてもよろしいですか?\n8. はい\n9. いいえ"
+							},
+							"successful": {
+								"_translation_": {
+									"_default_": "Reset successful",
+									"ja": "リセット成功"
+								}
+							}
+						},
+						"remove": {
+							"_translation_": {
+								"_default_": "Are you sure you want to remove this 3D object from the scene?\n8. Yes\n9. No",
+								"ja": "この 3D オブジェクトをシーンから削除してもよろしいですか?\n8. はい\n9. いいえ"
+							}
+						},
 						"explorer_mode": {
 							"tooltip": {
 								"_translation_": {
@@ -1434,7 +1476,7 @@
 						},
 						"extra": {
 							"_translation_": {
-								"_default_": "・✔️Ctrl+L to toggle 3D camera lock・✔️Ctrl+M to mirror the current pose\n・✔️Pause to pause/resume mocap\n・✔️F9 to start video capture\n・✔️F10 to stop video capture\n・✔️F12 to capture still shot",
+								"_default_": "・✔️Ctrl+L to toggle 3D camera lock\n・✔️Ctrl+M to mirror the current pose\n・✔️Pause to pause/resume mocap\n・✔️F9 to start video capture\n・✔️F10 to stop video capture\n・✔️F12 to capture still shot",
 								"ja": "・✔️Ctrl+Lで3Dカメラのロックを切り替える\n・✔️Ctrl+Mで現在のポーズをミラーリングする\n・✔️Pauseでモーキャプを一時停止/再開する\n・✔️F9でビデオキャプチャを開始する\n・✔️F10でビデオキャプチャを停止する\n・✔️F12で静止画をキャプチャする"
 							}
 						},
@@ -1710,6 +1752,12 @@
 					"_translation_": {
 						"_default_": "You can't enable Selfie Segmentation AI and motion capture at the same time.",
 						"ja": "Selfie Segmentation AI とモーション キャプチャを同時に有効にすることはできません。"
+					}
+				},
+				"camera_hidden": {
+					"_translation_": {
+						"_default_": "You need to enable the display of video input first.",
+						"ja": "ビデオ入力の表示を有効にしてください"
 					}
 				}
 			}
