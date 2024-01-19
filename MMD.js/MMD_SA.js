@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-01-15)
+// (2024-01-19)
 
 var use_full_spectrum = true
 
@@ -528,7 +528,7 @@ if (pmx_list.length) {
     if (model_json.length) {
       info_extra = "(+config)";
       const json = await model_json[0].async("text");
-MMD_SA_options.model_para = Object.assign(MMD_SA_options.model_para, JSON.parse(json, function (key, value) {
+Object.assign(MMD_SA_options.model_para, JSON.parse(json, function (key, value) {
   if (typeof value == "string") {
     if (/^eval\((.+)\)$/.test(value)) {
       value = eval(decodeURIComponent(RegExp.$1))
@@ -579,7 +579,7 @@ else if (vrm_list.length) {
     if (model_json.length) {
       info_extra = "(+config)";
       const json = await model_json[0].async("text");
-MMD_SA_options.model_para = Object.assign(MMD_SA_options.model_para, JSON.parse(json, function (key, value) {
+Object.assign(MMD_SA_options.THREEX_options.model_para, JSON.parse(json, function (key, value) {
   if (typeof value == "string") {
     if (/^eval\((.+)\)$/.test(value)) {
       value = eval(decodeURIComponent(RegExp.$1))
@@ -9739,8 +9739,8 @@ if (vrm_scale != 1) {
     }
   }
 
+  const model_para = MMD_SA.THREEX.get_model(0).model_para;//MMD_SA_options.model_para[vrm.meta.title];
   vrm.materials.forEach((m,i)=>{
-    const model_para = MMD_SA_options.model_para[vrm.meta.title];
     const outlineWidthFactor = (model_para?.material_para?.[i] || model_para?.material_para?.[m.name])?.outlineWidthFactor;
     if (outlineWidthFactor != null) {
       m.outlineWidthFactor = outlineWidthFactor;
@@ -9903,9 +9903,9 @@ if (!this.enabled) {
 
 if (!MMD_SA_options.THREEX_options.model_path) {
   MMD_SA_options.THREEX_options.model_path = System.Gadget.path + '/three.js/model/AliciaSolid.zip#/AliciaSolid.vrm'
-  MMD_SA_options.THREEX_options.model_para['AliciaSolid.vrm'] = {
+  MMD_SA_options.THREEX_options.model_para['AliciaSolid.vrm'] = Object.assign(MMD_SA_options.THREEX_options.model_para['AliciaSolid.vrm']||{}, {
     icon_path: 'icon_v01.jpg'
-  }
+  });
 }
 
 DEBUG_show('Loading THREEX...')
