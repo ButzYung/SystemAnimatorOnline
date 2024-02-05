@@ -1,4 +1,5 @@
-// Webkit-to-IE emulation (2022-12-27)
+// Webkit-to-IE emulation
+// 2024-02-05
 
 var webkit_mode = true
 
@@ -705,7 +706,8 @@ key_body = RegExp.$2
 key_name = RegExp.$3
 
 var cmd = 'REG QUERY "' + key_head+'\\'+key_body + '" /v "' + key_name + '"'
-try { result = SA_require('child_process').execSync(cmd) } catch (err) {}
+// use require instead of SA_require to fix error in later versions of electron
+try { result = require('child_process').execSync(cmd) } catch (err) {}
 if (result) {
   result = result.toString().replace(/\s+$/, "").trim().replace(/^HKEY\w+\\/, "")
   if (result.indexOf(key_body) == 0)
