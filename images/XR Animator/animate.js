@@ -8793,7 +8793,7 @@ else
        ,ended: true
       }
     }
-  ].concat((webkit_electron_mode) ? [
+  ].concat((0&&webkit_electron_mode) ? [
     { key:3, event_id: {
         func:()=>{
 navigator.clipboard.writeText('1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p').then(()=>{
