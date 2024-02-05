@@ -1,5 +1,5 @@
 // SA Electron - Main EXTENDED
-// (2024-01-19)
+// (2024-02-05)
 
 /*
 eval on Electron v1.6.x has some scope issues/bugs which makes the global variables on this script inaccessible inside functions.
@@ -16,6 +16,24 @@ if (windows_mode == undefined) {
     return decodeURIComponent(url.replace(/^file\:\/+/i, ((windows_mode)?"":"/")).replace(/^(\w)[\|\:]/i, "$1:").replace(/[\/\\]/g, ((windows_mode)?"\\":"/")).replace(/\?.+$/, ""));
   };
 }
+
+
+// https://stackoverflow.com/questions/54464276/how-to-force-discrete-gpu-in-electron-js
+const { spawn } = require('child_process');
+
+// Restart with force using the dedicated GPU
+if (windows_mode && process.env.GPUSET !== 'true') {
+  spawn(process.execPath, process.argv.slice(1), {
+    env: {
+      ...process.env,
+      SHIM_MCCOMPAT: '0x800000001', // this forces windows to use the dedicated GPU for the process
+      GPUSET: 'true'
+    },
+    detached: true,
+  });
+  process.exit(0);
+}
+
 
 const icon_name = (windows_mode) ? "icon_SA.ico" : "icon_SA_512x512.png";
 
