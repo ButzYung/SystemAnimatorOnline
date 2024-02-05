@@ -5,109 +5,127 @@
 				"info_short": {
 					"_translation_": {
 						"_default_": "Streamer Mode",
-						"ja": "ストリーマーモード"
+						"ja": "ストリーマーモード",
+						"zh": "直播主模式"
 					}
 				},
 				"info": {
 					"_translation_": {
 						"_default_": "Double-click to start \"Streamer mode\", a one-take shortcut that automatically enables everything you need to start your mocap session, including selecting a webcam, changing your avatar's pose, loading the mocap AI, and turning on VMC protocol (if enabled in last session). Your preferences in webcam, pose, mocap and VMC will be saved and applied automatically.",
-						"ja": "ダブルクリックして「ストリーマー モード」を開始します。Webカメラの選択、アバターのポーズの変更、モーキャプ AI のロード、VMC プロトコルのオンなど、モーキャプ セッションの開始に必要なすべての操作を 1 回の操作で自動的に有効にするショートカットです。 Webカメラ、ポーズ、モーキャプ、VMC の設定は保存され、自動的に適用されます。"
+						"ja": "ダブルクリックして「ストリーマー モード」を開始します。 Webカメラの選択、アバターのポーズの変更、モーキャプ AI のロード、VMC プロトコルのオンなど、モーキャプ セッションの開始に必要なすべての操作を 1 回の操作で自動的に有効にするショートカットです。 Webカメラ、ポーズ、モーキャプ、VMC の設定は保存され、自動的に適用されます。",
+						"zh": "按兩下啟動「直播主模式」，一次過將攝影機選擇、人物姿勢轉換、動捕AI載入、VMC協定等全數啟動。 所有相關的設定亦會自動保存及適用。"
 					}
 				},
 				"press_x_to_abort": {
 					"_translation_": {
 						"_default_": "Press X to abort",
-						"ja": "中止するには X を押します"
+						"ja": "中止するには X を押します",
+						"zh": "按 X 中止"
 					}
 				},
 				"mocap_model_loaded": {
 					"_translation_": {
 						"_default_": "Mocap model: LOADED",
-						"ja": "モーキャプ モデル: ロード済み"
+						"ja": "モーキャプ モデル: ロード済み",
+						"zh": "動捕模型: 已載入"
 					}
 				},
 				"face_data_calibrating": {
 					"_translation_": {
 						"_default_": "Face data calibrating",
-						"ja": "顔データの調整中"
+						"ja": "顔データの調整中",
+						"zh": "面部追蹤數據調整中"
 					}
 				},
 				"calibrating_face_data": {
 					"_translation_": {
 						"_default_": "Calibrating face data",
-						"ja": "顔データの調整"
+						"ja": "顔データの調整",
+						"zh": "正在調整面部追蹤數據"
 					}
 				},
 				"face_data_calibrated": {
 					"_translation_": {
 						"_default_": "Face data: CALIBRATED",
-						"ja": "顔データ: 校正済み"
+						"ja": "顔データ: 校正済み",
+						"zh": "面部數據: 已校正"
 					}
 				},
 				"face_data_calibrating_message": {
 					"_translation_": {
 						"_default_": "Sit back, look straight and keep a calm face for a few seconds while the calibration is in process.",
-						"ja": "調整が行われている間、リラックスしてまっすぐ前を見て、穏やかな顔を数秒間保ちます。"
+						"ja": "調整が行われている間、リラックスしてまっすぐ前を見て、穏やかな顔を数秒間保ちます。",
+						"zh": "請放鬆，眼望前方並維持平穩的表情約數秒時間，直到面部追蹤數據校正的過程結束。"
 					}
 				},
 				"motion_changed": {
 					"_translation_": {
 						"_default_": "Motion changed",
-						"ja": "モーションの変更"
+						"ja": "モーションの変更",
+						"zh": "動作已轉換"
 					}
 				},
 				"webcam_not_accessible": {
 					"_translation_": {
 						"_default_": "Target webcam is not accessible.",
-						"ja": "ターゲットのWebカメラにアクセスできません。"
+						"ja": "ターゲットのWebカメラにアクセスできません。",
+						"zh": "無法啟動指定攝影機。"
 					}
 				},
 				"webcam_on": {
 					"_translation_": {
 						"_default_": "Webcam: ON",
-						"ja": "Webカメラ: ON"
+						"ja": "Webカメラ: ON",
+						"zh": "攝影機: ON"
 					}
 				},
 				"VMC_protocol_on": {
 					"_translation_": {
 						"_default_": "VMC protocol: ON",
-						"ja": "VMCプロトコル: ON"
+						"ja": "VMCプロトコル: ON",
+						"zh": "VMC協定: ON"
 					},
 					"send_camera_data": {
 						"_translation_": {
 							"_default_": "Send camera data",
-							"ja": "カメラデータを送信する"
+							"ja": "カメラデータを送信する",
+							"zh": "傳送攝影機數據"
 						}
 					}
 				},
 				"mocap_initializing": {
 					"_translation_": {
 						"_default_": "Mocap initializing",
-						"ja": "モーキャプの初期化中"
+						"ja": "モーキャプの初期化中",
+						"zh": "動捕初始化中"
 					},
 					"face": {
 						"_translation_": {
 							"_default_": "Face",
-							"ja": "顔"
+							"ja": "顔",
+							"zh": "臉"
 						}
 					},
 					"full_body": {
 						"_translation_": {
 							"_default_": "Full Body",
-							"ja": "全身"
+							"ja": "全身",
+							"zh": "全身"
 						}
 					}
 				},
 				"finish_VMC": {
 					"_translation_": {
 						"_default_": "XR Animator is now ready with VMC protocol on. You may choose to hide 3D avatar to save extra CPU/GPU usage.\n1. Finish and hide 3D avatar\nX. Finish",
-						"ja": "VMCプロトコルをオンにして XR Animator の準備が整いました。 余分な CPU/GPU 使用量を節約するために、3D アバターを非表示にすることを選択できます。\n1. 3Dアバターを非表示にして終了する\nX. 終了する"
+						"ja": "VMCプロトコルをオンにして XR Animator の準備が整いました。 余分な CPU/GPU 使用量を節約するために、3D アバターを非表示にすることを選択できます。\n1. 3Dアバターを非表示にして終了する\nX. 終了する",
+						"zh": "XR Animator已準備就緒，VMC協定亦已啟動。 你可以選擇隱藏3D人物顯示以減低CPU/GPU用量。\n1. 完成及隱藏3D人物\nX. 完成"
 					}
 				},
 				"finish": {
 					"_translation_": {
 						"_default_": "XR Animator is now ready. You may choose to turn UI off for streaming (press Esc to toggle the bottom UI afterwards).\n1. Finish and turn UI off\nX. Finish",
-						"ja": "XR Animator の準備が整いました。 ストリーミング用に UI をオフにすることもできます (後で Esc キーを押して下部の UI を切り替えます)。\n1. UIをオフにして終了する\nX. 終了する"
+						"ja": "XR Animator の準備が整いました。 ストリーミング用に UI をオフにすることもできます (後で Esc キーを押して下部の UI を切り替えます)。\n1. UIをオフにして終了する\nX. 終了する",
+						"zh": "XR Animator已準備就緒。 你可以選擇隱藏UI顯示以方便直播 (及後按Esc切換UI顯示).\n1. 完成及隱藏UI\nX. 完成"
 					}
 				}
 			},
@@ -115,7 +133,8 @@
 				"info_short": {
 					"_translation_": {
 						"_default_": "Pose/Motion",
-						"ja": "ポーズ/モーション"
+						"ja": "ポーズ/モーション",
+						"zh": "姿勢/動作"
 					}
 				},
 				"info": {
@@ -123,110 +142,128 @@
 						"tracking_on": {
 							"_translation_": {
 								"_default_": "- The current pose supports <tracking_mode> tracking.",
-								"ja": "- 現在のポーズは<tracking_mode>トラッキングをサポートする。"
+								"ja": "- 現在のポーズは<tracking_mode>トラッキングをサポートする。",
+								"zh": "- 現在的姿勢支援<tracking_mode>動捕。"
 							},
 							"upper_body": {
 								"_translation_": {
 									"_default_": "upper-body🙋",
-									"ja": "上半身🙋"
+									"ja": "上半身🙋",
+									"zh": "上半身🙋"
 								}
 							},
 							"full_body": {
 								"_translation_": {
 									"_default_": "full-body💃",
-									"ja": "全身💃"
+									"ja": "全身💃",
+									"zh": "全身💃"
 								}
 							}
 						},
 						"tracking_off": {
 							"_translation_": {
 								"_default_": "- The current pose does not support motion tracking.",
-								"ja": "- 現在のポーズはモーション トラッキングをサポートしていません。"
+								"ja": "- 現在のポーズはモーション トラッキングをサポートしていません。",
+								"zh": "- 現在的姿勢並不支援動態捕捉。"
 							}
 						}
 					},
 					"ML_off": {
 						"_translation_": {
 							"_default_": "- Double-click to change your avatar's pose, supporting either full-body💃 or upper-body🙋 mocap.",
-							"ja": "- ダブルクリックしてアバターのポーズを変更し、全身💃または上半身🙋のモーションキャプチャをサポートします。"
+							"ja": "- ダブルクリックしてアバターのポーズを変更し、全身💃または上半身🙋のモーションキャプチャをサポートします。",
+							"zh": "- 按兩下選擇要轉換的姿勢，支援全身💃或上半身🙋動捕。"
 						}
 					},
 					"extra": {
 						"_translation_": {
 							"_default_": "- Hotkeys Alt/Ctrl+Num0-9➡️pose 1-18 (0 for custom pose)\n- 🦶denotes the support of \"arm-as-leg\" control mode by pressing <hotkey> to toggle🙋↔️🦶\n- Use mouse or keys to pick an alphanumeric option.",
-							"ja": "- ホットキーAlt/Ctrl+Num0-9➡️ポーズ1-18 (0はカスタム)\n- 🦶は「手の動きで脚を動かす」モードのサポートを示しています(ホットキー<hotkey>を押して切り替える🙋↔️🦶)。\n- マウスまたは英数字キーを使用してオプションを選択する。"
+							"ja": "- ホットキーAlt/Ctrl+Num0-9➡️ポーズ1-18 (0はカスタム)\n- 🦶は「手の動きで脚を動かす」モードのサポートを示しています(ホットキー<hotkey>を押して切り替える🙋↔️🦶)。\n- マウスまたは英数字キーを使用してオプションを選択する。",
+							"zh": "- 按熱鍵Alt/Ctrl+Num0-9轉換姿勢1-18 (0自訂)\n- 🦶代表支援「以手代足」操作模式(按熱鍵<hotkey>切換🙋↔️🦶)。\n- 以滑鼠或英數字鍵選擇選項。"
 						}
 					}
 				},
 				"upper_body_mocap": {
 					"_translation_": {
 						"_default_": "upper-body mocap",
-						"ja": "上半身モーキャプ"
+						"ja": "上半身モーキャプ",
+						"zh": "上半身動捕"
 					}
 				},
 				"full_body_mocap": {
 					"_translation_": {
 						"_default_": "full-body mocap",
-						"ja": "全身モーキャプ"
+						"ja": "全身モーキャプ",
+						"zh": "全身動捕"
 					}
 				},
 				"pose": {
 					"_translation_": {
 						"_default_": "Pose",
-						"ja": "ポーズ"
+						"ja": "ポーズ",
+						"zh": "姿勢"
 					}
 				},
 				"page": {
 					"_translation_": {
 						"_default_": "page",
-						"ja": "ページ"
+						"ja": "ページ",
+						"zh": "頁"
 					}
 				},
 				"hotkey": {
 					"_translation_": {
 						"_default_": "Hotkey",
-						"ja": "ホットキー"
+						"ja": "ホットキー",
+						"zh": "熱鍵"
 					}
 				},
 				"next_poses": {
 					"_translation_": {
 						"_default_": "Next 9 poses",
-						"ja": "次の9ポーズ"
+						"ja": "次の9ポーズ",
+						"zh": "接下來的9個姿勢"
 					}
 				},
 				"shoulder_adjust": {
 					"_translation_": {
 						"_default_": "Shoulder adjust",
-						"ja": "肩補正"
+						"ja": "肩補正",
+						"zh": "肩角度補正"
 					},
 					"Default": {
 						"_translation_": {
 							"_default_": "Default",
-							"ja": "デフォルト"
+							"ja": "デフォルト",
+							"zh": "預設"
 						}
 					},
 					"None": {
 						"_translation_": {
 							"_default_": "None",
-							"ja": "なし"
+							"ja": "なし",
+							"zh": "不適用"
 						}
 					},
 					"Full": {
 						"_translation_": {
 							"_default_": "Full",
-							"ja": "フル"
+							"ja": "フル",
+							"zh": "最大"
 						}
 					},
 					"Upper half": {
 						"_translation_": {
 							"_default_": "Upper half",
-							"ja": "上半"
+							"ja": "上半",
+							"zh": "上半"
 						}
 					},
 					"tooltip": {
 						"_translation_": {
 							"_default_": "Shoulder adjust:\nThis option determines the resting angle of shoulder and how the shoulder angle responds to arm mocap. \"Full\" has the lowest resting angle for VRM model. \"Upper half\" doesn't change the resting angle and shoulder angle changes only if arms are raised above the shoulder. \"None\" disables any shoulder angle adjustment.",
-							"ja": "肩補正:\nこのオプションは、肩の静止角度と、肩の角度が腕のモーション キャプチャにどのように反応するかを決定します。 「フル」は VRM モデルの静止角度が最も低くなります。 「上半」では静止角度は変わりませんが、肩の角度は腕を肩より上に上げた場合にのみ変わります。 「なし」を選択すると、肩の角度補正が無効になります。"
+							"ja": "肩補正:\nこのオプションは、肩の静止角度と、肩の角度が腕のモーション キャプチャにどのように反応するかを決定します。 「フル」は VRM モデルの静止角度が最も低くなります。 「上半」では静止角度は変わりませんが、肩の角度は腕を肩より上に上げた場合にのみ変わります。 「なし」を選択すると、肩の角度補正が無効になります。",
+							"zh": "肩角度補正:\n此設定決定肩膀的起動角度，及因應動捕而作出的角度捕正。 「最大」對於 VRM 模型的起動角度是最低的。 「上半」不會修正肩膀的起動角度，而只會對動捕中過肩的動作作出修正。 「不適用」不會作出任何肩膀角度的修正。"
 						}
 					}
 				},
@@ -234,7 +271,8 @@
 					"tooltip": {
 						"_translation_": {
 							"_default_": "Mirror current pose:\nThis option mirrors the current pose/motion. All parameters, including \"arm-as-leg\" control, are also mirrored. Use hotkey Ctrl+M as a shortcut to mirror pose at any time.",
-							"ja": "現在のポーズをミラーリングする:\nこのオプションは、現在のポーズ/モーションをミラーリングします。 「手の動きで脚を動かす」モードを含むすべてのパラメータもミラーリングされます。 ホットキー Ctrl+M をショートカットとして使用すると、いつでもポーズをミラーリングできます。"
+							"ja": "現在のポーズをミラーリングする:\nこのオプションは、現在のポーズ/モーションをミラーリングします。 「手の動きで脚を動かす」モードを含むすべてのパラメータもミラーリングされます。 ホットキー Ctrl+M をショートカットとして使用すると、いつでもポーズをミラーリングできます。",
+							"zh": "鏡像化現在的姿勢:\n此選項會將現在的姿勢/動作鏡像化。 所有參數，包括「以手代足」控制模式等，也會被鏡像化。 用熱鍵 Ctrl+M 可於任何時間將姿勢鏡像化。"
 						}
 					}
 				},
@@ -242,7 +280,8 @@
 					"tooltip": {
 						"_translation_": {
 							"_default_": "Push current pose to list top:\nThis option pushes the current pose/motion to the top of the pose list, mainly for the convenience to use the pose hotkeys (Alt/Ctrl+Num1-9) when they can only cover the first 18 poses.",
-							"ja": "現在のポーズをリストの一番上に置く:\nこのオプションは、現在のポーズ/モーションをポーズ リストの先頭に置きます。これは主に、最初の 18 ポーズしかカバーできないときにポーズ ホットキー (Alt/Ctrl+Num1 ～ 9) を使用するのに便利です。"
+							"ja": "現在のポーズをリストの一番上に置く:\nこのオプションは、現在のポーズ/モーションをポーズ リストの先頭に置きます。これは主に、最初の 18 ポーズしかカバーできないときにポーズ ホットキー (Alt/Ctrl+Num1 ～ 9) を使用するのに便利です。",
+							"zh": "置頂現在的姿勢:\n此選項會將現在的姿勢/動作置頂，方便於利用只限於首18個姿勢而設的熱鍵 (Alt/Ctrl+Num1-9)。"
 						}
 					}
 				},
@@ -250,7 +289,8 @@
 					"tooltip": {
 						"_translation_": {
 							"_default_": "Reset pose list order:\nThis option resets the pose list order for any changes you have made with the \"Push current pose to list top\" option.",
-							"ja": "ポーズリストの順序をリセット:\nこのオプションは、「現在のポーズをリストの一番上に置く」オプションで行った変更に対するポーズ リストの順序をリセットします。"
+							"ja": "ポーズリストの順序をリセット:\nこのオプションは、「現在のポーズをリストの一番上に置く」オプションで行った変更に対するポーズ リストの順序をリセットします。",
+							"zh": "還原姿勢列表的順序:\n此選項會將因「置頂現在的姿勢」選項而改變的姿勢列表的順序還原。"
 						}
 					}
 				},
@@ -258,13 +298,15 @@
 					"confirm": {
 						"_translation_": {
 							"_default_": "Are you sure you want to clear all custom poses?\nY. Yes\nN. No",
-							"ja": "すべてのカスタム ポーズをクリアしてもよろしいですか?\nY. はい\nN. いいえ"
+							"ja": "すべてのカスタム ポーズをクリアしてもよろしいですか?\nY. はい\nN. いいえ",
+							"zh": "你確定要清空所有自訂動作?\nY. 是\nN. 否"
 						}
 					},
 					"tooltip": {
 						"_translation_": {
-							"_default_": "Clear all custom poses:\nXR Animator saves custom poses/motions (VMD/FBX/BVH) you have dropped to the app, which can be mixed with upper body mocap just like those preset poses. However, the number of custom poses you can save is limited. This option clears all saved custom poses and motions.'",
-							"ja": "すべてのカスタムポーズをクリアする:\nXR Animator は、アプリにドロップしたカスタム ポーズ/モーション (VMD/FBX/BVH) を保存し、プリセット ポーズと同様に上半身のモーション キャプチャと混合できます。 ただし、保存できるカスタム ポーズの数には制限があります。 このオプションは、保存されているカスタム ポーズとモーションをすべてクリアします。"
+							"_default_": "Clear all custom poses:\nXR Animator saves custom poses/motions (VMD/FBX/BVH) you have dropped to the app, which can be mixed with upper body mocap just like those preset poses. However, the number of custom poses you can save is limited. This option clears all saved custom poses and motions.",
+							"ja": "すべてのカスタムポーズをクリアする:\nXR Animator は、アプリにドロップしたカスタム ポーズ/モーション (VMD/FBX/BVH) を保存し、プリセット ポーズと同様に上半身のモーション キャプチャと混合できます。 ただし、保存できるカスタム ポーズの数には制限があります。 このオプションは、保存されているカスタム ポーズとモーションをすべてクリアします。",
+							"zh": "清空所有自訂動作:\nXR Animator 會將使用者拖曳的動作檔案 (VMD/FBX/BVH) 的位置儲存，而這些自訂動作均可用於上半身動捕。 不過要注意可儲存的自訂動作數目是有上限的。 此選項會清空所有自訂動作。"
 						}
 					}
 				},
@@ -272,33 +314,45 @@
 					"tooltip": {
 						"_translation_": {
 							"_default_": "Export current pose config:\nThis experimental feature allows you to export the config of the current pose/motion as a JSON file. You can then change the JSON to adjust every finest detail, from arm IK anchors, hip adjustment, to arm-as-leg control. Drop the adjusted JSON file back to the app to apply changes. For now, changes are not saved and will be reset on app start.",
-							"ja": "現在のポーズ設定をエクスポートする\nこの実験的な機能を使用すると、現在のポーズの構成を JSON ファイルとしてエクスポートできます。 その後、JSON を変更して、腕の IK から脚のコントロールの調整まで、あらゆる詳細を調整できます。 調整した JSON ファイルをアプリにドロップして戻し、変更を適用します。 現時点では、変更は保存されず、アプリの起動時にリセットされます。"
+							"ja": "現在のポーズ設定をエクスポートする\nこの実験的な機能を使用すると、現在のポーズの構成を JSON ファイルとしてエクスポートできます。 その後、JSON を変更して、腕の IK から脚のコントロールの調整まで、あらゆる詳細を調整できます。 調整した JSON ファイルをアプリにドロップして戻し、変更を適用します。 現時点では、変更は保存されず、アプリの起動時にリセットされます。",
+							"zh": "匯出現在姿勢的設定:\n此實驗性的選項可將現在的姿勢匯出到 JSON 格式的檔案上。 你可透過改變此檔案的內容更改此姿勢的所有參數，包括 IK 設定、腰部補正及「以手代足」控制模式等等。 將改變後的檔案拖曳到程式中即可生效. 現時來說，改變後的設定不會被儲存而將於程式啟動時被還原。"
 						}
+					}
+				},
+				"custom_pose": {
+					"_translation_": {
+						"_default_": "Custom pose",
+						"ja": "カスタムポーズ",
+						"zh": "自訂的姿勢"
 					}
 				},
 				"extra": {
 					"_translation_": {
 						"_default_": "C. Mirror current pose (Ctrl+M)\nD. Push current pose to list top\nE. Reset pose list order\nF. Clear all custom poses\nG. Export current pose config\nX. Done",
-						"ja": "C. 現在のポーズをミラーリングする(Ctrl+M)\nD. 現在のポーズをリストの一番上に置く\nE. ポーズリストの順序をリセット\nF. すべてのカスタムポーズをクリアする\nG. 現在のポーズ設定をエクスポートする\nX. 終了"
+						"ja": "C. 現在のポーズをミラーリングする(Ctrl+M)\nD. 現在のポーズをリストの一番上に置く\nE. ポーズリストの順序をリセット\nF. すべてのカスタムポーズをクリアする\nG. 現在のポーズ設定をエクスポートする\nX. 終了",
+						"zh": "C. 鏡像化現在的姿勢 (Ctrl+M)\nD. 置頂現在的姿勢\nE. 還原姿勢列表的順序\nF. 清空所有自訂動作\nG. 匯出現在姿勢的設定\nX. 結束"
 					}
 				}
 			},
 			"webcam_media": {
 				"_translation_": {
 					"_default_": "Enable selfie camera, webcam or media file input?\n1. Yes\n2. Yes (flip/mirror image)\n3. No\n4. Options",
-					"ja": "自撮りカメラ、Webカメラ、またはメディア ファイルの入力を有効にしますか?\n1. はい\n2. はい (反転/鏡像)\n3. いいえ\n4. 設定"
+					"ja": "自撮りカメラ、Webカメラ、またはメディア ファイルの入力を有効にしますか?\n1. はい\n2. はい (反転/鏡像)\n3. いいえ\n4. 設定",
+					"zh": "要啟動攝影機或影像媒體輸入嗎?\n1. 是\n2. 是 (反轉/鏡像)\n3. 否\n4. 設定"
 				},
 				"info_short": {
 					"selfie_camera": {
 						"_translation_": {
 							"_default_": "Selfie camera",
-							"ja": "自撮りカメラ"
+							"ja": "自撮りカメラ",
+							"zh": "自拍攝影機"
 						}
 					},
 					"webcam_media": {
 						"_translation_": {
 							"_default_": "Webcam/Media",
-							"ja": "Webカメラ/メディア"
+							"ja": "Webカメラ/メディア",
+							"zh": "網路攝影機/影像媒體"
 						}
 					}
 				},
@@ -307,82 +361,95 @@
 						"ML_on": {
 							"_translation_": {
 								"_default_": "- To hide the media input while keeping the motion capture on, double-click this item.",
-								"ja": "- モーションキャプチャをオンにしたままメディア入力を非表示にするには、この項目をダブルクリックします。"
+								"ja": "- モーションキャプチャをオンにしたままメディア入力を非表示にするには、この項目をダブルクリックします。",
+								"zh": "- 如要在動捕有效的情況下隱藏影像媒體顯示，按此兩下。"
 							}
 						},
 						"ML_off": {
 							"_translation_": {
 								"_default_": "- To hide the media input, double-click this item.",
-								"ja": "- メディア入力を非表示にするには、この項目をダブルクリックします。"
+								"ja": "- メディア入力を非表示にするには、この項目をダブルクリックします。",
+								"zh": "- 如要隱藏影像媒體顯示，按此兩下。"
 							}
 						}
 					},
 					"camera_off": {
 						"_translation_": {
 							"_default_": "- Double-click to choose a webcam or media input.\n- To use local pic/video as input, drop the file to the app.\n- Use mouse or keys to pick an alphanumeric option.",
-							"ja": "- ダブルクリックしてWebカメラまたはメディア入力を選択します。\n- ローカルの画像/ビデオを入力として使用するには、ファイルをアプリにドロップします。\n- マウスまたは英数字キーを使用してオプションを選択する。"
+							"ja": "- ダブルクリックしてWebカメラまたはメディア入力を選択します。\n- ローカルの画像/ビデオを入力として使用するには、ファイルをアプリにドロップします。\n- マウスまたは英数字キーを使用してオプションを選択する。",
+							"zh": "- 按兩下選擇網路攝影機或影像媒體輸入。\n- 要以影像媒體作輸入的話，拖曳檔案到此。\n- 以滑鼠或英數字鍵選擇選項。"
 						}
 					}
 				},
 				"finding_camera": {
 					"_translation_": {
 						"_default_": "(finding camera...)",
-						"ja": "(カメラを探しています...)"
+						"ja": "(カメラを探しています...)",
+						"zh": "(正在尋找攝影機...)"
 					}
 				},
 				"choose_an_input": {
 					"_translation_": {
 						"_default_": "Choose an input.",
-						"ja": "入力を選択します。"
+						"ja": "入力を選択します。",
+						"zh": "選擇輸入。"
 					}
 				},
 				"no_camera": {
 					"_translation_": {
 						"_default_": "No camera is available on this device. Drop a local media file as input instead.",
-						"ja": "このデバイスでは使用できるカメラがありません。 代わりに、ローカル メディア ファイルを入力としてドロップします。"
+						"ja": "このデバイスでは使用できるカメラがありません。 代わりに、ローカル メディア ファイルを入力としてドロップします。",
+						"zh": "此裝置並沒有攝影機。 你可選擇拖曳影像媒體檔案到此作為輸入替代。"
 					}
 				},
 				"local_media_file": {
 					"_translation_": {
 						"_default_": "Local media file",
-						"ja": "ローカル メディア ファイル"
+						"ja": "ローカル メディア ファイル",
+						"zh": "影像媒體檔案"
 					}
 				},
 				"options": {
 					"resolution_limit": {
 						"_translation_": {
 							"_default_": "Resolution limit",
-							"ja": "解像度の制限"
+							"ja": "解像度の制限",
+							"zh": "解像度限制"
 						},
 						"tooltip": {
 							"_translation_": {
 								"_default_": "Change resolution limit:\nResolution limit determines the target resolution for live webcam, as well as pixel limit for local media file. \"Auto / No limit\" requests no target resolution for live webcam (sometimes needed for compatibility), and no pixel limit for local media file. Default is 1280x720.",
-								"ja": "解像度制限を変更する:\n解像度制限は、ライブ Webカメラのターゲット解像度と、ローカル メディア ファイルのピクセル制限を決定します。 「自動 / 制限なし」は、ライブ Web カメラのターゲット解像度 (互換性のために必要な場合があります) を要求せず、ローカル メディア ファイルのピクセル制限も要求しません。 デフォルトは 1280x720 です。"
+								"ja": "解像度制限を変更する:\n解像度制限は、ライブ Webカメラのターゲット解像度と、ローカル メディア ファイルのピクセル制限を決定します。 「自動 / 制限なし」は、ライブ Web カメラのターゲット解像度 (互換性のために必要な場合があります) を要求せず、ローカル メディア ファイルのピクセル制限も要求しません。 デフォルトは 1280x720 です。",
+								"zh": "變更解像度限制:\n解像度限制決定網路攝影機的目標解像度，或於使用影像媒體檔案時作為像素上限。 「自動 / 不設限」代表在使用網路攝影機時不會向系統要求特定解像度 (當有兼容性需要時)，及在使用影像媒體檔案時不設像素上限。 預設是 1280x720。"
 							}
 						}
 					},
 					"auto_no_limit": {
 						"_translation_": {
 							"_default_": "Auto / No limit",
-							"ja": "自動 / 制限なし"
+							"ja": "自動 / 制限なし",
+							"zh": "自動 / 不設限"
 						}
 					},
 					"frame_rate": {
 						"_translation_": {
 							"_default_": "Frame rate",
-							"ja": "フレームレート"
+							"ja": "フレームレート",
+							"zh": "幀率"
 						},
 						"tooltip": {
 							"_translation_": {
 								"_default_": "Change frame rate:\nBy default, XR Animator does not request a specific frame rate from webcam (for better compatibility), which is usually 30 fps, but sometimes you may get a lower than expected frame rate. Change it to 30 to specifically request this frame rate from your webcam.",
-								"ja": "フレームレートを変更する:\nデフォルトでは、XR Animator は Web カメラから特定のフレーム レートを要求しません (互換性向上のため)。通常は 30 fps ですが、予想よりも低いフレーム レートが得られる場合があります。 Web カメラからこのフレーム レートを具体的に要求するには、これを 30 に変更します。"
+								"ja": "フレームレートを変更する:\nデフォルトでは、XR Animator は Web カメラから特定のフレーム レートを要求しません (互換性向上のため)。通常は 30 fps ですが、予想よりも低いフレーム レートが得られる場合があります。 Web カメラからこのフレーム レートを具体的に要求するには、これを 30 に変更します。",
+								"zh": "變更幀率:\n在預設情況下，XR Aanimator 不會向系統要求特定幀率 (以增加兼容性)，而結果通常是 30fps, 但偶爾會出現低幀率的情況。 你可選擇 30 以作出具體的幀率要求。"
 							}
 						}
 					},
 					"extra": {
 						"_translation_": {
 							"_default_": "1. Change resolution limit\n2. Change frame rate\n3. Return",
-							"ja": "1. 解像度制限を変更する\n2. フレームレートを変更する\n3. 戻る"
+							"ja": "1. 解像度制限を変更する\n2. フレームレートを変更する\n3. 戻る",
+							"zh": "1. 變更解像度限制\n2. 變更幀率\n3. 返回"
 						}
 					}
 				}
@@ -391,39 +458,54 @@
 				"info_short": {
 					"_translation_": {
 						"_default_": "Motion capture",
-						"ja": "モーションキャプチャ"
+						"ja": "モーションキャプチャ",
+						"zh": "動態捕捉"
 					}
 				},
 				"info": {
 					"ML_on": {
 						"_translation_": {
 							"_default_": "- To record motion during mocap, change options or turn mocap off, double-click this item.\n- Press Pause to pause/resume mocap.",
-							"ja": "- モーションを記録したり、オプションを変更したり、モーキャプをオフにしたりするには、ここをダブルクリックします。\n- モーキャプを一時停止/再開するには、Pauseを押します。"
+							"ja": "- モーションを記録したり、オプションを変更したり、モーキャプをオフにしたりするには、ここをダブルクリックします。\n- モーキャプを一時停止/再開するには、Pauseを押します。",
+							"zh": "- 要記錄動作、更改設定或關閉動捕，按此兩下。\n- 按Pause鍵暫停/恢復動捕。"
 						},
 						"camera_off": {
 							"_translation_": {
 								"_default_": "- To choose a video input, double-click the \"Webcam/Media\" item. You can use a webcam, or drop a local video/picture file.",
-								"ja": "- 入力を選択するには、「Webカメラ/メディア」項目をダブルクリックします。 Web カメラ、またはローカルのビデオ/画像ファイルを使用できます。"
+								"ja": "- 入力を選択するには、「Webカメラ/メディア」項目をダブルクリックします。 Web カメラ、またはローカルのビデオ/画像ファイルを使用できます。",
+								"zh": "- 要選擇影像輸入，按「網路攝影機/影像媒體」兩下。 你可選擇以攝影機或影像媒體作動捕輸入。"
 							}
 						}
 					},
 					"ML_off": {
 						"_translation_": {
 							"_default_": "- Double-click to enable motion capture to control the avatar.\n- You can track any combination of face, hands and body.\n- Use mouse or keys to pick a numbered option.",
-							"ja": "- ダブルクリックしてモーション キャプチャを有効にしてアバターを制御します。\n- 顔、手、体のあらゆる組み合わせを追跡できます。\n- マウスまたは英数字キーを使用してオプションを選択する。"
+							"ja": "- ダブルクリックしてモーション キャプチャを有効にしてアバターを制御します。\n- 顔、手、体のあらゆる組み合わせを追跡できます。\n- マウスまたは英数字キーを使用してオプションを選択する。",
+							"zh": "- 按兩下啟動動態捕捉以控制你的人物。\n- 可選擇追蹤包括臉、手或身體的任何組合。\n- 以滑鼠或英數字鍵選擇選項。"
 						}
 					}
 				},
 				"ML_off": {
 					"_translation_": {
 						"_default_": "Enable motion capture?\n1. Face only\n2. Body only\n3. Body + Hands\n4. Face + Body\n5. Full body (MediaPipe Vision)\n6. Full body (Legacy Holistic)\n7. Mocap options\n8. Cancel",
-						"ja": "モーションキャプチャを有効にしますか?\n1. 顔だけ\n2. 体だけ\n3. 体と手\n4. 顔と体\n5. 全身 (MediaPipe Vision)\n6. 全身 (レガシー Holistic)\n7. モーションキャプチャ設定\n8. キャンセル"
+						"ja": "モーションキャプチャを有効にしますか?\n1. 顔だけ\n2. 体だけ\n3. 体と手\n4. 顔と体\n5. 全身 (MediaPipe Vision)\n6. 全身 (レガシー Holistic)\n7. モーションキャプチャ設定\n8. キャンセル",
+						"zh": "啟動動態捕捉?\n1. 面部\n2. 身體\n3. 身體 + 手部\n4. 面部 + 身體\n5. 全身 (MediaPipe Vision)\n6. 全身 (Legacy Holistic)\n7. 動態捕捉設定\n8. 取消"
 					},
 					"full_body_mediapipe_vision": {
 						"tooltip": {
 							"_translation_": {
 								"_default_": "Full body (MediaPipe Vision):\nMediaPipe Vision is the latest mocap AI suite from Google MediaPipe. This version of full body tracking uses face, body and hand tracking models at the same time.",
-								"ja": "全身 (MediaPipe Vision):\nMediaPipe Vision は、Google MediaPipe の最新のモーションキャプチャ AI スイートです。 このバージョンの全身追跡では、顔、体、手の追跡モデルを同時に使用します。"
+								"ja": "全身 (MediaPipe Vision):\nMediaPipe Vision は、Google MediaPipe の最新のモーションキャプチャ AI スイートです。 このバージョンの全身追跡では、顔、体、手の追跡モデルを同時に使用します。",
+								"_default_": "全身 (MediaPipe Vision):\nMediaPipe Vision 是 Google MediaPipe 最新版的動態捕捉 AI 組合。 此功能將同時使用臉、手和身體的動態捕捉模型。"
+							}
+						}
+					},
+					"full_body_legacy_holistic": {
+						"tooltip": {
+							"_translation_": {
+								"_default_": "Full body (Legacy Holistic):\nThis version of full body tracking uses the legacy MediaPipe Holistic AI model, which combines face, body and hand tracking into one model. This requires less system resource and makes it faster in some cases, at the expense of losing some mocap accuracy and features from the latest MediaPipe Vision.",
+								"ja": "全身 (Legacy Holistic):\nこのバージョンの全身追跡では、顔、体、手の追跡を 1 つのモデルに組み合わせた古い MediaPipe Holistic AI モデルを使用します。 これにより、必要なシステム リソースが減り、場合によっては高速になりますが、最新の MediaPipe Vision の一部のモーキャプの精度と機能が失われます。",
+								"_default_": "全身 (Legacy Holistic):\n此乃舊版的 MediaPipe Holistic AI 模型, 將臉、手和身體的動態捕捉模型合而為一。 此版本系統要求比較低，一般而言速度亦較快，但缺少了最新版 MediaPipe Vision 的一些功能和精確度。"
 							}
 						}
 					}
@@ -432,64 +514,75 @@
 					"export_motion_to_file": {
 						"_translation_": {
 							"_default_": "Export motion to file",
-							"ja": "モーションをファイルにエクスポートする"
+							"ja": "モーションをファイルにエクスポートする",
+							"zh": "將動作匯出成檔案"
 						},
 						"no_motion": {
 							"_translation_": {
 								"_default_": "There is no motion to export. Enable motion capture and record the motion, or drop a FBX/BVH motion file.",
-								"ja": "エクスポートするモーションはありません。 モーション キャプチャを有効にしてモーションを記録するか、FBX/BVH モーション ファイルをドロップします。"
+								"ja": "エクスポートするモーションはありません。 モーション キャプチャを有効にしてモーションを記録するか、FBX/BVH モーション ファイルをドロップします。",
+								"zh": "現在沒有可匯出的動作。 啟動動態捕捉並紀錄動作, 或拖曳 FBX/BVH 動作檔案。\n-"
 							}
 						},
 						"choose_format": {
 							"_translation_": {
 								"_default_": "Choose a motion format to export.",
-								"ja": "エクスポートするモーション形式を選択します。"
+								"ja": "エクスポートするモーション形式を選択します。",
+								"zh": "選擇匯出的格式"
 							}
 						}
 					},
 					"record_motion": {
 						"_translation_": {
 							"_default_": "🔴Record motion",
-							"ja": "🔴モーションを記録する"
+							"ja": "🔴モーションを記録する",
+							"zh": "🔴記録動作"
 						},
 						"choose_input": {
 							"_translation_": {
 								"_default_": "Choose a video input for motion capture first before you can record motion.",
-								"ja": "モーションを記録する前に、まずモーション キャプチャ用のビデオ入力を選択します。"
+								"ja": "モーションを記録する前に、まずモーション キャプチャ用のビデオ入力を選択します。",
+								"zh": "請先為動態捕捉選擇影像輸入以作記録動作之用。"
 							}
 						},
 						"model_warming_up": {
 							"_translation_": {
 								"_default_": "Mocap AI models are still warming up. Try again in a few seconds.",
-								"ja": "モーキャプ AI モデルはまだウォームアップ中です。 数秒後にもう一度試してください。"
+								"ja": "モーキャプ AI モデルはまだウォームアップ中です。 数秒後にもう一度試してください。",
+								"zh": "動態捕捉 AI 模型還在載入中, 請在幾秒後再嘗試。"
 							}
 						},
 						"choose_speed": {
 							"_translation_": {
 								"_default_": "Choose a speed to record motion.\n1. x 1\n2. x 0.5\n3. x 0.25\n4. Cancel",
-								"ja": "モーションを記録する速度を選択してください。\n1. x 1\n2. x 0.5\n3. x 0.25\n4. キャンセル"
+								"ja": "モーションを記録する速度を選択してください。\n1. x 1\n2. x 0.5\n3. x 0.25\n4. キャンセル",
+								"zh": "選擇記録動作的速度。\n1. x 1\n2. x 0.5\n3. x 0.25\n4. 取消"
 							},
 							"info": {
 								"_translation_": {
 									"_default_": "- Recorded motion can be exported to a file afterwards.\n- If your PC is slow, choose a slower speed to ensure that you can capture all the frames.\n- Live camera will always be recorded at normal speed.",
-									"ja": "- 記録したモーションは後でファイルにエクスポートできます。\n- PC が遅い場合は、すべてのフレームを確実にキャプチャできるように、より遅い速度を選択してください。\n- ライブカメラは常に通常の速度で記録されます。"
+									"ja": "- 記録したモーションは後でファイルにエクスポートできます。\n- PC が遅い場合は、すべてのフレームを確実にキャプチャできるように、より遅い速度を選択してください。\n- ライブカメラは常に通常の速度で記録されます。",
+									"zh": "- 被記録的動作可在及後匯出成檔案。\n- 如果你的電腦速度較慢, 選擇較慢的記錄速度以確保每格動作均被記錄。\n- 網路攝影機只能以正常速度記錄。"
 								}
 							},
 							"begin_recording": {
 								"_translation_": {
-									"_default_": "Use the seek bar to go to the desired frame, press the play button and begin recording.",
-									"ja": "シークバーを使用して目的のフレームに移動し、再生ボタンを押して録画を開始します。"
+									"_default_": "Use the seek bar to go to the desired frame, and press the play button to begin recording.",
+									"ja": "シークバーを使用して目的のフレームに移動し、再生ボタンを押して録画を開始します。",
+									"zh": "移動滑動條到指定幀數，然後按播放按鈕開始錄製。"
 								},
 								"info": {
 									"_translation_": {
 										"_default_": "- Double-click to stop motion recording.",
-										"ja": "- ダブルクリックしてモーション記録を停止します。"
+										"ja": "- ダブルクリックしてモーション記録を停止します。",
+										"zh": "- 按兩下停止錄製。"
 									}
 								},
 								"recording_stopped": {
 									"_translation_": {
 										"_default_": "Motion recording has stopped. Double-click and you can export the motion to a file in VMD or BVH format.",
-										"ja": "モーション録画が停止されました。 ダブルクリックすると、モーションを VMD または BVH 形式のファイルにエクスポートできます。"
+										"ja": "モーション録画が停止されました。 ダブルクリックすると、モーションを VMD または BVH 形式のファイルにエクスポートできます。",
+										"zh": "動作記録已停止。 你可以按此兩下並選擇將動作匯出成 VMD 或 BVH 格式的動作檔案。"
 									}
 								}
 							}
@@ -498,42 +591,49 @@
 					"mocap_options": {
 						"_translation_": {
 							"_default_": "Mocap options",
-							"ja": "モーションキャプチャ設定"
+							"ja": "モーションキャプチャ設定",
+							"zh": "動態捕捉設定"
 						}
 					},
 					"mocap_off": {
 						"_translation_": {
 							"_default_": "Mocap OFF",
-							"ja": "モーションキャプチャ OFF"
+							"ja": "モーションキャプチャ OFF",
+							"zh": "關閉動態捕捉"
 						}
 					}
 				},
 				"mocap_options": {
 					"_translation_": {
-						"_default_": "1. Body tracking options\n2. Hand tracking options\n3. Face tracking options\n4. Webcam angle offset\n5. Clear bounding box",
-						"ja": "1. ボディトラッキング設定\n2. ハンドトラッキング設定\n3. フェイストラッキング設定\n4. Webカメラの角度オフセット\n5. 境界ボックスをクリアする"
+						"_default_": "1. Body tracking options\n2. Hand tracking options\n3. Face tracking options\n4. Webcam angle offset correction\n5. Clear bounding box",
+						"ja": "1. ボディトラッキング設定\n2. ハンドトラッキング設定\n3. フェイストラッキング設定\n4. Webカメラの角度オフセット補正\n5. 境界ボックスをクリアする",
+						"zh": "1. 身體追蹤設定\n2. 手部追蹤設定\n3. 面部追蹤設定\n4. 攝影機角度偏移補正\n5. 清除邊界框"
 					},
 					"body_tracking_options": {
 						"AI_model_quality": {
 							"_translation_": {
 								"_default_": "AI model quality",
-								"ja": "AIモデルの品質"
+								"ja": "AIモデルの品質",
+								"zh": "AI模型品質"
 							},
 							"tooltip": {
 								"_translation_": {
 									"_default_": "AI model quality:\nThis option determines the weight of the mocap AI model. \"Best\" is the heavier version, which provides better mocap accuracy and quality, at the expense of extra GPU usage. Default is \"Normal\".",
-									"ja": "AIモデルの品質:\nこのオプションは、モーションキャプチャ AI モデルのウェイトを決定します。 「最高」はより重いバージョンで、追加の GPU 使用率を犠牲にして、モーションキャプチャの精度と品質が向上します。 デフォルトは「普通」です。"
+									"ja": "AIモデルの品質:\nこのオプションは、モーションキャプチャ AI モデルのウェイトを決定します。 「最高」はより重いバージョンで、追加の GPU 使用率を犠牲にして、モーションキャプチャの精度と品質が向上します。 デフォルトは「普通」です。",
+									"zh": "AI模型品質:\n此設定決定 AI 模型的質量。 「最佳」是最大版本的模型，有較佳的動捕準確度及質素，但 GPU 使用率也較高。 預設是「一般」。"
 								}
 							},
 							"z_depth_scale": {
 								"_translation_": {
 									"_default_": "Z-depth scale",
-									"ja": "Z-奥行きスケール"
+									"ja": "Z-奥行きスケール",
+									"zh": "Z-深度比例"
 								},
 								"tooltip": {
 									"_translation_": {
 										"_default_": "Z-depth scale:\nThis option determines the z-depth scale when AI model quality is set to \"Best\". \"Min\" gives you less sense of depth, while \"Max\" boosts it. Default is \"Medium\".",
-										"ja": "Z-奥行きスケール:\nこのオプションは、AI モデルの品質が「最高」に設定されている場合の Z-奥行きスケールを決定します。 「最小」にすると奥行き感が減りますが、「最大」にすると奥行き感が増します。 デフォルトは「中」です。"
+										"ja": "Z-奥行きスケール:\nこのオプションは、AI モデルの品質が「最高」に設定されている場合の Z-奥行きスケールを決定します。 「最小」にすると奥行き感が減りますが、「最大」にすると奥行き感が増します。 デフォルトは「中」です。",
+										"zh": "Z-深度比例:\n此設定在 AI 模型質素為「最佳」時決定Z-深度比例。 「最小」減少深度感，「最大」增加深度感。 預設是「中」。"
 									}
 								}
 							}
@@ -541,156 +641,182 @@
 						"shoulder_tracking": {
 							"_translation_": {
 								"_default_": "Shoulder tracking",
-								"ja": "肩トラッキング"
+								"ja": "肩トラッキング",
+								"zh": "肩動作捕捉"
 							},
 							"tooltip": {
 								"_translation_": {
 									"_default_": "Shoulder tracking:\nWhen enabled, shoulder motion and shrugging will be tracked. Note that shrug tracking requires face tracking enabled. Default is \"ON\".",
-									"ja": "肩トラッキング:\n有効にすると、肩の動きと肩をすくめる動作が追跡されます。 肩をすくめるトラッキングには顔トラッキングが有効になっている必要があることに注意してください。 デフォルトは「ON」です。"
+									"ja": "肩トラッキング:\n有効にすると、肩の動きと肩をすくめる動作が追跡されます。 肩をすくめるトラッキングには顔トラッキングが有効になっている必要があることに注意してください。 デフォルトは「ON」です。",
+									"zh": "肩動作捕捉:\n當此設定為有效時，肩膀的動作會被捕捉。 要捕捉聳肩動作的話，面部追蹤也要同時開啟。 預設是「ON」。"
 								}
 							}
 						},
 						"leg_IK": {
 							"_translation_": {
 								"_default_": "Leg IK",
-								"ja": "足IK"
+								"ja": "足IK",
+								"zh": "足IK"
 							},
 							"tooltip": {
 								"_translation_": {
 									"_default_": "Leg IK:\nWhen enabled, inverse kinematics (IK) will be used to calculate avatar's leg motions. When motion recording is on, IK data will be recorded, which makes editing on MMD easier for exported VMD motion. Default is \"OFF\".",
-									"ja": "足IK:\n有効にすると、インバースキネマティクス (IK) を使用してアバターの足の動きを計算します。 モーション記録がオンの場合、IK データが記録されるため、エクスポートされた VMD モーションを MMD 上で編集しやすくなります。 デフォルトは「OFF」です。"
+									"ja": "足IK:\n有効にすると、インバースキネマティクス (IK) を使用してアバターの足の動きを計算します。 モーション記録がオンの場合、IK データが記録されるため、エクスポートされた VMD モーションを MMD 上で編集しやすくなります。 デフォルトは「OFF」です。",
+									"zh": "足IK:\n當此設定為有效時，逆運動學 (IK) 會被用作腳部動作的計算。 在記錄動作時，IK 數據會被記錄，而當匯出成 VMD 時，在 MMD 上使用的時候會較方便修改。 預設是「OFF」。"
 								}
 							}
 						},
 						"leg_scale_adjustment": {
 							"_translation_": {
 								"_default_": "Leg scale adjustment",
-								"ja": "足スケール調整"
+								"ja": "足スケール調整",
+								"zh": "足比例調整"
 							},
 							"tooltip": {
 								"_translation_": {
 									"_default_": "Leg scale adjustment:\nThis experimental feature adapts the leg length difference between source and avatar to give you a better sense of grounding. You don't need this option in most cases, but some nice results can be achieved if you can find a setting that keeps the values of 左/右 on debug between 1 and 0.95 often. Default is \"OFF\".",
-									"ja": "足スケール調整:\nこの実験的な機能は、ソースとアバターの間の脚の長さの違いを調整して、接地感を高めます。 ほとんどの場合、このオプションは必要ありませんが、デバッグ時に左/右の値を 1 ～ 0.95 の間に維持する設定を見つけることができれば、良い結果が得られることがあります。 デフォルトは「OFF」です。"
+									"ja": "足スケール調整:\nこの実験的な機能は、ソースとアバターの間の脚の長さの違いを調整して、接地感を高めます。 ほとんどの場合、このオプションは必要ありませんが、デバッグ時に左/右の値を 1 ～ 0.95 の間に維持する設定を見つけることができれば、良い結果が得られることがあります。 デフォルトは「OFF」です。",
+									"zh": "足比例調整:\n此實驗性設定會比較影像來源及 3D 人物的腳長，作出調整以增加人物的接地感。 一般情形下並不需要使用此設定，但如果你能找到一個在左上的偵錯視窗中長期維持左/右値在 1-0.95 的設定的話，將會有不錯的效果。 預設是「OFF」。"
 								}
 							}
 						},
 						"auto_grounding": {
 							"_translation_": {
 								"_default_": "Auto-grounding",
-								"ja": "自動接地"
+								"ja": "自動接地",
+								"zh": "自動接地"
 							},
 							"tooltip": {
 								"_translation_": {
 									"_default_": "Auto-grounding:\nWhen enabled, your avatar's feet will always be grounded during full body mocap. This option can be toggled via hotkey (<hotkey>). Default is \"OFF\".",
-									"ja": "自動接地:\n有効にすると、全身モーション キャプチャ中にアバターの足が常に接地されます。 このオプションはホットキー (<hotkey>) で切り替えることができます。 デフォルトは「OFF」です。"
+									"ja": "自動接地:\n有効にすると、全身モーション キャプチャ中にアバターの足が常に接地されます。 このオプションはホットキー (<hotkey>) で切り替えることができます。 デフォルトは「OFF」です。",
+									"zh": "自動接地:\n當此設定為有效時，在使用全身動捕時, 腳部會長期接地。 可使用熱鍵 (<hotkey>) 隨時切換。 預設是「OFF」。"
 								}
 							}
 						},
 						"body_bend_reduction": {
 							"_translation_": {
 								"_default_": "Body bend reduction",
-								"ja": "体の曲がりを軽減する"
+								"ja": "体の曲がりを軽減する",
+								"zh": "減少身體前傾"
 							},
 							"tooltip": {
 								"_translation_": {
 									"_default_": "Body bend reduction:\nSometimes the mocap AI may misrecognize your body gesture as bending forward, especially when you are close to the camera. When enabled, this option reduces the bending of avatar's body by a certain percentage. Default is \"OFF\".",
-									"ja": "体の曲がりを軽減する:\n特にカメラに近い場合、モーションキャプチャ AI が体のジェスチャを前かがみであると誤認識することがあります。 このオプションを有効にすると、アバターの体の曲がりが一定の割合で軽減されます。 デフォルトは「OFF」です。"
+									"ja": "体の曲がりを軽減する:\n特にカメラに近い場合、モーションキャプチャ AI が体のジェスチャを前かがみであると誤認識することがあります。 このオプションを有効にすると、アバターの体の曲がりが一定の割合で軽減されます。 デフォルトは「OFF」です。",
+									"zh": "減少身體前傾:\n有時動捕 AI 會誤認身體為前傾，尤其當你較接近鏡頭的時候。 此設定會減少人物身體前傾的情況。 預設是「OFF」。"
 								}
 							}
 						},
 						"arm_horizontal_offset": {
 							"_translation_": {
 								"_default_": "Arm horizontal offset",
-								"ja": "腕の水平位置オフセット"
+								"ja": "腕の水平位置オフセット",
+								"zh": "手臂水平位置偏移"
 							},
 							"tooltip": {
 								"_translation_": {
 									"_default_": "If your avatar's arm/shoulder size proportion is off the average, use this option to apply an offset to the arm's horizontal position, which can be useful if you want some specific actions such as touching both hands. Press ➕➖ key to change value. Default is \"0%\".",
-									"ja": "アバターの腕と肩のサイズの比例が平均から外れている場合は、このオプションを使用して腕の水平位置にオフセットを適用します。これは、両手に触れるなどの特定のアクションが必要な場合に便利です。 ➕➖キーを押して値を変更します。 デフォルトは「0%」です。"
+									"ja": "アバターの腕と肩のサイズの比例が平均から外れている場合は、このオプションを使用して腕の水平位置にオフセットを適用します。これは、両手に触れるなどの特定のアクションが必要な場合に便利です。 ➕➖キーを押して値を変更します。 デフォルトは「0%」です。",
+									"zh": "當人物的手臂/肩膀的大小比例在一般以外時，可使用此設定調整手臂水平位置偏移以增加如雙手接觸等動作的真實感。 按➕➖鍵更改數值。 預設是「0%」。"
 								}
 							}
 						},
 						"upper_rotation_offset": {
 							"_translation_": {
 								"_default_": "Upper rotation offset",
-								"ja": "上半身の回転オフセット"
+								"ja": "上半身の回転オフセット",
+								"zh": "上半身回轉偏移"
 							},
 							"tooltip": {
 								"_translation_": {
 									"_default_": "Use this option to apply a rotation offset to the upper body of your avatar while rotating the root in the opposite direction, as if only your lower body is rotated while the upper body stays still. This can be useful if you are at a certain angle sideway to the camera instead of facing the camera straightly. Press ➕➖ key to change value. Default is \"0°\".",
-									"ja": "このオプションを使用して、アバターの上半身に回転オフセットを適用しながら、上半身は静止したまま下半身だけを回転させるかのように、ルートを反対方向に回転させます。 これは、カメラに真正面を向くのではなく、カメラに対して一定の角度で横にいる場合に便利です。 ➕➖キーを押して値を変更します。 デフォルトは「0°」です。"
+									"ja": "このオプションを使用して、アバターの上半身に回転オフセットを適用しながら、上半身は静止したまま下半身だけを回転させるかのように、ルートを反対方向に回転させます。 これは、カメラに真正面を向くのではなく、カメラに対して一定の角度で横にいる場合に便利です。 ➕➖キーを押して値を変更します。 デフォルトは「0°」です。",
+									"zh": "在特別情況下，可使用此選項調整人物上半身回轉偏移，同時系統會在人物的底部作出相反的回轉，以達至彷彿是上半身不動而是下半身回轉的效果。 此選項方便當鏡頭位置是側面面向你的時候使用。 按➕➖鍵更改數值。 預設是「0°」。"
 								}
 							}
 						},
 						"press_to_change_value": {
 							"_translation_": {
 								"_default_": "press ➕➖ key to change value",
-								"ja": "➕➖キーで値を変更する"
+								"ja": "➕➖キーで値を変更する",
+								"zh": "按➕➖鍵更改數值"
 							}
 						},
 						"hip_adjustment": {
 							"_translation_": {
 								"_default_": "Hip adjustment (upper body mocap)",
-								"ja": "腰の調整（上半身のモーキャプ）"
+								"ja": "腰の調整（上半身のモーキャプ）",
+								"zh": "腰部調整（上半身動捕）"
 							},
 							"press_to_change_value": {
 								"_translation_": {
 									"_default_": "Press ⬅️➡️ key to change value",
-									"ja": "⬅️➡️キーを押して値を変更します"
+									"ja": "⬅️➡️キーを押して値を変更します",
+									"zh": "按️⬅️➡️鍵更改數值"
 								},
 								"short": {
 									"_translation_": {
 										"_default_": "press ⬅️➡️ key to change value",
-										"ja": "⬅️➡️キーで値を変更する"
+										"ja": "⬅️➡️キーで値を変更する",
+										"zh": "按️⬅️➡️鍵更改數值"
 									}
 								}
 							},
 							"general_weighting": {
 								"_translation_": {
 									"_default_": "General weighting",
-									"ja": "一般的な重み付け"
+									"ja": "一般的な重み付け",
+									"zh": "整體比重"
 								},
 								"tooltip": {
 									"_translation_": {
 										"_default_": "By default, when using upper body mocap, hip position and rotation will be adjusted according to your upper body motion. This option determines the general weighting of the hip adjustment applied. Default is \"100%\".",
-										"ja": "デフォルトでは、上半身のモーションキャプチャを使用すると、上半身の動きに応じて腰の位置と回転が調整されます。 このオプションは、適用されるヒップ調整の一般的な重み付けを決定します。 デフォルトは「100%」です。"
+										"ja": "デフォルトでは、上半身のモーションキャプチャを使用すると、上半身の動きに応じて腰の位置と回転が調整されます。 このオプションは、適用されるヒップ調整の一般的な重み付けを決定します。 デフォルトは「100%」です。",
+										"zh": "在預設情況下，在使用上半身動捕時，人物的腰部會隨上半身的動作作出相應的位置及回轉調整。 此設定可改變此腰部調整功能的整體比重。 預設是「100%」。"
 									}
 								}
 							},
 							"head_motion_weight": {
 								"_translation_": {
 									"_default_": "Head motion weight",
-									"ja": "頭の動きの重み付け"
+									"ja": "頭の動きの重み付け",
+									"zh": "頭部動作比重"
 								},
 								"tooltip": {
 									"_translation_": {
 										"_default_": "This option determines the weighting of head motion to be included as part of the upper body motion. Default is \"100%\".",
-										"ja": "このオプションは、上半身の動きの一部として含まれる頭の動きの重み付けを決定します。 デフォルトは「100%」です。"
+										"ja": "このオプションは、上半身の動きの一部として含まれる頭の動きの重み付けを決定します。 デフォルトは「100%」です。",
+										"zh": "此設定決定頭部動作作為上半身動作一部份的比重。 預設是「100%」。"
 									}
 								}
 							},
 							"y_axis_adjustment": {
 								"_translation_": {
 									"_default_": "Y-axis adjustment",
-									"ja": "Y軸調整"
+									"ja": "Y軸調整",
+									"zh": "Y軸調整"
 								},
 								"tooltip": {
 									"_translation_": {
 										"_default_": "When this option is \"100%\", hip moves downwards when you lean forward, upwards when you lean backward, and sideways when you turn sideways. When this option is \"0%\", hip moves downwards no matter you lean forward or backward, and there is no hip movement when you turn sideways. Default is \"66%\".",
-										"ja": "このオプションが「100%」の場合、前傾すると腰が下に、後傾すると上に、横向きになると横に動きます。 このオプションが「0%」の場合、前かがみでも後傾でも腰が下に移動し、横を向くと腰は動きません。 デフォルトは「66%」です。"
+										"ja": "このオプションが「100%」の場合、前傾すると腰が下に、後傾すると上に、横向きになると横に動きます。 このオプションが「0%」の場合、前かがみでも後傾でも腰が下に移動し、横を向くと腰は動きません。 デフォルトは「66%」です。",
+										"zh": "當此設定是「100%」時，身體前傾會令腰向下移，後傾時向上移，橫轉時向橫移。 當此設定是「0%」時，身體前後傾也會令腰向下移，橫轉時則不會移動。 預設是「66%」。"
 									}
 								}
 							},
 							"scale": {
 								"_translation_": {
 									"_default_": "Scale",
-									"ja": "スケール"
+									"ja": "スケール",
+									"zh": "比例"
 								},
 								"x": {
 									"tooltip": {
 										"_translation_": {
 											"_default_": "This option determines the scaling of movement along the X axis. By default, hip moves to the left when you leans to the right (or turns right when \"Y-axis adjustment\" is on), and hip moves to the right when you leans to the left. A negative value inverts this behavior. Default is \"100%\".",
-											"ja": "このオプションは、X 軸に沿った動きのスケーリングを決定します。 デフォルトでは、右に体を傾けると（「Y 軸調整」がオンの場合は右に曲がると）、腰は左に移動します。 左に傾くと腰は右に動きます。 負の値を指定すると、この動作が逆転します。 デフォルトは「100%」です。"
+											"ja": "このオプションは、X 軸に沿った動きのスケーリングを決定します。 デフォルトでは、右に体を傾けると（「Y軸調整」がオンの場合は右に曲がると）、腰は左に移動します。 左に傾くと腰は右に動きます。 負の値を指定すると、この動作が逆転します。 デフォルトは「100%」です。",
+											"zh": "此設定決定腰部在 X 軸上移動的比例。 預設情況下，當身體右傾時(或在使用「Y軸調整」時身體向右轉)腰會向左移，左傾時則向右移。 負數值會倒轉此動作反應。 預設是「100%」。"
 										}
 									}
 								},
@@ -698,7 +824,8 @@
 									"tooltip": {
 										"_translation_": {
 											"_default_": "This option determines the scaling of movement along the Y axis. By default, hip moves downwards when you leans forward, and hip moves upwards when you leans backward (when \"Y-axis adjustment\" is on). A negative value inverts this behavior. Default is \"100%\".",
-											"ja": "このオプションは、Y 軸に沿った動きのスケーリングを決定します。 デフォルトでは、前傾するとヒップが下に移動し、後傾するとヒップが上に移動します (「Y 軸調整」がオンの場合)。 負の値を指定すると、この動作が逆転します。 デフォルトは「100%」です。"
+											"ja": "このオプションは、Y 軸に沿った動きのスケーリングを決定します。 デフォルトでは、前傾するとヒップが下に移動し、後傾するとヒップが上に移動します (「Y軸調整」がオンの場合)。 負の値を指定すると、この動作が逆転します。 デフォルトは「100%」です。",
+											"zh": "此設定決定腰部在 Y 軸上移動的比例。 預設情況下，當身體前傾時腰會向下移，後傾則向上移(當使用「Y軸調整」時)。 負數值會倒轉此動作反應。 預設是「100%」。"
 										}
 									}
 								},
@@ -706,7 +833,8 @@
 									"tooltip": {
 										"_translation_": {
 											"_default_": "This option determines the scaling of movement along the Z axis. By default, hip moves backwards when you leans forward, and hip moves forward when you leans backward. A negative value inverts this behavior. Default is \"100%\".",
-											"ja": "このオプションは、Z 軸に沿った移動のスケーリングを決定します。 デフォルトでは、前傾すると腰は後方に移動し、後傾すると腰は前に移動します。 負の値を指定すると、この動作が逆転します。 デフォルトは「100%」です。"
+											"ja": "このオプションは、Z 軸に沿った移動のスケーリングを決定します。 デフォルトでは、前傾すると腰は後方に移動し、後傾すると腰は前に移動します。 負の値を指定すると、この動作が逆転します。 デフォルトは「100%」です。",
+											"zh": "此設定決定腰部在 Z 軸上移動的比例。 預設情況下，當身體前傾時腰會向後移，後傾則向前移。 負數值會倒轉此動作反應。 預設是「100%」。"
 										}
 									}
 								}
@@ -714,12 +842,14 @@
 							"smoothing": {
 								"_translation_": {
 									"_default_": "Smoothing",
-									"ja": "平滑化"
+									"ja": "平滑化",
+									"zh": "平滑化"
 								},
 								"tooltip": {
 									"_translation_": {
 										"_default_": "This option determines how much you want the hip motion to be smoothened. Default is \"0%\".",
-										"ja": "このオプションは、腰の動きをどの程度滑らかにするかを決定します。 デフォルトは「0%」です。"
+										"ja": "このオプションは、腰の動きをどの程度滑らかにするかを決定します。 デフォルトは「0%」です。",
+										"zh": "此設定決定腰部在移動時會作出多大程度的平滑化。 預設是「0%」。"
 									}
 								}
 							}
@@ -729,41 +859,48 @@
 						"depth_adjustment": {
 							"_translation_": {
 								"_default_": "Depth adjustment",
-								"ja": "奥行き調整"
+								"ja": "奥行き調整",
+						    "zh": "深度調整"
 							},
 							"tooltip": {
 								"_translation_": {
 									"_default_": "This option enhances the sense of depth of avatar's arms by utilizing the data of hand tracking. This value determines how much you want the hand tracking data to override arm tracking data from the body mocap. Depth adjustment applies to upper body mocap, or full body mocap when close to the camera. Default is \"50%\".",
-									"ja": "ハンド トラッキングのデータを利用してアバターの腕の奥行き感を強調するオプションです。 この値は、ハンド トラッキング データがボディ モーキャプの腕トラッキング データをどの程度オーバーライドするかを決定します。 奥行き調整は、上半身のモーキャプ、またはカメラに近い場合の全身のモーキャプに適用されます。 デフォルトは「50%」です。"
+									"ja": "ハンド トラッキングのデータを利用してアバターの腕の奥行き感を強調するオプションです。 この値は、ハンド トラッキング データがボディ モーキャプの腕トラッキング データをどの程度オーバーライドするかを決定します。 奥行き調整は、上半身のモーキャプ、またはカメラに近い場合の全身のモーキャプに適用されます。 デフォルトは「50%」です。",
+									"zh": "此設定利用手部追蹤的數據以增加手臂位置的深度感。 數值決定手部追蹤數據覆蓋身體追蹤數據的比重。 深度調整於上半身動捕或接近鏡頭時適用。 預設是「50%」。"
 								}
 							},
 							"press_to_change_value": {
 								"_translation_": {
 									"_default_": "press ⬅️➡️ key to change value",
-									"ja": "⬅️➡️キーで値を変更する"
+									"ja": "⬅️➡️キーで値を変更する",
+									"zh": "按⬅️➡️鍵更改數值"
 								}
 							},
 							"IRL_hand_shoulder_scale": {
 								"_translation_": {
 									"_default_": "IRL hand/shoulder scale",
-									"ja": "あなたの手/肩の比例"
+									"ja": "あなたの手/肩の比例",
+									"zh": "你的手/肩大小比例"
 								},
 								"tooltip": {
 									"_translation_": {
 										"_default_": "Depth adjustment is calculated based on the comparison of your palm's size and shoulder width. Smaller value fits smaller hands/wider shoulder, while large value fits bigger hands/narrower shoulder. Default is \"22%\".",
-										"ja": "奥行き調整は手のひらの大きさと肩幅を比較して計算されます。 小さい値は小さい手/広い肩にフィットし、大きい値は大きい手/狭い肩にフィットします。 デフォルトは「22%」です。"
+										"ja": "奥行き調整は手のひらの大きさと肩幅を比較して計算されます。 小さい値は小さい手/広い肩にフィットし、大きい値は大きい手/狭い肩にフィットします。 デフォルトは「22%」です。",
+										"zh": "深度調整透過比較你的手掌和肩膀的大小比例以作計算。 細數值適合細手掌/闊肩膀，大數值適合大手掌/窄肩膀。 預設是「22%」。"
 									}
 								}
 							},
 							"depth_scale": {
 								"_translation_": {
 									"_default_": "Depth scale",
-									"ja": "奥行きスケール"
+									"ja": "奥行きスケール",
+									"zh": "深度比例"
 								},
 								"tooltip": {
 									"_translation_": {
-										"_default_": "This options determines how much you want to scale the value of depth up or down. Smaller scale draws your hands closer to your body, while larger scale extends your arm's reach. Default is \"50%\".",
-										"ja": "このオプションは、深度の値をどの程度スケールアップまたはスケールダウンするかを決定します。 スケールが小さいと手が体に近づき、スケールが大きいと腕が届く範囲が広がります。 デフォルトは「50%」です。"
+										"_default_": "This option determines how much you want to scale the value of depth up or down. Smaller scale draws your hands closer to your body, while larger scale extends your arm's reach. Default is \"50%\".",
+										"ja": "このオプションは、深度の値をどの程度スケールアップまたはスケールダウンするかを決定します。 スケールが小さいと手が体に近づき、スケールが大きいと腕が届く範囲が広がります。 デフォルトは「50%」です。",
+										"zh": "此設定決定深度值的大小比例。 細數值會偏向將手拉近身體，大數值則將手推得較遠。 預設是「50%」。"
 									}
 								}
 							}
@@ -771,35 +908,41 @@
 						"arm_stabilization": {
 							"_translation_": {
 								"_default_": "Arm stabilization",
-								"ja": "腕の安定化"
+								"ja": "腕の安定化",
+								"zh": "穩定手臂位置"
 							},
 							"tooltip": {
 								"_translation_": {
-									"_default_": "This option stabilizes the default arms tracking from body mocap and reduces false positive detections when hands are going on and off the screen, by utilizing the hands tracking data. This options applies when you are close to the camera, or just for upper body mocap. Default is \"ON\".",
-									"ja": "このオプションは、手の追跡データを利用することで、ボディ モーション キャプチャからのデフォルトの腕の追跡を安定させ、手が画面に出入りするときの誤検知を減らします。 このオプションは、カメラに近い場合、または上半身のモーションキャプチャのみに適用されます。 デフォルトは「ON」です。"
+									"_default_": "This option stabilizes the default arms tracking from body mocap and reduces false positive detections when hands are going on and off the screen, by utilizing the hands tracking data. This options applies when you are close to the camera, or using upper body mocap. Default is \"ON\".",
+									"ja": "このオプションは、手の追跡データを利用することで、ボディ モーション キャプチャからのデフォルトの腕の追跡を安定させ、手が画面に出入りするときの誤検知を減らします。 このオプションは、カメラに近い場合、または上半身のモーションキャプチャのみに適用されます。 デフォルトは「ON」です。",
+									"zh": "此設定在當你的手部出入畫面時，在身體追蹤以外追加利用手部追蹤的數據以穩定手臂位置。 此功能在接近鏡頭或只限上半身動捕時適用。 預設是「ON」。"
 								}
 							},
 							"upper_body_mocap": {
 								"_translation_": {
 									"_default_": "Upper body mocap",
-									"ja": "上半身のモーキャプのみ"
+									"ja": "上半身のモーキャプのみ",
+									"zh": "只限上半身動捕"
 								}
 							},
 							"time_to_stabilize": {
 								"_translation_": {
 									"_default_": "Time to stabilize",
-									"ja": "安定するまでの時間"
+									"ja": "安定するまでの時間",
+									"zh": "穩定所需時間"
 								},
 								"tooltip": {
 									"_translation_": {
 										"_default_": "This option determines the amount of time required to stabilize arm tracking, which improves the result at the expense of increased lag for hands to show up on screen. You can just leave it to the default value in most cases. Default is \"0\" (no delay).",
-										"ja": "このオプションは、腕の追跡を安定させるのに必要な時間を決定します。これにより、手が画面に表示されるまでの遅延が増加しますが、結果は改善されます。 ほとんどの場合、デフォルト値のままで問題ありません。 デフォルトは「0」（遅延なし）です。"
+										"ja": "このオプションは、腕の追跡を安定させるのに必要な時間を決定します。これにより、手が画面に表示されるまでの遅延が増加しますが、結果は改善されます。 ほとんどの場合、デフォルト値のままで問題ありません。 デフォルトは「0」（遅延なし）です。",
+										"zh": "此設定可增加穩定位置所需時間以提升準確性，而代價是反應時間較慢。 一般而言，用預設值已足夠。 預設是「0」(沒有延遲）。"
 									}
 								},
 								"frame": {
 									"_translation_": {
 										"_default_": "frame",
-										"ja": "フレーム"
+										"ja": "フレーム",
+										"zh": "幀"
 									}
 								}
 							}
@@ -807,30 +950,35 @@
 						"hand_stabilization": {
 							"_translation_": {
 								"_default_": "Hand stabilization",
-								"ja": "手の位置の安定化"
+								"ja": "手の位置の安定化",
+								"zh": "穩定手腕位置"
 							},
 							"tooltip": {
 								"_translation_": {
 									"_default_": "When enabled, the hand position from hand tracking will be used in favor of the one from body tracking. Percentage determines the duration to fade out hand tracking when it fails. You may want to lower the percentage if arm motion is vigorous or hand tracking condition is poor. Default is \"20%\".",
-									"ja": "有効にすると、ハンド トラッキングからの手の位置が、ボディ トラッキングからの手の位置を優先して使用されます。 パーセンテージは、ハンド トラッキングが失敗した場合にフェードアウトする時間を決定します。 腕の動きが激しい場合や手の追跡状態が悪い場合は、パーセンテージを下げることをお勧めします。 デフォルトは「20%」です。"
+									"ja": "有効にすると、ハンド トラッキングからの手の位置が、ボディ トラッキングからの手の位置を優先して使用されます。 パーセンテージは、ハンド トラッキングが失敗した場合にフェードアウトする時間を決定します。 腕の動きが激しい場合や手の追跡状態が悪い場合は、パーセンテージを下げることをお勧めします。 デフォルトは「20%」です。",
+									"zh": "當此設定為有效時，手部追蹤會取代身體追蹤數據以決定手腕的位置。 數值決定當手部追蹤失效時以多少時間及比例重新利用身體追蹤數據。 建議在手臂動作較大或手部追蹤狀況不佳時用較小的數值。 預設是「20%」。"
 								}
 							},
 							"press_to_change_value": {
 								"_translation_": {
 									"_default_": "press ➕➖ key to change value",
-									"ja": "➕➖キーで値を変更する"
+									"ja": "➕➖キーで値を変更する",
+									"zh": "按➕➖ 鍵更改數值"
 								}
 							}
 						},
 						"standalone_web_worker": {
 							"_translation_": {
 								"_default_": "Standalone web worker",
-								"ja": "独立したウェブワーカー"
+								"ja": "独立したウェブワーカー",
+								"zh": "獨立web worker"
 							},
 							"tooltip": {
 								"_translation_": {
 									"_default_": "When enabled, this experimental option separates the processing of hand tracking from body tracking, and runs hand tracking model on an independent web worker, which aims to give priority for body mocap to achieve higher fps, at the expense of possibly lower fps for hand tracking, when system resource is tight. Default is \"OFF\".",
-									"ja": "この実験的オプションを有効にすると、ハンド トラッキングの処理がボディ トラッキングから分離され、独立したウェブワーカーでハンド トラッキング モデルが実行されます。これは、ハンド トラッキングの fps が低下する可能性を犠牲にして、ボディ モーキャプを優先してより高い fps を達成することを目的としています。 デフォルトは「OFF」です。"
+									"ja": "この実験的オプションを有効にすると、ハンド トラッキングの処理がボディ トラッキングから分離され、独立したウェブワーカーでハンド トラッキング モデルが実行されます。これは、ハンド トラッキングの fps が低下する可能性を犠牲にして、ボディ モーキャプを優先してより高い fps を達成することを目的としています。 デフォルトは「OFF」です。",
+									"zh": "此實驗性設定將手部追蹤的處理和身體追蹤跡分開。 當系統資源不足時，此功能會優先處理身體追蹤以增加動捕幀率，而代價是手部追蹤的幀率有可能下降。 預設是「OFF」。"
 								}
 							}
 						}
@@ -839,161 +987,188 @@
 						"eye_tracking": {
 							"_translation_": {
 								"_default_": "Eye tracking",
-								"ja": "アイトラッキング"
+								"ja": "アイトラッキング",
+								"zh": "眼睛追蹤"
 							},
 							"tooltip": {
 								"_translation_": {
 									"_default_": "Eye tracking:\nSometimes you may want to turn eye tracking off if eyes are covered (e.g. sunglasses) or the tracking condition is poor. Otherwise, some bad tracking results can happen. Auto blink will be on when eye tracking is off. Default is \"ON\".",
-									"ja": "アイトラッキング:\n目が覆われている場合（サングラスなど）、または追跡状態が悪い場合は、アイトラッキングをオフにしたい場合があります。 そうしないと、悪い追跡結果が発生する可能性があります。 アイトラッキングがオフの場合、自動まばたきはオンになります。 デフォルトは「ON」です。"
+									"ja": "アイトラッキング:\n目が覆われている場合（サングラスなど）、または追跡状態が悪い場合は、アイトラッキングをオフにしたい場合があります。 そうしないと、悪い追跡結果が発生する可能性があります。 アイトラッキングがオフの場合、自動まばたきはオンになります。 デフォルトは「ON」です。",
+									"zh": "眼睛追蹤:\n在眼睛被遮蓋時(如太陽眼鏡）或環境狀況不佳時，你可選擇關閉眼睛追蹤以避免人物的眼睛出現不自然狀況。 在眼睛追蹤關閉時，自動眨眼會啟動。 預設是「ON」。"
 								}
 							}
 						},
 						"blink_LR_sync": {
 							"_translation_": {
 								"_default_": "Blink LR sync",
-								"ja": "まばたきの左右同期"
+								"ja": "まばたきの左右同期",
+								"zh": "眨眼左右同步"
 							},
 							"tooltip": {
 								"_translation_": {
 									"_default_": "Blink LR sync:\nFor various reasons, blink tracking may not be ideal and lead to some size differences between the eyes that don't look good. Turn on this option to synchronize the blink of both eyes, at the expense of losing the ability to wink. Default is \"OFF\".",
-									"ja": "まばたきの左右同期:\nさまざまな理由により、まばたきの追跡は理想的ではない可能性があり、目の大きさに多少の違いが生じ、見栄えが悪くなります。 このオプションをオンにすると、ウィンクする機能が失われますが、両目のまばたきが同期されます。 デフォルトは「OFF」です。"
+									"ja": "まばたきの左右同期:\nさまざまな理由により、まばたきの追跡は理想的ではない可能性があり、目の大きさに多少の違いが生じ、見栄えが悪くなります。 このオプションをオンにすると、ウィンクする機能が失われますが、両目のまばたきが同期されます。 デフォルトは「OFF」です。",
+									"zh": "眨眼左右同步:\n人物左右眼的大小可能在環境狀況不佳或其他原因下出現不自然狀況。 你可選擇開啟此選項以同步左右眼的眨眼狀態和大小。 預設是「OFF」。"
 								}
 							}
 						},
 						"auto_blink": {
 							"_translation_": {
 								"_default_": "Auto blink",
-								"ja": "自動まばたき"
+								"ja": "自動まばたき",
+								"zh": "自動眨眼"
 							},
 							"tooltip": {
 								"_translation_": {
 									"_default_": "Auto blink:\nSometimes blink tracking is hardly noticeable due to poor lighting and various conditions. Turn on this option to allow your avatar to blink automatically. Default is \"OFF\".",
-									"ja": "自動まばたき:\n不十分な照明やさまざまな条件により、まばたきの追跡がほとんど目立たない場合があります。 アバターが自動的にまばたきできるようにするには、このオプションをオンにします。 デフォルトは「OFF」です。"
+									"ja": "自動まばたき:\n不十分な照明やさまざまな条件により、まばたきの追跡がほとんど目立たない場合があります。 アバターが自動的にまばたきできるようにするには、このオプションをオンにします。 デフォルトは「OFF」です。",
+									"zh": "自動眨眼:\n在燈光不足或其他狀況下，眨眼追蹤有可能失效。啟動此功能以達至自動眨眼。 預設是「OFF」。"
 								}
 							}
 						},
 						"auto_look_at_camera": {
 							"_translation_": {
 								"_default_": "Auto \"look at camera\"",
-								"ja": "自動「カメラを見る」"
+								"ja": "自動「カメラを見る」",
+								"zh": "自動「望向鏡頭」"
 							},
 							"tooltip": {
 								"_translation_": {
 									"_default_": "Auto \"look at camera\":\nSometimes you may want your avatar to look at the camera, as if you are always looking at your audience, regardless of where you are actually looking at. This option can be toggled via hotkey (<hotkey>). Default is \"OFF\".",
-									"ja": "自動「カメラを見る」:\n場合によっては、実際にどこを見ているかに関係なく、あたかも常に聴衆を見ているかのように、アバターがカメラの方を向いているようにしたい場合があります。 このオプションはホットキー (<hotkey>) で切り替えることができます。 デフォルトは「OFF」です。"
+									"ja": "自動「カメラを見る」:\n場合によっては、実際にどこを見ているかに関係なく、あたかも常に聴衆を見ているかのように、アバターがカメラの方を向いているようにしたい場合があります。 このオプションはホットキー (<hotkey>) で切り替えることができます。 デフォルトは「OFF」です。",
+									"zh": "自動「望向鏡頭」:\n啟動此功能令人物自動望向鏡頭。 無論你現實是望向何方，人物也像永遠望向觀眾。 你可用熱鍵<hotkey>隨時切換。 預設是「OFF」。"
 								}
 							}
 						},
 						"eye_bone_rotation": {
 							"_translation_": {
 								"_default_": "Eye bone rotation",
-								"ja": "目のボーンの回転"
+								"ja": "目のボーンの回転",
+								"zh": "眼骨回轉"
 							},
 							"tooltip": {
 								"_translation_": {
 									"_default_": "Eye bone rotation (press ➕➖ key to change value):\nFor avatar models that use eye bone rotation, sometimes the rotation degree can be either too small or too large. Adjust this setting to fit your taste. In the case of ARKit/PerfectSync model, sometimes you may need to set it to 0% if eye bone rotation is actually redundant. Default is \"100%\".",
-									"ja": "目のボーンの回転(➕➖キーで値を変更する):\n目のボーンの回転を使用するアバター モデルの場合、回転度が小さすぎるか大きすぎる場合があります。 好みに合わせてこの設定を調整してください。 ARKit/PerfectSync モデルの場合、実際に目のボーンの回転が必要ない場合は、0% に設定する必要がある場合があります。 デフォルトは「100%」です。"
+									"ja": "目のボーンの回転(➕➖キーで値を変更する):\n目のボーンの回転を使用するアバター モデルの場合、回転度が小さすぎるか大きすぎる場合があります。 好みに合わせてこの設定を調整してください。 ARKit/PerfectSync モデルの場合、実際に目のボーンの回転が必要ない場合は、0% に設定する必要がある場合があります。 デフォルトは「100%」です。",
+									"zh": "眼骨回轉(按➕➖ 鍵更改數值）:\n當人物模型使用眼骨作眼睛回轉計算時，有可能出現幅度太大或大小的情況。 利用此設定以更改回轉幅度。 在人物支援 ARKit/PerfectSync 時，你或許需要將此選項設定為0%。 預設是「100%」。"
 								}
 							}
 						},
 						"tongue_out_tracking": {
 							"_translation_": {
 								"_default_": "\"Tongue out\" tracking",
-								"ja": "「舌出し」追跡"
+								"ja": "「舌出し」追跡",
+								"zh": "「吐舌」追蹤"
 							},
 							"tooltip": {
 								"_translation_": {
 									"_default_": "\"Tongue out\" tracking:\nXR Animator supports the tracking of ARKit 52 blendshapes, with the exception of a few, including \"tongueOut\". Turn on this option to allow XR Animator to estimate the tongue out motion by analyzing the other mouth blendshape data. Default is \"ON\".",
-									"ja": "「舌出し」追跡:\nXR Animator は、「tongueOut」などのいくつかの例外を除き、ARKit 52 ブレンドシェイプのトラッキングをサポートしています。 このオプションをオンにすると、XR Animator が他の口のブレンドシェイプ データを分析して舌を出す動きを推定できるようになります。 デフォルトは「ON」です。"
+									"ja": "「舌出し」追跡:\nXR Animator は、「tongueOut」などのいくつかの例外を除き、ARKit 52 ブレンドシェイプのトラッキングをサポートしています。 このオプションをオンにすると、XR Animator が他の口のブレンドシェイプ データを分析して舌を出す動きを推定できるようになります。 デフォルトは「ON」です。",
+									"zh": "「吐舌」追蹤:\nXR Animator 支援 ARKit 52個表情追蹤的大部份，除了包括「tongueOut」在內的一小部份。 啟動此選項以利用其他表情數據作吐舌追蹤推算。 預設是「ON」。"
 								}
 							}
 						},
 						"emotion_tracking_options": {
 							"_translation_": {
 								"_default_": "Emotion tracking options",
-								"ja": "感情トラッキング設定"
+								"ja": "感情トラッキング設定",
+								"zh": "感情追蹤設定"
 							},
 							"tooltip": {
 								"_translation_": {
 									"_default_": "Emotion tracking options:\nBy default, face tracking reads your facial expressions and attempts to match some standard expressions from your avatar model, such as joy/fun, sorrow, angry, and optionally surprise and blush. Adjust the general weighting or weighting of each individual expression to suit your taste.",
-									"ja": "感情トラッキング設定\nデフォルトでは、フェイストラッキングはユーザーの表情を読み取り、喜び/楽しみ、悲しみ、怒り、驚きや赤面など、アバター モデルの標準的な表情と一致させようとします。 全体的な重み付け、または個々の式の重み付けを好みに合わせて調整します。"
+									"ja": "感情トラッキング設定\nデフォルトでは、フェイストラッキングはユーザーの表情を読み取り、喜び/楽しみ、悲しみ、怒り、驚きや赤面など、アバター モデルの標準的な表情と一致させようとします。 全体的な重み付け、または個々の式の重み付けを好みに合わせて調整します。",
+									"zh": "感情追蹤設定:\n面部追蹤預設會閱讀各種面部數據以適當啟動人物模型預設如喜怒哀樂等的表情。 你可以更改各樣表情比重以達至最佳效果。"
 								}
 							},
 							"emotion_tracking": {
 								"_translation_": {
 									"_default_": "Emotion tracking",
-									"ja": "感情トラッキング"
+									"ja": "感情トラッキング",
+									"zh": "感情追蹤"
 								}
 							},
 							"press_to_change_value": {
 								"_translation_": {
 									"_default_": "Press ⬅️➡️ key to change value",
-									"ja": "⬅️➡️キーを押して値を変更します"
+									"ja": "⬅️➡️キーを押して値を変更します",
+									"zh": "按⬅️➡️鍵更改數值"
 								},
 								"short": {
 									"_translation_": {
 										"_default_": "press ⬅️➡️ key to change value",
-										"ja": "⬅️➡️キーで値を変更する"
+										"ja": "⬅️➡️キーで値を変更する",
+										"zh": "按⬅️➡️鍵更改數值"
 									}
 								}
 							},
 							"general_weighting": {
 								"_translation_": {
 									"_default_": "General weighting",
-									"ja": "一般的な重み付け"
+									"ja": "一般的な重み付け",
+									"zh": "一般比重"
 								},
 								"tooltip": {
 									"_translation_": {
 										"_default_": "This option determines the general weighting of all expressions detected via emotion tracking. Default is \"75%\".",
-										"ja": "このオプションは、感情トラッキングによって検出されたすべての表情の一般的な重み付けを決定します。 デフォルトは「75%」です。"
+										"ja": "このオプションは、感情トラッキングによって検出されたすべての表情の一般的な重み付けを決定します。 デフォルトは「75%」です。",
+										"zh": "此設定決所有表情追蹤的一般比重。 預設是「75%」。"
 									}
 								}
 							},
 							"joy_fun": {
 								"_translation_": {
 									"_default_": "Joy/Fun",
-									"ja": "喜び/楽しみ"
+									"ja": "喜び/楽しみ",
+									"zh": "高興/開心"
 								},
 								"tooltip": {
 									"_translation_": {
 										"_default_": "Activate the joy/fun expression simply by making a smiling face. This is natural, straight forward and you probably want to keep this expression detection on all the time. Default is \"100%\".",
-										"ja": "笑顔を作るだけで、アバターの喜び/楽しい表情を有効にします。 これは自然で簡単なことであり、おそらくこの表情検出を常にオンにしておくことが望ましいでしょう。 デフォルトは「100%」です。"
+										"ja": "笑顔を作るだけで、アバターの喜び/楽しい表情を有効にします。 これは自然で簡単なことであり、おそらくこの表情検出を常にオンにしておくことが望ましいでしょう。 デフォルトは「100%」です。",
+										"zh": "以笑臉啟動高興/開心的人物表情。 這個表情的啟動方法簡單又自然，一般情況下也建議使用。 預設是「100%」。"
 									}
 								}
 							},
 							"angry": {
 								"_translation_": {
 									"_default_": "Angry",
-									"ja": "怒り"
+									"ja": "怒り",
+									"zh": "憤怒"
 								},
 								"tooltip": {
 									"_translation_": {
 										"_default_": "Activate the angry expression by making a side pout on either left or right side. Lower the percentage if it is often misactivated. Default is \"100%\".",
-										"ja": "左側または右側のいずれかを口を尖らせると、アバターの怒りの表情を有効にします。 誤ってアクティブ化されることが多い場合は、パーセンテージを下げます。 デフォルトは「100%」です。"
+										"ja": "左側または右側のいずれかを口を尖らせると、アバターの怒りの表情を有効にします。 誤ってアクティブ化されることが多い場合は、パーセンテージを下げます。 デフォルトは「100%」です。",
+										"zh": "做出左或右「藐嘴」的動作以啟動人物憤怒的表情。 如出現經常誤發的情況，可降低數值。 預設是「100%」。"
 									}
 								}
 							},
 							"sorrow": {
 								"_translation_": {
 									"_default_": "Sorrow",
-									"ja": "悲しみ"
+									"ja": "悲しみ",
+									"zh": "悲傷"
 								},
 								"tooltip": {
 									"_translation_": {
 										"_default_": "Activate the sorrow expression by pulling your lower lip upward and making a standard sad face. Lower the percentage if it is often misactivated. Default is \"100%\".",
-										"ja": "下唇を引き上げて標準的な悲しい顔を作ることで、アバターの悲しみの表情を有効にします。 誤ってアクティブ化されることが多い場合は、パーセンテージを下げます。 デフォルトは「100%」です。"
+										"ja": "下唇を引き上げて標準的な悲しい顔を作ることで、アバターの悲しみの表情を有効にします。 誤ってアクティブ化されることが多い場合は、パーセンテージを下げます。 デフォルトは「100%」です。",
+										"zh": "作一個下唇向上拉的標準悲傷臉以啟動人物的悲傷表情。 如出現經常誤發的情況，可降低數值。 預設是「100%」。"
 									}
 								}
 							},
 							"surprised": {
 								"_translation_": {
 									"_default_": "Surprised",
-									"ja": "驚き"
+									"ja": "驚き",
+									"zh": "驚慌"
 								},
 								"tooltip": {
 									"_translation_": {
 										"_default_": "Activate the surprised expression by raising your eyebrows and lowering your jaw. Note that not all 3D models have this expression. Lower the percentage if it is often misactivated. Default is \"100%\".",
-										"ja": "眉を上げて顎を下げることで、アバターの驚きの表情を有効にします。 すべての 3D モデルがこの式ブレンドシェイプを持っているわけではないことに注意してください。 誤ってアクティブ化されることが多い場合は、パーセンテージを下げます。 デフォルトは「100%」です。"
+										"ja": "眉を上げて顎を下げることで、アバターの驚きの表情を有効にします。 すべての 3D モデルがこの式ブレンドシェイプを持っているわけではないことに注意してください。 誤ってアクティブ化されることが多い場合は、パーセンテージを下げます。 デフォルトは「100%」です。",
+										"zh": "提高眼眉及降低下巴以啟動人物的驚慌表情。 要注意並非所有人物模型也支援此表情。 如出現經常誤發的情況，可降低數值。 預設是「100%」。"
 									}
 								}
 							},
@@ -1001,7 +1176,8 @@
 								"tooltip": {
 									"_translation_": {
 										"_default_": "Depending on each individual avatar model's settings, some models may have other detectable expressions. Lower the percentage if they are often misactivated. Default is \"100%\".",
-										"ja": "個々のアバター モデルの設定に応じて、一部のモデルには他の検出可能な表現がある場合があります。 誤ってアクティブ化されることが多い場合は、パーセンテージを下げます。 デフォルトは「100%」です。"
+										"ja": "個々のアバター モデルの設定に応じて、一部のモデルには他の検出可能な表現がある場合があります。 誤ってアクティブ化されることが多い場合は、パーセンテージを下げます。 デフォルトは「100%」です。",
+										"zh": "部份人物模型可能有其他可被偵測的表情。 如出現經常誤發的情況，可降低數值。 預設是「100%」。"
 									}
 								}
 							}
@@ -1009,24 +1185,28 @@
 						"calibration_options": {
 							"_translation_": {
 								"_default_": "Calibration options",
-								"ja": "キャリブレーション設定"
+								"ja": "キャリブレーション設定",
+								"zh": "校準選項"
 							},
 							"tooltip": {
 								"_translation_": {
 									"_default_": "Calibration options:\nWhenever face tracking starts, mocap data from the first few seconds will be analyzed and calibrated to better fit the user's face. These options allow you to reset the calibration, export the current calibration to an external JSON file, or import a previously exported calibration.",
-									"ja": "キャリブレーション設定:\nフェイストラッキングが開始されるたびに、最初の数秒間のモーキャプ データが分析され、ユーザーの顔によりよくフィットするように調整されます。 これらのオプションを使用すると、キャリブレーションをリセットしたり、キャリブレーションを外部 JSON ファイルにエクスポートしたり、以前にエクスポートしたキャリブレーションをインポートしたりできます。"
+									"ja": "キャリブレーション設定:\nフェイストラッキングが開始されるたびに、最初の数秒間のモーキャプ データが分析され、ユーザーの顔によりよくフィットするように調整されます。 これらのオプションを使用すると、キャリブレーションをリセットしたり、キャリブレーションを外部 JSON ファイルにエクスポートしたり、以前にエクスポートしたキャリブレーションをインポートしたりできます。",
+									"zh": "當面部追蹤啟動時，系統會花約數秒時間分析你的面部數據以校準追蹤的準確度。 相關可用選項包括重置校準、匯出校準成 JSON 檔案、及匯入被匯出的校準檔案。"
 								}
 							},
 							"import_calibration": {
 								"_translation_": {
 									"_default_": "Drop a JSON file containing face calibration data.\n1. Cancel",
-									"ja": "顔のキャリブレーション データを含む JSON ファイルをドロップします。\n1. キャンセル"
+									"ja": "顔のキャリブレーション データを含む JSON ファイルをドロップします。\n1. キャンセル",
+									"zh": "拖曳包含面部校準數據的 JSON 檔案檔案到此。\n1. 取消"
 								}
 							},
 							"message": {
 								"_translation_": {
 									"_default_": "A. Reset calibration\nB. Import calibration\nC. Export calibration",
-									"ja": "A. キャリブレーションをリセットする\nB. キャリブレーションをインポートする\nC. キャリブレーションをエクスポートする"
+									"ja": "A. キャリブレーションをリセットする\nB. キャリブレーションをインポートする\nC. キャリブレーションをエクスポートする",
+									"zh": "A. 重置校準\nB. 匯入校準\nC. 匯出校準"
 								}
 							}
 						}
@@ -1034,42 +1214,49 @@
 					"webcam_angle_offset": {
 						"_translation_": {
 							"_default_": "If your webcam is angled up or down, offset it to cancel avatar's tilting.",
-							"ja": "Webカメラが上または下に傾いている場合は、それをオフセットしてアバターの傾きをキャンセルします。"
+							"ja": "Webカメラが上または下に傾いている場合は、それをオフセットしてアバターの傾きをキャンセルします。",
+							"zh": "如果你的攝影機的角度上下傾斜，可利用此選項作角度補正以消除人物因攝影機的角度而出現傾斜。"
 						},
 						"tooltip": {
 							"_translation_": {
 								"_default_": "Tilt adjustment:\nIf your webcam is angled up or down, enable this option to apply an angle offset to cancel avatar's tilting. Angle offset is fully applied to head. A smaller weighting can be applied to body (\"50%\" by default), as body mocap is usually less sensitive to webcam tilting. Negative weighting means an opposite angle offset for body. Default is \"OFF\".",
-								"ja": "傾き調整:\nWebカメラが上または下に傾いている場合は、このオプションを有効にして角度オフセットを適用し、アバターの傾きをキャンセルします。 角度オフセットがヘッドに完全に適用されます。 ボディ モーキャプは通常、Webカメラの傾きの影響をあまり受けないため、より小さい重み付けをボディに適用できます (デフォルトでは「50%」)。 デフォルトは「OFF」です。"
+								"ja": "傾き調整:\nWebカメラが上または下に傾いている場合は、このオプションを有効にして角度オフセットを適用し、アバターの傾きをキャンセルします。 角度オフセットがヘッドに完全に適用されます。 ボディ モーキャプは通常、Webカメラの傾きの影響をあまり受けないため、より小さい重み付けをボディに適用できます (デフォルトでは「50%」)。 デフォルトは「OFF」です。",
+								"zh": "傾斜調整:\n如果你的攝影機的角度上下傾斜，利用此選項作角度補正以消除人物的傾斜。 角度補正將完全施加於人物頭部，而身體通常因為受攝影機角度影響較小可以施加較小的角度補正(預設是「50%」)。 負數代表對身體施加相反的角度補正。 預設是「OFF」。"
 							}
 						},
 						"press_to_adjust_offset_angle": {
 							"_translation_": {
 								"_default_": "Press ⬆️⬇️ to adjust offset angle",
-								"ja": "⬆️⬇️を押してオフセット角度を調整する"
+								"ja": "⬆️⬇️を押してオフセット角度を調整する",
+								"zh": "按⬆️⬇️鍵更改補正角度"
 							}
 						},
 						"press_to_adjust_weighting_applied": {
 							"_translation_": {
 								"_default_": "Press ⬅️➡️ to adjust weighting applied",
-								"ja": "⬅️➡️を押して、適用される重み付けを調整する"
+								"ja": "⬅️➡️を押して、適用される重み付けを調整する",
+								"zh": "按⬅️➡️鍵更改角度比例"
 							}
 						},
 						"tilt_adjustment": {
 							"_translation_": {
 								"_default_": "Tilt adjustment",
-								"ja": "傾き調整"
+								"ja": "傾き調整",
+								"zh": "傾斜調整"
 							}
 						},
 						"angle": {
 							"_translation_": {
 								"_default_": "Angle",
-								"ja": "角度"
+								"ja": "角度",
+								"zh": "角度"
 							}
 						},
 						"weighting_body": {
 							"_translation_": {
 								"_default_": "Weighting (body)",
-								"ja": "重み付け（胴体）"
+								"ja": "重み付け（胴体）",
+								"zh": "角度比例(身體)"
 							}
 						}
 					},
@@ -1077,7 +1264,8 @@
 						"tooltip": {
 							"_translation_": {
 								"_default_": "Clear bounding box:\nXR Animator mocap can only track one person at the same time. When there are more than one person in the mocap source, sometimes the mocap AI can be tracking the wrong person. In such case, clear the bounding box of the current target to enforce the AI to track another person in the video.",
-								"ja": "境界ボックスをクリアする:\nXR Animator モーキャップは同時に 1 人の人物のみを追跡できます。 モーキャップ ソースに複数の人物が含まれている場合、モーキャップ AI が間違った人物を追跡することがあります。 このような場合、現在のターゲットの境界ボックスをクリアして、AI がビデオ内の別の人物を追跡するように強制します。"
+								"ja": "境界ボックスをクリアする:\nXR Animator モーキャップは同時に 1 人の人物のみを追跡できます。 モーキャップ ソースに複数の人物が含まれている場合、モーキャップ AI が間違った人物を追跡することがあります。 このような場合、現在のターゲットの境界ボックスをクリアして、AI がビデオ内の別の人物を追跡するように強制します。",
+								"zh": "清除邊界框:\nXR Animator 只能同時追蹤一人。 如果畫面上出現多過一個人，動捕 AI 有時會弄錯對象。 如出現此情況，可利用此功能清除現在被追蹤人物的邊界框以強制系統從新選擇追蹤畫面內的其他人物。"
 							}
 						}
 					}
@@ -1087,126 +1275,154 @@
 				"info_short": {
 					"_translation_": {
 						"_default_": "VMC-protocol",
-						"ja": "VMCプロトコル"
+						"ja": "VMCプロトコル",
+						"zh": "VMC協定"
 					}
 				},
 				"info": {
 					"_translation_": {
 						"_default_": "- VMC-protocol allows sending 3D motion data in real time from XR Animator to other supported apps, such as VSeeFace, VNyan, Warudo, Unity and Unreal Engine. Double-click to configure.\n- Use mouse or keys to pick an alphanumeric option.",
-						"ja": "- VMCプロトコルを使用すると、XR Animatorから他のサポートされているアプリ (VSeeFace、VNyan、Warudo、Unity、Unreal Engine など) に 3D モーション データをリアルタイムで送信できます。 ダブルクリックして設定します。\n- マウスまたは英数字キーを使用してオプションを選択する。"
+						"ja": "- VMCプロトコルを使用すると、XR Animatorから他のサポートされているアプリ (VSeeFace、VNyan、Warudo、Unity、Unreal Engine など) に 3D モーション データをリアルタイムで送信できます。 ダブルクリックして設定します。\n- マウスまたは英数字キーを使用してオプションを選択する。",
+						"zh": "- VMC協定容許 XR Animator 將 3D 動作數據實時傳送到其他應用程式，如VSeeFace、VNyan、Warudo、Unity 及 Unreal Engine 等。 按兩下更改設定。\n- 以滑鼠或英數字鍵選擇選項。"
 					}
 				},
 				"tooltip": {
 					"_translation_": {
 						"_default_": "VMC-protocol:\nVMC-protocol allows sending 3D motion data in real time from XR Animator to other supported apps, such as VSeeFace, VNyan, Warudo, Unity and Unreal Engine. Default is \"OFF\".",
-						"ja": "VMCプロトコル:\nVMCプロトコルを使用すると、XR Animatorから他のサポートされているアプリ (VSeeFace、VNyan、Warudo、Unity、Unreal Engine など) に 3D モーション データをリアルタイムで送信できます。 デフォルトは「OFF」です。"
+						"ja": "VMCプロトコル:\nVMCプロトコルを使用すると、XR Animatorから他のサポートされているアプリ (VSeeFace、VNyan、Warudo、Unity、Unreal Engine など) に 3D モーション データをリアルタイムで送信できます。 デフォルトは「OFF」です。",
+						"zh": "VMC協定:\nVMC協定容許 XR Animator 將 3D 動作數據實時傳送到其他應用程式，如VSeeFace、VNyan、Warudo、Unity 及 Unreal Engine 等。 預設是「OFF」。"
 					}
 				},
 				"parameters": {
 					"_translation_": {
 						"_default_": "VMC-protocol parameters",
-						"ja": "VMCプロトコルのパラメータ"
+						"ja": "VMCプロトコルのパラメータ",
+						"zh": "VMC協定參數"
+					}
+				},
+				"not_supported": {
+					"_translation_": {
+						"_default_": "This feature is available only for Windows app version using VRM model.",
+						"ja": "この機能はVRMモデルを使用したWindowsアプリ版でのみ利用可能です。",
+						"zh": "此功能僅適用於使用 VRM 模型的 Windows 應用程式版本。"
 					}
 				},
 				"port": {
 					"_translation_": {
 						"_default_": "port",
-						"ja": "ポート"
+						"ja": "ポート",
+						"zh": "通訊埠"
 					},
 					"current_port": {
 						"_translation_": {
 							"_default_": "Current port",
-							"ja": "現在のポート"
+							"ja": "現在のポート",
+							"zh": "現時的通訊埠"
 						}
 					},
 					"enter_valid_port": {
 						"_translation_": {
 							"_default_": "Enter a valid port number",
-							"ja": "有効なポート番号を入力します"
+							"ja": "有効なポート番号を入力します",
+							"zh": "輸入有效的通訊埠數字"
 						}
 					},
 					"3_digit_number_at_least": {
 						"_translation_": {
 							"_default_": "3-digit number at least",
-							"ja": "少なくとも3桁の数字"
+							"ja": "少なくとも3桁の数字",
+							"zh": "最少三位數字"
 						}
 					},
 					"no_bigger_than_65535": {
 						"_translation_": {
 							"_default_": "No bigger than 65535",
-							"ja": "65535 以下"
+							"ja": "65535 以下",
+							"zh": "65535 以下"
 						}
 					},
 					"invalid_port_number": {
 						"_translation_": {
 							"_default_": "Invalid port number",
-							"ja": "無効なポート番号"
+							"ja": "無効なポート番号",
+							"zh": "無效的通訊埠數字"
 						}
 					}
 				},
 				"host": {
 					"_translation_": {
 						"_default_": "host",
-						"ja": "ホスト"
+						"ja": "ホスト",
+						"zh": "主機"
 					},
 					"current_host": {
 						"_translation_": {
 							"_default_": "Current host",
-							"ja": "現在のホスト"
+							"ja": "現在のホスト",
+							"zh": "現在的主機"
 						}
 					},
 					"enter_valid_IP": {
 						"_translation_": {
 							"_default_": "Enter a valid IP address",
-							"ja": "有効なIPアドレスを入力します"
+							"ja": "有効なIPアドレスを入力します",
+							"zh": "輸入有效的主機 IP 位置"
 						}
 					},
 					"invalid_IP_address": {
 						"_translation_": {
 							"_default_": "Invalid IP address",
-							"ja": "無効なIPアドレス"
+							"ja": "無効なIPアドレス",
+							"zh": "無效的 IP 位置"
 						}
 					}
 				},
 				"port_host_extra": {
 					"_translation_": {
 						"_default_": "・Press R to reset to default\n・Press Enter to apply changes\n・Press Esc to cancel",
-						"ja": "・Rを押してデフォルトにリセットします\n・Enterを押して変更を適用します\n・Escを押してキャンセルします"
+						"ja": "・Rを押してデフォルトにリセットします\n・Enterを押して変更を適用します\n・Escを押してキャンセルします",
+						"zh": "・按 R 重置到預設狀態\n・按 Enter 接受更改\n・接 Esc 取消"
 					}
 				},
 				"send_camera_data": {
 					"_translation_": {
 						"_default_": "Send camera data",
-						"ja": "カメラデータを送信する"
+						"ja": "カメラデータを送信する",
+						"zh": "傳送攝影機數據"
 					},
 					"tooltip": {
 						"_translation_": {
 							"_default_": "Send camera data:\nWhen VMC-protocol is on, this option sends 3D camera data as well. Some VTubing apps such as VNyan and Warudo support reading VMC camera data. This virtually allows a complete synchronization of motion and camera visual between XR Animator and external app. Default is \"OFF\".",
-							"ja": "カメラデータを送信する:\nVMCプロトコルがオンの場合、このオプションは 3D カメラ データも送信します。 VNyan や Warudo などの一部の VTuber アプリは、VMC カメラ データの読み取りをサポートしています。 これにより、XR Animator と外部アプリの間でモーションとカメラのビジュアルを仮想的に完全に同期できます。 デフォルトは「OFF」です。"
+							"ja": "カメラデータを送信する:\nVMCプロトコルがオンの場合、このオプションは 3D カメラ データも送信します。 VNyan や Warudo などの一部の VTuber アプリは、VMC カメラ データの読み取りをサポートしています。 これにより、XR Animator と外部アプリの間でモーションとカメラのビジュアルを仮想的に完全に同期できます。 デフォルトは「OFF」です。",
+							"zh": "傳送攝影機數據:\n當使用 VMC協定時，啟動此選項可以同時傳送 3D 攝影機數據。 部份 VTubing 軟件如 VNyan 及 Warudo 等支援讀取 VMC 攝影機數據。 這可達至 XR Animator 和外部程式的動作和鏡頭完全同步。 預設是「OFF」。"
 						}
 					}
 				},
 				"app_mode": {
 					"_translation_": {
 						"_default_": "App mode",
-						"ja": "アプリモード"
+						"ja": "アプリモード",
+						"zh": "應用模式"
 					},
 					"tooltip": {
 						"_translation_": {
 							"_default_": "App mode:\nThis option determines the configuration applied to VMC when connected to the specified app. Different apps interpret various features of VMC protocol differently. Choosing the right app mode ensures that VMC data are sent correctly. Default is \"Others\".",
-							"ja": "アプリモード:\nこのオプションは、指定されたアプリに接続したときに VMC に適用される構成を決定します。 アプリが異なれば、VMCプロトコルのさまざまな機能の解釈も異なります。 適切なアプリ モードを選択すると、VMC データが正しく送信されます。 デフォルトは「その他」です。"
+							"ja": "アプリモード:\nこのオプションは、指定されたアプリに接続したときに VMC に適用される構成を決定します。 アプリが異なれば、VMCプロトコルのさまざまな機能の解釈も異なります。 適切なアプリ モードを選択すると、VMC データが正しく送信されます。 デフォルトは「その他」です。",
+							"zh": "應用模式:\n此選項將決定如何設定 VMC協定以適切地連接到特定的外部應用程式。 不同的程式對 VMC協定的數據可能有不同的演繹。 選擇適當的應用模式以確保 VMC數據能正確地傳送。 預設是「其他」。"
 						}
 					}
 				},
 				"3D_avatar_display": {
 					"_translation_": {
 						"_default_": "3D avatar display",
-						"ja": "3Dアバター表示"
+						"ja": "3Dアバター表示",
+						"zh": "3D人物顯示"
 					},
 					"tooltip": {
 						"_translation_": {
-							"_default_": "3D avatar display:\nThis option determines whether to hide the 3D avatar on XR Animator. Turn off your avatar display to save some CPU/GPU usage when using VMC-protocol. Default is \"ON\".",
-							"ja": "3Dアバター表示:\nこのオプションは、XR Animator で 3D アバターを非表示にするかどうかを決定します。 VMCプロトコルを使用する場合は、アバターの表示をオフにして CPU/GPU の使用量を節約します。 デフォルトは「ON」です。"
+							"_default_": "3D avatar display:\nThis option determines whether to show the 3D avatar on XR Animator. Hide your avatar display to save some CPU/GPU usage when using VMC-protocol. Default is \"ON\".",
+							"ja": "3Dアバター表示:\nこのオプションは、XR Animator で 3D アバターを表示にするかどうかを決定します。 VMCプロトコルを使用する場合、アバターを非表示にして CPU/GPU の使用量を節約します。 デフォルトは「ON」です。",
+							"zh": "3D人物顯示:\n此選項將決定是否顯示 3D 人物。 當使用 VMC協定時，隱藏 3D 人物顯示可節省 CPU/GPU 使用量。 預設是「ON」。"
 						}
 					}
 				}
@@ -1215,200 +1431,233 @@
 				"info_short": {
 					"_translation_": {
 						"_default_": "UI/Options",
-						"ja": "UI/オプション"
+						"ja": "UI/オプション",
+						"zh": "介面/選項"
 					}
 				},
 				"info": {
 					"_translation_": {
 						"_default_": "- Double-click for UI settings and other options.\n- Press Esc key to close speech bubble menu, or toggle UI when no menu is on.\n- Use mouse or keys to pick an alphanumeric option.",
-						"ja": "- ダブルクリックして UI 設定やその他のオプションを変更します。\n- Esc キーを押して吹き出しメニューを閉じるか、メニューが表示されていない場合は UI を切り替えます。\n- マウスまたは英数字キーを使用してオプションを選択する。"
+						"ja": "- ダブルクリックして UI 設定やその他のオプションを変更します。\n- Esc キーを押して吹き出しメニューを閉じるか、メニューが表示されていない場合は UI を切り替えます。\n- マウスまたは英数字キーを使用してオプションを選択する。",
+						"zh": "- 按兩下更改介面設定及其他選項。\n- 按 Esc 鍵關閉對話框選單，或於沒有選單時切換介面顯示。\n- 以滑鼠或英數字鍵選擇選項。"
 					}
 				},
 				"UI_and_overlays": {
 					"_translation_": {
 						"_default_": "UI and overlays",
-						"ja": "UIとオーバーレイ"
+						"ja": "UIとオーバーレイ",
+						"zh": "介面及重疊覆蓋"
 					}
 				},
 				"scene": {
 					"_translation_": {
 						"_default_": "Scene (background/3D/etc.)",
-						"ja": "シーン(背景/3Dなど)"
+						"ja": "シーン(背景/3Dなど)",
+						"zh": "場景(背景/3D等)"
 					},
 					"tooltip": {
 						"_translation_": {
 							"_default_": "Scene (background/3D/etc.):\nIn XR Animator, a scene defines all extra visuals from backdrop to 3D objects, as well as how they interact. A scene can be exported and imported as a JSON file.",
-							"ja": "シーン(背景/3Dなど):\nXR Animator では、シーンは背景から 3D オブジェクトに至るすべての追加ビジュアルと、それらの相互作用方法を定義します。 シーンは JSON ファイルとしてエクスポートおよびインポートできます。"
+							"ja": "シーン(背景/3Dなど):\nXR Animator では、シーンは背景から 3D オブジェクトに至るすべての追加ビジュアルと、それらの相互作用方法を定義します。 シーンは JSON ファイルとしてエクスポートおよびインポートできます。",
+							"zh": "場景(背景/3D等):\n在 XR Animator 的世界，一個「場景」定義了所有相關的追加視覺元素如背景及 3D 物件等，及它們之間如何互動。 場景可以透過 JSON 的格式被匯入或匯出。"
 						}
 					},
 					"message": {
 						"_translation_": {
 							"_default_": "Choose a feature to change, or drop a scene JSON <zipped>to change everything at once.\n1. Background image\n2. 3D panorama/skybox\n3. 3D scene builder (3D object)\n4. Export scene settings to file\n5. Reset scene to default\n6. Done",
-							"ja": "変更する機能を選択するか、シーン JSON をドロップしてすべてを一度に変更します。\n1. 背景画像\n2. 3Dパノラマ/スカイボックス\n3. 3Dシーンビルダー（3Dオブジェクト）\n4. シーン設定をファイルにエクスポート\n5. シーンを初期設定にリセット\n6. 終了"
+							"ja": "変更する機能を選択するか、<zipped>シーン JSON をドロップしてすべてを一度に変更します。\n1. 背景画像\n2. 3Dパノラマ/スカイボックス\n3. 3Dシーンビルダー（3Dオブジェクト）\n4. シーン設定をファイルにエクスポート\n5. シーンを初期設定にリセット\n6. 終了",
+							"zh": "選擇要更改的項目，或拖曳<zipped>場景 JSON 一次過更改所有相關項目。\n1. 背景畫像\n2. 3D 全景/天空盒\n3. 3D場景編輯器(3D物件)\n4. 匯出場景設定至檔案\n5. 重置場景至預設狀態\n6. 結束"
 						},
 						"zipped": {
 							"_translation_": {
 								"_default_": "zipped with all required assets ",
-								"ja": "必要なすべてのアセットが圧縮された"
+								"ja": "必要なすべてのアセットが圧縮された",
+								"zh": "已包含所有相關檔案的壓縮"
 							}
 						}
 					},
 					"export_scene_to_file": {
 						"_translation_": {
-							"_default_": "Export scene settings to file:\nThis option exports all settings of the current scene (background, panorama/skybox, 3D objects) to an external JSON file. To load a saved scene, simply drop the scene JSON to the app.",
-							"ja": "シーン設定をファイルにエクスポート:\nこのオプションは、現在のシーンのすべての設定 (背景、パノラマ/スカイボックス、3D オブジェクト) を外部 JSON ファイルにエクスポートします。 保存したシーンをロードするには、シーンの JSON をアプリにドロップするだけです。"
+							"_default_": "Export scene settings to file:\nThis option exports all settings of the current scene (background, panorama/skybox, 3D objects, etc) to an external JSON file. To load a saved scene, simply drop the scene JSON to the app.",
+							"ja": "シーン設定をファイルにエクスポート:\nこのオプションは、現在のシーンのすべての設定 (背景、パノラマ/スカイボックス、3D オブジェクトなど) を外部 JSON ファイルにエクスポートします。 保存したシーンをロードするには、シーンの JSON をアプリにドロップするだけです。",
+							"zh": "匯出場景設定至檔案:\n此選頂將現有場景的所有設定 (背景、全景/天空盒、3D 物件等) 匯出至檔案。 要匯入場景，拖曳保存了的場景 JSON 檔案到此。"
 						}
 					},
 					"reset_scene_to_default": {
 						"_translation_": {
 							"_default_": "Are you sure you want to reset the whole scene back to the default status?\n1. Yes\n2. No",
-							"ja": "シーン全体をデフォルトのステータスにリセットしてもよろしいですか?\n1. はい\n2. いいえ"
+							"ja": "シーン全体をデフォルトのステータスにリセットしてもよろしいですか?\n1. はい\n2. いいえ",
+							"zh": "是否確定要將現有場景重置至預設狀態?\n1. 是\n2. 否"
 						}
 					},
 					"background": {
 						"_translation_": {
 							"_default_": "Choose a background option below, or drop an image/video file to change wallpaper.\n1. Default\n2. Black\n3. White\n4. Green\n5. Webcam as background\n6. Done",
-							"ja": "以下の背景オプションを選択するか、画像/ビデオ ファイルをドロップして壁紙を変更します。\n1. デフォルト\n2. 黑\n3. 白\n4. 緑\n5. 背景としてのWebカメラ\n6. 終了"
+							"ja": "以下の背景オプションを選択するか、画像/ビデオ ファイルをドロップして壁紙を変更します。\n1. デフォルト\n2. 黑\n3. 白\n4. 緑\n5. 背景としてのWebカメラ\n6. 終了",
+							"zh": "選擇以下的背景選項，或拖曳圖像/影像檔案作為背景。\n1. 預設\n2. 黑\n3. 白\n4. 緑\n5. 以攝影機畫面作背景\n6. 結束"
 						}
 					},
 					"skybox": {
 						"_translation_": {
 							"_default_": "Choose a 3D skybox, or drop a skybox image/zip file.\n1. Blue sky\n2. Angel's staircase\n3. Stars & Milky Way\n4. >> Rotation speed+\n5. >> Rotation angle+\n6. 🌎Generate your skybox\n7. Done",
-							"ja": "3D スカイボックスを選択するか、スカイボックス画像/zip ファイルをドロップします。\n1. 青空\n2. 天使の階梯\n3. 星と天の川\n4. >> 回転速度+\n5. >> 回転角度+\n6. 🌎スカイボックスを生成する\n7. 終了"
+							"ja": "3D スカイボックスを選択するか、スカイボックス画像/zip ファイルをドロップします。\n1. 青空\n2. 天使の階梯\n3. 星と天の川\n4. >> 回転速度+\n5. >> 回転角度+\n6. 🌎スカイボックスを生成する\n7. 終了",
+							"zh": "選擇以下的全景選項，或拖曳圖像/壓縮的天空盒檔案作為全景。\n1. 藍天\n2. 天使的階梯\n3. 繁星與銀河系\n4. >> 回轉速度+\n5. >> 回轉角度+\n6. 🌎生成天空盒\n7. 結束"
 						}
 					},
 					"3D_scene_builder": {
 						"_translation_": {
 							"_default_": "Drop a <extra_model>zipped .X model or image/video file as 3D object. Info about the active object is on the top left corner. Use keyboard for controls.\n1. Show keyboard controls\n2. Hide UI\n3. Export scene settings to file\n4. Explorer mode: <explorer_mode>\n5. Done",
-							"ja": "<extra_model>圧縮された .X モデル、または画像/ビデオ ファイルを 3D オブジェクトとしてドロップします。 アクティブなオブジェクトに関する情報が左上隅に表示されます。 キーボードを使用して制御します。\n1. キーボードコントロールを表示\n2. ユーザーインターフェースを隠す\n3. シーン設定をファイルにエクスポート\n4. エクスプローラーモード: <explorer_mode>\n5. 終了"
+							"ja": "<extra_model>圧縮された .X モデル、または画像/ビデオ ファイルを 3D オブジェクトとしてドロップします。 アクティブなオブジェクトに関する情報が左上隅に表示されます。 キーボードを使用して制御します。\n1. キーボードコントロールを表示\n2. ユーザーインターフェースを隠す\n3. シーン設定をファイルにエクスポート\n4. エクスプローラーモード: <explorer_mode>\n5. 終了",
+							"zh": "拖曳<extra_model>壓縮的 .X 模型或圖像/影像檔案作為 3D 物件。 被選擇的物件的相關資訊會顯示於左上方。 以鍵盤操作物件。\n1. 顯示鍵盤操作選項\n2. 隱藏介面\n3. 匯出場景設定至檔案\n4. 探索者模式: <explorer_mode>\n5. 結束"
 						},
 						"THREEX": {
 							"_translation_": {
 								"_default_": "GLB model, ",
-								"ja": "GLBモデル、"
+								"ja": "GLBモデル、",
+								"zh": "GLB模型、"
 							}
 						},
 						"MMD": {
 							"_translation_": {
 								"_default_": "zipped PMX model, ",
-								"ja": "圧縮されたPMXモデル、"
+								"ja": "圧縮されたPMXモデル、",
+								"zh": "壓縮的PMX模型、"
 							}
 						},
 						"keyboard_controls": {
 							"1": {
 								"_translation_": {
 									"_default_": "・⬆️⬇️⬅️➡️ to move horizontally\n・Shift+⬆️⬇️ to move vertically\n・Shift+️⬅️➡️ to rotate Z\n・Ctrl+️⬆️⬇️⬅️➡️ to rotate XY\n・➕➖ to scale\n・Ctrl+➕➖ to adjust movement unit\n1. Next",
-									"ja": "・⬆️⬇️⬅️➡️で水平方向に移動する\n・Shift+⬆️⬇️で垂直に移動する\n・Shift+️⬅️➡️でZを回転させる\n・Ctrl+️⬆️⬇️⬅️➡️でXYを回転させる\n・➕➖でスケールする\n・Ctrl+➕➖で移動ユニットを調整する\n1. 次"
+									"ja": "・⬆️⬇️⬅️➡️で水平方向に移動する\n・Shift+⬆️⬇️で垂直に移動する\n・Shift+️⬅️➡️でZを回転させる\n・Ctrl+️⬆️⬇️⬅️➡️でXYを回転させる\n・➕➖でスケールする\n・Ctrl+➕➖で移動ユニットを調整する\n1. 次",
+									"zh": "・按 ⬆️⬇️⬅️➡️ 作水平移動\n・按 Shift+⬆️⬇️ 作垂直移動\n・按 Shift+️⬅️➡️ 作Z軸回轉\n・按 Ctrl+️⬆️⬇️⬅️➡️ 作XY軸回轉\n・按 ➕➖ 改變物件大小\n・按 Ctrl+➕➖ 改變移動單位大小\n1. 下一頁"
 								}
 							},
 							"2": {
 								"_translation_": {
 									"_default_": "・O to switch 3D object\n・B to attach 3D object to avatar's bone\n・C to change center of control\n・R to reset 3D object\n・X to remove 3D object<explorer_mode>",
-									"ja": "・Oで3Dオブジェクトを切り替えます\n・Bで3Dオブジェクトをアバターの骨に貼り付ける\n・Cで制御中心を変更する\n・Rで3Dオブジェクトをリセットする\n・Xで3D オブジェクトを削除する<explorer_mode>"
+									"ja": "・Oで3Dオブジェクトを切り替えます\n・Bで3Dオブジェクトをアバターの骨に貼り付ける\n・Cで制御中心を変更する\n・Rで3Dオブジェクトをリセットする\n・Xで3D オブジェクトを削除する<explorer_mode>",
+									"zh": "・按 O 切換3D物件\n・按 B 將3D物件貼往人物模型的骨頭上\n・按 C 改變控制中心\n・按 R 重置3D物件狀態\n・按 X 移除3D物件<explorer_mode>"
 								},
 								"next": {
 									"_translation_": {
 										"_default_": "\n1. Next",
-										"ja": "\n1. 次"
+										"ja": "\n1. 次",
+										"zh": "\n1. 下一頁"
 									}
 								},
 								"back": {
 									"_translation_": {
 										"_default_": "\n1. Back",
-										"ja": "\n1. 戻る"
+										"ja": "\n1. 戻る",
+										"zh": "\n1. 返回"
 									}
 								}
 							},
 							"3": {
 								"_translation_": {
 									"_default_": "Explorer mode controls:\n・WASD to move\n・SPACE to jump (+Shift for super jump)\n・Alt+⬆️⬇️ to adjust ground level\n1. Back",
-									"ja": "エクスプローラーモードのコントロール:\n・WASDで移動する\n・SPACEでジャンプ（+Shiftでスーパージャンプ）\n・Alt+⬆️⬇️で地面のレベルを調整する\n1. 戻る"
+									"ja": "エクスプローラーモードのコントロール:\n・WASDで移動する\n・SPACEでジャンプ（+Shiftでスーパージャンプ）\n・Alt+⬆️⬇️で地面のレベルを調整する\n1. 戻る",
+									"zh": "探索者模式操作:\n・按 WASD 移動人物\n・按 SPACE 跳躍 (+Shift 作超級跳躍)\n・按 Alt+⬆️⬇️ 調整地面高度\n1. 返回"
 								}
 							}
 						},
 						"restore_UI": {
 							"_translation_": {
 								"_default_": "Press 1 to restore UI.",
-								"ja": "1 を押して UI を復元します。"
+								"ja": "1 を押して UI を復元します。",
+								"zh": "按 1 重新顯示介面。"
 							}
 						},
 						"avatar_as_center": {
 							"_translation_": {
 								"_default_": "Avatar as center",
-								"ja": "アバターが制御の中心となる"
+								"ja": "アバターが制御の中心となる",
+								"zh": "以人物作控制中心"
 							}
 						},
 						"object_as_center": {
 							"_translation_": {
 								"_default_": "3D object as center",
-								"ja": "3Dオブジェクトが制御の中心となる"
+								"ja": "3Dオブジェクトが制御の中心となる",
+								"zh": "以 3D 物件作控制中心"
 							}
 						},
 						"note_object_fixed_as_center": {
 							"_translation_": {
 								"_default_": "NOTE: Center of control is always the object's center when it is attached to a bone.",
-								"ja": "注: オブジェクトがボーンにアタッチされている場合、コントロールの中心は常にオブジェクトの中心になります。"
+								"ja": "注: オブジェクトがボーンにアタッチされている場合、コントロールの中心は常にオブジェクトの中心になります。",
+								"zh": "注: 當物件貼在人物骨頭上時，只能以物件作控制中心。"
 							}
 						},
 						"note_avatar_fixed_as_center": {
 							"_translation_": {
 								"_default_": "NOTE: Center of control is always the avatar's center when explorer mode is on and the object is unattached.",
-								"ja": "注: エクスプローラー モードがオンで、オブジェクトがアタッチされていない場合、コントロールの中心は常にアバターの中心になります。"
+								"ja": "注: エクスプローラー モードがオンで、オブジェクトがアタッチされていない場合、コントロールの中心は常にアバターの中心になります。",
+								"zh": "注: 當探索者模式為有效而物件沒有貼在人物骨頭上時，只能以人物作控制中心。"
 							}
 						},
 						"reset": {
 							"_translation_": {
 								"_default_": "Are you sure you want to reset this 3D object to its initial status?\n8. Yes\n9. No",
-								"ja": "この 3D オブジェクトを初期状態にリセットしてもよろしいですか?\n8. はい\n9. いいえ"
+								"ja": "この 3D オブジェクトを初期状態にリセットしてもよろしいですか?\n8. はい\n9. いいえ",
+								"zh": "是否確定要重置此 3D 物件至預設狀態?\n8. 是\n9. 否"
 							},
 							"successful": {
 								"_translation_": {
 									"_default_": "Reset successful",
-									"ja": "リセット成功"
+									"ja": "リセット成功",
+									"zh": "重置成功"
 								}
 							}
 						},
 						"remove": {
 							"_translation_": {
 								"_default_": "Are you sure you want to remove this 3D object from the scene?\n8. Yes\n9. No",
-								"ja": "この 3D オブジェクトをシーンから削除してもよろしいですか?\n8. はい\n9. いいえ"
+								"ja": "この 3D オブジェクトをシーンから削除してもよろしいですか?\n8. はい\n9. いいえ",
+								"zh": "是否確定要將此 3D 物件從場景中移除?\n8. 是\n9. 否"
 							}
 						},
 						"explorer_mode": {
 							"tooltip": {
 								"_translation_": {
 									"_default_": "Explorer mode:\nWhen enabled, mesh colliders are calculated based on the current 3D scene so that you can use the standard WASD and SPACE key controls to navigate on your scene afterwards. This mode is usable when the 3D scene is not empty or VMC-protocol is on. Default is \"OFF\".",
-									"ja": "エクスプローラーモード:\n有効にすると、現在の 3D シーンに基づいてメッシュ コライダーが計算されるため、後で標準の WASD および SPACE キー コントロールを使用してシーン上を移動できるようになります。 このモードは、3D シーンが空でない場合、または VMCプロトコルがオンの場合に使用できます。 デフォルトは「OFF」です。"
+									"ja": "エクスプローラーモード:\n有効にすると、現在の 3D シーンに基づいてメッシュ コライダーが計算されるため、後で標準の WASD および SPACE キー コントロールを使用してシーン上を移動できるようになります。 このモードは、3D シーンが空でない場合、または VMCプロトコルがオンの場合に使用できます。 デフォルトは「OFF」です。",
+									"zh": "探索者模式:\n當被啟動時，此模式會根據現在的 3D 場景，計算網格碰撞體，從而令人物可以利用 WASD/SPACE 等操作在場景上移動。 此模式在 3D 場景並非空白或 VMC 協議有效時可以使用。 預設是「OFF」。"
 								}
 							},
 							"no_object": {
 								"_translation_": {
 									"_default_": "There is no 3D object in this scene.",
-									"ja": "このシーンには 3D オブジェクトはありません。"
+									"ja": "このシーンには 3D オブジェクトはありません。",
+									"zh": "此場景並沒有 3D 物件。"
 								}
 							},
 							"still_loading": {
 								"_translation_": {
 									"_default_": "Please wait until all 3D objects are fully loaded.",
-									"ja": "すべての 3D オブジェクトが完全に読み込まれるまでお待ちください。"
+									"ja": "すべての 3D オブジェクトが完全に読み込まれるまでお待ちください。",
+									"zh": "請等待至所有 3D 物件完全載入為止。"
 								}
 							},
 							"no_explorable_object": {
 								"_translation_": {
 									"_default_": "There is no explorable 3D object in this scene.",
-									"ja": "このシーンには探索可能な 3D オブジェクトはありません。"
+									"ja": "このシーンには探索可能な 3D オブジェクトはありません。",
+									"zh": "此場景並沒有可被探索的 3D 物件。"
 								}
 							},
 							"confirm": {
 								"_translation_": {
 									"_default_": "Explorer mode allows you to control your avatar to move through your 3D scene.\n1. START\n2. Cancel",
-									"ja": "エクスプローラー モードでは、アバターを制御して 3D シーン内を移動できます。\n1. 始める\n2. キャンセル"
+									"ja": "エクスプローラー モードでは、アバターを制御して 3D シーン内を移動できます。\n1. 始める\n2. キャンセル",
+									"zh": "探索者模式容許你控制人物並在場景中移動。\n1. 開始\n2. 取消"
 								}
 							},
 							"starting": {
 								"_translation_": {
 									"_default_": "Building an explorable scene...\nNOTE: Depending on the complexity of the 3D scene, it may take more than a few seconds.",
-									"ja": "探索可能なシーンを構築中...\n注: 3D シーンの複雑さによっては、数秒以上かかる場合があります。"
+									"ja": "探索可能なシーンを構築中...\n注: 3D シーンの複雑さによっては、数秒以上かかる場合があります。",
+									"zh": "正在建構可被探索的場景...\n注: 視乎場景的複雜程度，這過程可能需要數秒以上的時間。"
 								}
 							}
 						}
@@ -1417,156 +1666,182 @@
 				"visual_effects": {
 					"_translation_": {
 						"_default_": "Visual effects",
-						"ja": "視覚効果"
+						"ja": "視覚効果",
+						"zh": "視覺效果"
 					},
 					"tooltip": {
 						"_translation_": {
 							"_default_": "Visual effects:\nThis option allows you to customize 3D camera and lighting parameters, as well as add some post-processing effects (e.g. Bloom, SAO, DOF) for VRM avatar and its scene.",
-							"ja": "視覚効果:\nこのオプションを使用すると、3D カメラと照明パラメータをカスタマイズしたり、VRM アバターとそのシーンに後処理効果 (ブルーム、SAO、DOF など) を追加したりできます。"
+							"ja": "視覚効果:\nこのオプションを使用すると、3D カメラと照明パラメータをカスタマイズしたり、VRM アバターとそのシーンに後処理効果 (ブルーム、SAO、DOF など) を追加したりできます。",
+							"zh": "視覺效果:\n此選項容許你設定 3D 攝景機及照明參數，與及在使用 VRM 作人物模型時的場景後處理效果 (Bloom、SAO、DOF等)。"
 						}
 					}
 				},
 				"miscellaneous_options": {
 					"_translation_": {
 						"_default_": "Miscellaneous options",
-						"ja": "その他のオプション"
+						"ja": "その他のオプション",
+						"zh": "其他選項"
 					},
 					"message": {
 						"_translation_": {
 							"_default_": "1. ⌨️Hotkey list and options\n2. Camera face-locking: <camera_face_locking>\n3. Audio visualizer: <audio_visualizer>\n4. Export all settings\n5. Reset all settings\n6. Done",
-							"ja": "1. ⌨️ホットキーの一覧とオプション\n2. カメラのフェイスロック: <camera_face_locking>\n3. オーディオ視覚効果: <audio_visualizer>\n4. すべての設定をエクスポートする\n5. すべての設定をリセットする\n6. 終了"
+							"ja": "1. ⌨️ホットキーの一覧とオプション\n2. カメラのフェイスロック: <camera_face_locking>\n3. オーディオ視覚効果: <audio_visualizer>\n4. すべての設定をエクスポートする\n5. すべての設定をリセットする\n6. 終了",
+							"zh": "1. ⌨️熱鍵列表及設定\n2. 鏡頭鎖定面部: <camera_face_locking>\n3. 音訊視覺化工具: <audio_visualizer>\n4. 匯出所有設定\n5. 重置所有設定\n6. 結束"
 						}
 					},
 					"hotkey": {
 						"switch_motion": {
 							"_translation_": {
 								"_default_": " to switch motion",
-								"ja": "でモーションを切り替える"
+								"ja": "でモーションを切り替える",
+								"zh": " 切換動作"
 							}
 						},
 						"arm_as_leg_control": {
 							"_translation_": {
 								"_default_": " to toggle🙋↔️🦶control mode",
-								"ja": "で🙋↔️🦶制御モードを切り替える"
+								"ja": "で🙋↔️🦶制御モードを切り替える",
+								"zh": " 切換🙋↔️🦶操作模式"
 							}
 						},
 						"auto_grounding": {
 							"_translation_": {
 								"_default_": " to toggle mocap auto-grounding",
-								"ja": "でモーキャプ「自動接地」を切り替える"
+								"ja": "でモーキャプ「自動接地」を切り替える",
+								"zh": " 切換「自動接地」動捕模式"
 							}
 						},
 						"hand_camera": {
 							"_translation_": {
 								"_default_": " to toggle hand camera mode",
-								"ja": "でハンドカメラを切り替える"
+								"ja": "でハンドカメラを切り替える",
+								"zh": " 切換手提攝影機模式"
 							}
 						},
 						"selfie_mode": {
 							"_translation_": {
 								"_default_": " to toggle hand camera's selfie mode",
-								"ja": "でハンドカメラ「自撮りモード」を切り替える"
+								"ja": "でハンドカメラ「自撮りモード」を切り替える",
+								"zh": " 切換手提攝影機的自拍模式"
 							}
 						},
 						"auto_look_at_camera": {
 							"_translation_": {
 								"_default_": " to toggle auto \"look at camera\"",
-								"ja": "で自動「カメラを見る」を切り替える"
+								"ja": "で自動「カメラを見る」を切り替える",
+								"zh": " 切換自動「望向鏡頭」模式"
 							}
 						},
 						"extra": {
 							"_translation_": {
 								"_default_": "・✔️Ctrl+L to toggle 3D camera lock\n・✔️Ctrl+M to mirror the current pose\n・✔️Pause to pause/resume mocap\n・✔️F9 to start video capture\n・✔️F10 to stop video capture\n・✔️F12 to capture still shot",
-								"ja": "・✔️Ctrl+Lで3Dカメラのロックを切り替える\n・✔️Ctrl+Mで現在のポーズをミラーリングする\n・✔️Pauseでモーキャプを一時停止/再開する\n・✔️F9でビデオキャプチャを開始する\n・✔️F10でビデオキャプチャを停止する\n・✔️F12で静止画をキャプチャする"
+								"ja": "・✔️Ctrl+Lで3Dカメラのロックを切り替える\n・✔️Ctrl+Mで現在のポーズをミラーリングする\n・✔️Pauseでモーキャプを一時停止/再開する\n・✔️F9でビデオキャプチャを開始する\n・✔️F10でビデオキャプチャを停止する\n・✔️F12で静止画をキャプチャする",
+								"zh": "・✔️Ctrl+L 切換鎖定3D鏡頭模式\n・✔️Ctrl+M 鏡像化現在的姿勢\n・✔️Pause 暫停/重開動捕\n・✔️F9 開始螢幕錄影\n・✔️F10 停止螢幕錄影\n・✔️F12 截圖"
 							}
 						},
 						"hotkey": {
 							"_translation_": {
 								"_default_": "Hotkey",
-								"ja": "ホットキー"
+								"ja": "ホットキー",
+								"zh": "熱鍵"
 							}
 						},
 						"current_hotkey": {
 							"_translation_": {
 								"_default_": "Current hotkey",
-								"ja": "現在のホットキー"
+								"ja": "現在のホットキー",
+								"zh": "現在的熱鍵"
 							}
 						},
 						"valid_keys": {
 							"_translation_": {
 								"_default_": "Valid keys",
-								"ja": "有効なキー"
+								"ja": "有効なキー",
+								"zh": "有效的鍵"
 							}
 						},
 						"press_to_cancel": {
 							"_translation_": {
 								"_default_": "Press Esc to cancel.",
-								"ja": "Escを押してキャンセルします。"
+								"ja": "Escを押してキャンセルします。",
+								"zh": "按 Esc 鍵取消。"
 							}
 						},
 						"global_hotkey": {
 							"_translation_": {
 								"_default_": "Global hotkey",
-								"ja": "グローバルホットキー"
+								"ja": "グローバルホットキー",
+								"zh": "全域熱鍵"
 							}
 						},
 						"change_hotkey": {
 							"_translation_": {
 								"_default_": "Change hotkey",
-								"ja": "ホットキーを変更する"
+								"ja": "ホットキーを変更する",
+								"zh": "更改熱鍵"
 							}
 						},
 						"reset_hotkey": {
 							"_translation_": {
 								"_default_": "Reset hotkey",
-								"ja": "ホットキーをリセット"
+								"ja": "ホットキーをリセット",
+								"zh": "重置熱鍵"
 							}
 						},
 						"reserved": {
 							"_translation_": {
 								"_default_": "Reserved",
-								"ja": "使用中"
+								"ja": "使用中",
+								"zh": "使用中"
 							}
 						},
 						"not_usable": {
 							"_translation_": {
 								"_default_": "Not usable",
-								"ja": "使用不可"
+								"ja": "使用不可",
+								"zh": "不能使用"
 							}
 						},
 						"reset": {
 							"_translation_": {
 								"_default_": "Hotkey reset",
-								"ja": "ホットキーがリセットされました"
+								"ja": "ホットキーがリセットされました",
+								"zh": "熱鍵已被重置"
 							}
 						},
 						"already_default": {
 							"_translation_": {
 								"_default_": "Hotkey already in default state",
-								"ja": "ホットキーはすでにデフォルト状態です"
+								"ja": "ホットキーはすでにデフォルト状態です",
+								"zh": "熱鍵已在預設狀態"
 							}
 						},
 						"not_registered": {
 							"_translation_": {
 								"_default_": "Hotkey not registered, restoring default",
-								"ja": "ホットキーが登録されていません。デフォルトに戻します"
+								"ja": "ホットキーが登録されていません。デフォルトに戻します",
+								"zh": "熱鍵無法登錄，現正返回預設狀態"
 							}
 						},
 						"registered": {
 							"_translation_": {
 								"_default_": "Hotkey registered",
-								"ja": "ホットキーが登録されました"
+								"ja": "ホットキーが登録されました",
+								"zh": "熱鍵已被登錄"
 							}
 						},
 						"global_hotkey_mode": {
 							"_translation_": {
 								"_default_": "Global hotkey mode",
-								"ja": "グローバルホットキーモード"
+								"ja": "グローバルホットキーモード",
+								"zh": "全域熱鍵模式"
 							},
 							"tooltip": {
 								"_translation_": {
 									"_default_": "Global hotkey mode:\nWhen a hotkey is global, it always works even if XR Animator is out of focus. This option provides a convenient shortcut to toggle the global state of all hotkeys at once, instead of configuring each hotkey separately. Default is \"ON\".",
-									"ja": "グローバルホットキーモード:\nホットキーがグローバルの場合、XR Animator がフォーカスされていない場合でも、ホットキーは常に機能します。 このオプションは、各ホットキーを個別に設定するのではなく、すべてのホットキーのグローバル状態を一度に切り替える便利なショートカットを提供します。 デフォルトは「ON」です。"
+									"ja": "グローバルホットキーモード:\nホットキーがグローバルの場合、XR Animator がフォーカスされていない場合でも、ホットキーは常に機能します。 このオプションは、各ホットキーを個別に設定するのではなく、すべてのホットキーのグローバル状態を一度に切り替える便利なショートカットを提供します。 デフォルトは「ON」です。",
+									"zh": "全域熱鍵模式:\n當熱鍵處於全域模式時，即使 XR Animator 不是使用中的視窗熱鍵也能被啟動。 有別於逐個熱鍵去設定，此選項提供一個捷徑一次個更改所有熱鍵的全域模式。 預設是「ON」。"
 								}
 							}
 						}
@@ -1575,7 +1850,8 @@
 						"tooltip": {
 							"_translation_": {
 								"_default_": "Camera face-locking:\nWhen enabled, the 3D camera will lock your avatar's face and move accordingly, resulting in a more dynamic camera effect. \"Auto\" enables the face-locking effect only when a 3D scene is loaded (e.g. skybox, 3D objects). Default is \"Auto\".",
-								"ja": "カメラのフェイスロック:\n有効にすると、3D カメラがアバターの顔をロックし、それに応じて移動し、よりダイナミックなカメラ効果が得られます。 「自動」は、3D シーン (スカイボックス、3D オブジェクトなど) がロードされている場合にのみ、フェイス ロック効果を有効にします。 デフォルトは「自動」です。"
+								"ja": "カメラのフェイスロック:\n有効にすると、3D カメラがアバターの顔をロックし、それに応じて移動し、よりダイナミックなカメラ効果が得られます。 「自動」は、3D シーン (スカイボックス、3D オブジェクトなど) がロードされている場合にのみ、フェイス ロック効果を有効にします。 デフォルトは「自動」です。",
+								"zh": "鏡頭鎖定面部:\n此選項為有效時，3D 攝影機會鎖定人物的面部並隨之移動，達至較有動感的鏡頭效果。 設定為「自動」時，鏡頭鎖定面部模式只會在使用 3D 場景 (天空盒、3D 物件) 時啟用。 預設是「自動」。"
 							}
 						}
 					},
@@ -1583,7 +1859,8 @@
 						"tooltip": {
 							"_translation_": {
 								"_default_": "Audio visualizer:\nXR Animator supports various audio visualization effects when a music file is dropped to the app. Turn off this option if you don't want the default \"circular spectrum\" audio visualizer to show up when music plays. Default is \"ON\".",
-								"ja": "オーディオ視覚効果:\nXR Animator は、音楽ファイルをアプリにドロップしたときのさまざまなオーディオ視覚効果をサポートします。 音楽の再生時にデフォルトの「円形スペクトル」オーディオ ビジュアライザを表示したくない場合は、このオプションをオフにします。 デフォルトは「ON」です。"
+								"ja": "オーディオ視覚効果:\nXR Animator は、音楽ファイルをアプリにドロップしたときのさまざまなオーディオ視覚効果をサポートします。 音楽の再生時にデフォルトの「円形スペクトル」オーディオ ビジュアライザを表示したくない場合は、このオプションをオフにします。 デフォルトは「ON」です。",
+								"zh": "音訊視覺化工具:\nXR Animator 支援在播放音樂檔案時使用一些音訊視覺化效果。 如果你不想使用在播放音樂時出現的 3D 「圓形波譜」視覺化效果，可關閉此選項。 預設是「ON」。"
 							}
 						}
 					},
@@ -1591,44 +1868,51 @@
 						"tooltip": {
 							"_translation_": {
 								"_default_": "Export all settings:\nThis option exports all settings of XR Animator to an external JSON file, so that it can be imported back to XR Animator in the future simply by dropping the JSON file to the app.",
-								"ja": "すべての設定をエクスポートする:\nこのオプションでは、XR Animator のすべての設定が外部 JSON ファイルにエクスポートされるため、後で JSON ファイルをアプリにドロップするだけで XR Animator にインポートし直すことができます。"
+								"ja": "すべての設定をエクスポートする:\nこのオプションでは、XR Animator のすべての設定が外部 JSON ファイルにエクスポートされるため、後で JSON ファイルをアプリにドロップするだけで XR Animator にインポートし直すことができます。",
+								"zh": "匯出所有設定:\n此選項會將 XR Animator 所有的設定匯出至 JSON 格式的檔案，以便日後可以用拖曳的方式一次過匯入所有設定。"
 							}
 						}
 					},
 					"reset_all_settings": {
 						"_translation_": {
 							"_default_": "This will reset all XR Animator settings to the default. Are you sure?\n1. Yes\n2. No",
-							"ja": "これにより、XR Animator のすべての設定がデフォルトにリセットされます。 よろしいですか？\n1. はい\n2. いいえ"
+							"ja": "これにより、XR Animator のすべての設定がデフォルトにリセットされます。 よろしいですか？\n1. はい\n2. いいえ",
+							"_default_": "確定要重置 XR Animator 的所有設定至預設狀態?\n1. 是\n2. 否"
 						}
 					}
 				},
 				"export_motion_to_file": {
 					"_translation_": {
 						"_default_": "Export motion to file",
-						"ja": "モーションをファイルにエクスポートする"
+						"ja": "モーションをファイルにエクスポートする",
+						"zh": "將動作匯出成檔案"
 					},
 					"tooltip": {
 						"_translation_": {
 							"_default_": "Export motion to file:\nIf you have finished a mocap recording session, or if you are currently using an imported FBX/BVH motion, this option allows you to export the recorded/imported motion to an external motion file in VMD (MMD) or BVH format.",
-							"ja": "モーションをファイルにエクスポートする:\nモーションキャプチャの記録セッションが終了している場合、またはインポートされた FBX/BVH モーションを現在使用している場合、このオプションを使用すると、記録/インポートされたモーションを VMD (MMD) または BVH 形式で外部モーション ファイルにエクスポートできます。"
+							"ja": "モーションをファイルにエクスポートする:\nモーションキャプチャの記録セッションが終了している場合、またはインポートされた FBX/BVH モーションを現在使用している場合、このオプションを使用すると、記録/インポートされたモーションを VMD (MMD) または BVH 形式で外部モーション ファイルにエクスポートできます。",
+							"zh": "將動作匯出成檔案:\n此選項可於完成動捕錄製或正在使用輸入的 FBX/BVH 動作時將相關動作匯出成 VMD 或 BVH 格式的動作檔案。"
 						}
 					}
 				},
 				"about_XR_Animator": {
 					"_translation_": {
 						"_default_": "About XR Animator",
-						"ja": "XR Animatorについて"
+						"ja": "XR Animatorについて",
+						"zh": "關於 XR Animator"
 					},
 					"message": {
 						"_translation_": {
-							"_default_": "1. Video demo\n2. Readme\n3. Download app version\n4. Download add-ons\n5. ❤️Support this project\n6. Contacts\n7. Cancel",
-							"ja": "1. ビデオデモ\n2. リードミー\n3. アプリのバージョンをダウンロード\n4. アドオンをダウンロードする\n5. ❤️このプロジェクトを支援する\n6. 連絡先\n7. キャンセル"
+							"_default_": "1. Video demo\n2. Readme\n3. Download latest version\n4. Download add-ons\n5. ❤️Support this project\n6. Contacts\n7. Cancel",
+							"ja": "1. ビデオデモ\n2. リードミー\n3. 最新バージョンをダウンロード\n4. アドオンをダウンロードする\n5. ❤️このプロジェクトを支援する\n6. 連絡先\n7. キャンセル",
+							"zh": "1. 影像示範\n2. 讀我檔案\n3. 下載最新版本\n4. 下載附加元件\n5. ❤️支持開發\n6. 聯絡\n7. 取消"
 						}
 					},
 					"support": {
 						"_translation_": {
 							"_default_": "If you like XR Animator, please consider making a donation and help keep this project running🙏\n1. ☕Buy me a coffee\n2. 🤝PayPal.Me",
-							"ja": "XR Animator が気に入ったら、寄付してこのプロジェクトの継続にご協力ください🙏\n1. ☕コーヒーを買ってきてください\n2. 🤝PayPal.Me"
+							"ja": "XR Animator が気に入ったら、寄付してこのプロジェクトの継続にご協力ください🙏\n1. ☕コーヒーを買ってきてください\n2. 🤝PayPal.Me",
+							"zh": "如喜歡 XR Animator 的話，請考慮捐款以支持此計劃繼續開發及運作🙏\n1. ☕請我喝杯咖啡\n2. 🤝PayPal.Me"
 						}
 					}
 				}
@@ -1637,24 +1921,28 @@
 				"info_short": {
 					"_translation_": {
 						"_default_": "Hand camera",
-						"ja": "ハンドカメラ"
+						"ja": "ハンドカメラ",
+						"zh": "手提攝影機"
 					}
 				},
 				"info": {
 					"_translation_": {
 						"_default_": "- Press <hand_camera_hotkey> / double-click to use your hand as camera during mocap (status: <hand_camera_status>).\n- Repeat to switch among left hand, right hand, and OFF.- Press <selfie_mode_hotkey> to toggle \"Selfie mode\" which automatically focuses on your face (status: <selfie_mode_status>).\n- Press <auto_look_at_camera_hotkey> to toggle auto \"look at camera\" (status: <auto_look_at_camera_status>).",
-						"ja": "- <hand_camera_hotkey> を押すかダブルクリックすると、モーキャプ中に手をカメラとして使用します (状態: <hand_camera_status>)。\n- 繰り返して左手、右手、OFFを切り替えます。\n- <selfie_mode_hotkey> を押して「自撮りモード」を切り替え、自動的に顔に焦点を合わせます (状態: <selfie_mode_status>)。\n- キー<auto_look_at_camera_hotkey>➡️自動「カメラを見る」を切り替える (状態: <auto_look_at_camera_status>)"
+						"ja": "- <hand_camera_hotkey> を押すかダブルクリックすると、モーキャプ中に手をカメラとして使用します (状態: <hand_camera_status>)。\n- 繰り返して左手、右手、OFFを切り替えます。\n- <selfie_mode_hotkey> を押して「自撮りモード」を切り替え、自動的に顔に焦点を合わせます (状態: <selfie_mode_status>)。\n- キー<auto_look_at_camera_hotkey>➡️自動「カメラを見る」を切り替える (状態: <auto_look_at_camera_status>)",
+						"zh": "- 按 <hand_camera_hotkey> / 按兩下以使用手部作攝影機 (狀態: <hand_camera_status>).\n- 重複操作在左手、右手、及OFF之間作切換。\n- 按 <selfie_mode_hotkey> 切換自動對焦面部的自拍模式 (狀態: <selfie_mode_status>)。\n- 按 <auto_look_at_camera_hotkey> 切換自動「望向鏡頭」模式 (狀態: <auto_look_at_camera_status>)。"
 					},
 					"left_hand": {
 						"_translation_": {
 							"_default_": "left hand",
-							"ja": "左手"
+							"ja": "左手",
+							"zh": "左手"
 						}
 					},
 					"right_hand": {
 						"_translation_": {
 							"_default_": "right hand",
-							"ja": "右手"
+							"ja": "右手",
+							"zh": "右手"
 						}
 					}
 				}
@@ -1663,48 +1951,56 @@
 				"info_short": {
 					"_translation_": {
 						"_default_": "Media recorder",
-						"ja": "メディアレコーダー"
+						"ja": "メディアレコーダー",
+						"zh": "媒體記錄器"
 					}
 				},
 				"info": {
 					"_translation_": {
 						"_default_": "- Press F12 to capture a still image of the 3D content.\n- Press F9 to capture a video of the 3D content. Press F10 to stop and return the recorded MP4 file.\n- Double-click for settings.\n- Use mouse or keys to pick a numbered option.",
-						"ja": "- F12を押して3Dコンテンツの静止画像をキャプチャします。\n- F9を押して3Dコンテンツのビデオをキャプチャします。 F10を押して停止し、記録された MP4ファイルを戻します。\n- ダブルクリックして設定を行います。\n- マウスまたは英数字キーを使用してオプションを選択する。"
+						"ja": "- F12を押して3Dコンテンツの静止画像をキャプチャします。\n- F9を押して3Dコンテンツのビデオをキャプチャします。 F10を押して停止し、記録された MP4ファイルを戻します。\n- ダブルクリックして設定を行います。\n- マウスまたは英数字キーを使用してオプションを選択する。",
+						"zh": "- 按 F12 擷取現在的 3D 畫面。\n- 按 F9 開始錄製現在的 3D 畫面。 按 F10 結束並匯出成 MP4 影像檔案。\n- 按兩下進入設定。\n- 以滑鼠或英數字鍵選擇選項。"
 					}
 				},
 				"options": {
 					"_translation_": {
 						"_default_": "Video capture settings",
-						"ja": "ビデオキャプチャーの設定"
+						"ja": "ビデオキャプチャーの設定",
+						"zh": "影像錄製設定"
 					},
 					"unlimited": {
 						"_translation_": {
 							"_default_": "unlimited",
-							"ja": "無制限"
+							"ja": "無制限",
+							"zh": "無限制"
 						}
 					},
 					"Unlimited": {
 						"_translation_": {
 							"_default_": "unlimited",
-							"ja": "無制限"
+							"ja": "無制限",
+							"zh": "無限制"
 						}
 					},
 					"target_resolution": {
 						"_translation_": {
 							"_default_": "Target resolution",
-							"ja": "目標解像度"
+							"ja": "目標解像度",
+							"zh": "目標解像度"
 						}
 					},
 					"target_fps": {
 						"_translation_": {
 							"_default_": "Target frame rate",
-							"ja": "目標フレームレート"
+							"ja": "目標フレームレート",
+							"zh": "目標幀率"
 						}
 					},
 					"output_format": {
 						"_translation_": {
 							"_default_": "Output format",
-							"ja": "出力フォーマット"
+							"ja": "出力フォーマット",
+							"zh": "輸出格式"
 						}
 					}
 				}
@@ -1713,13 +2009,15 @@
 				"info_short": {
 					"_translation_": {
 						"_default_": "Air blower",
-						"ja": "送風機"
+						"ja": "送風機",
+						"zh": "吹風機"
 					}
 				},
 				"info": {
 					"_translation_": {
 						"_default_": "- Double-click for a camera-oriented wind-blowing effect.\n- Repeat to lock the current direction.\n- Repeat for a camera-oriented wind-sucking effect.\n- Repeat to lock the current direction.\n- Repeat to disable it.",
-						"ja": "- ダブルクリックで カメラ指向の風が吹く効果が得られます。\n- 繰り返して現在の方向をロックします。\n- 繰り返してカメラ指向の風吸い効果を取得します。\n- 繰り返して現在の方向をロックします。\n- 繰り返して無効にします。"
+						"ja": "- ダブルクリックで カメラ指向の風が吹く効果が得られます。\n- 繰り返して現在の方向をロックします。\n- 繰り返してカメラ指向の風吸い効果を取得します。\n- 繰り返して現在の方向をロックします。\n- 繰り返して無効にします。",
+						"zh": "- 按兩下啟動鏡頭方向的吹風效果。\n- 重複操作以鎖定方向。\n- 重複操作以切換至鏡頭方向的吸風效果。\n- 重複操作以鎖定方向。\n- 重複操作以關閉效果。"
 					}
 				}
 			},
@@ -1727,37 +2025,43 @@
 				"info": {
 					"_translation_": {
 						"_default_": "Double-click to <enable> Selfie Segmentation AI. When using with a camera or video input, the 3D avatar will be displayed behind the person in the video, allowing some interesting usage such as taking a selfie with your 3D avatar.",
-						"ja": "ダブルクリックして Selfie Segmentation AI を<enable>にします。 カメラやビデオ入力と併用すると、映像内の人物の後ろに3Dアバターが表示され、3Dアバターで自撮りするなど面白い使い方ができます。"
+						"ja": "ダブルクリックして Selfie Segmentation AI を<enable>にします。 カメラやビデオ入力と併用すると、映像内の人物の後ろに3Dアバターが表示され、3Dアバターで自撮りするなど面白い使い方ができます。",
+						"zh": "按兩下<enable> Selfie Segmentation AI。 當與攝影機或影像輸入同時使用時，3D 人物會顯示於影像內人物的後方，可達至一些如自拍等的有趣效果。"
 					}
 				},
 				"enable": {
 					"_translation_": {
 						"_default_": "enable",
-						"ja": "有効"
+						"ja": "有効",
+						"zh": "啟動"
 					}
 				},
 				"disable": {
 					"_translation_": {
 						"_default_": "disable",
-						"ja": "無効"
+						"ja": "無効",
+						"zh": "關閉"
 					}
 				},
 				"no_input": {
 					"_translation_": {
 						"_default_": "You need to enable video input first.",
-						"ja": "まずビデオ入力を有効にしてください。"
+						"ja": "まずビデオ入力を有効にしてください。",
+						"zh": "請先選擇有效的影像輸入。"
 					}
 				},
 				"mocap_on": {
 					"_translation_": {
 						"_default_": "You can't enable Selfie Segmentation AI and motion capture at the same time.",
-						"ja": "Selfie Segmentation AI とモーション キャプチャを同時に有効にすることはできません。"
+						"ja": "Selfie Segmentation AI とモーション キャプチャを同時に有効にすることはできません。",
+						"zh": "Selfie Segmentation AI 不能和動態捕捉同時使用。"
 					}
 				},
 				"camera_hidden": {
 					"_translation_": {
 						"_default_": "You need to enable the display of video input first.",
-						"ja": "ビデオ入力の表示を有効にしてください"
+						"ja": "ビデオ入力の表示を有効にしてください",
+						"zh": "請先啟動影像輸入的顯示。"
 					}
 				}
 			}
@@ -1766,7 +2070,8 @@
 			"confirm": {
 				"_translation_": {
 					"_default_": "NOTE: This legacy settings panel was designed for System Animator, with most of the settings now obsolete to XR Animator. This is for advanced user only. Continue?\n1. Yes\n2. No",
-					"ja": "注: このレガシー設定パネルは System Animator 用に設計されており、設定のほとんどは XR Animator では廃止されました。 これは上級ユーザーのみを対象としています。 続く？\n1. はい\n2. いいえ"
+					"ja": "注: このレガシー設定パネルは System Animator 用に設計されており、設定のほとんどは XR Animator では廃止されました。 これは上級ユーザーのみを対象としています。 続く？\n1. はい\n2. いいえ",
+					"zh": "注: 此乃為舊版 System Animator 而設的設定介面。 部份相關設定已不適用於新版的 XR Animator。 相關操作只適合熟練的使用者使用。 確定要繼續？\n1. 是\n2. 否"
 				}
 			}
 		},
@@ -1774,43 +2079,50 @@
 			"welcome": {
 				"_translation_": {
 					"_default_": "Welcome to XR Animator~!",
-					"ja": "XR Animatorへようこそ〜！"
+					"ja": "XR Animatorへようこそ〜！",
+					"zh": "歡迎使用 XR Animator〜！"
 				}
 			},
 			"camera": {
 				"_translation_": {
 					"_default_": "Drag to rotate 3D camera. Hold Ctrl key to pan. Double-click to reset.",
-					"ja": "ドラッグして 3D カメラを回転します。 Ctrl キーを押したままパンします。 ダブルクリックしてリセットします。"
+					"ja": "ドラッグして 3D カメラを回転します。 Ctrl キーを押したままパンします。 ダブルクリックしてリセットします。",
+					"zh": "拖曳以旋轉 3D 攝影機。 同持按住 Ctrl 鍵作平移。 按兩下重置攝影機。"
 				}
 			},
 			"move": {
 				"_translation_": {
 					"_default_": "To move the app window, drag with right mouse button.",
-					"ja": "アプリ ウィンドウを移動するには、マウスの右ボタンでドラッグします。"
+					"ja": "アプリ ウィンドウを移動するには、マウスの右ボタンでドラッグします。",
+					"zh": "要移動視窗，以滑鼠右鍵拖曳。"
 				}
 			},
 			"mocap": {
 				"_translation_": {
 					"_default_": "Enable motion capture to control the avatar with your body!",
-					"ja": "モーションキャプチャーを有効にしてアバターを体でコントロール！"
+					"ja": "モーションキャプチャーを有効にしてアバターを体でコントロール！",
+					"zh": "啟動動態捕捉，\n並使用身體動作控制人物！"
 				}
 			},
 			"webcam": {
 				"_translation_": {
 					"_default_": "Use your webcam, or drop a local pic/video instead.",
-					"ja": "Webカメラを使用するか、代わりにローカルの画像/ビデオをドロップしてください。"
+					"ja": "Webカメラを使用するか、代わりにローカルの画像/ビデオをドロップしてください。",
+					"zh": "你可選擇使用網路攝影機或拖曳圖像/影像檔案作動捕輸入。"
 				}
 			},
 			"motion": {
 				"_translation_": {
 					"_default_": "Drop a VMD/FBX/BVH motion, and animate your avatar!",
-					"ja": "VMD/FBX/BVH モーションをドロップしてアバターを動かしましょう！"
+					"ja": "VMD/FBX/BVH モーションをドロップしてアバターを動かしましょう！",
+					"zh": "你亦可以拖曳 VMD/FBX/BVH 動作檔案使你的人物動起來！"
 				}
 			},
 			"AR": {
 				"_translation_": {
 					"_default_": "You can enable AR mode if you are on an Android mobile!",
-					"ja": "Android モバイルを使用している場合は、AR モードを有効にすることができます。"
+					"ja": "Android モバイルを使用している場合は、AR モードを有効にすることができます。",
+					"zh": "如果你是使用 Android 系統的話，你甚至可以啟動擴增實境 (AR) 模式！"
 				}
 			}
 		}
