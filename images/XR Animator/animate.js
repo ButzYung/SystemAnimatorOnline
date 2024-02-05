@@ -1,5 +1,5 @@
 // XR Animator
-// (2024-01-19)
+// (2024-02-05)
 
 var MMD_SA_options = {
 
@@ -1480,9 +1480,24 @@ System._browser.camera.poseNet.enable_IK('右腕ＩＫ', true)
   }
 
  ,onstart: function () {
-let head_y = (MMD_SA.THREEX.enabled) ? MMD_SA.THREEX.get_model(0).para.pos0['head'][1] * MMD_SA.THREEX.get_model(0).model_scale : THREE.MMD.getModels()[0].mesh.bones_by_name['頭'].pmxBone.origin[1];
+//let head_y = (MMD_SA.THREEX.enabled) ? MMD_SA.THREEX.get_model(0).para.pos0['head'][1] * MMD_SA.THREEX.get_model(0).model_scale : THREE.MMD.getModels()[0].mesh.bones_by_name['頭'].pmxBone.origin[1];
+//this.center_view = (this.center_view_enforced) ? [0, (head_y)*1.025-11.4, -20*MMD_SA_options.Dungeon_options.camera_position_z_sign] : [0,0,0];
 
-this.center_view = (this.center_view_enforced) ? [0, (head_y)*1.025-11.4, -20*MMD_SA_options.Dungeon_options.camera_position_z_sign] : [0,0,0];
+if (this.center_view_enforced) {
+  const modelX = MMD_SA.THREEX.get_model(0);
+  const neck_y = modelX.get_bone_origin_by_MMD_name('首')[1];
+//  const hips_y = modelX.get_bone_origin_by_MMD_name((MMD_SA.THREEX.enabled)?'センター':'下半身')[1];
+  const height_ref = neck_y/3;//hips_y;//neck_y - hips_y;
+
+// https://hofk.de/main/discourse.threejs/2022/CalculateCameraDistance/CalculateCameraDistance.html
+  const d = height_ref / (2 * Math.tan(Math.PI/180 * 50 / 2));
+//DEBUG_show(d+'/'+neck_y);
+  this.center_view = [0, (neck_y-10), -(30-Math.max(d*1.7, 10))*MMD_SA_options.Dungeon_options.camera_position_z_sign];
+}
+else {
+  this.center_view = [0,0,0];
+}
+
   }
 
  ,object_click_disabled: true
@@ -3265,7 +3280,7 @@ video:{
 //  hidden:true,
 //  hidden_on_webcam: true,
   scale:0.4, top:-0.5,
-//left:-0.4,top:-1,
+//left:-0.5,top:-1,
 //scale:0.4*1,top:0,left:-3,
 //scale:0.4*2,top:0,left:-1,
 },
@@ -3804,6 +3819,13 @@ MMD_SA_options.motion_shuffle_list_default = MMD_SA_options._motion_shuffle_list
 MMD_SA._force_motion_shuffle = true;
 window.addEventListener('SA_MMD_model0_onmotionchange', ()=>{ MMD_SA.WebXR.ground_plane.visible=System._browser.camera.poseNet.ground_plane_visible }, {once:true});
 
+System._browser.on_animation_update.add(()=>{
+  if (MMD_SA_options._XRA_pose_list?.[0].find(p=>p.is_custom_motion && p.name==MMD_SA.MMD.motionManager.filename) != null) {
+//DEBUG_show(MMD_SA.MMD.motionManager._timeMax)
+    MMD_SA.motion_player_control.enabled = true;
+  }
+}, 0,1);
+
 MMD_SA_options.Dungeon_options.item_base.social_distancing && MMD_SA_options.Dungeon_options.item_base.social_distancing.reset();
 if (System._browser.camera.initialized) System._browser.on_animation_update.add(()=>{System._browser.camera._camera_reset = MMD_SA._trackball_camera.object.clone()},1,1);
 
@@ -4326,7 +4348,7 @@ const content =  _motion_list[index].slice(ini, ini+9).map((m,i)=>{
 
   return (i+1)+'. ' + info_prefix + (m.info||m.name) + info_suffix;
 }).join('\n')
-+ ((_has_custom_animation_) ? '\n0. (👤カスタムポーズ)' : '');
++ ((_has_custom_animation_) ? '\n0. (👤' + System._browser.translation.get('XR_Animator.UI.pose.custom_pose') + ')' : '');
 //+ ((_has_custom_animation_) ? ('\n0. (👤Custom motion: ' + (((this._animation_on_ != null) ? this._animation_on_ : (MMD_SA.THREEX.enabled && MMD_SA.THREEX.get_model(0).animation.enabled) || (THREE.MMD.getModels()[0].skin._motion_index >= MMD_SA.motion_max_default))?'ON':'OFF') + ') (🙋)') : '');
 
 //DEBUG_show(''+this._animation_on_,0,1)
@@ -5343,7 +5365,7 @@ MMD_SA_options.Dungeon.run_event("_FACEMESH_OPTIONS_",0);
  ,action: {
     func: function (item) {
 if (!webkit_electron_mode || !MMD_SA.THREEX.enabled) {
-  MMD_SA.SpeechBubble.message(0, 'This feature is available only for Windows app version with VRM model.', 3*1000);
+  MMD_SA.SpeechBubble.message(0, System._browser.translation.get('XR_Animator.UI.VMC_protocol.not_supported'), 5*1000);
   return true;
 }
 
@@ -5810,7 +5832,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  'Full body (Legacy Holistic):\nThis version of full body tracking uses the legacy MediaPipe Holistic AI model, which combines face, pose and hand tracking into one model. This requires less system resource and makes it faster in some cases, at the expense of losing some mocap accuracy and features from the latest MediaPipe Tasks Vision.'
+  System._browser.translation.get('XR_Animator.UI.motion_capture.ML_off.full_body_legacy_holistic.tooltip')
 );
       }
     }
@@ -7966,11 +7988,9 @@ return MMD_SA_options.camera_face_locking || ((MMD_SA_options.camera_face_lockin
 
 
 function ML_off() {
-  MMD_SA.WebXR.user_camera.facemesh.enabled = false
-  MMD_SA.WebXR.user_camera.poseNet.enabled = false
-  MMD_SA.WebXR.user_camera.handpose.enabled = false
-//  MMD_SA_options.Dungeon_options.item_base['pose'].action._motion_list_index = -1
-//  MMD_SA_options.Dungeon_options.item_base['pose'].action.func()
+  MMD_SA.WebXR.user_camera.facemesh.enabled = false;
+  MMD_SA.WebXR.user_camera.poseNet.enabled = false;
+  MMD_SA.WebXR.user_camera.handpose.enabled = false;
 }
 
 function mirror_3D_off() {
@@ -8683,7 +8703,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  get content() { return 'XR Animator (v0.19.1)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
+  get content() { return 'XR Animator (v0.19.5)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -11014,7 +11034,7 @@ config.video_capture = {
 
 config.UI_muted = MMD_SA_options.Dungeon.inventory.UI._muted;
 
-config.language = (System._browser.translation.language && (System._browser.translation.language != System._browser.translation.language_default)) ? System._browser.translation.language : null;
+config.language = (System._browser.translation.language && (System._browser.translation.language_full != System._browser.translation.language_default)) ? System._browser.translation.language : null;
 
 config.pose = {
   order: MMD_SA_options._XRA_pose_list[0].map(m=>m.index_default),
