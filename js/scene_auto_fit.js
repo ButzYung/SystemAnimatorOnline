@@ -1,5 +1,5 @@
 // auto fit
-// (2024-01-15)
+// (2024-02-05)
 
 const v1 = new THREE.Vector3();
 const v2 = new THREE.Vector3();
@@ -446,16 +446,20 @@ function process_gesture() {
       obj[p].left  = obj[p].right;
       obj[p].right = _left;
     }
-    if (para.assign) {
+    if ('assign' in para) {
       if (typeof para.assign == 'number') {
         obj[p] = para.assign;
       }
       else {
-        if (para.assign == 'default')
+        if (para.assign == 'default') {
           obj[p] = v_default;
+        }
+        else {
+          obj[p] = para.assign;
+        }
       }
     }
-    if (para.multiply) {
+    if (para.multiply != null) {
       let multiply = para.multiply;
       if (typeof multiply == 'number') {
         if (multiply > 1) {
@@ -493,7 +497,7 @@ function process_gesture() {
         obj[p].z *= multiply.z;
       }
     }
-    if (para.add) {
+    if (para.add != null) {
       let add = para.add;
       if (typeof add == 'number') {
         if (add > 0) {
