@@ -1,4 +1,4 @@
-// (2024-01-19)
+// (2024-02-05)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -3462,7 +3462,8 @@ System._browser.translation.dictionary = {
 			"backpack": {
 				"_translation_": {
 					"_default_": "Backpack",
-					"ja": "バックパック"
+					"ja": "バックパック",
+					"zh": "背包"
 				}
 			},
 			"tome": {
@@ -3471,55 +3472,64 @@ System._browser.translation.dictionary = {
 						"user_interface": {
 							"_translation_": {
 								"_default_": "User interface",
-								"ja": "ユーザーインターフェース"
+								"ja": "ユーザーインターフェース",
+								"zh": "使用者介面"
 							},
 							"UI_off": {
 								"_translation_": {
 									"_default_": "User interface is now OFF. Press Esc to toggle the bottom menu display.",
-									"ja": "ユーザーインターフェースはオフになりました。 Esc キーを押すと、下部のメニュー表示が切り替わります。"
+									"ja": "ユーザーインターフェースはオフになりました。 Esc キーを押すと、下部のメニュー表示が切り替わります。",
+									"zh": "使用者介面現已關閉。 按 Esc 鍵切換下方介面的顯示。"
 								},
 								"green_screen": {
 									"_translation_": {
 										"_default_": "green screen",
-										"ja": "グリーンスクリーン"
+										"ja": "グリーンスクリーン",
+										"zh": "綠幕"
 									}
 								}
 							}
 						},
 						"camera_display": {
 							"_translation_": {
-								"_default_": "Camera display",
-								"ja": "カメラ表示"
+								"_default_": "Video input display",
+								"ja": "ビデオ入力表示",
+								"zh": "影像輸入顯示"
 							},
 							"non_webcam": {
 								"_translation_": {
 									"_default_": "Non-webcam",
-									"ja": "非ウェブカメラ"
+									"ja": "非ウェブカメラ",
+									"zh": "非網路攝影機"
 								}
 							}
 						},
 						"wireframe_display": {
 							"_translation_": {
 								"_default_": "Wireframe display",
-								"ja": "ワイヤーフレーム表示"
+								"ja": "ワイヤーフレーム表示",
+								"zh": "線框顯示"
 							}
 						},
 						"mocap_debug_display": {
 							"_translation_": {
 								"_default_": "Mocap debug display",
-								"ja": "モーキャプのデバッグ表示"
+								"ja": "モーキャプのデバッグ表示",
+								"zh": "動捕偵錯顯示"
 							}
 						},
 						"UI_sound_effects": {
 							"_translation_": {
 								"_default_": "UI sound effects",
-								"ja": "UI音響効果"
+								"ja": "UI音響効果",
+								"zh": "介面聲效"
 							}
 						},
 						"UI_language": {
 							"_translation_": {
 								"_default_": "UI language",
-								"ja": "UI言語"
+								"ja": "UI言語",
+								"zh": "介面語言"
 							}
 						}
 					}
@@ -3531,109 +3541,127 @@ System._browser.translation.dictionary = {
 		"done": {
 			"_translation_": {
 				"_default_": "Done",
-				"ja": "終了"
+				"ja": "終了",
+				"zh": "結束"
 			}
 		},
 		"finish": {
 			"_translation_": {
 				"_default_": "Finish",
-				"ja": "終了"
+				"ja": "終了",
+				"zh": "完成"
 			}
 		},
 		"cancel": {
 			"_translation_": {
 				"_default_": "Cancel",
-				"ja": "キャンセル"
+				"ja": "キャンセル",
+				"zh": "取消"
 			}
 		},
 		"default": {
 			"_translation_": {
 				"_default_": "Default",
-				"ja": "デフォルト"
+				"ja": "デフォルト",
+				"zh": "預設"
 			}
 		},
 		"none": {
 			"_translation_": {
 				"_default_": "None",
-				"ja": "なし"
+				"ja": "なし",
+				"zh": "沒有"
 			}
 		},
 		"full": {
 			"_translation_": {
 				"_default_": "Full",
-				"ja": "フル"
-			}
-		},
-		"yes": {
-			"_translation_": {
-				"_default_": "Yes",
-				"ja": "はい"
-			}
-		},
-		"no": {
-			"_translation_": {
-				"_default_": "No",
-				"ja": "いいえ"
-			}
-		},
-		"others": {
-			"_translation_": {
-				"_default_": "Others",
-				"ja": "その他"
-			}
-		},
-		"auto": {
-			"_translation_": {
-				"_default_": "Auto",
-				"ja": "自動"
-			}
-		},
-		"Normal": {
-			"_translation_": {
-				"_default_": "Normal",
-				"ja": "普通"
-			}
-		},
-		"Medium": {
-			"_translation_": {
-				"_default_": "Medium",
-				"ja": "中"
-			}
-		},
-		"Max": {
-			"_translation_": {
-				"_default_": "Max",
-				"ja": "最大"
-			}
-		},
-		"Min": {
-			"_translation_": {
-				"_default_": "Min",
-				"ja": "最小"
-			}
-		},
-		"Best": {
-			"_translation_": {
-				"_default_": "Best",
-				"ja": "最高"
-			}
-		},
-		"Small": {
-			"_translation_": {
-				"_default_": "Small",
-				"ja": "小"
-			}
-		},
-		"Large": {
-			"_translation_": {
-				"_default_": "Large",
-				"ja": "大"
+				"ja": "フル",
+				"zh": "完全"
 			}
 		},
 		"Full": {
 			"_translation_": {
 				"_default_": "Full",
-				"ja": "フル"
+				"ja": "フル",
+				"zh": "完全"
+			}
+		},
+		"yes": {
+			"_translation_": {
+				"_default_": "Yes",
+				"ja": "はい",
+				"zh": "是"
+			}
+		},
+		"no": {
+			"_translation_": {
+				"_default_": "No",
+				"ja": "いいえ",
+				"zh": "否"
+			}
+		},
+		"others": {
+			"_translation_": {
+				"_default_": "Others",
+				"ja": "その他",
+				"zh": "其他"
+			}
+		},
+		"auto": {
+			"_translation_": {
+				"_default_": "Auto",
+				"ja": "自動",
+				"zh": "自動"
+			}
+		},
+		"Normal": {
+			"_translation_": {
+				"_default_": "Normal",
+				"ja": "普通",
+				"zh": "普通"
+			}
+		},
+		"Medium": {
+			"_translation_": {
+				"_default_": "Medium",
+				"ja": "中",
+				"zh": "中"
+			}
+		},
+		"Max": {
+			"_translation_": {
+				"_default_": "Max",
+				"ja": "最大",
+				"zh": "最大"
+			}
+		},
+		"Min": {
+			"_translation_": {
+				"_default_": "Min",
+				"ja": "最小",
+				"zh": "最小"
+			}
+		},
+		"Best": {
+			"_translation_": {
+				"_default_": "Best",
+				"ja": "最高",
+				"zh": "最佳"
+			}
+		},
+		"Small": {
+			"_translation_": {
+				"_default_": "Small",
+				"ja": "小",
+				"zh": "小"
+			}
+		},
+		"Large": {
+			"_translation_": {
+				"_default_": "Large",
+				"ja": "大",
+				"zh": "大"
 			}
 		}
 	}
@@ -11563,7 +11591,7 @@ MMD_SA_options.Dungeon.inventory.UI.muted = !MMD_SA_options.Dungeon.inventory.UI
      ,[
         {
   func: function () {
-const language = ['', 'en', 'ja'];
+const language = ['', 'en', 'ja', 'zh'];
 let index = language.indexOf(System._browser.translation.language_full);
 if (index == -1) {
   index = 1;
