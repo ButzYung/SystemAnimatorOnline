@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-01-19)
+// (2024-02-05)
 
 var use_full_spectrum = true
 
@@ -1091,7 +1091,7 @@ if (use_startup_screen) {
 }
 
 if (browser_native_mode || MMD_SA_options.Dungeon || use_startup_screen) {
-  Ldebug.style.posLeft = Ldebug.style.posTop = 50
+  Ldebug.style.posLeft = Ldebug.style.posTop = 40
   Ldebug.style.transformOrigin = "0 0"
   Ldebug.style.transform = "scale(3,3)"
   window.addEventListener("MMDStarted", function (e) {
@@ -1829,6 +1829,10 @@ SL_MC_Timeupdate(SL_MC_video_obj);
     return {
       get enabled() { return enabled; },
       set enabled(v) {
+if (v && System._browser.camera.media_control_enabled) {
+  if (!System._browser.camera.video.paused || System._browser.camera.video.currentTime) return;
+}
+
 motion_index = (v) ? MMD_SA.THREEX.get_model(0).animation.motion_index : -1;
 
 if (enabled == !!v) return;
@@ -1837,6 +1841,8 @@ enabled = !!v;
 animation_mixer_enabled = MMD_SA.THREEX.get_model(0).animation.enabled;
 
 if (enabled) {
+  System._browser.camera.media_control_enabled = false;
+
   this.paused = false;
   SL_MC_simple_mode = true;
   SL_MC_video_obj = this;
@@ -2695,7 +2701,7 @@ else {
 // http://stackoverflow.com/questions/1366068/whats-the-complete-range-for-chinese-characters-in-unicode
 // http://kourge.net/projects/regexp-unicode-block
 
-var use_ascii = !/^(ja)/.test(System._browser.translation.language) && (/^[\x00-\x7F]+$/.test(msg) || !/[^\x00-\x7F]{5}.*[^\x00-\x7F]{5}/.test(msg));
+var use_ascii = !/^(ja|zh)/.test(System._browser.translation.language) && (/^[\x00-\x7F]+$/.test(msg) || !/[^\x00-\x7F]{5}.*[^\x00-\x7F]{5}/.test(msg));
 //DEBUG_show((!b.column_max_unicode && !para.column_max_unicode)+'/'+use_ascii+"",0,1)
 var font = para.font || b.font
 var font_size = para.font_size || b.font_size
@@ -9111,18 +9117,28 @@ const expressionManager = (use_VRM1) ? vrm.expressionManager : vrm.blendShapePro
 let use_faceBlendshapes;
 const facemesh = System._browser.camera.facemesh;
 if (this.use_faceBlendshapes && facemesh.enabled) {
-  use_faceBlendshapes = facemesh.use_faceBlendshapes && System._browser.camera.initialized && facemesh.eye_tracking;
+  use_faceBlendshapes = facemesh.use_faceBlendshapes && System._browser.camera.initialized;
   if (use_faceBlendshapes) {
-    for (const name in blendshape_weight) {
-      if (this.emotion_list.indexOf(name) == -1)
-        blendshape_weight[name] = 0;
+    const f = facemesh.frames;
+
+    if (facemesh.auto_blink || !facemesh.eye_tracking) {
+      for (const b of [
+'EyeBlinkLeft',
+'EyeBlinkRight',
+])
+      {
+        if (f.morph[b]) f.morph[b][0].weight = Math.max(f.morph[b][0].weight, blendshape_weight[(b=='EyeBlinkLeft')?name_blink_l:name_blink_r]);
+      }
     }
-  }
 
-  const f = facemesh.frames;
+    for (const name in blendshape_weight) {
+      if (this.emotion_list.indexOf(name) == -1) {
+        blendshape_weight[name] = 0;
+      }
+    }
 
-  if (System._browser.camera.facemesh.auto_look_at_camera && facemesh.use_faceBlendshapes && System._browser.camera.initialized) {
-    for (const b of [
+    if (facemesh.auto_look_at_camera) {
+      for (const b of [
 'EyeLookUpLeft',
 'EyeLookUpRight',
 'EyeLookDownLeft',
@@ -9131,17 +9147,19 @@ if (this.use_faceBlendshapes && facemesh.enabled) {
 'EyeLookInRight',
 'EyeLookOutLeft',
 'EyeLookOutRight',
-]) {
-      if (f.morph[b]) f.morph[b][0].weight = 0;
+])
+      {
+        if (f.morph[b]) f.morph[b][0].weight = 0;
+      }
     }
-  }
 
-  facemesh.faceBlendshapes_list.forEach(b=>{
-    blendshape_weight[this.faceBlendshapes_map[b]] = (use_faceBlendshapes && f.morph[b]) ? f.morph[b][0].weight : 0;
-  });
+    facemesh.faceBlendshapes_list.forEach(b=>{
+      blendshape_weight[this.faceBlendshapes_map[b]] = (use_faceBlendshapes && f.morph[b]) ? f.morph[b][0].weight : 0;
+    });
 //this.getBoneNode('leftEye' ).quaternion.set(0,0,0,1);
 //this.getBoneNode('rightEye').quaternion.set(0,0,0,1);
 //vrm.lookAt.autoUpdate = false;
+  }
 }
 
 for (const name in blendshape_weight) {
@@ -9972,6 +9990,7 @@ PPE['UnrealBloom'].setup_rim_light();
 if (PPE_initialized) return;
 PPE_initializing = true;
 
+// Oct 11, 2023
 const _Pass = await import(System.Gadget.path + '/three.js/postprocessing/Pass.js');
 Pass = _Pass.Pass;
 
@@ -9980,13 +9999,16 @@ const EffectComposer = await import(System.Gadget.path + '/three.js/postprocessi
 // not using commit from Aug 23, 2023 as it breaks MSAA
 const RenderPass = await import(System.Gadget.path + '/three.js/postprocessing/RenderPass.js');
 
+// May 24, 2023
 const ShaderPass = await import(System.Gadget.path + '/three.js/postprocessing/ShaderPass.js');
 
 THREE.EffectComposer = EffectComposer.EffectComposer;
 THREE.RenderPass = RenderPass.RenderPass;
 THREE.ShaderPass = ShaderPass.ShaderPass;
 
-THREE.SMAAPass = (await import(System.Gadget.path + '/three.js/postprocessing/SMAAPass.js')).SMAAPass;
+//THREE.SMAAPass = (await import(System.Gadget.path + '/three.js/postprocessing/SMAAPass.js')).SMAAPass;
+
+// Dec 19, 2023
 THREE.OutputPass = (await import(System.Gadget.path + '/three.js/postprocessing/OutputPass.js')).OutputPass;
 
 PPE_options_default = {
@@ -11153,8 +11175,8 @@ Object.assign(self.THREE, Geometry_module);
 self.THREE.XLoader = _THREE.XLoader;
 
 if (MMD_SA_options.THREEX_options.use_OutlineEffect) {
-// 2023-01-19
-  const OutlineEffect_module = await import(System.Gadget.path + '/three.js/OutlineEffect.js');
+// Jun 10, 2023
+  const OutlineEffect_module = await import(System.Gadget.path + '/three.js/effects/OutlineEffect.js');
   Object.assign(self.THREE, OutlineEffect_module);
   console.log('OutlineEffect.js loaded')
 }
@@ -11170,8 +11192,7 @@ if (MMD_SA_options.THREEX_options.use_MMD) {
   }
 }
 
-// Jul 22, 2023 (r155)
-// not using commit from Aug 6, 2023 as it causes error
+// Dec 5, 2023 (r160)
 const GLTFLoader_module = await import(System.Gadget.path + '/three.js/loaders/GLTFLoader.js');
 Object.assign(self.THREE, GLTFLoader_module);
 
@@ -12016,8 +12037,8 @@ else {
   });
 }
 
-// 2023-03-11
-const FBXLoader_module = await System._browser.load_script(System.Gadget.path + '/three.js/FBXLoader.js', true);
+// Nov 18, 2023
+const FBXLoader_module = await System._browser.load_script(System.Gadget.path + '/three.js/loaders/FBXLoader.js', true);
 for (const name in FBXLoader_module) THREE[name] = FBXLoader_module[name];
         }
 
@@ -14547,13 +14568,15 @@ Array.prototype.shuffle = function () {
 	"MMD": {
 		"start": {
 			"_translation_": {
-				"_default_": "Press START to begin loading.\n\n- Drop a MMD model zip<VRM>to use your 3D model.\n- Drop a VMD/FBX motion to convert 3D to video file.",
-				"ja": "START を押してロードを開始します。\n\n- 3D モデルを使用するには、MMD モデルの zip<VRM>をドロップします。\n- VMD/FBX モーションをドロップして 3D をビデオ ファイルに変換します。"
+				"_default_": "Press START to begin loading.\n\n- Drop a MMD model zip<VRM>to use your own 3D model.\n- Drop a VMD/FBX motion to convert 3D to simple video file.",
+				"ja": "START を押してロードを開始します。\n\n- 3Dモデルを使用するには、MMDモデルのzip<VRM>をドロップします。\n- VMD/FBXモーションをドロップして3Dをビデオファイルに変換します。",
+				"zh": "按 START 開始載入程序。\n\n- 拖曳ZIP壓縮的MMD模型<VRM>作為你的3D人物。\n- 拖曳VMD/FBX動作檔案以自動轉換成簡單的影像檔案。"
 			},
 			"custom_model": {
 				"_translation_": {
 					"_default_": "Press START to begin with your custom 3D model.\n\n(Click here to reset to the default model.)",
-					"ja": "START を押してカスタム 3D モデルを開始します。\n\n(ここをクリックしてデフォルトのモデルにリセットします。)"
+					"ja": "START を押してカスタム 3D モデルを開始します。\n\n(ここをクリックしてデフォルトのモデルにリセットします。)",
+					"zh": "按 START 以你的自訂人物模型開始載入程序。\n\n(按此重置並使用預設模型。)"
 				}
 			}
 		}
