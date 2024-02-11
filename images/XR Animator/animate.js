@@ -1,5 +1,5 @@
 // XR Animator
-// (2024-02-05)
+// (2024-02-12)
 
 var MMD_SA_options = {
 
@@ -3280,7 +3280,7 @@ video:{
 //  hidden:true,
 //  hidden_on_webcam: true,
   scale:0.4, top:-0.5,
-//left:-0.5,top:-1,
+//left:-0.3,top:-1,
 //scale:0.4*1,top:0,left:-3,
 //scale:0.4*2,top:0,left:-1,
 },
@@ -3288,7 +3288,7 @@ wireframe:{
 //  hidden:true,
 //  align_with_video:true,
   top:0.5,
-//left:+(0.5),top:-1,
+//left:+(0.6),top:-1,
 //left:1,
 //top:0.8,left:0.4,
 //top:0,left:3,
@@ -3987,21 +3987,40 @@ function sort_by_index(a,b) {
 }
 
 const index_first = 2;
-function push_motion_to_list_front() {
-  const motion_para = MMD_SA.MMD.motionManager.para_SA;
-  const motion_id = motion_para._path.replace(/^.+[\/\\]/, '').replace(/\.\w{3,4}$/, '');
-  const index = _motion_list[0].findIndex(m=>m.name==motion_id);
+function swap_motion(index, index_to_swap=0, is_swap) {
+//DEBUG_show(index+'/'+index_to_swap+'/'+!!is_swap,0,1)
+  let motion_id;
+  if (index == null) {
+    const motion_para = MMD_SA.MMD.motionManager.para_SA;
+    motion_id = motion_para._path.replace(/^.+[\/\\]/, '').replace(/\.\w{3,4}$/, '');
+    index = _motion_list[0].findIndex(m=>m.name==motion_id);
+  }
+  else {
+    motion_id = _motion_list[0][index].name;
+  }
 //DEBUG_show(motion_id+'/'+index)
   if (index <= index_first) return;
 
-  _motion_list[0][index].index = index_first + 0.5;
+  if (is_swap && (index_to_swap <= index_first))
+    is_swap = false;
+
+  if (is_swap) {
+    const _index = _motion_list[0][index].index;
+    _motion_list[0][index].index = _motion_list[0][index_to_swap].index;
+    _motion_list[0][index_to_swap].index = _index;
+  }
+  else {
+    _motion_list[0][index].index = Math.max(index_to_swap, index_first) + 0.5;
+  }
   _motion_list[0].sort(sort_by_index);
   _motion_list[0].forEach((m,i)=>{ m.index=i; });
 
   for (let i = 1; i < _motion_list.length; i++)
     _motion_list[i].sort(sort_by_index);
 
-  _motion_page = 0;
+  const list_index = (System._browser.camera.poseNet.enabled) ? 2 : 1;
+  const index_new = _motion_list[list_index].findIndex(m=>m.name==motion_id);
+  _motion_page = parseInt(index_new/9);
 }
 
 let motion_list_length_default;
@@ -4314,6 +4333,59 @@ let _motion_page = 0;
 
 let _has_custom_animation_;
 
+function get_target_index(sb, key) {
+  if (key != null) {
+    const msg_branch_list = MMD_SA_options.Dungeon.dialogue_branch_mode.filter(b=>!b.sb_index);
+    const branch = msg_branch_list?.findIndex(b=>((b.sb_index||0)==(sb.index||0)) && (b.key==key));
+    return branch;
+  }
+}
+
+const _on_drag = {
+  outside_menu: {
+    func: function (sb_drag, outside_menu) {
+const list_index = (System._browser.camera.poseNet.enabled) ? 2 : 1;
+const offset = list_index-1;
+
+const index = get_target_index(sb_drag, sb_drag._drag_key_)+offset + _motion_page*9;
+
+let index_to_swap;
+//DEBUG_show(outside_menu)
+if (outside_menu == 'bottom') {
+  index_to_swap = 9999;
+}
+else if (outside_menu == 'left') {
+  index_to_swap = index - 9-1;
+}
+else if (outside_menu == 'right') {
+  index_to_swap = index + 9;
+}
+else {
+  index_to_swap = 0;
+}
+//DEBUG_show(index+'/'+index_to_swap)
+swap_motion(index, index_to_swap);
+
+MMD_SA_options.Dungeon.run_event('_POSE_',0,0);
+    }
+  }
+};
+
+const _on_drop = {
+  func: function (sb_drag, sb) {
+const list_index = (System._browser.camera.poseNet.enabled) ? 2 : 1;
+const offset = list_index-1;
+
+let index = get_target_index(sb_drag, sb_drag._drag_key_)+offset + _motion_page*9;
+let index_to_swap = get_target_index(sb, sb._branch_key_)+offset + _motion_page*9;
+//DEBUG_show(index+'/'+index_to_swap+'/'+_motion_page,0,1)
+if (index > index_to_swap) index_to_swap--;
+swap_motion(index, index_to_swap, false);
+
+MMD_SA_options.Dungeon.run_event('_POSE_',0,0);
+  }
+};
+
 MMD_SA_options.Dungeon_options.events_default["_POSE_"] = [
 //0
       [
@@ -4367,7 +4439,7 @@ const index = (System._browser.camera.poseNet.enabled) ? 2 : 1;
 
 let ini = _motion_page * 9;
 
-return _motion_list[index].slice(ini, ini+9).map((m,i) => { return { key:i+1, event_id:{ func:()=>{ change_motion(ini+i); System._browser.on_animation_update.add(()=>{MMD_SA_options.Dungeon.run_event('_POSE_',0,0)},20,0); }, } }; })
+return _motion_list[index].slice(ini, ini+9).map((m,i) => { return { key:i+1, on_drag:(_motion_page || (i > 3-index))?_on_drag:null, on_drop:_on_drop, event_id:{ func:()=>{ change_motion(ini+i); System._browser.on_animation_update.add(()=>{MMD_SA_options.Dungeon.run_event('_POSE_',0,0)},20,0); }, } }; })
   .concat((_has_custom_animation_)?[{ key:0, event_id:{ func:()=>{ this._animation_on_=change_custom_motion(); System._browser.on_animation_update.add(()=>{MMD_SA_options.Dungeon.run_event('_POSE_',0,0)},20,0); }, } }]:[]);
   },
           },
@@ -4406,7 +4478,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
       }
     },
-    { key:'D', event_id:{ func:()=>{ push_motion_to_list_front(); }, goto_event:{id:'_POSE_',branch_index:0} },
+    { key:'D', event_id:{ func:()=>{ swap_motion(); }, goto_event:{id:'_POSE_',branch_index:0} },
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
@@ -8703,7 +8775,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  get content() { return 'XR Animator (v0.19.5)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
+  get content() { return 'XR Animator (v0.19.6)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {

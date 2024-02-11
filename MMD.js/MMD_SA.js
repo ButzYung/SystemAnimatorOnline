@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-02-05)
+// (2024-02-12)
 
 var use_full_spectrum = true
 
@@ -2861,7 +2861,7 @@ for (var i = 0, i_length = msg_line.length; i < i_length; i++) {
   if (MMD_SA_options.SpeechBubble_branch) {
     if (MMD_SA_options.SpeechBubble_branch.RE.test(msg_line[i]))
       branch_index = RegExp.$1
-    let fillStyle = (branch_index != -1) ? MMD_SA_options.SpeechBubble_branch.fillStyle || 'Navy' : 'black';
+    let fillStyle = (branch_index != -1) ? ((branch_index == this._drag_key_) ? 'Green' : (MMD_SA_options.SpeechBubble_branch.fillStyle || 'Navy')) : 'black';
     if ((MMD_SA_options.SpeechBubble_branch.confirm_keydown || (MMD_SA_options.SpeechBubble_branch.use_cursor !== false)) && (this._branch_key_ != null)) {
       if ((branch_index != -1) && (branch_index == this._branch_key_)) {
         fillStyle = 'red'
@@ -3153,8 +3153,8 @@ if (this.msg_timerID) {
 }
 
 if (this.visible) {
-  this.msg = ""
-  this._branch_key_ = null
+  this.msg = "";
+  this._branch_key_ = this._drag_key_ = null;
 
   this.hidden_time_ref = Date.now()
 
@@ -3228,6 +3228,25 @@ window.addEventListener('MMDStarted', ()=>{
 
 //DEBUG_show('scale:'+scale.x+'\n'+mouse_x+','+mouse_y+'\n'+ (~~pos.x) +','+ (~~pos.y)+'\n\n'+sb.msg_obj.map((o,i)=>i+':'+ ~~o.x + 'x' + ~~o.y + '/' + ~~o.w + 'x' + ~~o.h).join('\n'))
 
+      const sb_drag = get_target_sb('_drag_key_');
+      if (sb == sb_drag) {
+        if (pos.x < 0) {
+          outside_menu = 'left';
+        }
+        else if (pos.x > w) {
+          outside_menu = 'right';
+        }
+        else if (pos.y < 0) {
+          outside_menu = 'top';
+        }
+        else if (pos.y > h) {
+          outside_menu = 'bottom';
+        }
+        else {
+          outside_menu = null;
+        }
+      }
+
       if ((pos.x < 0) || (pos.x > w) || (pos.y < 0) || (pos.y > h)) {
         clear_highlight(sb);
         return;
@@ -3248,13 +3267,10 @@ window.addEventListener('MMDStarted', ()=>{
         sb._branch_key_ = (msg_obj?.branch_key != null) ? msg_obj.branch_key : null;
         sb._update_placement(true);
 
-        if (sb._branch_key_) {
-          const msg_branch_list = MMD_SA_options.Dungeon.dialogue_branch_mode;
-          const branch = msg_branch_list?.find(b=>((b.sb_index||0)==(sb.index||0)) && (b.key==sb._branch_key_));
-          if (branch) {
-            mouseover = branch.onmouseover;
-            mouseover?.({ clientX:mouse_x, clientY:mouse_y });
-          }
+        const branch = get_target_branch(sb, sb._branch_key_);
+        if (branch) {
+          mouseover = branch.onmouseover;
+          mouseover?.({ clientX:mouse_x, clientY:mouse_y });
         }
 //DEBUG_show(Date.now())
       }
@@ -3268,11 +3284,19 @@ window.addEventListener('MMDStarted', ()=>{
 //      DEBUG_show(pos.toArray().join('\n')+'\n\n'+((msg_obj)?msg_obj.branch_index:-1));
     });
 
-    d_target.style.cursor = (is_pointer) ? 'pointer' : 'auto';
+    d_target.style.cursor = cursor || ((is_pointer) ? 'pointer' : 'auto');
   }
 
-  function get_target_sb() {
-    return bb_list.slice().sort((a,b)=>a._mesh.position.distanceToSquared(MMD_SA.THREEX.camera.obj.position) - b._mesh.position.distanceToSquared(MMD_SA.THREEX.camera.obj.position)).find(sb=>sb._branch_key_!=null);
+  function get_target_branch(sb, key) {
+    if (key != null) {
+      const msg_branch_list = MMD_SA_options.Dungeon.dialogue_branch_mode;
+      const branch = msg_branch_list?.find(b=>((b.sb_index||0)==(sb.index||0)) && (b.key==key));
+      return branch;
+    }
+  }
+
+  function get_target_sb(key='_branch_key_') {
+    return bb_list.slice().sort((a,b)=>a._mesh.position.distanceToSquared(MMD_SA.THREEX.camera.obj.position) - b._mesh.position.distanceToSquared(MMD_SA.THREEX.camera.obj.position)).find(sb=>sb[key]!=null);
   }
 
 //  const THREE = MMD_SA.THREEX.THREE;
@@ -3282,20 +3306,80 @@ window.addEventListener('MMDStarted', ()=>{
   const v2 = new THREE.Vector3();
 
   let mouse_x, mouse_y;
+  let mouse_down, mouse_drag;
+  let drag_target;
+  let cursor;
+  let outside_menu;
 
   const d_target = document.getElementById('SL_Host');
-  d_target.addEventListener('mousemove', (e)=>{
-    mouse_x = e.clientX * window.devicePixelRatio;
-    mouse_y = e.clientY * window.devicePixelRatio;
+
+  const ev_mouse_move = (!is_mobile) ? 'mousemove' : 'touchmove';
+  d_target.addEventListener(ev_mouse_move, (e)=>{
+    let sb;
+    if (!mouse_drag) {
+      if (mouse_down && (mouse_down > -1) && (mouse_down < RAF_timestamp - 250)) {
+        mouse_down = -1;
+        sb = drag_target?.[0];
+        if (sb) {
+          const branch = get_target_branch(sb, drag_target[1]);
+          if (branch?.on_drag) {
+            mouse_drag = true;
+            sb._drag_key_ = drag_target[1];
+            cursor = 'grabbing';
+            MMD_SA._trackball_camera.enabled = false;
+          }
+          else {
+            cursor = 'not-allowed';
+          }
+        }
+      }
+    }
+    else {
+      sb = get_target_sb();
+      if (sb) {
+        const branch = get_target_branch(sb, sb._branch_key_);
+        if (branch?.on_drop) {
+          cursor = 'grabbing';
+        }
+        else {
+          cursor = 'not-allowed';
+        }
+      }
+      else {
+        const sb_drag = get_target_sb('_drag_key_');
+        const drag_branch = get_target_branch(sb_drag, sb_drag._drag_key_);
+        if (drag_branch?.on_drag?.outside_menu) {
+          cursor = drag_branch.on_drag.outside_menu.cursor || 'move';
+        }
+        else {
+          cursor = 'not-allowed';
+        }
+      }
+    }
+
+    if (!is_mobile) {
+      mouse_x = e.clientX * window.devicePixelRatio;
+      mouse_y = e.clientY * window.devicePixelRatio;
+    }
+    else {
+      if (sb) {
+        mouse_x = (e.touches[0]?.clientX||0) * window.devicePixelRatio;
+        mouse_y = (e.touches[0]?.clientY||0) * window.devicePixelRatio;
+      }
+    }
   });
-  d_target.addEventListener('click', (e)=>{
-    if (!is_mobile && (d_target.style.cursor != 'pointer')) return;
+
+  const ev_mouse_down = (!is_mobile) ? 'mousedown' : 'touchstart';
+  d_target.addEventListener(ev_mouse_down, (e)=>{
+    if (is_mobile) {
+      mouse_x = (e.touches[0]?.clientX||0) * window.devicePixelRatio;
+      mouse_y = (e.touches[0]?.clientY||0) * window.devicePixelRatio;
+    }
 
     let sb = get_target_sb();
     if (!sb) {
       if (is_mobile) {
-        mouse_x = e.clientX * window.devicePixelRatio;
-        mouse_y = e.clientY * window.devicePixelRatio;
+//DEBUG_show(mouse_x+','+mouse_y)
         highlight(); sb = get_target_sb();
         if (!sb) {
           mouse_x = mouse_y = null;
@@ -3305,6 +3389,56 @@ window.addEventListener('MMDStarted', ()=>{
       else
         return;
     }
+
+    MMD_SA._trackball_camera.enabled = false;
+    e.stopPropagation();
+
+    if (!mouse_down) {
+      mouse_down = RAF_timestamp;
+    }
+
+    drag_target = [sb, sb._branch_key_];
+  });
+
+  const ev_mouse_up = (!is_mobile) ? 'click' : 'touchend';
+  d_target.addEventListener(ev_mouse_up, (e)=>{
+    mouse_down = null;
+    cursor = null;
+    drag_target = null;
+
+    if (MMD_SA._trackball_camera.enabled != !!returnBoolean("MMDTrackballCamera")) {
+      MMD_SA._trackball_camera.enabled = !!returnBoolean("MMDTrackballCamera");
+      e.stopPropagation();
+    }
+
+    let sb;
+    if (mouse_drag) {
+      mouse_drag = null;
+
+      const sb_drag = get_target_sb('_drag_key_');
+      sb = get_target_sb();
+      if (sb) {
+        const branch = get_target_branch(sb, sb._branch_key_);
+        if (branch?.on_drop) {
+          branch.on_drop.func(sb_drag, sb);
+        }
+      }
+      else {
+        const branch = get_target_branch(sb_drag, sb_drag._drag_key_);
+        if (branch.on_drag?.outside_menu) {
+          branch.on_drag.outside_menu.func(sb_drag, outside_menu);
+        }
+      }
+
+      sb_drag._drag_key_ = null;
+      return;
+    }
+
+    if (!is_mobile && (d_target.style.cursor != 'pointer')) return;
+
+    sb = get_target_sb();
+    if (!sb) return;
+
 /*
     if (is_mobile) {
       mouse_x = e.clientX * window.devicePixelRatio;
@@ -12179,6 +12313,11 @@ bone_map.forEach(name=>{
   else if (/head/i.test(name)) {
     rig('頭', name);
   }
+  else if (/(thumb|index|mid|ring|pinky).*(\d+)/i.test(name) && (parseInt(RegExp.$2) <= 3)) {
+    const name_MMD = MMD_finger(name);
+    if (!/twist|share/i.test(name))
+      rig(name_MMD, name);
+  }
   else if (/shoulder|clavicle|arm|hand/i.test(name)) {
     if (!/twist|share/i.test(name)) {
       const dir = MMD_LR(name);
@@ -12194,11 +12333,6 @@ bone_map.forEach(name=>{
       if (leg_name)
         rig(dir+leg_name, name);
     }
-  }
-  else if (/(thumb|index|mid|ring|pinky).*(\d+)/i.test(name)) {
-    const name_MMD = MMD_finger(name);
-    if (!/twist|share/i.test(name))
-      rig(name_MMD, name);
   }
 });
 
