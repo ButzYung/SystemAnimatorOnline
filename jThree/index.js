@@ -1,4 +1,4 @@
-// (2024-01-19)
+// (2024-02-12)
 
 MMD_SA.fn = {
 /*
@@ -475,32 +475,46 @@ const obj = x_object._obj;
 
 if (MMD_SA_options.Dungeon) {
   if (!mesh.visible || p_bone.disabled) {
-    if (!mesh.visible || !x_object.placement?.position || (p_bone.attached && !p_bone._detached_)) {
+    if (!mesh.visible) {
+      if (!p_bone.disabled)
+        p_bone._avatar_hidden_ = true;
+
       x_object._obj_proxy.hidden = true;
       x_object._obj_proxy.visible = false;
     }
     else {
-      if (p_bone.attached) {
-        p_bone.attached = false;
-        obj.matrixAutoUpdate = true;
-
-        x_object._obj_proxy.hidden = false
-        x_object._obj_proxy.visible = true
-
-        obj.position.copy(p_bone._detached_.pos);
-        obj.quaternion.copy(p_bone._detached_.rot);
+// Unhide object if avatar was previously hidden when the object was active. Otherwise, keep the current display status.
+      if (p_bone._avatar_hidden_) {
+        x_object._obj_proxy.hidden = false;
+        x_object._obj_proxy.visible = true;
       }
-      else {
-        if (!p_bone._detached_)
-          p_bone._detached_ = { pos:new THREE.Vector3(), rot: new THREE.Quaternion() };
-        p_bone._detached_.pos.copy(obj.position);
-        p_bone._detached_.rot.copy(obj.quaternion);
+
+      if (x_object.placement?.position) {
+        if (!p_bone._detached_) p_bone._detached_ = { pos:new THREE.Vector3(), rot: new THREE.Quaternion() };
+
+        if (p_bone.attached) {
+          p_bone.attached = false;
+          obj.matrixAutoUpdate = true;
+
+          x_object._obj_proxy.hidden = false;
+          x_object._obj_proxy.visible = true;
+
+          obj.position.copy(p_bone._detached_.pos);
+          obj.quaternion.copy(p_bone._detached_.rot);
+        }
+        else {
+          p_bone._detached_.pos.copy(obj.position);
+          p_bone._detached_.rot.copy(obj.quaternion);
+        }
       }
+
+      p_bone._avatar_hidden_ = false;
     }
     return;
   }
-  x_object._obj_proxy.hidden = false
-  x_object._obj_proxy.visible = true
+
+  x_object._obj_proxy.hidden = false;
+  x_object._obj_proxy.visible = true;
 }
 
 if (p_bone.condition && !p_bone.condition(x_object, model_index))
@@ -522,7 +536,7 @@ if (!is_root) {
     return;
 }
 
-x_object.parent_bone.attached = true;
+p_bone.attached = true;
 
 var pos, rot;
 var model_mesh, modelX;

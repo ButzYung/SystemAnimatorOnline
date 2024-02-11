@@ -1,5 +1,5 @@
 // auto fit
-// (2024-02-05)
+// (2024-02-12)
 
 const v1 = new THREE.Vector3();
 const v2 = new THREE.Vector3();
@@ -856,6 +856,12 @@ System._browser.camera.DEBUG_show(condition.contact_target.name+':'+dis)
 //            if (p_bone.name.charAt(0) != d) continue;
 
             p_bone.disabled = true;
+// object cannot be hidden if position is defined
+            if (x_object.placement?.position) {
+              x_object.placement._position_ = x_object.placement.position;
+              x_object.placement.position = null;
+            }
+
             if (x_object.placement.hidden) {
 // check conditions in case detach and attach/place occur at the same time frame
               System._browser.on_animation_update.add(()=>{ if (x_object.placement.hidden && x_object.parent_bone?.disabled) x_object._obj_proxy.hidden = true; }, 1,0);
