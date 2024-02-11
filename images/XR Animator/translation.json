@@ -279,18 +279,18 @@
 				"push_current_pose_to_list_top": {
 					"tooltip": {
 						"_translation_": {
-							"_default_": "Push current pose to list top:\nThis option pushes the current pose/motion to the top of the pose list, mainly for the convenience to use the pose hotkeys (Alt/Ctrl+Num1-9) when they can only cover the first 18 poses.",
-							"ja": "現在のポーズをリストの一番上に置く:\nこのオプションは、現在のポーズ/モーションをポーズ リストの先頭に置きます。これは主に、最初の 18 ポーズしかカバーできないときにポーズ ホットキー (Alt/Ctrl+Num1 ～ 9) を使用するのに便利です。",
-							"zh": "置頂現在的姿勢:\n此選項會將現在的姿勢/動作置頂，方便於利用只限於首18個姿勢而設的熱鍵 (Alt/Ctrl+Num1-9)。"
+							"_default_": "Push current pose to list top:\nThis option pushes the current pose/motion to the top of the pose list, mainly for the convenience to use the pose hotkeys (Alt/Ctrl+Num1-9) when they can only cover the first 18 poses. Alternatively, you can change the order of the poses via drag and drop.",
+							"ja": "現在のポーズをリストの一番上に置く:\nこのオプションは、現在のポーズ/モーションをポーズ リストの先頭に置きます。これは主に、最初の 18 ポーズしかカバーできないときにポーズ ホットキー (Alt/Ctrl+Num1 ～ 9) を使用するのに便利です。 または、ドラッグ アンド ドロップでポーズの順序を変更することもできます。",
+							"zh": "置頂現在的姿勢:\n此選項會將現在的姿勢/動作置頂，方便於利用只限於首18個姿勢而設的熱鍵 (Alt/Ctrl+Num1-9)。 你亦可以用拖曳的方法更改姿勢的順序。"
 						}
 					}
 				},
 				"reset_pose_list_order": {
 					"tooltip": {
 						"_translation_": {
-							"_default_": "Reset pose list order:\nThis option resets the pose list order for any changes you have made with the \"Push current pose to list top\" option.",
-							"ja": "ポーズリストの順序をリセット:\nこのオプションは、「現在のポーズをリストの一番上に置く」オプションで行った変更に対するポーズ リストの順序をリセットします。",
-							"zh": "還原姿勢列表的順序:\n此選項會將因「置頂現在的姿勢」選項而改變的姿勢列表的順序還原。"
+							"_default_": "Reset pose list order:\nThis option resets the pose list order for any changes you have made with the \"Push current pose to list top\" option or drag-and-drop.",
+							"ja": "ポーズリストの順序をリセット:\nこのオプションは、「現在のポーズをリストの一番上に置く」オプションまたはドラッグ アンド ドロップで加えた変更に対して、ポーズ リストの順序をリセットします。",
+							"zh": "還原姿勢列表的順序:\n此選項會將以「置頂現在的姿勢」選項或拖曳方法而改變的姿勢列表的順序還原。"
 						}
 					}
 				},
