@@ -10251,6 +10251,7 @@ return [
   'X. ' + System._browser.translation.get('Misc.done'),
 ].join('\n');
   }
+ ,para: { row_max:11  }
  ,bubble_index: 3
  ,get branch_list() {
 return branch_list();
