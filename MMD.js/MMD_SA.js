@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-02-12)
+// (2024-02-21)
 
 var use_full_spectrum = true
 
@@ -8837,6 +8837,8 @@ para.left_leg_length = ((para.pos0['leftUpperLeg'][1] - para.pos0['leftLowerLeg'
 
 para.bone_dummy = {};
 para.spine_to_hips_ratio = (para.pos0['chest']) ? 0 : 1 - THREE.Math.clamp((para.pos0['neck'][1] - para.pos0['spine'][1]) / (para.pos0['neck'][1] - para.pos0['hips'][1]) * 2, 0,1);
+
+para.spine_length = (para.pos0['neck'][1] - para.pos0['leftUpperLeg'][1]) * vrm_scale;
 
 Model_obj.call(this, index, vrm, para);
 this.mesh = vrm.scene;

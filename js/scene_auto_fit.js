@@ -1,5 +1,5 @@
 // auto fit
-// (2024-02-12)
+// (2024-02-21)
 
 const v1 = new THREE.Vector3();
 const v2 = new THREE.Vector3();
@@ -934,7 +934,7 @@ System._browser.camera.DEBUG_show(condition.contact_target.name+':'+dis)
                 x_object._mesh.scale.set(s,s,s);
               }
               if (obj.position) {
-                const pos_host = x_object.parent_bone || x_object.placement;
+                const pos_host = (x_object.parent_bone?.attached) ? x_object.parent_bone : x_object.placement;
                 const pos_offset = MMD_SA._v3a.copy(pos_host.position);
                 transform_property(obj.position, pos_host, 'position');
                 pos_offset.negate().add(pos_host.position);
@@ -950,6 +950,11 @@ System._browser.camera.DEBUG_show(condition.contact_target.name+':'+dis)
           if (g.action.transform.motion_tracking) {
             for (const p in g.action.transform.motion_tracking) {
               transform_property(g.action.transform.motion_tracking[p], MMD_SA.MMD.motionManager.para_SA.motion_tracking, p);
+            }
+          }
+          if (g.action.transform.gesture) {
+            for (const p in g.action.transform.gesture) {
+              transform_property(g.action.transform.gesture[p], para.json.XR_Animator_scene.on.gesture, p);
             }
           }
         }

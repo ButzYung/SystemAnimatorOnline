@@ -496,7 +496,7 @@
 							"_translation_": {
 								"_default_": "Full body (MediaPipe Vision):\nMediaPipe Vision is the latest mocap AI suite from Google MediaPipe. This version of full body tracking uses face, body and hand tracking models at the same time.",
 								"ja": "全身 (MediaPipe Vision):\nMediaPipe Vision は、Google MediaPipe の最新のモーションキャプチャ AI スイートです。 このバージョンの全身追跡では、顔、体、手の追跡モデルを同時に使用します。",
-								"_default_": "全身 (MediaPipe Vision):\nMediaPipe Vision 是 Google MediaPipe 最新版的動態捕捉 AI 組合。 此功能將同時使用臉、手和身體的動態捕捉模型。"
+								"zh": "全身 (MediaPipe Vision):\nMediaPipe Vision 是 Google MediaPipe 最新版的動態捕捉 AI 組合。 此功能將同時使用臉、手和身體的動態捕捉模型。"
 							}
 						}
 					},
@@ -505,7 +505,7 @@
 							"_translation_": {
 								"_default_": "Full body (Legacy Holistic):\nThis version of full body tracking uses the legacy MediaPipe Holistic AI model, which combines face, body and hand tracking into one model. This requires less system resource and makes it faster in some cases, at the expense of losing some mocap accuracy and features from the latest MediaPipe Vision.",
 								"ja": "全身 (Legacy Holistic):\nこのバージョンの全身追跡では、顔、体、手の追跡を 1 つのモデルに組み合わせた古い MediaPipe Holistic AI モデルを使用します。 これにより、必要なシステム リソースが減り、場合によっては高速になりますが、最新の MediaPipe Vision の一部のモーキャプの精度と機能が失われます。",
-								"_default_": "全身 (Legacy Holistic):\n此乃舊版的 MediaPipe Holistic AI 模型, 將臉、手和身體的動態捕捉模型合而為一。 此版本系統要求比較低，一般而言速度亦較快，但缺少了最新版 MediaPipe Vision 的一些功能和精確度。"
+								"zh": "全身 (Legacy Holistic):\n此乃舊版的 MediaPipe Holistic AI 模型, 將臉、手和身體的動態捕捉模型合而為一。 此版本系統要求比較低，一般而言速度亦較快，但缺少了最新版 MediaPipe Vision 的一些功能和精確度。"
 							}
 						}
 					}
@@ -521,7 +521,7 @@
 							"_translation_": {
 								"_default_": "There is no motion to export. Enable motion capture and record the motion, or drop a FBX/BVH motion file.",
 								"ja": "エクスポートするモーションはありません。 モーション キャプチャを有効にしてモーションを記録するか、FBX/BVH モーション ファイルをドロップします。",
-								"zh": "現在沒有可匯出的動作。 啟動動態捕捉並紀錄動作, 或拖曳 FBX/BVH 動作檔案。\n-"
+								"zh": "現在沒有可匯出的動作。 啟動動態捕捉並紀錄動作, 或拖曳 FBX/BVH 動作檔案。"
 							}
 						},
 						"choose_format": {
@@ -666,20 +666,6 @@
 								}
 							}
 						},
-						"leg_scale_adjustment": {
-							"_translation_": {
-								"_default_": "Leg scale adjustment",
-								"ja": "足スケール調整",
-								"zh": "足比例調整"
-							},
-							"tooltip": {
-								"_translation_": {
-									"_default_": "Leg scale adjustment:\nThis experimental feature adapts the leg length difference between source and avatar to give you a better sense of grounding. You don't need this option in most cases, but some nice results can be achieved if you can find a setting that keeps the values of 左/右 on debug between 1 and 0.95 often. Default is \"OFF\".",
-									"ja": "足スケール調整:\nこの実験的な機能は、ソースとアバターの間の脚の長さの違いを調整して、接地感を高めます。 ほとんどの場合、このオプションは必要ありませんが、デバッグ時に左/右の値を 1 ～ 0.95 の間に維持する設定を見つけることができれば、良い結果が得られることがあります。 デフォルトは「OFF」です。",
-									"zh": "足比例調整:\n此實驗性設定會比較影像來源及 3D 人物的腳長，作出調整以增加人物的接地感。 一般情形下並不需要使用此設定，但如果你能找到一個在左上的偵錯視窗中長期維持左/右値在 1-0.95 的設定的話，將會有不錯的效果。 預設是「OFF」。"
-								}
-							}
-						},
 						"auto_grounding": {
 							"_translation_": {
 								"_default_": "Auto-grounding",
@@ -698,13 +684,13 @@
 							"_translation_": {
 								"_default_": "Body bend reduction",
 								"ja": "体の曲がりを軽減する",
-								"zh": "減少身體前傾"
+								"zh": "減少身體前後彎曲"
 							},
 							"tooltip": {
 								"_translation_": {
-									"_default_": "Body bend reduction:\nSometimes the mocap AI may misrecognize your body gesture as bending forward, especially when you are close to the camera. When enabled, this option reduces the bending of avatar's body by a certain percentage. Default is \"OFF\".",
-									"ja": "体の曲がりを軽減する:\n特にカメラに近い場合、モーションキャプチャ AI が体のジェスチャを前かがみであると誤認識することがあります。 このオプションを有効にすると、アバターの体の曲がりが一定の割合で軽減されます。 デフォルトは「OFF」です。",
-									"zh": "減少身體前傾:\n有時動捕 AI 會誤認身體為前傾，尤其當你較接近鏡頭的時候。 此設定會減少人物身體前傾的情況。 預設是「OFF」。"
+									"_default_": "Body bend reduction:\nSometimes the mocap AI may misrecognize your body gesture as bending forward or backward, especially when you are close to the camera. When enabled, this option reduces the bending of avatar's body by a certain ratio. Default is \"OFF\".",
+									"ja": "体の曲がりを軽減する:\n特にカメラに近づいている場合、モーションキャプチャ AI が体のジェスチャを前屈または後屈と誤認識することがあります。 このオプションを有効にすると、アバターの体の曲がりが一定の比率で軽減されます。 デフォルトは「OFF」です。",
+									"zh": "減少身體前後彎曲:\n有時動捕 AI 會誤認身體為前傾或後傾，尤其當你較接近鏡頭的時候。 更改此設定的比例以減少人物身體前後彎曲的情況。 預設是「OFF」。"
 								}
 							}
 						},
@@ -913,9 +899,9 @@
 							},
 							"tooltip": {
 								"_translation_": {
-									"_default_": "This option stabilizes the default arms tracking from body mocap and reduces false positive detections when hands are going on and off the screen, by utilizing the hands tracking data. This options applies when you are close to the camera, or using upper body mocap. Default is \"ON\".",
-									"ja": "このオプションは、手の追跡データを利用することで、ボディ モーション キャプチャからのデフォルトの腕の追跡を安定させ、手が画面に出入りするときの誤検知を減らします。 このオプションは、カメラに近い場合、または上半身のモーションキャプチャのみに適用されます。 デフォルトは「ON」です。",
-									"zh": "此設定在當你的手部出入畫面時，在身體追蹤以外追加利用手部追蹤的數據以穩定手臂位置。 此功能在接近鏡頭或只限上半身動捕時適用。 預設是「ON」。"
+									"_default_": "This option stabilizes the default arms tracking from body mocap and reduces false positive detections when hands are going on and off the screen, by utilizing the hands tracking data. This option applies in upper body mocap, or when this option is \"ON\" and you are close to camera. Default is \"ON\".",
+									"ja": "このオプションは、手の追跡データを利用することで、ボディ モーション キャプチャからのデフォルトの腕の追跡を安定させ、手が画面に出入りするときの誤検知を減らします。 このオプションは、上半身のモーキャプに適用されるか、このオプションが「ON」でカメラに近い場合に適用されます。 デフォルトは「ON」です。",
+									"zh": "此設定在當你的手部出入畫面時，在身體追蹤以外追加利用手部追蹤的數據以穩定手臂位置。 此功能在上半身動捕模式，或此選項為「ON」並接近鏡頭時適用。 預設是「ON」。"
 								}
 							},
 							"upper_body_mocap": {
@@ -978,7 +964,7 @@
 								"_translation_": {
 									"_default_": "When enabled, this experimental option separates the processing of hand tracking from body tracking, and runs hand tracking model on an independent web worker, which aims to give priority for body mocap to achieve higher fps, at the expense of possibly lower fps for hand tracking, when system resource is tight. Default is \"OFF\".",
 									"ja": "この実験的オプションを有効にすると、ハンド トラッキングの処理がボディ トラッキングから分離され、独立したウェブワーカーでハンド トラッキング モデルが実行されます。これは、ハンド トラッキングの fps が低下する可能性を犠牲にして、ボディ モーキャプを優先してより高い fps を達成することを目的としています。 デフォルトは「OFF」です。",
-									"zh": "此實驗性設定將手部追蹤的處理和身體追蹤跡分開。 當系統資源不足時，此功能會優先處理身體追蹤以增加動捕幀率，而代價是手部追蹤的幀率有可能下降。 預設是「OFF」。"
+									"zh": "此實驗性功能將手部追蹤的處理和身體追蹤分開。 當系統資源不足時，此功能會優先處理身體追蹤以增加動捕幀率，而代價是手部追蹤的幀率有可能下降。 預設是「OFF」。"
 								}
 							}
 						}
@@ -1050,7 +1036,7 @@
 								"_translation_": {
 									"_default_": "Eye bone rotation (press ➕➖ key to change value):\nFor avatar models that use eye bone rotation, sometimes the rotation degree can be either too small or too large. Adjust this setting to fit your taste. In the case of ARKit/PerfectSync model, sometimes you may need to set it to 0% if eye bone rotation is actually redundant. Default is \"100%\".",
 									"ja": "目のボーンの回転(➕➖キーで値を変更する):\n目のボーンの回転を使用するアバター モデルの場合、回転度が小さすぎるか大きすぎる場合があります。 好みに合わせてこの設定を調整してください。 ARKit/PerfectSync モデルの場合、実際に目のボーンの回転が必要ない場合は、0% に設定する必要がある場合があります。 デフォルトは「100%」です。",
-									"zh": "眼骨回轉(按➕➖ 鍵更改數值）:\n當人物模型使用眼骨作眼睛回轉計算時，有可能出現幅度太大或大小的情況。 利用此設定以更改回轉幅度。 在人物支援 ARKit/PerfectSync 時，你或許需要將此選項設定為0%。 預設是「100%」。"
+									"zh": "眼骨回轉(按➕➖ 鍵更改數值）:\n當人物模型使用眼骨作眼睛回轉計算時，有可能出現幅度太大或太小的情況。 利用此設定以更改回轉幅度。 在人物支援 ARKit/PerfectSync 時，你或許需要將此選項設定為0%。 預設是「100%」。"
 								}
 							}
 						},
@@ -1065,6 +1051,20 @@
 									"_default_": "\"Tongue out\" tracking:\nXR Animator supports the tracking of ARKit 52 blendshapes, with the exception of a few, including \"tongueOut\". Turn on this option to allow XR Animator to estimate the tongue out motion by analyzing the other mouth blendshape data. Default is \"ON\".",
 									"ja": "「舌出し」追跡:\nXR Animator は、「tongueOut」などのいくつかの例外を除き、ARKit 52 ブレンドシェイプのトラッキングをサポートしています。 このオプションをオンにすると、XR Animator が他の口のブレンドシェイプ データを分析して舌を出す動きを推定できるようになります。 デフォルトは「ON」です。",
 									"zh": "「吐舌」追蹤:\nXR Animator 支援 ARKit 52個表情追蹤的大部份，除了包括「tongueOut」在內的一小部份。 啟動此選項以利用其他表情數據作吐舌追蹤推算。 預設是「ON」。"
+								}
+							}
+						},
+						"lean_tracking": {
+							"_translation_": {
+								"_default_": "Body leaning tracking",
+								"ja": "体の傾きの追跡",
+								"zh": "身體前傾追蹤"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Body leaning tracking:\nThis option compares your head size with the size data collected during the calibration process to determine how much the body of the avatar should lean forward. This option applies when you are close to the camera. Default is \"Normal\".",
+									"ja": "体の傾きの追跡:\nこのオプションでは、頭のサイズとキャリブレーション プロセス中に収集されたサイズ データを比較して、アバターの体をどの程度前傾させるかを決定します。 このオプションは、カメラに近づいたときに適用されます。 デフォルトは「普通」です。",
+									"zh": "身體傾前追蹤:\n此選項透過比較目前頭部的大小及較準過程中收集的的大小資料以決定人物身體前傾的幅度。 此選項在你接近鏡頭時適用。 預設是「普通」。"
 								}
 							}
 						},
