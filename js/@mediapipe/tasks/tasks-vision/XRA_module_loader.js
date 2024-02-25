@@ -3,7 +3,7 @@
 (()=>{
   function load_module(m) {
 //    console.log(m);
-    for (const name of ['FilesetResolver', 'FaceLandmarker', 'PoseLandmarker', 'HandLandmarker'])
+    for (const name of ['FilesetResolver', 'FaceLandmarker', 'PoseLandmarker', 'HandLandmarker', 'HolisticLandmarker'])
       self[name] = m[name];
   }
 
