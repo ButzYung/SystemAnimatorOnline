@@ -1,4 +1,4 @@
-// 2023-11-09
+// 2024-02-25
 
 const is_worker = (typeof window !== "object");
 
@@ -191,7 +191,7 @@ function _onmessage(e) {
 
   var posenet_initialized, handpose_initialized, holistic_initialized, human_initialized;
   async function PoseAT_load_lib(options) {
-if (options.use_holistic && !holistic_initialized) {
+if (options.use_holistic_legacy && !holistic_initialized) {
   await load_scripts('@mediapipe/holistic/holistic.js');
 
   await (async ()=>{
@@ -303,45 +303,49 @@ minConfidence: 0.2
   human_initialized = true
 }
 
-if (!options.use_holistic && !use_human_pose) {
+if (!options.use_holistic_legacy && !use_human_pose) {
 
-if (!posenet_initialized) {
+if ((options.use_holistic_landmarker) ? !holistic_initialized : !posenet_initialized) {
 /*
   await load_scripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tf-backend-wasm.js');
   tf.wasm.setWasmPaths('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/');
   await tf.setBackend("wasm")
 */
   if (use_mediapipe_pose_landmarker) {
-    await load_scripts('@mediapipe/tasks/tasks-vision/XRA_module_loader.js');
+    const vision = await load_vision_common();
 
-    await new Promise((resolve)=>{
-const timerID = setInterval(()=>{
-  if ('FilesetResolver' in self) {
-    clearInterval(timerID);
-    resolve();
-  }
-}, 100);
-      });
-
-    const vision = await FilesetResolver.forVisionTasks(
-// path/to/wasm/root
-//"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
-path_adjusted('@mediapipe/tasks/tasks-vision/wasm')
-    );
-
-    pose_model_quality = options.model_quality || '';
-    pose_landmarker = await PoseLandmarker.createFromOptions(
+    if (options.use_holistic_landmarker) {
+      holistic_landmarker = await HolisticLandmarker.createFromOptions(
 vision,
 {
   baseOptions: {
-    modelAssetPath: path_adjusted('@mediapipe/tasks/pose_landmarker_' + ((pose_model_quality == 'Best') ? 'heavy' : 'full') + '.task'),
+    modelAssetPath: path_adjusted('@mediapipe/tasks/' + 'holistic_landmarker' + '.task'),
+//    delegate: "GPU"
+  },
+  runningMode: 'VIDEO',
+
+  outputFaceBlendshapes: true
+}
+      );
+
+      mediapipe_hand_landmarker.setup();
+    }
+    else {
+      pose_model_quality = options.model_quality || '';
+      pose_landmarker = await PoseLandmarker.createFromOptions(
+vision,
+{
+  baseOptions: {
+    modelAssetPath: path_adjusted('@mediapipe/tasks/' + 'pose_landmarker_' + ((pose_model_quality == 'Best') ? 'heavy' : 'full') + '.task'),
     delegate: "GPU"
   },
   runningMode: 'VIDEO',
+
   numPoses: 1
 }
-    );
-    console.log('Pose model quality:' + (pose_model_quality||'Normal'));
+      );
+      console.log('Pose model quality:' + (pose_model_quality||'Normal'));
+    }
 
     data_filter[0] = {
       landmarks: [],
@@ -351,34 +355,66 @@ vision,
       data_filter[0].landmarks[i] = new OneEuroFilter(30, 1,1,2, 3);
       data_filter[0].worldLandmarks[i] = new OneEuroFilter(30, 1,1,2, 3);
     }
+    data_filter[0].poseLandmarks = data_filter[0].landmarks;
+    data_filter[0].poseWorldLandmarks = data_filter[0].worldLandmarks;
 
     posenet = {
 estimatePoses: function (video, dummy, nowInMs) {
-  const result = pose_landmarker.detectForVideo(video, nowInMs);
+  const landmarker = (options.use_holistic_landmarker) ? holistic_landmarker : pose_landmarker;
+  let result = landmarker.detectForVideo(video, nowInMs);
+//console.log(result)
 
-  for (const p of ['landmarks', 'worldLandmarks']) {
+  let pose_names;
+  let result_hands, result_face;
+  if (options.use_holistic_landmarker) {
+// https://github.com/google/mediapipe/blob/master/mediapipe/tasks/web/vision/holistic_landmarker/holistic_landmarker_result.ts
+    pose_names = ['poseLandmarks', 'poseWorldLandmarks'];
+    result_face = { multiFaceLandmarks:result.faceLandmarks };
+
+    const multiHandLandmarks = [];
+    const multiHandedness = [];
+    [result.leftHandLandmarks, result.rightHandLandmarks].forEach((hand,i)=>{
+      if (hand.length) {
+        multiHandLandmarks.push(hand[0]);
+// swapped label since v0.10.5
+        const label = (i==1)?'Left':'Right';
+        multiHandedness.push({ index:i, score:1, categoryName:label, displayName:label });
+      }
+    });
+    result_hands = { multiHandLandmarks:multiHandLandmarks, multiHandedness:multiHandedness };
+  }
+  else {
+    pose_names = ['landmarks', 'worldLandmarks'];
+  }
+
+  for (const p of pose_names) {
     const c = result[p]?.[0];
     if (!c) continue;
 
     for (let i = 0; i < 33; i++) {
       const v = c[i];
-/*
-      const v3 = data_filter[0][p][i].filter([v.x, v.y, v.z], nowInMs);
-      v.x = v3[0];
-      v.y = v3[1];
-*/
+
+//      const v3 = data_filter[0][p][i].filter([v.x, v.y, v.z], nowInMs);
+//      v.x = v3[0];
+//      v.y = v3[1];
+
       const v3 = data_filter[0][p][i].filter([0, 0, v.z], nowInMs);
       v.z = v3[2];
    }
   }
 
-//console.log(result)
-  return Promise.resolve(Object.assign({ poseLandmarks:result.landmarks[0], za:result.worldLandmarks[0] }, result));
+//console.log(Object.assign(result, { poseLandmarks:result[pose_names[0]][0], za:result[pose_names[1]][0] }, result_face, result_hands))
+  return Promise.resolve(Object.assign(result, { poseLandmarks:result[pose_names[0]][0], za:result[pose_names[1]][0] }, result_face, result_hands));
 }
     };
 
-    console.log('(Mediapipe Pose Landmarker initialized)')
-    postMessageAT('(Mediapipe Pose Landmarker initialized)')
+    if (options.use_holistic_landmarker) {
+      console.log('(Mediapipe Holistic Landmarker initialized)');
+    }
+    else {
+      console.log('(Mediapipe Pose Landmarker initialized)');
+      postMessageAT('(Mediapipe Pose Landmarker initialized)');
+    }
   }
   else if (use_movenet) {
     await load_scripts((use_mediapipe && use_blazepose)?'@mediapipe/pose-detection.js':'https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection');
@@ -433,10 +469,15 @@ estimatePoses: function (video, dummy, nowInMs) {
     postMessageAT('(PoseNet initialized)')
   }
 
-  posenet_initialized = true
+  if (options.use_holistic_landmarker) {
+    holistic_initialized = true;
+  }
+  else {
+    posenet_initialized = true;
+  }
 }
 else {
-  if (use_mediapipe_pose_landmarker && (options.model_quality != null) && (pose_model_quality != options.model_quality)) {
+  if (!options.use_holistic_landmarker && use_mediapipe_pose_landmarker && (options.model_quality != null) && (pose_model_quality != options.model_quality)) {
     pose_model_quality = options.model_quality;
     pose_landmarker.setOptions({
       baseOptions: {
@@ -485,7 +526,7 @@ else {
     });
   }
   else if (use_mediapipe_hand_landmarker) {
-    handpose_model = await load_mediapipe_hand_landmarker();
+    handpose_model = await mediapipe_hand_landmarker.load();
   }
   else {
     await load_scripts('@mediapipe/hands/hands.js');//'https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js');//
@@ -528,7 +569,7 @@ estimateHands: async function (img, config) {
 
   async function HandsAT_load_lib(options) {
 if (!handpose_initialized) {
-  handpose_model = await load_mediapipe_hand_landmarker();
+  handpose_model = await mediapipe_hand_landmarker.load();
 
   console.log('(Mediapipe hands initialized)')
   postMessageAT('(Mediapipe hands initialized)')
@@ -537,7 +578,7 @@ if (!handpose_initialized) {
 handpose_initialized = true
   }
 
-async function load_mediapipe_hand_landmarker() {
+async function load_vision_common() {
   await load_scripts('@mediapipe/tasks/tasks-vision/XRA_module_loader.js');
 
   await new Promise((resolve)=>{
@@ -555,6 +596,15 @@ const timerID = setInterval(()=>{
 path_adjusted('@mediapipe/tasks/tasks-vision/wasm')
   );
 
+  return vision;
+}
+
+const mediapipe_hand_landmarker = (()=>{
+  return {
+
+    load: async function () {
+  const vision = await load_vision_common();
+
   const f = [];
   const score_list = [0.5, 0.1];//0.3, 0.1];
   for (let i = 0; i < score_list.length; i++) {
@@ -567,8 +617,8 @@ vision,
     delegate: "GPU"
   },
   runningMode: 'VIDEO',
-  numHands: 2,
 
+  numHands: 2,
   minHandDetectionConfidence: score,
   minHandPresenceConfidence: 0.5,//score,
   minTrackingConfidence: score,
@@ -576,21 +626,9 @@ vision,
     );
   }
 
-  data_filter[1] = {
-    Left: {
-      landmarks: [],
-    },
-    Right: {
-      landmarks: [],
-    },
-  };
-  for (const d of ['Left', 'Right']) {
-    for (let i = 0; i < 21; i++) {
-      data_filter[1][d].landmarks[i] = new OneEuroFilter(30, 1,1/1000,1, 3);
-    }
-  }
-
   let f_index = 0;
+
+  this.setup();
 
   console.log('(Mediapipe Hand Landmarker initialized)');
   postMessageAT('(Mediapipe Hand Landmarker initialized)');
@@ -644,7 +682,26 @@ h.categoryName = h.displayName = label;
   };
 })(),
   };
+    },
+
+    setup: function () {
+data_filter[1] = {
+  Left: {
+    landmarks: [],
+  },
+  Right: {
+    landmarks: [],
+  },
+};
+for (const d of ['Left', 'Right']) {
+  for (let i = 0; i < 21; i++) {
+    data_filter[1][d].landmarks[i] = new OneEuroFilter(30, 1,1/1000,1, 3);
+  }
 }
+    },
+
+  };
+})();
 
 var use_human;
 var use_mixed_human;
@@ -653,6 +710,8 @@ var use_tfjs, use_tfjs_posenet, use_mediapipe, use_blazepose, use_movenet, use_h
 var use_mediapipe_hand_landmarker, use_mediapipe_pose_landmarker;
 var pose_landmarker;
 var pose_model_quality, pose_model_z_depth_scale;
+
+var holistic_landmarker;
 
 var hands_worker, hands_worker_data, hands_worker_pose;
 var hands_worker_ready;
@@ -952,7 +1011,7 @@ return h_list.some(_h=>(_h[0] >= clip[0]) && (_h[1] >= clip[1]) && (_h[0] <= cli
 
     if (!hands || use_human_hands) return hands
 
-    if (options.use_holistic) {
+    if (options.use_holistic_legacy) {
       const _result = hands
       hands = { image:_result.image, multiHandedness:[], multiHandLandmarks:[] }
       if (_result.leftHandLandmarks && _result.leftHandLandmarks.length) {
@@ -1477,7 +1536,7 @@ async function PoseAT_process_video_buffer() {
 
   pose_model_z_depth_scale = options.z_depth_scale || 3;
 
-  if (options.use_holistic) {
+  if (options.use_holistic_legacy) {
     const result = await holistic_model.predict(rgba, {}, vt);
 //console.log(result)
 
@@ -1509,10 +1568,23 @@ async function PoseAT_process_video_buffer() {
     }
   }
   else {//if (no_hand_countdown <= 0) {
-    pose = await ((use_human_pose) ? human.detect(rgba) : ((use_movenet) ? posenet.estimatePoses(rgba, {}, vt) : posenet_model.estimateSinglePose(rgba, {})));
-    pose = pose_adjust((use_human_pose) ? pose.body[0] : pose)
+    const result = await ((use_human_pose) ? human.detect(rgba) : ((use_movenet) ? posenet.estimatePoses(rgba, {}, vt) : posenet_model.estimateSinglePose(rgba, {})));
+    pose = pose_adjust((use_human_pose) ? result.body[0] : result);
 
-    if (options.use_handpose && (use_hands_worker || ((handpose_model || use_human_hands) && (use_hands_worker || (skip_hand_countdown-- <= 0))))) {
+    if (options.use_holistic_landmarker) {
+      hands = hands_adjust(result, vt, pose);
+
+      if (result.faceLandmarks && result.faceLandmarks.length) {
+        let faces = process_facemesh({multiFaceLandmarks:result.faceLandmarks}, w,h, {x:0, y:0, w:w, h:h, ratio:0, scale:1});
+
+        let face = faces[0]
+        let sm = face.scaledMesh;
+// NOTE: pass the full scaledMesh as it is needed to be passed and drawn on the facemesh worker
+        facemesh = { faces:[{ faceInViewConfidence:face.faceScore||face.faceInViewConfidence||0, scaledMesh:sm, mesh:face.mesh, eyes:eyes, bb_center:face.bb_center, emotion:face.emotion, rotation:face.rotation, faceBlendshapes:result.faceBlendshapes?.[0] }] };
+//console.log(facemesh)
+      }
+    }
+    else if (options.use_handpose && (use_hands_worker || ((handpose_model || use_human_hands) && (use_hands_worker || (skip_hand_countdown-- <= 0))))) {
       skip_hand_countdown = options.skip_hand_countdown_max||0;
       if (is_hand_visible(pose)) {
         if (use_hands_worker) {
