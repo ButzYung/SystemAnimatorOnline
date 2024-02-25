@@ -1,4 +1,4 @@
-// (2024-02-12)
+// (2024-02-25)
 
 MMD_SA.fn = {
 /*
@@ -709,7 +709,7 @@ if (p_bone.rotation) {
       }
     }
     else if (rot_adjust.external_point.type == 'object3D') {
-      const object3d = MMD_SA.THREEX._XR_Animator_scene_.object3D_list.find(obj=>obj.id==rot_adjust.external_point.name);
+      const object3d = MMD_SA.THREEX._XR_Animator_scene_?.object3D_list.find(obj=>obj.id==rot_adjust.external_point.name);
       if (object3d) {
         const _x_object = MMD_SA.THREEX._object3d_list_.find(obj=>obj.uuid==object3d._object3d_uuid);
         axis_ext = MMD_SA._v3b.copy(rot_adjust.external_point.reference_point).multiply(_x_object._mesh.scale).applyQuaternion(_x_object._mesh.quaternion).add(_x_object._mesh.position);
