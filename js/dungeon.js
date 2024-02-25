@@ -1,4 +1,4 @@
-// (2024-02-05)
+// (2024-02-25)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -11175,7 +11175,11 @@ this.object_base_list.forEach(function (obj, idx) {
     if (Array.isArray(v_current) && Array.isArray(v)) {
       const v_append = [];
       v.forEach(k=>{
-        const index = v_current.findIndex(k_current=>k_current.key==k.key);
+        const index = v_current.findIndex(k0=>{
+const keys0 = (Array.isArray(k0.key)) ? k0.key : [k0.key];
+const keys1 = (Array.isArray(k.key))  ? k.key  : [k.key];
+return keys0.some(kk0=>keys1.indexOf(kk0) != -1);
+        });
         if (index > -1) {
           v_current[index] = k;
         }
