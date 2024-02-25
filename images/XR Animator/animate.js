@@ -1,5 +1,5 @@
 // XR Animator
-// (2024-02-21)
+// (2024-02-25)
 
 var MMD_SA_options = {
 
@@ -8793,7 +8793,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  get content() { return 'XR Animator (v0.19.7)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
+  get content() { return 'XR Animator (v0.19.8)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -9631,7 +9631,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
             (()=>{
           let option_active = 'General weighting';
 
-          const options = ['General weighting', 'Head motion weight', 'Y-axis adjustment', 'Scale X', 'Scale Y', 'Scale Z', 'Smoothing'];
+          const options = ['General weighting', 'Head motion weight', 'Head pitch rotation', 'Y-axis adjustment', 'Scale X', 'Scale Y', 'Scale Z', 'Smoothing'];
 
           return {
             message: {
@@ -9644,16 +9644,17 @@ System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.bod
 '・' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value'),
 'A. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.general_weighting') + ': ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'OFF' : System._browser.camera.poseNet.hip_adjustment_weight_percent + '%') + ((option_active=='General weighting')?'⬅️➡️':''),
 'B. ┣ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.head_motion_weight') + ': ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_head_weight_percent + '%') + ((option_active=='Head motion weight')?'⬅️➡️':''),
-'C. ┣ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.y_axis_adjustment') + ': ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent + '%') + ((option_active=='Y-axis adjustment')?'⬅️➡️':''),
-'D. ┣ ' + scale + ' X: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_x_percent + '%') + ((option_active=='Scale X')?'⬅️➡️':''),
-'E. ┣ ' + scale + ' Y: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_y_percent + '%') + ((option_active=='Scale Y')?'⬅️➡️':''),
-'F. ┣ ' + scale + ' Z: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_z_percent + '%') + ((option_active=='Scale Z')?'⬅️➡️':''),
-'G. ┗ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.smoothing') + ': ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_smoothing_percent + '%') + ((option_active=='Smoothing')?'⬅️➡️':''),
+'C.     ┗ ' + ' ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.head_motion_weight.pitch_rotation') + ': ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_head_pitch_rotation_percent + '%') + ((option_active=='Head pitch rotation')?'⬅️➡️':''),
+'D. ┣ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.y_axis_adjustment') + ': ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent + '%') + ((option_active=='Y-axis adjustment')?'⬅️➡️':''),
+'E. ┣ ' + scale + ' X: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_x_percent + '%') + ((option_active=='Scale X')?'⬅️➡️':''),
+'F. ┣ ' + scale + ' Y: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_y_percent + '%') + ((option_active=='Scale Y')?'⬅️➡️':''),
+'G. ┣ ' + scale + ' Z: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_z_percent + '%') + ((option_active=='Scale Z')?'⬅️➡️':''),
+'H. ┗ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.smoothing') + ': ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_smoothing_percent + '%') + ((option_active=='Smoothing')?'⬅️➡️':''),
     ].join('\n');
   },
   index: 1,
   bubble_index: 3,
-  para: { row_max:10 },
+  para: { row_max:11 },
   branch_list: [
   { key:'any', func:(e)=>{
 let step = 2;
@@ -9676,6 +9677,9 @@ System._browser.camera.poseNet.hip_adjustment_weight_percent = THREE.Math.clamp(
       break;
     case 'Head motion weight':
 System._browser.camera.poseNet.hip_adjustment_head_weight_percent = THREE.Math.clamp(System._browser.camera.poseNet.hip_adjustment_head_weight_percent + v, 0,100);
+      break;
+    case 'Head pitch rotation':
+System._browser.camera.poseNet.hip_adjustment_head_pitch_rotation_percent = THREE.Math.clamp(System._browser.camera.poseNet.hip_adjustment_head_pitch_rotation_percent + v*5, -200,200);
       break;
     case 'Y-axis adjustment':
 System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent = THREE.Math.clamp(System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent + v, 0,100);
@@ -9743,6 +9747,19 @@ MMD_SA_options.Dungeon.utils.tooltip(
   },
   { key:'C', event_id: {
       func:()=>{
+option_active = 'Head pitch rotation';
+      },
+      goto_event: { branch_index:mocap_options_branch, step:2 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.head_motion_weight.pitch_rotation') + ((option_active=='Head pitch rotation')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.head_motion_weight.pitch_rotation.tooltip')
+);
+    }
+  },
+  { key:'D', event_id: {
+      func:()=>{
 option_active = 'Y-axis adjustment';
       },
       goto_event: { branch_index:mocap_options_branch, step:2 },
@@ -9754,7 +9771,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
     }
   },
-  { key:'D', event_id: {
+  { key:'E', event_id: {
       func:()=>{
 option_active = 'Scale X';
       },
@@ -9767,7 +9784,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
     }
   },
-  { key:'E', event_id: {
+  { key:'F', event_id: {
       func:()=>{
 option_active = 'Scale Y';
       },
@@ -9780,7 +9797,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
     }
   },
-  { key:'F', event_id: {
+  { key:'G', event_id: {
       func:()=>{
 option_active = 'Scale Z';
       },
@@ -9793,7 +9810,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
     }
   },
-  { key:'G', event_id: {
+  { key:'H', event_id: {
       func:()=>{
 option_active = 'Smoothing';
       },
@@ -11066,6 +11083,7 @@ config.user_camera = {
       hip_adjustment_adjust_y_axis_percent: System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent,
       hip_adjustment_scale_x_percent: System._browser.camera.poseNet.hip_adjustment_scale_x_percent,
       hip_adjustment_scale_y_percent: System._browser.camera.poseNet.hip_adjustment_scale_y_percent,
+      hip_adjustment_head_pitch_rotation_percent: System._browser.camera.poseNet.hip_adjustment_head_pitch_rotation_percent,
       hip_adjustment_scale_z_percent: System._browser.camera.poseNet.hip_adjustment_scale_z_percent,
       hip_adjustment_smoothing_percent: System._browser.camera.poseNet.hip_adjustment_smoothing_percent,
       upper_rotation_offset: MMD_SA_options.user_camera.ML_models.pose.upper_rotation_offset,
@@ -11263,6 +11281,7 @@ try {
         System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent = config[p].ML_models.pose.hip_adjustment_adjust_y_axis_percent;
         System._browser.camera.poseNet.hip_adjustment_scale_x_percent = config[p].ML_models.pose.hip_adjustment_scale_x_percent;
         System._browser.camera.poseNet.hip_adjustment_scale_y_percent = config[p].ML_models.pose.hip_adjustment_scale_y_percent;
+        System._browser.camera.poseNet.hip_adjustment_head_pitch_rotation_percent = config[p].ML_models.pose.hip_adjustment_head_pitch_rotation_percent;
         System._browser.camera.poseNet.hip_adjustment_scale_z_percent = config[p].ML_models.pose.hip_adjustment_scale_z_percent;
         System._browser.camera.poseNet.hip_adjustment_smoothing_percent = config[p].ML_models.pose.hip_adjustment_smoothing_percent;
 
