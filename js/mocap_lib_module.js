@@ -70,7 +70,7 @@ function _onmessage(e) {
   }
   if (data.canvas_hands)
     _canvas_hands = data.canvas_hands;
-  canvas_hands = (data.options.use_canvas_hands) ? _canvas_hands : null;
+  canvas_hands = (data.options.use_canvas_hands && !data.options.use_holistic) ? _canvas_hands : null;
   if (data.canvas_hands) console.log('(Transferred - canvas_hands)');
 
   if (data.canvas_hands_worker)
@@ -169,7 +169,7 @@ function _onmessage(e) {
   }
   if (data.canvas_hands)
     _canvas_hands = data.canvas_hands;
-  canvas_hands = (data.options.use_canvas_hands) ? _canvas_hands : null;
+  canvas_hands = (data.options.use_canvas_hands && !data.options.use_holistic) ? _canvas_hands : null;
   if (data.canvas_hands) console.log('(Transferred - canvas_hands_workers)');
 
   if (data.rgba) {
