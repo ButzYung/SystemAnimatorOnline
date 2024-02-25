@@ -775,6 +775,20 @@
 										"ja": "このオプションは、上半身の動きの一部として含まれる頭の動きの重み付けを決定します。 デフォルトは「100%」です。",
 										"zh": "此設定決定頭部動作作為上半身動作一部份的比重。 預設是「100%」。"
 									}
+								},
+								"pitch_rotation": {
+									"_translation_": {
+										"_default_": "Pitch rotation",
+										"ja": "ピッチ回転",
+										"zh": "俯仰旋轉"
+									},
+									"tooltip": {
+										"_translation_": {
+											"_default_": "This option determines how the pitch part of the head rotation is used for hip adjustment. It can be a negative value, meaning the behavior of hip motion based on \"Scale Y\" and part of \"Scale Z\" settings will be inverted for the head rotation part. Default is \"100%\".",
+											"ja": "このオプションは、頭の回転のピッチ部分を腰の調整にどのように使用するかを決定します。 負の値にすることもできます。 これは、「スケール Y」の設定と「スケール Z」の設定の一部に基づく腰の動きの動作が頭の回転部分に対して反転されることを意味します。 デフォルトは「100%」です。",
+											"zh": "此設定決定如何使用頭部俯仰部份的旋轉作為腰部調整的計算。 數值可以是負數，意味著頭部旋轉作為「比例Y」及部份「比例Z」設定所代表的腰部動作反應將會反轉。 預設是「100%」。"
+										}
+									}
 								}
 							},
 							"y_axis_adjustment": {
@@ -802,7 +816,7 @@
 										"_translation_": {
 											"_default_": "This option determines the scaling of movement along the X axis. By default, hip moves to the left when you leans to the right (or turns right when \"Y-axis adjustment\" is on), and hip moves to the right when you leans to the left. A negative value inverts this behavior. Default is \"100%\".",
 											"ja": "このオプションは、X 軸に沿った動きのスケーリングを決定します。 デフォルトでは、右に体を傾けると（「Y軸調整」がオンの場合は右に曲がると）、腰は左に移動します。 左に傾くと腰は右に動きます。 負の値を指定すると、この動作が逆転します。 デフォルトは「100%」です。",
-											"zh": "此設定決定腰部在 X 軸上移動的比例。 預設情況下，當身體右傾時(或在使用「Y軸調整」時身體向右轉)腰會向左移，左傾時則向右移。 負數值會倒轉此動作反應。 預設是「100%」。"
+											"zh": "此設定決定腰部在 X 軸上移動的比例。 預設情況下，當身體右傾時(或在使用「Y軸調整」時身體向右轉)腰會向左移，左傾時則向右移。 負數值會反轉此動作反應。 預設是「100%」。"
 										}
 									}
 								},
@@ -811,7 +825,7 @@
 										"_translation_": {
 											"_default_": "This option determines the scaling of movement along the Y axis. By default, hip moves downwards when you leans forward, and hip moves upwards when you leans backward (when \"Y-axis adjustment\" is on). A negative value inverts this behavior. Default is \"100%\".",
 											"ja": "このオプションは、Y 軸に沿った動きのスケーリングを決定します。 デフォルトでは、前傾するとヒップが下に移動し、後傾するとヒップが上に移動します (「Y軸調整」がオンの場合)。 負の値を指定すると、この動作が逆転します。 デフォルトは「100%」です。",
-											"zh": "此設定決定腰部在 Y 軸上移動的比例。 預設情況下，當身體前傾時腰會向下移，後傾則向上移(當使用「Y軸調整」時)。 負數值會倒轉此動作反應。 預設是「100%」。"
+											"zh": "此設定決定腰部在 Y 軸上移動的比例。 預設情況下，當身體前傾時腰會向下移，後傾則向上移(當使用「Y軸調整」時)。 負數值會反轉此動作反應。 預設是「100%」。"
 										}
 									}
 								},
@@ -820,7 +834,7 @@
 										"_translation_": {
 											"_default_": "This option determines the scaling of movement along the Z axis. By default, hip moves backwards when you leans forward, and hip moves forward when you leans backward. A negative value inverts this behavior. Default is \"100%\".",
 											"ja": "このオプションは、Z 軸に沿った移動のスケーリングを決定します。 デフォルトでは、前傾すると腰は後方に移動し、後傾すると腰は前に移動します。 負の値を指定すると、この動作が逆転します。 デフォルトは「100%」です。",
-											"zh": "此設定決定腰部在 Z 軸上移動的比例。 預設情況下，當身體前傾時腰會向後移，後傾則向前移。 負數值會倒轉此動作反應。 預設是「100%」。"
+											"zh": "此設定決定腰部在 Z 軸上移動的比例。 預設情況下，當身體前傾時腰會向後移，後傾則向前移。 負數值會反轉此動作反應。 預設是「100%」。"
 										}
 									}
 								}
@@ -1506,7 +1520,7 @@
 					},
 					"3D_scene_builder": {
 						"_translation_": {
-							"_default_": "Drop a <extra_model>zipped .X model or image/video file as 3D object. Info about the active object is on the top left corner. Use keyboard for controls.\n1. Show keyboard controls\n2. Hide UI\n3. Export scene settings to file\n4. Explorer mode: <explorer_mode>\n5. Done",
+							"_default_": "Drop a <extra_model>zipped .X model or image/video file as 3D object. Info about active object is on top left corner. Use keyboard for controls.\n1. Show keyboard controls\n2. Hide UI\n3. Export scene settings to file\n4. Explorer mode: <explorer_mode>\n5. Done",
 							"ja": "<extra_model>圧縮された .X モデル、または画像/ビデオ ファイルを 3D オブジェクトとしてドロップします。 アクティブなオブジェクトに関する情報が左上隅に表示されます。 キーボードを使用して制御します。\n1. キーボードコントロールを表示\n2. ユーザーインターフェースを隠す\n3. シーン設定をファイルにエクスポート\n4. エクスプローラーモード: <explorer_mode>\n5. 終了",
 							"zh": "拖曳<extra_model>壓縮的 .X 模型或圖像/影像檔案作為 3D 物件。 被選擇的物件的相關資訊會顯示於左上方。 以鍵盤操作物件。\n1. 顯示鍵盤操作選項\n2. 隱藏介面\n3. 匯出場景設定至檔案\n4. 探索者模式: <explorer_mode>\n5. 結束"
 						},

@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-02-21)
+// (2024-02-25)
 
 var use_full_spectrum = true
 
@@ -8357,6 +8357,16 @@ if (!threeX.enabled) {
 return decodeURIComponent((MMD_SA.MMD_started) ? this.para.url : ((this.index == 0) ? MMD_SA_options.THREEX_options.model_path : MMD_SA_options.THREEX_options.model_path_extra[this.index-1]));
     },
 
+    para: (()=>{
+      const handler = {
+        get(obj, prop) {
+return MMD_SA_options.model_para_obj[prop];
+        },
+      };
+
+      return new Proxy({}, handler);
+    })(),
+
     get_bone_origin_by_MMD_name: function (name) {
 return (threeX.enabled) ? this.para.pos0[VRM.bone_map_MMD_to_VRM[name]]?.slice().map(v=>v*this.model_scale) : this.get_bone_by_MMD_name(name)?.pmxBone.origin;
     },
@@ -8832,13 +8842,11 @@ for (const name in humanBones) {
 }
 
 para.left_arm_length = v1.fromArray(para.pos0['leftUpperArm']).distanceTo(v2.fromArray(para.pos0['leftHand'])) * vrm_scale;
-
 para.left_leg_length = ((para.pos0['leftUpperLeg'][1] - para.pos0['leftLowerLeg'][1]) + (para.pos0['leftLowerLeg'][1] - para.pos0['leftFoot'][1])) * vrm_scale;
+para.spine_length = (para.pos0['neck'][1] - para.pos0['leftUpperLeg'][1]) * vrm_scale;
 
 para.bone_dummy = {};
 para.spine_to_hips_ratio = (para.pos0['chest']) ? 0 : 1 - THREE.Math.clamp((para.pos0['neck'][1] - para.pos0['spine'][1]) / (para.pos0['neck'][1] - para.pos0['hips'][1]) * 2, 0,1);
-
-para.spine_length = (para.pos0['neck'][1] - para.pos0['leftUpperLeg'][1]) * vrm_scale;
 
 Model_obj.call(this, index, vrm, para);
 this.mesh = vrm.scene;
