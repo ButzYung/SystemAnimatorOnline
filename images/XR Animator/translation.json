@@ -968,6 +968,20 @@
 								}
 							}
 						},
+						"constrain_tracking_region": {
+							"_translation_": {
+								"_default_": "Constrain tracking region",
+								"ja": "追跡領域を制限する",
+								"zh": "限制追蹤範圍"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "When enabled, this option constrains the tracking region of hands by using data from body tracking, which is generally more effective than tracking the whole screen when you are far away from the camera. Default is \"Auto\" (i.e. enabled for full body mocap, disabled for upper body mocap).",
+									"ja": "このオプションを有効にすると、ボディ トラッキングのデータを使用して手のトラッキング領域が制限されます。 これは一般に、カメラから遠く離れている場合に画面全体をトラッキングするよりも効果的です。 デフォルトは「自動」です(つまり、全身モーキャプでは有効、上半身モーキャプでは無効)。",
+									"zh": "此設定為有效時，手部追蹤的範圍會收窄至身體追蹤數據所推算的範圍。 一般而言，在遠離鏡頭時使用此追蹤範圍會比全畫面更為有效。 預設是「自動」(意味著全身動捕時使用，上半身動捕時不使用)。"
+								}
+							}
+						},
 						"standalone_web_worker": {
 							"_translation_": {
 								"_default_": "Standalone web worker",
@@ -1054,17 +1068,17 @@
 								}
 							}
 						},
-						"tongue_out_tracking": {
+						"mouth_tracking_sensitivity": {
 							"_translation_": {
-								"_default_": "\"Tongue out\" tracking",
-								"ja": "「舌出し」追跡",
-								"zh": "「吐舌」追蹤"
+								"_default_": "Mouth tracking sensitivity",
+								"ja": "口追跡感度",
+								"zh": "嘴部追蹤靈敏度"
 							},
 							"tooltip": {
 								"_translation_": {
-									"_default_": "\"Tongue out\" tracking:\nXR Animator supports the tracking of ARKit 52 blendshapes, with the exception of a few, including \"tongueOut\". Turn on this option to allow XR Animator to estimate the tongue out motion by analyzing the other mouth blendshape data. Default is \"ON\".",
-									"ja": "「舌出し」追跡:\nXR Animator は、「tongueOut」などのいくつかの例外を除き、ARKit 52 ブレンドシェイプのトラッキングをサポートしています。 このオプションをオンにすると、XR Animator が他の口のブレンドシェイプ データを分析して舌を出す動きを推定できるようになります。 デフォルトは「ON」です。",
-									"zh": "「吐舌」追蹤:\nXR Animator 支援 ARKit 52個表情追蹤的大部份，除了包括「tongueOut」在內的一小部份。 啟動此選項以利用其他表情數據作吐舌追蹤推算。 預設是「ON」。"
+									"_default_": "Mouth tracking sensitivity:\nThis option determines the sensitivity of mouth tracking when mouth motion is subtle. Lower the setting if avatar's mouth is open even when idle. Default is \"High\".",
+									"ja": "口追跡感度:\nこのオプションは、口の動きが微妙な場合の口トラッキングの感度を決定します。 アイドル状態でもアバターの口が開いている場合は設定を下げます。 デフォルトは「高」です。",
+									"zh": "嘴部追蹤靈敏度:\n此選項決定當嘴部動作微細時的追蹤靈敏度。 如果人物的口部在沒有嘴部動作時仍然張開，可降低設定值。 預設是「高」。"
 								}
 							}
 						},
@@ -1183,6 +1197,20 @@
 										"_default_": "Activate the surprised expression by raising your eyebrows and lowering your jaw. Note that not all 3D models have this expression. Lower the percentage if it is often misactivated. Default is \"100%\".",
 										"ja": "眉を上げて顎を下げることで、アバターの驚きの表情を有効にします。 すべての 3D モデルがこの式ブレンドシェイプを持っているわけではないことに注意してください。 誤ってアクティブ化されることが多い場合は、パーセンテージを下げます。 デフォルトは「100%」です。",
 										"zh": "提高眼眉及降低下巴以啟動人物的驚慌表情。 要注意並非所有人物模型也支援此表情。 如出現經常誤發的情況，可降低數值。 預設是「100%」。"
+									}
+								}
+							},
+							"tongue_out": {
+								"_translation_": {
+									"_default_": "Tongue out",
+									"ja": "舌出し",
+									"zh": "吐舌"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "XR Animator supports the tracking of ARKit 52 blendshapes, with the exception of a few, including \"tongueOut\". Turn on this option to allow XR Animator to estimate the tongue out motion by analyzing the other mouth blendshape data. Lower the percentage if it is often misactivated. Default is \"100%\".",
+										"ja": "XR Animator は、「tongueOut」などのいくつかの例外を除き、ARKit 52 ブレンドシェイプのトラッキングをサポートしています。 このオプションをオンにすると、XR Animator が他の口のブレンドシェイプ データを分析して舌を出す動きを推定できるようになります。 誤ってアクティブ化されることが多い場合は、パーセンテージを下げます。 デフォルトは「100%」です。",
+										"zh": "XR Animator 支援 ARKit 52個表情追蹤的大部份，除了包括「tongueOut」在內的一小部份。 啟動此選項以利用其他表情數據作吐舌追蹤推算。 如出現經常誤發的情況，可降低數值。 預設是「100%」。"
 									}
 								}
 							},

@@ -3629,6 +3629,20 @@ System._browser.translation.dictionary = {
 				"zh": "中"
 			}
 		},
+		"Low": {
+			"_translation_": {
+				"_default_": "Low",
+				"ja": "低",
+				"zh": "低"
+			}
+		},
+		"High": {
+			"_translation_": {
+				"_default_": "High",
+				"ja": "高",
+				"zh": "高"
+			}
+		},
 		"Max": {
 			"_translation_": {
 				"_default_": "Max",

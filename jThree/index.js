@@ -1,4 +1,4 @@
-// (2024-02-25)
+// (2024-03-04)
 
 MMD_SA.fn = {
 /*
@@ -649,7 +649,12 @@ if (p_bone.rotation) {
       obj.quaternion.setFromAxisAngle(aa[0].applyQuaternion(MMD_SA.TEMP_q.copy(MMD_SA_options.model_para_obj.rot_hand_adjust_base[(p_bone.name.charAt(0)=="左")?1:-1]).conjugate() ), -aa[1]);
     }
     else if (rot_adjust.reset_rotation) {
-      obj.quaternion.set(0,0,0,1);
+      if (rot_adjust.reset_rotation === true) {
+        obj.quaternion.set(0,0,0,1);
+      }
+      else {
+        obj.quaternion.copy(modelX.get_bone_rotation_by_MMD_name(rot_adjust.reset_rotation.name));
+      }
     }
 
     let reference_origin = MMD_SA._v3b_.set(0,0,0);
