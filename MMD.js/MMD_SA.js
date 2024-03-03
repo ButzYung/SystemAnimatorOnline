@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-02-25)
+// (2024-03-04)
 
 var use_full_spectrum = true
 
@@ -9342,17 +9342,19 @@ if (MMD_SA.OSC.VMC.sender_enabled && MMD_SA.OSC.VMC.ready) {
   const model_position_offset = v4.copy(mesh.position).sub(model_position0).multiplyScalar(model_pos_scale);
 
   const warudo_mode = MMD_SA.OSC.app_mode == 'Warudo';
-  const VNyan_mode = MMD_SA.OSC.app_mode == 'VNyan';
+  const VNyan_mode = MMD_SA.OSC.app_mode && (MMD_SA.OSC.app_mode.indexOf('VNyan') != -1);
   const VSeeFace_mode = (MMD_SA.OSC.app_mode == 'VSeeFace') && MMD_SA.OSC.VMC.send_camera_data;
 
+  let root_turned_around = warudo_mode || (MMD_SA.OSC.app_mode === 'VNyan(+Z)');
+  let model_turned_around = MMD_SA.OSC.VMC.send_camera_data && (MMD_SA.OSC.app_mode === 'VNyan');
+
   const model_rot = q4.copy(mesh.quaternion);
-  let turned_around = MMD_SA.OSC.VMC.send_camera_data && VNyan_mode;// && MMD_SA_options._XRA_explorer_mode;
-  if (!turned_around ^ !!this.is_VRM1) model_rot.premultiply(q2.set(0,1,0,0));
+  if (!model_turned_around ^ !!this.is_VRM1) model_rot.premultiply(q2.set(0,1,0,0));
 //DEBUG_show(mesh.quaternion.toArray())
 
   const pos_msgs = [
 'root',
-...((VSeeFace_mode) ? ((System._browser.camera.poseNet.enabled && MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only && MMD_SA.MMD.motionManager.para_SA.center_view_enforced) ? [0,0,-5/10] : [0, 5/10, -60/10]) : [model_position_offset.x*((warudo_mode)?-1:1), model_position_offset.y, -model_position_offset.z*((warudo_mode)?-1:1)]),
+...((VSeeFace_mode) ? ((System._browser.camera.poseNet.enabled && MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only && MMD_SA.MMD.motionManager.para_SA.center_view_enforced) ? [0,0,-5/10] : [0, 5/10, -60/10]) : [model_position_offset.x*((root_turned_around)?-1:1), model_position_offset.y, -model_position_offset.z*((root_turned_around)?-1:1)]),
 -model_rot.x, -model_rot.y, model_rot.z, model_rot.w,
   ];
 
@@ -9408,13 +9410,13 @@ blendshape_weight[name],
     const camera_pos = v1.copy(camera.position).sub(mesh.position).multiplyScalar(model_pos_scale);
 
     const camera_rot = q1.copy(camera.quaternion);
-    if (!turned_around) camera_rot.premultiply(q2.set(0,1,0,0));
+    if (!model_turned_around) camera_rot.premultiply(q2.set(0,1,0,0));
 
     camera_pos.add(model_position_offset);
 
     camera_msgs = [
 'Camera',
-camera_pos.x*((!turned_around)?-1:1), camera_pos.y, -camera_pos.z*((!turned_around)?-1:1),
+camera_pos.x*((!model_turned_around)?-1:1), camera_pos.y, -camera_pos.z*((!model_turned_around)?-1:1),
 -camera_rot.x, -camera_rot.y, camera_rot.z, camera_rot.w,
 //0,0,0,
 //0,1,0,0,
@@ -9433,7 +9435,7 @@ camera.fov,
 
       const obj_rot = q1.copy(obj.quaternion);
       let sign = 1;
-      if (!turned_around) {//warudo_mode) {
+      if (!model_turned_around) {//warudo_mode) {
         sign = -1;
         obj_rot.multiply(q2.set(0,1,0,0));
       }
