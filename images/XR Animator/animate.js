@@ -1,5 +1,5 @@
 // XR Animator
-// (2024-02-25)
+// (2024-03-04)
 
 var MMD_SA_options = {
 
@@ -6100,6 +6100,7 @@ const app_mode = [
   'Others',
   'Warudo',
   'VNyan',
+  'VNyan(+Z)',
   'VSeeFace',
 ];
 
@@ -8793,7 +8794,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  get content() { return 'XR Animator (v0.19.8)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
+  get content() { return 'XR Animator (v0.19.9)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -9862,8 +9863,9 @@ return [
   '4. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.arm_stabilization') + ': ' + ((System._browser.camera.handpose.stabilize_arm == 2) ? 'ON' : ((System._browser.camera.handpose.stabilize_arm == 1) ? System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.arm_stabilization.upper_body_mocap') : 'OFF')),
   '5. ┗ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.arm_stabilization.time_to_stabilize') + ': ' + ((System._browser.camera.handpose.stabilize_arm) ? ((System._browser.camera.handpose.stabilize_arm_time) ? ((System._browser.camera.handpose.stabilize_arm_time == 1) ? '1 ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.arm_stabilization.time_to_stabilize.frame') : System._browser.camera.handpose.stabilize_arm_time + 'ms') : '0') : 'N/A'),
   '6. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.hand_stabilization') + ': ' + ((System._browser.camera.handpose.stabilize_hand_percent) ? System._browser.camera.handpose.stabilize_hand_percent + '%' : 'OFF') + '(➕➖)',
-  '7. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.standalone_web_worker') + ': ' + ((System._browser.camera.handpose.use_hands_worker) ? 'ON' : 'OFF'),
-  '8. ' + System._browser.translation.get('Misc.done'),
+  '7. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.constrain_tracking_region') + ': ' + ((System._browser.camera.handpose.constrain_tracking_region) ? 'ON' : System._browser.translation.get('Misc.auto')),
+  '8. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.standalone_web_worker') + ': ' + ((System._browser.camera.handpose.use_hands_worker) ? 'ON' : 'OFF'),
+  '9. ' + System._browser.translation.get('Misc.done'),
 ].join('\n');
   }
  ,bubble_index: 3
@@ -9998,6 +10000,19 @@ MMD_SA_options.Dungeon.utils.tooltip(
   },
   { key:7, event_id: {
       func:()=>{
+System._browser.camera.handpose.constrain_tracking_region = !System._browser.camera.handpose.constrain_tracking_region;
+      },
+      goto_event: { branch_index:mocap_options_branch, step:4 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.constrain_tracking_region') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.constrain_tracking_region.tooltip')
+);
+    }
+  },
+  { key:8, event_id: {
+      func:()=>{
 System._browser.camera.handpose.use_hands_worker = !System._browser.camera.handpose.use_hands_worker;
       },
       goto_event: { branch_index:mocap_options_branch, step:4 },
@@ -10009,7 +10024,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
     }
   },
-  { key:8, is_closing_event:true, branch_index:done_branch }
+  { key:9, is_closing_event:true, branch_index:done_branch }
   ]
             }
           };
@@ -10178,11 +10193,14 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
       }
     },
-    { key:6, event_id:{ func:()=>{ System._browser.camera.facemesh.use_tongue_out = (System._browser.camera.facemesh.use_tongue_out) ? 0 : 1; }, goto_branch:facemesh_options_branch },
+    { key:6, event_id:{ func:()=>{
+if (++System._browser.camera.facemesh.mouth_tracking_sensitivity > 2)
+  System._browser.camera.facemesh.mouth_tracking_sensitivity = 0;
+      }, goto_branch:facemesh_options_branch },
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.tongue_out_tracking.tooltip')
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.mouth_tracking_sensitivity.tooltip')
 );
       }
     },
@@ -10255,13 +10273,26 @@ switch (System._browser.camera.facemesh.lean_tracking) {
 if (lean_tracking)
   lean_tracking = System._browser.translation.get('Misc.' + lean_tracking);
 
+let mouth_tracking_sensitivity;
+switch (System._browser.camera.facemesh.mouth_tracking_sensitivity) {
+  case 1:
+    mouth_tracking_sensitivity = 'High';
+    break;
+  case 2:
+    mouth_tracking_sensitivity = 'Max';
+    break;
+  default:
+    mouth_tracking_sensitivity = 'Normal';
+}
+mouth_tracking_sensitivity = System._browser.translation.get('Misc.' + mouth_tracking_sensitivity);
+
 return [
   '1. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.eye_tracking') + ': ' + ((!System._browser.camera.facemesh.eye_tracking)?'OFF':'ON'),
   '2. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.blink_LR_sync') + ': ' + ((!System._browser.camera.facemesh.blink_sync)?'OFF':'ON'),
   '3. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.auto_blink') + ': ' + ((!System._browser.camera.facemesh.auto_blink)?'OFF':'ON'),
   '4. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.auto_look_at_camera') + ' (' + (System._browser.hotkeys.config_by_id['auto_look_at_camera']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.facemesh.auto_look_at_camera)?'OFF':'ON'),
   '5. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.eye_bone_rotation') + ': ' + (System._browser.camera.facemesh.eye_bone_rotation_percent + '%') + ' (➕➖)',
-  '6. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.tongue_out_tracking') + ': ' + ((System._browser.camera.facemesh.use_tongue_out) ? 'ON' : 'OFF'),
+  '6. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.mouth_tracking_sensitivity') + ': ' + mouth_tracking_sensitivity,
   '7. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.lean_tracking') + ': ' + (lean_tracking || 'OFF'),
   '8. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options'),
   ...((System._browser.camera.facemesh.enabled && System._browser.camera.video) ? ['9. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.calibration_options')] : []),
@@ -10294,7 +10325,7 @@ get branch_list() {
         (()=>{
           let option_active = 'General weighting';
 
-          const options = ['General weighting', 'Joy/Fun', 'Angry', 'Sorrow', 'Surprised', 'Others'];
+          const options = ['General weighting', 'Joy/Fun', 'Angry', 'Sorrow', 'Surprised', 'Tongue out', 'Others'];
 
           const _branch_list = [
   { key:'any', func:(e)=>{
@@ -10331,6 +10362,9 @@ System._browser.camera.facemesh.emotion_sorrow_percent = THREE.Math.clamp(System
       break;
     case 'Surprised':
 System._browser.camera.facemesh.emotion_surprised_percent = THREE.Math.clamp(System._browser.camera.facemesh.emotion_surprised_percent + v, 0,100);
+      break;
+    case 'Tongue out':
+System._browser.camera.facemesh.emotion_tongue_out_percent = THREE.Math.clamp(System._browser.camera.facemesh.emotion_tongue_out_percent + v, 0,100);
       break;
     case 'Others':
 System._browser.camera.facemesh.emotion_others_percent = THREE.Math.clamp(System._browser.camera.facemesh.emotion_others_percent + v, 0,100);
@@ -10414,6 +10448,19 @@ MMD_SA_options.Dungeon.utils.tooltip(
   },
   { key:'F', event_id: {
       func:()=>{
+option_active = 'Tongue out';
+      },
+      goto_event: { branch_index:facemesh_options_branch, step:2 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.tongue_out') + ((option_active=='Tongue out')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.tongue_out.tooltip')
+);
+    }
+  },
+  { key:'G', event_id: {
+      func:()=>{
 option_active = 'Others';
       },
       goto_event: { branch_index:facemesh_options_branch, step:2 },
@@ -10439,7 +10486,8 @@ System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.fac
 'C. ┣ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.angry') + ': ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'N/A' : System._browser.camera.facemesh.emotion_angry_percent + '%') + ((option_active=='Angry')?'⬅️➡️':''),
 'D. ┣ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.sorrow') + ': ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'N/A' : System._browser.camera.facemesh.emotion_sorrow_percent + '%') + ((option_active=='Sorrow')?'⬅️➡️':''),
 'E. ┣ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.surprised') + ': ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'N/A' : System._browser.camera.facemesh.emotion_surprised_percent + '%') + ((option_active=='Surprised')?'⬅️➡️':''),
-'F. ┗ ' + System._browser.translation.get('Misc.others') + ': ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'N/A' : System._browser.camera.facemesh.emotion_others_percent + '%') + ((option_active=='Others')?'⬅️➡️':''),
+'F. ┣ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options.tongue_out') + ': ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'N/A' : System._browser.camera.facemesh.emotion_tongue_out_percent + '%') + ((option_active=='Tongue out')?'⬅️➡️':''),
+'G. ┗ ' + System._browser.translation.get('Misc.others') + ': ' + ((System._browser.camera.facemesh.emotion_weight_percent == 0) ? 'N/A' : System._browser.camera.facemesh.emotion_others_percent + '%') + ((option_active=='Others')?'⬅️➡️':''),
     ].join('\n');
   },
   index: 1,
@@ -11097,6 +11145,7 @@ config.user_camera = {
       depth_adjustment_percent: MMD_SA_options.user_camera.ML_models.hands.depth_adjustment_percent,
       palm_shoulder_scale_percent: MMD_SA_options.user_camera.ML_models.hands.palm_shoulder_scale_percent,
       depth_scale_percent: MMD_SA_options.user_camera.ML_models.hands.depth_scale_percent,
+      constrain_tracking_region: System._browser.camera.handpose.constrain_tracking_region,
     },
     facemesh: {
       eye_tracking: System._browser.camera.facemesh.eye_tracking,
@@ -11104,13 +11153,14 @@ config.user_camera = {
       auto_blink: System._browser.camera.facemesh.auto_blink,
       auto_look_at_camera: System._browser.camera.facemesh.auto_look_at_camera,
       eye_bone_rotation_percent: System._browser.camera.facemesh.eye_bone_rotation_percent,
-      use_tongue_out: System._browser.camera.facemesh.use_tongue_out,
+      mouth_tracking_sensitivity: System._browser.camera.facemesh.mouth_tracking_sensitivity,
       lean_tracking: System._browser.camera.facemesh.lean_tracking,
       emotion_weight_percent: System._browser.camera.facemesh.emotion_weight_percent,
       emotion_joy_fun_percent: System._browser.camera.facemesh.emotion_joy_fun_percent,
       emotion_angry_percent: System._browser.camera.facemesh.emotion_angry_percent,
       emotion_sorrow_percent: System._browser.camera.facemesh.emotion_sorrow_percent,
       emotion_surprised_percent: System._browser.camera.facemesh.emotion_surprised_percent,
+      emotion_tongue_out_percent: System._browser.camera.facemesh.emotion_tongue_out_percent,
       emotion_others_percent: System._browser.camera.facemesh.emotion_others_percent,
     },
     tilt_adjustment: Object.assign({}, System._browser.camera.tilt_adjustment),
@@ -11294,6 +11344,7 @@ try {
         System._browser.camera.handpose.stabilize_arm = config[p].ML_models.hands?.stabilize_arm;
         System._browser.camera.handpose.stabilize_arm_time = config[p].ML_models.hands?.stabilize_arm_time;
         System._browser.camera.handpose.stabilize_hand_percent = config[p].ML_models.hands?.stabilize_hand_percent;
+        System._browser.camera.handpose.constrain_tracking_region = config[p].ML_models.hands?.constrain_tracking_region;
         System._browser.camera.handpose.use_hands_worker = config[p].ML_models.hands?.use_hands_worker;
 
         System._browser.camera.facemesh.eye_tracking = config[p].ML_models.facemesh.eye_tracking;
@@ -11301,13 +11352,14 @@ try {
         System._browser.camera.facemesh.auto_blink = config[p].ML_models.facemesh.auto_blink;
         System._browser.camera.facemesh.auto_look_at_camera = config[p].ML_models.facemesh.auto_look_at_camera;
         System._browser.camera.facemesh.eye_bone_rotation_percent = config[p].ML_models.facemesh.eye_bone_rotation_percent;
-        System._browser.camera.facemesh.use_tongue_out = config[p].ML_models.facemesh.use_tongue_out;
+        System._browser.camera.facemesh.mouth_tracking_sensitivity = config[p].ML_models.facemesh.mouth_tracking_sensitivity;
         System._browser.camera.facemesh.lean_tracking = config[p].ML_models.facemesh.lean_tracking;
         System._browser.camera.facemesh.emotion_weight_percent = config[p].ML_models.facemesh.emotion_weight_percent;
         System._browser.camera.facemesh.emotion_joy_fun_percent = config[p].ML_models.facemesh.emotion_joy_fun_percent;
         System._browser.camera.facemesh.emotion_angry_percent = config[p].ML_models.facemesh.emotion_angry_percent;
         System._browser.camera.facemesh.emotion_sorrow_percent = config[p].ML_models.facemesh.emotion_sorrow_percent;
         System._browser.camera.facemesh.emotion_surprised_percent = config[p].ML_models.facemesh.emotion_surprised_percent;
+        System._browser.camera.facemesh.emotion_tongue_out_percent = config[p].ML_models.facemesh.emotion_tongue_out_percent;
         System._browser.camera.facemesh.emotion_others_percent = config[p].ML_models.facemesh.emotion_others_percent;
 
         MMD_SA_options.user_camera.streamer_mode = config[p].streamer_mode || { camera_preference:{} };
