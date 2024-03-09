@@ -856,6 +856,17 @@ export declare class FilesetResolver {
      */
     static forAudioTasks(basePath?: string): Promise<WasmFileset>;
     /**
+     * Creates a fileset for the MediaPipe GenAI tasks.
+     *
+     * @export
+     * @param basePath An optional base path to specify the directory the Wasm
+     *    files should be loaded from. If not specified, the Wasm files are
+     *    loaded from the host's root directory.
+     * @return A `WasmFileset` that can be used to initialize MediaPipe GenAI
+     *    tasks.
+     */
+    static forGenAiTasks(basePath?: string): Promise<WasmFileset>;
+    /**
      * Creates a fileset for the MediaPipe Text tasks.
      *
      * @export
@@ -2117,6 +2128,8 @@ export declare interface Landmark {
     y: number;
     /** The z coordinates of the landmark. */
     z: number;
+    /** The likelihood of the landmark being visible within the image. */
+    visibility: number;
 }
 
 /** Data that a user can use to specialize drawing options. */
@@ -2399,6 +2412,8 @@ export declare interface NormalizedLandmark {
     y: number;
     /** The z coordinates of the normalized landmark. */
     z: number;
+    /** The likelihood of the landmark being visible within the image. */
+    visibility: number;
 }
 
 /**
