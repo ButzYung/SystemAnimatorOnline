@@ -1,5 +1,5 @@
 // auto fit
-// (2024-02-21)
+// (2024-03-09)
 
 const v1 = new THREE.Vector3();
 const v2 = new THREE.Vector3();
@@ -464,30 +464,37 @@ function process_gesture() {
       if (typeof multiply == 'number') {
         if (multiply > 1) {
           if (obj[p_offset] < 0) {
-            obj[p_offset] += obj[p] * (multiply-1);
+            obj[p_offset] += (obj[p]+obj[p_offset]) * (multiply-1);
             if (obj[p_offset] > 0) {
               multiply = 1 + obj[p_offset] / obj[p];
               obj[p_offset] = 0;
+            }
+            else {
+              multiply = 1;
             }
           }
         }
         else {
           if (obj[p_offset] > 0) {
-            obj[p_offset] += obj[p] * (multiply-1);
+            obj[p_offset] += (obj[p]+obj[p_offset]) * (multiply-1);
             if (obj[p_offset] < 0) {
               multiply = 1 + obj[p_offset] / obj[p];
               obj[p_offset] = 0;
             }
+            else {
+              multiply = 1;
+            }
           }
         }
 
-        obj[p] *= multiply;
-
-        if (para.limit != null) {
-          let limit = (typeof para.limit == 'number') ? para.limit : v_default;
-          if ((multiply > 1) ? obj[p] > limit : obj[p] < limit) {
-            obj[p_offset] = (obj[p_offset]||0) + (obj[p] - limit);
-            obj[p] = limit;
+        if (multiply != 1) {
+          obj[p] = (obj[p] + (obj[p_offset]||0)) * multiply;
+          if (para.limit != null) {
+            let limit = (typeof para.limit == 'number') ? para.limit : v_default;
+            if ((multiply > 1) ? obj[p] > limit : obj[p] < limit) {
+              obj[p_offset] = obj[p] - limit;
+              obj[p] = limit;
+            }
           }
         }
       }
