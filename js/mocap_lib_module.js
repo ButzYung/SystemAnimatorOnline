@@ -1,4 +1,4 @@
-// 2024-02-25
+// 2024-03-09
 
 const is_worker = (typeof window !== "object");
 
@@ -1190,6 +1190,33 @@ s*s = ((x2*x2 + y2*y2)/1.5 - (x1*x1 + y1*y1))/(z1*z1 - z2*z2/1.5)
   h.forEach(j=>{j[2] *= _adjust_ratio});
 }
 //hand.z_adjust_ratio = _adjust_ratio;
+
+
+const palm0 = h[0];
+for (let f_idx = 0; f_idx < 5; f_idx++) {
+  const finger = [];
+  for (let idx = 0; idx < 4; idx++)
+    finger[idx] = h[f_idx*4+1+idx];
+
+  let dx = finger[0][0] - palm0[0];
+  let dy = finger[0][1] - palm0[1];
+  let dz = finger[0][1] - palm0[1];
+  const ref_length = Math.sqrt(dx*dx + dy*dy + dz*dz) * ((f_idx == 0) ? 2 : 1) * 0.5;
+
+  for (let i = 0; i < 3; i++) {
+    const f1 = [];
+    for (let idx = 0; idx < 3; idx++)
+      f1[idx] = finger[i+1][idx] - finger[i][idx];
+    const min_length = ref_length * ((i < 2) ? 0.4 : 0.2);
+    if (f1[0]*f1[0] + f1[1]*f1[1] + f1[2]*f1[2] < min_length*min_length) {
+      const z_mod = Math.sign(f1[2]) * Math.sqrt(min_length*min_length - (f1[0]*f1[0] + f1[1]*f1[1]));
+//console.log(hand.label+f_idx+':'+z_mod);
+      for (let j = i+1; j < 4; j++)
+        finger[j][2] += z_mod;
+    }
+  }
+}
+
 
 if (data_filter[1]) {
   const d = hand.label;
