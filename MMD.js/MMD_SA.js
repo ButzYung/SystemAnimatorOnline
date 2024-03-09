@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-03-04)
+// (2024-03-09)
 
 var use_full_spectrum = true
 
@@ -2625,6 +2625,7 @@ else {
 const sprite = new THREE.Sprite( material );
 
 if (MMD_SA.THREEX.enabled) {
+  window.addEventListener('MMDStarted', ()=>{sprite.renderOrder = 999;});
   sprite.layers.enable(MMD_SA.THREEX.PPE.UnrealBloom.NO_BLOOM);
 //  sprite.layers.enable(MMD_SA.THREEX.PPE.N8AO.AO_MASK);
 }
@@ -8841,6 +8842,7 @@ for (const name in humanBones) {
   }
 }
 
+para.shoulder_width = para.pos0['leftUpperArm'][0] - para.pos0['rightUpperArm'][0];
 para.left_arm_length = v1.fromArray(para.pos0['leftUpperArm']).distanceTo(v2.fromArray(para.pos0['leftHand'])) * vrm_scale;
 para.left_leg_length = ((para.pos0['leftUpperLeg'][1] - para.pos0['leftLowerLeg'][1]) + (para.pos0['leftLowerLeg'][1] - para.pos0['leftFoot'][1])) * vrm_scale;
 para.spine_length = (para.pos0['neck'][1] - para.pos0['leftUpperLeg'][1]) * vrm_scale;
