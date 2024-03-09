@@ -1,5 +1,5 @@
 // XR Animator
-// (2024-03-04)
+// (2024-03-09)
 
 var MMD_SA_options = {
 
@@ -2999,7 +2999,7 @@ if (z_para) {
       transformation: {
         position: {
           y: { unit_length:1, min:'elbow+0' },
-          x: { add:{left:0.1, right:-0}, scale:{left:1.5, right:1} },
+          x: { add:{left:0, right:0}, scale:{left:1.5, right:1} },
         }
       },
       elbow_lock: {
@@ -3301,7 +3301,7 @@ wireframe:{
 //  hidden:true,
 //  align_with_video:true,
   top:0.5,
-//left:+(0.6)//top:-1,
+//left:+(0.5),top:-1,
 //left:1,
 //top:0.8,left:0.4,
 //top:0,left:3,
@@ -3840,7 +3840,9 @@ System._browser.on_animation_update.add(()=>{
 }, 0,1);
 
 MMD_SA_options.Dungeon_options.item_base.social_distancing && MMD_SA_options.Dungeon_options.item_base.social_distancing.reset();
-if (System._browser.camera.initialized) System._browser.on_animation_update.add(()=>{System._browser.camera._camera_reset = MMD_SA._trackball_camera.object.clone()},1,1);
+
+if (System._browser.camera.initialized) System._browser.on_animation_update.add(()=>{ System._browser.camera._update_camera_reset(); }, 1,1);
+System._browser.on_animation_update.add(()=>{ System._browser.camera.poseNet.frames._z_max = System._browser.camera.poseNet.frames._z_max_timestamp = 0; }, 0,0);
 
 if (MMD_SA_options.Dungeon._event_active.id == '_POSE_') MMD_SA_options.Dungeon.run_event(null,null,0);
       }
@@ -5102,7 +5104,7 @@ target.fromArray(target_filter[d].filter(target.toArray()));
 
 target.multiplyScalar(30).add(hand_pos);
 
-const c_base = MMD_SA.Camera_MOD.get_camera_base(['camera_lock']);
+const c_base = MMD_SA.Camera_MOD.get_camera_base(['camera_lock','hip_camera']);
 hand_pos.sub(c_base.pos);
 target.sub(c_base.target);
 
@@ -8794,7 +8796,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  get content() { return 'XR Animator (v0.19.9)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
+  get content() { return 'XR Animator (v0.19.10)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -9526,8 +9528,9 @@ MMD_SA_options.Dungeon.utils.tooltip(
 
 '5. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.auto_grounding') + ' (' + (System._browser.hotkeys.config_by_id['mocap_auto_grounding']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON'),
 '6. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.body_bend_reduction') + ': ' + ((body_bend_reduction_power) ? System._browser.translation.get('Misc.' + body_bend_reduction_power) : 'OFF'),
-'7. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.arm_horizontal_offset') + ': ' + (System._browser.camera.poseNet.arm_horizontal_offset_percent||0) + '%' + ((option_plus_minus == 'arm_horizontal_offset') ? ' (➕➖)' : ''),
-'8. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.upper_rotation_offset') + ': ' + ((MMD_SA.MMD.motionManager.para_SA.motion_tracking?.ML_models?.pose || MMD_SA_options.user_camera.ML_models.pose).upper_rotation_offset||0) + '°' + ((option_plus_minus == 'upper_rotation_offset') ? '(➕➖)' : ''),
+'7. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_camera') + ': ' + ((System._browser.camera.poseNet.hip_camera) ? 'ON' : 'OFF'),
+'8. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.arm_horizontal_offset') + ': ' + (System._browser.camera.poseNet.arm_horizontal_offset_percent||0) + '%' + ((option_plus_minus == 'arm_horizontal_offset') ? ' (➕➖)' : ''),
+'9. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.upper_rotation_offset') + ': ' + ((MMD_SA.MMD.motionManager.para_SA.motion_tracking?.ML_models?.pose || MMD_SA_options.user_camera.ML_models.pose).upper_rotation_offset||0) + '°' + ((option_plus_minus == 'upper_rotation_offset') ? '(➕➖)' : ''),
 'X. ' + System._browser.translation.get('Misc.done'),
     ].join('\n');
   },
@@ -9599,6 +9602,19 @@ MMD_SA_options.Dungeon.utils.tooltip(
   },
   { key:7, event_id: {
       func: function () {
+System._browser.camera.poseNet.hip_camera = !System._browser.camera.poseNet.hip_camera;
+      },
+      goto_event: { branch_index:mocap_options_branch, step:1 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_camera.tooltip')
+);
+    }
+  },
+  { key:8, event_id: {
+      func: function () {
 option_plus_minus = 'arm_horizontal_offset';
       },
       goto_event: { branch_index:mocap_options_branch, step:1 },
@@ -9610,7 +9626,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
     }
   },
-  { key:8, event_id: {
+  { key:9, event_id: {
       func: function () {
 option_plus_minus = 'upper_rotation_offset';
       },
@@ -11126,6 +11142,7 @@ config.user_camera = {
       auto_grounding: System._browser.camera.poseNet.auto_grounding,
       shoulder_tracking: System._browser.camera.poseNet.shoulder_tracking,
       body_bend_reduction_power: System._browser.camera.poseNet.body_bend_reduction_power,
+      hip_camera: System._browser.camera.poseNet.hip_camera,
       hip_adjustment_weight_percent: System._browser.camera.poseNet.hip_adjustment_weight_percent,
       hip_adjustment_head_weight_percent: System._browser.camera.poseNet.hip_adjustment_head_weight_percent,
       hip_adjustment_adjust_y_axis_percent: System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent,
@@ -11325,6 +11342,7 @@ try {
         System._browser.camera.poseNet.auto_grounding = config[p].ML_models.pose.auto_grounding;
         System._browser.camera.poseNet.shoulder_tracking = config[p].ML_models.pose.shoulder_tracking;
         System._browser.camera.poseNet.body_bend_reduction_power = config[p].ML_models.pose.body_bend_reduction_power;
+        System._browser.camera.poseNet.hip_camera = config[p].ML_models.pose.hip_camera;
         System._browser.camera.poseNet.arm_horizontal_offset_percent = config[p].ML_models.pose.arm_horizontal_offset_percent;
         System._browser.camera.poseNet.hip_adjustment_weight_percent = config[p].ML_models.pose.hip_adjustment_weight_percent;
         System._browser.camera.poseNet.hip_adjustment_head_weight_percent = config[p].ML_models.pose.hip_adjustment_head_weight_percent;

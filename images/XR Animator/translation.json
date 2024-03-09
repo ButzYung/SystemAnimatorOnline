@@ -125,7 +125,7 @@
 					"_translation_": {
 						"_default_": "XR Animator is now ready. You may choose to turn UI off for streaming (press Esc to toggle the bottom UI afterwards).\n1. Finish and turn UI off\nX. Finish",
 						"ja": "XR Animator の準備が整いました。 ストリーミング用に UI をオフにすることもできます (後で Esc キーを押して下部の UI を切り替えます)。\n1. UIをオフにして終了する\nX. 終了する",
-						"zh": "XR Animator已準備就緒。 你可以選擇隱藏UI顯示以方便直播 (及後按Esc切換UI顯示).\n1. 完成及隱藏UI\nX. 完成"
+						"zh": "XR Animator已準備就緒。 你可以選擇隱藏UI顯示以方便直播 (及後按Esc切換下方UI顯示).\n1. 完成及隱藏UI\nX. 完成"
 					}
 				}
 			},
@@ -691,6 +691,20 @@
 									"_default_": "Body bend reduction:\nSometimes the mocap AI may misrecognize your body gesture as bending forward or backward, especially when you are close to the camera. When enabled, this option reduces the bending of avatar's body by a certain ratio. Default is \"OFF\".",
 									"ja": "体の曲がりを軽減する:\n特にカメラに近づいている場合、モーションキャプチャ AI が体のジェスチャを前屈または後屈と誤認識することがあります。 このオプションを有効にすると、アバターの体の曲がりが一定の比率で軽減されます。 デフォルトは「OFF」です。",
 									"zh": "減少身體前後彎曲:\n有時動捕 AI 會誤認身體為前傾或後傾，尤其當你較接近鏡頭的時候。 更改此設定的比例以減少人物身體前後彎曲的情況。 預設是「OFF」。"
+								}
+							}
+						},
+						"hip_camera": {
+							"_translation_": {
+								"_default_": "Hip camera",
+								"ja": "ヒップカメラ",
+								"zh": "腰間鏡頭"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Hip camera:\nWhen enabled, this option captures your hip position during upper body mocap, but instead of transferring the position to the avatar, the position is used to animate the 3D camera. It's like being the motion actor and the camera man at the same time. Default is \"OFF\".",
+									"ja": "ヒップカメラ:\nこのオプションを有効にすると、上半身のモーキャプ中に腰の位置がキャプチャされますが、その位置はアバターに転送されるのではなく、3D カメラのアニメーション化に使用されます。 モーションアクターであると同時にカメラマンであるようなものです。 デフォルトは「OFF」です。",
+									"zh": "腰間鏡頭:\n當此設定為有效時，腰部位置的數據會在上半身動捕時被讀取。 而有別於全身動捕，數據會用作移動 3D 鏡頭而不是人物本身，彷彿同時擔當動作演員及攝影師雙重角色。 預設是「OFF」。"
 								}
 							}
 						},
@@ -1306,7 +1320,7 @@
 						"tooltip": {
 							"_translation_": {
 								"_default_": "Clear bounding box:\nXR Animator mocap can only track one person at the same time. When there are more than one person in the mocap source, sometimes the mocap AI can be tracking the wrong person. In such case, clear the bounding box of the current target to enforce the AI to track another person in the video.",
-								"ja": "境界ボックスをクリアする:\nXR Animator モーキャップは同時に 1 人の人物のみを追跡できます。 モーキャップ ソースに複数の人物が含まれている場合、モーキャップ AI が間違った人物を追跡することがあります。 このような場合、現在のターゲットの境界ボックスをクリアして、AI がビデオ内の別の人物を追跡するように強制します。",
+								"ja": "境界ボックスをクリアする:\nXR Animator モーキャプは同時に 1 人の人物のみを追跡できます。 モーキャプ ソースに複数の人物が含まれている場合、モーキャプ AI が間違った人物を追跡することがあります。 このような場合、現在のターゲットの境界ボックスをクリアして、AI がビデオ内の別の人物を追跡するように強制します。",
 								"zh": "清除邊界框:\nXR Animator 只能同時追蹤一人。 如果畫面上出現多過一個人，動捕 AI 有時會弄錯對象。 如出現此情況，可利用此功能清除現在被追蹤人物的邊界框以強制系統從新選擇追蹤畫面內的其他人物。"
 							}
 						}
