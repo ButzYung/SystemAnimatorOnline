@@ -1933,7 +1933,7 @@
 						"_translation_": {
 							"_default_": "This will reset all XR Animator settings to the default. Are you sure?\n1. Yes\n2. No",
 							"ja": "これにより、XR Animator のすべての設定がデフォルトにリセットされます。 よろしいですか？\n1. はい\n2. いいえ",
-							"_default_": "確定要重置 XR Animator 的所有設定至預設狀態?\n1. 是\n2. 否"
+							"zh": "確定要重置 XR Animator 的所有設定至預設狀態?\n1. 是\n2. 否"
 						}
 					}
 				},
