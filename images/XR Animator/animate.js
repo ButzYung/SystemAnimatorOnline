@@ -1,5 +1,5 @@
 // XR Animator
-// (2024-03-09)
+// (2024-03-18)
 
 var MMD_SA_options = {
 
@@ -2998,9 +2998,24 @@ if (z_para) {
     arm_tracking: {
       transformation: {
         position: {
+          z: { "unit_length": 1, "add":{"right":1} },
           y: { unit_length:1, min:'elbow+0' },
           x: { add:{left:0, right:0}, scale:{left:1.5, right:1} },
-        }
+        },
+"root_rotation": {
+	"left": {
+		"x": 0,
+		"y": 0,
+		"z": 20,
+		"order": "ZYX"
+	},
+	"right": {
+		"x": 0,
+		"y": -20,
+		"z": 10,
+		"order": "ZYX"
+	}
+}
       },
       elbow_lock: {
         right:{
@@ -3293,7 +3308,7 @@ video:{
 //  hidden:true,
 //  hidden_on_webcam: true,
   scale:0.4, top:-0.5,
-//left:-0.5*0,top:-1,
+//left:-0.5,top:-1,
 //scale:0.4*1,top:0,left:-3,
 //scale:0.4*2,top:0,left:-1,
 },
@@ -8796,7 +8811,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  get content() { return 'XR Animator (v0.19.10)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
+  get content() { return 'XR Animator (v0.19.11)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -9127,7 +9142,7 @@ MMD_SA_options.Dungeon.run_event(null,null,5);
 
 return true;
     } },
-    ...['switch_motion','arm_to_leg_control_mode','mocap_auto_grounding','hand_camera','selfie_mode','auto_look_at_camera'].map((id,i)=>{
+    ...['switch_motion','arm_to_leg_control_mode','mocap_auto_grounding','hand_camera','selfie_mode','auto_look_at_camera','hip_camera'].map((id,i)=>{
       return { key:i+1, event_id:{ func:()=>{
 hotkey_id = id;
 hotkey_combo = hotkey_info = hotkey_acc = null;
@@ -9218,6 +9233,7 @@ return [
   '4. ' + get_state('hand_camera') + hotkeys.config_by_id['hand_camera'].accelerator[0] + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.hand_camera'),
   '5. ' + get_state('selfie_mode') + hotkeys.config_by_id['selfie_mode'].accelerator[0] + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.selfie_mode'),
   '6. ' + get_state('auto_look_at_camera') + hotkeys.config_by_id['auto_look_at_camera'].accelerator[0] + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.auto_look_at_camera'),
+  '7. ' + get_state('hip_camera') + hotkeys.config_by_id['hip_camera'].accelerator[0] + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.hip_camera'),
   'G. ' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.global_hotkey_mode') + '🌐: ' + ((System._browser.hotkeys.is_global) ? 'ON' : 'OFF'),
   'X. ' + System._browser.translation.get('Misc.done'),
 ].join('\n');
@@ -9528,7 +9544,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 
 '5. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.auto_grounding') + ' (' + (System._browser.hotkeys.config_by_id['mocap_auto_grounding']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON'),
 '6. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.body_bend_reduction') + ': ' + ((body_bend_reduction_power) ? System._browser.translation.get('Misc.' + body_bend_reduction_power) : 'OFF'),
-'7. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_camera') + ': ' + ((System._browser.camera.poseNet.hip_camera) ? 'ON' : 'OFF'),
+'7. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_camera') + ' (' + (System._browser.hotkeys.config_by_id['hip_camera']?.accelerator[0]||'') + '): ' + ((System._browser.camera.poseNet.hip_camera) ? 'ON' : 'OFF'),
 '8. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.arm_horizontal_offset') + ': ' + (System._browser.camera.poseNet.arm_horizontal_offset_percent||0) + '%' + ((option_plus_minus == 'arm_horizontal_offset') ? ' (➕➖)' : ''),
 '9. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.upper_rotation_offset') + ': ' + ((MMD_SA.MMD.motionManager.para_SA.motion_tracking?.ML_models?.pose || MMD_SA_options.user_camera.ML_models.pose).upper_rotation_offset||0) + '°' + ((option_plus_minus == 'upper_rotation_offset') ? '(➕➖)' : ''),
 'X. ' + System._browser.translation.get('Misc.done'),
@@ -9609,7 +9625,7 @@ System._browser.camera.poseNet.hip_camera = !System._browser.camera.poseNet.hip_
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_camera.tooltip')
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_camera.tooltip').replace(/\<hotkey\>/, System._browser.hotkeys.config_by_id['hip_camera']?.accelerator[0]||'N/A')
 );
     }
   },
@@ -11088,6 +11104,14 @@ System._browser.camera.facemesh.auto_look_at_camera = !System._browser.camera.fa
 DEBUG_show('Auto "look at camera":' + ((System._browser.camera.facemesh.auto_look_at_camera) ? 'ON' : 'OFF'), 3);
       }
     },
+
+    {
+      id: 'hip_camera',
+      accelerator: ['Alt+H'],
+      process: (e)=>{
+System._browser.camera.poseNet.hip_camera = !System._browser.camera.poseNet.hip_camera;
+      }
+    },
   ];
 
   const hotkey_reserved = [];
@@ -11262,7 +11286,7 @@ const config = MMD_SA_options._XRA_settings_export();
 System.Gadget.Settings.writeString('LABEL_XRA_settings', JSON.stringify(config));
   });
 
-  MMD_SA_options._XRA_settings_import = async (config)=>{
+  MMD_SA_options._XRA_settings_import = async (config=MMD_SA_options._XRA_settings_imported)=>{
 function shoulder_adjust(p) {
   MMD_SA.THREEX.shoulder_adjust = config[p];
 
@@ -11293,41 +11317,28 @@ try {
 
   MMD_SA_options._XRA_settings_imported = config;
 
-  if (!loaded) {
-    for (const p in config) {
-      switch (p) {
-        case 'language':
-          System._browser.translation.language = config[p];
-          break;
-      }
+  for (const p in config) {
+    switch (p) {
+      case 'language':
+        System._browser.translation.language = config[p];
+        break;
     }
-    return;
   }
+  if (!loaded) return;
 
-  if (!MMD_SA.MMD_started) {
-    for (const p in config) {
-      switch (p) {
-        case 'shoulder_adjust':
-          shoulder_adjust(p);
-          break;
-        case 'hand_camera_fov':
-          MMD_SA_options.Dungeon_options.item_base.hand_camera.fov = config[p];
-          break;
-        case 'VMC':
-          MMD_SA.OSC.app_mode = config[p].app_mode;
-          break;
-      }
-    }
-//shoulder_adjust('shoulder_adjust');
-    return;
-  }
+  if (!MMD_SA.THREEX.THREEX) return;
 
   for (const p in config) {
     switch (p) {
       case 'shoulder_adjust':
         shoulder_adjust(p);
         break;
+    }
+  }
+  if (!MMD_SA.MMD_started) return;
 
+  for (const p in config) {
+    switch (p) {
       case 'user_camera':
         Object.assign(MMD_SA_options.user_camera.pixel_limit, config[p].pixel_limit);
         MMD_SA_options.user_camera.fps = config[p].fps;
@@ -11417,6 +11428,8 @@ try {
         break;
       case 'hand_camera_fov':
         MMD_SA_options.Dungeon_options.item_base.hand_camera.fov = config[p];
+        if (config[p] != null)
+          MMD_SA.THREEX.GUI.obj.visual_effects.folders[0].children[1].controllers[1].setValue(config[p]);
         break;
 
       case 'UI_muted':
@@ -11495,15 +11508,6 @@ catch (err) {
   }
 
   window.addEventListener("load", () => {
-MMD_SA_options._XRA_settings_import();
-  });
-
-  window.addEventListener('jThree_ready', ()=>{
-MMD_SA_options._XRA_settings_import();
-  });
-
-  window.addEventListener('MMDStarted', ()=>{
-    System._browser.on_animation_update.add(()=>{
 window.addEventListener('SA_dragdrop_JSON', (e)=>{
   const json = e.detail.json;
   if (json.XR_Animator_settings) {
@@ -11513,6 +11517,15 @@ window.addEventListener('SA_dragdrop_JSON', (e)=>{
   }
 });
 
+MMD_SA_options._XRA_settings_import();
+  });
+
+  window.addEventListener('jThree_ready', ()=>{
+MMD_SA_options._XRA_settings_import();
+  });
+
+  window.addEventListener('MMDStarted', ()=>{
+    System._browser.on_animation_update.add(()=>{
 MMD_SA_options._XRA_settings_import();
     }, 0,0);
 
