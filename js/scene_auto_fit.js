@@ -1,5 +1,5 @@
 // auto fit
-// (2024-03-09)
+// (2024-03-18)
 
 const v1 = new THREE.Vector3();
 const v2 = new THREE.Vector3();
@@ -749,15 +749,18 @@ function process_gesture() {
                   br = '上半身2';
                   break;
                 case "head":
-                  br = model.get_bone_rotation_by_MMD_name('頭');
                   pt = model.get_bone_position_by_MMD_name('頭');//.add(v2.set(0, v2.fromArray(model.get_bone_origin_by_MMD_name('頭')).distanceTo(v3.fromArray(model.get_bone_origin_by_MMD_name('首'))), 0).applyQuaternion(br));
+                  br = model.get_bone_rotation_by_MMD_name('頭');
+                  break;
+                case "camera":
+                  pt = MMD_SA._trackball_camera.object.position.clone();
                   break;
               }
 
               const pos_offset = v2.set(0,0,0);
               if (condition.contact_target.position) pos_offset.copy(condition.contact_target.position);
               pos_offset.add(_pos_offset);
-              pt.add(pos_offset.applyQuaternion((typeof br == 'string') ? model.get_bone_rotation_by_MMD_name(br) : br));
+              if (br) pt.add(pos_offset.applyQuaternion((typeof br == 'string') ? model.get_bone_rotation_by_MMD_name(br) : br));
 
               let z_weight = (System._browser.camera.poseNet._upper_body_only_mode) ? 0.5 : 1/3;
               pt.z = pt.z * z_weight + hand_pos.z * (1-z_weight);

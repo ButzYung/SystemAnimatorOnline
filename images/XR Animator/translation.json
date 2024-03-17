@@ -698,13 +698,13 @@
 							"_translation_": {
 								"_default_": "Hip camera",
 								"ja": "ヒップカメラ",
-								"zh": "腰間鏡頭"
+								"zh": "腰間攝影機"
 							},
 							"tooltip": {
 								"_translation_": {
-									"_default_": "Hip camera:\nWhen enabled, this option captures your hip position during upper body mocap, but instead of transferring the position to the avatar, the position is used to animate the 3D camera. It's like being the motion actor and the camera man at the same time. Default is \"OFF\".",
-									"ja": "ヒップカメラ:\nこのオプションを有効にすると、上半身のモーキャプ中に腰の位置がキャプチャされますが、その位置はアバターに転送されるのではなく、3D カメラのアニメーション化に使用されます。 モーションアクターであると同時にカメラマンであるようなものです。 デフォルトは「OFF」です。",
-									"zh": "腰間鏡頭:\n當此設定為有效時，腰部位置的數據會在上半身動捕時被讀取。 而有別於全身動捕，數據會用作移動 3D 鏡頭而不是人物本身，彷彿同時擔當動作演員及攝影師雙重角色。 預設是「OFF」。"
+									"_default_": "Hip camera:\nWhen enabled, this option captures your hip position during upper body mocap, but instead of transferring the position to the avatar, the position is used to animate the 3D camera. It's like being the motion actor and the camera man at the same time. This option can be toggled via hotkey (<hotkey>). Default is \"OFF\".",
+									"ja": "ヒップカメラ:\nこのオプションを有効にすると、上半身のモーキャプ中に腰の位置がキャプチャされますが、その位置はアバターに転送されるのではなく、3D カメラのアニメーション化に使用されます。 モーションアクターであると同時にカメラマンであるようなものです。 このオプションはホットキー (<hotkey>) で切り替えることができます。 デフォルトは「OFF」です。",
+									"zh": "腰間攝影機:\n當此設定為有效時，腰部位置的數據會在上半身動捕時被讀取。 而有別於全身動捕，數據會用作移動 3D 鏡頭而不是人物本身，彷彿同時擔當動作演員及攝影師雙重角色。 可使用熱鍵 (<hotkey>) 隨時切換。 預設是「OFF」。"
 								}
 							}
 						},
@@ -1787,6 +1787,13 @@
 								"_default_": " to toggle auto \"look at camera\"",
 								"ja": "で自動「カメラを見る」を切り替える",
 								"zh": " 切換自動「望向鏡頭」模式"
+							}
+						},
+						"hip_camera": {
+							"_translation_": {
+								"_default_": " to toggle hip camera mode",
+								"ja": "でヒップカメラを切り替える",
+								"zh": " 切換腰間攝影機模式"
 							}
 						},
 						"extra": {
