@@ -1,4 +1,4 @@
-// 2024-03-09
+// 2024-03-25
 
 const is_worker = (typeof window !== "object");
 
@@ -1201,13 +1201,13 @@ for (let f_idx = 0; f_idx < 5; f_idx++) {
   let dx = finger[0][0] - palm0[0];
   let dy = finger[0][1] - palm0[1];
   let dz = finger[0][1] - palm0[1];
-  const ref_length = Math.sqrt(dx*dx + dy*dy + dz*dz) * ((f_idx == 0) ? 2 : 1) * 0.5;
+  const ref_length = Math.sqrt(dx*dx + dy*dy + dz*dz) * ((f_idx == 0) ? 2 : 0.75) * 0.5;
 
   for (let i = 0; i < 3; i++) {
     const f1 = [];
     for (let idx = 0; idx < 3; idx++)
       f1[idx] = finger[i+1][idx] - finger[i][idx];
-    const min_length = ref_length * ((i < 2) ? 0.4 : 0.2);
+    const min_length = ref_length * ((i < 2) ? 0.4 : 0.2);// * ((f_idx == 4) ? 0.75 : 1);
     if (f1[0]*f1[0] + f1[1]*f1[1] + f1[2]*f1[2] < min_length*min_length) {
       const z_mod = Math.sign(f1[2]) * Math.sqrt(min_length*min_length - (f1[0]*f1[0] + f1[1]*f1[1]));
 //console.log(hand.label+f_idx+':'+z_mod);
