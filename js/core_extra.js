@@ -1,4 +1,4 @@
-// System Animator core - EXTRA (2023-04-10)
+// System Animator core - EXTRA (2024-03-25)
 
 var use_SA_gimage_emulation
 
@@ -397,18 +397,18 @@ catch (err) {}
     }
   }
 
-  if (self._js_min_mode_ || (browser_native_mode && !webkit_window && !localhost_mode)) {
-console.log("_core.00.min.js")
-    html +=
-  '<script type="text/javascript" language="javascript" src="js/_core.00.min.js"></scr'+'ipt>\n'
-  }
-  else {
+  if (localhost_mode || (webkit_electron_mode && /AT_SystemAnimator_v0001\.gadget/.test(toLocalPath(self.location.href).replace(/[\/\\][^\/\\]+$/, "")))) {
     html +=
   '<script type="text/javascript" language="javascript" src="js/dragdrop.js"></scr'+'ipt>\n'
 + '<script type="text/javascript" language="javascript" src="js/img_cache.js"></scr'+'ipt>\n'
 + '<script type="text/javascript" language="javascript" src="js/seq.js"></scr'+'ipt>\n'
 + '<script type="text/javascript" language="javascript" src="js/shell_folder.js"></scr'+'ipt>\n'
-+ '<script type="text/javascript" language="javascript" src="js/wmi.js"></scr'+'ipt>\n'
++ '<script type="text/javascript" language="javascript" src="_private/js/wmi.js"></scr'+'ipt>\n'
+  }
+  else {
+console.log("_core.00.min.js")
+    html +=
+  '<script type="text/javascript" language="javascript" src="js/_core.00.min.js"></scr'+'ipt>\n'
   }
 
   if (SA_project_JSON && SA_project_JSON.P2P_network && !is_SA_child_animation) {
