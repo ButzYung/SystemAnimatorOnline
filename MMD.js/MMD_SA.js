@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-03-09)
+// (2024-03-25)
 
 var use_full_spectrum = true
 
@@ -674,10 +674,12 @@ MMD_SA._click_to_reset = null;
         MMD_SA_options.motion_shuffle = [index];
         MMD_SA_options.motion_shuffle_list_default = null;
         MMD_SA._force_motion_shuffle = true;
-        return;
+      }
+      else {
+        await MMD_SA.load_external_motion(src);
       }
 
-      await MMD_SA.load_external_motion(src);
+      if (System._browser.camera.initialized) System._browser.on_animation_update.add(()=>{ System._browser.camera._update_camera_reset(); }, 1,1);
     });
   }
   else if (item.isFileSystem && /([^\/\\]+)\.(fbx)$/i.test(src)) {
