@@ -1,4 +1,4 @@
-// (2024-02-25)
+// (2024-03-25)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -11185,8 +11185,13 @@ this.object_base_list.forEach(function (obj, idx) {
 
  ,get dialogue_branch_mode() { return this._states.dialogue_branch_mode; }
  ,set dialogue_branch_mode(v) {
-    var v_current = this._states.dialogue_branch_mode;
+    let v_current = this._states.dialogue_branch_mode;
     if (Array.isArray(v_current) && Array.isArray(v)) {
+      const sb_index = {};
+      v.forEach(k=>sb_index[k.sb_index||0]=true);
+      for (const i in sb_index)
+        v_current = v_current.filter(k=>(k.sb_index||0) != i);
+
       const v_append = [];
       v.forEach(k=>{
         const index = v_current.findIndex(k0=>{
