@@ -1,5 +1,5 @@
 // XR Animator
-// (2024-03-18)
+// (2024-03-25)
 
 var MMD_SA_options = {
 
@@ -2122,7 +2122,7 @@ cam_pos.copy(MMD_SA._trackball_camera.object.position)
 //      enabled: true,
       transformation: {
         position: {
-          x: { unit_length:1, add:{'left':-2, 'right':2}, min:{'left':-10, 'right':2.2-10.5}, max:{'left':10, 'right':2.2+10.5}, scale:{'left':1, 'right':1} },
+          x: { unit_length:1, add:{'left':-0, 'right':2}, min:{'left':-10, 'right':2.2-10.5}, max:{'left':10, 'right':2.2+10.5}, scale:{'left':1, 'right':1} },
           y: { unit_length:1, add:{'left':5, 'right':3}, min:{'left':4.5, 'right':3.5}, max:{'left':15, 'right':3.5+0.5},scale:{'left':1.75, 'right':0.3} },
           z: { unit_length:1, add:3, min:{'left':5, 'right':11.2-10}, max:{'left':12, 'right':11.2}, scale:{'left':2, 'right':2} },
 /*
@@ -3308,7 +3308,7 @@ video:{
 //  hidden:true,
 //  hidden_on_webcam: true,
   scale:0.4, top:-0.5,
-//left:-0.5,top:-1,
+//left:-0.5*-1,top:-1,
 //scale:0.4*1,top:0,left:-3,
 //scale:0.4*2,top:0,left:-1,
 },
@@ -3857,7 +3857,6 @@ System._browser.on_animation_update.add(()=>{
 MMD_SA_options.Dungeon_options.item_base.social_distancing && MMD_SA_options.Dungeon_options.item_base.social_distancing.reset();
 
 if (System._browser.camera.initialized) System._browser.on_animation_update.add(()=>{ System._browser.camera._update_camera_reset(); }, 1,1);
-System._browser.on_animation_update.add(()=>{ System._browser.camera.poseNet.frames._z_max = System._browser.camera.poseNet.frames._z_max_timestamp = 0; }, 0,0);
 
 if (MMD_SA_options.Dungeon._event_active.id == '_POSE_') MMD_SA_options.Dungeon.run_event(null,null,0);
       }
@@ -5064,10 +5063,11 @@ if (System._browser.camera.handpose.enabled) {
   }, {once:true});
 }
 
-System._browser.camera.poseNet._arm_IK_adjust[hand_camera_side] = { min:{z:0.25}, scale:{x:1.25,y:1,z:1.5} };
+const sign_LR = (d=='左')?1:-1;
+
+System._browser.camera.poseNet._arm_IK_adjust[hand_camera_side] = { add:{x:-0.08*sign_LR}, min:{z:0.5}, scale:{x:1.25,y:1,z:1.5} };
 if (frames.skin[d+'腕ＩＫ']) frames.skin[d+'腕ＩＫ'][0].data_filter = {};
 
-const sign_LR = (d=='左')?1:-1;
 let target = v1;
 if (selfie_mode) {
   const head_target = modelX.get_bone_position_by_MMD_name('首');
@@ -8811,7 +8811,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  get content() { return 'XR Animator (v0.19.11)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
+  get content() { return 'XR Animator (v0.19.12)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -9497,9 +9497,9 @@ DEBUG_show('(Motion recording STARTED / x0.25 speed)', 3)
  ,bubble_index: 3
  ,branch_list: [
   { key:1, event_index:1 },
-  { key:2, event_index:4 },
+  { key:2, event_index:5 },
   { key:3, branch_index:facemesh_options_branch },
-  { key:4, event_index:5 },
+  { key:4, event_index:6 },
   { key:5, branch_index:mocap_options_branch+4,
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
@@ -9514,199 +9514,53 @@ MMD_SA_options.Dungeon.utils.tooltip(
         },
 
         ...(()=>{
+          let page2_index = 2;
           let option_plus_minus = 'arm_horizontal_offset';
+
+          const hip_adjustment_index = 3;
+          const z_depth_scale_event_index = 4;
+
+          let hip_adjustment_option_active = 'General weighting';
+          const hip_adjustment_options = ['General weighting', 'Head motion weight', 'Head pitch rotation', 'Y-axis adjustment', 'Scale X', 'Scale Y', 'Scale Z', 'Smoothing'];
 
           return [
             {
           message: {
   get content() {
-    let body_bend_reduction_power;
-    switch (System._browser.camera.poseNet.body_bend_reduction_power) {
-      case 0.25:
-        body_bend_reduction_power = 'Small';
-        break;
-      case 0.5:
-        body_bend_reduction_power = 'Medium';
-        break;
-      case 0.75:
-        body_bend_reduction_power = 'Large';
-        break;
-      case 1:
-        body_bend_reduction_power = 'Full';
-        break;
-    }
-
     return [
 '1. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.AI_model_quality') + ': ' + System._browser.translation.get('Misc.' + (MMD_SA_options.user_camera.ML_models.pose.model_quality || 'Normal')),
 '2. ┗ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.AI_model_quality.z_depth_scale') + ': ' + ((MMD_SA_options.user_camera.ML_models.pose.model_quality == 'Best') ? System._browser.translation.get('Misc.' + ((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale) ? ((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale<3)?'Max':'Min'):'Medium')) : 'N/A'),
-'3. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.shoulder_tracking') + ': ' + ((System._browser.camera.poseNet.shoulder_tracking) ? 'ON' : 'OFF'),
-'4. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.leg_IK') + ': ' + ((MMD_SA_options.user_camera.ML_models.pose.use_legIK)?'ON':'OFF'),
+'3. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.arm_horizontal_offset') + ': ' + (System._browser.camera.poseNet.arm_horizontal_offset_percent||0) + '%' + ((option_plus_minus == 'arm_horizontal_offset') ? '➕➖' : ''),
+'4. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_entry_duration') + ': ' + System._browser.camera.poseNet.limb_entry_duration_percent + '%' + ((option_plus_minus == 'limb_entry_duration') ? '➕➖' : ''),
+'5. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_return_duration') + ': ' + System._browser.camera.poseNet.limb_return_duration_percent + '%' + ((option_plus_minus == 'limb_return_duration') ? '➕➖' : ''),
+'6. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.upper_rotation_offset') + ': ' + ((MMD_SA.MMD.motionManager.para_SA.motion_tracking?.ML_models?.pose || MMD_SA_options.user_camera.ML_models.pose).upper_rotation_offset||0) + '°' + ((option_plus_minus == 'upper_rotation_offset') ? '➕➖' : ''),
+'7. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment') + ' ' + ((page2_index==2) ? '▶️' : '◀️'),
 
-'5. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.auto_grounding') + ' (' + (System._browser.hotkeys.config_by_id['mocap_auto_grounding']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON'),
-'6. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.body_bend_reduction') + ': ' + ((body_bend_reduction_power) ? System._browser.translation.get('Misc.' + body_bend_reduction_power) : 'OFF'),
-'7. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_camera') + ' (' + (System._browser.hotkeys.config_by_id['hip_camera']?.accelerator[0]||'') + '): ' + ((System._browser.camera.poseNet.hip_camera) ? 'ON' : 'OFF'),
-'8. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.arm_horizontal_offset') + ': ' + (System._browser.camera.poseNet.arm_horizontal_offset_percent||0) + '%' + ((option_plus_minus == 'arm_horizontal_offset') ? ' (➕➖)' : ''),
-'9. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.upper_rotation_offset') + ': ' + ((MMD_SA.MMD.motionManager.para_SA.motion_tracking?.ML_models?.pose || MMD_SA_options.user_camera.ML_models.pose).upper_rotation_offset||0) + '°' + ((option_plus_minus == 'upper_rotation_offset') ? '(➕➖)' : ''),
 'X. ' + System._browser.translation.get('Misc.done'),
     ].join('\n');
   },
   bubble_index: 3,
-  para: { row_max:11 },
-  branch_list: [
-  { key:1, event_id: {
-      func: function () {
-MMD_SA_options.user_camera.ML_models.pose.model_quality = (!MMD_SA_options.user_camera.ML_models.pose.model_quality) ? 'Best' : undefined;
-      },
-      goto_event: { branch_index:mocap_options_branch, step:1 },
-    },
-    onmouseover: function (e) {
-MMD_SA_options.Dungeon.utils.tooltip(
-  e.clientX, e.clientY,
-  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.AI_model_quality.tooltip')
-);
-    }
-  },
-  { key:2, event_index:3,
-    onmouseover: function (e) {
-MMD_SA_options.Dungeon.utils.tooltip(
-  e.clientX, e.clientY,
-  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.AI_model_quality.z_depth_scale.tooltip')
-);
-    }
-  },
-  { key:3, event_index:6,
-    onmouseover: function (e) {
-MMD_SA_options.Dungeon.utils.tooltip(
-  e.clientX, e.clientY,
-  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.shoulder_tracking.tooltip')
-);
-    }
-  },
-  { key:4, branch_index:mocap_options_branch+1,
-    onmouseover: function (e) {
-MMD_SA_options.Dungeon.utils.tooltip(
-  e.clientX, e.clientY,
-  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.leg_IK.tooltip')
-);
-    }
-  },
-
-  { key:5, branch_index:mocap_options_branch+3,
-    onmouseover: function (e) {
-MMD_SA_options.Dungeon.utils.tooltip(
-  e.clientX, e.clientY,
-  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.auto_grounding.tooltip').replace(/\<hotkey\>/, System._browser.hotkeys.config_by_id['mocap_auto_grounding']?.accelerator[0]||'N/A')
-);
-    }
-  },
-  { key:6, event_id: {
-      func: function () {
-let v = System._browser.camera.poseNet.body_bend_reduction_power || 0;
-v += 0.25;
-if (v > 1)
-  v = 0;
-System._browser.camera.poseNet.body_bend_reduction_power = v;
-      },
-      goto_event: { branch_index:mocap_options_branch, step:1 },
-    },
-    onmouseover: function (e) {
-MMD_SA_options.Dungeon.utils.tooltip(
-  e.clientX, e.clientY,
-  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.body_bend_reduction.tooltip')
-);
-    }
-  },
-  { key:7, event_id: {
-      func: function () {
-System._browser.camera.poseNet.hip_camera = !System._browser.camera.poseNet.hip_camera;
-      },
-      goto_event: { branch_index:mocap_options_branch, step:1 },
-    },
-    onmouseover: function (e) {
-MMD_SA_options.Dungeon.utils.tooltip(
-  e.clientX, e.clientY,
-  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_camera.tooltip').replace(/\<hotkey\>/, System._browser.hotkeys.config_by_id['hip_camera']?.accelerator[0]||'N/A')
-);
-    }
-  },
-  { key:8, event_id: {
-      func: function () {
-option_plus_minus = 'arm_horizontal_offset';
-      },
-      goto_event: { branch_index:mocap_options_branch, step:1 },
-    },
-    onmouseover: function (e) {
-MMD_SA_options.Dungeon.utils.tooltip(
-  e.clientX, e.clientY,
-  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.arm_horizontal_offset') + ((option_plus_minus == 'arm_horizontal_offset') ? ' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.press_to_change_value') + ')' : '') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.arm_horizontal_offset.tooltip')
-);
-    }
-  },
-  { key:9, event_id: {
-      func: function () {
-option_plus_minus = 'upper_rotation_offset';
-      },
-      goto_event: { branch_index:mocap_options_branch, step:1 },
-    },
-    onmouseover: function (e) {
-MMD_SA_options.Dungeon.utils.tooltip(
-  e.clientX, e.clientY,
-  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.upper_rotation_offset') + ((option_plus_minus == 'upper_rotation_offset') ? ' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.press_to_change_value') + ')' : '') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.upper_rotation_offset.tooltip')
-);
-    }
-  },
-  { key:'X', is_closing_event:true, branch_index:done_branch }
-  ]
-          },
-          next_step: {}
-            },
-// 2
-            (()=>{
-          let option_active = 'General weighting';
-
-          const options = ['General weighting', 'Head motion weight', 'Head pitch rotation', 'Y-axis adjustment', 'Scale X', 'Scale Y', 'Scale Z', 'Smoothing'];
-
-          return {
-            message: {
-  get content() {
-    const scale = System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.scale');
-
-    return [
-System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment'),
-//'・Press ⬆️⬇️ to switch option',
-'・' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value'),
-'A. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.general_weighting') + ': ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'OFF' : System._browser.camera.poseNet.hip_adjustment_weight_percent + '%') + ((option_active=='General weighting')?'⬅️➡️':''),
-'B. ┣ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.head_motion_weight') + ': ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_head_weight_percent + '%') + ((option_active=='Head motion weight')?'⬅️➡️':''),
-'C.     ┗ ' + ' ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.head_motion_weight.pitch_rotation') + ': ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_head_pitch_rotation_percent + '%') + ((option_active=='Head pitch rotation')?'⬅️➡️':''),
-'D. ┣ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.y_axis_adjustment') + ': ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent + '%') + ((option_active=='Y-axis adjustment')?'⬅️➡️':''),
-'E. ┣ ' + scale + ' X: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_x_percent + '%') + ((option_active=='Scale X')?'⬅️➡️':''),
-'F. ┣ ' + scale + ' Y: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_y_percent + '%') + ((option_active=='Scale Y')?'⬅️➡️':''),
-'G. ┣ ' + scale + ' Z: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_z_percent + '%') + ((option_active=='Scale Z')?'⬅️➡️':''),
-'H. ┗ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.smoothing') + ': ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_smoothing_percent + '%') + ((option_active=='Smoothing')?'⬅️➡️':''),
-    ].join('\n');
-  },
-  index: 1,
-  bubble_index: 3,
-  para: { row_max:11 },
+//  para: { row_max:11 },
   branch_list: [
   { key:'any', func:(e)=>{
-let step = 2;
-if (/Arrow(Up|Down)/.test(e.code)) {
-  let index = options.findIndex(v=>v==option_active);
+let step = hip_adjustment_index;
+
+if ((page2_index == hip_adjustment_index) && /Arrow(Up|Down)/.test(e.code)) {
+  let index = hip_adjustment_options.findIndex(v=>v==hip_adjustment_option_active);
   index -= (e.code == 'ArrowUp') ? 1 : -1;
   if (index < 0) {
-    index = options.length-1;
+    index = hip_adjustment_options.length-1;
   }
-  else if (index > options.length-1) {
+  else if (index > hip_adjustment_options.length-1) {
     index = 0;
   }
-  option_active = options[index];
+  hip_adjustment_option_active = hip_adjustment_options[index];
 }
-else if (/Arrow(Left|Right)/.test(e.code)) {
+else if ((page2_index == hip_adjustment_index) && /Arrow(Left|Right)/.test(e.code)) {
   const v = (e.code == 'ArrowRight') ? 1 : -1;
-  switch (option_active) {
+  switch (hip_adjustment_option_active) {
     case 'General weighting':
-System._browser.camera.poseNet.hip_adjustment_weight_percent = THREE.Math.clamp(System._browser.camera.poseNet.hip_adjustment_weight_percent + v, 0,100);
+System._browser.camera.poseNet.hip_adjustment_weight_percent = THREE.Math.clamp(System._browser.camera.poseNet.hip_adjustment_weight_percent + v, 0,200);
       break;
     case 'Head motion weight':
 System._browser.camera.poseNet.hip_adjustment_head_weight_percent = THREE.Math.clamp(System._browser.camera.poseNet.hip_adjustment_head_weight_percent + v, 0,100);
@@ -9731,13 +9585,19 @@ System._browser.camera.poseNet.hip_adjustment_smoothing_percent = THREE.Math.cla
       break;
     default:
       return false;
-  }
+ }
 }
 else if ((e.key == '+') || (e.key == '-')) {
   step = 1;
-  const inc = (e.key == '+') ? 1 : -1;
+  let inc = (e.key == '+') ? 1 : -1;
   if (option_plus_minus == 'arm_horizontal_offset') {
     System._browser.camera.poseNet.arm_horizontal_offset_percent = THREE.Math.clamp((System._browser.camera.poseNet.arm_horizontal_offset_percent||0) + inc*2, -200,200);
+  }
+  else if (option_plus_minus == 'limb_entry_duration') {
+    System._browser.camera.poseNet.limb_entry_duration_percent = THREE.Math.clamp((System._browser.camera.poseNet.limb_entry_duration_percent||0) + inc*5, 25,400);
+  }
+  else if (option_plus_minus == 'limb_return_duration') {
+    System._browser.camera.poseNet.limb_return_duration_percent = THREE.Math.clamp((System._browser.camera.poseNet.limb_return_duration_percent||0) + inc*5, 25,400);
   }
   else {
     const _pose = (MMD_SA.MMD.motionManager.para_SA.motion_tracking?.ML_models?.pose || MMD_SA_options.user_camera.ML_models.pose);
@@ -9752,118 +9612,322 @@ MMD_SA_options.Dungeon.run_event(null, mocap_options_branch, step);
 
 return true;
   } },
-  { key:'A', event_id: {
-      func:()=>{
-option_active = 'General weighting';
+
+  { key:1, event_id: {
+      func: function () {
+MMD_SA_options.user_camera.ML_models.pose.model_quality = (!MMD_SA_options.user_camera.ML_models.pose.model_quality) ? 'Best' : undefined;
       },
-      goto_event: { branch_index:mocap_options_branch, step:2 },
+      goto_event: { branch_index:mocap_options_branch, step:1 },
     },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.general_weighting') + ((option_active=='General weighting')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.general_weighting.tooltip')
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.AI_model_quality.tooltip')
+);
+    }
+  },
+  { key:2, event_index:z_depth_scale_event_index,
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.AI_model_quality.z_depth_scale.tooltip')
+);
+    }
+  },
+  { key:3, event_id: {
+      func: function () {
+option_plus_minus = 'arm_horizontal_offset';
+      },
+      goto_event: { branch_index:mocap_options_branch, step:1 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.arm_horizontal_offset') + ((option_plus_minus == 'arm_horizontal_offset') ? ' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.press_to_change_value') + ')' : '') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.arm_horizontal_offset.tooltip')
+);
+    }
+  },
+  { key:4, event_id: {
+      func: function () {
+option_plus_minus = 'limb_entry_duration';
+      },
+      goto_event: { branch_index:mocap_options_branch, step:1 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_entry_duration') + ((option_plus_minus == 'limb_entry_duration') ? ' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.press_to_change_value') + ')' : '') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_entry_duration.tooltip')
+);
+    }
+  },
+  { key:5, event_id: {
+      func: function () {
+option_plus_minus = 'limb_return_duration';
+      },
+      goto_event: { branch_index:mocap_options_branch, step:1 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_return_duration') + ((option_plus_minus == 'limb_return_duration') ? ' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.press_to_change_value') + ')' : '') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_return_duration.tooltip')
+);
+    }
+  },
+  { key:6, event_id: {
+      func: function () {
+option_plus_minus = 'upper_rotation_offset';
+      },
+      goto_event: { branch_index:mocap_options_branch, step:1 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.upper_rotation_offset') + ((option_plus_minus == 'upper_rotation_offset') ? ' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.press_to_change_value') + ')' : '') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.upper_rotation_offset.tooltip')
+);
+    }
+  },
+  { key:7, event_id: {
+      func: function () {
+page2_index = (page2_index != hip_adjustment_index) ? hip_adjustment_index : 2;
+      },
+      goto_event: { branch_index:mocap_options_branch, step:1 },
+    }
+  },
+  { key:'X', is_closing_event:true, branch_index:done_branch }
+  ]
+          },
+          goto_event: { branch_index:mocap_options_branch, get step() { return page2_index; } }
+            },
+// 2
+            {
+          message: {
+  get content() {
+    let body_bend_reduction_power;
+    switch (System._browser.camera.poseNet.body_bend_reduction_power) {
+      case 0.25:
+        body_bend_reduction_power = 'Small';
+        break;
+      case 0.5:
+        body_bend_reduction_power = 'Medium';
+        break;
+      case 0.75:
+        body_bend_reduction_power = 'Large';
+        break;
+      case 1:
+        body_bend_reduction_power = 'Full';
+        break;
+    }
+
+    return [
+'A. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.shoulder_tracking') + ': ' + ((System._browser.camera.poseNet.shoulder_tracking) ? 'ON' : 'OFF'),
+'B. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.body_bend_reduction') + ': ' + ((body_bend_reduction_power) ? System._browser.translation.get('Misc.' + body_bend_reduction_power) : 'OFF'),
+'C. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.leg_IK') + ': ' + ((MMD_SA_options.user_camera.ML_models.pose.use_legIK)?'ON':'OFF'),
+'D. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.auto_grounding') + ' (' + (System._browser.hotkeys.config_by_id['mocap_auto_grounding']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON'),
+'E. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_camera') + ' (' + (System._browser.hotkeys.config_by_id['hip_camera']?.accelerator[0]||'') + '): ' + ((System._browser.camera.poseNet.hip_camera) ? 'ON' : 'OFF'),
+    ].join('\n');
+  },
+  index: 1,
+  bubble_index: 3,
+//  para: { row_max:11 },
+  branch_list: [
+  { key:'A', event_id: {
+      func: function () {
+System._browser.camera.poseNet.shoulder_tracking = (System._browser.camera.poseNet.shoulder_tracking) ? 0 : null;
+      },
+      goto_event: { branch_index:mocap_options_branch, step:1 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.shoulder_tracking.tooltip')
+);
+    }
+  },
+  { key:'B', event_id: {
+      func: function () {
+let v = System._browser.camera.poseNet.body_bend_reduction_power || 0;
+v += 0.25;
+if (v > 1)
+  v = 0;
+System._browser.camera.poseNet.body_bend_reduction_power = v;
+      },
+      goto_event: { branch_index:mocap_options_branch, step:1 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.body_bend_reduction.tooltip')
+);
+    }
+  },
+  { key:'C', branch_index:mocap_options_branch+1,
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.leg_IK.tooltip')
+);
+    }
+  },
+
+  { key:'D', branch_index:mocap_options_branch+3,
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.auto_grounding.tooltip').replace(/\<hotkey\>/, System._browser.hotkeys.config_by_id['mocap_auto_grounding']?.accelerator[0]||'N/A')
+);
+    }
+  },
+  { key:'E', event_id: {
+      func: function () {
+System._browser.camera.poseNet.hip_camera = !System._browser.camera.poseNet.hip_camera;
+      },
+      goto_event: { branch_index:mocap_options_branch, step:1 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_camera.tooltip').replace(/\<hotkey\>/, System._browser.hotkeys.config_by_id['hip_camera']?.accelerator[0]||'N/A')
+);
+    }
+  }
+  ]
+          }
+            },
+// 3
+            {
+              message: {
+  get content() {
+    const scale = System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.scale');
+
+    return [
+System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment') + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.upper_body_mocap'),
+//'・Press ⬆️⬇️ to switch option',
+'・' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value'),
+'A. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.general_weighting') + ': ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'OFF' : System._browser.camera.poseNet.hip_adjustment_weight_percent + '%') + ((hip_adjustment_option_active=='General weighting')?'⬅️➡️':''),
+'B. ┣ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.head_motion_weight') + ': ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_head_weight_percent + '%') + ((hip_adjustment_option_active=='Head motion weight')?'⬅️➡️':''),
+'C.     ┗ ' + ' ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.head_motion_weight.pitch_rotation') + ': ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_head_pitch_rotation_percent + '%') + ((hip_adjustment_option_active=='Head pitch rotation')?'⬅️➡️':''),
+'D. ┣ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.y_axis_adjustment') + ': ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent + '%') + ((hip_adjustment_option_active=='Y-axis adjustment')?'⬅️➡️':''),
+'E. ┣ ' + scale + ' X: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_x_percent + '%') + ((hip_adjustment_option_active=='Scale X')?'⬅️➡️':''),
+'F. ┣ ' + scale + ' Y: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_y_percent + '%') + ((hip_adjustment_option_active=='Scale Y')?'⬅️➡️':''),
+'G. ┣ ' + scale + ' Z: ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_scale_z_percent + '%') + ((hip_adjustment_option_active=='Scale Z')?'⬅️➡️':''),
+'H. ┗ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.smoothing') + ': ' + ((System._browser.camera.poseNet.hip_adjustment_weight_percent == 0) ? 'N/A' : System._browser.camera.poseNet.hip_adjustment_smoothing_percent + '%') + ((hip_adjustment_option_active=='Smoothing')?'⬅️➡️':''),
+    ].join('\n');
+  },
+  index: 1,
+  bubble_index: 3,
+  para: { row_max:11 },
+  branch_list: [
+  { key:'A', event_id: {
+      func:()=>{
+hip_adjustment_option_active = 'General weighting';
+      },
+      goto_event: { branch_index:mocap_options_branch, step:hip_adjustment_index },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.general_weighting') + ((hip_adjustment_option_active=='General weighting')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.general_weighting.tooltip')
 );
     }
   },
   { key:'B', event_id: {
       func:()=>{
-option_active = 'Head motion weight';
+hip_adjustment_option_active = 'Head motion weight';
       },
-      goto_event: { branch_index:mocap_options_branch, step:2 },
+      goto_event: { branch_index:mocap_options_branch, step:hip_adjustment_index },
     },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.head_motion_weight') + ((option_active=='Head motion weight')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.head_motion_weight.tooltip')
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.head_motion_weight') + ((hip_adjustment_option_active=='Head motion weight')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.head_motion_weight.tooltip')
 );
     }
   },
   { key:'C', event_id: {
       func:()=>{
-option_active = 'Head pitch rotation';
+hip_adjustment_option_active = 'Head pitch rotation';
       },
-      goto_event: { branch_index:mocap_options_branch, step:2 },
+      goto_event: { branch_index:mocap_options_branch, step:hip_adjustment_index },
     },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.head_motion_weight.pitch_rotation') + ((option_active=='Head pitch rotation')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.head_motion_weight.pitch_rotation.tooltip')
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.head_motion_weight.pitch_rotation') + ((hip_adjustment_option_active=='Head pitch rotation')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.head_motion_weight.pitch_rotation.tooltip')
 );
     }
   },
   { key:'D', event_id: {
       func:()=>{
-option_active = 'Y-axis adjustment';
+hip_adjustment_option_active = 'Y-axis adjustment';
       },
-      goto_event: { branch_index:mocap_options_branch, step:2 },
+      goto_event: { branch_index:mocap_options_branch, step:hip_adjustment_index },
     },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.y_axis_adjustment') + ((option_active=='Y-axis adjustment')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.y_axis_adjustment.tooltip')
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.y_axis_adjustment') + ((hip_adjustment_option_active=='Y-axis adjustment')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.y_axis_adjustment.tooltip')
 );
     }
   },
   { key:'E', event_id: {
       func:()=>{
-option_active = 'Scale X';
+hip_adjustment_option_active = 'Scale X';
       },
-      goto_event: { branch_index:mocap_options_branch, step:2 },
+      goto_event: { branch_index:mocap_options_branch, step:hip_adjustment_index },
     },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.scale') + ' X' + ((option_active=='Scale X')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.scale.x.tooltip')
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.scale') + ' X' + ((hip_adjustment_option_active=='Scale X')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.scale.x.tooltip')
 );
     }
   },
   { key:'F', event_id: {
       func:()=>{
-option_active = 'Scale Y';
+hip_adjustment_option_active = 'Scale Y';
       },
-      goto_event: { branch_index:mocap_options_branch, step:2 },
+      goto_event: { branch_index:mocap_options_branch, step:hip_adjustment_index },
     },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.scale') + ' Y' + ((option_active=='Scale Y')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.scale.y.tooltip')
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.scale') + ' Y' + ((hip_adjustment_option_active=='Scale Y')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.scale.y.tooltip')
 );
     }
   },
   { key:'G', event_id: {
       func:()=>{
-option_active = 'Scale Z';
+hip_adjustment_option_active = 'Scale Z';
       },
-      goto_event: { branch_index:mocap_options_branch, step:2 },
+      goto_event: { branch_index:mocap_options_branch, step:hip_adjustment_index },
     },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.scale') + ' Z' + ((option_active=='Scale Z')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.scale.z.tooltip')
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.scale') + ' Z' + ((hip_adjustment_option_active=='Scale Z')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.scale.z.tooltip')
 );
     }
   },
   { key:'H', event_id: {
       func:()=>{
-option_active = 'Smoothing';
+hip_adjustment_option_active = 'Smoothing';
       },
-      goto_event: { branch_index:mocap_options_branch, step:2 },
+      goto_event: { branch_index:mocap_options_branch, step:hip_adjustment_index },
     },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.smoothing') + ((option_active=='Smoothing')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.smoothing.tooltip')
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.smoothing') + ((hip_adjustment_option_active=='Smoothing')?' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.press_to_change_value.short') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment.smoothing.tooltip')
 
 );
     }
   },
   ]
+              }
             }
-          };
-            })()
           ];
         })(),
-// 3
+// 4
         {
           func: function () {
 if (MMD_SA_options.user_camera.ML_models.pose.model_quality != 'Best') return;
@@ -9877,11 +9941,12 @@ else
           },
           goto_event: { branch_index:mocap_options_branch, step:1 },
         },
-// 4
+// 5
         (()=>{
           let option_active = 'Depth adjustment';
-
           const options = ['Depth adjustment', 'IRL hand/shoulder scale', 'Depth scale'];
+
+          const hand_page_index = 5;
 
           return {
             message: {
@@ -9894,7 +9959,7 @@ return [
   '3. ┗ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.depth_adjustment.depth_scale') + ': ' + ((MMD_SA_options.user_camera.ML_models.hands.depth_adjustment_percent == 0) ? 'OFF' : MMD_SA_options.user_camera.ML_models.hands.depth_scale_percent + '%') + ((option_active=='Depth scale')?'⬅️➡️':''),
   '4. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.arm_stabilization') + ': ' + ((System._browser.camera.handpose.stabilize_arm == 2) ? 'ON' : ((System._browser.camera.handpose.stabilize_arm == 1) ? System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.arm_stabilization.upper_body_mocap') : 'OFF')),
   '5. ┗ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.arm_stabilization.time_to_stabilize') + ': ' + ((System._browser.camera.handpose.stabilize_arm) ? ((System._browser.camera.handpose.stabilize_arm_time) ? ((System._browser.camera.handpose.stabilize_arm_time == 1) ? '1 ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.arm_stabilization.time_to_stabilize.frame') : System._browser.camera.handpose.stabilize_arm_time + 'ms') : '0') : 'N/A'),
-  '6. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.hand_stabilization') + ': ' + ((System._browser.camera.handpose.stabilize_hand_percent) ? System._browser.camera.handpose.stabilize_hand_percent + '%' : 'OFF') + '(➕➖)',
+  '6. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.hand_stabilization') + ': ' + ((System._browser.camera.handpose.stabilize_hand_percent) ? System._browser.camera.handpose.stabilize_hand_percent + '%' : 'OFF') + '➕➖',
   '7. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.constrain_tracking_region') + ': ' + ((System._browser.camera.handpose.constrain_tracking_region) ? 'ON' : System._browser.translation.get('Misc.auto')),
   '8. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.hand_tracking_options.standalone_web_worker') + ': ' + ((System._browser.camera.handpose.use_hands_worker) ? 'ON' : 'OFF'),
   '9. ' + System._browser.translation.get('Misc.done'),
@@ -9938,7 +10003,7 @@ else {
   return false;
 }
 
-MMD_SA_options.Dungeon.run_event(null,mocap_options_branch,4);
+MMD_SA_options.Dungeon.run_event(null,mocap_options_branch,hand_page_index);
 
 return true;
   } },
@@ -9947,7 +10012,7 @@ return true;
       func:()=>{
 option_active = 'Depth adjustment';
       },
-      goto_event: { branch_index:mocap_options_branch, step:4 },
+      goto_event: { branch_index:mocap_options_branch, step:hand_page_index },
     },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
@@ -9960,7 +10025,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
       func:()=>{
 option_active = 'IRL hand/shoulder scale';
       },
-      goto_event: { branch_index:mocap_options_branch, step:4 },
+      goto_event: { branch_index:mocap_options_branch, step:hand_page_index },
     },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
@@ -9973,7 +10038,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
       func:()=>{
 option_active = 'Depth scale';
       },
-      goto_event: { branch_index:mocap_options_branch, step:4 },
+      goto_event: { branch_index:mocap_options_branch, step:hand_page_index },
     },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
@@ -9987,7 +10052,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 if (--System._browser.camera.handpose.stabilize_arm < 0)
   System._browser.camera.handpose.stabilize_arm = 2
       },
-      goto_event: { branch_index:mocap_options_branch, step:4 },
+      goto_event: { branch_index:mocap_options_branch, step:hand_page_index },
     },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
@@ -10011,7 +10076,7 @@ else {
   System._browser.camera.handpose.stabilize_arm_time = 0;
 }
       },
-      goto_event: { branch_index:mocap_options_branch, step:4 },
+      goto_event: { branch_index:mocap_options_branch, step:hand_page_index },
     },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
@@ -10021,7 +10086,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
     }
   },
   { key:6, event_id: {
-      goto_event: { branch_index:mocap_options_branch, step:4 },
+      goto_event: { branch_index:mocap_options_branch, step:hand_page_index },
     },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
@@ -10034,7 +10099,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
       func:()=>{
 System._browser.camera.handpose.constrain_tracking_region = !System._browser.camera.handpose.constrain_tracking_region;
       },
-      goto_event: { branch_index:mocap_options_branch, step:4 },
+      goto_event: { branch_index:mocap_options_branch, step:hand_page_index },
     },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
@@ -10047,7 +10112,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
       func:()=>{
 System._browser.camera.handpose.use_hands_worker = !System._browser.camera.handpose.use_hands_worker;
       },
-      goto_event: { branch_index:mocap_options_branch, step:4 },
+      goto_event: { branch_index:mocap_options_branch, step:hand_page_index },
     },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
@@ -10061,7 +10126,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
             }
           };
         })(),
-// 5
+// 6
         {
           message: {
 get content() {
@@ -10096,7 +10161,7 @@ else {
   return false;
 }
 
-MMD_SA_options.Dungeon.run_event(null,null,5);
+MMD_SA_options.Dungeon.run_event(null,null,6);
 
 return true;
   } },
@@ -10105,7 +10170,7 @@ return true;
 const tilt_adjustment = MMD_SA.MMD.motionManager.para_SA.motion_tracking?.camera?.tilt_adjustment || System._browser.camera.tilt_adjustment;
 tilt_adjustment.enabled = !tilt_adjustment.enabled;
       },
-      goto_event: { branch_index:mocap_options_branch, step:5 },
+      goto_event: { branch_index:mocap_options_branch, step:6 },
     },
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
@@ -10117,13 +10182,6 @@ MMD_SA_options.Dungeon.utils.tooltip(
   { key:2, is_closing_event:true, branch_index:done_branch }
 ],
           }
-        },
-// 6
-        {
-          func: function () {
-System._browser.camera.poseNet.shoulder_tracking = (System._browser.camera.poseNet.shoulder_tracking) ? 0 : null;
-          },
-          goto_event: { branch_index:mocap_options_branch, step:1 },
         },
       ]
 // 30
@@ -10323,11 +10381,11 @@ return [
   '2. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.blink_LR_sync') + ': ' + ((!System._browser.camera.facemesh.blink_sync)?'OFF':'ON'),
   '3. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.auto_blink') + ': ' + ((!System._browser.camera.facemesh.auto_blink)?'OFF':'ON'),
   '4. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.auto_look_at_camera') + ' (' + (System._browser.hotkeys.config_by_id['auto_look_at_camera']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.facemesh.auto_look_at_camera)?'OFF':'ON'),
-  '5. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.eye_bone_rotation') + ': ' + (System._browser.camera.facemesh.eye_bone_rotation_percent + '%') + ' (➕➖)',
+  '5. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.eye_bone_rotation') + ': ' + (System._browser.camera.facemesh.eye_bone_rotation_percent + '%') + '➕➖',
   '6. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.mouth_tracking_sensitivity') + ': ' + mouth_tracking_sensitivity,
   '7. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.lean_tracking') + ': ' + (lean_tracking || 'OFF'),
-  '8. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options'),
-  ...((System._browser.camera.facemesh.enabled && System._browser.camera.video) ? ['9. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.calibration_options')] : []),
+  '8. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options') + ' ▶️',
+  ...((System._browser.camera.facemesh.enabled && System._browser.camera.video) ? ['9. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.calibration_options') + ' ▶️'] : []),
   'X. ' + System._browser.translation.get('Misc.done'),
 ].join('\n');
   }
@@ -11177,6 +11235,8 @@ config.user_camera = {
       hip_adjustment_smoothing_percent: System._browser.camera.poseNet.hip_adjustment_smoothing_percent,
       upper_rotation_offset: MMD_SA_options.user_camera.ML_models.pose.upper_rotation_offset,
       arm_horizontal_offset_percent: System._browser.camera.poseNet.arm_horizontal_offset_percent,
+      limb_entry_duration_percent: System._browser.camera.poseNet.limb_entry_duration_percent,
+      limb_return_duration_percent: System._browser.camera.poseNet.limb_return_duration_percent,
     },
     hands: {
       stabilize_hand_percent: System._browser.camera.handpose.stabilize_hand_percent,
@@ -11355,6 +11415,8 @@ try {
         System._browser.camera.poseNet.body_bend_reduction_power = config[p].ML_models.pose.body_bend_reduction_power;
         System._browser.camera.poseNet.hip_camera = config[p].ML_models.pose.hip_camera;
         System._browser.camera.poseNet.arm_horizontal_offset_percent = config[p].ML_models.pose.arm_horizontal_offset_percent;
+        System._browser.camera.poseNet.limb_entry_duration_percent = config[p].ML_models.pose.limb_entry_duration_percent;
+        System._browser.camera.poseNet.limb_return_duration_percent = config[p].ML_models.pose.limb_return_duration_percent;
         System._browser.camera.poseNet.hip_adjustment_weight_percent = config[p].ML_models.pose.hip_adjustment_weight_percent;
         System._browser.camera.poseNet.hip_adjustment_head_weight_percent = config[p].ML_models.pose.hip_adjustment_head_weight_percent;
         System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent = config[p].ML_models.pose.hip_adjustment_adjust_y_axis_percent;
