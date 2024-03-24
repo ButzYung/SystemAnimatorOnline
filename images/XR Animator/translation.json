@@ -736,6 +736,34 @@
 								}
 							}
 						},
+						"limb_entry_duration": {
+							"_translation_": {
+								"_default_": "Limb entry duration",
+								"ja": "四肢の進入時間",
+								"zh": "四肢進入位置時間"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "This setting determines the duration of avatar's hands/fingers (or feet/toes in \"arm-as-leg\" mode) moving into the position when your hands enter the screen during upper body mocap. Press ➕➖ key to change value. Default is \"100%\" (250ms).",
+									"ja": "この設定は、上半身のモーキャップ中に手が画面に入ったときに、アバターの手/指 (または「手の動きで脚を動かす」モードでは脚/つま先) がその位置に移動する時間を決定します。 ➕➖キーを押して値を変更します。 デフォルトは「100%」 (250ms) です。",
+									"zh": "在上半身動捕模式中，當手部進入畫面時，此設定決定人物手/手指 (或「以手代足」操作模式時的腳/腳趾) 進入預定位置的所需時間。 按➕➖鍵更改數值。 預設是「100%」 (250ms) 。"
+								}
+							}
+						},
+						"limb_return_duration": {
+							"_translation_": {
+								"_default_": "Limb return duration",
+								"ja": "四肢の戻り時間",
+								"zh": "四肢回復位置時間"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "This setting determines the duration of avatar's hands/fingers (or feet/toes in \"arm-as-leg\" mode) returning to the default position when your hands leave the screen during upper body mocap. Press ➕➖ key to change value. Default is \"100%\" (500ms).",
+									"ja": "この設定は、上半身のモーキャップ中に手が画面から離れたときに、アバターの手/指 (または「手の動きで脚を動かす」モードでは脚/つま先) がデフォルトの位置に戻る時間を決定します。 ➕➖キーを押して値を変更します。 デフォルトは「100%」 (500ms) です。",
+									"zh": "在上半身動捕模式中，當手部離開畫面時，此設定決定人物手/手指 (或「以手代足」操作模式時的腳/腳趾) 回復到預定位置的所需時間。 按➕➖鍵更改數值。 預設是「100%」 (500ms) 。"
+								}
+							}
+						},
 						"press_to_change_value": {
 							"_translation_": {
 								"_default_": "press ➕➖ key to change value",
@@ -745,9 +773,16 @@
 						},
 						"hip_adjustment": {
 							"_translation_": {
-								"_default_": "Hip adjustment (upper body mocap)",
-								"ja": "腰の調整（上半身のモーキャプ）",
-								"zh": "腰部調整（上半身動捕）"
+								"_default_": "Hip adjustment",
+								"ja": "腰の調整",
+								"zh": "腰部調整"
+							},
+							"upper_body_mocap": {
+								"_translation_": {
+									"_default_": " (upper body mocap)",
+									"ja": "（上半身のモーキャプ）",
+									"zh": "（上半身動捕）"
+								}
 							},
 							"press_to_change_value": {
 								"_translation_": {
@@ -1223,7 +1258,7 @@
 								"tooltip": {
 									"_translation_": {
 										"_default_": "XR Animator supports the tracking of ARKit 52 blendshapes, with the exception of a few, including \"tongueOut\". Turn on this option to allow XR Animator to estimate the tongue out motion by analyzing the other mouth blendshape data. Lower the percentage if it is often misactivated. Default is \"100%\".",
-										"ja": "XR Animator は、「tongueOut」などのいくつかの例外を除き、ARKit 52 ブレンドシェイプのトラッキングをサポートしています。 このオプションをオンにすると、XR Animator が他の口のブレンドシェイプ データを分析して舌を出す動きを推定できるようになります。 誤ってアクティブ化されることが多い場合は、パーセンテージを下げます。 デフォルトは「100%」です。",
+										"ja": "XR Animator は、「tongueOut」などのいくつかの例外を除き、ARKit 52 ブレンドシェイプのトラッキングをサポートしています。 このオプションをオンにすると、他の口のブレンドシェイプ データを分析して舌を出す動きを推定できます。 誤ってアクティブ化されることが多い場合は、パーセンテージを下げます。 デフォルトは「100%」です。",
 										"zh": "XR Animator 支援 ARKit 52個表情追蹤的大部份，除了包括「tongueOut」在內的一小部份。 啟動此選項以利用其他表情數據作吐舌追蹤推算。 如出現經常誤發的情況，可降低數值。 預設是「100%」。"
 									}
 								}
