@@ -1,4 +1,4 @@
-// (2024-03-04)
+// (2024-04-02)
 
 MMD_SA.fn = {
 /*
@@ -454,7 +454,10 @@ setTimeout(function () {
 
 var simulateCallback = (()=>{
   const rot_filter = {};
-  const rot_filter_para = { minCutOff:1, beta:1, dCutOff: 1 };
+  const rot_filter_para = { minCutOff:1, beta:1, dCutOff:1 };
+
+  const bone_ext_filter = {};
+  const bone_ext_filter_para = { minCutOff:0.25, beta:0.1, dCutOff:0.25 };
 
 return function () {
 // AT: process x_object with parent_bone
@@ -709,7 +712,16 @@ if (p_bone.rotation) {
       }
 
       if (bone_pos) {
-        if (bone_ext) bone_pos.add(bone_ext);
+        if (bone_ext) {
+          if (rot_adjust.external_point.use_filter) {
+            let _bone_ext_filter = bone_ext_filter[rot_adjust.external_point.name];
+            if (!_bone_ext_filter)
+              _bone_ext_filter = bone_ext_filter[rot_adjust.external_point.name] = new System._browser.data_filter([{ type:'one_euro', id:rot_adjust.external_point.name+'_bone_ext', para:[30, 1,1,1, 3] }]);
+            Object.assign(_bone_ext_filter.filters[0].filter, bone_ext_filter_para);
+            bone_ext.fromArray(_bone_ext_filter.filter(bone_ext.toArray()));
+          }
+          bone_pos.add(bone_ext);
+        }
         axis_ext = bone_pos;
       }
     }
@@ -794,7 +806,7 @@ if (p_bone.rotation) {
       x_object.uuid = THREE.Math.generateUUID();
     let _rot_filter = rot_filter[x_object.uuid];
     if (!_rot_filter)
-      _rot_filter = rot_filter[x_object.uuid] = new System._browser.data_filter([{ type:'one_euro', id:'propr_rot', para:[30, 1,1,1, 4] }]);
+      _rot_filter = rot_filter[x_object.uuid] = new System._browser.data_filter([{ type:'one_euro', id:x_object.uuid+'_rot', para:[30, 1,1,1, 4] }]);
     Object.assign(_rot_filter.filters[0].filter, rot_filter_para, data_filter);
 
     if (transfer_to_parent_bone && x_object._rot_aligned_) {
