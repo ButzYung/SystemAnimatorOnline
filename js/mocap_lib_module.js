@@ -340,7 +340,7 @@ vision,
     delegate: "GPU"
   },
   runningMode: 'VIDEO',
-
+//minPoseDetectionConfidence:0.8, minPosePresenceConfidence:0.8, minTrackingConfidence:0.8,
   numPoses: 1
 }
       );

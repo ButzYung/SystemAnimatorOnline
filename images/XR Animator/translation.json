@@ -807,7 +807,7 @@
 								"tooltip": {
 									"_translation_": {
 										"_default_": "By default, when using upper body mocap, hip position and rotation will be adjusted according to your upper body motion. This option determines the general weighting of the hip adjustment applied. Default is \"100%\".",
-										"ja": "デフォルトでは、上半身のモーションキャプチャを使用すると、上半身の動きに応じて腰の位置と回転が調整されます。 このオプションは、適用されるヒップ調整の一般的な重み付けを決定します。 デフォルトは「100%」です。",
+										"ja": "デフォルトでは、上半身のモーションキャプチャを使用すると、上半身の動きに応じて腰の位置と回転が調整されます。 このオプションは、適用される腰の調整の一般的な重み付けを決定します。 デフォルトは「100%」です。",
 										"zh": "在預設情況下，在使用上半身動捕時，人物的腰部會隨上半身的動作作出相應的位置及回轉調整。 此設定可改變此腰部調整功能的整體比重。 預設是「100%」。"
 									}
 								}
