@@ -1,5 +1,5 @@
 // SA Electron - Main EXTENDED
-// (2024-02-05)
+// (2024-04-02)
 
 /*
 eval on Electron v1.6.x has some scope issues/bugs which makes the global variables on this script inaccessible inside functions.
@@ -645,6 +645,7 @@ webContents.send('tray_menu', 'OPACITY:apply_to_child')
   contextMenu_MMD_OSC_VMC_app_mode = Menu.buildFromTemplate([
     {label: 'Warudo', type: 'radio', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'MMD:OSC_VMC_CLIENT|app_mode|Warudo') }},
     {label: 'VNyan', type: 'radio', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'MMD:OSC_VMC_CLIENT|app_mode|VNyan') }},
+    {label: 'VNyan(+Z)', type: 'radio', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'MMD:OSC_VMC_CLIENT|app_mode|VNyan(+Z)') }},
     {label: 'VSeeFace', type: 'radio', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'MMD:OSC_VMC_CLIENT|app_mode|VSeeFace') }},
     {label: 'Others', type: 'radio', click: function (menuItem, browserWindow) { webContents.send('tray_menu', 'MMD:OSC_VMC_CLIENT|app_mode|Others') }},
   ]);
@@ -1080,6 +1081,7 @@ return function (menuItem, browserWindow) {
         const app_mode = [
   'Warudo',
   'VNyan',
+  'VNyan(+Z)',
   'VSeeFace',
   'Others',
         ];
