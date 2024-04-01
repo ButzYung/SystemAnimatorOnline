@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-03-25)
+// (2024-04-02)
 
 var use_full_spectrum = true
 
@@ -8848,6 +8848,10 @@ para.shoulder_width = para.pos0['leftUpperArm'][0] - para.pos0['rightUpperArm'][
 para.left_arm_length = v1.fromArray(para.pos0['leftUpperArm']).distanceTo(v2.fromArray(para.pos0['leftHand'])) * vrm_scale;
 para.left_leg_length = ((para.pos0['leftUpperLeg'][1] - para.pos0['leftLowerLeg'][1]) + (para.pos0['leftLowerLeg'][1] - para.pos0['leftFoot'][1])) * vrm_scale;
 para.spine_length = (para.pos0['neck'][1] - para.pos0['leftUpperLeg'][1]) * vrm_scale;
+
+//para.left_heel_height = para.pos0['leftFoot'][1] * vrm_scale;
+para.hip_center = new THREE.Vector3().fromArray(para.pos0['leftUpperLeg']).setX(0).multiplyScalar(vrm_scale);
+para.hip_center_offset = new THREE.Vector3().fromArray(para.pos0['hips']).multiplyScalar(vrm_scale).sub(para.hip_center);
 
 para.bone_dummy = {};
 para.spine_to_hips_ratio = (para.pos0['chest']) ? 0 : 1 - THREE.Math.clamp((para.pos0['neck'][1] - para.pos0['spine'][1]) / (para.pos0['neck'][1] - para.pos0['hips'][1]) * 2, 0,1);
