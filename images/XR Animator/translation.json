@@ -902,6 +902,118 @@
 									}
 								}
 							}
+						},
+						"body_collider": {
+							"_translation_": {
+								"_default_": "Body collider",
+								"ja": "ボディコライダー",
+								"zh": "身體碰撞體"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "This option place colliders to various parts of avatar's body, which react with hands and arms to prevent them from overlapping the body parts. You can choose to enable \"Full\" mode to support both full body and upper body mocap, or just upper body mocap (including full body when close to camera). Default is \"Upper body mocap\".",
+									"ja": "この設定では、アバターの体のさまざまな部分にコライダーを配置します。 コライダーは手や腕で反応して、体の部分と重ならないようにします。 「フル」を有効にして、全身と上半身のモーキャプをサポートするか、上半身のモーキャプのみをサポートするかを選択できます(カメラに近づいたときの全身を含む)。 デフォルトは「上半身のモーキャプのみ」です。",
+									"zh": "此設定將碰撞體置於人物身體的各個部位，以防置手及手臂與碰撞體所在的身體部位重疊。 你可選擇「完全」模式以支援全身及上半身動捕，或只限上半身動捕(包括接近鏡頭時的全身動捕)。 預設是「只限上半身動捕」。"
+								}
+							},
+							"mode": {
+								"_translation_": {
+									"_default_": "Mode",
+									"ja": "モード",
+									"zh": "模式"
+								}
+							},
+							"upper_body_mocap": {
+								"_translation_": {
+									"_default_": "Upper body mocap",
+									"ja": "上半身のモーキャプのみ",
+									"zh": "只限上半身動捕"
+								}
+							},
+							"press_to_change_value": {
+								"_translation_": {
+									"_default_": "press ⬅️➡️ key to change value",
+									"ja": "⬅️➡️キーで値を変更する",
+									"zh": "按️⬅️➡️鍵更改數值"
+								}
+							},
+							"size": {
+								"_translation_": {
+									"_default_": "size",
+									"ja": "サイズ",
+									"zh": "大小"
+								},
+								"space": {
+									"_translation_": {
+										"_default_": " ",
+										"ja": "の",
+										"zh": "的"
+									}
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "This option determines the size of the collider. For example, if your avatar model has big breast, you may need to increase the size to over 100%. \"0%\" effectively turns off the collider. Press ⬅️➡️ key to change value. Default is \"125%\" for chest, \"0%\" for head, and \"100%\" for other parts.",
+										"ja": "このオプションはコライダーのサイズを決定します。 たとえば、アバター モデルの胸が大きい場合は、サイズを 100% を超えるまで大きくする必要がある場合があります。 「0%」は事実上コライダーをオフにします。 ⬅️➡️キーを押して値を変更します。 デフォルトは胸は「125%」、頭は「0%」、その他の部分は「100%」です。",
+										"zh": "此設定決定碰撞體的大小。 例於你的人物模型擁有大胸部時，你或許需要將大小設定為大過100%。 「0%」實際上等同將碰撞體關掉。 按⬅️➡️鍵更改數值。 胸的預設是「125%」，頭是「0%」，其他部位是「100%」。"
+									}
+								}
+							},
+							"reaction_type": {
+								"_translation_": {
+									"_default_": "Reaction type",
+									"ja": "反応タイプ",
+									"zh": "反應類型"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "This option determines the type of reaction when collider and hand collide. \"Z-push\" pushes your hand backward in the Z direction, while \"Sphere\" lets your hand slide on a sphere-like surface. Default is \"Z-push\".",
+										"ja": "このオプションは、コライダーとハンドが衝突したときの反応のタイプを決定します。 「Zプッシュ」は手を Z 方向に後方に押します。 「スフィア」は手を球状の表面上でスライドさせます。 デフォルトは「Zプッシュ」です。",
+										"zh": "此設定決定當碰撞體與手部碰撞時發生的反應類型。 「Z-推移」將手部推回 Z 方向，而「球狀」則令手部於球状般的表面上滑動。 預設是「Z-推移」。"
+									}
+								},
+								"z_push": {
+									"_translation_": {
+										"_default_": "Z-push",
+										"ja": "Zプッシュ",
+										"zh": "Z-推移"
+									}
+								},
+								"sphere": {
+									"_translation_": {
+										"_default_": "Sphere",
+										"ja": "スフィア",
+										"zh": "球狀"
+									}
+								}
+							},
+							"head": {
+								"_translation_": {
+									"_default_": "Head",
+									"ja": "頭",
+									"zh": "頭"
+								}
+							},
+							"chest": {
+								"_translation_": {
+									"_default_": "Chest",
+									"ja": "胸",
+									"zh": "胸"
+								}
+							},
+							"waist": {
+								"_translation_": {
+									"_default_": "Waist",
+									"ja": "腰",
+									"zh": "腰"
+								}
+							},
+							"hip": {
+								"_translation_": {
+									"_default_": "Hip",
+									"ja": "臀部",
+									"zh": "臀部"
+								}
+							}
 						}
 					},
 					"hand_tracking_options": {
@@ -2025,8 +2137,8 @@
 				},
 				"info": {
 					"_translation_": {
-						"_default_": "- Press <hand_camera_hotkey> / double-click to use your hand as camera during mocap (status: <hand_camera_status>).\n- Repeat to switch among left hand, right hand, and OFF.- Press <selfie_mode_hotkey> to toggle \"Selfie mode\" which automatically focuses on your face (status: <selfie_mode_status>).\n- Press <auto_look_at_camera_hotkey> to toggle auto \"look at camera\" (status: <auto_look_at_camera_status>).",
-						"ja": "- <hand_camera_hotkey> を押すかダブルクリックすると、モーキャプ中に手をカメラとして使用します (状態: <hand_camera_status>)。\n- 繰り返して左手、右手、OFFを切り替えます。\n- <selfie_mode_hotkey> を押して「自撮りモード」を切り替え、自動的に顔に焦点を合わせます (状態: <selfie_mode_status>)。\n- キー<auto_look_at_camera_hotkey>➡️自動「カメラを見る」を切り替える (状態: <auto_look_at_camera_status>)",
+						"_default_": "- Press <hand_camera_hotkey> / dblclick to activate during mocap (status: <hand_camera_status>).\n- Repeat to switch among left hand, right hand, and OFF.\n- Press <selfie_mode_hotkey> to toggle \"Selfie mode\" which automatically focuses on your face (status: <selfie_mode_status>).\n- Press <auto_look_at_camera_hotkey> to toggle auto \"look at camera\" (status: <auto_look_at_camera_status>).",
+						"ja": "- <hand_camera_hotkey> を押すかダブルクリックすると、モーキャプ中に手をカメラとして使用します (状態: <hand_camera_status>)。\n- 繰り返して左手、右手、OFFを切り替えます。\n- <selfie_mode_hotkey> を押して「自撮りモード」を切り替える (状態: <selfie_mode_status>)。\n- キー<auto_look_at_camera_hotkey>で️自動「カメラを見る」を切り替える (状態: <auto_look_at_camera_status>)",
 						"zh": "- 按 <hand_camera_hotkey> / 按兩下以使用手部作攝影機 (狀態: <hand_camera_status>).\n- 重複操作在左手、右手、及OFF之間作切換。\n- 按 <selfie_mode_hotkey> 切換自動對焦面部的自拍模式 (狀態: <selfie_mode_status>)。\n- 按 <auto_look_at_camera_hotkey> 切換自動「望向鏡頭」模式 (狀態: <auto_look_at_camera_status>)。"
 					},
 					"left_hand": {

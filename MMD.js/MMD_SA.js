@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-04-02)
+// (2024-04-11)
 
 var use_full_spectrum = true
 
@@ -8844,7 +8844,7 @@ for (const name in humanBones) {
   }
 }
 
-para.shoulder_width = para.pos0['leftUpperArm'][0] - para.pos0['rightUpperArm'][0];
+para.shoulder_width = (para.pos0['leftUpperArm'][0] - para.pos0['rightUpperArm'][0]) * vrm_scale;;
 para.left_arm_length = v1.fromArray(para.pos0['leftUpperArm']).distanceTo(v2.fromArray(para.pos0['leftHand'])) * vrm_scale;
 para.left_leg_length = ((para.pos0['leftUpperLeg'][1] - para.pos0['leftLowerLeg'][1]) + (para.pos0['leftLowerLeg'][1] - para.pos0['leftFoot'][1])) * vrm_scale;
 para.spine_length = (para.pos0['neck'][1] - para.pos0['leftUpperLeg'][1]) * vrm_scale;
@@ -8852,6 +8852,12 @@ para.spine_length = (para.pos0['neck'][1] - para.pos0['leftUpperLeg'][1]) * vrm_
 //para.left_heel_height = para.pos0['leftFoot'][1] * vrm_scale;
 para.hip_center = new THREE.Vector3().fromArray(para.pos0['leftUpperLeg']).setX(0).multiplyScalar(vrm_scale);
 para.hip_center_offset = new THREE.Vector3().fromArray(para.pos0['hips']).multiplyScalar(vrm_scale).sub(para.hip_center);
+
+para.lower_arm_fixedAxis = {};
+for (const d of ['左','右']) {
+  const dir = (d=='左') ? 'left' : 'right';
+  para.lower_arm_fixedAxis[d] = v1.fromArray(para.pos0[dir+'Hand']).sub(v2.fromArray(para.pos0[dir+'LowerArm'])).normalize().toArray();
+}
 
 para.bone_dummy = {};
 para.spine_to_hips_ratio = (para.pos0['chest']) ? 0 : 1 - THREE.Math.clamp((para.pos0['neck'][1] - para.pos0['spine'][1]) / (para.pos0['neck'][1] - para.pos0['hips'][1]) * 2, 0,1);
@@ -10227,15 +10233,15 @@ PPE_list.map(name=>{ return { name:name, order:this[name].UI_order }; }).sort((a
 });
 
 window.addEventListener('SA_MMD_SL_resize', ()=>{
-  PPE_list.forEach(name=>{
-    const effect = this[name];
-    if (effect.enabled)
-      effect.resize();
-  });
-
   const SL = threeX.SL;
   const width = SL.width;
   const height = SL.height;
+
+  PPE_list.forEach(name=>{
+    const effect = this[name];
+    if (effect.enabled)
+      effect.resize(width, height);
+  });
 
   effects_composer.setSize( width, height );
 });
@@ -10438,6 +10444,7 @@ postprocessing.materialBokeh = new THREE.ShaderMaterial( {
 postprocessing.quad_w = w;
 postprocessing.quad_h = h;
 
+//postprocessing.quad = new THREE.Mesh( new THREE.PlaneGeometry( 1, 1 ), postprocessing.materialBokeh ); postprocessing.quad.scale.set(w,h,1);
 postprocessing.quad = new THREE.Mesh( new THREE.PlaneGeometry( w, h ), postprocessing.materialBokeh );
 postprocessing.quad.position.z = - 500;
 postprocessing.scene.add( postprocessing.quad );
@@ -10785,7 +10792,8 @@ threeX.GUI.update(gui_N8AO);
 threeX.GUI.update(gui_vrm);
             },
 
-            resize: function () {
+            resize: function (width, height) {
+//this.pass.setSize(width, height);
             },
 
             render: function (scene, camera) {
@@ -11034,11 +11042,7 @@ threeX.GUI.update(gui_bloom);
 threeX.GUI.update(gui_bloom_vrm);
             },
 
-            resize: function () {
-const SL = threeX.SL;
-const width = SL.width;
-const height = SL.height;
-
+            resize: function (width, height) {
 bloomComposer.setSize( width, height );
             },
 
