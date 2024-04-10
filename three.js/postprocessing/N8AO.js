@@ -398,6 +398,11 @@ const $12b21d24d1192a04$export$a815acccbd2c9a49 = {
   value: null
 }
     },
+
+// AT: https://github.com/N8python/n8ao/commit/99b3f5ed9dfde2c560c431d549a548ca03b9717e
+    depthWrite: false,
+    depthTest: false,
+
     vertexShader: /* glsl */ `
 		varying vec2 vUv;
 		void main() {
@@ -564,6 +569,14 @@ uniform sampler2D AO_mask_diffuse;
         vec4 texel = texture2D(tDiffuse, vUv);
         #endif
 
+// AT: https://github.com/N8python/n8ao/commit/99b3f5ed9dfde2c560c431d549a548ca03b9717e
+        #ifdef LOGDEPTH
+        texel.a = clamp(texel.a, 0.0, 1.0);
+        if (texel.a == 0.0) {
+          texel.a = 1.0;
+        }
+        #endif
+
 // AT: AO mask
 //        float finalAo = pow(texel.a, intensity);
         float fogFactor;
@@ -687,6 +700,11 @@ const $e52378cd0f5a973d$export$57856b59f317262e = {
             value: false
         }
     },
+
+// AT: https://github.com/N8python/n8ao/commit/99b3f5ed9dfde2c560c431d549a548ca03b9717e
+    depthWrite: false,
+    depthTest: false,
+
     vertexShader: /* glsl */ `
 		varying vec2 vUv;
 		void main() {
@@ -806,7 +824,20 @@ const $e52378cd0f5a973d$export$57856b59f317262e = {
             occlusion += occSample * rangeCheck;
             count += rangeCheck;
         }
-        occlusion /= count;
+
+// AT: https://github.com/N8python/n8ao/commit/f7dafd6acc3e4c0b7e9d77b00eaeb1014a7f0b37
+//        occlusion /= count;
+
+        if (count > 0.0) {
+          occlusion /= count;
+        }
+        #ifdef LOGDEPTH
+          occlusion = clamp(occlusion, 0.0, 1.0);
+          if (occlusion == 0.0) {
+            occlusion = 1.0;
+          }
+        #endif
+
         gl_FragColor = vec4(0.5 + 0.5 * normal, occlusion);
     }
     `
@@ -838,6 +869,11 @@ const $26aca173e0984d99$export$1efdf491687cd442 = {
             value: false
         }
     },
+
+// AT: https://github.com/N8python/n8ao/commit/99b3f5ed9dfde2c560c431d549a548ca03b9717e
+    depthWrite: false,
+    depthTest: false,
+
     vertexShader: /* glsl */ `
     varying vec2 vUv;
     void main() {
@@ -1115,7 +1151,7 @@ class $05f6997e4b65da14$export$2d57db20b5eb5e0a extends (0, $5Whe3$Pass) {
 ,type:THREEX.HalfFloatType
 ,samples:4
         });
-// AT： Replace all this._AO_mask.depthTexture references with this._AO_mask.depthTexture
+// AT: Replace all this._AO_mask.depthTexture references with this._AO_mask.depthTexture
 //        this._AO_mask.depthTexture = new $5Whe3$DepthTexture(this.width, this.height, $5Whe3$UnsignedIntType);
 //        this._AO_mask.depthTexture.format = $5Whe3$DepthFormat;
         this.writeTargetInternal = new $5Whe3$WebGLRenderTarget(this.width, this.height, {
@@ -1312,27 +1348,6 @@ this._AO_mask.setSize(width, height);
             renderer.setRenderTarget(this.beautyRenderTarget);
             renderer.render(this.scene, this.camera);
         }
-        if (this.debugMode) {
-            timerQuery = gl.createQuery();
-            gl.beginQuery(ext.TIME_ELAPSED_EXT, timerQuery);
-        }
-        const xrEnabled = renderer.xr.enabled;
-        renderer.xr.enabled = false;
-        this.camera.updateMatrixWorld();
-        this._r.set(this.width, this.height);
-        let trueRadius = this.configuration.aoRadius;
-        if (this.configuration.halfRes && this.configuration.screenSpaceRadius) trueRadius *= 0.5;
-        if (this.configuration.halfRes) {
-            renderer.setRenderTarget(this.depthDownsampleTarget);
-            this.depthDownsampleQuad.material.uniforms.sceneDepth.value = this._AO_mask.depthTexture;
-            this.depthDownsampleQuad.material.uniforms.resolution.value = this._r;
-            this.depthDownsampleQuad.material.uniforms["near"].value = this.camera.near;
-            this.depthDownsampleQuad.material.uniforms["far"].value = this.camera.far;
-            this.depthDownsampleQuad.material.uniforms["projectionMatrixInv"].value = this.camera.projectionMatrixInverse;
-            this.depthDownsampleQuad.material.uniforms["viewMatrixInv"].value = this.camera.matrixWorld;
-            this.depthDownsampleQuad.material.uniforms["logDepth"].value = this.configuration.logarithmicDepthBuffer;
-            this.depthDownsampleQuad.render(renderer);
-        }
 
 // AT: AO mask
 //this.camera.layers.set( MMD_SA.THREEX.PPE.N8AO.AO_MASK);
@@ -1364,6 +1379,28 @@ this.scene.traverse(obj=>{
 //this.camera.layers.set( 0 );
 
 this.effectCompositerQuad.material.uniforms['AO_mask_diffuse'].value = this._AO_mask.texture;
+
+        if (this.debugMode) {
+            timerQuery = gl.createQuery();
+            gl.beginQuery(ext.TIME_ELAPSED_EXT, timerQuery);
+        }
+        const xrEnabled = renderer.xr.enabled;
+        renderer.xr.enabled = false;
+        this.camera.updateMatrixWorld();
+        this._r.set(this.width, this.height);
+        let trueRadius = this.configuration.aoRadius;
+        if (this.configuration.halfRes && this.configuration.screenSpaceRadius) trueRadius *= 0.5;
+        if (this.configuration.halfRes) {
+            renderer.setRenderTarget(this.depthDownsampleTarget);
+            this.depthDownsampleQuad.material.uniforms.sceneDepth.value = this._AO_mask.depthTexture;
+            this.depthDownsampleQuad.material.uniforms.resolution.value = this._r;
+            this.depthDownsampleQuad.material.uniforms["near"].value = this.camera.near;
+            this.depthDownsampleQuad.material.uniforms["far"].value = this.camera.far;
+            this.depthDownsampleQuad.material.uniforms["projectionMatrixInv"].value = this.camera.projectionMatrixInverse;
+            this.depthDownsampleQuad.material.uniforms["viewMatrixInv"].value = this.camera.matrixWorld;
+            this.depthDownsampleQuad.material.uniforms["logDepth"].value = this.configuration.logarithmicDepthBuffer;
+            this.depthDownsampleQuad.render(renderer);
+        }
 
         this.effectShaderQuad.material.uniforms["sceneDiffuse"].value = this.beautyRenderTarget.texture;
         this.effectShaderQuad.material.uniforms["sceneDepth"].value = this.configuration.halfRes ? this.depthDownsampleTarget.texture[0] : this._AO_mask.depthTexture;
