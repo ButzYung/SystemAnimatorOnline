@@ -30,7 +30,7 @@
  * Date: 2015-02-25
  */
 // AT: customizations
-// (2023-01-17)
+// (2024-04-18)
 
 THREE.TrackballControls = function ( object, domElement ) {
 
@@ -41,8 +41,8 @@ THREE.TrackballControls = function ( object, domElement ) {
 	this.domElement = ( domElement !== undefined ) ? domElement : document;
 
 	// API
-
-	this.enabled = true;
+// AT: getter/setter for .enabled
+	this._enabled = true;
 
 	this.screen = { left: 0, top: 0, width: 0, height: 0 };
 
@@ -766,6 +766,14 @@ THREE.TrackballControls.prototype = {
 
 	constructor: THREE.TrackballControls,
 
+// AT: getter/setter for .enabled
+    get enabled() {
+return this._enabled && MMD_SA.THREEX.camera.control.enabled;
+    },
+    set enabled(v) {
+this._enabled = v;
+    },
+
 	stop: function() {
 		this.enabled = false;
 		return this;
@@ -893,7 +901,8 @@ EPS: 0.000001,
 
 	update: function () {
 
-		if ( ! this.enabled ) return;
+// AT: getter/setter for .enabled
+		if ( ! this._enabled ) return;
 
 		this._eye.subVectors( this.object.position, this.target );
 
