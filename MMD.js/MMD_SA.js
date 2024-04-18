@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-04-11)
+// (2024-04-18)
 
 var use_full_spectrum = true
 
@@ -332,7 +332,7 @@ vo.audio_onended = function (e) {
 
 Audio_BPM.checkWinamp(vo)
 
-DragDrop_RE = eval('/\\.(' + DragDrop_RE_default_array.concat(["vmd", "bvh", "mp3", "wav", "aac", "zip", "json", "vrm", "fbx", "gltf", "glb"]).join("|") + ')$/i')
+DragDrop_RE = eval('/\\.(' + DragDrop_RE_default_array.concat(["vmd", "bvh", "mp3", "wav", "aac", "zip", "json", "vrm", "fbx", "gltf", "glb", "exr", "hdr"]).join("|") + ')$/i')
 
 DragDrop.onDrop_finish = async function (item) {
   function load_motion(func) {
@@ -706,6 +706,9 @@ MMD_SA._click_to_reset = null;
   }
   else if (item.isFileSystem && /([^\/\\]+)\.(gltf|glb)$/i.test(src)) {
     return;
+  }
+  else if (item.isFileSystem && /([^\/\\]+)\.(exr|hdr)$/i.test(src)) {
+    MMD_SA.THREEX.utils.HDRI.load(src, true);
   }
   else if (item.isFolder) {
     Audio_BPM.play_list.drop_folder(item)
@@ -11048,6 +11051,11 @@ bloomComposer.setSize( width, height );
 
             render: function (scene, camera) {
 function renderBloom( mask ) {
+  const _backgroundIntensity = scene.backgroundIntensity;
+  scene.backgroundIntensity *= 0.25;
+  const _environmentIntensity = scene.environmentIntensity;
+  scene.environmentIntensity *= 0.25;
+
   if ( mask === true ) {
     MMD_SA.THREEX.get_model(0).model.materials.forEach(m=>{
 // assign rgb values directly instead of using *= or /= (not working probably because of its getter/setting nature)
@@ -11074,6 +11082,9 @@ function renderBloom( mask ) {
     bloomComposer.render();
     camera.layers.set( ENTIRE_SCENE );
   }
+
+  scene.backgroundIntensity = _backgroundIntensity;
+  scene.environmentIntensity = _environmentIntensity;
 }
 
 function darkenNonBloomed( obj ) {
@@ -11350,7 +11361,7 @@ if (MMD_SA_options.THREEX_options.use_MMD) {
   }
 }
 
-// Dec 5, 2023 (r160)
+// Apr 3, 2024
 const GLTFLoader_module = await import(System.Gadget.path + '/three.js/loaders/GLTFLoader.js');
 Object.assign(self.THREE, GLTFLoader_module);
 
@@ -11918,6 +11929,10 @@ if (threeX.enabled) {
   this.obj.aspect = width/height
   this.obj.updateProjectionMatrix()
 }
+      },
+
+      control: {
+        enabled: true
       }
     },
 
@@ -12195,7 +12210,7 @@ else {
   });
 }
 
-// Nov 18, 2023
+// Mar 14, 2024
 const FBXLoader_module = await System._browser.load_script(System.Gadget.path + '/three.js/loaders/FBXLoader.js', true);
 for (const name in FBXLoader_module) THREE[name] = FBXLoader_module[name];
         }
@@ -13047,14 +13062,139 @@ const Octree_module = await System._browser.load_script(System.Gadget.path + '/t
 for (const name in Octree_module) THREE[name] = Octree_module[name];
       },
 
+      HDRI: (()=>{
+        let EXRLoader, EXR_loader, RGBELoader, RGBE_loader;
+        let pmremGenerator;
+
+        let HDRI_renderTarget_last;
+
+        let path_now, path_next;
+
+        let load_promise;
+
+        let initialized, loading;
+        async function init() {
+if (initialized) return;
+initialized = true;
+
+EXRLoader = await System._browser.load_script(System.Gadget.path + '/three.js/loaders/EXRLoader.js', true);
+EXR_loader = new EXRLoader.EXRLoader();
+
+RGBELoader = await System._browser.load_script(System.Gadget.path + '/three.js/loaders/RGBELoader.js', true);
+RGBE_loader = new RGBELoader.RGBELoader();
+
+const renderer = threeX.renderer.obj;
+pmremGenerator = new THREE.PMREMGenerator(renderer);
+pmremGenerator.compileEquirectangularShader();
+        }
+
+// https://github.com/mrdoob/three.js/blob/master/examples/webgl_materials_envmaps_exr.html
+        function load_core(path, set_background) {
+return new Promise((resolve)=>{
+  path_now = path;
+
+  ((/\.exr$/i.test(path)) ? EXR_loader : RGBE_loader).load( toFileProtocol(path), function ( texture ) {
+    texture.mapping = THREE.EquirectangularReflectionMapping;
+
+    const exrCubeRenderTarget = pmremGenerator.fromEquirectangular( texture );
+
+    display(exrCubeRenderTarget, set_background);
+
+    if (HDRI_renderTarget_last)
+      HDRI_renderTarget_last.dispose();
+    HDRI_renderTarget_last = exrCubeRenderTarget;
+
+console.log('HDRI', path)
+    resolve();
+  });
+});
+        }
+
+        function display(exrCubeRenderTarget, set_background) {
+threeX.scene.environment = exrCubeRenderTarget.texture;
+//set_background=true
+if (set_background) {
+  threeX.scene.background = exrCubeRenderTarget.texture;
+//threeX.scene.backgroundBlurriness = 0.5
+  System._browser.camera.display_floating = (MMD_SA_options.user_camera.display.floating_auto !== false);
+
+  if (MMD_SA_options.mesh_obj_by_id["DomeMESH"])
+    MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.visible = false;
+}
+        }
+
+        let mode;
+
+        return {
+          get mode() { return (mode == null) ? 1 : mode; },
+          set mode(v) {
+const _mode = this.mode;
+mode = v;
+
+if ((_mode != this.mode) && (this.mode != 1)) {
+  if (mode == 2) {
+    if (this.path && !threeX.scene.background) {
+      threeX.scene.background = HDRI_renderTarget_last.texture;
+      System._browser.camera.display_floating = (MMD_SA_options.user_camera.display.floating_auto !== false);
+    }
+  }
+  else {
+    threeX.scene.background = null;
+  }
+}
+          },
+
+          get path() { return threeX.enabled && threeX.scene.environment && path_now; },
+
+          load: async function (path, set_background) {
+if (!threeX.enabled) return false;
+if (loading) return false;
+
+if ((set_background == null) || !this.mode)
+  set_background = (!this.mode) ? false : ((this.mode == 1) ? (!MMD_SA_options.mesh_obj_by_id["DomeMESH"]?._obj.visible && (!!MMD_SA.THREEX.scene.background || !MMD_SA.THREEX._object3d_list_?.length)) : true);
+
+if (path == this.path) {
+  display(HDRI_renderTarget_last, set_background);
+  return false;
+}
+
+if (load_promise) {
+  path_next = path;
+}
+else {
+  load_promise = new Promise(async (resolve)=>{
+    await init();
+
+    await load_core(path, set_background);
+
+    resolve();
+    load_promise = null;
+
+    if (path_next && (path_now != path_next))
+      load_promise = this.load(path_next);
+    path_next = null;
+  });
+}
+
+return load_promise;
+          }
+        };
+      })(),
+
       dispose: function (obj) {
 if (!threeX.enabled && (obj.children.length == 1) && (obj.children[0]._model_index != null)) {
   _THREE.MMD.removeModel(_THREE.MMD.getModels()[obj.children[0]._model_index]);
 }
 
-let geo_disposed = 0, map_disposed = 0, mtrl_disposed = 0;
+let geo_disposed = 0, map_disposed = 0, mtrl_disposed = 0, misc_disposed = 0;
 obj.traverse(node => {
-  if (!node.isMesh && !node.geometry) return;
+  if (!node.isMesh && !node.geometry) {
+    if (node.dispose) {
+      node.dispose();
+      misc_disposed++;
+    }
+    return;
+  }
 
   if (node.geometry) {
     node.geometry.dispose();
@@ -13077,7 +13217,7 @@ obj.traverse(node => {
   }
 });
 
-console.log('geo_disposed:' + geo_disposed, 'map_disposed:' + map_disposed, 'mtrl_disposed:' + mtrl_disposed);
+console.log('geo_disposed:' + geo_disposed, 'map_disposed:' + map_disposed, 'mtrl_disposed:' + mtrl_disposed, 'misc_disposed:' + misc_disposed);
       },
 
     }

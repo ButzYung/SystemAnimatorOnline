@@ -1667,9 +1667,9 @@
 					},
 					"message": {
 						"_translation_": {
-							"_default_": "Choose a feature to change, or drop a scene JSON <zipped>to change everything at once.\n1. Background image\n2. 3D panorama/skybox\n3. 3D scene builder (3D object)\n4. Export scene settings to file\n5. Reset scene to default\n6. Done",
-							"ja": "変更する機能を選択するか、<zipped>シーン JSON をドロップしてすべてを一度に変更します。\n1. 背景画像\n2. 3Dパノラマ/スカイボックス\n3. 3Dシーンビルダー（3Dオブジェクト）\n4. シーン設定をファイルにエクスポート\n5. シーンを初期設定にリセット\n6. 終了",
-							"zh": "選擇要更改的項目，或拖曳<zipped>場景 JSON 一次過更改所有相關項目。\n1. 背景畫像\n2. 3D 全景/天空盒\n3. 3D場景編輯器(3D物件)\n4. 匯出場景設定至檔案\n5. 重置場景至預設狀態\n6. 結束"
+							"_default_": "Choose an option, or drop a scene JSON <zipped>to change everything at once.\n1. Background image\n2. 3D panorama/skybox/HDRI\n3. 3D scene builder (3D object)\n4. Export scene settings to file\n5. Reset scene to default\n6. Done",
+							"ja": "変更するオプションを選択するか、<zipped>シーン JSON をドロップしてすべてを一度に変更します。\n1. 背景画像\n2. 3Dパノラマ/スカイボックス/HDRI\n3. 3Dシーンビルダー（3Dオブジェクト）\n4. シーン設定をファイルにエクスポート\n5. シーンを初期設定にリセット\n6. 終了",
+							"zh": "選擇要更改的項目，或拖曳<zipped>場景 JSON 一次過更改所有相關項目。\n1. 背景畫像\n2. 3D 全景/天空盒/HDRI\n3. 3D場景編輯器(3D物件)\n4. 匯出場景設定至檔案\n5. 重置場景至預設狀態\n6. 結束"
 						},
 						"zipped": {
 							"_translation_": {
@@ -1681,9 +1681,9 @@
 					},
 					"export_scene_to_file": {
 						"_translation_": {
-							"_default_": "Export scene settings to file:\nThis option exports all settings of the current scene (background, panorama/skybox, 3D objects, etc) to an external JSON file. To load a saved scene, simply drop the scene JSON to the app.",
-							"ja": "シーン設定をファイルにエクスポート:\nこのオプションは、現在のシーンのすべての設定 (背景、パノラマ/スカイボックス、3D オブジェクトなど) を外部 JSON ファイルにエクスポートします。 保存したシーンをロードするには、シーンの JSON をアプリにドロップするだけです。",
-							"zh": "匯出場景設定至檔案:\n此選頂將現有場景的所有設定 (背景、全景/天空盒、3D 物件等) 匯出至檔案。 要匯入場景，拖曳保存了的場景 JSON 檔案到此。"
+							"_default_": "Export scene settings to file:\nThis option exports all settings of the current scene (background, panorama/skybox/HDRI, 3D objects, etc) to an external JSON file. To load a saved scene, simply drop the scene JSON to the app.",
+							"ja": "シーン設定をファイルにエクスポート:\nこのオプションは、現在のシーンのすべての設定 (背景、パノラマ/スカイボックス/HDRI、3D オブジェクトなど) を外部 JSON ファイルにエクスポートします。 保存したシーンをロードするには、シーンの JSON をアプリにドロップするだけです。",
+							"zh": "匯出場景設定至檔案:\n此選頂將現有場景的所有設定 (背景、全景/天空盒/HDRI、3D 物件等) 匯出至檔案。 要匯入場景，拖曳保存了的場景 JSON 檔案到此。"
 						}
 					},
 					"reset_scene_to_default": {
@@ -1702,9 +1702,90 @@
 					},
 					"skybox": {
 						"_translation_": {
-							"_default_": "Choose a 3D skybox, or drop a skybox image/zip file.\n1. Blue sky\n2. Angel's staircase\n3. Stars & Milky Way\n4. >> Rotation speed+\n5. >> Rotation angle+\n6. 🌎Generate your skybox\n7. Done",
-							"ja": "3D スカイボックスを選択するか、スカイボックス画像/zip ファイルをドロップします。\n1. 青空\n2. 天使の階梯\n3. 星と天の川\n4. >> 回転速度+\n5. >> 回転角度+\n6. 🌎スカイボックスを生成する\n7. 終了",
-							"zh": "選擇以下的全景選項，或拖曳圖像/壓縮的天空盒檔案作為全景。\n1. 藍天\n2. 天使的階梯\n3. 繁星與銀河系\n4. >> 回轉速度+\n5. >> 回轉角度+\n6. 🌎生成天空盒\n7. 結束"
+							"_default_": "Choose a 3D skybox, or drop an equirectangular image/zipped skybox file.\n1. Default\n2. Blue sky\n3. Angel's staircase\n4. Stars & Milky Way\n5. 🔄Rotation speed: <rotation_speed>\n6. 🔄Rotation axis angle: <rotation_axis_angle>\nX. Done",
+							"ja": "3D スカイボックスを選択するか、「正距円筒図法」画像/圧縮されたスカイボックスをドロップします。\n1. デフォルト\n2. 青空\n3. 天使の階梯\n4. 星と天の川\n5. 🔄回転速度: <rotation_speed>\n6. 🔄回転軸角度: <rotation_axis_angle>\nX. 終了",
+							"zh": "選擇以下的預設天空盒，或拖曳「等距柱狀投影」圖像/ZIP壓縮的天空盒檔案。\n1. 預設\n2. 藍天\n3. 天使的階梯\n4. 繁星與銀河\n5. 🔄旋轉速度: <rotation_speed>\n6. 🔄旋轉軸角度: <rotation_axis_angle>\nX. 結束"
+						},
+						"press_to_change_value": {
+							"_translation_": {
+								"_default_": "press ⬅️➡️ key to change value",
+								"ja": "⬅️➡️キーで値を変更する",
+								"zh": "按️⬅️➡️鍵更改數值"
+							}
+						},
+						"rotation_speed": {
+							"_translation_": {
+								"_default_": "Rotation speed",
+								"ja": "回転速度",
+								"zh": "旋轉速度"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "This option rotates the skybox/HDRI scene at the specified speed. Rotation direction can be adjusted using the \"Rotation axis angle\" option. Press ⬅️➡️ key to change value. Default is \"0\".",
+									"ja": "このオプションは、指定された速度でスカイボックス/HDRI シーンを回転します。 回転方向は「回転軸角度」オプションを使用して調整できます。 ⬅️➡️キーを押して値を変更します。 デフォルトは「0」です。",
+									"zh": "此選項可令天空盒/HDRI 場景以指定速度旋轉。 旋轉方向可以「旋轉軸角度」選項調整。 按⬅️➡️鍵更改數值。 預設是「0」。"
+								}
+							}
+						},
+						"rotation_axis_angle": {
+							"_translation_": {
+								"_default_": "Rotation axis angle",
+								"ja": "回転軸角度",
+								"zh": "旋轉軸角度"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "When \"Rotation speed\" is zero, this option changes the static angle of rotation of the skybox/HDRI scene. Otherwise, this option changes the direction of rotation. Press ⬅️➡️ key to change value. Default is \"0°\".",
+									"ja": "「回転速度」が 0 の場合、このオプションはスカイボックス/HDRI シーンの静的な回転角度を変更します。 それ以外の場合、このオプションは回転方向を変更します。 ⬅️➡️キーを押して値を変更します。 デフォルトは「0°」です。",
+									"zh": "當「旋轉速度」為零時，此選項會變更天空盒/HDRI 場景的靜態旋轉角度。 否則，此選項會變更旋轉方向。 按⬅️➡️鍵更改數值。 預設是「0°」。"
+								}
+							}
+						},
+						"HDRI": {
+							"_translation_": {
+								"_default_": "Choose a HDRI scene, or drop a HDRI (.hdr/.exr) equirectangular image.\nA. Colorful Studio\nB. Blue Sky\nC. Ballroom\nD. Photo Studio Loft Hall\nE. Blue Photo Studio\nF. ☀️Mode: <HDRI_mode>\nG. ☀️Light intensity: <HDRI_light_intensity>%➕➖\nH. 🌐Download from Poly Haven",
+								"ja": "HDRI シーンを選択するか、HDRI (.hdr/.exr) 「正距円筒図法」画像をドロップします。\nA. カラフルスタジオ\nB. 青空\nC. ボールルーム\nD. フォトスタジオ ロフトホール\nE. ブルーフォトスタジオ\nF. ☀️モード: <HDRI_mode>\nG. ☀️光強度: <HDRI_light_intensity>%➕➖\nH. 🌐「Poly Haven」からダウンロード",
+								"zh": "選擇以下的預設 HDRI 場景，或拖曳 HDRI格式 (.hdr/.exr) 「等距柱狀投影」圖像。\nA. 多彩工作室\nB. 藍天\nC. 舞廳\nD. 照相館閣樓大廳\nE. 藍色照相館\nF. ☀️模式: <HDRI_mode>\nG. ☀️光強度: <HDRI_light_intensity>%➕➖\nH. 🌐從「Poly Haven」下載"
+							},
+							"mode": {
+								"0": {
+									"_translation_": {
+										"_default_": "Environment lighting only",
+										"ja": "環境照明のみ",
+										"zh": "只限環境照明"
+									}
+								},
+								"1": {
+									"_translation_": {
+										"_default_": "Auto",
+										"ja": "自動",
+										"zh": "自動"
+									}
+								},
+								"2": {
+									"_translation_": {
+										"_default_": "Skybox and lighting",
+										"ja": "スカイボックスと照明",
+										"zh": "天空盒和燈光"
+									}
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "HDRI mode:\nBy default, HDRI is used for environment lighting, which affects how PBR-based 3D objects are lit (when you load a 3D object, a preset HDRI will be automatically loaded for lighting if no other HDRI is in use). You can also choose \"Skybox and lighting\" mode, which uses HDRI as skybox background as well. Default is \"Auto\".",
+										"ja": "HDRI モード:\nデフォルトでは、HDRI が環境照明に使用され、PBR ベース の 3D オブジェクト の照明方法に影響します (3D オブジェクトをロードすると、他の HDRI が使用されていない場合、プリセット HDRI が照明用に自動的にロードされます)。 HDRI をスカイボックスの背景としても使用する「スカイボックスと照明」モードを選択することもできます。 デフォルトは「自動」。",
+										"zh": "HDRI 模式：\n預設情況下，HDRI 會用作環境照明，從而影響基於 PBR 的 3D 物件的照明方式 （當載入 3D 物件時，如果沒有使用其他 HDRI，將自動載入預設的 HDRI 進行照明）。 您也可以選擇「天空盒和照明」模式，令 HDRI 可同時作天空盒背景用途。 預設是「自動」。"
+									}
+								}
+							},
+							"light_intensity": {
+								"tooltip": {
+									"_translation_": {
+										"_default_": "HDRI light_intensity (press ➕➖ key to change value):\nThis option change the HDRI light intensity, which affects both environment lighting and HDRI skybox. Press ➕➖ key to change value. Default is \"100%\".",
+										"ja": "HDRI 光強度(➕➖キーで値を変更する):\nこのオプションは HDRI ライトの強度を変更します。これは環境照明と HDRI スカイボックスの両方に影響します。 ➕➖キーを押して値を変更します。 デフォルトは「100%」です。",
+										"zh": "HDRI 光強度(按️➕➖鍵更改數值)：\n此選項會變更 HDRI 光強度，從而影響環境照明和 HDRI 天空盒。 按➕➖鍵更改數值。 預設是「100%」。"
+									}
+								}
+							}
 						}
 					},
 					"3D_scene_builder": {

@@ -1,5 +1,5 @@
 // XR Animator
-// (2024-04-11)
+// (2024-04-18)
 
 var MMD_SA_options = {
 
@@ -3310,7 +3310,7 @@ video:{
 //  hidden:true,
 //  hidden_on_webcam: true,
   scale:0.4, top:-0.5,
-//left:-0.5*-1,top:-1,
+//left:-0.5,top:-1,
 //scale:0.4*1,top:0,left:-3,
 //scale:0.4*2,top:0,left:-1,
 },
@@ -6599,6 +6599,8 @@ var model_filename_cleaned = model_filename.replace(/[\-\_]copy\d+\.(x|gltf|glb)
 var model_para = MMD_SA_options.model_para[model_filename] || MMD_SA_options.model_para[model_filename_cleaned] || {};
 
 const is_X_model = /\.x/i.test(url);
+if (!is_X_model && MMD_SA.THREEX.enabled && !MMD_SA.THREEX.utils.HDRI.path)
+  change_HDRI(1, (MMD_SA.THREEX.utils.HDRI.mode == 1) ? false : null);
 
 let material_para = model_para.material_para || {};
 material_para = material_para._default_ || {};
@@ -6685,7 +6687,7 @@ if (!object3d.parent_bone) {
   System._browser.camera.poseNet.ground_plane_visible = false
   MMD_SA.WebXR.ground_plane.visible = System._browser.camera.poseNet.ground_plane_visible
 
-  System._browser.camera.display_floating = (MMD_SA_options.user_camera.display.floating || (MMD_SA_options.user_camera.display.floating_auto !== false));
+  System._browser.camera.display_floating = (MMD_SA_options.user_camera.display.floating_auto !== false);
 }
 
 MMD_SA.THREEX.scene.add(mesh);
@@ -7349,6 +7351,7 @@ function remove_object3D(index) {
     }
 
     MMD_SA.THREEX.utils.dispose(object3d._obj);
+
     delete object3d._obj;
     delete object3d._mesh;
   });
@@ -7537,6 +7540,8 @@ async function change_panorama(index, src, para={}) {
       MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.traverse(obj=>{
        obj.layers.enable(MMD_SA.THREEX.PPE.N8AO.NO_AO);
       });
+
+      MMD_SA.THREEX.scene.background = null;
     }
 
     panorama_index = index;
@@ -7589,16 +7594,73 @@ async function change_panorama(index, src, para={}) {
     show();
 }
 
-var dome_axis_angle = 0
-var dome_rotation_speed = 0
-var dome_rotation = 0
+var dome_axis_angle = 0;
+var dome_rotation_speed = 0;
+var dome_rotation = 0;
 function rotate_dome() {
   var axis = v3a.set(0,1,0);
   axis.applyEuler(e1.set(0, 0, dome_axis_angle/180*Math.PI));
   dome_rotation = (dome_rotation + RAF_timestamp_delta/(1000*60*10) * dome_rotation_speed * 360) % 360;
 
-  MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.useQuaternion = true
-  MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.quaternion.setFromAxisAngle(axis, dome_rotation/180*Math.PI)
+  MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.quaternion.setFromAxisAngle(axis, dome_rotation/180*Math.PI);
+
+  if (!MMD_SA.THREEX.enabled) {
+    MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.useQuaternion = true;
+  }
+  else {
+    e1.setFromQuaternion(MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.quaternion);
+
+    if (MMD_SA.THREEX.scene.environment)
+      MMD_SA.THREEX.scene.environmentRotation.copy(e1);
+    if (MMD_SA.THREEX.scene.background)
+      MMD_SA.THREEX.scene.backgroundRotation.copy(e1);
+  }
+}
+
+function remove_skybox() {
+  MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.visible = false;
+  MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.quaternion.set(0,0,0,1);
+
+  dome_rotation = 0;
+//  dome_axis_angle = 0;
+//  dome_rotation_speed = 0;
+
+  System._browser.on_animation_update.remove(rotate_dome,1);
+}
+
+const HDRI_list = [
+  'colorful_studio.hdr',
+  'rustig_koppie_puresky.hdr',
+  'ballroom.hdr',
+  'photo_studio_loft_hall.hdr',
+  'blue_photo_studio.exr',
+];
+
+async function change_HDRI(index, use_background) {
+  if ((use_background == null) || !MMD_SA.THREEX.utils.HDRI.mode)
+    use_background = (!MMD_SA.THREEX.utils.HDRI.mode) ? false : ((MMD_SA.THREEX.utils.HDRI.mode == 1) ? (!MMD_SA_options.mesh_obj_by_id["DomeMESH"]?._obj.visible && (!!MMD_SA.THREEX.scene.background || !MMD_SA.THREEX._object3d_list_?.length)) : true);
+
+  await MMD_SA.THREEX.utils.HDRI.load(System.Gadget.path + '/images/_dungeon/hdri/' + ((use_background)?'full/':'') + HDRI_list[index-1], use_background);
+
+  if (use_background) {
+    remove_skybox();
+
+    if (dome_rotation_speed) {
+      System._browser.on_animation_update.remove(rotate_dome,1);
+      System._browser.on_animation_update.add(rotate_dome,0,1,-1);
+    }
+  }
+}
+
+function remove_HDRI() {
+  if (!MMD_SA.THREEX.enabled) return;
+
+  MMD_SA.THREEX.scene.background = null;
+  MMD_SA.THREEX.scene.environment = null
+  MMD_SA.THREEX.scene.environmentRotation.set(0,0,0);
+  MMD_SA.THREEX.scene.backgroundRotation.set(0,0,0);
+
+  System._browser.on_animation_update.remove(rotate_dome,1);
 }
 
 const scene_json_for_export = {
@@ -7810,7 +7872,39 @@ MMD_SA._force_motion_shuffle = true;
       loaded_count_max++;
     }
 
-    const panorama = json.XR_Animator_scene.panorama;
+    const HDRI = MMD_SA.THREEX.enabled && json.XR_Animator_scene.HDRI;
+    if (HDRI) {
+      if (HDRI.path) {
+        if (!await locate_file(zip, HDRI)) {
+          HDRI.path = null;
+          HDRI.index = 1;
+        }
+      }
+      if (HDRI.path || HDRI.index) {
+        loaded_count_max++;
+
+        MMD_SA.THREEX.utils.HDRI.mode = HDRI.mode;
+        MMD_SA.THREEX.scene.environmentIntensity = MMD_SA.THREEX.scene.backgroundIntensity = HDRI.intensity || 1;
+
+// use await to make sure that HDRI is loaded before 3D objects
+        await ((HDRI.path) ? MMD_SA.THREEX.utils.HDRI.load(HDRI.path, HDRI.use_background) : change_HDRI(HDRI.index, HDRI.use_background));
+        show_status('✅HDRI');
+        check_loaded(1);
+
+        if (HDRI.rotation_speed) {
+          dome_axis_angle = panorama.axis_angle;
+          dome_rotation_speed = panorama.rotation_speed;
+          System._browser.on_animation_update.remove(rotate_dome,1);
+          System._browser.on_animation_update.add(rotate_dome,0,1,-1);
+        }
+        else if (HDRI.axis_angle) {
+          const a = HDRI.axis_angle * Math.PI/180;
+          MMD_SA.THREEX.scene.backgroundRotation.y = MMD_SA.THREEX.scene.environmentRotation.y = a;
+        }
+      }
+    }
+
+    const panorama = !HDRI?.mode && json.XR_Animator_scene.panorama;
     if (panorama) {
       if (panorama.path) {
         if (!await locate_file(zip, panorama))
@@ -7828,6 +7922,12 @@ MMD_SA._force_motion_shuffle = true;
           dome_rotation_speed = panorama.rotation_speed;
           System._browser.on_animation_update.remove(rotate_dome,1);
           System._browser.on_animation_update.add(rotate_dome,0,1,-1);
+        }
+        else if (panorama.axis_angle) {
+          const a = panorama.axis_angle * Math.PI/180;
+          MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.quaternion.copy(MMD_SA.TEMP_q.set(0,Math.sin(a),0, Math.cos(a)));
+          if (!MMD_SA.THREEX.enabled)
+            MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.useQuaternion = true;
         }
       }
     }
@@ -8061,6 +8161,22 @@ function export_scene_JSON() {
     };
     if (panorama_index == 0)
       scene_json.panorama.path = panorama_src;
+  }
+
+  const HDRI_path = MMD_SA.THREEX.utils.HDRI.path;
+  if (HDRI_path) {
+    let HDRI_filename = HDRI_path.replace(/^.+[\/\\]/, '');
+    let HDRI_index = ((HDRI_path != HDRI_filename) && (HDRI_list.indexOf(HDRI_filename)+1)) || null;
+    scene_json.HDRI = {
+      index: HDRI_index,
+      use_background: !!MMD_SA.THREEX.scene.background,
+      mode: MMD_SA.THREEX.utils.HDRI.mode,
+      intensity: MMD_SA.THREEX.scene.environmentIntensity,
+      axis_angle: dome_axis_angle,
+      rotation_speed: dome_rotation_speed,
+    };
+    if (!HDRI_index)
+      scene_json.HDRI.path = MMD_SA.THREEX.utils.HDRI.path;
   }
 
   scene_json.settings = Object.assign({}, scene_json_for_export.XR_Animator_scene.settings||{});
@@ -8381,16 +8497,13 @@ if (v_bg) {
   v_bg.style.visibility = 'hidden';
 }
 
-LdesktopBG_host.style.display = bg_state_default
-document.body.style.backgroundColor = bg_color_default
-LdesktopBG.style.backgroundImage = bg_wallpaper_default
-MMD_SA_options.user_camera.display.webcam_as_bg = webcam_as_bg_default
+LdesktopBG_host.style.display = bg_state_default;
+document.body.style.backgroundColor = bg_color_default;
+LdesktopBG.style.backgroundImage = bg_wallpaper_default;
+MMD_SA_options.user_camera.display.webcam_as_bg = webcam_as_bg_default;
 
-MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.visible = false
-dome_axis_angle = 0
-dome_rotation = 0
-dome_rotation_speed = 0
-System._browser.on_animation_update.remove(rotate_dome,1)
+remove_skybox();
+remove_HDRI();
 
 remove_object3D();
 
@@ -8515,21 +8628,114 @@ reset_scene_UI();
         }
       ]
 
-     ,[
-        {
-          func: function () {
+     ,(()=>{
+        let skybox_option_active = 'rotation_axis_angle';
+        let skybox_options = ['rotation_speed', 'rotation_axis_angle'];
+
+        return [
+          {
+            func: function () {
 DragDrop.onDrop_finish = onDrop_change_panorama;
-          }
-         ,message: {
-  get content() { return System._browser.translation.get('XR_Animator.UI.UI_options.scene.skybox'); }
+            }
+           ,message: {
+  get content() {
+return System._browser.translation.get('XR_Animator.UI.UI_options.scene.skybox').replace('<rotation_speed>', ((dome_rotation_speed)?'x'+dome_rotation_speed:0) + ((skybox_option_active == 'rotation_speed')?'⬅️➡️':'')).replace('<rotation_axis_angle>', dome_axis_angle + '°' + ((skybox_option_active == 'rotation_axis_angle')?'⬅️➡️':''));
+  }
  ,bubble_index: 3
+ ,para: { row_max:11 }
  ,branch_list: [
-    { key:1, branch_index:panorama_branch+1 }
-   ,{ key:2, branch_index:panorama_branch+2 }
-   ,{ key:3, branch_index:panorama_branch+3 }
-   ,{ key:4, branch_index:panorama_branch+4 }
-   ,{ key:5, branch_index:panorama_branch+5 }
-   ,{ key:6, event_id:{ func:()=>{
+  { key:'any', func:(e)=>{
+let step;
+
+if (/Arrow(Up|Down)/.test(e.code)) {
+  let index = skybox_options.findIndex(v=>v==skybox_option_active);
+  index -= (e.code == 'ArrowUp') ? 1 : -1;
+  if (index < 0) {
+    index = skybox_options.length-1;
+  }
+  else if (index > skybox_options.length-1) {
+    index = 0;
+  }
+  skybox_option_active = skybox_options[index];
+}
+else if (/Arrow(Left|Right)/.test(e.code)) {
+  if (skybox_option_active == 'rotation_speed') {
+    const v = (e.code == 'ArrowRight') ? 1 : -1;
+    let speed_ini = dome_rotation_speed;
+    dome_rotation_speed = THREE.Math.clamp(dome_rotation_speed+v, 0,16);
+    if (!speed_ini) {
+      if (dome_rotation_speed) {
+        System._browser.on_animation_update.remove(rotate_dome,1);
+        System._browser.on_animation_update.add(rotate_dome,0,1,-1);
+      }
+    }
+    else {
+      if (!dome_rotation_speed)
+        System._browser.on_animation_update.remove(rotate_dome,1);
+    }
+  }
+  else if (skybox_option_active == 'rotation_axis_angle') {
+    const v = (e.code == 'ArrowRight') ? 5 : -5;
+    dome_axis_angle = THREE.Math.clamp(dome_axis_angle+v, 0,360);
+    if (!dome_rotation_speed) {
+      const a = dome_axis_angle * Math.PI/180;
+      MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.quaternion.copy(MMD_SA.TEMP_q.set(0,Math.sin(a),0, Math.cos(a)));
+      if (!MMD_SA.THREEX.enabled) {
+        MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.useQuaternion = true;
+      }
+      else {
+        MMD_SA.THREEX.scene.backgroundRotation.y = MMD_SA.THREEX.scene.environmentRotation.y = a;
+      }
+    }
+  }
+}
+else if (MMD_SA.THREEX.enabled && ((e.key == '+') || (e.key == '-'))) {
+  const v = (e.key == '+') ? 0.01 : -0.01;
+  MMD_SA.THREEX.scene.environmentIntensity = MMD_SA.THREEX.scene.backgroundIntensity = THREE.Math.clamp(MMD_SA.THREEX.scene.environmentIntensity+v, 0,1);
+}
+else {
+  return false;
+}
+
+MMD_SA_options.Dungeon.run_event(null, panorama_branch, 0);
+
+return true;
+  } }
+   ,{ key:1, event_id: {
+        func: function () {
+          remove_skybox();
+          remove_HDRI();
+        },
+        goto_branch: panorama_branch
+      }
+    }
+   ,{ key:2, branch_index:panorama_branch+1 }
+   ,{ key:3, branch_index:panorama_branch+2 }
+   ,{ key:4, branch_index:panorama_branch+3 }
+   ,{ key:5, event_id: {
+        func: function () { skybox_option_active = 'rotation_speed'; },
+        goto_branch: panorama_branch
+      },
+      onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.UI_options.scene.skybox.rotation_speed') + ((skybox_option_active=='rotation_speed')?' (' + System._browser.translation.get('XR_Animator.UI.UI_options.scene.skybox.press_to_change_value') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.UI_options.scene.skybox.rotation_speed.tooltip')
+);
+      }
+    }
+   ,{ key:6, event_id: {
+        func: function () { skybox_option_active = 'rotation_axis_angle'; },
+        goto_branch: panorama_branch
+      },
+      onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.UI_options.scene.skybox.rotation_axis_angle') + ((skybox_option_active=='rotation_axis_angle')?' (' + System._browser.translation.get('XR_Animator.UI.UI_options.scene.skybox.press_to_change_value') + ')':'') + ':\n' + System._browser.translation.get('XR_Animator.UI.UI_options.scene.skybox.rotation_axis_angle.tooltip')
+);
+      }
+    }
+/*
+   ,{ key:7, event_id:{ func:()=>{
 var url = 'https://skybox.blockadelabs.com/';
 if (webkit_electron_mode)
   webkit_electron_remote.shell.openExternal(url)
@@ -8537,11 +8743,102 @@ else
   window.open(url)
       }, goto_branch:done_branch }
     }
-   ,{ key:7, is_closing_event:true, branch_index:done_branch }
+*/
+   ,{ key:'X', is_closing_event:true, branch_index:done_branch }
   ]
-          }
-        }
-      ]
+            },
+            next_step: {}
+          },
+          {
+            func: function () {
+if (MMD_SA.THREEX.enabled) MMD_SA_options.Dungeon.run_event();
+            }
+          },
+          {
+            func: function () {}
+           ,message: {
+  get content() {
+return System._browser.translation.get('XR_Animator.UI.UI_options.scene.skybox.HDRI').replace(/\<HDRI_mode\>/, System._browser.translation.get('XR_Animator.UI.UI_options.scene.skybox.HDRI.mode.' + MMD_SA.THREEX.utils.HDRI.mode)).replace(/\<HDRI_light_intensity\>/, Math.round(MMD_SA.THREEX.scene.environmentIntensity*100));
+  },
+  index: 1,
+  bubble_index: 3,
+  para: { row_max:11 },
+  branch_list: [
+    { key:'A', event_id: {
+        func: function () { change_HDRI(1); },
+        goto_branch: panorama_branch
+      }
+    },
+    { key:'B', event_id: {
+        func: function () { change_HDRI(2); },
+        goto_branch: panorama_branch
+      }
+    },
+    { key:'C', event_id: {
+        func: function () { change_HDRI(3); },
+        goto_branch: panorama_branch
+      }
+    },
+    { key:'D', event_id: {
+        func: function () { change_HDRI(4); },
+        goto_branch: panorama_branch
+      }
+    },
+    { key:'E', event_id: {
+        func: function () { change_HDRI(5); },
+        goto_branch: panorama_branch
+      }
+    },
+    { key:'F', event_id: {
+        func: function () {
+if (++MMD_SA.THREEX.utils.HDRI.mode > 2)
+  MMD_SA.THREEX.utils.HDRI.mode = 0;
+
+if (MMD_SA.THREEX.utils.HDRI.mode == 2) {
+  const HDRI_path = MMD_SA.THREEX.utils.HDRI.path;
+  if (MMD_SA.THREEX.utils.HDRI.path) {
+    let HDRI_filename = HDRI_path.replace(/^.+[\/\\]/, '');
+    let HDRI_index = ((HDRI_path != HDRI_filename) && (HDRI_list.indexOf(HDRI_filename)+1)) || null;
+    if (HDRI_index)
+      change_HDRI(HDRI_index);
+  }
+}
+        },
+        goto_branch: panorama_branch
+      },
+      onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.UI_options.scene.skybox.HDRI.mode.tooltip')
+);
+      }
+    },
+    { key:'G', event_id: {
+        func: function () {},
+        goto_branch: panorama_branch
+      },
+      onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.UI_options.scene.skybox.HDRI.light_intensity.tooltip')
+);
+      }
+    },
+    { key:'H', event_id:{ func:()=>{
+var url = 'https://polyhaven.com/hdris';
+if (webkit_electron_mode)
+  webkit_electron_remote.shell.openExternal(url)
+else
+  window.open(url)
+        },
+        goto_branch: panorama_branch
+      }
+    }
+  ],
+            }
+          },
+        ];
+      })()
 
      ,[
         {
@@ -8570,44 +8867,9 @@ change_panorama(3);
         }
       ]
 // 16
-     ,[
-        {
-          func: function () {
-if (!MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.visible) {
-  DEBUG_show('(Dome panorama not visible)', 2)
-  return
-}
-
-if (dome_rotation_speed)
-  dome_rotation_speed *= 2
-else {
-  dome_rotation_speed = 1
-  System._browser.on_animation_update.add(rotate_dome,0,1,-1)
-}
-if (dome_rotation_speed > 16) {
-  dome_rotation_speed = 0
-  System._browser.on_animation_update.remove(rotate_dome,1)
-}
-DEBUG_show('Dome rotation speed: x' + dome_rotation_speed, 2)
-          }
-         ,goto_branch: panorama_branch
-        }
-      ]
+     ,[]
 // 17
-     ,[
-        {
-          func: function () {
-if (!MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.visible) {
-  DEBUG_show('(Dome panorama not visible)', 2)
-  return
-}
-
-dome_axis_angle = (dome_axis_angle + 18) % 360;
-DEBUG_show('Dome rotation angle: ' + dome_axis_angle + '°', 2)
-          }
-         ,goto_branch: panorama_branch
-        }
-      ]
+     ,[]
 // 18
      ,[
         {
@@ -8813,7 +9075,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  get content() { return 'XR Animator (v0.20.0)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
+  get content() { return 'XR Animator (v0.21.0)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -11251,12 +11513,16 @@ window.addEventListener("SA_AR_onARFrame", (function () {
       MMD_SA.reset_camera(false);
       MMD_SA.Camera_MOD.adjust_camera('camera_lock', pos.sub(obj.object.position), target.sub(obj.target), z);
       MMD_SA.reset_camera();
+
+      MMD_SA.THREEX.camera.control.enabled = false;
     }
     else {
       MMD_SA.Camera_MOD.adjust_camera('camera_lock', v1.set(0,0,0), v2.set(0,0,0), 0);
+
+      MMD_SA.THREEX.camera.control.enabled = true;
     }
 
-    DEBUG_show('Camera lock: ON', 3);
+    DEBUG_show('Camera lock:'+((camera_locked)?'ON':'OFF'), 3);
   }
 
   const hotkey_config = [
@@ -11813,29 +12079,6 @@ else if (mm.para_SA.motion_tracking_enabled) {
       return update_frame
     };
   })();
-
-/*
-window.addEventListener('jThree_ready', ()=>{
-  if (!MMD_SA.THREEX.enabled) return;
-
-  const THREE = MMD_SA.THREEX.THREE;
-
-  const renderer = MMD_SA.THREEX.renderer.obj;
-
-  const pmremGenerator = new THREE.PMREMGenerator(renderer);
-  pmremGenerator.compileEquirectangularShader();
-
-  new THREE.TextureLoader().load( toFileProtocol('C:\\Users\\user\\Downloads\\equirectangular.png'), function ( texture ) {
-
-					texture.mapping = THREE.EquirectangularReflectionMapping;
-					texture.colorSpace = THREE.SRGBColorSpace;
-
-					MMD_SA.THREEX.scene.environment = pmremGenerator.fromEquirectangular( texture ).texture;
-console.log(999,'TEST');
-				} );
-
-});
-*/
 
 })();
 
