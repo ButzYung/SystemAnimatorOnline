@@ -201,6 +201,8 @@ All demos support the use of custom MMD (MikuMikuDance) model. Drop a zip of you
 
 - Various 3D background effects ported and modified from codes found on [Shadertoy](https://www.shadertoy.com/)
 
+- Some icons and backgrounds from [Freepik](https://www.freepik.com/)
+
 - For some other third-party programming libraries/3D data/assets used in System Animator, please refer to the corresponding script/readme for license and terms (can be found on the downloadable/Github version of System Animator).
 
 ### Other third-party assests used in some demos
