@@ -84,15 +84,21 @@ Lastly, click the Snapshot icon and a still photo will be generated. This can be
 
 [Check out the following YouTube video](https://youtu.be/TIMPqV9lVH8) for demonstration.
 
-# ❤️Donation
+# ❤️Support this project
 
-XR Animator inherits from System Animator, my desktop gadget project which have been active for many years. Lots of time, efforts and money have been spent to keep these projects free and running. If you like my works, please consider making a donation. Your financial support is needed to keep us going!🙏
+The future of XR Animator relies on your support🙇 Some IRL family issues have significantly increased my financial burden. While it was fun to develop the app, financial return was next to minimal. Reality forces me to evaluate the sustainability of this project, or soon I will have to give up...😢
 
+If you like XR Animator, please consider making a donation🙇 Or even better, join my membership with perks such as ***EARLY ACCESS to the latest version XR Animator*** (at least one month ahead of the public release on GitHub), insider stories/tips and other benefits🎁 Sponsor us, and help keep this project free and sustainable🙏
+
+- ☕[Ko-fi (Membership)](https://ko-fi.com/butzyung/tiers)
+- 🎁[FANBOX (メンバーシップ)](https://xra.fanbox.cc/)
 - ☕[Buy Me a Coffee](https://ko-fi.com/butzyung)
+- 🙏[Donate via PayPal](https://www.paypal.me/AnimeThemeGadgets)
 
-- 🙏[Donate via PayPal.Me](https://www.paypal.me/AnimeThemeGadgets)
+XR Animator is currently sponsored by the following persons❤️
 
-- 🟡Donate via Bitcoin ( 1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p )
+- **NewruGuru, Nymph, Shionay, shion, KuraiNoOni, MShade**
+- Other supporters
 
 # About System Animator
 
