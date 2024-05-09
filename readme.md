@@ -10,7 +10,7 @@ XR Animator, inherited from my previous desktop gadget project known as System A
 
 It has a variety of motion tracking options. You can choose to track the face, full body, or something in between (any combination of face/body/hands).
 
-The web app version works on all major web browsers both on desktop and smartphone. On browsers supporting both web worker and OffscreenCanvas (e.g. Chrome), it can achieve 60fps visual rendering and 30fps body pose detection on a medicore PC. On smartphones with limited processing power, you may want to use limit its usage on face tracking.
+The web app version works on all major web browsers both on desktop and smartphone. On browsers supporting both web worker and OffscreenCanvas (e.g. Chrome), it can achieve 60fps visual rendering and 30fps body pose detection on a mediocre PC. On smartphones with limited processing power, you may want to use limit its usage on face tracking.
 
 ### 🌐[XR Animator - Web app version](https://sao.animetheme.com/XR_Animator.html)
 
