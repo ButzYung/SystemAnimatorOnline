@@ -97,7 +97,7 @@ If you like XR Animator, please consider making a donation🙇 Or even better, j
 
 XR Animator is currently sponsored by the following persons❤️
 
-- **NewruGuru, Nymph, Shionay, shion, KuraiNoOni, MShade**
+- **NewruGuru, Nymph, Shionay, shion, KuraiNoOni, MShade, Dominic Renner, Kai**
 - Other supporters
 
 # About System Animator
