@@ -1,5 +1,5 @@
 // XR Animator
-// (2024-04-18)
+// (2024-04-26)
 
 var MMD_SA_options = {
 
@@ -3406,7 +3406,11 @@ wireframe:{
 	}
 }
     },
+
+    model_path_extra: []
   }
+
+ ,audio_to_dance_disabled: true
 
 // END
 };
@@ -5392,6 +5396,7 @@ return System._browser.snapshot.init();
    ,"rec" : (()=>{
       function snapshot(e) {
 const ev = e.detail.e;
+if (ev.altKey || ev.ctrlKey || ev.shiftKey) return;
 switch (ev.code) {
   case 'F12':
     System._browser.snapshot.init();
@@ -8207,7 +8212,7 @@ window.addEventListener('jThree_ready', ()=>{
 // use .condition instead of .enabled to save some headaches when .camera_face_locking can change at any time
 //    enabled: MMD_SA_options.camera_face_locking,
     condition: ()=>{
-return MMD_SA_options.camera_face_locking || ((MMD_SA_options.camera_face_locking !== false) && !explorer_mode && !MMD_SA_options.Dungeon_options.item_base.hand_camera._hand_camera_active && MMD_SA_options.Dungeon.started && (MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.visible || object3d_list.some(obj=>!obj.parent_bone)) && !MMD_SA.THREEX._THREE.MMD.getCameraMotion().length);
+return MMD_SA_options.camera_face_locking || ((MMD_SA_options.camera_face_locking !== false) && !explorer_mode && !MMD_SA_options.Dungeon_options.item_base.hand_camera._hand_camera_active && MMD_SA_options.Dungeon.started && (MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.visible || (MMD_SA.THREEX.enabled && MMD_SA.THREEX.scene.background) || object3d_list.some(obj=>!obj.parent_bone)) && !MMD_SA.THREEX._THREE.MMD.getCameraMotion().length);
     },
   });
 });
@@ -9075,7 +9080,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  get content() { return 'XR Animator (v0.21.0)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
+  get content() { return 'XR Animator (v0.22.0)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -9145,7 +9150,7 @@ else
  ,get branch_list() { return [
     { key:1, event_id: {
         func:()=>{
-var url = 'https://ko-fi.com/butzyung'
+var url = (System._browser.translation.language == 'ja') ? 'https://xra.fanbox.cc/' : 'https://ko-fi.com/butzyung';
 if (webkit_electron_mode)
   webkit_electron_remote.shell.openExternal(url)
 else
@@ -9179,6 +9184,15 @@ navigator.clipboard.writeText('1KkHVxgn4tusMhXNt1qFqSpiCiDRcqUh8p').then(()=>{
   ] : [
     { key:3, is_closing_event:true }
   ]); }
+          },
+          next_step: {}
+        },
+        {
+          message: {
+get content() { return System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.support.sponsor').replace(/\<list\>/, System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.support.sponsor.list')); },
+bubble_index: 3,
+index: 1,
+bubble_index: 3,
           }
         }
       ]
@@ -9331,7 +9345,7 @@ MMD_SA_options.use_CircularSpectrum = !MMD_SA_options.use_CircularSpectrum;
 message: {
   index: 1,
   bubble_index: 3,
-  get content() { return System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.extra'); }
+  get content() { return System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.extra').replace(/\<switch_avatar_model\>/, (System._browser.hotkeys.config_by_id['switch_avatar_model'].accelerator[0] == 'Alt+1')?'Alt+1-4':'Ctrl+1-4'); }
 },
 next_step: {},
         },
@@ -9413,6 +9427,33 @@ hotkey_combo = hotkey_info = hotkey_acc = null;
         }, goto_event:{event_index:5} }
       };
     }),
+
+    { key:'A', event_id:{ func:()=>{
+if (hotkey_id) return;
+
+const id = 'switch_avatar_model';
+const hotkeys = System._browser.hotkeys;
+const config = hotkeys.config_by_id[id];
+const acc = [];
+const acc_command = (config.accelerator[0] == 'Alt+1') ? 'Ctrl' : 'Alt';
+for (let i = 0; i < 4; i++) {
+  acc[i] = acc_command + '+' + (i+1);
+}
+
+if (!hotkeys.register(id, acc)) {
+  const acc_default = hotkeys._hotkey_config.find(c=>c.id==id).accelerator;
+  hotkeys.register(id, acc_default);
+  DEBUG_show('❌' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.not_registered') + ' (' + acc_default[0] + ')', 5);
+}
+      }, goto_event:{event_index:3} },
+      sb_index: 1,
+      onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.extra.switch_avatar_model.tooltip')
+);
+      }
+    },
 
     { key:'D', event_id:{ func:()=>{
 if (!hotkey_id) return;
@@ -11547,6 +11588,35 @@ if (/Numpad(\d)/.test(ev.code) && (ev.altKey||ev.ctrlKey)) {
     },
 
     {
+
+      id: 'switch_avatar_model',
+      accelerator: (()=>{
+const acc = [];
+for (let i = 1; i <= 4; i++)
+  acc.push('Alt+'+i);
+return acc;
+      })(),
+      global_disabled: true,
+      process: (e)=>{
+const ev = e.detail.e;
+const index = parseInt(ev.code.replace(/\D+/g, ''))-1;
+const model_index = MMD_SA.THREEX.models.findIndex(m=>m.index_default==index);
+if (model_index != -1) {
+  MMD_SA.THREEX.VRM.swap_model(model_index);
+}
+else {
+  const path = MMD_SA_options.THREEX_options.model_path_extra?.[index-1];
+  if (path) {
+    SA_DragDropEMU(path);
+  }
+  else {
+    DEBUG_show('(No extra model available)', 3);
+  }
+}
+      }
+    },
+
+    {
       id: 'mocap_auto_grounding',
       accelerator: ['Ctrl+G'],
       process: (e)=>{
@@ -11718,6 +11788,8 @@ config.user_camera = {
   streamer_mode: MMD_SA_options.user_camera.streamer_mode,
 };
 
+config.model_path_extra = MMD_SA_options.THREEX_options.model_path_extra;
+
 const hotkeys = System._browser.hotkeys;
 config.hotkeys = {
   is_global: hotkeys.is_global,
@@ -11729,7 +11801,7 @@ config.hotkeys = {
     const global_disabled = hotkeys.accelerators[config.accelerator[0]].config.global_disabled;
     if (!!global_disabled !== !!c.global_disabled)
       _config.global_disabled = global_disabled;
-    if ((c.accelerator.length == 1) && (config.accelerator[0] != c.accelerator[0]))
+    if (config.accelerator[0] != c.accelerator[0])
       _config.accelerator = config.accelerator;
 
     return _config;
@@ -11908,6 +11980,10 @@ try {
         Object.assign(System._browser.camera.tilt_adjustment, config[p].ML_models.tilt_adjustment||{});
         break;
 
+      case 'model_path_extra':
+        MMD_SA_options.THREEX_options.model_path_extra = config[p];
+        break;
+
       case 'hotkeys':
         const hotkeys = System._browser.hotkeys;
         if (!MMD_SA_options.Dungeon.started) {
@@ -12079,6 +12155,7 @@ else if (mm.para_SA.motion_tracking_enabled) {
       return update_frame
     };
   })();
+
 
 })();
 
