@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-04-18)
+// (2024-04-26)
 
 var use_full_spectrum = true
 
@@ -618,6 +618,13 @@ MMD_SA._click_to_reset = null;
 //console.log(DragDrop)
   }
   else if (item.isFileSystem && /([^\/\\]+)\.(vrm)$/i.test(src)) {
+    if (MMD_SA.MMD_started) {
+      if (MMD_SA.THREEX.enabled) {
+        MMD_SA.THREEX.VRM.load_extra(src);
+      }
+      return;
+    }
+
     if (!MMD_SA_options.use_THREEX) return;
     if (!MMD_SA.jThree_ready) return;
 
@@ -803,6 +810,9 @@ else
           });
         });
       }
+    }
+    else if (MMD_SA_options.audio_to_dance_disabled) {
+      return;
     }
     else {
       vo.motion_by_song_name_mode = false
@@ -8311,12 +8321,12 @@ this.model = model;
     }
 
     return function (index, model, para) {
-this.index = index
+this.index = this.index_default = index;
 
 if (model)
-  this.model = model
+  this.model = model;
 if (para)
-  this.para = para
+  this.para = para;
 
 this.animation = new Animation(this);
 
@@ -8921,6 +8931,8 @@ return (!use_VRM1) ? (THREE.VRMSchema.HumanoidBoneName[name.charAt(0).toUpperCas
         value: function () {
 // three-vrm 1.0 (TEST)
 //if (!use_VRM1) return;
+
+if (this.index > 0) return;
 
 const restrict_physics = MMD_SA.motion[_THREE.MMD.getModels()[this.index].skin._motion_index].para_SA.mov_speed;
 const settings_default = this._joints_settings;
@@ -9776,7 +9788,8 @@ return rig_map;
       },
 
       load: async function (url, para) {
-MMD_SA.fn.load_length_extra++
+if (!MMD_SA.MMD_started)
+  MMD_SA.fn.load_length_extra++
 
 var url_raw = url;
 var model_filename = url.replace(/^.+[\/\\]/, '')
@@ -9794,6 +9807,8 @@ await new Promise((resolve) => {
     resolve();
   }, 'blob', true);
 });
+
+await new Promise((resolve) => {
 
 GLTF_loader.load(
 
@@ -9818,7 +9833,8 @@ mesh_obj.traverse( ( obj ) => {
   obj.layers.enable(MMD_SA.THREEX.PPE.N8AO.AO_MASK);
 } );
 
-data.scene.add(mesh_obj);
+if (!MMD_SA.MMD_started)
+  data.scene.add(mesh_obj);
 
 var vrm_obj = new VRM_object(para.vrm_index, vrm, { url:url_raw });
 
@@ -9948,7 +9964,10 @@ if (object_url) {
   URL.revokeObjectURL(object_url)
 }
 
-MMD_SA.fn.setupUI()
+if (!MMD_SA.MMD_started)
+  MMD_SA.fn.setupUI();
+
+resolve();
     }
 
     return function (gltf) {
@@ -9977,7 +9996,96 @@ else {
   (error) => console.error(error)
 
 );
-        }
+
+});
+      },
+
+      load_extra: (()=>{
+        let loading;
+
+        return async function (src) {
+const filename_new = src.replace(/^.+[\/\\]/, '');
+let index_new = threeX.models.findIndex(m=>filename_new == m.model_path.replace(/^.+[\/\\]/, ''));
+if (index_new == 0) return;
+
+if (loading) return;
+loading = true;
+
+if (index_new == -1) {
+  index_new = threeX.models.length;
+
+  if (!MMD_SA_options.THREEX_options.model_path_extra)
+    MMD_SA_options.THREEX_options.model_path_extra;
+  MMD_SA_options.THREEX_options.model_path_extra[index_new-1] = src;
+
+  await threeX.VRM.load(src, {
+vrm_index: index_new,
+
+get_parent: function () {
+  this.parent_data = threeX._THREE.MMD.getModels()[0];
+  return this.parent_data.mesh;
+},
+
+update: function () {}
+  });
+}
+
+loading = false;
+
+this.swap_model(index_new);
+        };
+      })(),
+
+      swap_model: (()=>{
+        let loading = false;
+        return function (index_new) {
+if ((index_new >= threeX.models.length) || (index_new == 0)) return;
+
+if (loading) return;
+loading = true;
+
+System._browser.on_animation_update.add(()=>{
+  if (index_new > 3) {
+    const index_last = threeX.models.findIndex(m=>m.index_default==3);
+
+    const model_now = threeX.models[index_last];
+    const model_new = threeX.models[index_new];
+
+    threeX.utils.dispose(model_now.model.scene);
+    threeX.scene.remove(model_now.model.scene);
+
+    model_new.index_default = 3;
+    model_new.index = index_last;
+    threeX.models[index_last] = model_new;
+    threeX.models.length--;
+
+    index_new = index_last;
+  }
+
+  const model_now = threeX.models[0];
+  const model_new = threeX.models[index_new];
+
+  model_new.index = 0;
+  model_now.index = index_new;
+  threeX.models.sort((a,b)=>a.index-b.index);
+
+//  threeX.utils.dispose(model_now.model.scene);
+  threeX.scene.remove(model_now.model.scene);
+//  threeX.models.length = 1;
+
+  threeX.scene.add(model_new.model.scene);
+
+  const canvas = MMD_SA_options.Dungeon.character.icon;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage((model_new.is_VRM1)?model_new.model.meta.thumbnailImage:model_new.model.meta.texture.source.data, 0,0,64,64);
+  MMD_SA_options.Dungeon.update_status_bar(true);
+
+  MMD_SA._force_motion_shuffle = true;
+
+  loading = false;
+}, 0,0);
+        };
+      })(),
 
     };
   })();
@@ -11191,10 +11299,23 @@ this.setup_rim_light();
       create: function () {
 const gui = new THREE.GUI();
 
-SL_Host.appendChild(gui.domElement);
+const host = SL_Host;
+host.appendChild(gui.domElement);
 gui.domElement.addEventListener('mousedown', (e)=>{
 //  e.preventDefault();
   e.stopPropagation();
+});
+
+gui.domElement.addEventListener('click', (e)=>{ e.stopPropagation(); });
+document.addEventListener('click', (e)=>{
+  let d = document.activeElement;
+  while (d) {
+    d = d.parentElement;
+    if (d == gui.domElement) {
+      document.activeElement.blur();
+//DEBUG_show(Date.now())
+    }
+  }
 });
 
 gui.add({
@@ -12463,7 +12584,8 @@ const _vec3 = new THREE.Vector3();
 let hipsPositionScale;
 
 // Adjust with reference to hips height.
-const motion_hips = asset.getObjectByName( Object.entries(rig_map.VRM).find(kv=>kv[1]=='hips')[0] );
+let motion_hips = asset.getObjectByName( Object.entries(rig_map.VRM).find(kv=>kv[1]=='hips')[0] );
+console.log('motion_hips', motion_hips);
 //let hips_q = motion_hips.quaternion.clone();//motion_hips.getWorldQuaternion(new THREE.Quaternion());
 
 const axis_vector = { y:new THREE.Vector3(), x:new THREE.Vector3() };
@@ -12513,9 +12635,6 @@ hips_q.conjugate().premultiply(rig_rot);
 
 const hips_q_inv = hips_q.clone().conjugate();
 
-// can be negative
-const motionHipsHeight = v1.copy(motion_hips.position).applyQuaternion(q1.copy(motion_hips.quaternion).conjugate().premultiply(rig_rot)).y;
-
 let hips_height;
 // always use native model bone measuremenet if even the motion is loaded in MMD mode (e.g. loading FBX on app start)
 if (THREEX_enabled) {
@@ -12528,6 +12647,9 @@ if (THREEX_enabled) {
 else {
   hips_height = bones_by_name["左足"].pmxBone.origin[1];
 }
+
+// can be negative
+const motionHipsHeight = v1.copy((motion_hips.position.lengthSq()) ? motion_hips.position : motion_hips.parent.position).applyQuaternion(q1.copy(motion_hips.quaternion).conjugate().premultiply(rig_rot)).y;
 
 hipsPositionScale = hips_height / motionHipsHeight;
 console.log('hipsPositionScale', hipsPositionScale);
@@ -12566,6 +12688,11 @@ if (b) {
   while (rig_parent.isBone && (!b_parent || !b_parent.isBone || (!modelX.getBoneNode(rig_map[model_type][rig_parent.name], false) && (VRM_mode || (rig_map[model_type][rig_parent.name] != '上半身3'))))) {
     b_intermediate.push(rig_parent.name);
     rig_parent = rig_parent.parent;
+  }
+// a simplified case (for QuickMagic) to ignore b_intermediate if b_parent_name is センター instead of the expected bone parent (may need to watch out for cases of 上半身=>センター in which there may be valid b_intermediate in between)
+  if (b_intermediate.length && (b_parent_name == 'センター')) {
+    console.log('b_intermediate (skipped)', vrmBoneName, b_parent_name);
+    b_intermediate.length = 0;
   }
   if (b_intermediate.length) console.log('b_intermediate', vrmBoneName, b_intermediate, b_parent_name);
 }
