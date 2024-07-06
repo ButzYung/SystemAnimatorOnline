@@ -24,6 +24,7 @@ import {
 	CompressedTexture,
 	Vector3,
 	Quaternion,
+	REVISION
 } from 'three';
 import { decompress } from './../utils/TextureUtils.js';
 
@@ -502,7 +503,7 @@ class GLTFWriter {
 		this.json = {
 			asset: {
 				version: '2.0',
-				generator: 'THREE.GLTFExporter'
+				generator: 'THREE.GLTFExporter r' + REVISION
 			}
 		};
 
