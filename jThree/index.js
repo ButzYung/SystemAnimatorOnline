@@ -1,4 +1,4 @@
-// (2024-04-02)
+// (2024-05-08)
 
 MMD_SA.fn = {
 /*
@@ -685,7 +685,7 @@ if (p_bone.rotation) {
       let bone_pos;
       let bone_ext;
       if (rot_adjust.external_point.name.indexOf('hand') != -1) {
-        if (System._browser.camera.poseNet.enabled && (!MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only || !System._browser.camera.poseNet.frames.get_blend_default_motion('skin', d+'腕ＩＫ'))) {
+        if ((rot_adjust.mocap_only === false) || (System._browser.camera.poseNet.enabled && (!MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only || !System._browser.camera.poseNet.frames.get_blend_default_motion('skin', d+'腕ＩＫ')))) {
           bone_pos = modelX.get_bone_position_by_MMD_name(d+'手首');
           bone_ext = MMD_SA.TEMP_v3.set(0,0,0);//((d=='左')?1:-1)*0.5, 0, 0);
           if (rot_adjust.external_point.offset)
