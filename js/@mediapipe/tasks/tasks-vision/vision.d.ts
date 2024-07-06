@@ -867,6 +867,17 @@ export declare class FilesetResolver {
      */
     static forGenAiTasks(basePath?: string): Promise<WasmFileset>;
     /**
+     * Creates a fileset for the MediaPipe GenAI Experimental tasks.
+     *
+     * @export
+     * @param basePath An optional base path to specify the directory the Wasm
+     *    files should be loaded from. If not specified, the Wasm files are
+     *    loaded from the host's root directory.
+     * @return A `WasmFileset` that can be used to initialize MediaPipe GenAI
+     *    tasks.
+     */
+    static forGenAiExperimentalTasks(basePath?: string): Promise<WasmFileset>;
+    /**
      * Creates a fileset for the MediaPipe Text tasks.
      *
      * @export
@@ -1909,8 +1920,10 @@ export declare class ImageSegmenterResult {
 
 /**
  * Valid types of image sources which we can run our GraphRunner over.
+ *
+ * @deprecated Use TexImageSource instead.
  */
-export declare type ImageSource = HTMLCanvasElement | HTMLVideoElement | HTMLImageElement | ImageData | ImageBitmap | VideoFrame;
+export declare type ImageSource = TexImageSource;
 
 /**
  * Performs interactive segmentation on images.
