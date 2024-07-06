@@ -2034,7 +2034,7 @@
 								"tooltip": {
 									"_translation_": {
 										"_default_": "Switch avatar model:\nXR Animator allows you to load 3 more avatar models after the app starts, by dropping a VRM model file. Use this option to change hotkeys to either Alt+1-4 or Ctrl+1-4 to switch model. File paths will be saved and next time you can use hotkeys to switch model without dropping the files again. Default is \"Alt+1-4\".",
-										"ja": "アバター モデルの切り替え:\nXR Animator では、アプリの起動後に VRM モデル ファイルをドロップすることで、さらに 3 つのアバター モデルをロードできます。 このオプションを使用して、ホットキーを Alt+1 ～ 4 または Ctrl+1 ～ 4 に変更してモデルを切り替えます。 ファイル パスが保存され、次回からはホットキーを使用してファイルを再度ドロップすることなくモデルを切り替えることができます。 デフォルトは「Alt+1-4」です。",
+										"ja": "アバター モデルの切り替え:\nXR Animator では、アプリの起動後に VRM ファイルをドロップすることで、他のアバター モデルをロードできます。 このオプションを使用して、ホットキーを Alt+1-4 または Ctrl+1-4 に変更してモデルを切り替えます。 次回からは、ホットキーを使用して、ファイルを再度ドロップすることなくモデルを切り替えることができます。 デフォルトは「Alt+1-4」です。",
 										"zh": "切換人物模型:\nXR Animator 可讓您在應用程式啟動後透過拖放 VRM 模型檔案來載入另外 3 個人物模型。 使用此選項將熱鍵變更為 Alt+1-4 或 Ctrl+1-4 以切換模型。 檔案路徑將被保存，下次您可以使用熱鍵切換模型而無需再次拖放檔案。 預設是「Alt+1-4」。"
 									}
 								}
@@ -2216,13 +2216,13 @@
 						},
 						"sponsor": {
 							"_translation_": {
-								"_default_": "XR Animator is sponsored by the following people🙏\n \n<list>\n and other supporters",
-								"ja": "XR Animator は以下の方々にご協賛いただいております🙏\n \n<list>\n その他サポーターの皆様",
-								"zh": "XR Animator 由以下的人士贊助🙏\n \n<list>\n 及其他支持者"
+								"_default_": "XR Animator is sponsored by the following persons🙏\n \n<list>\n \nand other supporters",
+								"ja": "XR Animator は以下の方々にご協賛いただいております🙏\n \n<list>\n \nその他サポーターの皆様",
+								"zh": "XR Animator 由以下的人士贊助🙏\n \n<list>\n \n及其他支持者"
 							},
 							"list": {
 								"_translation_": {
-									"_default_": "NewruGuru, Nymph, Shionay, shion, KuraiNoOni, MShade, Dominic Renner, Kai, ambyshard, Prajzis, 星洛薊野Azami,"
+									"_default_": "NewruGuru, Nymph, Shionay, shion, KuraiNoOni, MShade, Dominic Renner, Kai,"
 								}
 							}
 						}

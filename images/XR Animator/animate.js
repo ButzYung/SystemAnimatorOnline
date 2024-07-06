@@ -1,5 +1,5 @@
 // XR Animator
-// (2024-04-26)
+// (2024-05-08)
 
 var MMD_SA_options = {
 
@@ -3310,7 +3310,7 @@ video:{
 //  hidden:true,
 //  hidden_on_webcam: true,
   scale:0.4, top:-0.5,
-//left:-0.5,top:-1,
+//left:-0.5,//top:-1,
 //scale:0.4*1,top:0,left:-3,
 //scale:0.4*2,top:0,left:-1,
 },
@@ -3318,7 +3318,7 @@ wireframe:{
 //  hidden:true,
 //  align_with_video:true,
   top:0.5,
-//left:+(0.5),top:-1,
+//left:+(0.5),//top:-1,
 //left:1,
 //top:0.8,left:0.4,
 //top:0,left:3,
@@ -3411,6 +3411,8 @@ wireframe:{
   }
 
  ,audio_to_dance_disabled: true
+
+ ,is_XR_Animator: true
 
 // END
 };
@@ -4427,7 +4429,12 @@ MMD_SA_options.Dungeon_options.events_default["_POSE_"] = [
 
         {
           func: ()=>{
-window.addEventListener('SA_MMD_model0_process_bones_after_IK', delay_dialogue, {once:true});
+if (THREE.MMD.motionPlaying) {
+  window.addEventListener('SA_MMD_model0_process_bones_after_IK', delay_dialogue, {once:true});
+}
+else {
+  MMD_SA_options.Dungeon.run_event();
+}
           }
         },
 
@@ -9080,7 +9087,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  get content() { return 'XR Animator (v0.22.0)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
+  get content() { return 'XR Animator (v0.23.0)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -9214,13 +9221,13 @@ if (/\.(bvh|fbx)$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filenam
           }
          ,message: {
   get content() {
-return System._browser.translation.get('XR_Animator.UI.motion_capture.ML_on.export_motion_to_file.choose_format') + '\n1. VMD' + ((MMD_SA.THREEX.enabled) ? '\n2. BVH' : '') + '\nX. ' + System._browser.translation.get('Misc.cancel');
+return System._browser.translation.get('XR_Animator.UI.motion_capture.ML_on.export_motion_to_file.choose_format') + '\n1. VMD' + ((MMD_SA.THREEX.enabled) ? '\n2. glTF\n3. BVH' : '') + '\nX. ' + System._browser.translation.get('Misc.cancel');
   } 
  ,bubble_index: 3
  ,get branch_list() {
 return [
   { key:1, event_index:2 },
-  ...((MMD_SA.THREEX.enabled) ? [{ key:2, event_index:3 }] : []),
+  ...((MMD_SA.THREEX.enabled) ? [{ key:2, event_index:3 },{ key:3, event_index:4 }] : []),
   { key:'X', is_closing_event:true, event_index:99 },
 ];
   }
@@ -9256,6 +9263,28 @@ setTimeout(()=>{
 var filename;
 var vmd = System._browser.camera.motion_recorder.vmd;
 if (vmd) {
+  filename = 'motion.glb'
+}
+else {
+  vmd = System._browser.camera.motion_recorder.vmd || MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename];
+  filename = MMD_SA.MMD.motionManager.filename + '.glb'
+}
+
+setTimeout(()=>{
+  MMD_SA.THREEX.utils.export_GLTF_motion(filename, vmd);
+}, 0);
+          }
+         ,message: {
+  content: 'Please wait while the file is being generated for saving.'
+ ,duration: 3
+          }
+         ,ended: true
+        },
+        {
+          func: function () {
+var filename;
+var vmd = System._browser.camera.motion_recorder.vmd;
+if (vmd) {
   filename = 'motion.bvh'
 }
 else {
@@ -9275,7 +9304,7 @@ setTimeout(()=>{
  ,duration: 3
           }
          ,ended: true
-        }
+        },
 
       ]
 // 23
