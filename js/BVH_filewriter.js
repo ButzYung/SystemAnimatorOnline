@@ -1,5 +1,5 @@
 // BVH FileWriter
-// (2023-10-03)
+// (2024-05-08)
 
 var BVH_FileWriter = (()=>{
   let v1 = new THREE.Vector3();
@@ -148,6 +148,7 @@ for (const name in boneKeys_by_name) {
         bk_keys_full.push(k_new);
       }
     }
+
     bk_keys_full.push(k);
     f++;
   });
@@ -161,6 +162,8 @@ for (const name in boneKeys_by_name) {
 
 
 //console.log(boneKeys_by_name, f_max)
+
+let root_pos_offset;
 
 let data_lines = [];
 for (let f = 0; f < f_max; f++) {
@@ -183,8 +186,18 @@ for (let f = 0; f < f_max; f++) {
       if (name == 'hips') {
         const pos = v1.fromArray(k.pos);
         const bone_move = boneKeys_by_name['全ての親'];
-        if (bone_move)
+        if (bone_move) {
           pos.add(v2.fromArray(bone_move.keys_full[f].pos));
+        }
+
+        if (f == 0) {
+          root_pos_offset = pos.clone();
+//console.log(root_pos_offset)
+        }
+        else {
+          pos.add(root_pos_offset);
+        }
+
         v += pos.toArray().join(' ') + ' ';
 
         const bone_lower_body = boneKeys_by_name['下半身'];
