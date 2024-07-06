@@ -3,7 +3,7 @@
 
 // modified by Butz Yung - https://github.com/ButzYung
 // THREE.Quaternion required
-// (2023-05-05)
+// (2024-05-08)
 
 class LowPassFilter {
   constructor(alpha, type) {
@@ -169,11 +169,11 @@ if (self.THREE) {
     return 1.0 / ( 1.0 + tau / te );
   }
 
-  filter(x, timestamp=null) {
+  filter(x, timestamp=null, time_scale=1) {
     if (this.lasttime && timestamp) {
 // AT: convert timestamp to seconds
 // avoid infinity when time delta is 0
-      this.freq = 1.0 / Math.max( (timestamp - this.lasttime)/1000, 1/60 );
+      this.freq = 1.0 / (Math.max( (timestamp - this.lasttime)/1000, 1/60 ) * time_scale);
     }
     this.lasttime = timestamp;
 
