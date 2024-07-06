@@ -1,4 +1,4 @@
-// (2023-09-29)
+// (2024-05-08)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -2468,8 +2468,8 @@ if (/\.bvh$/i.test(url_raw)) {
   return
 }
 
-// AT: FBX
-if (/\.fbx$/i.test(url_raw)) {
+// AT: FBX/GLTF
+if (/\.(fbx|glb)$/i.test(url_raw)) {
   new Promise((resolve)=>{
     if (THREE.MMD.getModels().length) {
       resolve();
@@ -2478,7 +2478,7 @@ if (/\.fbx$/i.test(url_raw)) {
       window.addEventListener('SA_MMD_model0_onload', ()=>{ resolve(); }, {once:true});
     }
   }).then(()=>{
-    MMD_SA.THREEX.utils.load_FBX_motion( url_raw, THREE.MMD.getModels()[0], VMD ).then(vmd=>{ onload(vmd); });
+    MMD_SA.THREEX.utils.load_THREEX_motion( url_raw, THREE.MMD.getModels()[0], VMD ).then(vmd=>{ onload(vmd); });
   });
   return
 }
@@ -2495,7 +2495,7 @@ VMD.prototype.generateSkinAnimation = function( pmx, RE ) {
 var model_para_obj = self.MMD_SA && MMD_SA_options.model_para_obj_all[pmx._model_index];
 
 const to_T_pose = /\.vmd$/i.test(this.url) && MMD_SA.THREEX.get_model(pmx._model_index).is_T_pose;
-const to_A_pose = !to_T_pose && /\.fbx$/i.test(this.url) && !MMD_SA.THREEX.get_model(pmx._model_index).is_T_pose;
+const to_A_pose = !to_T_pose && /\.(fbx|glb)$/i.test(this.url) && !MMD_SA.THREEX.get_model(pmx._model_index).is_T_pose;
 const need_pose_conversion = to_A_pose || to_T_pose;
 
 var motion_para = self.MMD_SA && MMD_SA_options.motion_para[decodeURIComponent(this.url.replace(/^.+[\/\\]/, "").replace(/\.([a-z0-9]{1,4})$/i, ""))];
@@ -2666,14 +2666,18 @@ var key = keys.find(function (k) { return Math.round(k.time*30)==key_mod.frame }
 if (!key)
   return
 
-var _pos = key_mod.pos
-var _rot = key_mod.rot
+var _pos = key_mod.pos;
+var _rot = key_mod.rot;
+var _rot_add = key_mod.rot_add;
+if (_rot_add)
+  _rot = MMD_SA._v3a.setEulerFromQuaternion(MMD_SA._q1.set(key.rot[0],key.rot[1],key.rot[2],key.rot[3]), 'YXZ').multiply(MMD_SA._v3b.set(-1,1,-1)).multiplyScalar(180/Math.PI);
+//console.log('_rot_add',_rot_add);
 if (_pos)
   key.pos = [_pos.x, _pos.y, -_pos.z].map((n,i) => n+pos_add[xyz[i]]*((i==2)?-1:1))
 if (_rot) {
-  key.rot = MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.fromArray([-_rot.x, _rot.y, -_rot.z].map((n,i) => n*Math.PI/180+rot_add[xyz[i]]*((i==1)?1:-1))), 'YXZ').toArray()
+  key.rot = MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.fromArray([-(_rot.x+(_rot_add?.x||0)), (_rot.y+(_rot_add?.y||0)), -(_rot.z+(_rot_add?.z||0))].map((n,i) => n*Math.PI/180+rot_add[xyz[i]]*((i==1)?1:-1))), 'YXZ').toArray()
 // AT: rot for T-pose
-  need_pose_conversion && ((to_T_pose) ? MMD_SA.THREEX.utils.convert_A_pose_rotation_to_T_pose(v.name, key.rot) : MMD_SA.THREEX.utils.convert_T_pose_rotation_to_A_pose(v.name, key.rot));
+  !_rot_add && need_pose_conversion && ((to_T_pose) ? MMD_SA.THREEX.utils.convert_A_pose_rotation_to_T_pose(v.name, key.rot) : MMD_SA.THREEX.utils.convert_T_pose_rotation_to_A_pose(v.name, key.rot));
 }
 if (key_mod.interp)
   key.interp = new Uint8Array(key_mod.interp)
