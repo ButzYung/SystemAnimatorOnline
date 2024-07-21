@@ -1,4 +1,4 @@
-// (2024-03-25)
+// (2024-05-18)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -3641,6 +3641,13 @@ System._browser.translation.dictionary = {
 				"_default_": "High",
 				"ja": "高",
 				"zh": "高"
+			}
+		},
+		"Very high": {
+			"_translation_": {
+				"_default_": "Very high",
+				"ja": "とても高い",
+				"zh": "非常高"
 			}
 		},
 		"Max": {

@@ -1,5 +1,5 @@
 // XR Animator
-// (2024-05-08)
+// (2024-05-18)
 
 var MMD_SA_options = {
 
@@ -190,6 +190,9 @@ var MMD_SA_options = {
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/sitting_sexy09.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/sitting_sexy10.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/prone_pose01.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/model_pose01.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/model_pose02.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/model_pose03.vmd' }
 
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/walk_n_run/walk_A34_f0-42.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/tsuna/モブ歩き男80f.vmd' }
@@ -3041,89 +3044,99 @@ if (z_para) {
     }
 
 
-   ,"crouch01": {
+   ,"model_pose01": {
   adjustment_per_model: {
-    'DUMMY.pmx' : {
+    _default_ : {
   skin_default: {
+'センター': { pos_add:{x:0, y:-0.5, z:0} },
   }
-    }
+    },
   },
-
-//  look_at_screen: true,
-  look_at_screen_bone_list: [
-    { name:"首", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
-    { name:"頭", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
-    { name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
-    { name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
-  ],
-
-//  center_view: [0,-6,7.5],
-
-  motion_tracking_enabled: true,
-  motion_tracking_upper_body_only: true,
-  motion_tracking: {
-    look_at_screen: true,
-    motion_default_weight: {
-      'head': 1,
-    },
-    hip_adjustment: {
-      feet_fixed_weight: 1,
-      displacement_weight: 0.75,
-//rotation_weight:0,
-    },
-    arm_default_stickiness: {
-      'left' : { parent:{ name:'頭', weight:{ x:{left:1, right:1}, y:{down:1, up:1}, z:{backward:0.5, forward:1} } }, default_position_weight:0.1, default_rotation_weight:0.5, },
-      'right': { parent:{ name:'頭', weight:{ x:{left:1, right:1}, y:{down:1, up:1}, z:{backward:0.5, forward:1} } }, default_position_weight:0.1, default_rotation_weight:0.5, },
-//default_position_weight:0, default_rotation_weight:0
-    },
-  }
+			"look_at_screen_bone_list": [
+				{ "name":"首", "weight_screen":0.5, "weight_screen_y":0.5, "weight_motion":1 },	
+				{ "name":"頭", "weight_screen":0.5, "weight_screen_y":0.5, "weight_motion":1 },
+				{ "name":"上半身",  "weight_screen":0.5, "weight_screen_x":0, "weight_screen_y":0.5, "weight_motion":1 },
+				{ "name":"上半身2", "weight_screen":0.5, "weight_screen_x":0, "weight_screen_y":0.5, "weight_motion":1 }
+			],
+//			"look_at_screen": true,
+			"motion_tracking_enabled": true,
+			"motion_tracking_upper_body_only": true,
+			"motion_tracking": {
+"look_at_screen": true,
+"hip_adjustment": {
+	"left": { "feet_fixed_weight":0.8 }, "right": { "feet_fixed_weight":1 },
+	"rotation_weight":0.5,
+	"displacement_weight":1
+},
+"arm_default_stickiness": {
+	"default_position_weight":0.25
+}
+			}
     }
 
-   ,"crouch02": {
-  adjustment_per_model: {
-    'DUMMY.pmx' : {
-  skin_default: {
-  }
+   ,"model_pose02": {
+			"look_at_screen_bone_list": [
+				{ "name":"首", "weight_screen":0.5, "weight_screen_y":0.5, "weight_motion":1 },	
+				{ "name":"頭", "weight_screen":0.5, "weight_screen_y":0.5, "weight_motion":1 },
+				{ "name":"上半身",  "weight_screen":0.5, "weight_screen_x":0, "weight_screen_y":0.5, "weight_motion":1 },
+				{ "name":"上半身2", "weight_screen":0.5, "weight_screen_x":0, "weight_screen_y":0.5, "weight_motion":1 }
+			],
+//			"look_at_screen": true,
+			"motion_tracking_enabled": true,
+			"motion_tracking_upper_body_only": true,
+"look_at_screen": true,
+"center_view": [0,-3,5],
+			"motion_tracking": {
+"look_at_screen": true,
+"hip_adjustment": {
+	"feet_fixed_weight":0.75,
+	"rotation_weight":0.25,
+	"displacement_weight":0.75,
+	"knee_fixed_weight":1
+},
+"arm_default_stickiness": {
+	"default_position_weight":0.25
+}
+			}
     }
-  },
 
-//  look_at_screen: true,
-  look_at_screen_bone_list: [
-    { name:"首", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
-    { name:"頭", weight_screen:0.5, weight_screen_y:0.5, weight_motion:1 },
-    { name:"上半身",  weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
-    { name:"上半身2", weight_screen:0.5, weight_screen_x:0,weight_screen_y:0.5, weight_motion:1 },
-  ],
-
-//  center_view: [0,-6,7.5],
-
-  motion_tracking_enabled: true,
-  motion_tracking_upper_body_only: true,
-  motion_tracking: {
-    look_at_screen: true,
-    motion_default_weight: {
-      'head': 1,
-    },
-    hip_adjustment: {
-      feet_fixed_weight: 1,
-      displacement_weight: 1,
-    },
-    arm_default_stickiness: {
-      default_position_weight:0.75, default_rotation_weight:0.5,
-    },
-    arm_tracking: {
-      transformation: {
-        position: {
-          x: { scale:1.5 },
-          y: { scale:1.5 },
-          z: {},
-        },
-      },
-      IK_constraint: {
-//        target_offset: [0,3,0],
-      },
-    },
-  }
+   ,"model_pose03": {
+			"look_at_screen_bone_list": [
+				{ "name":"首", "weight_screen":0.5, "weight_screen_y":0.5, "weight_motion":1 },	
+				{ "name":"頭", "weight_screen":0.5, "weight_screen_y":0.5, "weight_motion":1 },
+				{ "name":"上半身",  "weight_screen":0.5, "weight_screen_x":0, "weight_screen_y":0.5, "weight_motion":1 },
+				{ "name":"上半身2", "weight_screen":0.5, "weight_screen_x":0, "weight_screen_y":0.5, "weight_motion":1 }
+			],
+//			"look_at_screen": true,
+			"motion_tracking_enabled": true,
+			"motion_tracking_upper_body_only": true,
+			"motion_tracking": {
+"look_at_screen": true,
+"hip_adjustment": {
+	"left": { "feet_fixed_weight":1 },
+	"right": { "feet_fixed_weight":0.5 },
+	"rotation_weight":0.5,
+	"displacement_weight":1
+},
+"arm_default_stickiness": {
+	"left": { "default_position_weight":0.5 },
+	"right": { "default_position_weight":0 }
+},
+"arm_as_leg": {
+	"linked_side": "right",
+	"transformation": {
+		"position": {
+			"x": { "unit_length":1, "add":0.31, "scale":2 },
+			"y": { "unit_length":1, "add":-5.639580078125, "scale":2 },
+			"z": { "unit_length":1, "add":-1, "min":0.05, "scale":2 },
+			"__camera_weight":0
+		},
+		"rotation": {
+			"y": { "add":-45, "__foot_ratio":0.5 }
+		}
+	}
+}
+			}
     }
 
 
@@ -3318,7 +3331,7 @@ wireframe:{
 //  hidden:true,
 //  align_with_video:true,
   top:0.5,
-//left:+(0.5),//top:-1,
+//left:+(0.4),top:-1,
 //left:1,
 //top:0.8,left:0.4,
 //top:0,left:3,
@@ -4337,6 +4350,12 @@ _motion_list[0] = [
   {name:"sitting_sexy10", info:"Sit 15 (🙋/🦶)"},
 
   {name:"sit_simple", info:"Sit simple (🙋)"},
+
+  {name:"model_pose01", info:"Model pose 01 (🙋)"},
+
+  {name:"model_pose02", info:"Model pose 02 (🙋)"},
+
+  {name:"model_pose03", info:"Model pose 03 (🙋/🦶)"},
 
 ].filter(m=>m!=null);
 
@@ -5855,8 +5874,9 @@ camera.video_track?.applyConstraints(camera.set_constraints()).then(function () 
       [
         {
           func: function () {
-let index = (options.pixel_limit.disabled) ? 4 : ((options.pixel_limit.current) ? [[640,480], [1280,960], [1920,1080]].findIndex(r=>r.every((v,i)=>v==options.pixel_limit.current[i]))+1 : 0);
-if (++index > 4)
+const no_limit = 5;
+let index = (options.pixel_limit.disabled) ? no_limit : ((options.pixel_limit.current) ? [[640,480], [1280,960], [1920,1080], [3840,2160]].findIndex(r=>r.every((v,i)=>v==options.pixel_limit.current[i]))+1 : 0);
+if (++index > no_limit)
   index = 0;
 
 switch (index) {
@@ -5873,6 +5893,10 @@ switch (index) {
     options.pixel_limit.current = [1920,1080];
     break;
   case 4:
+    options.pixel_limit.disabled = false;
+    options.pixel_limit.current = [3840,2160];
+    break;
+  case no_limit:
     options.pixel_limit.disabled = true;
     options.pixel_limit.current = null;
     break;
@@ -9087,7 +9111,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  get content() { return 'XR Animator (v0.23.0)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
+  get content() { return 'XR Animator (v0.23.1)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -10787,7 +10811,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
       }
     },
     { key:6, event_id:{ func:()=>{
-if (++System._browser.camera.facemesh.mouth_tracking_sensitivity > 2)
+if (++System._browser.camera.facemesh.mouth_tracking_sensitivity > 3)
   System._browser.camera.facemesh.mouth_tracking_sensitivity = 0;
       }, goto_branch:facemesh_options_branch },
       onmouseover: function (e) {
@@ -10872,6 +10896,9 @@ switch (System._browser.camera.facemesh.mouth_tracking_sensitivity) {
     mouth_tracking_sensitivity = 'High';
     break;
   case 2:
+    mouth_tracking_sensitivity = 'Very high';
+    break;
+  case 3:
     mouth_tracking_sensitivity = 'Max';
     break;
   default:
@@ -11588,8 +11615,8 @@ window.addEventListener("SA_AR_onARFrame", (function () {
     }
     else {
       MMD_SA.Camera_MOD.adjust_camera('camera_lock', v1.set(0,0,0), v2.set(0,0,0), 0);
-
       MMD_SA.THREEX.camera.control.enabled = true;
+      MMD_SA.reset_camera();
     }
 
     DEBUG_show('Camera lock:'+((camera_locked)?'ON':'OFF'), 3);
@@ -12184,6 +12211,9 @@ else if (mm.para_SA.motion_tracking_enabled) {
       return update_frame
     };
   })();
+
+
+  MMD_SA_options.motion_para['motion_ukulele'] = Object.assign({}, MMD_SA_options.motion_para['sitting_sexy09']);
 
 
 })();

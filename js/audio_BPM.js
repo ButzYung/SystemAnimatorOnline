@@ -1,5 +1,5 @@
 // audio player with BPM support
-// (2023-02-06)
+// (2024-05-18)
 
 var Audio_BPM = {
   audio_obj: null
@@ -582,13 +582,17 @@ if (vo.motion_by_song_name_mode) {
 
   var motion_name = motion_by_song_name.motion_name || motion_by_song_name.motion_path.replace(/^.+[\/\\]/, "").replace(/\.vmd$/i, "")
   motion_index = MMD_SA_options.motion_index_by_name[motion_name]
-  if (motion_index >= 0) {
-    _onload_song_name_mode()
+  if (motion_index == null) {
+    motion_index = MMD_SA_options.motion.length;
   }
   else {
-    motion_index = MMD_SA_options.motion.length;
-    MMD_SA.load_external_motion(motion_by_song_name.motion_path, _onload_song_name_mode)
+// ignore custom motion that hasn't been loaded
+    if (!MMD_SA.motion[motion_index]) {
+      delete MMD_SA_options.motion_index_by_name[motion_name];
+      motion_index = MMD_SA_options.motion.length;
+    }
   }
+  MMD_SA.load_external_motion(motion_by_song_name.motion_path, _onload_song_name_mode)
 
   vo.BPM_mode = false
   return

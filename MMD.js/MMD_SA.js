@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-05-08)
+// (2024-05-18)
 
 var use_full_spectrum = true
 
@@ -1699,6 +1699,7 @@ function _finalize() {
   mm.filename = name_new
 
   mm.para_SA = MMD_SA_options.motion_para[name_new] = MMD_SA_options.motion_para[name_new]||{};
+  mm.para_SA.is_custom_motion = true;
 
   for (const p of [['look_at_screen',false], ['random_range_disabled',true], ['motion_tracking_enabled',true], ['motion_tracking_upper_body_only',true]]) {
     if (mm.para_SA[p[0]] == null)
@@ -1712,7 +1713,7 @@ function _finalize() {
   window.dispatchEvent(new CustomEvent("SA_on_external_motion_loaded", { detail:{ path:src, result:result } }));
 
   if (_onload) {
-    _onload()
+    _onload();
   }
   else if (!result.return_value && (_onload !== false)) {
     MMD_SA_options.motion_shuffle = [index]
@@ -1760,6 +1761,9 @@ function _vmd(vmd_components) {
 }
 
 if (MMD_SA.motion[MMD_SA_options.motion_index_by_name[name_new]]) {
+  if (_onload) {
+    _onload();
+  }
   resolve_func();
 }
 //else if (MMD_SA.vmd_by_filename[name_new]) { _finalize(); }
@@ -12498,7 +12502,7 @@ function MMD_finger(name) {
 }
 
 const spine_list = ['上半身','上半身2','上半身3'];
-const arm_list = ["肩","腕","ひじ","手首"];
+const arm_list = ["腕","ひじ","手首"];
 const leg_list = ['足','ひざ','足首','足先EX'];
 const finger_map = {
   thumb:"親",
@@ -12518,7 +12522,8 @@ function rig(k, v) {
 const bone_map = [];
 asset.traverse((obj)=>{
   if (obj.isBone) {
-    bone_map.push(obj.name);
+    if (bone_map.findIndex(name=>name==obj.name) == -1)
+      bone_map.push(obj.name);
   }
 // fingersbase
   else if (is_XRA_rig && /^(left|right)hand$/i.test(obj.name)) {
@@ -12551,7 +12556,11 @@ bone_map.forEach(name=>{
     if (!/twist|share/i.test(name))
       rig(name_MMD, name);
   }
-  else if (/shoulder|clavicle|arm|hand/i.test(name)) {
+  else if (/shoulder|clavicle/i.test(name)) {
+    const dir = MMD_LR(name);
+    rig(dir+'肩', name);
+  }
+  else if (/arm|hand/i.test(name)) {
     if (!/twist|share/i.test(name)) {
       const dir = MMD_LR(name);
       const arm_name = arm_list.find(a_name=>!_rig_map[dir+a_name]);
@@ -12629,7 +12638,7 @@ if (clip) {
   rig_name = 'mixamo';
 }
 else {
-  clip = asset.animations[0];//asset.animations.length-1];
+  clip = asset.animations.sort((a,b)=>b.duration-a.duration)[0];//[asset.animations.length-1];
   rig_name = clip.name;//clip.tracks[0].name.split('.')[0].substring(0,5);
 }
 console.log(rig_name, asset);
@@ -12648,8 +12657,7 @@ if (!rig_map) {
 }
 
 let skeletons = [];
-// save some headaches
-if (motion_format == 'GLTF') {
+if (1||motion_format == 'GLTF') {
   asset.traverse((obj)=>{
     if (obj.isSkinnedMesh && obj.skeleton && (skeletons.findIndex(s=>s==obj.skeleton) == -1))
       skeletons.push(obj.skeleton);
@@ -12744,11 +12752,13 @@ hips_q.conjugate().premultiply(rig_rot);
 
 const hips_q_inv = hips_q.clone().conjugate();
 
-console.log('rig_rot,[hips_q]', rig_rot, [hips_q, motion_hips.quaternion])
-
+console.log('rig_rot,[hips_q]', rig_rot, [hips_q.clone(), motion_hips.quaternion, motion_hips.parent.getWorldQuaternion(new THREE.Quaternion()), new THREE.Quaternion().copy(hips_q_inv).premultiply(motion_hips.quaternion).multiply(q2.copy(motion_hips.quaternion).conjugate()).multiply(hips_q)])
+let _rig_rot_perpendicular = Math.abs(rig_rot.w) % 1 < 0.0001;
 if (skeletons.length && (bone_clones['hips'].clone.quaternion.w != 1)) {
-  hips_q.copy(rig_rot);
-  hips_q_inv.copy(rig_rot).conjugate();
+  if (_rig_rot_perpendicular) {
+    hips_q.copy(rig_rot);
+    hips_q_inv.copy(hips_q).conjugate();
+  }
 }
 
 let hips_height;
@@ -12846,7 +12856,7 @@ clip.tracks.forEach( ( track ) => {
     const mixamoRigNode = asset.getObjectByName( mixamoRigName );
 
 // probably need a better solution
-    let adjust_center = (skeletons.length && (MMD_node_name == 'センター')) ? (Math.abs(q1.copy(hips_q_inv).premultiply(motion_hips.quaternion).multiply(q2.copy(motion_hips.quaternion).conjugate()).multiply(hips_q).normalize().w) < 0.999) : false;
+    let adjust_center = (skeletons.length && (MMD_node_name == 'センター')) ? (_rig_rot_perpendicular && (Math.abs(q1.copy(hips_q_inv).premultiply(motion_hips.quaternion).multiply(q2.copy(motion_hips.quaternion).conjugate()).multiply(hips_q).normalize().w) < 0.999)) : false;
 
 const b_intermediate = [];
 
@@ -13018,7 +13028,7 @@ if (b_intermediate.length) {
   }
 
 // probably need a better solution
-  if (skeletons.length) _vec3.applyQuaternion(q4.copy(vq).conjugate());
+  if (skeletons.length && _rig_rot_perpendicular) _vec3.applyQuaternion(q4.copy(vq).conjugate());
 
   if (is_XRA_rig_VRM0) { _vec3.x *= -1; _vec3.z *= -1; }
 

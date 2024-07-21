@@ -1,5 +1,5 @@
 // auto fit
-// (2024-03-18)
+// (2024-05-18)
 
 const v1 = new THREE.Vector3();
 const v2 = new THREE.Vector3();
@@ -554,7 +554,7 @@ function process_gesture() {
 
     for (const d of ['左','右']) {
       const gesture = gesture_plugin.gesture[d];
-      gesture.ANY = gesture.OTHERS = true;
+      gesture.OFF = gesture.ANY = gesture.OTHERS = true;
 
       let gestures = [];
       const dir = ((d=='左') ? 'left' : 'right') + '|';
@@ -567,7 +567,7 @@ function process_gesture() {
             if (g_event[name_ext])
               gestures.push(name_ext);
           }
-          break;
+          continue;
         }
       }
       gestures = [...gestures.filter(name=>name.indexOf('OTHERS')==-1), ...gestures.filter(name=>name.indexOf('OTHERS')!=-1)];
@@ -640,6 +640,11 @@ function process_gesture() {
 // use unconverted name
         const gesture_name_raw = name_raw.replace(/^.+\|/, '').replace(/\#\d$/, '');
         const ge = gesture[gesture_name_raw];
+
+        if (/OFF$/.test(gesture_name_raw)) {
+System._browser.camera.DEBUG_show(gesture_name_raw+'/'+System._browser.camera.poseNet.frames.get_blend_default_motion('skin', d+'手首')+'/'+Date.now())
+          if (!System._browser.camera.poseNet.enabled || (System._browser.camera.poseNet.frames.get_blend_default_motion('skin', d+'手首') < 1)) continue;
+        }
 
         const condition = g?.condition;
         let condition_list;
@@ -1168,8 +1173,8 @@ window.addEventListener('SA_MMD_model0_onmotionchange', (e)=>{
 initialized = true;
   }
 
+// for similar gestures, the more specific one should come first
   const ge_list = [
-[ 'index_pinky', [[{thumb_out:false}, ['fox','horns']]] ],
 [ 'thumb', [[null, ['grab','fist']]] ],
 [ 'palm_open' ],
 
@@ -1177,6 +1182,7 @@ initialized = true;
 [ 'finger2_horizontal' ],
 
 [ 'horns_horizontal' ],
+[ 'index_pinky', [[{thumb_out:false}, ['fox','horns']]] ],
 
 [ 'finger1_down' ],
 [ 'finger2_down' ],
@@ -1210,7 +1216,7 @@ function process_gesture(hand,d, g_id, para_list) {
 
     if (ge_last) {
       (para[1] || [g_id]).forEach(name=>{
-//mc._debug_msg.push(name + ((_duration) ? '|'+_duration : ''));
+//mc._debug_msg.push(name);
         this.gesture[d][name] = ge_last;
       });
       return true;

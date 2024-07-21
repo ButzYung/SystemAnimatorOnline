@@ -1237,9 +1237,9 @@
 							},
 							"tooltip": {
 								"_translation_": {
-									"_default_": "Mouth tracking sensitivity:\nThis option determines the sensitivity of mouth tracking when mouth motion is subtle. Lower the setting if avatar's mouth is open even when idle. Default is \"High\".",
-									"ja": "口追跡感度:\nこのオプションは、口の動きが微妙な場合の口トラッキングの感度を決定します。 アイドル状態でもアバターの口が開いている場合は設定を下げます。 デフォルトは「高」です。",
-									"zh": "嘴部追蹤靈敏度:\n此選項決定當嘴部動作微細時的追蹤靈敏度。 如果人物的口部在沒有嘴部動作時仍然張開，可降低設定值。 預設是「高」。"
+									"_default_": "Mouth tracking sensitivity:\nThis option determines the sensitivity of mouth tracking when mouth motion is subtle. \"Very high/Max\" boosts mid-range mouth blendshape values as well. Lower the setting if avatar's mouth is open even when idle. Default is \"High\".",
+									"ja": "口追跡感度:\nこのオプションは、口の動きが微妙な場合の口トラッキングの感度を決定します。 「とても高い/最大」は、中程度の口のブレンドシェイプ値もブーストします。 アイドル状態でもアバターの口が開いている場合は設定を下げます。 デフォルトは「高」です。",
+									"zh": "嘴部追蹤靈敏度:\n此選項決定當嘴部動作微細時的追蹤靈敏度。 「非常高/最大」亦會增強中等程度的嘴部混合變形數值。 如果人物的口部在沒有嘴部動作時仍然張開，可降低設定值。 預設是「高」。"
 								}
 							}
 						},
