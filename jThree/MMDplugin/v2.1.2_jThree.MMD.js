@@ -1,4 +1,4 @@
-// (2024-05-08)
+// (2024-06-02)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -4089,6 +4089,15 @@ rotated = true
 			}
 if (!rotated) { /*DEBUG_show(i,0,1);*/break; }
 		}
+/*
+if (/\u8155\uFF29\uFF2B/.test(target.name)) {
+const d = target.name.charAt(0);
+const rot_lower_arm = mesh.bones_by_name[d+'ひじ+'].quaternion;
+rot_lower_arm.fromArray(MMD_SA.THREEX.utils.convert_A_pose_rotation_to_T_pose(d+'ひじ', rot_lower_arm.toArray()));
+rot_lower_arm.setFromEuler(MMD_SA.TEMP_v3.setEulerFromQuaternion(rot_lower_arm, 'YZX').setX(0), 'YZX');
+rot_lower_arm.fromArray(MMD_SA.THREEX.utils.convert_T_pose_rotation_to_A_pose(d+'ひじ', rot_lower_arm.toArray()));
+}
+*/
 
 // MMD IK operates on A pose. Convert it back to T pose for T-posed model
 const bones_by_name = mesh.bones_by_name;

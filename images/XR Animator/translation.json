@@ -722,6 +722,20 @@
 								}
 							}
 						},
+						"arm_vertical_offset": {
+							"_translation_": {
+								"_default_": "Arm vertical offset",
+								"ja": "腕の垂直位置オフセット",
+								"zh": "手臂垂直位置偏移"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Use this option if your want your avatar's arm position to be higher or lower than the one detected by mocap. Press ➕➖ key to change value. Default is \"0%\".",
+									"ja": "アバターの腕の位置を、モーションキャプチャによって検出された位置よりも高くまたは低くしたい場合は、このオプションを使用します。 ➕➖キーを押して値を変更します。 デフォルトは「0%」です。",
+									"zh": "如果您希望人物的手臂位置高於或低於動作捕捉所偵測到的位置，可使用此選項。 按➕➖鍵更改數值。 預設是「0%」。"
+								}
+							}
+						},
 						"upper_rotation_offset": {
 							"_translation_": {
 								"_default_": "Upper rotation offset",
@@ -2222,7 +2236,7 @@
 							},
 							"list": {
 								"_translation_": {
-									"_default_": "NewruGuru, Nymph, Shionay, shion, KuraiNoOni, MShade, Dominic Renner, Kai, ambyshard, Prajzis, 星洛薊野Azami,"
+									"_default_": "NewruGuru, Nymph, Shionay, shion, KuraiNoOni, MShade, Dominic Renner, Kai, ambyshard, Prajzis, Cylan Cade, LouLi Lou,"
 								}
 							}
 						}

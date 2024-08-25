@@ -1,5 +1,5 @@
 // auto fit
-// (2024-05-18)
+// (2024-06-02)
 
 const v1 = new THREE.Vector3();
 const v2 = new THREE.Vector3();
@@ -428,9 +428,12 @@ function process_gesture() {
     if (p.indexOf('.') != -1) {
       const ps = p.split('.');
       p = ps.pop();
-      ps.forEach(_p=>{
+      const is_valid_obj = ps.every(_p=>{
         obj = obj[_p];
+        return !!obj;
       });
+
+      if (!is_valid_obj) return;
     }
 
     let v_default = obj['_'+p+'_'];
@@ -642,7 +645,7 @@ function process_gesture() {
         const ge = gesture[gesture_name_raw];
 
         if (/OFF$/.test(gesture_name_raw)) {
-System._browser.camera.DEBUG_show(gesture_name_raw+'/'+System._browser.camera.poseNet.frames.get_blend_default_motion('skin', d+'手首')+'/'+Date.now())
+//System._browser.camera.DEBUG_show(gesture_name_raw+'/'+System._browser.camera.poseNet.frames.get_blend_default_motion('skin', d+'手首')+'/'+Date.now())
           if (!System._browser.camera.poseNet.enabled || (System._browser.camera.poseNet.frames.get_blend_default_motion('skin', d+'手首') < 1)) continue;
         }
 

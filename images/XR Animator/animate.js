@@ -1,5 +1,5 @@
 // XR Animator
-// (2024-05-18)
+// (2024-06-02)
 
 var MMD_SA_options = {
 
@@ -189,6 +189,7 @@ var MMD_SA_options = {
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/sitting_sexy08.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/sitting_sexy09.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/sitting_sexy10.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/sitting_sexy11.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/prone_pose01.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/model_pose01.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/model_pose02.vmd' }
@@ -1986,28 +1987,6 @@ cam_pos.copy(MMD_SA._trackball_camera.object.position)
   }
     }
 
-   ,"kabedon_single_hand_v01": {
-//  look_at_screen: true,
-  motion_tracking_enabled: true,
-  motion_tracking_upper_body_only: true,
-  motion_tracking: {
-//    look_at_screen: true,
-    arm_default_stickiness: {
-      default_rotation_weight: 0.5,
-    },
-    arm_as_leg: {
-      enabled: true,
-      linked_side: 'right',
-      transformation: {
-        position: {
-          y: { add:1.5, scale:1.5 },
-          z: { add:0.4, scale:1.5, max:1 },
-        },
-      },
-    },
-  }
-    }
-
    ,"sitting_sexy01": {
 //  look_at_screen: true,
 
@@ -3139,6 +3118,72 @@ if (z_para) {
 			}
     }
 
+	,"sitting_sexy11": {
+  look_at_screen_bone_list: [
+    { name:"首", weight_screen:0.5, weight_motion:1 },
+    { name:"頭", weight_screen:0.5, weight_motion:1 },
+  ],
+//			"look_at_screen": true,
+		"motion_tracking_enabled": true,
+		"motion_tracking_upper_body_only": true,
+		"look_at_screen": true,
+		"center_view": [0,-6.5,8],
+		"motion_tracking": {
+			"look_at_screen": true,
+			"hip_adjustment": {
+				"feet_fixed_weight": 0.75,
+				"rotation_weight": 0.25,
+				"displacement_weight": 0.25,
+				"knee_fixed_weight": 0
+			},
+			"arm_default_stickiness": {
+				"default_position_weight": 0.75,
+				"default_rotation_weight": 0.75
+			},
+			"arm_as_leg": {
+				"transformation": {
+					"position": {
+						"x": {
+							"unit_length": 1,
+							"add": {
+								"left": 4,
+								"right":-4
+							},
+							"min": {
+								"left": 1,
+								"right": -10
+							},
+							"max": {
+								"left": 10,
+								"right": -1
+							},
+							"scale": 2
+						},
+						"y": {
+							"unit_length": 1,
+							"add": 10,
+							"scale": -2,
+							"min": 4
+						},
+						"z": {
+							"min": 0,
+							"max": 0
+						},
+						"rotation": {
+							"x": 90,
+							"y": 0,
+							"z": 0
+						}
+					},
+					"rotation": {
+						"y": {
+							"foot_ratio": 0.5
+						}
+					}
+				}
+			}
+		}
+	}
 
   }
 
@@ -3323,7 +3368,7 @@ video:{
 //  hidden:true,
 //  hidden_on_webcam: true,
   scale:0.4, top:-0.5,
-//left:-0.5,//top:-1,
+//left:+0.5,top:-0.25,
 //scale:0.4*1,top:0,left:-3,
 //scale:0.4*2,top:0,left:-1,
 },
@@ -3331,7 +3376,7 @@ wireframe:{
 //  hidden:true,
 //  align_with_video:true,
   top:0.5,
-//left:+(0.4),top:-1,
+//left:+(0.5),top:-1,
 //left:1,
 //top:0.8,left:0.4,
 //top:0,left:3,
@@ -4356,6 +4401,8 @@ _motion_list[0] = [
   {name:"model_pose02", info:"Model pose 02 (🙋)"},
 
   {name:"model_pose03", info:"Model pose 03 (🙋/🦶)"},
+
+  {name:"sitting_sexy11", info:"Sit 16 (🙋/🦶)"},
 
 ].filter(m=>m!=null);
 
@@ -9111,7 +9158,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  get content() { return 'XR Animator (v0.23.1)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
+  get content() { return 'XR Animator (v0.23.2-b)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -9877,7 +9924,6 @@ MMD_SA_options.Dungeon.utils.tooltip(
 
         ...(()=>{
           let page2_index = 2;
-          let option_plus_minus = 'arm_horizontal_offset';
 
           const hip_adjustment_index = 3;
           const body_collider_index = 4;
@@ -9889,6 +9935,9 @@ MMD_SA_options.Dungeon.utils.tooltip(
           let body_collider_option_active = 'Chest size';
           const body_collider_options = ['Head size', 'Chest size', 'Waist size', 'Hip size'];
 
+          let option_plus_minus = 'arm_horizontal_offset';
+          const body_tracking_options = ['arm_horizontal_offset', 'arm_vertical_offset', 'limb_entry_duration', 'limb_return_duration', 'upper_rotation_offset'];
+
           return [
             {
           message: {
@@ -9897,17 +9946,18 @@ MMD_SA_options.Dungeon.utils.tooltip(
 '1. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.AI_model_quality') + ': ' + System._browser.translation.get('Misc.' + (MMD_SA_options.user_camera.ML_models.pose.model_quality || 'Normal')),
 '2. ┗ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.AI_model_quality.z_depth_scale') + ': ' + ((MMD_SA_options.user_camera.ML_models.pose.model_quality == 'Best') ? System._browser.translation.get('Misc.' + ((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale) ? ((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale<3)?'Max':'Min'):'Medium')) : 'N/A'),
 '3. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.arm_horizontal_offset') + ': ' + (System._browser.camera.poseNet.arm_horizontal_offset_percent||0) + '%' + ((option_plus_minus == 'arm_horizontal_offset') ? '➕➖' : ''),
-'4. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_entry_duration') + ': ' + System._browser.camera.poseNet.limb_entry_duration_percent + '%' + ((option_plus_minus == 'limb_entry_duration') ? '➕➖' : ''),
-'5. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_return_duration') + ': ' + System._browser.camera.poseNet.limb_return_duration_percent + '%' + ((option_plus_minus == 'limb_return_duration') ? '➕➖' : ''),
-'6. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.upper_rotation_offset') + ': ' + ((MMD_SA.MMD.motionManager.para_SA.motion_tracking?.ML_models?.pose || MMD_SA_options.user_camera.ML_models.pose).upper_rotation_offset||0) + '°' + ((option_plus_minus == 'upper_rotation_offset') ? '➕➖' : ''),
-'7. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment') + ' ' + ((page2_index!=hip_adjustment_index) ? '▶️' : '◀️'),
-'8. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.body_collider') + ' ' + ((page2_index!=body_collider_index) ? '▶️' : '◀️'),
+'4. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.arm_vertical_offset') + ': ' + (System._browser.camera.poseNet.arm_vertical_offset_percent||0) + '%' + ((option_plus_minus == 'arm_vertical_offset') ? '➕➖' : ''),
+'5. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_entry_duration') + ': ' + System._browser.camera.poseNet.limb_entry_duration_percent + '%' + ((option_plus_minus == 'limb_entry_duration') ? '➕➖' : ''),
+'6. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_return_duration') + ': ' + System._browser.camera.poseNet.limb_return_duration_percent + '%' + ((option_plus_minus == 'limb_return_duration') ? '➕➖' : ''),
+'7. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.upper_rotation_offset') + ': ' + ((MMD_SA.MMD.motionManager.para_SA.motion_tracking?.ML_models?.pose || MMD_SA_options.user_camera.ML_models.pose).upper_rotation_offset||0) + '°' + ((option_plus_minus == 'upper_rotation_offset') ? '➕➖' : ''),
+'8. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment') + ' ' + ((page2_index!=hip_adjustment_index) ? '▶️' : '◀️'),
+'9. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.body_collider') + ' ' + ((page2_index!=body_collider_index) ? '▶️' : '◀️'),
 
 'X. ' + System._browser.translation.get('Misc.done'),
     ].join('\n');
   },
   bubble_index: 3,
-//  para: { row_max:11 },
+  para: { row_max:11 },
   branch_list: [
   { key:'any', func:(e)=>{
 let step;
@@ -10002,12 +10052,28 @@ System._browser.camera.poseNet.hip_adjustment_smoothing_percent = THREE.Math.cla
       return false;
  }
 }
+else if (/Arrow(Up|Down)/.test(e.code)) {
+  step = 1;
+
+  let index = body_tracking_options.findIndex(v=>v==option_plus_minus);
+  index -= (e.code == 'ArrowUp') ? 1 : -1;
+  if (index < 0) {
+    index = body_tracking_options.length-1;
+  }
+  else if (index > body_tracking_options.length-1) {
+    index = 0;
+  }
+  option_plus_minus = body_tracking_options[index];
+}
 else if ((e.key == '+') || (e.key == '-')) {
   step = 1;
 
   let inc = (e.key == '+') ? 1 : -1;
   if (option_plus_minus == 'arm_horizontal_offset') {
     System._browser.camera.poseNet.arm_horizontal_offset_percent = THREE.Math.clamp((System._browser.camera.poseNet.arm_horizontal_offset_percent||0) + inc*2, -200,200);
+  }
+  else if (option_plus_minus == 'arm_vertical_offset') {
+    System._browser.camera.poseNet.arm_vertical_offset_percent = THREE.Math.clamp((System._browser.camera.poseNet.arm_vertical_offset_percent||0) + inc*2, -100,100);
   }
   else if (option_plus_minus == 'limb_entry_duration') {
     System._browser.camera.poseNet.limb_entry_duration_percent = THREE.Math.clamp((System._browser.camera.poseNet.limb_entry_duration_percent||0) + inc*5, 25,400);
@@ -10065,6 +10131,19 @@ MMD_SA_options.Dungeon.utils.tooltip(
   },
   { key:4, event_id: {
       func: function () {
+option_plus_minus = 'arm_vertical_offset';
+      },
+      goto_event: { branch_index:mocap_options_branch, step:1 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.arm_vertical_offset') + ((option_plus_minus == 'arm_vertical_offset') ? ' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.press_to_change_value') + ')' : '') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.arm_vertical_offset.tooltip')
+);
+    }
+  },
+  { key:5, event_id: {
+      func: function () {
 option_plus_minus = 'limb_entry_duration';
       },
       goto_event: { branch_index:mocap_options_branch, step:1 },
@@ -10076,7 +10155,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
     }
   },
-  { key:5, event_id: {
+  { key:6, event_id: {
       func: function () {
 option_plus_minus = 'limb_return_duration';
       },
@@ -10089,7 +10168,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
     }
   },
-  { key:6, event_id: {
+  { key:7, event_id: {
       func: function () {
 option_plus_minus = 'upper_rotation_offset';
       },
@@ -10102,14 +10181,14 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
     }
   },
-  { key:7, event_id: {
+  { key:8, event_id: {
       func: function () {
 page2_index = (page2_index != hip_adjustment_index) ? hip_adjustment_index : 2;
       },
       goto_event: { branch_index:mocap_options_branch, step:1 },
     }
   },
-  { key:8, event_id: {
+  { key:9, event_id: {
       func: function () {
 page2_index = (page2_index != body_collider_index) ? body_collider_index : 2;
       },
@@ -11798,6 +11877,7 @@ config.user_camera = {
       hip_adjustment_smoothing_percent: System._browser.camera.poseNet.hip_adjustment_smoothing_percent,
       upper_rotation_offset: MMD_SA_options.user_camera.ML_models.pose.upper_rotation_offset,
       arm_horizontal_offset_percent: System._browser.camera.poseNet.arm_horizontal_offset_percent,
+      arm_vertical_offset_percent: System._browser.camera.poseNet.arm_vertical_offset_percent,
       limb_entry_duration_percent: System._browser.camera.poseNet.limb_entry_duration_percent,
       limb_return_duration_percent: System._browser.camera.poseNet.limb_return_duration_percent,
 
@@ -11990,6 +12070,7 @@ try {
         System._browser.camera.poseNet.body_bend_reduction_power = config[p].ML_models.pose.body_bend_reduction_power;
         System._browser.camera.poseNet.hip_camera = config[p].ML_models.pose.hip_camera;
         System._browser.camera.poseNet.arm_horizontal_offset_percent = config[p].ML_models.pose.arm_horizontal_offset_percent;
+        System._browser.camera.poseNet.arm_vertical_offset_percent = config[p].ML_models.pose.arm_vertical_offset_percent;
         System._browser.camera.poseNet.limb_entry_duration_percent = config[p].ML_models.pose.limb_entry_duration_percent;
         System._browser.camera.poseNet.limb_return_duration_percent = config[p].ML_models.pose.limb_return_duration_percent;
         System._browser.camera.poseNet.hip_adjustment_weight_percent = config[p].ML_models.pose.hip_adjustment_weight_percent;

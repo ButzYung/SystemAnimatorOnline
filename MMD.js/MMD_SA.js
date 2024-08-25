@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-05-18)
+// (2024-06-02)
 
 var use_full_spectrum = true
 
@@ -8942,6 +8942,7 @@ let i = 0;
 this.model.springBoneManager.joints.forEach( e => {
 //  e.settings.dragForce = 1
   e.settings.stiffness = settings_default[i].stiffness * ((restrict_physics) ? 10 : 1) * vrm_scale;
+  e.settings.gravityPower = settings_default[i].gravityPower;
   i++;
 });
 
@@ -12485,7 +12486,7 @@ function MMD_LR(name) {
 const nj_list = ["０","１","２","３"];
 function MMD_finger(name) {
   let j_index;
-  var f = finger_map[RegExp.$1.toLowerCase()];
+  var f = finger_map[RegExp.$1.toLowerCase().replace(/middle/, 'mid')];
   if (f) {
     j_index = parseInt(RegExp.$2);
   }
@@ -12551,7 +12552,7 @@ bone_map.forEach(name=>{
   else if (/head/i.test(name)) {
     rig('頭', name);
   }
-  else if (/(thumb|index|mid|ring|pinky|little|finger)\D*(\d+)$/i.test(name)) {
+  else if (/(thumb|index|mid\D*|ring|pinky|little|finger)(\d+)$/i.test(name)) {
     const name_MMD = MMD_finger(name);
     if (!/twist|share/i.test(name))
       rig(name_MMD, name);
@@ -12752,7 +12753,7 @@ hips_q.conjugate().premultiply(rig_rot);
 
 const hips_q_inv = hips_q.clone().conjugate();
 
-console.log('rig_rot,[hips_q]', rig_rot, [hips_q.clone(), motion_hips.quaternion, motion_hips.parent.getWorldQuaternion(new THREE.Quaternion()), new THREE.Quaternion().copy(hips_q_inv).premultiply(motion_hips.quaternion).multiply(q2.copy(motion_hips.quaternion).conjugate()).multiply(hips_q)])
+console.log('rig_rot,[hips_q]', rig_rot, [hips_q.clone()]);//, motion_hips.quaternion, motion_hips.parent.getWorldQuaternion(new THREE.Quaternion()), new THREE.Quaternion().copy(hips_q_inv).premultiply(motion_hips.quaternion).multiply(q2.copy(motion_hips.quaternion).conjugate()).multiply(hips_q)]);
 let _rig_rot_perpendicular = Math.abs(rig_rot.w) % 1 < 0.0001;
 if (skeletons.length && (bone_clones['hips'].clone.quaternion.w != 1)) {
   if (_rig_rot_perpendicular) {
