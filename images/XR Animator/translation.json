@@ -778,6 +778,20 @@
 								}
 							}
 						},
+						"hip_depth_scale": {
+							"_translation_": {
+								"_default_": "Hip depth scale",
+								"ja": "ヒップ深さスケール",
+								"zh": "腰部深度比例"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "This setting determines the scaling of z-depth position of hip during full body mocap or when \"Hip camera\" is on. Smaller value makes your avatar appear bigger, while bigger value makes it smaller. Press ➕➖ key to change value. Default is \"100%\".",
+									"ja": "この設定は、全身モーションキャプチャ中または「ヒップカメラ」がオンのときのヒップの Z 深度位置のスケーリングを決定します。値が小さいほどアバターは大きく表示され、値が大きいほどアバターは小さく表示されます。 ➕➖キーを押して値を変更します。 デフォルトは「100%」です。",
+									"zh": "此設定決定全身動作捕捉期間或「腰間攝影機」開啟時腰部 z 深度位置的縮放比例。 較小的值使您的人物看起來更大， 而較大的值則使其看起來更小。 按➕➖鍵更改數值。 預設是「100%」。"
+								}
+							}
+						},
 						"press_to_change_value": {
 							"_translation_": {
 								"_default_": "press ➕➖ key to change value",
@@ -2230,13 +2244,13 @@
 						},
 						"sponsor": {
 							"_translation_": {
-								"_default_": "XR Animator is sponsored by the following persons🙏\n \n<list>\n \nand other supporters",
+								"_default_": "XR Animator is sponsored by the following people🙏\n \n<list>\n \nand other supporters",
 								"ja": "XR Animator は以下の方々にご協賛いただいております🙏\n \n<list>\n \nその他サポーターの皆様",
 								"zh": "XR Animator 由以下的人士贊助🙏\n \n<list>\n \n及其他支持者"
 							},
 							"list": {
 								"_translation_": {
-									"_default_": "NewruGuru, Nymph, Shionay, shion, KuraiNoOni, MShade, Dominic Renner, Kai, ambyshard, Prajzis, Cylan Cade, LouLi Lou,"
+									"_default_": "NewruGuru, Nymph, Shionay, shion, KuraiNoOni, MShade, Kai, ambyshard, Prajzis, LouLi Lou,"
 								}
 							}
 						}

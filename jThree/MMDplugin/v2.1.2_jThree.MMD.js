@@ -1,4 +1,4 @@
-// (2024-06-02)
+// (2024-06-10)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1

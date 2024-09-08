@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-06-02)
+// (2024-06-10)
 
 var use_full_spectrum = true
 
@@ -1029,17 +1029,70 @@ c.width  = MMD_SA_options.width
 c.height = MMD_SA_options.height
 */
 
+Object.defineProperty(MMD_SA, "camera_auto_adjust_scale_enabled", {
+  get: function () {
+return MMD_SA_options.camera_auto_adjust && !THREE.MMD.getCameraMotion().length && (this.MMD.motionManager.para_SA.camera_auto_adjust !== false);
+  }
+});
+
+Object.defineProperty(MMD_SA, "camera_auto_adjust_fov_enabled", {
+  get: function () {
+return MMD_SA_options.camera_auto_adjust && !THREE.MMD.getCameraMotion().length && ((this.MMD.motionManager.para_SA.camera_auto_adjust !== false) || this.MMD.motionManager.para_SA.camera_auto_adjust_fov);
+  }
+});
+
+Object.defineProperty(MMD_SA, "camera_auto_adjust_scale",
+{
+  get: function () {
+if (!this.camera_auto_adjust_scale_enabled) return 1;
+
+const modelX = MMD_SA.THREEX.get_model(0);
+let scale1 = modelX.para.left_leg_length / 10.569580078125;
+let scale2 = modelX.para.spine_length / 4.97462;
+if (((scale1 > 1) && (scale2 < 1)) || ((scale1 < 1) && (scale2 > 1))) return 1;
+
+let scale = (scale1+scale2)/2;//(scale1 > 1) ? Math.min(scale1, scale2) : Math.max(scale1, scale2);//
+
+const mod = 0.9;
+const mod2 = 1 * ((scale < 1) ? Math.pow(scale, 0.25) : 1);
+
+scale = (scale > 1) ? Math.max(scale*mod, 1) : Math.min(scale/mod, 1);
+scale = 1 + (scale-1) * mod2;
+
+return scale;
+  }
+});
+
 Object.defineProperty(MMD_SA, "center_view_raw",
 {
   get: function () {
 if (MMD_SA_options.MMD_disabled)
-  return [0,0,0]
-var para_SA = this.MMD.motionManager.para_SA
-var cv = (para_SA.center_view || MMD_SA_options.center_view || [0,0,0]).slice()
+  return [0,0,0];
+
+var para_SA = this.MMD.motionManager.para_SA;
+var cv = (para_SA.center_view || MMD_SA_options.center_view || [0,0,0]).slice();
 
 if (MMD_SA_options.Dungeon && !MMD_SA.music_mode) {
   if (!para_SA.center_view_enforced)
-    cv[2] = -cv[2]
+    cv[2] = -cv[2];
+}
+
+let scale = this.camera_auto_adjust_scale;
+if (scale != 1) {
+  const c_base = MMD_SA._v3a_.fromArray(MMD_SA_options.camera_position_base).add(MMD_SA.TEMP_v3.fromArray(cv));
+  c_base.multiplyScalar(scale);
+  cv = c_base.sub(MMD_SA.TEMP_v3.fromArray(MMD_SA_options.camera_position_base)).toArray();
+  cv[2] *= MMD_SA_options.Dungeon_options.camera_position_z_sign;
+}
+
+if (this.camera_auto_adjust_fov_enabled) {
+// https://hofk.de/main/discourse.threejs/2022/CalculateCameraDistance/CalculateCameraDistance.html
+// fov 50: 0.93261531630999718566001238959912
+  let f_fov = 2 * Math.tan(Math.PI/180 * MMD_SA.THREEX.camera.obj.fov / 2);
+  let fov_mod = 0.93261531630999718566001238959912/f_fov;
+  fov_mod = 1 + (fov_mod-1) * 0.5;
+  cz = MMD_SA_options.camera_position_base[2] * MMD_SA_options.Dungeon_options.camera_position_z_sign;
+  cv[2] = ((cv[2] + cz) * fov_mod - cz);
 }
 
 return cv
@@ -1066,19 +1119,27 @@ Object.defineProperty(MMD_SA, "center_view_lookAt",
 {
   get: function () {
 if (MMD_SA_options.MMD_disabled)
-  return [0,0,0]
-var para_SA = this.MMD.motionManager.para_SA
-var center_view_lookAt = para_SA.center_view_lookAt || MMD_SA_options.center_view_lookAt
+  return [0,0,0];
 
+var para_SA = this.MMD.motionManager.para_SA;
+var center_view_lookAt = para_SA.center_view_lookAt || MMD_SA_options.center_view_lookAt;
+
+let scale = this.camera_auto_adjust_scale;
 if (!center_view_lookAt) {
   center_view_lookAt = this.center_view_raw.slice(0,2);
   center_view_lookAt.push(0)
 }
-if (MMD_SA.center_view_lookAt_offset) {
-  center_view_lookAt = center_view_lookAt.slice()
-  for (var i = 0; i < 3; i++)
-    center_view_lookAt[i] += MMD_SA.center_view_lookAt_offset[i]
+else {
+  if (scale != 1)
+    center_view_lookAt = MMD_SA._v3a_.fromArray(center_view_lookAt).multiplyScalar(scale).toArray();
 }
+
+if (MMD_SA.center_view_lookAt_offset) {
+  center_view_lookAt = center_view_lookAt.slice();
+  for (var i = 0; i < 3; i++)
+    center_view_lookAt[i] += MMD_SA.center_view_lookAt_offset[i] * scale;
+}
+
 
 if (MMD_SA_options.Dungeon && !MMD_SA.music_mode) {
   center_view_lookAt = MMD_SA._v3a_.fromArray(center_view_lookAt).applyEuler(MMD_SA_options.Dungeon.character.rot).toArray();
@@ -1341,7 +1402,8 @@ if (MMD_SA.use_jThree && this._kissing && motion_name && (motion_name != MMD_SA.
   this.onFinish()
 motion_name = MMD_SA.MMD.motionManager.filename
 
-if (MMD_SA.use_jThree && !busy && (MMD_SA.camera_position.y > MMD_SA._head_pos.y-2) && (Math.abs(MMD_SA.camera_position.x - MMD_SA._head_pos.x) < 10) && (MMD_SA._head_pos.distanceTo(MMD_SA.camera_position) < 10)) {
+const scale = MMD_SA.camera_auto_adjust_scale;
+if (MMD_SA.use_jThree && !busy && (MMD_SA.camera_position.y > MMD_SA._head_pos.y - 2*scale) && (Math.abs(MMD_SA.camera_position.x - MMD_SA._head_pos.x) < 10*scale) && (MMD_SA._head_pos.distanceTo(MMD_SA.camera_position) < 10*scale)) {
   is_kissing = true
 }
 else {
@@ -8860,6 +8922,8 @@ for (const name in humanBones) {
 
 para.shoulder_width = (para.pos0['leftUpperArm'][0] - para.pos0['rightUpperArm'][0]) * vrm_scale;;
 para.left_arm_length = v1.fromArray(para.pos0['leftUpperArm']).distanceTo(v2.fromArray(para.pos0['leftHand'])) * vrm_scale;
+para.left_palm_length = v1.fromArray(para.pos0['leftHand']).distanceTo(v2.fromArray(para.pos0['leftMiddleProximal'])) * vrm_scale;
+//para.eye_width = v1.fromArray(para.pos0['leftEye']).distanceTo(v2.fromArray(para.pos0['rightEye'])) * vrm_scale;
 para.left_leg_length = ((para.pos0['leftUpperLeg'][1] - para.pos0['leftLowerLeg'][1]) + (para.pos0['leftLowerLeg'][1] - para.pos0['leftFoot'][1])) * vrm_scale;
 para.spine_length = (para.pos0['neck'][1] - para.pos0['leftUpperLeg'][1]) * vrm_scale;
 
@@ -9234,8 +9298,8 @@ MMD_bone_list.forEach(MMD_name=>{
   }
 });
 
-var MMD_model_para = MMD_SA_options.model_para_obj_all[this.index];
-var model_scale = 1/vrm_scale * this.para.left_leg_length / MMD_model_para.left_leg_length;
+const MMD_model_para = MMD_SA_options.model_para_obj_all[this.index];
+const leg_scale = this.para.left_leg_length / MMD_model_para.left_leg_length;
 
 const center_bone_pos = v1.set(0,0,0);
 const hips_rot = q1.set(0,0,0,1);
@@ -9255,9 +9319,8 @@ if (!animation_enabled) {
 if (!animation_enabled) {
   const root_bone = bones_by_name['全ての親'];
   const root_bone_pos = get_MMD_bone_pos(mesh_MMD, root_bone, v2);
-  center_bone_pos.add(root_bone_pos).applyQuaternion(root_bone.quaternion);
+  center_bone_pos.multiplyScalar(leg_scale).add(root_bone_pos).multiplyScalar(1/vrm_scale).applyQuaternion(root_bone.quaternion);
 
-  center_bone_pos.multiplyScalar(model_scale);
   this.getBoneNode('hips').position.fromArray(this.para.pos0['hips']).add(this.process_position(center_bone_pos));
 
   hips_rot.premultiply(root_bone.quaternion);
@@ -11405,11 +11468,26 @@ const gui_light_and_camera = gui.addFolder( 'Light and camera' );
 window.addEventListener('MMDStarted', (()=>{
   function update_tray() {
     function f() {
-      System._browser.update_tray();
+      if (System._browser.camera.initialized) {
+        System._browser.update_tray();
+      }
+      else {
+        MMD_SA.reset_camera();
+      }
     }
 
     System._browser.on_animation_update.remove(f, 0);
     System._browser.on_animation_update.add(f, 0,0);
+  }
+
+  function reset_camera() {
+    function f() {
+      System._browser.camera._update_camera_reset();
+    }
+
+    MMD_SA.reset_camera();
+    System._browser.on_animation_update.remove(f, 1);
+    System._browser.on_animation_update.add(f, 1,1);
   }
 
   return ()=>{
@@ -11469,6 +11547,7 @@ gui_directional_light.close();
 const params_camera = Object.assign({
   reset: function () {
     gui_camera.controllers.forEach(c=>{c.reset()});
+    reset_camera();
   },
 }, {
   'FOV (main camera)': 50,
@@ -11482,6 +11561,8 @@ gui_camera.add( params_camera, 'FOV (main camera)', 30, 120, 1 ).onChange( funct
   System.Gadget.Settings.writeString('LABEL_CameraFOV', (value==50)?'':value);
   MMD_SA._trackball_camera.object.fov = value;
   MMD_SA._trackball_camera.object.updateProjectionMatrix();
+
+  reset_camera();
 });
 gui_camera.add( params_camera, 'FOV (hand camera)', 30, 120, 1 ).onChange( function ( value ) {
   if (hand_camera)

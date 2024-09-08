@@ -1,5 +1,5 @@
 // auto fit
-// (2024-06-02)
+// (2024-06-10)
 
 const v1 = new THREE.Vector3();
 const v2 = new THREE.Vector3();

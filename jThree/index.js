@@ -1,4 +1,4 @@
-// (2024-05-08)
+// (2024-06-10)
 
 MMD_SA.fn = {
 /*
@@ -610,7 +610,7 @@ else {
 
 obj.position.copy(pos);
 if (p_bone.position) {
-  const obj_pos_offset = MMD_SA.TEMP_v3.set(p_bone.position.x, p_bone.position.y, -p_bone.position.z);
+  const obj_pos_offset = MMD_SA.TEMP_v3.fromArray(System._browser.camera.poseNet.auto_scale_property([p_bone.position.x, p_bone.position.y, -p_bone.position.z], p_bone.name, !!MMD_SA_options.user_camera.ML_models.enabled));
   if (p_bone.position.scale_base)
     obj_pos_offset.multiply(obj.scale).multiplyScalar(1/p_bone.position.scale_base);
   if (is_root && System._browser.camera.poseNet.enabled && System._browser.camera.poseNet.frames.skin['センター']?.[0]._hip_adjustment_offset) {
@@ -689,7 +689,7 @@ if (p_bone.rotation) {
           bone_pos = modelX.get_bone_position_by_MMD_name(d+'手首');
           bone_ext = MMD_SA.TEMP_v3.set(0,0,0);//((d=='左')?1:-1)*0.5, 0, 0);
           if (rot_adjust.external_point.offset)
-            bone_ext.add(rot_adjust.external_point.offset);
+            bone_ext.add(MMD_SA.THREEX.v4.fromArray(System._browser.camera.poseNet.auto_scale_property([rot_adjust.external_point.offset.x, rot_adjust.external_point.offset.y, rot_adjust.external_point.offset.z], '手首', true)));
           bone_rot = modelX.get_bone_rotation_by_MMD_name(d+'手首');
           bone_ext.applyQuaternion(MMD_SA_options.model_para_obj.rot_arm_adjust[d+'腕'].axis_rot).applyQuaternion(bone_rot);
         }
@@ -698,7 +698,7 @@ if (p_bone.rotation) {
         bone_pos = modelX.get_bone_position_by_MMD_name(d+'腕');
         bone_ext = MMD_SA.TEMP_v3.set(0,0,0);
         if (rot_adjust.external_point.offset)
-          bone_ext.add(rot_adjust.external_point.offset);
+          bone_ext.add(MMD_SA.THREEX.v4.fromArray(System._browser.camera.poseNet.auto_scale_property([rot_adjust.external_point.offset.x, rot_adjust.external_point.offset.y, rot_adjust.external_point.offset.z], '腕', true)));
         bone_rot = modelX.get_bone_rotation_by_MMD_name((!rot_adjust.external_point.offset?.ignore_local_rotation) ? d+'腕' : '上半身2');
         bone_ext.applyQuaternion(bone_rot);
       }
