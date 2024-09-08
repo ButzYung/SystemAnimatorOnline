@@ -95,9 +95,9 @@ If you like XR Animator, please consider making a donation🙇 Or even better, j
 - ☕[Buy Me a Coffee](https://ko-fi.com/butzyung)
 - 🙏[Donate via PayPal](https://www.paypal.me/AnimeThemeGadgets)
 
-XR Animator is currently sponsored by the following persons❤️
+XR Animator is currently sponsored by the following people❤️
 
-- **NewruGuru, Nymph, Shionay, shion, KuraiNoOni, MShade, Dominic Renner, Kai, ambyshard, Prajzis, Cylan Cade, LouLi Lou**
+- **NewruGuru, Nymph, Shionay, shion, KuraiNoOni, MShade, Kai, ambyshard, Prajzis, LouLi Lou**
 - Other supporters
 
 # About System Animator
