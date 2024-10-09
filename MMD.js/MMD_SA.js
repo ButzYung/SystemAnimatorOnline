@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-06-10)
+// (2024-06-19)
 
 var use_full_spectrum = true
 
@@ -1031,7 +1031,7 @@ c.height = MMD_SA_options.height
 
 Object.defineProperty(MMD_SA, "camera_auto_adjust_scale_enabled", {
   get: function () {
-return MMD_SA_options.camera_auto_adjust && !THREE.MMD.getCameraMotion().length && (this.MMD.motionManager.para_SA.camera_auto_adjust !== false);
+return MMD_SA_options.camera_auto_adjust && !THREE.MMD.getCameraMotion().length && (this.MMD.motionManager.para_SA.camera_auto_adjust !== false) && !this.MMD.motionManager.para_SA.use_mother_bone;
   }
 });
 
@@ -1083,6 +1083,15 @@ if (scale != 1) {
   c_base.multiplyScalar(scale);
   cv = c_base.sub(MMD_SA.TEMP_v3.fromArray(MMD_SA_options.camera_position_base)).toArray();
   cv[2] *= MMD_SA_options.Dungeon_options.camera_position_z_sign;
+}
+else if (MMD_SA_options.camera_auto_adjust && ((cv[1] == 0) || this.MMD.motionManager.para_SA.use_mother_bone)) {
+
+  const modelX = MMD_SA.THREEX.get_model(0);
+  let scale_offset = (modelX.para.hip_center.y + modelX.para.spine_length/2) - (11.364640235900879 + 4.97462/2);
+  scale_offset *= 0.75;
+  if (scale_offset < 0) scale_offset *= 0.85;
+  cv[1] += scale_offset*0.5;
+
 }
 
 if (this.camera_auto_adjust_fov_enabled) {
@@ -8446,9 +8455,30 @@ return MMD_SA_options.model_para_obj[prop];
       return new Proxy({}, handler);
     })(),
 
-    get_bone_origin_by_MMD_name: function (name) {
-return (threeX.enabled) ? this.para.pos0[VRM.bone_map_MMD_to_VRM[name]]?.slice().map(v=>v*this.model_scale) : this.get_bone_by_MMD_name(name)?.pmxBone.origin;
-    },
+    get_bone_origin_by_MMD_name: (()=>{
+      let v1, v2;
+      window.addEventListener('jThree_ready', ()=>{
+v1 = new THREE.Vector3();
+v2 = new THREE.Vector3();
+      });
+
+      return function (name, root_origin) {
+if (threeX.enabled && !root_origin)
+  return this.para.pos0[VRM.bone_map_MMD_to_VRM[name]]?.slice().map(v=>v*this.model_scale);
+
+let b = (!threeX.enabled) ? this.get_bone_by_MMD_name(name) : _THREE.MMD.getModels()[0].mesh.bones_by_name[name];
+if (!b) return null;
+if (!root_origin) return b.pmxBone.origin;
+
+v1.fromArray(b.pmxBone.origin);
+while (b.parent?.pmxBone) {
+  b = b.parent;
+  v1.sub(v2.fromArray(b.pmxBone.origin));
+}
+
+return v1.toArray();
+      };
+    })(),
 
     get_bone_position_by_MMD_name: function (name, local_only) {
 var bone = this.get_bone_by_MMD_name(name);
@@ -8927,7 +8957,7 @@ para.left_palm_length = v1.fromArray(para.pos0['leftHand']).distanceTo(v2.fromAr
 para.left_leg_length = ((para.pos0['leftUpperLeg'][1] - para.pos0['leftLowerLeg'][1]) + (para.pos0['leftLowerLeg'][1] - para.pos0['leftFoot'][1])) * vrm_scale;
 para.spine_length = (para.pos0['neck'][1] - para.pos0['leftUpperLeg'][1]) * vrm_scale;
 
-//para.left_heel_height = para.pos0['leftFoot'][1] * vrm_scale;
+para.left_heel_height = para.pos0['leftFoot'][1] * vrm_scale;
 para.hip_center = new THREE.Vector3().fromArray(para.pos0['leftUpperLeg']).setX(0).multiplyScalar(vrm_scale);
 para.hip_center_offset = new THREE.Vector3().fromArray(para.pos0['hips']).multiplyScalar(vrm_scale).sub(para.hip_center);
 

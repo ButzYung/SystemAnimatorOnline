@@ -1,5 +1,5 @@
 // XR Animator
-// (2024-06-10)
+// (2024-06-19)
 
 var MMD_SA_options = {
 
@@ -1514,13 +1514,7 @@ if (this.center_view_enforced) {
 //DEBUG_show(Date.now()+'\n'+cz)
 }
 else {
-//  center_view = [0,0,0];
-
-  let scale_offset = (modelX.para.hip_center.y + modelX.para.spine_length/2) - (11.364640235900879 + 4.97462/2);
-  scale_offset *= 0.75;
-  if (scale_offset < 0) scale_offset *= 0.85;
-  center_view = [0, scale_offset*0.5, 0];
-
+  center_view = [0,0,0];
 }
 
 return center_view;
@@ -3390,7 +3384,7 @@ video:{
 //  hidden:true,
 //  hidden_on_webcam: true,
   scale:0.4, top:-0.5,
-//left:+0.4,top:-1,
+//left:-0.25,top:-1,
 //scale:0.4*1,top:0,left:-3,
 //scale:0.4*2,top:0,left:-1,
 },
@@ -3398,7 +3392,7 @@ wireframe:{
 //  hidden:true,
 //  align_with_video:true,
   top:0.5,
-//left:+(0.5),top:-1,
+//left:+(0.25),top:-1,
 //left:1,
 //top:0.8,left:0.4,
 //top:0,left:3,
@@ -9182,7 +9176,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  get content() { return 'XR Animator (v0.24.0)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
+  get content() { return 'XR Animator (v0.24.1)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {

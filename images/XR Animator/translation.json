@@ -2244,13 +2244,13 @@
 						},
 						"sponsor": {
 							"_translation_": {
-								"_default_": "XR Animator is sponsored by the following people🙏\n \n<list>\n \nand other supporters",
+								"_default_": "XR Animator is sponsored by the following persons🙏\n \n<list>\n \nand other supporters",
 								"ja": "XR Animator は以下の方々にご協賛いただいております🙏\n \n<list>\n \nその他サポーターの皆様",
 								"zh": "XR Animator 由以下的人士贊助🙏\n \n<list>\n \n及其他支持者"
 							},
 							"list": {
 								"_translation_": {
-									"_default_": "NewruGuru, Nymph, Shionay, shion, KuraiNoOni, MShade, Kai, ambyshard, Prajzis, LouLi Lou,"
+									"_default_": "NewruGuru, Nymph, Shionay, shion, KuraiNoOni, MShade, Dominic Renner, Kai, ambyshard, Prajzis, 星洛薊野Azami,"
 								}
 							}
 						}

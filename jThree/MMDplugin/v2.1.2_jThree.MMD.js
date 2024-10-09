@@ -1,4 +1,4 @@
-// (2024-06-10)
+// (2024-06-19)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -2735,6 +2735,11 @@ return (this._IK_name_list.indexOf(IK_name) != -1);
     };
     motion_para.IK_disabled._IK_name_list.push(v.name)
   }
+}
+
+if (self.MMD_SA && (keys.length > 2) && (keys[0].name == '全ての親')) {
+  if (MMD_SA.TEMP_v3.fromArray(keys[0].pos).lengthSq() || MMD_SA.TEMP_v3.fromArray(keys[keys.length-1].pos).lengthSq())
+    motion_para.use_mother_bone = true;
 }
 
 // AT: skip empty keys (i:bone_idx required)

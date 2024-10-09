@@ -1,4 +1,4 @@
-// (2024-06-10)
+// (2024-06-19)
 
 MMD_SA.fn = {
 /*
@@ -642,7 +642,7 @@ if (p_bone.rotation) {
   const rot_adjust = p_bone.rotation.align_with_external_point;
   if (rot_adjust)
     x_object.user_data._rot_default_ = (x_object.user_data._rot_default_ || new THREE.Quaternion()).copy(obj.quaternion);
-  if (rot_adjust && (!rot_adjust.mocap_only || (System._browser.camera.poseNet.enabled && System._browser.camera.ML_warmed_up))) {
+  if (rot_adjust && !rot_adjust.disabled && (!rot_adjust.mocap_only || (System._browser.camera.poseNet.enabled && System._browser.camera.ML_warmed_up))) {
     const rot_original = MMD_SA._q2.copy(obj.quaternion);
 
     transfer_to_parent_bone = rot_adjust.transfer_to_parent_bone && (System._browser.camera.poseNet.enabled && System._browser.camera.ML_warmed_up);
