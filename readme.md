@@ -97,7 +97,7 @@ If you like XR Animator, please consider making a donation🙇 Or even better, j
 
 XR Animator is currently sponsored by the following people❤️
 
-- **NewruGuru, Nymph, Shionay, shion, KuraiNoOni, MShade, Kai, ambyshard, Prajzis, LouLi Lou**
+- **NewruGuru, Nymph, Shionay, shion, KuraiNoOni, MShade, Kai, Prajzis, LouLi Lou, Cylan Cade, CoCoNo**
 - Other supporters
 
 # About System Animator
