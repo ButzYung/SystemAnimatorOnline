@@ -1,4 +1,4 @@
-// (2024-05-18)
+// (2024-06-30)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -7412,7 +7412,9 @@ key_para.pressed = _k.pressed
 
 //if (pos_delta && key_map.keyCode==105) { DEBUG_show(key_map.keyCode+'/'+Date.now()); console.log(key_map); }
         if (key_map_by_mode.rot_speed) {
-          rot = rotation_v3.copy(key_map_by_mode.rot_speed).multiplyScalar(t_diff * (key_map_data.scale||1))
+          rot = rotation_v3.copy(key_map_by_mode.rot_speed).multiplyScalar(t_diff * (key_map_data.scale||1));
+// v0.25.0
+//          if (c.about_turn) rot.y *= -1;
         }
 
         if (TPS_mode_in_action) {
@@ -8743,6 +8745,10 @@ delete this.motion["PC movement forward"].para_SA;
 if (!this.motion["PC forward jump"]) {
   this.motion["PC forward jump"] = { path:System.Gadget.path + '/MMD.js/motion/motion_rpg_pack01.zip#/tsuna/tsuna_small_jump.vmd',
     para: { adjust_center_view_disabled:true, motion_duration:(46-12)/30, onended: function () { MMD_SA._no_fading=true; }
+
+,motion_tracking_enabled:true
+,motion_tracking_upper_body_only:true
+
  ,adjustment_per_model: {
     _default_ : {
 //  skin_filter: { test:function(name){ return ((name.indexOf("スカート")==-1) && (name.indexOf("パーカー")==-1) && (name.indexOf("胸")==-1) && (name.indexOf("乳")==-1)) } }
@@ -8778,6 +8784,10 @@ return [
 if (!this.motion["PC high jump"]) {
   this.motion["PC high jump"] = { path:System.Gadget.path + '/MMD.js/motion/motion_rpg_pack01.zip#/landing/05_magical_jump_v01.vmd',
     para: { adjust_center_view_disabled:true, motion_duration:(162)/30, onended: function () { MMD_SA._no_fading=true; }
+
+,motion_tracking_enabled:true
+,motion_tracking_upper_body_only:true
+
  ,look_at_screen:false
  ,range:[{time:[10,0]}]
  ,adjustment_per_model: {
@@ -8819,6 +8829,10 @@ return [
 if (!this.motion["PC landing"]) {
   this.motion["PC landing"] = { path:System.Gadget.path + '/MMD.js/motion/motion_rpg_pack01.zip#/landing/04_deep_landing.vmd',
     para: { adjust_center_view_disabled:true, duration:(57)/30
+
+,motion_tracking_enabled:true
+,motion_tracking_upper_body_only:true
+
  ,onended: function (loop_end) {
 MMD_SA._no_fading=true;
 if (loop_end) {

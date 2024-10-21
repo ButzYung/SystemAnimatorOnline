@@ -1,4 +1,4 @@
-// (2024-06-19)
+// (2024-07-02)
 
 MMD_SA.fn = {
 /*
@@ -1118,7 +1118,7 @@ MMD_SA.reset_camera = function (check_event) {
   MMD_SA._trackball_camera.SA_adjust()
 //  tc.object.updateMatrixWorld()
 
-  MMD_SA._trackball_camera.rotate_with_up_fixed = MMD_SA_options.Dungeon && MMD_SA_options.Dungeon.character.TPS_mode;
+//  MMD_SA._trackball_camera.rotate_with_up_fixed = MMD_SA_options.Dungeon && MMD_SA_options.Dungeon.character.TPS_mode;
 
   window.dispatchEvent(new CustomEvent("MMDCameraReset_after", { detail:{ enforced:check_event } }));
 }

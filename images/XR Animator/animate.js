@@ -1,5 +1,5 @@
 // XR Animator
-// (2024-06-19)
+// (2024-07-02)
 
 var MMD_SA_options = {
 
@@ -3384,7 +3384,7 @@ video:{
 //  hidden:true,
 //  hidden_on_webcam: true,
   scale:0.4, top:-0.5,
-//left:-0.25,top:-1,
+//left:0.5, top:-1,
 //scale:0.4*1,top:0,left:-3,
 //scale:0.4*2,top:0,left:-1,
 },
@@ -3392,7 +3392,7 @@ wireframe:{
 //  hidden:true,
 //  align_with_video:true,
   top:0.5,
-//left:+(0.25),top:-1,
+//left:-(0.5),top:-1,
 //left:1,
 //top:0.8,left:0.4,
 //top:0,left:3,
@@ -4747,6 +4747,8 @@ return info;
 
    ,"facemesh" : (()=>{
       function mocap_hotkeys(e) {
+if (System._browser.hotkeys.disabled) return;
+
 const ev = e.detail.e;
 switch (ev.code) {
   case 'Pause':
@@ -5486,6 +5488,8 @@ return System._browser.snapshot.init();
 
    ,"rec" : (()=>{
       function snapshot(e) {
+if (System._browser.hotkeys.disabled) return;
+
 const ev = e.detail.e;
 if (ev.altKey || ev.ctrlKey || ev.shiftKey) return;
 switch (ev.code) {
@@ -9176,7 +9180,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  get content() { return 'XR Animator (v0.24.1)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
+  get content() { return 'XR Animator (v0.25.0)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -9408,7 +9412,8 @@ return System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_
   para: { no_word_break:true },
   branch_list: [
     { key:1, event_index:3 },
-    { key:2, event_index:1,
+    { key:2, event_index:9 },
+    { key:3, event_index:1,
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
@@ -9416,7 +9421,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
       }
     },
-    { key:3, event_index:2,
+    { key:4, event_index:2,
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
@@ -9424,7 +9429,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
       }
     },
-    { key:4, event_index:6,
+    { key:5, event_index:6,
       onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
@@ -9432,8 +9437,8 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
       }
     },
-    { key:5, event_index:7 },
-    { key:6, is_closing_event:true, event_index:99 },
+    { key:6, event_index:7 },
+    { key:7, is_closing_event:true, event_index:99 },
   ],
           }
         },
@@ -9532,6 +9537,7 @@ for (let i = 0; i < 2; i++) {
 if (check_hotkey()) {
   hotkey_acc = hotkey_combo.join('+');
   hotkey_combo = null;
+  System._browser.hotkeys.disabled = false;
 }
 
 MMD_SA_options.Dungeon.run_event(null,null,5);
@@ -9585,6 +9591,8 @@ hotkeys.enable_global(hotkey_id, !!hotkeys.accelerators[config.accelerator[0]].c
 if (!hotkey_id) return;
 if (hotkey_id == 'switch_motion') return;
 
+System._browser.hotkeys.disabled = true;
+
 hotkey_combo = [];
 hotkey_info = hotkey_acc = null;
     }, goto_event:{event_index:4} } },
@@ -9608,6 +9616,8 @@ hotkey_combo = hotkey_acc = null;
     }, goto_event:{event_index:4} } },
 
     { key:'F', event_id:{ func:()=>{
+System._browser.hotkeys.disabled = false;
+
 if (!hotkey_id) return;
 
 const hotkeys = System._browser.hotkeys;
@@ -9633,7 +9643,9 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
       }
     },
-    { key:'X', is_closing_event:true, event_id:{ func:()=>{
+    { key:'X', get is_closing_event() { return !System._browser.hotkeys.disabled; }, event_id:{ func:()=>{
+System._browser.hotkeys.disabled = false;
+
 hotkey_id = hotkey_combo = hotkey_info = hotkey_acc = null;
     }, goto_event:{event_index:99} } },
           ];
@@ -9837,6 +9849,293 @@ DEBUG_show('✅Settings reset', 3);
 
           ended: true,
         },
+
+        ...(()=>{
+          const button_alpha_list = ['A','B','C','D','E','F','G','H'];
+          const button_name_list = ['Ⓐ','Ⓑ','Ⓧ','Ⓨ','▲','▼','◀','▶'];
+          const button_index_list = [0,1,2,3, 12,13,14,15];
+
+          let hotkey_id, hotkey_combo, hotkey_acc;
+          let button_append;
+
+          let page2_type;
+
+          let default_control_option_active = 'joystick_left';
+          let default_control_options = ['joystick_left', 'joystick_right', 'L2/R2'];
+
+          const branch_list = [
+    { key:'any', func:(e)=>{
+let page_index = 9;
+if ((page2_type == 'default_control') && /Arrow(Up|Down)/.test(e.code)) {
+  page_index = 10;
+  let index = default_control_options.findIndex(v=>v==default_control_option_active);
+  index -= (e.code == 'ArrowUp') ? 1 : -1;
+  if (index < 0) {
+    index = default_control_options.length-1;
+  }
+  else if (index > default_control_options.length-1) {
+    index = 0;
+  }
+  default_control_option_active = default_control_options[index];
+}
+else if ((page2_type == 'default_control') && /Arrow(Left|Right)/.test(e.code)) {
+  page_index = 10;
+  const v = (e.code == 'ArrowRight') ? 1 : -1;
+  switch (default_control_option_active) {
+    case 'joystick_left':
+MMD_SA_options.gamepad[0].axes[0].sensitivity_percent = THREE.Math.clamp((MMD_SA_options.gamepad[0].axes[0].sensitivity_percent||100) + v*2, 50,200);
+      break;
+    case 'joystick_right':
+MMD_SA_options.gamepad[0].axes[2].sensitivity_percent = THREE.Math.clamp((MMD_SA_options.gamepad[0].axes[2].sensitivity_percent||100) + v*2, 50,200);
+      break;
+    case 'L2/R2':
+MMD_SA_options.gamepad[0].buttons[6].sensitivity_percent = THREE.Math.clamp((MMD_SA_options.gamepad[0].buttons[6].sensitivity_percent||100) + v*2, 50,200);
+      break;
+  }
+}
+else {
+  if (!hotkey_id) return false;
+  if (!hotkey_combo) return false;
+
+  if (System._browser.hotkeys.disabled) {
+    if (/Alt|Control|Shift/.test(e.key)) {
+      hotkey_combo[0] = e.key.replace(/Control/, 'Ctrl');
+    }
+    else if (/Key([A-Z])/.test(e.code)) {
+      hotkey_combo[1] = RegExp.$1;
+    }
+    else if (/^(Numpad\d|Digit\d|F\d+|Escape|Pause|NumpadAdd|NumpadSubtract|ArrowUp|ArrowDown|ArrowLeft|ArrowRight|Space)$/.test(e.code)) {
+// space=32, LURD=37-40, +=107, -=109
+      hotkey_combo[1] = e.code;
+    }
+    else if (e.key == 'Enter') {
+      if (!hotkey_combo[1]) {
+        hotkey_combo[0] = '';
+        hotkey_acc = '';
+      }
+      else {
+        hotkey_acc = (hotkey_combo[0]) ? hotkey_combo.join('+') : hotkey_combo[1];
+      }
+      System._browser.hotkeys.disabled = false;
+    }
+  }
+  else {
+    return false;
+  }
+}
+
+MMD_SA_options.Dungeon.run_event(null,null,page_index);
+
+return true;
+    } },
+    ...button_index_list.map((id,i)=>{
+      return { key:button_alpha_list[i], event_id:{ func:()=>{
+hotkey_id = id + ((button_append)?'+'+button_append:'');
+hotkey_combo = hotkey_acc = null;
+        }, goto_event:{event_index:9} }
+      };
+    }),
+
+    { key:'K', event_id:{ func:()=>{
+if (!hotkey_id) return;
+
+System._browser.hotkeys.disabled = true;
+
+hotkey_combo = ['',''];
+hotkey_acc = null;
+    }, goto_event:{event_index:9} } },
+
+    { key:'R', event_id:{ func:()=>{
+System._browser.hotkeys.disabled = false;
+
+if (!hotkey_id) return;
+
+hotkey_id = hotkey_combo = hotkey_acc = null;
+    }, goto_event:{event_index:9} } },
+
+    { key:'S', event_id:{ func:()=>{
+System._browser.hotkeys.disabled = false;
+
+if (!hotkey_id) return;
+
+if (hotkey_acc) {
+  MMD_SA_options.gamepad[0].buttons[hotkey_id] = { key:hotkey_acc };
+}
+else {
+  delete MMD_SA_options.gamepad[0].buttons[hotkey_id];
+}
+
+hotkey_id = hotkey_combo = hotkey_acc = null;
+    }, goto_event:{event_index:9} } },
+
+    { key:'M', event_id:{ func:()=>{
+default_control_option_active = 'joystick_left';
+      }, goto_event:{event_index:10} },
+      sb_index: 1,
+      onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.gamepad_control.adjust_default_controls.joystick_left.tooltip').replace(/\<press_to_adjust\>/, (default_control_option_active == 'joystick_left') ? ' ('+System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.gamepad_control.adjust_default_controls.press_to_adjust')+')' : '')
+);
+      },
+    },
+
+    { key:'N', event_id:{ func:()=>{
+default_control_option_active = 'joystick_right';
+    }, goto_event:{event_index:10} },
+      sb_index: 1,
+      onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.gamepad_control.adjust_default_controls.joystick_right.tooltip').replace(/\<press_to_adjust\>/, (default_control_option_active == 'joystick_right') ? ' ('+System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.gamepad_control.adjust_default_controls.press_to_adjust')+')' : '')
+);
+      },
+    },
+
+    { key:'O', event_id:{ func:()=>{
+default_control_option_active = 'L2/R2';
+    }, goto_event:{event_index:10} },
+      sb_index: 1,
+      onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.gamepad_control.adjust_default_controls.L2_R2.tooltip').replace(/\<press_to_adjust\>/, (default_control_option_active == 'L2/R2') ? ' ('+System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.gamepad_control.adjust_default_controls.press_to_adjust')+')' : '')
+);
+      },
+    },
+
+    { key:'I', event_id:{ func:()=>{
+if (!button_append) {
+  button_append = 4;
+}
+else if (button_append == 4) {
+  button_append = 5;
+}
+else {
+  button_append = null;
+}
+    }, goto_event:{event_index:10} } },
+
+    { key:1, event_id:{ func:()=>{
+MMD_SA.Gamepad.enabled = !MMD_SA.Gamepad.enabled;
+      }, goto_event:{event_index:9} },
+      onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.gamepad_control.tooltip')
+);
+      },
+    },
+
+    { key:2, event_id:{ func:()=>{
+page2_type = 'default_control';
+      }, goto_event:{event_index:10} },
+      onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.gamepad_control.adjust_default_controls.tooltip')
+);
+      },
+    },
+
+    { key:3, event_id:{ func:()=>{
+page2_type = 'custom_control';
+      }, goto_event:{event_index:10} },
+      onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.gamepad_control.change_custom_controls.tooltip')
+);
+      },
+    },
+
+    { key:'X', get is_closing_event() { return !System._browser.hotkeys.disabled; }, event_id:{ func:()=>{
+System._browser.hotkeys.disabled = false;
+
+hotkey_id = hotkey_combo = hotkey_acc = null;
+page2_type = null;
+    }, goto_event:{event_index:99} } },
+          ];
+
+          return [
+// 9
+            {
+              func: ()=>{
+if (page2_type) MMD_SA_options.Dungeon.run_event();
+              },
+              message: {
+  get content() {
+let msgs;
+if (hotkey_id) {
+  let [b, r] = hotkey_id.split('+');
+  msgs = [
+System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.gamepad_control.button') + ': ' + button_name_list[button_index_list.findIndex(i=>i==b)] + ((r) ? '+' + ((r==4)?'L1':'R1') : ''),
+  ];
+  if (hotkey_combo && System._browser.hotkeys.disabled) {
+    msgs = msgs.concat([
+' ┗ ' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.gamepad_control.change_custom_controls.new_key') + ': ' + ((hotkey_combo.join('') && hotkey_combo.join('+')) || '(None)'),
+System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.gamepad_control.change_custom_controls.changing_key'),
+    ]);
+  }
+  else {
+    msgs = msgs.concat([
+' ┗ ' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.gamepad_control.change_custom_controls.current_key') + ': ' + (hotkey_acc || ((hotkey_acc == '') && '(None)') || MMD_SA_options.gamepad[0].buttons[hotkey_id]?.key || '(None)'),
+'K. ' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.gamepad_control.change_custom_controls.change_key'),
+'R. ' + System._browser.translation.get('Misc.cancel'),
+'S. ' + System._browser.translation.get('Misc.finish'),
+    ]);
+  }
+}
+else {
+  msgs = [
+'1. 🎮' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.gamepad_control') + ': ' + ((MMD_SA.Gamepad.enabled) ? 'ON': 'OFF'),
+'2. ┣ ' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.gamepad_control.adjust_default_controls'),
+'3. ┗ ' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.gamepad_control.change_custom_controls'),
+'X. ' + System._browser.translation.get('Misc.done')
+  ];
+}
+
+return msgs.join('\n')
+  },
+  bubble_index: 3,
+  para: { no_word_break:true, font_scale:1.25 },
+  branch_list: branch_list,
+              },
+            },
+
+// 10
+            {
+              message: {
+  get content() {
+let msgs;
+if (page2_type == 'default_control') {
+  msgs = [
+System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.gamepad_control.adjust_default_controls.info'),
+'M. 🕹️L: ' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.gamepad_control.adjust_default_controls.joystick_left')  + (MMD_SA_options.gamepad[0].axes[0].sensitivity_percent||100) + '%' + ((default_control_option_active == 'joystick_left') ? '⬅️➡️' : ''),
+'N. 🕹️R: ' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.gamepad_control.adjust_default_controls.joystick_right') + (MMD_SA_options.gamepad[0].axes[2].sensitivity_percent||100) + '%' + ((default_control_option_active == 'joystick_right') ? '⬅️➡️' : ''),
+'O. L2/R2: ' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.gamepad_control.adjust_default_controls.L2_R2') + (MMD_SA_options.gamepad[0].buttons[6].sensitivity_percent||100) + '%' + ((default_control_option_active == 'L2/R2') ? '⬅️➡️' : ''),
+''
+  ];
+}
+else {
+  msgs = button_alpha_list.map((b,i)=>{
+return b+'. ' + button_name_list[i] + ((button_append) ? '+' + ((button_append==4)?'L1':'R1') : '') + ': ' + (MMD_SA_options.gamepad[0].buttons[button_index_list[i] + ((button_append)?'+'+button_append:'')]?.key || '(None)');
+  }).concat([
+'I. ' + System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.gamepad_control.change_custom_controls.next_8_button_combos'),
+  ]);
+}
+
+return msgs.join('\n')
+  },
+  index: 1,
+  bubble_index: 3,
+  para: { row_max:11, font_scale:0.9, },
+  branch_list: branch_list,
+              },
+            },
+          ];
+        })(),
+
       ]
 // 24
      ,[
@@ -9954,7 +10253,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
           const body_collider_options = ['Head size', 'Chest size', 'Waist size', 'Hip size'];
 
           let option_plus_minus = 'arm_horizontal_offset';
-          const body_tracking_options = ['arm_horizontal_offset', 'arm_vertical_offset', 'limb_entry_duration', 'limb_return_duration', 'hip_depth_scale', 'upper_rotation_offset'];
+          const body_tracking_options = ['arm_horizontal_offset', 'arm_vertical_offset', 'hip_depth_scale', 'hip_z_position_offset', 'hip_y_position_offset', 'limb_entry_duration', 'limb_return_duration', 'upper_rotation_offset'];
 
           return [
             {
@@ -9965,9 +10264,9 @@ MMD_SA_options.Dungeon.utils.tooltip(
 '2. ┗ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.AI_model_quality.z_depth_scale') + ': ' + ((MMD_SA_options.user_camera.ML_models.pose.model_quality == 'Best') ? System._browser.translation.get('Misc.' + ((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale) ? ((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale<3)?'Max':'Min'):'Medium')) : 'N/A'),
 '3. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.arm_horizontal_offset') + ': ' + (System._browser.camera.poseNet.arm_horizontal_offset_percent||0) + '%' + ((option_plus_minus == 'arm_horizontal_offset') ? '➕➖' : ''),
 '4. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.arm_vertical_offset') + ': ' + (System._browser.camera.poseNet.arm_vertical_offset_percent||0) + '%' + ((option_plus_minus == 'arm_vertical_offset') ? '➕➖' : ''),
-'5. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_entry_duration') + ': ' + System._browser.camera.poseNet.limb_entry_duration_percent + '%' + ((option_plus_minus == 'limb_entry_duration') ? '➕➖' : ''),
-'6. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_return_duration') + ': ' + System._browser.camera.poseNet.limb_return_duration_percent + '%' + ((option_plus_minus == 'limb_return_duration') ? '➕➖' : ''),
-'7. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_depth_scale') + ': ' + System._browser.camera.poseNet.hip_depth_scale_percent + '%' + ((option_plus_minus == 'hip_depth_scale') ? '➕➖' : ''),
+'5. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_depth_scale') + ': ' + System._browser.camera.poseNet.hip_depth_scale_percent + '%' + ((option_plus_minus == 'hip_depth_scale') ? '➕➖' : ''),
+'6. ┣ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_z_position_offset') + ': ' + System._browser.camera.poseNet.hip_z_position_offset_percent + '%' + ((option_plus_minus == 'hip_z_position_offset') ? '➕➖' : ''),
+'7. ┗ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_y_position_offset') + ': ' + System._browser.camera.poseNet.hip_y_position_offset_percent + '%' + ((option_plus_minus == 'hip_y_position_offset') ? '➕➖' : ''),
 '8. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_adjustment') + ' ' + ((page2_index!=hip_adjustment_index) ? '▶️' : '◀️'),
 '9. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.body_collider') + ' ' + ((page2_index!=body_collider_index) ? '▶️' : '◀️'),
 
@@ -10100,7 +10399,13 @@ else if ((e.key == '+') || (e.key == '-')) {
     System._browser.camera.poseNet.limb_return_duration_percent = THREE.Math.clamp((System._browser.camera.poseNet.limb_return_duration_percent||0) + inc*5, 25,400);
   }
   else if (option_plus_minus == 'hip_depth_scale') {
-    System._browser.camera.poseNet.hip_depth_scale_percent = THREE.Math.clamp((System._browser.camera.poseNet.hip_depth_scale_percent||0) + inc*2, 30,300);
+    System._browser.camera.poseNet.hip_depth_scale_percent = THREE.Math.clamp((System._browser.camera.poseNet.hip_depth_scale_percent||0) + inc*2, 10,300);
+  }
+  else if (option_plus_minus == 'hip_z_position_offset') {
+    System._browser.camera.poseNet.hip_z_position_offset_percent = THREE.Math.clamp((System._browser.camera.poseNet.hip_z_position_offset_percent||0) + inc, -100,100);
+  }
+  else if (option_plus_minus == 'hip_y_position_offset') {
+    System._browser.camera.poseNet.hip_y_position_offset_percent = THREE.Math.clamp((System._browser.camera.poseNet.hip_y_position_offset_percent||0) + inc, -100,100);
   }
   else if (option_plus_minus == 'upper_rotation_offset') {
     const _pose = (MMD_SA.MMD.motionManager.para_SA.motion_tracking?.ML_models?.pose || MMD_SA_options.user_camera.ML_models.pose);
@@ -10165,45 +10470,6 @@ MMD_SA_options.Dungeon.utils.tooltip(
   },
   { key:5, event_id: {
       func: function () {
-option_plus_minus = 'limb_entry_duration';
-      },
-      goto_event: { branch_index:mocap_options_branch, step:1 },
-    },
-    onmouseover: function (e) {
-MMD_SA_options.Dungeon.utils.tooltip(
-  e.clientX, e.clientY,
-  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_entry_duration') + ((option_plus_minus == 'limb_entry_duration') ? ' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.press_to_change_value') + ')' : '') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_entry_duration.tooltip')
-);
-    }
-  },
-  { key:6, event_id: {
-      func: function () {
-option_plus_minus = 'limb_return_duration';
-      },
-      goto_event: { branch_index:mocap_options_branch, step:1 },
-    },
-    onmouseover: function (e) {
-MMD_SA_options.Dungeon.utils.tooltip(
-  e.clientX, e.clientY,
-  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_return_duration') + ((option_plus_minus == 'limb_return_duration') ? ' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.press_to_change_value') + ')' : '') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_return_duration.tooltip')
-);
-    }
-  },
-  { key:6, event_id: {
-      func: function () {
-option_plus_minus = 'limb_return_duration';
-      },
-      goto_event: { branch_index:mocap_options_branch, step:1 },
-    },
-    onmouseover: function (e) {
-MMD_SA_options.Dungeon.utils.tooltip(
-  e.clientX, e.clientY,
-  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_return_duration') + ((option_plus_minus == 'limb_return_duration') ? ' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.press_to_change_value') + ')' : '') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_return_duration.tooltip')
-);
-    }
-  },
-  { key:7, event_id: {
-      func: function () {
 option_plus_minus = 'hip_depth_scale';
       },
       goto_event: { branch_index:mocap_options_branch, step:1 },
@@ -10212,6 +10478,32 @@ option_plus_minus = 'hip_depth_scale';
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
   System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_depth_scale') + ((option_plus_minus == 'hip_depth_scale') ? ' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.press_to_change_value') + ')' : '') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_depth_scale.tooltip')
+);
+    }
+  },
+  { key:6, event_id: {
+      func: function () {
+option_plus_minus = 'hip_z_position_offset';
+      },
+      goto_event: { branch_index:mocap_options_branch, step:1 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_z_position_offset') + ((option_plus_minus == 'hip_z_position_offset') ? ' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.press_to_change_value') + ')' : '') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_z_position_offset.tooltip')
+);
+    }
+  },
+  { key:7, event_id: {
+      func: function () {
+option_plus_minus = 'hip_y_position_offset';
+      },
+      goto_event: { branch_index:mocap_options_branch, step:1 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_y_position_offset') + ((option_plus_minus == 'hip_y_position_offset') ? ' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.press_to_change_value') + ')' : '') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_y_position_offset.tooltip')
 );
     }
   },
@@ -10260,7 +10552,9 @@ page2_index = (page2_index != body_collider_index) ? body_collider_index : 2;
 'C. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.leg_IK') + ': ' + ((MMD_SA_options.user_camera.ML_models.pose.use_legIK)?'ON':'OFF'),
 'D. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.auto_grounding') + ' (' + (System._browser.hotkeys.config_by_id['mocap_auto_grounding']?.accelerator[0]||'') + '): ' + ((!System._browser.camera.poseNet.auto_grounding)?'OFF':'ON'),
 'E. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_camera') + ' (' + (System._browser.hotkeys.config_by_id['hip_camera']?.accelerator[0]||'') + '): ' + ((System._browser.camera.poseNet.hip_camera) ? 'ON' : 'OFF'),
-'F. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.upper_rotation_offset') + ': ' + ((MMD_SA.MMD.motionManager.para_SA.motion_tracking?.ML_models?.pose || MMD_SA_options.user_camera.ML_models.pose).upper_rotation_offset||0) + '°' + ((option_plus_minus == 'upper_rotation_offset') ? '➕➖' : ''),
+'F. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_entry_duration') + ': ' + System._browser.camera.poseNet.limb_entry_duration_percent + '%' + ((option_plus_minus == 'limb_entry_duration') ? '➕➖' : ''),
+'G. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_return_duration') + ': ' + System._browser.camera.poseNet.limb_return_duration_percent + '%' + ((option_plus_minus == 'limb_return_duration') ? '➕➖' : ''),
+'H. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.upper_rotation_offset') + ': ' + ((MMD_SA.MMD.motionManager.para_SA.motion_tracking?.ML_models?.pose || MMD_SA_options.user_camera.ML_models.pose).upper_rotation_offset||0) + '°' + ((option_plus_minus == 'upper_rotation_offset') ? '➕➖' : ''),
     ].join('\n');
   },
   index: 1,
@@ -10328,6 +10622,32 @@ MMD_SA_options.Dungeon.utils.tooltip(
     }
   },
   { key:'F', event_id: {
+      func: function () {
+option_plus_minus = 'limb_entry_duration';
+      },
+      goto_event: { branch_index:mocap_options_branch, step:1 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_entry_duration') + ((option_plus_minus == 'limb_entry_duration') ? ' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.press_to_change_value') + ')' : '') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_entry_duration.tooltip')
+);
+    }
+  },
+  { key:'G', event_id: {
+      func: function () {
+option_plus_minus = 'limb_return_duration';
+      },
+      goto_event: { branch_index:mocap_options_branch, step:1 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_return_duration') + ((option_plus_minus == 'limb_return_duration') ? ' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.press_to_change_value') + ')' : '') + ':\n' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.limb_return_duration.tooltip')
+);
+    }
+  },
+  { key:'H', event_id: {
       func: function () {
 option_plus_minus = 'upper_rotation_offset';
       },
@@ -11099,22 +11419,22 @@ else if (/Arrow(Left|Right)/.test(e.code)) {
 System._browser.camera.facemesh.emotion_weight_percent = THREE.Math.clamp(System._browser.camera.facemesh.emotion_weight_percent + v, 0,100);
       break;
     case 'Joy/Fun':
-System._browser.camera.facemesh.emotion_joy_fun_percent = THREE.Math.clamp(System._browser.camera.facemesh.emotion_joy_fun_percent + v, 0,100);
+System._browser.camera.facemesh.emotion_joy_fun_percent = THREE.Math.clamp(System._browser.camera.facemesh.emotion_joy_fun_percent + v, 0,200);
       break;
     case 'Angry':
-System._browser.camera.facemesh.emotion_angry_percent = THREE.Math.clamp(System._browser.camera.facemesh.emotion_angry_percent + v, 0,100);
+System._browser.camera.facemesh.emotion_angry_percent = THREE.Math.clamp(System._browser.camera.facemesh.emotion_angry_percent + v, 0,200);
       break;
     case 'Sorrow':
-System._browser.camera.facemesh.emotion_sorrow_percent = THREE.Math.clamp(System._browser.camera.facemesh.emotion_sorrow_percent + v, 0,100);
+System._browser.camera.facemesh.emotion_sorrow_percent = THREE.Math.clamp(System._browser.camera.facemesh.emotion_sorrow_percent + v, 0,200);
       break;
     case 'Surprised':
-System._browser.camera.facemesh.emotion_surprised_percent = THREE.Math.clamp(System._browser.camera.facemesh.emotion_surprised_percent + v, 0,100);
+System._browser.camera.facemesh.emotion_surprised_percent = THREE.Math.clamp(System._browser.camera.facemesh.emotion_surprised_percent + v, 0,200);
       break;
     case 'Tongue out':
 System._browser.camera.facemesh.emotion_tongue_out_percent = THREE.Math.clamp(System._browser.camera.facemesh.emotion_tongue_out_percent + v, 0,100);
       break;
     case 'Others':
-System._browser.camera.facemesh.emotion_others_percent = THREE.Math.clamp(System._browser.camera.facemesh.emotion_others_percent + v, 0,100);
+System._browser.camera.facemesh.emotion_others_percent = THREE.Math.clamp(System._browser.camera.facemesh.emotion_others_percent + v, 0,200);
       break;
     default:
       return false;
@@ -11929,6 +12249,8 @@ config.user_camera = {
       limb_entry_duration_percent: System._browser.camera.poseNet.limb_entry_duration_percent,
       limb_return_duration_percent: System._browser.camera.poseNet.limb_return_duration_percent,
       hip_depth_scale_percent: System._browser.camera.poseNet.hip_depth_scale_percent,
+      hip_y_position_offset_percent: System._browser.camera.poseNet.hip_y_position_offset_percent,
+      hip_z_position_offset_percent: System._browser.camera.poseNet.hip_z_position_offset_percent,
 
       body_collider: (()=>{
         const bc = {
@@ -11972,6 +12294,9 @@ config.user_camera = {
 
   streamer_mode: MMD_SA_options.user_camera.streamer_mode,
 };
+
+MMD_SA_options.gamepad[0].enabled = MMD_SA.Gamepad.enabled;
+config.gamepad = MMD_SA_options.gamepad;
 
 config.model_path_extra = MMD_SA_options.THREEX_options.model_path_extra;
 
@@ -12122,7 +12447,6 @@ try {
         System._browser.camera.poseNet.arm_vertical_offset_percent = config[p].ML_models.pose.arm_vertical_offset_percent;
         System._browser.camera.poseNet.limb_entry_duration_percent = config[p].ML_models.pose.limb_entry_duration_percent;
         System._browser.camera.poseNet.limb_return_duration_percent = config[p].ML_models.pose.limb_return_duration_percent;
-        System._browser.camera.poseNet.hip_depth_scale_percent = config[p].ML_models.pose.hip_depth_scale_percent;
         System._browser.camera.poseNet.hip_adjustment_weight_percent = config[p].ML_models.pose.hip_adjustment_weight_percent;
         System._browser.camera.poseNet.hip_adjustment_head_weight_percent = config[p].ML_models.pose.hip_adjustment_head_weight_percent;
         System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent = config[p].ML_models.pose.hip_adjustment_adjust_y_axis_percent;
@@ -12131,6 +12455,9 @@ try {
         System._browser.camera.poseNet.hip_adjustment_head_pitch_rotation_percent = config[p].ML_models.pose.hip_adjustment_head_pitch_rotation_percent;
         System._browser.camera.poseNet.hip_adjustment_scale_z_percent = config[p].ML_models.pose.hip_adjustment_scale_z_percent;
         System._browser.camera.poseNet.hip_adjustment_smoothing_percent = config[p].ML_models.pose.hip_adjustment_smoothing_percent;
+        System._browser.camera.poseNet.hip_depth_scale_percent = config[p].ML_models.pose.hip_depth_scale_percent;
+        System._browser.camera.poseNet.hip_y_position_offset_percent = config[p].ML_models.pose.hip_y_position_offset_percent;
+        System._browser.camera.poseNet.hip_z_position_offset_percent = config[p].ML_models.pose.hip_z_position_offset_percent;
 
         System._browser.camera.poseNet.body_collider.mode = config[p].ML_models.pose.body_collider?.mode;
         for (const part of ['head','chest','waist','hip']) System._browser.camera.poseNet.body_collider[part].size_percent = config[p].ML_models.pose.body_collider?.[part]?.size_percent;
@@ -12165,6 +12492,11 @@ try {
 
         MMD_SA_options.user_camera.streamer_mode = config[p].streamer_mode || { camera_preference:{} };
         Object.assign(System._browser.camera.tilt_adjustment, config[p].ML_models.tilt_adjustment||{});
+        break;
+
+      case 'gamepad':
+        MMD_SA_options.gamepad = config[p];
+        MMD_SA.Gamepad.enabled = MMD_SA_options.gamepad[0].enabled;
         break;
 
       case 'model_path_extra':

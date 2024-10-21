@@ -792,6 +792,34 @@
 								}
 							}
 						},
+						"hip_z_position_offset": {
+							"_translation_": {
+								"_default_": "Z position offset",
+								"ja": "Z 位置オフセット",
+								"zh": "Z 位置偏移"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "This setting applies a fixed offset on the z-depth position of hip during full body mocap or when \"Hip camera\" is on. Combined with \"Hip depth scale\", these allow total control over the visual size of your avatar along the z direction. Press ➕➖ key to change value. Default is \"0%\".",
+									"ja": "この設定は、全身モーションキャプチャ中または「ヒップカメラ」がオンのときに、ヒップの Z 深度位置に固定オフセットを適用します。 「ヒップ深さスケール」と組み合わせることで、アバターの Z 方向の視覚的なサイズを完全に制御できます。 ➕➖キーを押して値を変更します。 デフォルトは「0%」です。",
+									"zh": "此設定在使用全身動作捕捉期間或「腰間攝影機」開啟時， 對腰部 z 深度位置追加固定數值的偏移。 當此設定和「腰部深度比例」同時使用時， 可完全控制人物模型在 Z 方向的視覺大小。 按➕➖鍵更改數值。 預設是「100%」。"
+								}
+							}
+						},
+						"hip_y_position_offset": {
+							"_translation_": {
+								"_default_": "Y position offset",
+								"ja": "Y 位置オフセット",
+								"zh": "Y 位置偏移"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "This setting applies a fixed offset on the vertical position of hip during full body mocap or when \"Hip camera\" is on, mainly to adjust the case when near the camera. Press ➕➖ key to change value. Default is \"0%\".",
+									"ja": "この設定は、全身モーションキャプチャ中または「ヒップカメラ」がオンのときにヒップの垂直位置に固定オフセットを適用し、主にカメラの近くにある場合を調整します。 ➕➖キーを押して値を変更します。 デフォルトは「0%」です。",
+									"zh": "此設定在使用全身動作捕捉期間或「腰間攝影機」開啟時， 對腰部的垂直位置追加固定數值的偏移， 主要用於接近鏡頭時的調整。 按➕➖鍵更改數值。 預設是「100%」。"
+								}
+							}
+						},
 						"press_to_change_value": {
 							"_translation_": {
 								"_default_": "press ➕➖ key to change value",
@@ -1997,9 +2025,9 @@
 					},
 					"message": {
 						"_translation_": {
-							"_default_": "1. ⌨️Hotkey list and options\n2. Camera face-locking: <camera_face_locking>\n3. Audio visualizer: <audio_visualizer>\n4. Export all settings\n5. Reset all settings\n6. Done",
-							"ja": "1. ⌨️ホットキーの一覧とオプション\n2. カメラのフェイスロック: <camera_face_locking>\n3. オーディオ視覚効果: <audio_visualizer>\n4. すべての設定をエクスポートする\n5. すべての設定をリセットする\n6. 終了",
-							"zh": "1. ⌨️熱鍵列表及設定\n2. 鏡頭鎖定面部: <camera_face_locking>\n3. 音訊視覺化工具: <audio_visualizer>\n4. 匯出所有設定\n5. 重置所有設定\n6. 結束"
+							"_default_": "1. ⌨️Hotkey list and options\n2. 🎮Gamepad options\n3. Camera face-locking: <camera_face_locking>\n4. Audio visualizer: <audio_visualizer>\n5. Export all settings\n6. Reset all settings\n7. Done",
+							"ja": "1. ⌨️ホットキーの一覧とオプション\n2. 🎮ゲームパッドのオプション\n3. カメラのフェイスロック: <camera_face_locking>\n4. オーディオ視覚効果: <audio_visualizer>\n5. すべての設定をエクスポートする\n6. すべての設定をリセットする\n7. 終了",
+							"zh": "1. ⌨️熱鍵列表及設定\n2. 🎮遊戲手把選項\n3. 鏡頭鎖定面部: <camera_face_locking>\n4. 音訊視覺化工具: <audio_visualizer>\n5. 匯出所有設定\n6. 重置所有設定\n7. 結束"
 						}
 					},
 					"hotkey": {
@@ -2174,6 +2202,146 @@
 							}
 						}
 					},
+					"gamepad_control": {
+						"_translation_": {
+							"_default_": "Gamepad control",
+							"ja": "ゲームパッドコントロール",
+							"zh": "遊戲手把控制"
+						},
+						"tooltip": {
+							"_translation_": {
+								"_default_": "Gamepad control:\nXR Animator allows you to use gamepad as an alternative way to control various features, such as camera control and avatar movement, as well as customized shortcuts assigned to buttons. If your controller is wireless, this can effectively be used as a remote control. Default is \"OFF\".",
+								"ja": "ゲームパッドコントロール:\nXR Animator を使用すると、ゲームパッドを代替手段として使用して、カメラ制御やアバターの移動、ボタンに割り当てられたカスタマイズされたショートカットなど、さまざまな機能を制御することができます。 コントローラーがワイヤレスの場合、これをリモート コントロールとして効果的に使用できます。 デフォルトは「OFF」です。",
+								"zh": "遊戲手把控制:\nXR Animator 可讓您使用遊戲手把作為控制各種功能的替代方式，例如 3D 鏡頭控制和人物移動，以及指派給按鈕的自訂快捷鍵。 如果您的控制器是無線的，甚至可以當遙控器使用。 預設是「OFF」。"
+							}
+						},
+						"adjust_default_controls": {
+							"_translation_": {
+								"_default_": "Adjust default controls",
+								"ja": "デフォルトコントロールの調整",
+								"zh": "調整預設控制項"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Adjust default controls:\nThe analog sticks and a few buttons are assigned to some default controls, such as camera control and avatar movement. Click to check the default controls as well as changing the sensitivity of the anlog sticks.",
+									"ja": "デフォルトコントロールの調整:\nアナログ スティックといくつかのボタンは、カメラ コントロールやアバターの移動などのいくつかのデフォルト コントロールに割り当てられています。 クリックすると、デフォルトのコントロールを確認したり、アナログ スティックの感度を変更したりできます。",
+									"zh": "調整預設控制項:\n模擬搖桿和一些按鈕被分配給一些預設控件，例如 3D 鏡頭控制和人物移動。 按一下可檢視預設控制項以及變更類比搖桿的靈敏度。"
+								}
+							},
+							"info": {
+								"_translation_": {
+									"_default_": "Start: Streamer mode / Mocap pause\nSelect: Toggle orbit camera (no z rolling)",
+									"ja": "Start: ストリーマーモード / モーキャプ一時停止\nSelect: 軌道カメラ（Z軸上の回転なし）を切り替える",
+									"zh": "Start: 直播主模式 / 暫停動捕\nSelect: 切換軌道相機（z 軸上不滾動）"
+								}
+							},
+							"press_to_adjust": {
+								"_translation_": {
+									"_default_": "press ⬅️➡️ key to adjust sensitivity",
+									"ja": "⬅️➡️キーで感度を調整する",
+									"zh": "按️⬅️➡️鍵調整靈敏度"
+								}
+							},
+							"joystick_left": {
+								"_translation_": {
+									"_default_": "Pan camera / Move avatar\n    ┣ Button: Reset camera\n    ┗ Sensitivity: ",
+									"ja": "パンカメラ / アバターを移動\n    ┣ ボタン: カメラをリセット\n    ┗ 感度: ",
+									"zh": "平移鏡頭 / 移動人物\n    ┣ 按鈕: 重置鏡頭\n    ┗ 靈敏度: "
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "Left joystick<press_to_adjust>:\nLeft joystick pans camera by default, and moves your avatar during \"Explorer mode\". Pressing it resets camera. Press ⬅️➡️ key to adjust sensitivity (mainly affects the degree of camera motion). Default is \"100%\".",
+										"ja": "左ジョイスティック<press_to_adjust>:\n左ジョイスティックはデフォルトでカメラをパンし、「エクスプローラー モード」中にアバターを移動します。 押すとカメラがリセットされます。 ⬅️➡️ キーを押して感度を調整します（主にカメラの動きの度合いに影響します）。 デフォルトは「100%」です。",
+										"zh": "左操縱桿<press_to_adjust>:\n預設情況下，左操縱桿平移相機，並在「探索者模式」期間移動您的人物。 按下它可重置鏡頭。 按⬅️➡️鍵調整靈敏度（主要影響鏡頭的移動幅度）。 預設是「100%」。"
+									}
+								}
+							},
+							"joystick_right": {
+								"_translation_": {
+									"_default_": "Rotate camera\n    ┣ Button: Lock camera\n    ┗ Sensitivity: ",
+									"ja": "カメラを回転する\n    ┣ ボタン: カメラをロックする\n    ┗ 感度: ",
+									"zh": "旋轉鏡頭\n    ┣ 按鈕: 鎖定鏡頭\n    ┗ 靈敏度: "
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "Right joystick<press_to_adjust>:\nRight joystick rotates camera. Pressing it locks camera. Press ⬅️➡️ key to adjust sensitivity (mainly affects the degree of camera motion). Default is \"100%\".",
+										"ja": "右ジョイスティック<press_to_adjust>:\n右ジョイスティックはカメラを回転させます。 これを押すとカメラがロックされます。 ⬅️➡️ キーを押して感度を調整します（主にカメラの動きの度合いに影響します）。 デフォルトは「100%」です。",
+										"zh": "右操縱桿<press_to_adjust>:\n右操縱桿旋轉鏡頭。 按下它會鎖定鏡頭。 按⬅️➡️鍵調整靈敏度（主要影響鏡頭的移動幅度）。 預設是「100%」。"
+									}
+								}
+							},
+							"L2_R2": {
+								"_translation_": {
+									"_default_": "Zoom camera / Jump\n    ┗ Sensitivity: ",
+									"ja": "ズームカメラ / ジャンプ\n    ┗ 感度: ",
+									"zh": "變焦鏡頭 / 跳躍\n    ┗ 靈敏度: "
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "L2/R2<press_to_adjust>:\nL2/R2 controls the zooming of camera by default, and activates jumping of your avatar during \"Explorer mode\". Press ⬅️➡️ key to adjust sensitivity (mainly affects the degree of camera motion). Default is \"100%\".",
+										"ja": "L2/R2<press_to_adjust>:\nL2/R2 はデフォルトでカメラのズームを制御し、「エクスプローラー モード」 中にアバターのジャンプを有効にします。 ⬅️➡️ キーを押して感度を調整します（主にカメラの動きの度合いに影響します）。 デフォルトは「100%」です。",
+										"zh": "L2/R2<press_to_adjust>:\nL2/R2 預設控制鏡頭的變焦，並在「探索者模式」下啟動人物的跳躍。 按⬅️➡️鍵調整靈敏度（主要影響鏡頭的移動幅度）。 預設是「100%」。"
+									}
+								}
+							}
+						},
+						"change_custom_controls": {
+							"_translation_": {
+								"_default_": "Change custom controls",
+								"ja": "カスタム コントロールの変更",
+								"zh": "變更自訂控制項"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Change custom controls:\nD-pad and ABXY buttons can be assigned to any function that can be activated by a keyboard shortcut, such as changing poses (Alt/Ctrl+Num0-9). Combined with L1 and R1, you can assign up to 24 button combos.",
+									"ja": "カスタム コントロールの変更:\nD パッドと ABXY ボタンは、ポーズの変更 (Alt/Ctrl+Num0-9) など、キーボード ショートカットでアクティブ化できる任意の機能に割り当てることができます。 L1 と R1 と組み合わせて、最大 24 個のボタン コンボを割り当てることができます。",
+									"zh": "變更自訂控制項:\n方向鍵和 ABXY 按鈕可指派給可透過鍵盤快速鍵啟動的任何功能，例如變更姿勢 (Alt/Ctrl+Num0-9)。 結合 L1 和 R1，您可以分配最多 24 個按鈕組合。"
+								}
+							},
+							"next_8_button_combos": {
+								"_translation_": {
+									"_default_": "Next 8 button combos",
+									"ja": "次の8つのボタンコンボ",
+									"zh": "接下來的 8 個按鈕組合"
+								}
+							},
+							"current_key": {
+								"_translation_": {
+									"_default_": "Current key",
+									"ja": "現在のキー",
+									"zh": "目前的鍵"
+								}
+							},
+							"change_key": {
+								"_translation_": {
+									"_default_": "Change key",
+									"ja": "キーの変更",
+									"zh": "更改鍵盤按鍵"
+								}
+							},
+							"new_key": {
+								"_translation_": {
+									"_default_": "New key",
+									"ja": "新しいキー",
+									"zh": "新的鍵盤按鍵"
+								}
+							},
+							"changing_key": {
+								"_translation_": {
+									"_default_": "・ Press any key\n・ Press Alt/Ctrl/Shift (optional)\nPress Enter to confirm.",
+									"ja": "・ 任意のキーを押します\n・ 必要に応じて Alt/Ctrl/Shift を押します\nEnterキーを押して確認します。",
+									"zh": "・ 按任何鍵\n・ 如有必要，可按 Alt/Ctrl/Shift\n按 Enter 確認。"
+								}
+							}
+						},
+						"button": {
+							"_translation_": {
+								"_default_": "Button",
+								"ja": "ボタン",
+								"zh": "按鈕"
+							}
+						}
+					},
 					"camera_face_locking": {
 						"tooltip": {
 							"_translation_": {
@@ -2250,7 +2418,7 @@
 							},
 							"list": {
 								"_translation_": {
-									"_default_": "NewruGuru, Nymph, Shionay, shion, KuraiNoOni, MShade, Dominic Renner, Kai, ambyshard, Prajzis, 星洛薊野Azami,"
+									"_default_": "NewruGuru, Nymph, Shionay, shion, KuraiNoOni, MShade, Kai, Prajzis, LouLi Lou, Cylan Cade, CoCoNo,"
 								}
 							}
 						}

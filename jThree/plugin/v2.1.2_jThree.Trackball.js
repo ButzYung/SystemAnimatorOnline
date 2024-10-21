@@ -30,7 +30,7 @@
  * Date: 2015-02-25
  */
 // AT: customizations
-// (2024-04-18)
+// (2024-07-02)
 
 THREE.TrackballControls = function ( object, domElement ) {
 
@@ -102,11 +102,51 @@ var _rotateStart_fixed_up = new THREE.Vector2();
 var _rotateEnd_fixed_up   = new THREE.Vector2();
 var _rotateAll_fixed_up   = new THREE.Vector2();
 
-// save some headaches, and turn this on only in TPS mode
-this.rotate_with_up_fixed = false//true
 this.getMouseOnScreen_fixed_up = function (pageX, pageY, v2) {
   return this.getMouseOnScreen( pageX, pageY, (v2||new THREE.Vector2()) );
 }
+
+Object.defineProperties(this, {
+// v0.25.0
+  rotate_with_up_fixed: (()=>{
+// save some headaches, and turn this on only in TPS mode
+    let _rotate_with_up_fixed = false;
+    return {
+      get: ()=>{
+return (MMD_SA_options.Dungeon && MMD_SA_options.Dungeon.character.TPS_mode) || _rotate_with_up_fixed;
+      },
+      set: (v)=>{ _rotate_with_up_fixed = v; }
+    };
+  })(),
+
+  _rotateStart: {
+    get: ()=>_rotateStart
+  },
+  _rotateEnd: {
+    get: ()=>_rotateEnd
+  },
+
+  _zoomStart: {
+    get: ()=>_zoomStart
+  },
+  _zoomEnd: {
+    get: ()=>_zoomEnd
+  },
+
+  _panStart: {
+    get: ()=>_panStart
+  },
+  _panEnd: {
+    get: ()=>_panEnd
+  },
+
+  _rotateStart_fixed_up: {
+    get: ()=>_rotateStart_fixed_up
+  },
+  _rotateEnd_fixed_up: {
+    get: ()=>_rotateEnd_fixed_up
+  },
+});
 
 	this.rotateCamera = (function(){
 
@@ -170,8 +210,8 @@ function camera_limit1() {
 
 if (this.rotate_with_up_fixed) {
   if (_rotateStart_fixed_up.distanceToSquared(_rotateEnd_fixed_up) > this.EPS) {//(true) {//
-
-    _eye.subVectors( this.position0, this.target );
+// v0.25.0 (scale _eye to consider zoom distance)
+    _eye.subVectors( this.position0, this.target ).normalize().multiplyScalar(this._eye.length());
     _eye3.set(0, _eye.y, -Math.sqrt(_eye.x*_eye.x + _eye.z*_eye.z));
     let tilt = Math.atan2(_eye3.y, -_eye3.z);
     let clamp_upper =  1.9 - tilt/(Math.PI/4);
