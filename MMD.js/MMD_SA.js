@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-06-19)
+// (2024-07-14)
 
 var use_full_spectrum = true
 
@@ -8974,9 +8974,9 @@ Model_obj.call(this, index, vrm, para);
 this.mesh = vrm.scene;
 
 this._joints_settings = [];
-vrm.springBoneManager.joints.forEach( e => {
+for ( const e of vrm.springBoneManager.joints ) {
   this._joints_settings.push(Object.assign({}, e.settings));
-});
+}
 
 if (!MMD_SA.MMD_started)
   vrm_list.push(this)
@@ -9033,12 +9033,12 @@ const restrict_physics = MMD_SA.motion[_THREE.MMD.getModels()[this.index].skin._
 const settings_default = this._joints_settings;
 // Set has no index
 let i = 0;
-this.model.springBoneManager.joints.forEach( e => {
-//  e.settings.dragForce = 1
-  e.settings.stiffness = settings_default[i].stiffness * ((restrict_physics) ? 10 : 1) * vrm_scale;
+for ( const e of this.model.springBoneManager.joints ) {
+//e.settings.dragForce = 1;//settings_default[i].dragForce;
+  e.settings.stiffness = settings_default[i].stiffness * ((restrict_physics) ? 10 : 1) * VRM.joint_stiffness_percent/100 * vrm_scale;//this.mesh.scale.x;
   e.settings.gravityPower = settings_default[i].gravityPower;
   i++;
-});
+};
 
 this.model.springBoneManager.reset();
 //this.model.springBoneManager.setInitState();
@@ -9085,7 +9085,7 @@ if (vrm.springBoneManager) {
     for ( const joint of vrm.springBoneManager.joints ) {
       let j = model_para._joints[i];
       if (!j)
-        j = model_para._joints[i] = { settings:{ stiffness:joint.settings.stiffness, hitRadius:joint.settings.hitRadius } };
+        j = model_para._joints[i] = { settings:this._joints_settings[i] };
       i++;
 
       joint.settings.stiffness = j.settings.stiffness * scale;
@@ -9877,11 +9877,16 @@ if (!mesh.matrixAutoUpdate) {
     const finger_list_en = ["Thumb", "Index", "Middle", "Ring", "Little"];
     const nj_list = ["０","１","２","３"];
 
+    let joint_stiffness_percent;
+
     return {
       get list() { return vrm_list; },
       set list(v) { vrm_list = v; },
 
       get vrm_scale() { return vrm_scale; },
+
+      get joint_stiffness_percent () { return (joint_stiffness_percent == null) ? 100 : joint_stiffness_percent; },
+      set joint_stiffness_percent (v) { joint_stiffness_percent = v; },
 
       get bone_map_MMD_to_VRM() { return bone_map_MMD_to_VRM; },
       get bone_map_VRM_to_MMD() { return bone_map_VRM_to_MMD; },
@@ -15553,7 +15558,10 @@ case "口角下げ":
 case "上":
 case "下":
   morph_alt.push(m, 'まゆ'+m, '眉'+((m=='上')?'↑':'↓'));
-  break
+  break;
+case "照れ":
+  morph_alt.push(m, '赤面');
+  break;
 default:
   morph_alt.push(m);
     }

@@ -225,6 +225,20 @@
 						"zh": "接下來的9個姿勢"
 					}
 				},
+				"hip_adjustment_set": {
+					"_translation_": {
+						"_default_": "Hip adjustment set",
+						"ja": "腰の調整の設定セット",
+						"zh": "腰部調整設的設定集"
+					},
+					"tooltip": {
+						"_translation_": {
+							"_default_": "Hip adjustment set:\nThis option allows you to change the configuration set (A-H) for \"Hip adjutsment\" of upper body mocap, which can be defined under mocap options. Configuration is applied on a per-pose basis. Press ⬅️➡️ key to change value.",
+							"ja": "腰の調整の設定セット:\nこのオプションを使用すると、モーションキャプチャ設定で定義できる上半身のモーキャプの「腰の調整」の設定セット (A-H) を変更できます。 設定はポーズごとに適用されます。 ⬅️➡️キーを押して設定セットを変更します。",
+							"zh": "腰部調整設的設定集:\n此選項可讓您變更上半身動捕的「腰部調整」的設定集 (A-H)，可在「動態捕捉設定」下定義。 每個姿勢均可選用不同的設定集。 按⬅️➡️鍵更改設定集。"
+						}
+					}
+				},
 				"shoulder_adjust": {
 					"_translation_": {
 						"_default_": "Shoulder adjust",
@@ -314,7 +328,7 @@
 					"tooltip": {
 						"_translation_": {
 							"_default_": "Export current pose config:\nThis experimental feature allows you to export the config of the current pose/motion as a JSON file. You can then change the JSON to adjust every finest detail, from arm IK anchors, hip adjustment, to arm-as-leg control. Drop the adjusted JSON file back to the app to apply changes. For now, changes are not saved and will be reset on app start.",
-							"ja": "現在のポーズ設定をエクスポートする\nこの実験的な機能を使用すると、現在のポーズの構成を JSON ファイルとしてエクスポートできます。 その後、JSON を変更して、腕の IK から脚のコントロールの調整まで、あらゆる詳細を調整できます。 調整した JSON ファイルをアプリにドロップして戻し、変更を適用します。 現時点では、変更は保存されず、アプリの起動時にリセットされます。",
+							"ja": "現在のポーズ設定をエクスポートする:\nこの実験的な機能を使用すると、現在のポーズの構成を JSON ファイルとしてエクスポートできます。 その後、JSON を変更して、腕の IK から脚のコントロールの調整まで、あらゆる詳細を調整できます。 調整した JSON ファイルをアプリにドロップして戻し、変更を適用します。 現時点では、変更は保存されず、アプリの起動時にリセットされます。",
 							"zh": "匯出現在姿勢的設定:\n此實驗性的選項可將現在的姿勢匯出到 JSON 格式的檔案上。 你可透過改變此檔案的內容更改此姿勢的所有參數，包括 IK 設定、腰部補正及「以手代足」控制模式等等。 將改變後的檔案拖曳到程式中即可生效. 現時來說，改變後的設定不會被儲存而將於程式啟動時被還原。"
 						}
 					}
@@ -326,11 +340,18 @@
 						"zh": "自訂的姿勢"
 					}
 				},
+				"extra_current_pose": {
+					"_translation_": {
+						"_default_": "B. ┣ Mirror current pose (Ctrl+M)\nC. ┣ Push current pose to list top\nD. ┗ Export current pose config",
+						"ja": "B. ┣ 現在のポーズをミラーリングする(Ctrl+M)\nC. ┣ 現在のポーズをリストの一番上に置く\nD. ┗ 現在のポーズ設定をエクスポートする",
+						"zh": "B. ┣ 鏡像化現在的姿勢 (Ctrl+M)\nC. ┣ 置頂現在的姿勢\nD. ┗ 匯出現在姿勢的設定"
+					}
+				},
 				"extra": {
 					"_translation_": {
-						"_default_": "C. Mirror current pose (Ctrl+M)\nD. Push current pose to list top\nE. Reset pose list order\nF. Clear all custom poses\nG. Export current pose config\nX. Done",
-						"ja": "C. 現在のポーズをミラーリングする(Ctrl+M)\nD. 現在のポーズをリストの一番上に置く\nE. ポーズリストの順序をリセット\nF. すべてのカスタムポーズをクリアする\nG. 現在のポーズ設定をエクスポートする\nX. 終了",
-						"zh": "C. 鏡像化現在的姿勢 (Ctrl+M)\nD. 置頂現在的姿勢\nE. 還原姿勢列表的順序\nF. 清空所有自訂動作\nG. 匯出現在姿勢的設定\nX. 結束"
+						"_default_": "F. Reset pose list order\nG. Clear all custom poses",
+						"ja": "F. ポーズリストの順序をリセット\nG. すべてのカスタムポーズをクリアする",
+						"zh": "F. 還原姿勢列表的順序\nG. 清空所有自訂動作"
 					}
 				}
 			},
@@ -854,6 +875,20 @@
 									}
 								}
 							},
+							"configuration_set": {
+								"_translation_": {
+									"_default_": "Configuration set",
+									"ja": "設定セット",
+									"zh": "設定集"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "XR Animator allows you to define multiple sets of configuration (A-H) for hip adjustment, which can be applied to different poses for upper body mocap under \"Pose/Motion\".",
+										"ja": "XR Animator を使用すると、腰の調整用の複数の設定セット (A-H) を定義できます。 これは、「ポーズ/モーション」の下の上半身のモーションキャプチャのさまざまなポーズに適用できます。",
+										"zh": "XR Animator 可讓您定義多組腰部調整的設定集 (A-H)，並套用於「姿勢/動作」下上半身動作捕捉的不同姿勢。"
+									}
+								}
+							},
 							"general_weighting": {
 								"_translation_": {
 									"_default_": "General weighting",
@@ -864,7 +899,7 @@
 									"_translation_": {
 										"_default_": "By default, when using upper body mocap, hip position and rotation will be adjusted according to your upper body motion. This option determines the general weighting of the hip adjustment applied. Default is \"100%\".",
 										"ja": "デフォルトでは、上半身のモーションキャプチャを使用すると、上半身の動きに応じて腰の位置と回転が調整されます。 このオプションは、適用される腰の調整の一般的な重み付けを決定します。 デフォルトは「100%」です。",
-										"zh": "在預設情況下，在使用上半身動捕時，人物的腰部會隨上半身的動作作出相應的位置及回轉調整。 此設定可改變此腰部調整功能的整體比重。 預設是「100%」。"
+										"zh": "在預設情況下，在使用上半身動捕時，人物的腰部會隨上半身的動作作出相應的位置及回轉調整。 此設定可改變腰部調整功能的整體比重。 預設是「100%」。"
 									}
 								}
 							},
@@ -941,6 +976,20 @@
 											"ja": "このオプションは、Z 軸に沿った移動のスケーリングを決定します。 デフォルトでは、前傾すると腰は後方に移動し、後傾すると腰は前に移動します。 負の値を指定すると、この動作が逆転します。 デフォルトは「100%」です。",
 											"zh": "此設定決定腰部在 Z 軸上移動的比例。 預設情況下，當身體前傾時腰會向後移，後傾則向前移。 負數值會反轉此動作反應。 預設是「100%」。"
 										}
+									}
+								}
+							},
+							"rotation": {
+								"_translation_": {
+									"_default_": "Rotation",
+									"ja": "回転",
+									"zh": "旋轉"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "By default, hip rotates according to the rotation of your upper body. This option determines the degree of rotation. Negative value meanns the direction of rotation is inverted. Default is \"100%\".",
+										"ja": "デフォルトでは、ヒップは上半身の回転に応じて回転します。 このオプションは回転の度合いを決定します。 負の値は回転方向が反転することを意味します。 デフォルトは「100%」です。",
+										"zh": "預設情況下，臀部隨著上半身的旋轉而旋轉。 此選項決定旋轉的幅度。 負值表示旋轉方向反轉。 預設是「100%」。"
 									}
 								}
 							},
@@ -2025,9 +2074,9 @@
 					},
 					"message": {
 						"_translation_": {
-							"_default_": "1. ⌨️Hotkey list and options\n2. 🎮Gamepad options\n3. Camera face-locking: <camera_face_locking>\n4. Audio visualizer: <audio_visualizer>\n5. Export all settings\n6. Reset all settings\n7. Done",
-							"ja": "1. ⌨️ホットキーの一覧とオプション\n2. 🎮ゲームパッドのオプション\n3. カメラのフェイスロック: <camera_face_locking>\n4. オーディオ視覚効果: <audio_visualizer>\n5. すべての設定をエクスポートする\n6. すべての設定をリセットする\n7. 終了",
-							"zh": "1. ⌨️熱鍵列表及設定\n2. 🎮遊戲手把選項\n3. 鏡頭鎖定面部: <camera_face_locking>\n4. 音訊視覺化工具: <audio_visualizer>\n5. 匯出所有設定\n6. 重置所有設定\n7. 結束"
+							"_default_": "1. ⌨️Hotkey list and options\n2. 🎮Gamepad options\n3. VRM joint stiffness: <VRM_joint_stiffness_percent>%➕➖\n4. Camera face-locking: <camera_face_locking>\n5. Audio visualizer: <audio_visualizer>\n6. Export all settings\n7. Reset all settings\n8. Done",
+							"ja": "1. ⌨️ホットキーの一覧とオプション\n2. 🎮ゲームパッドのオプション\n3. VRM 関節の剛性: <VRM_joint_stiffness_percent>%➕➖\n4. カメラのフェイスロック: <camera_face_locking>\n5. オーディオ視覚効果: <audio_visualizer>\n6. すべての設定をエクスポートする\n7. すべての設定をリセットする\n8. 終了",
+							"zh": "1. ⌨️熱鍵列表及設定\n2. 🎮遊戲手把選項\n3. VRM 關節剛度: <VRM_joint_stiffness_percent>%➕➖\n4. 鏡頭鎖定面部: <camera_face_locking>\n5. 音訊視覺化工具: <audio_visualizer>\n6. 匯出所有設定\n7. 重置所有設定\n8. 結束"
 						}
 					},
 					"hotkey": {
@@ -2339,6 +2388,15 @@
 								"_default_": "Button",
 								"ja": "ボタン",
 								"zh": "按鈕"
+							}
+						}
+					},
+					"VRM_joint_stiffness": {
+						"tooltip": {
+							"_translation_": {
+								"_default_": "VRM joint stiffness:\nThis setting determines the stiffness of springbone joints of VRM model. Smaller value makes springbone-related parts (e.g. hairs) look softer. Press ➕➖ key to change value. Default is \"100%\".",
+								"ja": "VRM 関節の剛性:\nこの設定は、VRM モデルのスプリングボーン ジョイントの剛性を決定します。 値が小さいほど、スプリングボーン関連のパーツ (髪の毛など) が柔らかく見えます。 ➕➖キーを押して値を変更します。 デフォルトは「100%」です。",
+								"zh": "VRM 關節剛度:\n此設定決定 VRM 模型的彈簧骨關節的剛度。 數值越小，與彈簧骨相關的部分（例如頭髮）看起來越柔軟。 按➕➖鍵更改數值。 預設是「100%」。"
 							}
 						}
 					},
