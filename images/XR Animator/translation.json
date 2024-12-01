@@ -233,9 +233,9 @@
 					},
 					"tooltip": {
 						"_translation_": {
-							"_default_": "Hip adjustment set:\nThis option allows you to change the configuration set (A-H) for \"Hip adjutsment\" of upper body mocap, which can be defined under mocap options. Configuration is applied on a per-pose basis. Press ⬅️➡️ key to change value.",
-							"ja": "腰の調整の設定セット:\nこのオプションを使用すると、モーションキャプチャ設定で定義できる上半身のモーキャプの「腰の調整」の設定セット (A-H) を変更できます。 設定はポーズごとに適用されます。 ⬅️➡️キーを押して設定セットを変更します。",
-							"zh": "腰部調整設的設定集:\n此選項可讓您變更上半身動捕的「腰部調整」的設定集 (A-H)，可在「動態捕捉設定」下定義。 每個姿勢均可選用不同的設定集。 按⬅️➡️鍵更改設定集。"
+							"_default_": "Hip adjustment set:\nThis option allows you to change the configuration set (Default, A-H) for \"Hip adjutsment\", which can be defined under mocap options. Configuration is applied on a per-pose basis (full body mocap uses an independent configuration). Press ⬅️➡️ key to change value.",
+							"ja": "腰の調整の設定セット:\nこのオプションを使用すると、モーションキャプチャ設定で定義できる「腰の調整」の設定セット (デフォルト、A ～ H) を変更できます。 設定はポーズごとに適用されます (全身モーキャプでは独立した構成が使用されます)。 ⬅️➡️キーを押して設定セットを変更します。",
+							"zh": "腰部調整設的設定集:\n此選項可讓您變更「腰部調整」的設定集 (預設，A-H)，可在「動態捕捉設定」下定義。 每個姿勢均可選用不同的設定集 (全身動捕使用獨立的設定集)。 按⬅️➡️鍵更改設定集。"
 						}
 					}
 				},
@@ -856,9 +856,16 @@
 							},
 							"upper_body_mocap": {
 								"_translation_": {
-									"_default_": " (upper body mocap)",
-									"ja": "（上半身のモーキャプ）",
-									"zh": "（上半身動捕）"
+									"_default_": " (upper body mocap🙋)",
+									"ja": "（上半身のモーキャプ🙋）",
+									"zh": "（上半身動捕🙋）"
+								}
+							},
+							"full_body_mocap": {
+								"_translation_": {
+									"_default_": " (full body mocap💃)",
+									"ja": "（全身のモーキャプ💃）",
+									"zh": "（全身動捕💃）"
 								}
 							},
 							"press_to_change_value": {
@@ -883,9 +890,9 @@
 								},
 								"tooltip": {
 									"_translation_": {
-										"_default_": "XR Animator allows you to define multiple sets of configuration (A-H) for hip adjustment, which can be applied to different poses for upper body mocap under \"Pose/Motion\".",
-										"ja": "XR Animator を使用すると、腰の調整用の複数の設定セット (A-H) を定義できます。 これは、「ポーズ/モーション」の下の上半身のモーションキャプチャのさまざまなポーズに適用できます。",
-										"zh": "XR Animator 可讓您定義多組腰部調整的設定集 (A-H)，並套用於「姿勢/動作」下上半身動作捕捉的不同姿勢。"
+										"_default_": "XR Animator allows you to define multiple sets of configuration (default, A-H) for hip adjustment for upper body mocap. An independent default set is also available for full body mocap. If the ✔️mark appears, it means that the current set is in use. These sets can be applied to different poses under \"Pose/Motion\" options.",
+										"ja": "XR Animator では、上半身のモーキャプの腰の調整用に複数の設定セット (デフォルト、A ～ H) を定義できます。 全身のモーキャプ用に独立したデフォルト セットも用意されています。 ✔️マークが表示されている場合は、現在のセットが使用中であることを意味します。 これらのセットは、「ポーズ/モーション」オプションのさまざまなポーズに適用できます。",
+										"zh": "XR Animator 可讓您為上半身動捕的腰部調整定義多組設定集（預設，A-H），同時亦提供一組獨立的預設設定集給全身動捕使用。 如果出現✔️標記，則表示目前的設定集正在使用中。 這些設定集可以應用於「姿勢/動作」選項下的不同姿勢。"
 									}
 								}
 							},
@@ -927,6 +934,20 @@
 											"_default_": "This option determines how the pitch part of the head rotation is used for hip adjustment. It can be a negative value, meaning the behavior of hip motion based on \"Scale Y\" and part of \"Scale Z\" settings will be inverted for the head rotation part. Default is \"100%\".",
 											"ja": "このオプションは、頭の回転のピッチ部分を腰の調整にどのように使用するかを決定します。 負の値にすることもできます。 これは、「スケール Y」の設定と「スケール Z」の設定の一部に基づく腰の動きの動作が頭の回転部分に対して反転されることを意味します。 デフォルトは「100%」です。",
 											"zh": "此設定決定如何使用頭部俯仰部份的旋轉作為腰部調整的計算。 數值可以是負數，意味著頭部旋轉作為「比例Y」及部份「比例Z」設定所代表的腰部動作反應將會反轉。 預設是「100%」。"
+										}
+									}
+								},
+								"chest_rotation_offset": {
+									"_translation_": {
+										"_default_": "Chest rotation offset",
+										"ja": "胸部回転オフセット",
+										"zh": "胸部旋轉偏移"
+									},
+									"tooltip": {
+										"_translation_": {
+											"_default_": "This option determines the degree of chest rotation offset based on head rotation. By default, the offset's rotation direction is the opposite of head rotation. Negative value inverts the direction. Default is \"20%\".",
+											"ja": "このオプションは、頭の回転に基づいて胸の回転オフセットの度合いを決定します。 デフォルトでは、オフセットの回転方向は頭の回転の反対です。 負の値は方向を反転します。 デフォルトは「20%」です。",
+											"zh": "此選項決定以頭部旋轉為根據的胸部旋轉偏移的程度。 預設情況下，偏移的旋轉方向與頭部旋轉方向相反。 負值會反轉方向。 預設是「20%」。"
 										}
 									}
 								}
@@ -987,9 +1008,23 @@
 								},
 								"tooltip": {
 									"_translation_": {
-										"_default_": "By default, hip rotates according to the rotation of your upper body. This option determines the degree of rotation. Negative value meanns the direction of rotation is inverted. Default is \"100%\".",
+										"_default_": "By default, hip rotates according to the rotation of your upper body. This option determines the degree of rotation. Negative value means the direction of rotation is inverted. Default is \"100%\".",
 										"ja": "デフォルトでは、ヒップは上半身の回転に応じて回転します。 このオプションは回転の度合いを決定します。 負の値は回転方向が反転することを意味します。 デフォルトは「100%」です。",
 										"zh": "預設情況下，臀部隨著上半身的旋轉而旋轉。 此選項決定旋轉的幅度。 負值表示旋轉方向反轉。 預設是「100%」。"
+									}
+								}
+							},
+							"full_body_weighting": {
+								"_translation_": {
+									"_default_": "Full body weighting💃",
+									"ja": "全身の重み付け💃",
+									"zh": "全身的比重💃"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "When close to camera, hip adjustment settings are fully applied during full body mocap. This option determines how much the settings should be applied when no longer close to the camera (i.e. hips visible) during full body mocap. Default is \"0%\".",
+										"ja": "カメラに近い場合、全身モーキャプ中に腰の調整設定が完全に適用されます。 このオプションは、全身モーキャプ中にカメラに近づかなくなったとき（つまり、ヒップが見えるとき）に設定をどの程度適用するかを決定します。 デフォルトは「0%」です。",
+										"zh": "當靠近鏡頭時，腰部調整設定將在全身動捕期間完全套用。 此選項可決定在全身動捕過程中不再靠近相機時（即下半身在鏡頭範圍內時）應套用多少設定。 預設是「0%」。"
 									}
 								}
 							},
@@ -1292,6 +1327,20 @@
 								}
 							}
 						},
+						"blink_clarity": {
+							"_translation_": {
+								"_default_": "Blink clarity",
+								"ja": "まばたきの明瞭さ",
+								"zh": "眨眼清晰度"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Blink clarity:\nThis option determines the contrast between eye open and close status. Use a higher value if you have a hard time fully opening or closing your avatar's eyes, or activating a full blink. Default is \"Normal\".",
+									"ja": "まばたきの明瞭さ:\nこのオプションは、目の開閉状態のコントラストを決定します。 アバターの目を完全に開いたり閉じたりするのが困難な場合、または完全に瞬きするのが困難な場合は、高い値を使用します。 デフォルトは「普通」です。",
+									"zh": "眨眼清晰度:\n此選項決定睜眼和閉眼狀態之間的對比。 如果您很難完全打開或關閉人物的眼睛，或啟動完整的眨眼，請使用較高的值。 預設是「普通」。"
+								}
+							}
+						},
 						"auto_blink": {
 							"_translation_": {
 								"_default_": "Auto blink",
@@ -1446,9 +1495,9 @@
 								},
 								"tooltip": {
 									"_translation_": {
-										"_default_": "Activate the sorrow expression by pulling your lower lip upward and making a standard sad face. Lower the percentage if it is often misactivated. Default is \"100%\".",
-										"ja": "下唇を引き上げて標準的な悲しい顔を作ることで、アバターの悲しみの表情を有効にします。 誤ってアクティブ化されることが多い場合は、パーセンテージを下げます。 デフォルトは「100%」です。",
-										"zh": "作一個下唇向上拉的標準悲傷臉以啟動人物的悲傷表情。 如出現經常誤發的情況，可降低數值。 預設是「100%」。"
+										"_default_": "Activate the sorrow expression by frowning, or pulling your lower lip upward and making a standard sad face. Lower the percentage if it is often misactivated. Default is \"100%\".",
+										"ja": "眉をひそめたり、下唇を引き上げて標準的な悲しい顔を作ることで、アバターの悲しみの表情を有効にします。 誤ってアクティブ化されることが多い場合は、パーセンテージを下げます。 デフォルトは「100%」です。",
+										"zh": "透過皺眉或做出下唇向上拉的標準悲傷臉以啟動人物的悲傷表情。 如出現經常誤發的情況，可降低數值。 預設是「100%」。"
 									}
 								}
 							},

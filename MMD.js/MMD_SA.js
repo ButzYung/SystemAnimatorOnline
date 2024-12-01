@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-07-14)
+// (2024-07-30)
 
 var use_full_spectrum = true
 
