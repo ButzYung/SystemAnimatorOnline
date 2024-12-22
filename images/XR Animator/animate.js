@@ -1,5 +1,5 @@
 // XR Animator
-// (2024-08-04)
+// (2024-08-18)
 
 var MMD_SA_options = {
 
@@ -190,6 +190,7 @@ var MMD_SA_options = {
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/sitting_sexy09.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/sitting_sexy10.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/sitting_sexy11.vmd' }
+   ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/sitting_sexy12.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/prone_pose01.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/model_pose01.vmd' }
    ,{ must_load:true, no_shuffle:true, path:Settings.f_path + '/assets/assets.zip#/motion/model_pose02.vmd' }
@@ -3083,7 +3084,7 @@ if (z_para) {
 			"motion_tracking_enabled": true,
 			"motion_tracking_upper_body_only": true,
 "look_at_screen": true,
-"center_view": [0,-3,5],
+"center_view": [0,-3,7],
 			"motion_tracking": {
 "look_at_screen": true,
 "hip_adjustment": {
@@ -3202,7 +3203,40 @@ if (z_para) {
 				}
 			}
 		}
-	}
+	},
+
+		"sitting_sexy12": {
+  adjustment_per_model: {
+    _default_ : {
+  skin_default: {
+    "左腕": { rot_add:{x:0, y:0, z:-5} },
+  }
+    },
+  },
+			"look_at_screen_bone_list": [
+				{ "name":"首", "weight_screen":0.5, "weight_screen_y":0.5, "weight_motion":1 },	
+				{ "name":"頭", "weight_screen":0.5, "weight_screen_y":0.5, "weight_motion":1 },
+				{ "name":"上半身",  "weight_screen":0.5, "weight_screen_x":0, "weight_screen_y":0.5, "weight_motion":1 },
+				{ "name":"上半身2", "weight_screen":0.5, "weight_screen_x":0, "weight_screen_y":0.5, "weight_motion":1 }
+			],
+			"motion_tracking_enabled": true,
+			"motion_tracking_upper_body_only": true,
+"look_at_screen": true,
+"center_view": [0,-5,8],
+			"motion_tracking": {
+"look_at_screen": true,
+"hip_adjustment": {
+	"feet_fixed_weight":0.75,
+	"rotation_weight":0.25,
+	"displacement_weight":0.5,
+	"knee_fixed_weight":1
+},
+"arm_default_stickiness": {
+	"left" : { "default_position_weight":0 },
+	"right": { "default_position_weight":0.75 }
+}
+			}
+		}
 
   }
 
@@ -4424,6 +4458,8 @@ _motion_list[0] = [
   {name:"model_pose03", info:"Model pose 03 (🙋/🦶)"},
 
   {name:"sitting_sexy11", info:"Sit 16 (🙋/🦶)"},
+
+  {name:"sitting_sexy12", info:"Sit 17 (🙋)"},
 
 ].filter(m=>m!=null);
 
@@ -9261,7 +9297,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  get content() { return 'XR Animator (v0.27.1)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
+  get content() { return 'XR Animator (v0.27.2)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -9905,10 +9941,13 @@ System._browser.save_file('XRA_settings.json', json, 'application/json');
 				},
 				"tilt_adjustment": Object.assign({}, System._browser.camera.tilt_adjustment),
 			},
+			"motion_recorder": {},
 			"streamer_mode": {
 				"camera_preference": {}
 			}
 		},
+		"gamepad": [{}],
+		"model_path_extra": [],
 		"hotkeys": {
 			"is_global": true
 		},
@@ -9917,6 +9956,8 @@ System._browser.save_file('XRA_settings.json', json, 'application/json');
 		"shoulder_adjust": null,
         "selfie_mode": false,
 		"video_capture": {},
+		"UI_muted": false,
+		"language": null,
 		"pose": {},
 		"VMC": {}
 	}
@@ -10332,14 +10373,28 @@ const tilt_page_index = 7;
 return [
         {
           message: {
-  get content() { return System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options') + '\n6. ' + System._browser.translation.get('Misc.done'); }
+  get content() { return System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options').replace(/\<smoothing\>/, System._browser.translation.get('Misc.' + ((System._browser.camera.mocap_data_smoothing == 1) ? 'Small' : ((System._browser.camera.mocap_data_smoothing == 2) ? 'Normal' : 'Min')))) + '\n7. ' + System._browser.translation.get('Misc.done'); }
  ,bubble_index: 3
  ,branch_list: [
   { key:1, event_index:1 },
   { key:2, event_index:hand_page_index },
   { key:3, branch_index:facemesh_options_branch },
-  { key:4, event_index:tilt_page_index },
-  { key:5, branch_index:mocap_options_branch+4,
+  { key:4, event_id: {
+      func: function () {
+if (++System._browser.camera.mocap_data_smoothing > 2)
+  System._browser.camera.mocap_data_smoothing = 0;
+      },
+      goto_event: { branch_index:mocap_options_branch },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.mocap_data_smoothing.tooltip')
+);
+    }
+  },
+  { key:5, event_index:tilt_page_index },
+  { key:6, branch_index:mocap_options_branch+4,
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
@@ -10347,7 +10402,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
     }
   },
-  { key:6, is_closing_event:true, branch_index:done_branch }
+  { key:7, is_closing_event:true, branch_index:done_branch }
   ]
           }
         },
@@ -12561,6 +12616,7 @@ config.user_camera = {
       emotion_tongue_out_percent: System._browser.camera.facemesh.emotion_tongue_out_percent,
       emotion_others_percent: System._browser.camera.facemesh.emotion_others_percent,
     },
+    mocap_data_smoothing: System._browser.camera.mocap_data_smoothing,
     tilt_adjustment: Object.assign({}, System._browser.camera.tilt_adjustment),
     debug_hidden: MMD_SA_options.user_camera.ML_models.debug_hidden,
   },
@@ -12772,6 +12828,8 @@ try {
         System._browser.camera.facemesh.emotion_tongue_out_percent = config[p].ML_models.facemesh.emotion_tongue_out_percent;
         System._browser.camera.facemesh.emotion_others_percent = config[p].ML_models.facemesh.emotion_others_percent;
 
+        System._browser.camera.mocap_data_smoothing = config[p].ML_models.mocap_data_smoothing;
+
         MMD_SA_options.user_camera.streamer_mode = config[p].streamer_mode || { camera_preference:{} };
         Object.assign(System._browser.camera.tilt_adjustment, config[p].ML_models.tilt_adjustment||{});
         break;
@@ -12937,6 +12995,194 @@ else if (mm.para_SA.motion_tracking_enabled) {
   });
 
 
+// headless_mode START
+  Object.defineProperty(System._browser, 'skipping_rendering', {
+    get: function () {
+if (this.skip_rendering && !this.hidden) return true;
+
+if (!returnBoolean('DisableBackgroundThrottling')) return false;
+
+return this.skip_background_rendering && this.hidden;
+    }
+  });
+
+  window.addEventListener('load', ()=>{
+    Object.defineProperty(MMD_SA, 'hide_3D_avatar', (()=>{
+      let hide_3D_avatar = false;
+      return {
+        get: function () { return hide_3D_avatar || System._browser.skipping_rendering; },
+        set: function (v) { hide_3D_avatar = v; }
+      };
+    })());
+  });
+
+  window.addEventListener('SA_WebSocket_server_on_message', (()=>{
+/*
+    async function load_file(path) {
+if (!path || !FSO_OBJ.FileExists(path)) return null;
+
+let blob;
+
+const response = await fetch(toFileProtocol(path));
+if (linux_mode) {
+  blob = new Blob([await response.arrayBuffer()]);
+}
+else {
+  blob = await response.blob();
+}
+
+if (blob) {
+  blob.name = path;
+  blob.isFileSystem = true;
+  await SA_DragDropEMU(blob);
+}
+    }
+*/
+    function on_XRA_loaded(func, delay=1) {
+if (delay == -1) {
+  func();
+}
+else {
+  window.addEventListener('SA_Dungeon_onstart', ()=>{
+    System._browser.on_animation_update.add(func, delay,0);
+  });
+}
+    }
+
+    function write_settings(data, stage=get_stage()) {
+      function func(data) {
+data.forEach(para=>{
+  let path = para.path;
+  let value = para.value;
+
+  if (!path) {
+    MMD_SA_options._XRA_settings_imported = value;
+  }
+  else {
+    const nodes = path.split('.');
+    let node = MMD_SA_options._XRA_settings_imported;
+    for (let i = 0; i < nodes.length-1; i++) {
+      const name = nodes[i];
+//console.log(name, node, node[name])
+      if (node[name]) {
+        node = node[name];
+      }
+      else {
+        node = node[name] = (isNaN(parseInt(nodes[i+1]))) ? {} : [];
+      }
+    }
+
+    node[nodes[nodes.length-1]] = value;
+    //console.log(node, nodes[nodes.length-1], value);
+  }
+});
+//console.log(MMD_SA_options._XRA_settings_imported);
+
+System._browser.on_animation_update.remove(update_settings, 0);
+System._browser.on_animation_update.add(update_settings, 1,0);
+      }
+
+on_XRA_loaded(()=>{
+  func(data);
+}, (stage >= 2) ? -1 : 1);
+
+    }
+
+    function update_settings() {
+MMD_SA_options._XRA_settings_import();
+DEBUG_show();
+    }
+
+    function get_stage() {
+let stage = 0;
+if (MMD_SA_options.Dungeon.started) {//(MMD_SA.MMD_started) {
+  stage = 2;
+}
+else if (MMD_SA.THREEX.THREEX) {
+  stage = 1;
+}
+
+return stage;
+    }
+
+//window.addEventListener('load', ()=>{ setTimeout(()=>{ write_setting({path:'user_camera.pixel_limit.disabled', value:false}); }, 1000) });
+
+    return function (e) {
+let message = e.detail.message;
+console.log(message)
+
+let msg_json;
+try {
+// test
+//message = message.replace(/^"/, '').replace(/"$/, '').replace(/\\"/g, '"');console.log(message);
+  msg_json = JSON.parse(message);
+}
+catch (err) {
+//  console.error(err);
+  console.log(message);
+  return;
+}
+
+const app = msg_json.app;
+const action = msg_json.action;
+const data = msg_json.data;
+
+if (app != 'XRAnimator') return;
+
+let stage = get_stage();
+
+if (action == 'enable_headless_mode') {
+  if (stage == 0) {
+    System._browser.on_animation_update.add(()=>{
+document.getElementById('LMMD_StartButton').dispatchEvent(new MouseEvent('click'));
+    }, 2,0);
+
+    on_XRA_loaded(()=>{
+if (document.getElementById('Ldungeon_UI')) {
+  document.getElementById('Ldungeon_UI').style.visibility = "hidden"
+  document.getElementById('Ldungeon_inventory').style.visibility = "hidden"
+  document.getElementById('Ldungeon_inventory_backpack').style.visibility = "hidden"
+}
+
+System._browser.on_animation_update.add(()=>{
+  const inv = MMD_SA_options.Dungeon.inventory.find('streamer_mode');
+  inv.action_check().then(actionable=>{
+    if (actionable)
+      inv.item.action.func();
+  });
+}, 10,0);
+    });
+
+    MMD_SA_options.user_camera.display.wireframe = { top:0, left:0, scale:1.8 };
+    document.body.style.backgroundColor = 'rgba(105,105,105,0.5)';//'#696969';//
+    System._browser.skip_rendering = true;
+
+    MMD_SA_options.width = 640;
+    MMD_SA_options.height = 360;
+    resize();
+  }
+}
+else if (action == 'write_settings') {
+  write_settings(data, stage);
+}
+else if (action == 'open_file') {
+  if (/\.vrm$/.test(data)) {
+    let path = 'F:\\MMD\\_sync\\models\\_VRM\\7a04m_Model-Pack_01_vrm\\Rabbit_01_Aquamarine.vrm';
+    if (stage == 1) {
+      on_XRA_loaded(()=>{
+        SA_DragDropEMU(path);
+      });
+    }
+    else {
+      SA_DragDropEMU(path);
+    }
+  }
+} 
+    };
+  })());
+// headless_mode END
+
+
   EV_sync_update.fps_control = (function () {
     var update_frame = false
     var cooling_count = 0
@@ -12961,7 +13207,7 @@ else if (mm.para_SA.motion_tracking_enabled) {
   })();
 
 
-  MMD_SA_options.motion_para['motion_ukulele'] = Object.assign({}, MMD_SA_options.motion_para['sitting_sexy09']);
+//MMD_SA_options.motion_para['motion_ukulele'] = Object.assign({}, MMD_SA_options.motion_para['sitting_sexy09']);
 
 
 })();

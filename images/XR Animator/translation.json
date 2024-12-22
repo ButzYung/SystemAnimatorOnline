@@ -626,9 +626,9 @@
 				},
 				"mocap_options": {
 					"_translation_": {
-						"_default_": "1. Body tracking options\n2. Hand tracking options\n3. Face tracking options\n4. Webcam angle offset correction\n5. Clear bounding box",
-						"ja": "1. ボディトラッキング設定\n2. ハンドトラッキング設定\n3. フェイストラッキング設定\n4. Webカメラの角度オフセット補正\n5. 境界ボックスをクリアする",
-						"zh": "1. 身體追蹤設定\n2. 手部追蹤設定\n3. 面部追蹤設定\n4. 攝影機角度偏移補正\n5. 清除邊界框"
+						"_default_": "1. Body tracking options\n2. Hand tracking options\n3. Face tracking options\n4. Mocap data smoothing: <smoothing>\n5. Webcam angle offset correction\n6. Clear bounding box",
+						"ja": "1. ボディトラッキング設定\n2. ハンドトラッキング設定\n3. フェイストラッキング設定\n4. モーキャプデータ平滑化: <smoothing>\n5. Webカメラの角度オフセット補正\n6. 境界ボックスをクリアする",
+						"zh": "1. 身體追蹤設定\n2. 手部追蹤設定\n3. 面部追蹤設定\n4. 動態捕捉數據平滑化: <smoothing>\n5. 攝影機角度偏移補正\n6. 清除邊界框"
 					},
 					"body_tracking_options": {
 						"AI_model_quality": {
@@ -1565,6 +1565,15 @@
 									"ja": "A. キャリブレーションをリセットする\nB. キャリブレーションをインポートする\nC. キャリブレーションをエクスポートする",
 									"zh": "A. 重置校準\nB. 匯入校準\nC. 匯出校準"
 								}
+							}
+						}
+					},
+					"mocap_data_smoothing": {
+						"tooltip": {
+							"_translation_": {
+								"_default_": "Mocap data smoothing:\nThis option determines how much smoothing should be applied to real-time mocap and motion recording. Less smoothing preserves more motion details, at the expense of increased jitters during subtle motion. \"Min\" uses no extra smoothing other than the minimum required. Default is \"Normal\".",
+								"ja": "モーキャプデータ平滑化:\nこのオプションは、リアルタイムのモーションキャプチャとモーション記録にどの程度のスムージングを適用するかを決定します。 スムージングが少ないほど、微妙な動きの際に不安定さが増す代わりに、より多くのモーションの詳細が保持されます。 「最小」では、必要最小限以外の追加のスムージングは使用されません。 デフォルトは「普通」です。",
+								"zh": "動態捕捉數據平滑化:\n此選項決定應對實時動作捕捉和動作記錄應用多少平滑度。 較少的平滑可以保留更多的動作細節，但代價是細微的動作會增加不穩定性。 「最小」除了所需的最小值之外，不會使用額外的平滑。 預設為「普通」。"
 							}
 						}
 					},
@@ -2525,7 +2534,7 @@
 							},
 							"list": {
 								"_translation_": {
-									"_default_": "NewruGuru, Nymph, Shionay, shion, KuraiNoOni, MShade, Kai, Prajzis, LouLi Lou, Cylan Cade, CoCoNo,"
+									"_default_": "NewruGuru, Nymph, KuraiNoOni, Kai, Prajzis, LouLi Lou, MShade, coffee-addict, skeh, CoCoNo,"
 								}
 							}
 						}

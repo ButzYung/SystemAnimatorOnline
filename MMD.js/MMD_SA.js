@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-07-30)
+// (2024-08-18)
 
 var use_full_spectrum = true
 
@@ -1002,8 +1002,7 @@ if (!ao.ontimeupdate)
 
       if (json.System_Animator_motion_para) {
         for (const name in json.System_Animator_motion_para) {
-          if (MMD_SA_options.motion_para[name])
-            MMD_SA_options.motion_para[name] = Object.assign(MMD_SA_options.motion_para[name]||{}, json.System_Animator_motion_para[name]);
+          MMD_SA_options.motion_para[name] = Object.assign(MMD_SA_options.motion_para[name]||{}, json.System_Animator_motion_para[name]);
         }
         DEBUG_show('✅Motion config imported', 3);
       }
@@ -12602,7 +12601,8 @@ function MMD_LR(name) {
 const nj_list = ["０","１","２","３"];
 function MMD_finger(name) {
   let j_index;
-  var f = finger_map[RegExp.$1.toLowerCase().replace(/middle/, 'mid')];
+// use 'middle' instead of /middle/, as regular expression will change RegExp.$ values
+  var f = finger_map[RegExp.$1.toLowerCase().replace('middle', 'mid')];
   if (f) {
     j_index = parseInt(RegExp.$2);
   }
@@ -12636,9 +12636,27 @@ function rig(k, v) {
     _rig_map[k] = v
 }
 
+function is_armature(obj) {
+  if (!has_armature) return false;
+/*
+// FBX-to-glTF test
+  do {
+    obj = obj.parent;
+    if (!obj) return false;
+    if (obj.name == 'Armature') return true;
+  }
+  while (obj?.name);
+*/
+  return false;
+}
+
 const bone_map = [];
+let has_armature;
 asset.traverse((obj)=>{
-  if (obj.isBone) {
+  if (obj.name == 'Armature') {
+    has_armature = true;
+  }
+  else if (obj.isBone || is_armature(obj)) {
     if (bone_map.findIndex(name=>name==obj.name) == -1)
       bone_map.push(obj.name);
   }
@@ -12794,6 +12812,9 @@ Object.entries(rig_map.VRM).forEach(kv=>{
 
 skeletons.forEach(s=>s.pose());
 
+// FBX-to-glTF test
+//if (!skeletons.length) skeletons = [{}];
+
 console.log('bone_clones', bone_clones)
 
 VRM.fix_rig_map(rig_map.VRM);
@@ -12871,6 +12892,15 @@ const hips_q_inv = hips_q.clone().conjugate();
 
 console.log('rig_rot,[hips_q]', rig_rot, [hips_q.clone()]);//, motion_hips.quaternion, motion_hips.parent.getWorldQuaternion(new THREE.Quaternion()), new THREE.Quaternion().copy(hips_q_inv).premultiply(motion_hips.quaternion).multiply(q2.copy(motion_hips.quaternion).conjugate()).multiply(hips_q)]);
 let _rig_rot_perpendicular = Math.abs(rig_rot.w) % 1 < 0.0001;
+/*
+// FBX-to-glTF test
+if (1) {
+    hips_q.set(-0.707,0,0,0.707).normalize();
+    hips_q_inv.copy(hips_q).conjugate();
+//    rig_rot.copy(hips_q)
+}
+else
+*/
 if (skeletons.length && (bone_clones['hips'].clone.quaternion.w != 1)) {
   if (_rig_rot_perpendicular) {
     hips_q.copy(rig_rot);
