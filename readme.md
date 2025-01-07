@@ -72,23 +72,11 @@ After the page has been fully loaded, click on the little phone button on the to
 
 [Check out these YouTube videos](https://www.youtube.com/playlist?list=PLLpwhHMvOCSt_9k1zDMKHc7X1nBUwnU8l) for demonstration.
 
-# AR Selfie
-
-XR Animator also supports the AR selfie feature, using both the front camera (for AR) and the selfie camera, allowing you to take a selfie with the 3D avatar in AR mode.
-
-Before you enter the AR mode, you need to double-click the "Selfie camera" icon and enable the selfie camera first. Then you can toggle the selfie camera at any time during the AR session. By default, avatar is always displayed in front of you in selfie mode. Double-click the "Segmentation AI" icon to enable the AI mode, which detects your shape inside the camera, allowing your avatar to blend into the background and appear behind you. Note that the AI mode is SLOW. You will probably need the latest Android phone to get a smooth frame rate.
-
-You may also use the "Segmentation AI" on PC directly and display the avatar behind you without going through the AR mode.
-
-Lastly, click the Snapshot icon and a still photo will be generated. This can be saved into your phone for whatever purpose you want, showing off to your friends perhaps!
-
-[Check out the following YouTube video](https://youtu.be/TIMPqV9lVH8) for demonstration.
-
 # ❤️Support this project
 
 The future of XR Animator relies on your support🙇 Some IRL family issues have significantly increased my financial burden. While it was fun to develop the app, financial return was next to minimal. Reality forces me to evaluate the sustainability of this project, or soon I will have to give up...😢
 
-If you like XR Animator, please consider making a donation🙇 Or even better, join my membership with perks such as ***EARLY ACCESS to the latest version XR Animator*** (at least one month ahead of the public release on GitHub), insider stories/tips and other benefits🎁 Sponsor us, and help keep this project free and sustainable🙏
+If you like XR Animator, please consider making a donation🙇 Or even better, join my membership with perks such as ***EARLY ACCESS to the latest version XR Animator*** (at least 3 months ahead of the public release on GitHub), insider stories/tips and other benefits🎁 Sponsor us, and help keep this project free and sustainable🙏
 
 - ☕[Ko-fi (Membership)](https://ko-fi.com/butzyung/tiers)
 - 🎁[FANBOX (メンバーシップ)](https://xra.fanbox.cc/)
