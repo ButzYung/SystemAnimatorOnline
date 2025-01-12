@@ -1,5 +1,5 @@
 // System Animator core basics
-// (2023-01-17)
+// (2024-09-01)
 
 var use_SA_browser_mode
 
@@ -669,6 +669,7 @@ return webkit_electron_remote.dialog.showMessageBox(browserWindow, options)
   webkit_version_milestone["1.2.4"]  = (v1 >= 10204)//('getChildWindows' in webkit_window)
   webkit_version_milestone["1.4.11"] = (v1 >= 10411)//reload page instead of relaunch to restart the app (https://github.com/electron/electron/pull/8110)
   webkit_version_milestone["6.0.0"]  = (v1 >= 60000)//sync/promise-based version of dialog.showMessageBox, dialog.showOpenDialog, dialog.showSaveDialog
+  webkit_version_milestone["32.0.0"] = (v1 >= 320000)//replace File.path with webUtils.getPathForFile
 
 // electron v6
   webkit_electron_screen = webkit_electron_screen || webkit_electron_remote.screen

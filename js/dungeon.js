@@ -6812,6 +6812,8 @@ return k_code == 'Key'+branch.key;
 }
 else {
   if (k_code == 'Escape') {
+// headless_mode
+    if (MMD_SA_options._XRA_headless_mode) {} else
     if (System._browser.overlay_mode == 0) {
       System._browser.overlay_mode = System._browser.overlay_mode_TEMP = 1;
     }

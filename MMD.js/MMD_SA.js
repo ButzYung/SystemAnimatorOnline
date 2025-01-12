@@ -6320,7 +6320,7 @@ camera_mod.update_camera_base();
 const pos = v1.copy(camera_mod.c_pos);
 const target = v2.copy(camera_mod.c_target);
 
-ignore_list?.forEach(id=>{
+((ignore_list === true) ? Object.keys(camera_mod.mod_list) : ignore_list)?.forEach(id=>{
   const c = camera_mod.mod_list[id];
   if (c) {
     pos.add(c.pos_last);
@@ -8956,6 +8956,10 @@ para.left_palm_length = v1.fromArray(para.pos0['leftHand']).distanceTo(v2.fromAr
 para.left_leg_length = ((para.pos0['leftUpperLeg'][1] - para.pos0['leftLowerLeg'][1]) + (para.pos0['leftLowerLeg'][1] - para.pos0['leftFoot'][1])) * vrm_scale;
 para.spine_length = (para.pos0['neck'][1] - para.pos0['leftUpperLeg'][1]) * vrm_scale;
 
+const b3 = new THREE.Box3().setFromObject(vrm.scene);
+para.head_height_absolute = (b3.max.y - para.pos0['head'][1]) * vrm_scale;
+//console.log(para.head_height_absolute)
+
 para.left_heel_height = para.pos0['leftFoot'][1] * vrm_scale;
 para.hip_center = new THREE.Vector3().fromArray(para.pos0['leftUpperLeg']).setX(0).multiplyScalar(vrm_scale);
 para.hip_center_offset = new THREE.Vector3().fromArray(para.pos0['hips']).multiplyScalar(vrm_scale).sub(para.hip_center);
@@ -9877,6 +9881,9 @@ if (!mesh.matrixAutoUpdate) {
     const nj_list = ["０","１","２","３"];
 
     let joint_stiffness_percent;
+    function resetPhysics() {
+MMD_SA.THREEX.get_model(0).resetPhysics();
+    }
 
     return {
       get list() { return vrm_list; },
@@ -9885,7 +9892,13 @@ if (!mesh.matrixAutoUpdate) {
       get vrm_scale() { return vrm_scale; },
 
       get joint_stiffness_percent () { return (joint_stiffness_percent == null) ? 100 : joint_stiffness_percent; },
-      set joint_stiffness_percent (v) { joint_stiffness_percent = v; },
+      set joint_stiffness_percent (v) {
+joint_stiffness_percent = v;
+if (MMD_SA_options.Dungeon.started) {//(MMD_SA.MMD_started) {//
+  System._browser.on_animation_update.remove(resetPhysics, 0);
+  System._browser.on_animation_update.add(resetPhysics, 60,0);
+}
+      },
 
       get bone_map_MMD_to_VRM() { return bone_map_MMD_to_VRM; },
       get bone_map_VRM_to_MMD() { return bone_map_VRM_to_MMD; },
@@ -10024,7 +10037,8 @@ mesh_obj.traverse( ( obj ) => {
   obj.layers.enable(MMD_SA.THREEX.PPE.N8AO.AO_MASK);
 } );
 
-if (!MMD_SA.MMD_started)
+// headless_mode
+if (!MMD_SA.MMD_started && !MMD_SA_options._XRA_headless_mode)
   data.scene.add(mesh_obj);
 
 var vrm_obj = new VRM_object(para.vrm_index, vrm, { url:url_raw });
@@ -13920,6 +13934,67 @@ obj.traverse(node => {
 console.log('geo_disposed:' + geo_disposed, 'map_disposed:' + map_disposed, 'mtrl_disposed:' + mtrl_disposed, 'misc_disposed:' + misc_disposed);
       },
 
+// headless_mode
+      press_key: function (k) {
+const ck = k.split('+');
+let command, code;
+if (ck.length == 1) {
+  code = ck[0];
+}
+else {
+  command = ck[0];
+  code = ck[1];
+}
+
+let altKey, ctrlKey, shiftKey;
+switch (command) {
+  case 'Alt':
+    altKey = true;
+    break;
+  case 'Ctrl':
+    ctrlKey = true;
+    break;
+  case 'Shift':
+    shiftKey = true;
+    break;
+}
+
+let keyCode;
+if (/^[A-Z]$/.test(code)) {
+  code = 'Key' + code;
+}
+else if (/Numpad(\d)/.test(code)) {
+  keyCode = 96 + parseInt(RegExp.$1);
+}
+else if (/Arrow(Up|Down|Left|Right)/.test(code)) {
+  switch (RegExp.$1) {
+    case 'Left':
+      keyCode = 37;
+      break;
+    case 'Up':
+      keyCode = 38;
+      break;
+    case 'Down':
+      keyCode = 39;
+      break;
+    case 'Right':
+      keyCode = 40;
+      break;
+  }
+}
+else if (code == 'NumpadAdd') {
+  keyCode = 107;
+}
+else if (code == 'NumpadSubtract') {
+  keyCode = 109;
+}
+else if (code == 'Space') {
+  keyCode = 32;
+}
+
+document.dispatchEvent(new KeyboardEvent('keydown', { code, keyCode, altKey, ctrlKey, shiftKey }));
+      }
+
     }
 
   };
@@ -14468,63 +14543,8 @@ const k = MMD_SA_options.gamepad[0].buttons[b_id]?.key;
 //DEBUG_show(i+'/'+b_id+'/'+k)
 if (!k) return;
 
-const ck = k.split('+');
-let command, code;
-if (ck.length == 1) {
-  code = ck[0];
-}
-else {
-  command = ck[0];
-  code = ck[1];
-}
-
-let altKey, ctrlKey, shiftKey;
-switch (command) {
-  case 'Alt':
-    altKey = true;
-    break;
-  case 'Ctrl':
-    ctrlKey = true;
-    break;
-  case 'Shift':
-    shiftKey = true;
-    break;
-}
-
-let keyCode;
-if (/^[A-Z]$/.test(code)) {
-  code = 'Key' + code;
-}
-else if (/Numpad(\d)/.test(code)) {
-  keyCode = 96 + parseInt(RegExp.$1);
-}
-else if (/Arrow(Up|Down|Left|Right)/.test(code)) {
-  switch (RegExp.$1) {
-    case 'Left':
-      keyCode = 37;
-      break;
-    case 'Up':
-      keyCode = 38;
-      break;
-    case 'Down':
-      keyCode = 39;
-      break;
-    case 'Right':
-      keyCode = 40;
-      break;
-  }
-}
-else if (code == 'NumpadAdd') {
-  keyCode = 107;
-}
-else if (code == 'NumpadSubtract') {
-  keyCode = 109;
-}
-else if (code == 'Space') {
-  keyCode = 32;
-}
-
-document.dispatchEvent(new KeyboardEvent('keydown', { code, keyCode, altKey, ctrlKey, shiftKey }));
+// headless_mode
+MMD_SA.THREEX.utils.press_key(k);
         }
 
         const buttons = {};

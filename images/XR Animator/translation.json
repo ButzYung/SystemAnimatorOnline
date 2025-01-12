@@ -2132,9 +2132,9 @@
 					},
 					"message": {
 						"_translation_": {
-							"_default_": "1. ⌨️Hotkey list and options\n2. 🎮Gamepad options\n3. VRM joint stiffness: <VRM_joint_stiffness_percent>%➕➖\n4. Camera face-locking: <camera_face_locking>\n5. Audio visualizer: <audio_visualizer>\n6. Export all settings\n7. Reset all settings\n8. Done",
-							"ja": "1. ⌨️ホットキーの一覧とオプション\n2. 🎮ゲームパッドのオプション\n3. VRM 関節の剛性: <VRM_joint_stiffness_percent>%➕➖\n4. カメラのフェイスロック: <camera_face_locking>\n5. オーディオ視覚効果: <audio_visualizer>\n6. すべての設定をエクスポートする\n7. すべての設定をリセットする\n8. 終了",
-							"zh": "1. ⌨️熱鍵列表及設定\n2. 🎮遊戲手把選項\n3. VRM 關節剛度: <VRM_joint_stiffness_percent>%➕➖\n4. 鏡頭鎖定面部: <camera_face_locking>\n5. 音訊視覺化工具: <audio_visualizer>\n6. 匯出所有設定\n7. 重置所有設定\n8. 結束"
+							"_default_": "1. ⌨️Hotkey list and options\n2. 🎮Gamepad options\n3. VRM joint stiffness: <VRM_joint_stiffness_percent>%➕➖\n4. Camera auto-zoom: <camera_auto_zoom>⬅️➡️\n5. Camera face-locking: <camera_face_locking>\n6. Audio visualizer: <audio_visualizer>\n7. Export all settings\n8. Reset all settings\n9. Done",
+							"ja": "1. ⌨️ホットキーの一覧とオプション\n2. 🎮ゲームパッドのオプション\n3. VRM 関節の剛性: <VRM_joint_stiffness_percent>%➕➖\n4. カメラの自動ズーム: <camera_auto_zoom>⬅️➡️\n5. カメラのフェイスロック: <camera_face_locking>\n6. オーディオ視覚効果: <audio_visualizer>\n7. すべての設定をエクスポートする\n8. すべての設定をリセットする\n9. 終了",
+							"zh": "1. ⌨️熱鍵列表及設定\n2. 🎮遊戲手把選項\n3. VRM 關節剛度: <VRM_joint_stiffness_percent>%➕➖\n4. 鏡頭自動變焦: <camera_auto_zoom>⬅️➡️\n5. 鏡頭鎖定面部: <camera_face_locking>\n6. 音訊視覺化工具: <audio_visualizer>\n7. 匯出所有設定\n8. 重置所有設定\n9. 結束"
 						}
 					},
 					"hotkey": {
@@ -2467,6 +2467,15 @@
 							}
 						}
 					},
+					"camera_auto_zoom": {
+						"tooltip": {
+							"_translation_": {
+								"_default_": "Camera auto-zoom:\nWhen enabled, the 3D camera will automatically adjust the zoom distance to fill the screen with the display of avatar model by a certain percentage, no matter how you rotate the camera. This applies to all poses and motions other than the default pose for upper and full body mocap. Press ⬅️➡️ key to change value. Default is \"OFF\".",
+								"ja": "カメラの自動ズーム:\n有効にすると、3D カメラは、カメラをどのように回転させても、アバター モデルの表示が一定の割合で画面いっぱいに表示されるようにズーム距離を自動的に調整します。 これは、上半身および全身のモーキャプのデフォルトポーズ以外のすべてのポーズとモーションに適用されます。 ⬅️➡️キーを押して値を変更します。 デフォルトは「OFF」です。",
+								"zh": "鏡頭鎖定面部:\n此選項為有效時，無論您如何旋轉3D鏡頭，它都會自動調整變焦距離，使人物模型以一定比例填滿螢幕。 這適用於除上半身和全身動作捕捉預設姿勢以外的所有姿勢和動作。 按⬅️➡️鍵更改數值。 預設是「OFF」。"
+							}
+						}
+					},
 					"audio_visualizer": {
 						"tooltip": {
 							"_translation_": {
@@ -2528,7 +2537,7 @@
 						},
 						"sponsor": {
 							"_translation_": {
-								"_default_": "XR Animator is sponsored by the following persons🙏\n \n<list>\n \nand other supporters",
+								"_default_": "XR Animator is sponsored by the following people🙏\n \n<list>\n \nand other supporters",
 								"ja": "XR Animator は以下の方々にご協賛いただいております🙏\n \n<list>\n \nその他サポーターの皆様",
 								"zh": "XR Animator 由以下的人士贊助🙏\n \n<list>\n \n及其他支持者"
 							},

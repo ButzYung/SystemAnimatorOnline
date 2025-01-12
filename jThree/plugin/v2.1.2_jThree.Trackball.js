@@ -210,6 +210,11 @@ function camera_limit1() {
 
 if (this.rotate_with_up_fixed) {
   if (_rotateStart_fixed_up.distanceToSquared(_rotateEnd_fixed_up) > this.EPS) {//(true) {//
+// AT: Camera_MOD
+const pos_raw = MMD_SA._v3a.copy(MMD_SA.Camera_MOD.get_camera_base(true).pos);
+const pos_offset = MMD_SA.THREEX.v4.copy(MMD_SA.Camera_MOD.get_camera_base().pos).sub(pos_raw);
+this._eye.add(pos_offset);
+
 // v0.25.0 (scale _eye to consider zoom distance)
     _eye.subVectors( this.position0, this.target ).normalize().multiplyScalar(this._eye.length());
     _eye3.set(0, _eye.y, -Math.sqrt(_eye.x*_eye.x + _eye.z*_eye.z));
@@ -235,25 +240,28 @@ if (this.rotate_with_up_fixed) {
     this._eye.copy(_eye3);
 
 //DEBUG_show(Date.now())
-    let result0 = camera_limit0.call(this)
+    let result0 = camera_limit0.call(this);
     if (result0) {
-      this._eye.copy(_eye2)
-      _rotateStart_fixed_up.copy(_rotateEnd_fixed_up)
-      return
+      this._eye.copy(_eye2);
+      _rotateStart_fixed_up.copy(_rotateEnd_fixed_up);
     }
+    else {
+      this._eye.applyQuaternion( quaternion );
 
-    this._eye.applyQuaternion( quaternion );
-
-    if (camera_limit1.call(this)) {
-      this._eye.copy(_eye2)
-      _rotateStart_fixed_up.y = _rotateEnd_fixed_up.y;
-    }
+      if (camera_limit1.call(this)) {
+        this._eye.copy(_eye2)
+        _rotateStart_fixed_up.y = _rotateEnd_fixed_up.y;
+      }
 
 //_rotateAll_fixed_up
-    _rotateAll_fixed_up.add(_rotateEnd_fixed_up).sub(_rotateStart_fixed_up);
-    _rotateAll_fixed_up.y = THREE.Math.clamp( _rotateAll_fixed_up.y, clamp_lower, clamp_upper );
+      _rotateAll_fixed_up.add(_rotateEnd_fixed_up).sub(_rotateStart_fixed_up);
+      _rotateAll_fixed_up.y = THREE.Math.clamp( _rotateAll_fixed_up.y, clamp_lower, clamp_upper );
 
-    _rotateStart_fixed_up.add(_v3.copy(_rotateEnd_fixed_up).sub(_rotateStart_fixed_up).multiplyScalar(this.damping))
+      _rotateStart_fixed_up.add(_v3.copy(_rotateEnd_fixed_up).sub(_rotateStart_fixed_up).multiplyScalar(this.damping));
+    }
+
+// AT: Camera_MOD
+this._eye.sub(pos_offset);
   }
   return
 }
@@ -265,6 +273,11 @@ if (this.rotate_with_up_fixed) {
 
 			if ( angle ) {
 
+// AT: Camera_MOD
+const pos_raw = MMD_SA._v3a.copy(MMD_SA.Camera_MOD.get_camera_base(true).pos);
+const pos_offset = MMD_SA.THREEX.v4.copy(MMD_SA.Camera_MOD.get_camera_base().pos).sub(pos_raw);
+this._eye.add(pos_offset);
+
 				axis.crossVectors( _rotateStart, _rotateEnd ).normalize();
 //DEBUG_show(axis.toArray().join("\n"))
 				angle *= _this.rotateSpeed;
@@ -274,8 +287,8 @@ if (this.rotate_with_up_fixed) {
 // AT: camera limit
 if (camera_limit0.call(this)) {
   _rotateStart.copy(_rotateEnd)
-  return
 }
+else {
 
 				this._eye.applyQuaternion( quaternion );
 				!_this._fixed && _this.object.up.applyQuaternion( quaternion );
@@ -302,6 +315,9 @@ if (camera_limit1.call(this)) {
   _rotateStart.applyQuaternion(_q);
 }
 
+}
+// AT: Camera_MOD
+this._eye.sub(pos_offset);
 			}
 		};
 
@@ -451,6 +467,11 @@ var para = {
 };
 
 return function (_pos_delta, rot_delta) {
+// AT: Camera_MOD
+//const pos_raw = MMD_SA._v3a.copy(MMD_SA.Camera_MOD.get_camera_base(true).pos);
+//const pos_offset = MMD_SA.THREEX.v4.copy(MMD_SA.Camera_MOD.get_camera_base().pos).sub(pos_raw);
+//this.object.position.sub(pos_offset);
+
   pos0.copy(this.object.position)
 
   var pos_delta, pos_delta_target
@@ -541,6 +562,9 @@ this.target.set(model_pos.x+center_view_lookAt[0], model_pos.y+10+center_view_lo
   this.object.updateMatrixWorld()
 // adjust .position0 as required by "look_at_mouse" as well
   this.position0.add(this.object.position).sub(pos0)
+
+// AT: Camera_MOD
+//this.object.position.add(pos_offset);
 };
   })();
 }

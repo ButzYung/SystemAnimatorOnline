@@ -1,5 +1,4 @@
-// Webkit-to-IE emulation
-// 2024-02-05
+// 2024-09-01
 
 var webkit_mode = true
 
@@ -184,16 +183,26 @@ else if (webkit_electron_mode) {
     var confirmed = !webkit_electron_dialog.showMessageBox(null, {type:"question", buttons:["OK", "Cancel"], defaultId:1, message:msg})
     try { webkit_window.setAlwaysOnTop(SA_topmost_window.returnBoolean("AutoItAlwaysOnTop")) } catch (err) {}
     return confirmed
+  };
+
+  if (webkit_version_milestone["32.0.0"]) {
+    Object.defineProperty(File.prototype, "path", (()=>{
+      const { webUtils } = require('electron');
+      console.log('(electron 32+ - use webUtils.getPathForFile)');
+      return {
+        get: function () { return webUtils.getPathForFile(this); }
+      };
+    })());
   }
 }
 else {
-  var _confirm = window.confirm
+  const _confirm = window.confirm;
   window.confirm = function (msg) {
     try { webkit_window.setAlwaysOnTop(false) } catch (err) {}
     var confirmed = _confirm(msg) 
     try { webkit_window.setAlwaysOnTop(SA_topmost_window.returnBoolean("AutoItAlwaysOnTop")) } catch (err) {}
     return confirmed
-  }
+  };
 }
   }
 
@@ -701,20 +710,35 @@ if (!/^([^\\]+)\\(.+)\\([^\\]+)$/.test(key.replace(/\\$/, ""))) {
   return ""
 }
 
-key_head = RegExp.$1
-key_body = RegExp.$2
-key_name = RegExp.$3
+key_head = RegExp.$1;
+key_body = RegExp.$2;
+key_name = RegExp.$3;
 
-var cmd = 'REG QUERY "' + key_head+'\\'+key_body + '" /v "' + key_name + '"'
+let cmd;
+if (key_name == ' ') {
+  cmd = 'REG QUERY "' + key_head+'\\'+key_body + '"';
+  try { result = require('child_process').execSync(cmd) } catch (err) {}
+  if (result) {
+    try {
+      const list = result.toString().split(/[\n\r]+/);
+      return list;
+    }
+     catch (err) { console.error(err); }
+    return [];
+  }
+}
+else {
+  cmd = 'REG QUERY "' + key_head+'\\'+key_body + '" /v "' + key_name + '"'
 // use require instead of SA_require to fix error in later versions of electron
-try { result = require('child_process').execSync(cmd) } catch (err) {}
-if (result) {
-  result = result.toString().replace(/\s+$/, "").trim().replace(/^HKEY\w+\\/, "")
-  if (result.indexOf(key_body) == 0)
-    result = result.substr(key_body.length).replace(/^\s+/, "")
+  try { result = require('child_process').execSync(cmd) } catch (err) {}
+  if (result) {
+    result = result.toString().replace(/\s+$/, "").trim().replace(/^HKEY\w+\\/, "")
+    if (result.indexOf(key_body) == 0)
+      result = result.substr(key_body.length).replace(/^\s+/, "")
 //console.log(result)
-  if ((result.indexOf(key_name) == 0) && /^REG\w+\s+(.+)$/.test(result.substr(key_name.length).trim())) {
-    return RegExp.$1
+    if ((result.indexOf(key_name) == 0) && /^REG\w+\s+(.+)$/.test(result.substr(key_name.length).trim())) {
+      return RegExp.$1
+    }
   }
 }
 
