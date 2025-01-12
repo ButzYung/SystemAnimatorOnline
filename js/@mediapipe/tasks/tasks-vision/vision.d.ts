@@ -21,10 +21,10 @@ declare interface BaseOptions_2 {
      */
     modelAssetPath?: string | undefined;
     /**
-     * A buffer containing the model aaset. Only one of `modelAssetPath` or
-     * `modelAssetBuffer` can be set.
+     * A buffer or stream reader containing the model asset. Only one of
+     * `modelAssetPath` or `modelAssetBuffer` can be set.
      */
-    modelAssetBuffer?: Uint8Array | undefined;
+    modelAssetBuffer?: Uint8Array | ReadableStreamDefaultReader | undefined;
     /** Overrides the default backend to use for the provided model. */
     delegate?: "CPU" | "GPU" | undefined;
 }
@@ -448,9 +448,10 @@ export declare class FaceDetector extends VisionTaskRunner {
      * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
-     * @param modelAssetBuffer A binary representation of the model.
+     * @param modelAssetBuffer An array or a stream containing a binary
+     *    representation of the model.
      */
-    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array): Promise<FaceDetector>;
+    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array | ReadableStreamDefaultReader): Promise<FaceDetector>;
     /**
      * Initializes the Wasm runtime and creates a new face detector based on the
      * path to the model asset.
@@ -537,9 +538,10 @@ export declare class FaceLandmarker extends VisionTaskRunner {
      * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
-     * @param modelAssetBuffer A binary representation of the model.
+     * @param modelAssetBuffer An array or a stream containing a binary
+     *    representation of the model.
      */
-    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array): Promise<FaceLandmarker>;
+    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array | ReadableStreamDefaultReader): Promise<FaceLandmarker>;
     /**
      * Initializes the Wasm runtime and creates a new `FaceLandmarker` based on
      * the path to the model asset.
@@ -716,9 +718,10 @@ export declare class FaceStylizer extends VisionTaskRunner {
      * @export
      * @param wasmFileset A configuration object that provides the location of
      *     the Wasm binary and its loader.
-     * @param modelAssetBuffer A binary representation of the model.
+     * @param modelAssetBuffer An array or a stream containing a binary
+     *    representation of the model.
      */
-    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array): Promise<FaceStylizer>;
+    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array | ReadableStreamDefaultReader): Promise<FaceStylizer>;
     /**
      * Initializes the Wasm runtime and creates a new Face Stylizer based on
      * the path to the model asset.
@@ -927,9 +930,10 @@ export declare class GestureRecognizer extends VisionTaskRunner {
      * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
-     * @param modelAssetBuffer A binary representation of the model.
+     * @param modelAssetBuffer An array or a stream containing a binary
+     *    representation of the model.
      */
-    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array): Promise<GestureRecognizer>;
+    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array | ReadableStreamDefaultReader): Promise<GestureRecognizer>;
     /**
      * Initializes the Wasm runtime and creates a new gesture recognizer based on
      * the path to the model asset.
@@ -1064,9 +1068,10 @@ export declare class HandLandmarker extends VisionTaskRunner {
      * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
-     * @param modelAssetBuffer A binary representation of the model.
+     * @param modelAssetBuffer An array or a stream containing a binary
+     *    representation of the model.
      */
-    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array): Promise<HandLandmarker>;
+    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array | ReadableStreamDefaultReader): Promise<HandLandmarker>;
     /**
      * Initializes the Wasm runtime and creates a new `HandLandmarker` based on
      * the path to the model asset.
@@ -1250,9 +1255,10 @@ export declare class HolisticLandmarker extends VisionTaskRunner {
      * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
-     * @param modelAssetBuffer A binary representation of the model.
+     * @param modelAssetBuffer An array or a stream containing a binary
+     *    representation of the model.
      */
-    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array): Promise<HolisticLandmarker>;
+    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array | ReadableStreamDefaultReader): Promise<HolisticLandmarker>;
     /**
      * Initializes the Wasm runtime and creates a new `HolisticLandmarker` based
      * on the path to the model asset.
@@ -1486,9 +1492,10 @@ export declare class ImageClassifier extends VisionTaskRunner {
      * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
-     * @param modelAssetBuffer A binary representation of the model.
+     * @param modelAssetBuffer An array or a stream containing a binary
+     *    representation of the model.
      */
-    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array): Promise<ImageClassifier>;
+    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array | ReadableStreamDefaultReader): Promise<ImageClassifier>;
     /**
      * Initializes the Wasm runtime and creates a new image classifier based on
      * the path to the model asset.
@@ -1576,9 +1583,10 @@ export declare class ImageEmbedder extends VisionTaskRunner {
      * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
-     * @param modelAssetBuffer A binary representation of the TFLite model.
+     * @param modelAssetBuffer An array or a stream containing a binary
+     *    representation of the model.
      */
-    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array): Promise<ImageEmbedder>;
+    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array | ReadableStreamDefaultReader): Promise<ImageEmbedder>;
     /**
      * Initializes the Wasm runtime and creates a new image embedder based on the
      * path to the model asset.
@@ -1703,9 +1711,10 @@ export declare class ImageSegmenter extends VisionTaskRunner {
      * @export
      * @param wasmFileset A configuration object that provides the location of
      *     the Wasm binary and its loader.
-     * @param modelAssetBuffer A binary representation of the model.
+     * @param modelAssetBuffer An array or a stream containing a binary
+     *    representation of the model.
      */
-    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array): Promise<ImageSegmenter>;
+    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array | ReadableStreamDefaultReader): Promise<ImageSegmenter>;
     /**
      * Initializes the Wasm runtime and creates a new image segmenter based on
      * the path to the model asset.
@@ -1968,10 +1977,11 @@ export declare class InteractiveSegmenter extends VisionTaskRunner {
      * @export
      * @param wasmFileset A configuration object that provides the location of
      *     the Wasm binary and its loader.
-     * @param modelAssetBuffer A binary representation of the model.
+     * @param modelAssetBuffer An array or a stream containing a binary
+     *    representation of the model.
      * @return A new `InteractiveSegmenter`.
      */
-    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array): Promise<InteractiveSegmenter>;
+    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array | ReadableStreamDefaultReader): Promise<InteractiveSegmenter>;
     /**
      * Initializes the Wasm runtime and creates a new interactive segmenter based
      * on the path to the model asset.
@@ -2168,7 +2178,7 @@ export declare interface LandmarkData {
  * limitations under the License.
  */
 /** A two-dimensional matrix. */
-declare interface Matrix {
+export declare interface Matrix {
     /** The number of rows. */
     rows: number;
     /** The number of columns. */
@@ -2450,9 +2460,10 @@ export declare class ObjectDetector extends VisionTaskRunner {
      * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
-     * @param modelAssetBuffer A binary representation of the model.
+     * @param modelAssetBuffer An array or a stream containing a binary
+     *    representation of the model.
      */
-    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array): Promise<ObjectDetector>;
+    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array | ReadableStreamDefaultReader): Promise<ObjectDetector>;
     /**
      * Initializes the Wasm runtime and creates a new object detector based on the
      * path to the model asset.
@@ -2531,9 +2542,10 @@ export declare class PoseLandmarker extends VisionTaskRunner {
      * @export
      * @param wasmFileset A configuration object that provides the location of the
      *     Wasm binary and its loader.
-     * @param modelAssetBuffer A binary representation of the model.
+     * @param modelAssetBuffer An array or a stream containing a binary
+     *    representation of the model.
      */
-    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array): Promise<PoseLandmarker>;
+    static createFromModelBuffer(wasmFileset: WasmFileset, modelAssetBuffer: Uint8Array | ReadableStreamDefaultReader): Promise<PoseLandmarker>;
     /**
      * Initializes the Wasm runtime and creates a new `PoseLandmarker` based on
      * the path to the model asset.
