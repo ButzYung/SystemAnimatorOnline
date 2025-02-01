@@ -30,7 +30,7 @@
  * Date: 2015-02-25
  */
 // AT: customizations
-// (2024-07-02)
+// (2024-09-02)
 
 THREE.TrackballControls = function ( object, domElement ) {
 

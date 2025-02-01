@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-08-18)
+// (2024-09-15)
 
 var use_full_spectrum = true
 
@@ -2913,18 +2913,45 @@ if ((msg.length > column_max) && ((para.auto_wrap || b.auto_wrap) || (msg.indexO
 else
   msg_line = msg.split("\n")
 
-this.msg_line = msg_line
+this.msg_line = msg_line;
 
+const msg_obj_old = this.msg_obj;
 this.msg_obj = msg_line.map(msg=>{
   return {};
 });
 
 var w_max = 0, h_max = font_size
-for (var i = 0, i_length = msg_line.length; i < i_length; i++) {
-  const m = context.measureText(msg_line[i]);
+for (let i = 0, i_length = msg_line.length; i < i_length; i++) {
+  const _msg = msg_line[i];
+  const m = context.measureText(_msg);
   this.msg_obj[i].w = m.width;
   if (w_max < m.width)
     w_max = m.width;
+
+  let b_length;
+  if (_msg.indexOf('➕➖') == _msg.length-2) {
+    b_length = 2;
+  }
+  else if (_msg.indexOf('⬅️➡️') == _msg.length-4) {
+    b_length = 4;
+  }
+
+  if (b_length) {
+    const msg_width = context.measureText(_msg.substring(0, _msg.length-b_length)).width;
+    const button_width = context.measureText(_msg.substring(_msg.length-b_length)).width;
+
+    const ev = (b_length == 2) ? [{ key:'+' }, { key:'-' }] : [{ code:'ArrowLeft' }, { code:'ArrowRight' }];
+
+    const id = _msg.replace(/\:.+$/, '');
+    const b_list_old = msg_obj_old?.[i]?.b_list;
+    const msg_identical = id == b_list_old?.[0].id;
+
+    this.msg_obj[i].b_list = [
+{ id:id, w:msg_width, _mouse_:(msg_identical)?b_list_old[0]._mouse_:{} },
+{ w:msg_width+button_width/2, event:ev[0], _mouse_:(msg_identical)?b_list_old[1]._mouse_:{}, b:_msg.substring(_msg.length-b_length,   _msg.length-b_length/2) },
+{ w:msg_width+button_width,   event:ev[1], _mouse_:(msg_identical)?b_list_old[2]._mouse_:{}, b:_msg.substring(_msg.length-b_length/2, _msg.length) },
+    ];
+  }
 }
 
 var w = w_max
@@ -3285,6 +3312,8 @@ window.addEventListener('MMDStarted', ()=>{
       }
     }
 
+    ignore_click = false;
+
     let is_pointer = false;
     bb_list.forEach(sb=>{
       if (!sb.visible || (mouse_x == null)) {
@@ -3339,15 +3368,19 @@ window.addEventListener('MMDStarted', ()=>{
         return;
       }
 
-      let msg_obj;
+      let msg_obj, msg_obj_index;
       for (let i = sb.msg_obj.length-1; i >= 0; i--) {
         const obj = sb.msg_obj[i];
         if ((pos.x > obj.x) && (pos.y > obj.y)) {
-          if ((pos.x-obj.x < obj.w*1.2) && ((i < sb.msg_obj.length-1) || (pos.y-obj.y < obj.h*1.2)))
+          if ((pos.x-obj.x < obj.w*1.2) && ((i < sb.msg_obj.length-1) || (pos.y-obj.y < obj.h*1.2))) {
             msg_obj = sb.msg_obj[i];
+            msg_obj_index = i;
+          }
           break;
         }
       }
+
+      let is_no_click_zone;
 
       let mouseover = msg_obj?.branch_key != null;
       if ((msg_obj?.branch_key != null) ? sb._branch_key_ != msg_obj.branch_key : sb._branch_key_ != null) {
@@ -3357,9 +3390,44 @@ window.addEventListener('MMDStarted', ()=>{
         const branch = get_target_branch(sb, sb._branch_key_);
         if (branch) {
           mouseover = branch.onmouseover;
-          mouseover?.({ clientX:mouse_x, clientY:mouse_y });
+          branch.onmouseover?.({ clientX:mouse_x, clientY:mouse_y });
         }
 //DEBUG_show(sb._branch_key_+'/'+Date.now())
+      }
+      else if (msg_obj?.b_list) {
+        const x = pos.x - msg_obj.x;
+        const b = msg_obj.b_list.find(b=>b._mouse_.down) || msg_obj.b_list.find((b,i)=>{
+          return (b.b && (x > (msg_obj.b_list[i-1]?.w||0)) && (x < b.w));
+        });
+
+        is_no_click_zone = !b;
+
+        if (b && mouse_down) {
+          ignore_click = true;
+
+          let b_clicked;
+          if (!b._mouse_.down) {
+            b._mouse_.down = mouse_down;
+            b_clicked = true;
+          }
+          else {
+            b._mouse_.down += RAF_timestamp_delta;
+            if (mouse_down + 500 < b._mouse_.down) {
+              b._mouse_.click_interval += RAF_timestamp_delta;
+              b_clicked = b._mouse_.click_interval > 1000/15;
+            }
+          }
+
+          if (b_clicked) {
+            b._mouse_.click_interval = 0;
+            document.dispatchEvent(new KeyboardEvent('keydown', b.event));
+//DEBUG_show(msg_obj_index+'/'+(b?.b||'')+'/'+JSON.stringify(b.event)+'/'+Date.now())
+          }
+//DEBUG_show(msg_obj_index+'/'+(b?.b||'')+'/'+Date.now())
+        }
+        else {
+          msg_obj.b_list.forEach(b=>{ b._mouse_.down=null; });
+        }
       }
 
       if (!mouseover) {
@@ -3367,7 +3435,7 @@ window.addEventListener('MMDStarted', ()=>{
 //MMD_SA_options.Dungeon.inventory._item_updated?.update_info(null, true);
       }
 
-      is_pointer = is_pointer || (sb._branch_key_ != null);
+      is_pointer = is_pointer || (!is_no_click_zone && (sb._branch_key_ != null));
 //      DEBUG_show(pos.toArray().join('\n')+'\n\n'+((msg_obj)?msg_obj.branch_index:-1));
     });
 
@@ -3416,7 +3484,8 @@ window.addEventListener('MMDStarted', ()=>{
             MMD_SA._trackball_camera.enabled = false;
           }
           else {
-            cursor = 'not-allowed';
+            if (!ignore_click)
+              cursor = 'not-allowed';
           }
         }
       }
@@ -3487,9 +3556,18 @@ window.addEventListener('MMDStarted', ()=>{
     drag_target = [sb, sb._branch_key_];
   });
 
+  let ignore_click;
+  let ignore_dblclick;
   const ev_mouse_up = (!is_mobile) ? 'click' : 'touchend';
   d_target.addEventListener(ev_mouse_up, (e)=>{
     mouse_down = null;
+    if (ignore_click) {
+      ignore_click = false;
+      ignore_dblclick = true;
+      System._browser.on_animation_update.add(()=>{ ignore_dblclick=false; }, 0,0);
+      return;
+    }
+
     cursor = null;
     drag_target = null;
 
@@ -3550,6 +3628,13 @@ window.addEventListener('MMDStarted', ()=>{
     }
 
     SA_OnKeyDown(ev);
+  });
+
+  d_target.addEventListener('dblclick', (e)=>{
+    if (ignore_dblclick) {
+      ignore_dblclick = false;
+      e.stopPropagation();
+    }
   });
 
 // https://stackoverflow.com/questions/11586527/converting-world-coordinates-to-screen-coordinates-in-three-js-using-projection
@@ -9662,6 +9747,21 @@ obj_pos.x*sign, obj_pos.y, -obj_pos.z*sign,
 -obj_rot.x*sign, -obj_rot.y, obj_rot.z*sign, obj_rot.w,
       ]);
 
+      if ((x_object._tracker_scale_ != obj.scale.x) || !x_object._tracker_scale_counter_) {
+        x_object._tracker_scale_  = obj.scale.x;
+        x_object._tracker_scale_counter_ = 60;
+
+        const _tracker_index = ((x_object.VMC_tracker_index != null) ? x_object.VMC_tracker_index : tracker_index);
+        if (warudo_mode) {
+          const msg = 'XRAnimator|set_tracker_scale|' + (_tracker_index + ((_tracker_index < 10) ? ' ' : '')) + '|' + (x_object._tracker_scale_ * model_pos_scale);
+          System._browser.WebSocket.send_message('ws://localhost:19190', msg);
+//console.log(msg)
+        }
+      }
+      else if (x_object._tracker_scale_counter_) {
+        x_object._tracker_scale_counter_--;
+      }
+
       tracker_index++;
     }
   });
@@ -13959,7 +14059,7 @@ switch (command) {
     break;
 }
 
-let keyCode;
+let key, keyCode;
 if (/^[A-Z]$/.test(code)) {
   code = 'Key' + code;
 }
@@ -13983,9 +14083,12 @@ else if (/Arrow(Up|Down|Left|Right)/.test(code)) {
   }
 }
 else if (code == 'NumpadAdd') {
+  key = '+';
   keyCode = 107;
+
 }
 else if (code == 'NumpadSubtract') {
+  key = '-';
   keyCode = 109;
 }
 else if (code == 'Space') {
