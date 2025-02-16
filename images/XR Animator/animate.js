@@ -6031,7 +6031,7 @@ options = {
   get content() {
     return [
 System._browser.translation.get('XR_Animator.UI.webcam_media.options.resolution_limit') + ': ' + ((options.pixel_limit.disabled) ? System._browser.translation.get('XR_Animator.UI.webcam_media.options.auto_no_limit') : (options.pixel_limit.current||MMD_SA_options.user_camera.pixel_limit._default_).join('x') + ((!options.pixel_limit.current) ? ' (' + System._browser.translation.get('Misc.default') + ')' : '')),
-System._browser.translation.get('XR_Animator.UI.webcam_media.options.frame_rate') + ': ' + (options.fps || System._browser.translation.get('Misc.default')),
+System._browser.translation.get('XR_Animator.UI.webcam_media.options.frame_rate') + ': ' + (options.fps?.exact || options.fps || System._browser.translation.get('Misc.default')),
 System._browser.translation.get('XR_Animator.UI.webcam_media.options.extra')
     ].join('\n');
   }
@@ -6113,7 +6113,7 @@ switch (index) {
       [
         {
           func: function () {
-options.fps = (options.fps) ? null : 30;
+options.fps = (options.fps) ? null : { exact:30 };
           }
          ,goto_event: { branch_index:3, step:1 }
         }
