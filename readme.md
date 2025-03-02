@@ -14,9 +14,9 @@ The web app version works on all major web browsers both on desktop and smartpho
 
 ### 🌐[XR Animator - Web app version](https://sao.animetheme.com/XR_Animator.html)
 
-The Windows/Linux app version (powered by [Electron](https://www.electronjs.org/)) is also availabe for download, which provides a few extra features (e.g. VMC-protocol, transparent background) available only in a native-OS environment.
+The Windows/Linux/macOS app version (powered by [Electron](https://www.electronjs.org/)) is also availabe for download, which provides a few extra features (e.g. VMC-protocol, transparent background) available only in a native-OS environment.
 
-### 🖥️[XR Animator - Windows/Linux app version](https://github.com/ButzYung/SystemAnimatorOnline/releases)
+### 🖥️[XR Animator - Windows/Linux/macOS app version](https://github.com/ButzYung/SystemAnimatorOnline/releases)
 
 # Features
 
