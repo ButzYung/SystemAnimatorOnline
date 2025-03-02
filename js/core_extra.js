@@ -1,4 +1,4 @@
-// System Animator core - EXTRA (2024-03-25)
+// System Animator core - EXTRA (2025-02-22)
 
 var use_SA_gimage_emulation
 
@@ -146,7 +146,7 @@ function SA_load_scripts() {
 
 // settings from localStorage
     var Settings_default_by_path, Settings_by_path, update_LS
-    if (WallpaperEngine_CEF_mode) {
+    if (save_settings_by_localStorage) {
 // reset corrupted config
 //localStorage.Settings_default_by_path=""
 //localStorage.Settings_by_path=""
@@ -314,7 +314,7 @@ System.Gadget.Settings._settings_default = {
   "Folder": path_demo_by_url[SA_HTA_folder] || ("$SA_HTA_folder$" + ((SA_HTA_folder_full == SA_HTA_folder) ? "" : encodeURIComponent(SA_HTA_folder_full.substr(SA_HTA_folder.length))))
 };
 
-if (c_js) {
+if (c_js && !save_settings_by_localStorage) {
   // direct eval for XUL
   html += SystemEXT.ReadJS(c_js, true)
 //  html += '<script type="text/javascript" language="javascript" src="' + toFileProtocol(SA_HTA_folder) + '/_config_local.js"></scr'+'ipt>\n'
@@ -324,7 +324,7 @@ else {
 //alert(System.Gadget.Settings._settings.Folder)
 
 // settings from localStorage
-  if (WallpaperEngine_CEF_mode) {
+  if (save_settings_by_localStorage) {
     update_LS = false
     if (!Settings_default_by_path[SA_HTA_folder]) {
       update_LS = true
@@ -337,8 +337,9 @@ else {
 
     Settings_by_path = localStorage.Settings_by_path
     update_LS = false
-    if (Settings_by_path)
+    if (Settings_by_path) {
       Settings_by_path = JSON.parse(Settings_by_path)
+    }
     else {
       update_LS = true
       Settings_by_path = {}
@@ -406,6 +407,7 @@ catch (err) {}
 + '<script type="text/javascript" language="javascript" src="_private/js/wmi.js"></scr'+'ipt>\n'
   }
   else {
+// NOTE: exclude wmi.js
 console.log("_core.00.min.js")
     html +=
   '<script type="text/javascript" language="javascript" src="js/_core.00.min.js"></scr'+'ipt>\n'

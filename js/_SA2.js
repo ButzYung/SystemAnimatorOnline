@@ -1,4 +1,4 @@
-// (2023-06-27)
+// (2025-02-22)
 
 var IPC
 
@@ -495,7 +495,7 @@ window.addEventListener("SA_resized_once", function () {
   self.focus()
   if (webkit_electron_mode) {
     webkit_window.setIgnoreMouseEvents(IgnoreMouseEvents && !WallpaperEngine_mode)
-    if (windows_mode || linux_mode) {
+    if (windows_mode || linux_mode || mac_mode) {
       let no_focus = IgnoreMouseEvents || AutoItStayOnDesktop;
       webkit_window.setFocusable(!no_focus)
 // have to set it here AFTER focus/setFocusable in newer version of Electron

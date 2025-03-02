@@ -1,4 +1,4 @@
-// 2024-03-25
+// 2024-10-02
 
 const is_worker = (typeof window !== "object");
 
@@ -320,7 +320,7 @@ vision,
 {
   baseOptions: {
     modelAssetPath: path_adjusted('@mediapipe/tasks/' + 'holistic_landmarker' + '.task'),
-//    delegate: "GPU"
+    delegate: "GPU"
   },
   runningMode: 'VIDEO',
 
@@ -492,6 +492,8 @@ else {
 }
 
 use_hands_worker = options.use_hands_worker;// = true;
+//use_hands_worker_parallel = use_hands_worker;
+
 if (use_hands_worker) {
   if (!hands_worker)
     handpose_initialized = false;
@@ -521,6 +523,7 @@ if (typeof data === "string") {
 else {
   hands_worker_ready = true;
   hands_worker_data = data;
+  if (resolve_hands_worker_parallel) resolve_hands_worker_parallel();
 }
       };
     });
@@ -716,6 +719,10 @@ var holistic_landmarker;
 var hands_worker, hands_worker_data, hands_worker_pose;
 var hands_worker_ready;
 var use_hands_worker// = true;
+var use_hands_worker_parallel;
+var resolve_hands_worker_parallel;
+
+var pose_last;
 
 var use_human_only, use_human_pose, use_human_hands;
 
@@ -1265,7 +1272,7 @@ ctx.save();
 
 hand_clip.length = 0;
 let clip = [];
-const radius = shoulder_width * (1 + Math.max(shoulder_width/Math.max(w,h)*5-0.5, 0.1)) /2;
+const radius = shoulder_width * (1 + Math.max(shoulder_width/Math.max(w,h)*5-0.5, 0.1)) /2 * ((use_hands_worker_parallel) ? 1.2 : 1);
 for (const id of [9,10]) {
   const kp = pose.keypoints[get_pose_index(id)];
   if (kp.score < score_threshold) continue;
@@ -1536,6 +1543,43 @@ catch (err) {
 }
 
 async function PoseAT_process_video_buffer() {
+  async function process_hands_worker(_pose=pose) {
+    if (!hands_worker_ready) await new Promise((resolve)=>{ setTimeout(resolve, 0); });
+
+    if (hands_worker_ready) {
+hands_worker_pose = _pose;
+
+options.pose = _pose;
+options.shoulder_width = shoulder_width;
+
+let _rgba = rgba;
+if (use_hands_worker_parallel) {
+  _rgba = await createImageBitmap(_rgba);
+}
+else if (!(_rgba instanceof ImageBitmap)) {
+  rgba = undefined;
+  _rgba = _rgba.data.buffer;
+}
+
+let data_to_transfer = [_rgba];
+let data = { w:w, h:h, options:options, rgba:_rgba };
+if (_canvas_hands_worker) {
+  data.canvas_hands = _canvas_hands_worker;
+  data_to_transfer.push(_canvas_hands_worker);
+}
+
+hands_worker.postMessage(data, data_to_transfer);
+
+_canvas_hands_worker = null;
+
+data_to_transfer.length = 0;
+data_to_transfer = undefined;
+data.rgba = _rgba = undefined;
+
+hands_worker_ready = false;
+    }
+  }
+
   let _t = performance.now();
 
   if (options.timestamp != null) {
@@ -1595,8 +1639,17 @@ async function PoseAT_process_video_buffer() {
     }
   }
   else {//if (no_hand_countdown <= 0) {
+    let _use_hands_worker_parallel;
+    if (use_hands_worker_parallel && pose_last && is_hand_visible(pose_last)) {
+      _use_hands_worker_parallel = true;
+      hands_worker_data = null;
+      await process_hands_worker(pose_last);
+    }
+
     const result = await ((use_human_pose) ? human.detect(rgba) : ((use_movenet) ? posenet.estimatePoses(rgba, {}, vt) : posenet_model.estimateSinglePose(rgba, {})));
     pose = pose_adjust((use_human_pose) ? result.body[0] : result);
+
+    if (use_hands_worker_parallel) pose_last = pose;
 
     if (options.use_holistic_landmarker) {
       hands = hands_adjust(result, vt, pose);
@@ -1614,34 +1667,12 @@ async function PoseAT_process_video_buffer() {
     else if (options.use_handpose && (use_hands_worker || ((handpose_model || use_human_hands) && (use_hands_worker || (skip_hand_countdown-- <= 0))))) {
       skip_hand_countdown = options.skip_hand_countdown_max||0;
       if (is_hand_visible(pose)) {
-        if (use_hands_worker) {
-          if (!hands_worker_ready) await new Promise((resolve)=>{ setTimeout(resolve, 0); });
-
-          if (hands_worker_ready) {
-hands_worker_pose = pose;
-
-options.pose = pose;
-options.shoulder_width = shoulder_width;
-
-if (!(rgba instanceof ImageBitmap)) rgba = rgba.data.buffer;
-
-let data_to_transfer = [rgba];
-let data = { w:w, h:h, options:options, rgba:rgba };
-if (_canvas_hands_worker) {
-  data.canvas_hands = _canvas_hands_worker;
-  data_to_transfer.push(_canvas_hands_worker);
-}
-
-hands_worker.postMessage(data, data_to_transfer);
-
-_canvas_hands_worker = null;
-
-data_to_transfer.length = 0;
-data_to_transfer = undefined;
-data.rgba = rgba = undefined;
-
-hands_worker_ready = false;
-          }
+        if (use_hands_worker_parallel) {
+          if (_use_hands_worker_parallel && !hands_worker_data) await new Promise((resolve)=>{ resolve_hands_worker_parallel = resolve; });
+          resolve_hands_worker_parallel = null;
+        }
+        else if (use_hands_worker) {
+          await process_hands_worker();
         }
         else if (handpose_model) {
           handpose_model.set_score?.(w,h, options);
@@ -1655,6 +1686,13 @@ hands_worker_ready = false;
         no_hand_countdown = no_hand_countdown_max
       }
       else {
+        if (use_hands_worker_parallel) {
+// basically dummy to wait for hands worker to finish
+          if (_use_hands_worker_parallel && !hands_worker_data) await new Promise((resolve)=>{ resolve_hands_worker_parallel = resolve; });
+// ignore use_hands_worker_parallel for next frame
+          pose_last = null;
+        }
+
         no_hand_countdown--;
 // discard outdated data when hands are hidden
         hands_worker_data = null;
@@ -1693,6 +1731,11 @@ hands_worker_ready = false;
   }
 
   let _t_hands, fps_hands;
+
+  if (use_hands_worker_parallel && hands_worker_data) {
+    hands = hands_worker_data.handpose;
+    hands_worker_data = null;
+  }
 
   if (hands_worker_data) {
 //console.log(hands_worker_data)

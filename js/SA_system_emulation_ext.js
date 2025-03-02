@@ -421,6 +421,16 @@ var SA_demo = (self.path_demo_by_url && path_demo_by_url[cf]) || (cf.indexOf(Sys
 var use_config_local = webkit_mode && cf_full && (cf != cf_full)
 
 if (saved_settings) {
+
+  if (save_settings_by_localStorage) {
+    let Settings_by_path = JSON.parse(localStorage.Settings_by_path);
+    if (Settings_by_path[SA_HTA_folder]) {
+      const settings_JSON = JSON.parse('{' + saved_settings.join(',') + '}');
+      Object.assign(Settings_by_path[SA_HTA_folder], settings_JSON);
+      localStorage.Settings_by_path = JSON.stringify(Settings_by_path);
+    }
+  }
+
   js =
   '/* Gadget local config (v1.2.0) */' + rn
 + ((use_config_local) ? '/* ' + cf_full + ' */' + rn : '')

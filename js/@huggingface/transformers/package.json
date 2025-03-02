@@ -1,0 +1,102 @@
+{
+  "name": "@huggingface/transformers",
+  "version": "3.0.0-alpha.15",
+  "description": "State-of-the-art Machine Learning for the web. Run 🤗 Transformers directly in your browser, with no need for a server!",
+  "main": "./src/transformers.js",
+  "types": "./types/transformers.d.ts",
+  "type": "module",
+  "exports": {
+    "node": {
+      "import": {
+        "types": "./types/transformers.d.ts",
+        "default": "./dist/transformers.mjs"
+      },
+      "require": {
+        "types": "./types/transformers.d.ts",
+        "default": "./dist/transformers.cjs"
+      }
+    },
+    "default": {
+      "types": "./types/transformers.d.ts",
+      "default": "./dist/transformers.js"
+    }
+  },
+  "imports": {
+    "#onnxruntime-webgpu": {
+      "node": "onnxruntime-web",
+      "default": "onnxruntime-web/webgpu"
+    }
+  },
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typegen": "tsc ./src/transformers.js --allowJs --declaration --emitDeclarationOnly --declarationMap --outDir types",
+    "dev": "webpack serve --no-client-overlay",
+    "build": "webpack && npm run typegen",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose",
+    "readme": "python ./docs/scripts/build_readme.py",
+    "docs-api": "node ./docs/scripts/generate.js",
+    "docs-preview": "doc-builder preview transformers.js ./docs/source/ --not_python_module",
+    "docs-build": "doc-builder build transformers.js ./docs/source/ --not_python_module --build_dir ./docs/build/ --repo_owner xenova"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xenova/transformers.js.git"
+  },
+  "keywords": [
+    "transformers",
+    "transformers.js",
+    "huggingface",
+    "hugging face",
+    "machine learning",
+    "deep learning",
+    "artificial intelligence",
+    "AI",
+    "ML"
+  ],
+  "author": "Hugging Face",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/xenova/transformers.js/issues"
+  },
+  "homepage": "https://github.com/xenova/transformers.js#readme",
+  "dependencies": {
+    "@huggingface/jinja": "^0.3.0",
+    "onnxruntime-node": "1.19.2",
+    "onnxruntime-web": "1.20.0-dev.20240908-de7a02beef",
+    "sharp": "^0.33.5"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.1",
+    "@webgpu/types": "^0.1.44",
+    "catharsis": "github:xenova/catharsis",
+    "jest": "^29.5.0",
+    "jest-environment-node": "^29.5.0",
+    "jsdoc-to-markdown": "^8.0.1",
+    "prettier": "3.3.3",
+    "typescript": "^5.2.2",
+    "wavefile": "^11.0.0",
+    "webpack": "^5.80.0",
+    "webpack-cli": "^5.0.2",
+    "webpack-dev-server": "^4.13.3"
+  },
+  "files": [
+    "src",
+    "dist",
+    "types",
+    "README.md",
+    "LICENSE"
+  ],
+  "browser": {
+    "fs": false,
+    "path": false,
+    "url": false,
+    "sharp": false,
+    "onnxruntime-node": false
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "jsdelivr": "./dist/transformers.min.js",
+  "unpkg": "./dist/transformers.min.js"
+}

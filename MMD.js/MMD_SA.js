@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-09-15)
+// (2024-10-02)
 
 var use_full_spectrum = true
 
@@ -3561,6 +3561,13 @@ window.addEventListener('MMDStarted', ()=>{
   const ev_mouse_up = (!is_mobile) ? 'click' : 'touchend';
   d_target.addEventListener(ev_mouse_up, (e)=>{
     mouse_down = null;
+
+    if (MMD_SA._trackball_camera.enabled != !!returnBoolean("MMDTrackballCamera")) {
+      MMD_SA._trackball_camera.enabled = !!returnBoolean("MMDTrackballCamera");
+      e.stopPropagation();
+    }
+
+// AFTER resetting _trackball_camera.enabled
     if (ignore_click) {
       ignore_click = false;
       ignore_dblclick = true;
@@ -3570,11 +3577,6 @@ window.addEventListener('MMDStarted', ()=>{
 
     cursor = null;
     drag_target = null;
-
-    if (MMD_SA._trackball_camera.enabled != !!returnBoolean("MMDTrackballCamera")) {
-      MMD_SA._trackball_camera.enabled = !!returnBoolean("MMDTrackballCamera");
-      e.stopPropagation();
-    }
 
     let sb;
     if (mouse_drag) {
@@ -12174,6 +12176,20 @@ if (threeX.enabled) {
 }
       });
 
+      window.addEventListener('MMDStarted', ()=>{
+Object.defineProperty(MMD_SA._trackball_camera.object, 'fov', (()=>{
+  let fov = MMD_SA._trackball_camera.object.fov;
+  return {
+    get: function () { return fov; },
+    set: function (v) {
+      if (fov != v)
+        window.dispatchEvent(new CustomEvent('SA_MMD_camera_FOV_on_change'));
+      fov = v;
+    }
+  };
+})());
+      });
+
       return {
         get obj() { return (threeX.enabled) ? data.renderer : MMD_SA._renderer; },
 
@@ -13795,16 +13811,89 @@ setTimeout(()=>{
         };
       })(),
 
-      camera_auto_targeting: (function () {
+      camera_auto_targeting: (()=>{
+        let target_data;
+        window.addEventListener('load', ()=>{
+Object.defineProperty(MMD_SA_options, 'camera_face_locking_percent', (()=>{
+  let camera_face_locking_percent;
+  return {
+    get: function () { return (camera_face_locking_percent == null) ? 100 : camera_face_locking_percent; },
+    set: function (v) { camera_face_locking_percent = v; }
+  };
+})());
+Object.defineProperty(MMD_SA_options, 'camera_face_locking_look_at_target_percent', (()=>{
+  let camera_face_locking_look_at_target_percent;
+  return {
+    get: function () { return (camera_face_locking_look_at_target_percent == null) ? -20 : camera_face_locking_look_at_target_percent; },
+    set: function (v) { camera_face_locking_look_at_target_percent = v; }
+  };
+})());
+Object.defineProperty(MMD_SA_options, 'camera_face_locking_movement_x_percent', (()=>{
+  let camera_face_locking_movement_x_percent;
+  return {
+    get: function () { return (camera_face_locking_movement_x_percent == null) ? -60 : camera_face_locking_movement_x_percent; },
+    set: function (v) { camera_face_locking_movement_x_percent = v; }
+  };
+})());
+Object.defineProperty(MMD_SA_options, 'camera_face_locking_movement_y_percent', (()=>{
+  let camera_face_locking_movement_y_percent;
+  return {
+    get: function () { return (camera_face_locking_movement_y_percent == null) ? -60 : camera_face_locking_movement_y_percent; },
+    set: function (v) { camera_face_locking_movement_y_percent = v; }
+  };
+})());
+Object.defineProperty(MMD_SA_options, 'camera_face_locking_movement_z_percent', (()=>{
+  let camera_face_locking_movement_z_percent;
+  return {
+    get: function () { return (camera_face_locking_movement_z_percent == null) ? 0 : camera_face_locking_movement_z_percent; },
+    set: function (v) { camera_face_locking_movement_z_percent = v; }
+  };
+})());
+Object.defineProperty(MMD_SA_options, 'camera_face_locking_z_min', (()=>{
+  let camera_face_locking_z_min;
+  return {
+    get: function () { return (camera_face_locking_z_min == null) ? 1 : camera_face_locking_z_min; },
+    set: function (v) { camera_face_locking_z_min = Math.round(v*10)/10; }
+  };
+})());
+Object.defineProperty(MMD_SA_options, 'camera_face_locking_smooth_time', (()=>{
+  let camera_face_locking_smooth_time;
+  return {
+    get: function () { return (camera_face_locking_smooth_time == null) ? 0.5 : camera_face_locking_smooth_time; },
+    set: function (v) {
+      camera_face_locking_smooth_time = Math.round(v*10)/10;
+      target_data.filters[0].filter.minCutOff = System._browser.data_filter.calculate_one_euro_minCutoff_from_transition_time(camera_face_locking_smooth_time);
+console.log(target_data.filters[0].filter, camera_face_locking_smooth_time);
+    }
+  };
+})());
+
+target_data = new System._browser.data_filter([{ type:'one_euro', id:'camera_face_locking', transition_time:0.5, para:[30, 1,0.1/5,1, 3] }]);
+        });
+
         function targeting() {
 if (!target_current.enabled && ((target_current.enabled === false) || (target_current.condition && !target_current.condition()))) {
-  MMD_SA.Camera_MOD.adjust_camera(target_current.id, null, v1.set(0,0,0));
+  MMD_SA.Camera_MOD.adjust_camera(target_current.id, v1.set(0,0,0), v1.set(0,0,0));
   return;
 }
 
 var target_pos = v4.fromArray(target_data.filter(target_current.get_target_position().toArray()));//target_current.get_target_position();//
-//DEBUG_show(target_pos.toArray().join('\n') + '\n' + Date.now());
-MMD_SA.Camera_MOD.adjust_camera(target_current.id, null, target_pos);
+//System._browser.camera.DEBUG_show(target_pos.toArray().join('\n') + '\n' + Date.now());
+
+const cam_pos = v1.copy(target_pos);
+cam_pos.x *= MMD_SA_options.camera_face_locking_movement_x_percent/100;
+cam_pos.y *= MMD_SA_options.camera_face_locking_movement_y_percent/100;
+
+const model_scale = MMD_SA.THREEX.get_model(0).para.spine_length / 4.97462;
+const z_base = MMD_SA_options.camera_position_base[2] + MMD_SA.center_view[2];
+let z = z_base - target_pos.z;
+z = (System._browser.camera.ML_enabled) ? Math.max(z - Math.min(MMD_SA_options.camera_face_locking_z_min*10 * model_scale, z_base), 0) : z - Math.min(MMD_SA_options.camera_face_locking_z_min*10 * model_scale, z_base);
+//System._browser.camera.DEBUG_show(z)
+cam_pos.z = (z < 0) ? -z : -z * MMD_SA_options.camera_face_locking_movement_z_percent/100;
+
+target_pos.multiplyScalar(MMD_SA_options.camera_face_locking_look_at_target_percent/100);
+
+MMD_SA.Camera_MOD.adjust_camera(target_current.id, cam_pos, target_pos);
         }
 
         var target_current;
@@ -13834,14 +13923,9 @@ head_pos.sub(head_pos_ref);
 const c_base = MMD_SA.Camera_MOD.get_camera_base(['camera_lock']);
 pos.sub(c_base.target);
 
-return head_pos.add(pos).multiplyScalar(0.75);
+return head_pos.add(pos).multiplyScalar(MMD_SA_options.camera_face_locking_percent/100);
   },
         };
-
-        var target_data;
-        window.addEventListener('jThree_ready', ()=>{
-target_data = new System._browser.data_filter([{ type:'one_euro', id:'camera_face_locking', transition_time:0.5, para:[30, 1,0.1/5,1, 3] }]);
-        });
 
 //window.addEventListener('MMDStarted', ()=>{ System._browser.on_animation_update.add(()=>{DEBUG_show(MMD_SA.THREEX.get_model(0).get_bone_position_by_MMD_name('上半身').toArray().join('\n')+'\n'+Date.now())},0,1,-1) });
 
@@ -14711,6 +14795,467 @@ gamepads.push(new Gamepad(id));
   };
 
   return _gamepad;
+})();
+
+
+MMD_SA.Wallpaper3D = (()=>{
+  let img, canvas_img, canvas_depth, canvas_temp;
+  let depth_worker;
+  let ar;
+  let camera_factor = 1;
+  let d_to_full_screen;
+
+  let update_depth_transform_timerID;
+
+  let resolve_loaded;
+
+  let enabled = true;
+
+  function update_depth(time=500) {
+if (!_wallpaper_3D.depth_map_ready) return;
+
+if (update_depth_transform_timerID)
+  clearTimeout(update_depth_transform_timerID);
+update_depth_transform_timerID = setTimeout(()=>{
+  update_depth_transform_timerID = null;
+  _wallpaper_3D.update_transform();
+  _wallpaper_3D.update_mesh();
+}, time);
+  }
+
+  window.addEventListener('SA_MMD_SL_resize', ()=>{ update_depth(100); });
+  window.addEventListener('SA_MMD_camera_FOV_on_change', ()=>{ update_depth(100); });
+
+  const _wallpaper_3D = {
+    scale_base: 200,
+    depth_dim: 512,
+
+    get enabled() { return !!enabled; },
+    set enabled(v) {
+enabled = !!v;
+this.visible = v;
+    },
+
+    init: async function () {
+if (this.mesh) return;
+
+img = new Image();
+canvas_img = document.createElement('canvas');
+canvas_depth = document.createElement('canvas');
+canvas_depth_transformed = document.createElement('canvas');
+canvas_temp = document.createElement('canvas');
+
+const THREE = MMD_SA.THREEX.THREE;
+const geometry = new THREE.PlaneGeometry(1,1, (this.depth_dim-1),(this.depth_dim-1));
+
+const canvas_tex = this.canvas_tex = document.createElement('canvas');
+canvas_tex.width = canvas_tex.height = 2048;
+canvas_tex.getContext('2d').clearRect(0,0,canvas_tex.width,canvas_tex.height);
+
+const texture = new THREE.Texture(canvas_tex);
+if (MMD_SA.THREEX.enabled && MMD_SA.THREEX.use_sRGBEncoding) texture.colorSpace = THREE.SRGBColorSpace;
+
+const material = new THREE.MeshBasicMaterial( { map:texture, fog:false } );
+
+this.mesh = new THREE.Mesh( geometry, material );
+
+if (!MMD_SA.THREEX.enabled) {
+  this.mesh.useQuaternion = true;
+  if (MMD_SA.WebXR.ground_plane) MMD_SA.WebXR.ground_plane.visible = false;
+  System._browser.camera.poseNet.ground_plane_visible = false;
+}
+
+await new Promise((resolve)=>{
+  MMD_SA_options._Wallpaper3D_status_ = '(🌐Initializing depth AI...)'
+
+  depth_worker = new Worker('js/depth_estimation_worker.js', {type: 'module'});
+
+  depth_worker.onmessage = (e)=>{
+    if (typeof e.data == 'string') {
+      if (e.data = 'OK') {
+        resolve();
+      }
+      else {
+        MMD_SA_options._Wallpaper3D_status_ = e.data;
+      }
+    }
+    else {
+      let img_raw = new Uint8ClampedArray(e.data.rgba);
+
+      let image_data = new ImageData(e.data.width, e.data.height);
+      for (let i = 0, i_max = image_data.data.length/4; i < i_max; i++) {
+        image_data.data[i*4] = image_data.data[i*4+1] = image_data.data[i*4+2] = img_raw[i];
+        image_data.data[i*4+3] = 255;
+      }
+//console.log(image_data);
+/*
+this.canvas_tex.width  = e.data.width;
+this.canvas_tex.height = e.data.height;
+this.canvas_tex.getContext('2d').putImageData(image_data, 0,0);
+this.mesh.material.map.needsUpdate = true;
+*/
+
+      let ctx;
+
+      canvas_img.width  = e.data.width;
+      canvas_img.height = e.data.height;
+      ctx = canvas_img.getContext('2d');
+      ctx.putImageData(image_data, 0,0);
+
+      const dw = this.depth_dim;
+      const dh = this.depth_dim;
+
+      canvas_depth.width = canvas_depth.height = this.depth_dim;
+      ctx = canvas_depth.getContext('2d');
+      ctx.drawImage(canvas_img, 0,0,canvas_img.width,canvas_img.height, 0,0,dw,dh);
+
+      this.depth_map_ready = true;
+
+      this.update_mesh();
+
+      this.mesh.visible = true;
+
+      System._browser.camera.display_floating = (MMD_SA_options.user_camera.display.floating_auto !== false);
+
+      MMD_SA_options._Wallpaper3D_status_ = '(✔️3D mesh generated - ' + Math.round(e.data.t) + 'ms)';
+
+      this.busy = false;
+
+      if (resolve_loaded) {
+        resolve_loaded();
+        resolve_loaded = null;
+      }
+    }
+  }
+});
+
+MMD_SA.THREEX.scene.add(this.mesh);
+    },
+
+    options_by_filename: {},
+
+    _access_general_options_only_: false,
+
+    options: (()=>{
+      const options_default = {
+scale_xy_percent: 110,
+scale_z_percent: 100,
+depth_shift_percent: 0,
+depth_contrast_percent: 0,
+depth_blur: 2,
+// depth_scale_percent
+pos_x_offset_percent: 0,
+pos_y_offset_percent: 0,
+pos_z_offset_percent: 0,
+      };
+
+      const options_general = {};
+
+      return new Proxy(options_general, {
+        get(obj, prop, receiver) {
+if (prop == 'enabled') return _wallpaper_3D.enabled;
+
+const options = !_wallpaper_3D._access_general_options_only_ && _wallpaper_3D.options_by_filename[_wallpaper_3D.filename];
+return (options?.[prop] != null) ? options[prop] : ((obj[prop] != null) ? obj[prop] : options_default[prop]);
+        },
+
+        set(obj, prop, value) {
+if (prop == 'enabled') {
+  _wallpaper_3D.enabled = value;
+  return;
+}
+
+// no changing settings if depth map is still loading (can change if wallpaper 3D has not been initialized yet)
+if (_wallpaper_3D.mesh && !_wallpaper_3D.depth_map_ready) return;
+
+const options = (!_wallpaper_3D._access_general_options_only_ && _wallpaper_3D.options_by_filename[_wallpaper_3D.filename]) || obj;
+
+options[prop] = value;
+
+switch (prop) {
+  case 'scale_xy_percent':
+    if (_wallpaper_3D.depth_map_ready)
+      _wallpaper_3D.update_transform();
+    break;
+  default:
+    update_depth();
+};
+        }
+      });
+    })(),
+
+    busy: false,
+
+    load: async function (src) {
+if (!this.enabled) return;
+
+if (this.busy) return;
+this.busy = true;
+
+this.depth_map_ready = false
+
+this.filename = src.replace(/^.+[\/\\]/, '');
+if (!this.options_by_filename[this.filename]) {
+  const options = {};
+  for (const p of ['scale_xy_percent', 'scale_z_percent', 'depth_shift_percent', 'depth_contrast_percent', 'depth_blur', 'pos_x_offset_percent', 'pos_y_offset_percent', 'pos_z_offset_percent']) {
+    options[p] = this.options[p];
+  }
+// after values are copied from general options
+  this.options_by_filename[this.filename] = options;
+}
+
+await this.init();
+
+MMD_SA_options._Wallpaper3D_status_ = '(⏳Analyzing image depth...)';
+
+this.mesh.visible = false;
+
+await new Promise((resolve)=>{
+  img.onload = function () {
+    resolve();
+  };
+  img.src = toFileProtocol(src);
+});
+
+ar = img.width/img.height;
+
+let sw, sh;
+if (img.width * img.height > 1920*1080) {
+// sh*ar * sh = 1920*1080
+  sh = Math.round(Math.sqrt(1920*1080/ar));
+  sw = Math.round(sh * ar);
+}
+else {
+  sh = img.height;
+  sw = img.width;
+}
+
+let ctx;
+
+this.canvas_tex.getContext('2d').drawImage(img, 0,0,img.width,img.height, 0,0,2048,2048);
+this.mesh.material.map.needsUpdate = true;
+
+this.update_transform();
+
+canvas_img.width = sw;
+canvas_img.height = sh;
+
+ctx = canvas_img.getContext('2d');
+ctx.drawImage(img, 0,0,img.width,img.height, 0,0,sw,sh);
+let rgba = ctx.getImageData(0,0,sw,sh).data.buffer;
+
+let data = { rgba:rgba, width:sw, height:sh };
+depth_worker.postMessage(data, [data.rgba]);
+
+data = data.rgba = rgba = undefined;
+
+return new Promise((resolve)=>{
+  resolve_loaded = resolve;
+});
+    },
+
+    update_transform: function () {
+let scale_xy = this.options.scale_xy_percent/100;
+let scale_z = this.options.scale_z_percent/100;
+let pos_z_offset_percent = this.options.pos_z_offset_percent;
+
+this.mesh.scale.set(((ar>1)?ar:1)*scale_xy, ((ar>1)?1:1/ar)*scale_xy, scale_z).multiplyScalar(this.scale_base);
+
+const center_view = MMD_SA.center_view;
+d_to_full_screen = this.scale_base * scale_z + (MMD_SA_options.camera_position_base[2] + center_view[2])
+
+this.mesh.position.copy(MMD_SA.THREEX.get_model(0).mesh.position);
+this.mesh.position.y += (MMD_SA_options.camera_position_base[1] + center_view[1]);
+this.mesh.position.z += (MMD_SA_options.camera_position_base[2] + center_view[2]) - d_to_full_screen - this.mesh.scale.z * pos_z_offset_percent/100;
+    },
+
+    update_mesh: function () {
+if (!this.depth_map_ready) return;
+
+let scale_z = this.options.scale_z_percent/100;
+let depth_shift_percent = this.options.depth_shift_percent;
+let depth_contrast_percent = this.options.depth_contrast_percent;
+//let depth_scale_percent = this.options.depth_scale_percent;
+let depth_blur = this.options.depth_blur;
+let pos_x_offset_percent = this.options.pos_x_offset_percent;
+let pos_y_offset_percent = this.options.pos_y_offset_percent;
+let pos_z_offset_percent = this.options.pos_z_offset_percent;
+
+let ctx;
+let update_texture;
+if (depth_shift_percent || depth_contrast_percent || depth_blur) {// || (depth_scale_percent != 100)) {
+  update_texture = true;
+
+  canvas_temp.width = canvas_temp.height = this.depth_dim;
+  ctx = canvas_temp.getContext('2d');
+  ctx.globalAlpha = 1;
+  if (depth_shift_percent && (depth_contrast_percent < 0)) {
+
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.filter = 'none';
+    ctx.fillColor = 'black';
+    ctx.fillRect(0,0,this.depth_dim,this.depth_dim);
+    ctx.globalAlpha = (depth_contrast_percent+100)/100;
+    ctx.drawImage(canvas_depth, 0,0);
+    ctx.globalAlpha = 1;
+
+/*
+    ctx.globalCompositeOperation = 'copy';
+    ctx.filter = 'contrast(' + (depth_contrast_percent+100) + '%)';
+    ctx.drawImage(canvas_depth, 0,0);
+    ctx.filter = 'none';
+*/
+  }
+  else {
+    ctx.globalCompositeOperation = 'copy';
+    ctx.filter = 'none';
+    ctx.drawImage(canvas_depth, 0,0);
+  }
+
+// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/globalCompositeOperation
+// https://en.wikipedia.org/wiki/Blend_modes
+  if (depth_shift_percent) {
+    ctx.globalCompositeOperation = (depth_shift_percent < 0) ? 'multiply' : 'screen';
+    let power = Math.abs(depth_shift_percent/100);
+    while (power > 0) {
+      ctx.globalAlpha = Math.min(power, 1);
+      ctx.drawImage(canvas_temp, 0,0);
+      power--;
+    }
+  }
+
+  if (depth_contrast_percent > 0) {
+    ctx.globalCompositeOperation = 'overlay';//'soft-light';//
+    let power = Math.abs(depth_contrast_percent/100);
+//    if (depth_contrast_percent < 0) ctx.filter = 'invert(100%)';
+    while (power > 0) {
+      ctx.globalAlpha = power;
+      ctx.drawImage(canvas_temp, 0,0);
+      power--;
+    }
+  }
+
+  canvas_depth_transformed.width = canvas_depth_transformed.height = this.depth_dim;
+  ctx = canvas_depth_transformed.getContext('2d');
+  ctx.globalCompositeOperation = 'copy';
+  ctx.globalAlpha = 1;
+
+  let filters = [];
+
+  if (!depth_shift_percent && (depth_contrast_percent < 0)) filters.push('contrast(' + (depth_contrast_percent+100) + '%)');
+//  if (depth_scale_percent != 100) filters.push('brightness(' + depth_scale_percent + '%)');
+
+  if (depth_blur) filters.push('blur(' + depth_blur + 'px)');
+
+  ctx.filter = (filters.length) ? filters.join(' ') : 'none';
+//DEBUG_show(ctx.filter)
+
+  ctx.drawImage(canvas_temp, 0,0);
+  ctx.filter = 'none';
+}
+else {
+  ctx = ctx = canvas_depth.getContext('2d');
+}
+
+// https://hofk.de/main/discourse.threejs/2022/CalculateCameraDistance/CalculateCameraDistance.html
+// box_h = d * (2 * Math.tan(camera.fov / 2))
+const ar_camera = MMD_SA.THREEX.SL.width/MMD_SA.THREEX.SL.height;
+camera_factor = 2 * Math.tan(MMD_SA.THREEX.camera.obj.fov * Math.PI/180 / 2) * ar_camera / ((ar > 1) ? ar : 1) * ((ar > ar_camera) ? ar/ar_camera : 1);
+/*
+if (1) {
+  if (update_texture) this.mesh.material.uniforms.Wallpaper3D_displacementMap.value.needsUpdate = true;
+  return;
+}
+*/
+const z_offset = pos_z_offset_percent/100 * scale_z * camera_factor;
+let h_max = d_to_full_screen / this.scale_base * camera_factor;
+let h_min = (d_to_full_screen - this.scale_base * scale_z) / this.scale_base * camera_factor;
+h_max -= h_min + z_offset;
+
+const center_x = 0.5 - pos_x_offset_percent/100;
+const center_y = 0.5 - pos_y_offset_percent/100;
+//console.log(h_max,center_y)
+
+const dw = this.depth_dim;
+const dh = this.depth_dim;
+const depth_idata = ctx.getImageData(0,0,dw,dh);
+
+//if (1) {} else
+if (MMD_SA.THREEX.enabled) {
+  const pos = this.mesh.geometry.getAttribute('position');
+  const uv  = this.mesh.geometry.getAttribute('uv');
+//console.log(pos.count,uv.count,this.mesh.geometry.getIndex().count)
+  for (let i = 0, i_max = pos.count; i < i_max; i++) {
+    let x = uv.array[i*2];
+    let y = uv.array[i*2+1];
+    if (x < 0) x += 1;
+    if (y < 0) y += 1;
+    y = 1-y;
+
+    x = Math.round(x*(dw-1));
+    y = Math.round(y*(dh-1));
+
+    let depth = depth_idata.data[(y*dw + x) * 4]/255;
+//if (isNaN(depth)) console.log(x,y)
+    pos.array[i*3+2] = depth;
+
+    let w = x/(dw-1) - center_x;
+    let h = 1-y/(dh-1) - center_y;
+    let scale = Math.max((1-depth) * h_max + (h_min+z_offset), h_min);
+    pos.array[i*3]   = w * scale;
+    pos.array[i*3+1] = h * scale;
+  }
+
+  pos.needsUpdate = true;
+}
+else {
+  const pos  = this.mesh.geometry.vertices;
+  const uv   = this.mesh.geometry.faceVertexUvs[0];
+  const face = this.mesh.geometry.faces;
+
+//  const v_index = {};
+  const face_a = ['a', 'b', 'c'];
+  for (let i = 0, i_max = face.length; i < i_max; i++) {
+    const f_obj = face[i];
+    for (let f = 0; f < 3; f++) {
+      const vi = f_obj[face_a[f]];
+//      if (v_index[vi]) break;
+//      v_index[vi] = true;
+
+      let x = uv[i][f].x;
+      let y = uv[i][f].y;
+      if (x < 0) x += 1;
+      if (y < 0) y += 1;
+      y = 1-y;
+
+      x = Math.round(x*(dw-1));
+      y = Math.round(y*(dh-1));
+
+      let depth = depth_idata.data[(y*dw + x) * 4]/255;
+      pos[vi].z = depth;
+
+      let w = x/(dw-1) - center_x;
+      let h = 1-y/(dh-1) - center_y;
+      let scale = Math.max((1-depth) * h_max + (h_min+z_offset), h_min);
+      pos[vi].x = w * scale;
+      pos[vi].y = h * scale;
+    }
+  }
+
+  this.mesh.geometry.verticesNeedUpdate = true;
+}
+    },
+
+    get visible() { return this.mesh?.visible; },
+    set visible(v) {
+if (this.mesh)
+  this.mesh.visible = !!v;
+if (v)
+  MMD_SA_options._Wallpaper3D_status_ = '(✔️Ready)';
+    },
+  };
+
+  return _wallpaper_3D;
 })();
 
 
