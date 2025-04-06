@@ -6742,7 +6742,7 @@ key_map.down = 0
   d.SA_keydown = function (e) {
 const k = e.detail.keyCode;
 const _e = e.detail.e;
-const k_code = _e.code;
+const k_code = (is_mobile && (k == 111)) ? 'Escape' : _e.code;
 
 const result = {};
 window.dispatchEvent(new CustomEvent("SA_Dungeon_keydown", { detail:{ e:_e, result:result } }));
