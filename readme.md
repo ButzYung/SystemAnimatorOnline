@@ -144,17 +144,22 @@ All demos support the use of custom MMD (MikuMikuDance) model. Drop a zip of you
 - [jThree v2](https://github.com/GrimoireGL/GrimoireJS) (NOTE: jThree has been discontinued. Its successor is known as "Grimoire.js")
 
 - [ammo.js](https://github.com/kripken/ammo.js), a port of Bullet Physics to JavaScript, zlib licensed
-    
 
 - [JSZip](https://stuk.github.io/jszip/) (used under MIT license)
 
 - [MediaPipe](https://github.com/google/mediapipe)
 
-- [TensorFlow.js](https://github.com/tensorflow/tfjs)
+- [Transformers.js](https://github.com/huggingface/transformers.js)
+
+- [bvh2vrma](https://github.com/vrm-c/bvh2vrma)
 
 - [osc-js](https://github.com/adzialocha/osc-js)
 
+- [electron-as-wallpaper](https://github.com/meslzy/electron-as-wallpaper)
+
 - [PeerJS](https://peerjs.com/)
+
+- [TensorFlow.js](https://github.com/tensorflow/tfjs)
 
 ### Other third-party assests
 
