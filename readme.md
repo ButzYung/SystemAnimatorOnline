@@ -85,7 +85,7 @@ If you like XR Animator, please consider making a donation🙇 Or even better, j
 
 XR Animator is currently sponsored by the following people❤️
 
-- **NewruGuru, Nymph, KuraiNoOni, Kai, Prajzis, LouLi Lou, MShade, coffee-addict, skeh, YAR, MiiThrii VRTuber, Swoonifer, CoCoNo, JM Choi**
+- **NewruGuru, Nymph, KuraiNoOni, Kai, Prajzis, LouLi Lou, coffee-addict, skeh, YAR, Swoonifer, CoCoNo, JM Choi, Motoko Library**
 - Other supporters
 
 # About System Animator
