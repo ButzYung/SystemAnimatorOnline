@@ -1,4 +1,4 @@
-// (2023-04-10)
+// (2024-10-14)
 
 /*!
  * jThree JavaScript Library v2.1.2
@@ -37415,12 +37415,17 @@ function checkRenderingContext() {
 
 // AT: MMD_disabled
 if (MMD_SA_options.MMD_disabled) {
-  var $ = jThree;
+  const $ = jThree;
 
-  MMD_SA.fn.x_object_init()
+  MMD_SA_options.motion = [];
+  MMD_SA_options.mesh_obj = [];
+  MMD_SA_options.mesh_obj_preload_list = [];
 
-  MMD_SA._tray_updatable = true
-  System._browser.update_tray()
+  window.dispatchEvent(new CustomEvent("GOML_ready"));
+  MMD_SA.fn.x_object_init();
+
+//  MMD_SA._tray_updatable = true;
+  System._browser.update_tray(null, true);
 
   if (jThree.Trackball) jThree.trackball = jThree.Trackball;
   $.trackball();
@@ -37540,9 +37545,11 @@ if (self.MMD_SA) {
 // AT: Make the ready function portable for System Animator.
 if (self.MMD_SA) {
   MMD_SA.jThree_ready = function () {
-    window.dispatchEvent(new CustomEvent("jThree_ready"))
-    ready()
-    window.dispatchEvent(new CustomEvent("GOML_ready"))
+    window.dispatchEvent(new CustomEvent("jThree_ready"));
+ 
+    ready();
+
+    window.dispatchEvent(new CustomEvent("GOML_ready"));
   }
 }
 else

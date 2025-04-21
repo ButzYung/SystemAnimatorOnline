@@ -148,10 +148,9 @@ export class PreTrainedModel extends PreTrainedModel_base {
      *
      * @param {Object} decoderResults The decoder results object.
      * @param {Object} pastKeyValues The previous past key values.
-     * @param {boolean} [dispose=true] Whether to dispose of the old gpu buffer.
      * @returns {Object} An object containing past key values.
      */
-    getPastKeyValues(decoderResults: any, pastKeyValues: any, dispose?: boolean): any;
+    getPastKeyValues(decoderResults: any, pastKeyValues: any, disposeEncoderPKVs?: boolean): any;
     /**
      * Returns an object containing attentions from the given model output object.
      *

@@ -1,4 +1,4 @@
-// (2024-06-19)
+// (2024-10-14)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -7846,7 +7846,7 @@ THREE.Mesh.prototype.dispose = function() { // delete webgl objects
 };
 
 // AT: ammo.js async
-jThree._ammo_async_init_.push(function () {
+jThree._ammo_async_init_?.push(function () {
 
 window.Ammo && MMD.setGravity( 0, -9.8*10, 0 );//mod by jThree
 
@@ -7887,7 +7887,7 @@ if (self.MMD_SA && !MMD_SA_options.ground_physics_disabled) {
 self.MMD_SA && MMD_SA.ammo_proxy && MMD_SA.ammo_proxy.update_worker();
 
 });
-if (!self.MMD_SA || !MMD_SA_options.ammo_version || MMD_SA._ammo_async_loaded_) { /*console.log(jThree._ammo_async_init_);*/ jThree._ammo_async_init_.forEach(function (func) { func() }); jThree._ammo_async_init_=[]; }
+if (!self.MMD_SA || !MMD_SA_options.ammo_version || MMD_SA._ammo_async_loaded_) { /*console.log(jThree._ammo_async_init_);*/ jThree._ammo_async_init_?.forEach(function (func) { func() }); jThree._ammo_async_init_=[]; }
 
 jThree.modelHooks.pmx = function( url, loaded ) {
 	new PMX().load( url, function( pmx ) {

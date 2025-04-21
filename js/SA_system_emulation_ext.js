@@ -1,5 +1,5 @@
 // System object emultaion - extension
-// (2021-11-09)
+// (2024-10-10)
 
 var xul_mode
 
@@ -341,43 +341,32 @@ var js =
 return js
   }
 
- ,CreateShortcut: function (para) {
-var _null = (xul_mode || webkit_mode) ? "null" : ""
-for (var i = 2; i <= 4; i++) {
+ ,CreateShortcut: function (para, blocking=true) {
+var _null = (xul_mode || webkit_mode) ? "null" : "";
+for (let i = 2; i <= 4; i++) {
   if (!para[i])
-    para[i] = _null
+    para[i] = _null;
 }
 
 if (xul_mode) {
-  XPCOM_object["Shell.Application"]._run(System.Gadget.path + '\\js\\SA_xul_create_shortcut.js', encodeURIComponent(para[0])+' '+encodeURIComponent(para[1])+' '+encodeURIComponent(para[2])+' '+encodeURIComponent(para[3])+' '+encodeURIComponent(para[4]), true, true)
+  XPCOM_object["Shell.Application"]._run(System.Gadget.path + '\\js\\SA_xul_create_shortcut.js', encodeURIComponent(para[0])+' '+encodeURIComponent(para[1])+' '+encodeURIComponent(para[2])+' '+encodeURIComponent(para[3])+' '+encodeURIComponent(para[4]), true, true);
 }
 else if (webkit_mode) {
-  WebKit_object["Shell.Application"]._run(System.Gadget.path + '\\js\\SA_xul_create_shortcut.js', encodeURIComponent(para[0])+' '+encodeURIComponent(para[1])+' '+encodeURIComponent(para[2])+' '+encodeURIComponent(para[3])+' '+encodeURIComponent(para[4]), null, true)
+// supress occasional error when blocking is false
+  WebKit_object["Shell.Application"]._run(System.Gadget.path + '\\js\\SA_xul_create_shortcut.js', encodeURIComponent(para[0])+' '+encodeURIComponent(para[1])+' '+encodeURIComponent(para[2])+' '+encodeURIComponent(para[3])+' '+encodeURIComponent(para[4]), null, blocking);
 }
 else {
-  shortcut = oShell.CreateShortcut(para[1])
-  shortcut.TargetPath = para[0]
-  shortcut.WorkingDirectory = para[2]
-  shortcut.Arguments = para[3]
-  shortcut.IconLocation = para[4]
-  shortcut.Save()
+  shortcut = oShell.CreateShortcut(para[1]);
+  shortcut.TargetPath = para[0];
+  shortcut.WorkingDirectory = para[2];
+  shortcut.Arguments = para[3];
+  shortcut.IconLocation = para[4];
+
+  shortcut.Save();
 }
   }
 
  ,SaveLocalSettings: function (saved_settings, cf, cf_full) {
-function electronRegisterCheck() {
-  if (!webkit_electron_mode || linux_mode)
-    return false
-
-  var registered
-  try {
-    registered = webkit_electron_remote.app.isDefaultProtocolClient("system-animator")
-  }
-  catch (err) {}
-
-  return registered
-}
-
 if (!cf) {
   cf = this._default.config_folder
   cf_full = this._default.config_folder_full

@@ -45,7 +45,7 @@ export type PretrainedOptions = {
      * - The model is a model provided by the library (loaded with the *model id* string of a pretrained model).
      * - The model is loaded by supplying a local directory as `pretrained_model_name_or_path` and a configuration JSON file named *config.json* is found in the directory.
      */
-    config?: any;
+    config?: import('../configs.js').PretrainedConfig;
     /**
      * Path to a directory in which a downloaded pretrained model configuration should be cached if the standard cache should not be used.
      */

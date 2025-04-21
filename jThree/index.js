@@ -1,4 +1,4 @@
-// (2024-07-02)
+// (2024-10-14)
 
 MMD_SA.fn = {
 /*
@@ -28,8 +28,14 @@ if (this.length < load_length) {
   DEBUG_show('(' + parseInt(this.length/load_length*100) + '% loaded)')
 }
 else if (this.length == load_length) {
-  this._ready_for_model_creation[0] = true
-  DEBUG_show('(100% loaded, processing model...)')
+  if (MMD_SA_options.MMD_disabled) {
+    setTimeout(function () { MMD_SA.fn.init() }, 200);
+    DEBUG_show("(MMD starting...)",2);
+  }
+  else {
+    this._ready_for_model_creation[0] = true;
+    DEBUG_show('(100% loaded, processing model...)');
+  }
 }
 else if (this.length == load_length +1) {
 //  DEBUG_show('(100% loaded, processing model and first motion...)')
@@ -184,7 +190,7 @@ var fn = this
 var model = THREE.MMD.getModels()[0]
 
 var _material_list = []
-model.pmx.materials.forEach(function (m) {
+model?.pmx.materials.forEach(function (m) {
   _material_list.push(m.name)
 });
 MMD_SA._material_list = _material_list
@@ -212,16 +218,24 @@ THREE.MMD.getModels().forEach(function (_model) {
   _model.morph_MMD_SA_extra = [MMD_SA.Animation_dummy]
 });
 
-MMD_SA.MMD = {
-  MotionManager: function () {
-    this._model_index = 0
-  }
+MMD_SA.MMD = (()=>{
+  let motionManager;
+  const motionManager_dummy = { para_SA:{} };
 
- ,setFrameNumber: function () {}
+  return {
+    MotionManager: function () {
+      this._model_index = 0;
+    },
 
- ,play: function () { jThree.MMD.play() }
- ,pause: function () { jThree.MMD.pause() }
-}
+    setFrameNumber: function () {},
+
+    play: function () { jThree.MMD.play() },
+    pause: function () { jThree.MMD.pause() },
+
+    get motionManager() { return motionManager || motionManager_dummy; },
+    set motionManager(v) { motionManager = v; },
+  };
+})();
 
 Object.defineProperty(MMD_SA.MMD.MotionManager.prototype, "lastFrame",
 {
@@ -438,12 +452,12 @@ if (MMD_SA_options.use_speech_bubble) {
 //MMD_SA.physicsHelper = new THREE.MMDPhysicsHelper( THREE.MMD.getModels()[0].mesh ); MMD_SA.scene.add( MMD_SA.physicsHelper );
 
 
-MMD_SA._tray_updatable = true
-System._browser.update_tray()
-
 setTimeout(function () {
-  MMD_SA.MMD_started = true
-//console.log(THREE.MMD.getModels()[0])
+  MMD_SA.MMD_started = true;
+
+  MMD_SA._tray_updatable = !MMD_SA_options.MMD_disabled || !MMD_SA.THREEX.enabled;
+  System._browser.update_tray(null, true);
+
   resize();
   $.MMD.cameraMotion = true;
 
@@ -844,16 +858,16 @@ THREE.MMD.getModels().forEach(function (_model, idx) {
   }
 
 // a trick to "warm up" fadeout on startup
-  MMD_SA.fadeout_opacity = 0.95
-  MMD_SA.fadeout_canvas.width  = SL.width
-  MMD_SA.fadeout_canvas.height = SL.height
-  var context = MMD_SA.fadeout_canvas.getContext("2d")
-  context.globalCompositeOperation = 'copy'
-  context.globalAlpha = 0.01
-  context.fillRect(0,0,SL.width,SL.height)
-  context.globalAlpha = 1
+  MMD_SA.fadeout_opacity = 0.95;
+  MMD_SA.fadeout_canvas.width  = SL.width;
+  MMD_SA.fadeout_canvas.height = SL.height;
+  var context = MMD_SA.fadeout_canvas.getContext("2d");
+  context.globalCompositeOperation = 'copy';
+  context.globalAlpha = 0.01;
+  context.fillRect(0,0,SL.width,SL.height);
+  context.globalAlpha = 1;
 
-  MMD_SA_options.model_para_obj_all.forEach(function (model_para, idx) {
+  !MMD_SA_options.MMD_disabled && MMD_SA_options.model_para_obj_all.forEach(function (model_para, idx) {
     var mesh = THREE.MMD.getModels()[idx].mesh
 // reset temp positioning if necessary
     if (model_para.position_loading || model_para.bone_connection || mesh.bones_by_name["全ての親"])
@@ -1094,7 +1108,7 @@ MMD_SA.reset_camera = function (check_event) {
 //MMD_SA._debug_msg = [center_view]
 //DEBUG_show(center_view,0,1)
 
-  var model_pos = THREE.MMD.getModels()[0].mesh.position
+  var model_pos = THREE.MMD.getModels()[0]?.mesh.position || MMD_SA._v3b_.set(0,0,0);
   var camera_position = MMD_SA_options.camera_position.slice()
   if (MMD_SA_options.use_random_camera && returnBoolean("MMDRandomCamera") && (MMD_SA.MMD.motionManager.para_SA.use_random_camera || Audio_BPM.vo.BPM_mode)) {
     var rc = MMD_SA_options.random_camera

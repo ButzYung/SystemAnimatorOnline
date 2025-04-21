@@ -468,9 +468,9 @@
 					},
 					"extra": {
 						"_translation_": {
-							"_default_": "1. Change resolution limit\n2. Change frame rate\n3. Return",
-							"ja": "1. 解像度制限を変更する\n2. フレームレートを変更する\n3. 戻る",
-							"zh": "1. 變更解像度限制\n2. 變更幀率\n3. 返回"
+							"_default_": "1. Change resolution limit\n2. Change frame rate\n3. Save and return",
+							"ja": "1. 解像度制限を変更する\n2. フレームレートを変更する\n3. 保存して戻る",
+							"zh": "1. 變更解像度限制\n2. 變更幀率\n3. 儲存並返回"
 						}
 					}
 				}
@@ -1858,9 +1858,23 @@
 					},
 					"background": {
 						"_translation_": {
-							"_default_": "Choose a background option below, or drop an image/video file to change wallpaper.\n1. Default\n2. Black\n3. White\n4. Green\n5. Webcam as background\n6. Done",
-							"ja": "以下の背景オプションを選択するか、画像/ビデオ ファイルをドロップして壁紙を変更します。\n1. デフォルト\n2. 黑\n3. 白\n4. 緑\n5. 背景としてのWebカメラ\n6. 終了",
-							"zh": "選擇以下的背景選項，或拖曳圖像/影像檔案作為背景。\n1. 預設\n2. 黑\n3. 白\n4. 緑\n5. 以攝影機畫面作背景\n6. 結束"
+							"_default_": "Choose a background option, or drop an image/video file to change wallpaper.\n1. Default\n2. Black\n3. White\n4. Green\n5. Webcam as background\n6. Image input handler: <image_input_handler>\nX. Done",
+							"ja": "以下の背景オプションを選択するか、画像/ビデオ ファイルをドロップして壁紙を変更します。\n1. デフォルト\n2. 黑\n3. 白\n4. 緑\n5. 背景としてのWebカメラ\n6. 画像入力ハンドラー: <image_input_handler>\nX. 終了",
+							"zh": "選擇以下的背景選項，或拖曳圖像/影像檔案作為背景。\n1. 預設\n2. 黑\n3. 白\n4. 緑\n5. 以攝影機畫面作背景\n6. 影像輸入處理程序: <image_input_handler>\nX. 結束"
+						},
+						"image_input_handler_as_wallpaper": {
+							"_translation_": {
+								"_default_": "Wallpaper",
+								"ja": "壁紙",
+								"zh": "壁紙"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Image input handler:\nBy default, image input is treated as mocap source when this speech bubble is off. Setting it to \"Wallpaper\" allows you to change wallpaper by dropping an image anywhere and anytime.",
+									"ja": "画像入力ハンドラー:\nデフォルトでは、この吹き出しがオフの場合、画像入力はモーションキャプチャ ソースとして扱われます。 これを「壁紙」に設定すると、いつでもどこでも画像をドロップして壁紙を変更できます。",
+									"zh": "影像輸入處理程序:\n預設情況下，當此對話雲關閉時，影像輸入將被視為動作捕捉來源。 將其設為「壁紙」可讓您隨時隨地放置圖像來變更桌布。"
+								}
+							}
 						},
 						"3D_wallpaper": {
 							"_translation_": {
@@ -1945,9 +1959,9 @@
 									},
 									"tooltip": {
 										"_translation_": {
-											"_default_": "Depth blur<press_to_change_value>:\nUse this setting to blur the depth. Larger value smooths changes betwen adjacent depth values. Default is \"2\".",
-											"ja": "深さのぼかし<press_to_change_value>:\nこの設定を使用して深度をぼかします。 値が大きいほど、隣接する深度値間の変化が滑らかになります。 デフォルトは「2」です。",
-											"zh": "深度模糊<press_to_change_value>:\n使用此設定來模糊深度。 較大的值可以平滑相鄰深度值之間的變化。 預設是「2」。"
+											"_default_": "Depth blur<press_to_change_value>:\nUse this setting to blur the depth. Larger value smooths changes betwen adjacent depth values. Default is \"2px\".",
+											"ja": "深さのぼかし<press_to_change_value>:\nこの設定を使用して深度をぼかします。 値が大きいほど、隣接する深度値間の変化が滑らかになります。 デフォルトは「2px」です。",
+											"zh": "深度模糊<press_to_change_value>:\n使用此設定來模糊深度。 較大的值可以平滑相鄰深度值之間的變化。 預設是「2px」。"
 										}
 									}
 								}
@@ -1998,6 +2012,69 @@
 										"_default_": "Export scene settings to file:\nThis option exports all settings of the current 3D wallpaper to an external JSON file. To load a saved 3D wallpaper, simply drop the scene JSON to the app.",
 										"ja": "シーン設定をファイルにエクスポート:\nこのオプションは、現在の 3D 壁紙のすべての設定を外部の JSON ファイルにエクスポートします。 保存した 3D 壁紙を読み込むには、シーン JSON をアプリにドロップするだけです。",
 										"zh": "匯出場景設定至檔案:\n此選項將目前 3D 桌布的所有設定匯出到外部 JSON 檔案。 要載入已儲存的 3D 壁紙，只需將場景 JSON 拖放到應用程式中即可。"
+									}
+								}
+							},
+							"advanced_options": {
+								"_translation_": {
+									"_default_": "Advanced options",
+									"ja": "詳細オプション",
+									"zh": "進階選項"
+								}
+							},
+							"depth_model": {
+								"_translation_": {
+									"_default_": "Depth model",
+									"ja": "深度モデル",
+									"zh": "深度模型"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "Depth model:\nThis setting determines the AI model used to generate the depth map for 3D wallpaper. \"Depth Anything v2 base\" offers better quality at the expense of extra system resource usage. Default is \"Depth Anything v2 small\".",
+										"ja": "深度モデル:\nこの設定は、3D 壁紙の深度マップを生成するために使用される AI モデルを決定します。 「Depth Anything v2 base」 は、システム リソースの使用量が増える代わりに、より優れた品質を提供します。 デフォルトは 「Depth Anything v2 small」 です。",
+										"zh": "深度模型:\n此設定決定用於產生 3D 壁紙深度圖的 AI 模型。 「Depth Anything v2 base」提供更好的質量，但會佔用額外的系統資源。 預設值為「Depth Anything v2 small」。"
+									}
+								}
+							},
+							"super_resolution": {
+								"_translation_": {
+									"_default_": "Super resolution",
+									"ja": "超解像度",
+									"zh": "超解析度"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "Super resolution:\nThis option determines whether to perform super-resolution AI upscaling for low-res image input of 3D wallpaper. Note that this process can take more than a minute depending on the image resolution and GPU power. Upscaled image can be saved at the end of the process for future use. Default is \"OFF\".",
+										"ja": "超解像度:\nこのオプションは、3D 壁紙の低解像度画像入力に対して超解像度 AI アップスケーリングを実行するかどうかを決定します。 画像の解像度と GPU パワーによっては、このプロセスに 1 分以上かかる場合があることに注意してください。 アップスケールされた画像は、将来使用するためにプロセスの最後に保存できます。 デフォルトは「OFF」です。",
+										"zh": "超解析度:\n此選項決定是否對3D壁紙的低解析度影像輸入進行超解析度AI放大。 請注意，此過程可能需要一分鐘以上的時間，具體取決於影像解析度和 GPU 功率。 放大的圖像可以在過程結束時保存以供將來使用。 預設為「OFF」。"
+									}
+								},
+								"model": {
+									"_translation_": {
+										"_default_": "Model",
+										"ja": "モデル",
+										"zh": "模型"
+									},
+									"tooltip": {
+										"_translation_": {
+											"_default_": "Super resolution model:\nThis setting determines the AI model used to perform resolution upscaling. \"Swin2SR x4\" offers better quality and x4 upscaling at the expense of extra system resource usage. The \"PSNR\" version of model offers extra reduction of noise caused by JPEG-like compression. Default is \"Swin2SR x2 lite\".",
+											"ja": "超解像度モデル:\nこの設定は、解像度のアップスケーリングを実行するために使用される AI モデルを決定します。 「Swin2SR x4」 は、システム リソースの使用量を増やす代わりに、より優れた品質と x4 アップスケーリングを提供します。 モデルの「PSNR」バージョンは、JPEG のような圧縮によって発生するノイズをさらに低減します。 デフォルトは 「Swin2SR x2 lite」 です。",
+											"zh": "超解析度模型:\n此設定決定用於執行解析度升級的 AI 模型。 「Swin2SR x4」提供更好的品質和 x4 升級，但代價是額外的系統資源使用。 模型的「PSNR」版本可進一步減少由類似 JPEG 壓縮引起的雜訊。 預設為「Swin2SR x2 lite」。"
+										}
+									}
+								}
+							},
+							"create_desktop_shortcut": {
+								"_translation_": {
+									"_default_": "Create 3D wallpaper desktop shortcut",
+									"ja": "3D壁紙のデスクトップショートカットを作成",
+									"zh": "建立3D壁紙桌面捷徑"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "Create 3D wallpaper desktop shortcut:\nClick to create a desktop shortcut to a special 3D-wallpaper-only-mode XR Animator, which functions as a real 2D-to-3D desktop wallpaper when you enable the \"Stay on desktop\" option on tray menu. During wallpaper mode, use \"Show drop area\" option on tray menu to change wallpaper.",
+										"ja": "3D壁紙のデスクトップショートカットを作成:\nクリックすると、特別な 3D 壁紙専用モードの XR Animator へのデスクトップ ショートカットが作成されます。 これは、トレイ メニューの 「Stay on desktop」 オプションを有効にすると、実際の 2D から 3D へのデスクトップ 壁紙として機能します。 壁紙モード中に、トレイ メニューの 「Show drop area」 オプションを使用して壁紙を変更します。",
+										"zh": "建立3D壁紙桌面捷徑:\n點擊可建立特殊 3D 桌布模式 XR Animator 的桌面捷徑。 當您啟用托盤選單上的「Stay on desktop」選項時，該特殊模式的 XR Animator 可用作真正的 2D 到 3D 桌面桌布。 在壁紙模式下，使用托盤選單上的「Show drop area」選項來變更桌布。"
 									}
 								}
 							}
@@ -2791,7 +2868,7 @@
 							},
 							"list": {
 								"_translation_": {
-									"_default_": "NewruGuru, Nymph, KuraiNoOni, Kai, Prajzis, LouLi Lou, MShade, coffee-addict, skeh, YAR, MiiThrii VRTuber, CoCoNo, JM Choi,"
+									"_default_": "NewruGuru, Nymph, KuraiNoOni, Kai, Prajzis, LouLi Lou, coffee-addict, skeh, YAR, Swoonifer, CoCoNo, JM Choi, Motoko Library,"
 								}
 							}
 						}

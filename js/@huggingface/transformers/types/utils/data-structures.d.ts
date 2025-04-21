@@ -155,7 +155,7 @@ export class TokenLattice {
      * @param {number} eosTokenId The end-of-sequence token ID.
      */
     constructor(sentence: string, bosTokenId: number, eosTokenId: number);
-    sentence: string;
+    chars: string[];
     len: number;
     bosTokenId: number;
     eosTokenId: number;
@@ -174,7 +174,7 @@ export class TokenLattice {
     /**
      * Implements the Viterbi algorithm to compute the most likely sequence of tokens.
      *
-     * @returns {TokenLatticeNode[]} The array of nodes representing the most likely sequence of tokens.
+     * @returns {TokenLatticeNode[]} The most likely sequence of tokens.
      */
     viterbi(): TokenLatticeNode[];
     /**
@@ -183,13 +183,13 @@ export class TokenLattice {
      */
     piece(node: TokenLatticeNode): string;
     /**
-     * @returns {Array} The array of nodes representing the most likely sequence of tokens.
+     * @returns {string[]} The most likely sequence of tokens.
      */
-    tokens(): any[];
+    tokens(): string[];
     /**
-     * @returns {Array} The array of nodes representing the most likely sequence of tokens.
+     * @returns {number[]} The most likely sequence of token ids.
      */
-    tokenIds(): any[];
+    tokenIds(): number[];
 }
 /**
  * Represents a node in a character trie.

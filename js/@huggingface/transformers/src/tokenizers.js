@@ -28,6 +28,7 @@ import {
     escapeRegExp,
     isIntegralNumber,
     mergeArrays,
+    len,
 } from './utils/core.js';
 
 import {
@@ -195,7 +196,7 @@ function clean_up_tokenization(text) {
  * @returns {string} The text with accents removed.
  */
 function remove_accents(text) {
-    return text.replace(/[\u0300-\u036f]/g, '');
+    return text.replace(/\p{M}/gu, '');
 }
 
 /**
@@ -541,18 +542,18 @@ class Unigram extends TokenizerModel {
         this.unk_token = this.vocab[config.unk_id];
 
         this.tokens_to_ids = new Map(this.vocab.map((x, i) => [x, i]));
-        this.bosToken = ' '; // beginning of a sentence token
+        this.bos_token = ' '; // beginning of a sentence token
 
-        this.bosTokenId = this.tokens_to_ids.get(this.bosToken); // NOTE: may be undefined
-        this.eosToken = moreConfig.eos_token;
+        this.bos_token_id = this.tokens_to_ids.get(this.bos_token); // NOTE: may be undefined
+        this.eos_token = moreConfig.eos_token;
 
-        this.eosTokenId = this.tokens_to_ids.get(this.eosToken);
-        this.unkToken = this.vocab[this.unk_token_id];
+        this.eos_token_id = this.tokens_to_ids.get(this.eos_token);
+        this.unk_token = this.vocab[this.unk_token_id];
 
         this.minScore = min(this.scores)[0];
 
-        this.unkScore = this.minScore - 10.0;
-        this.scores[this.unk_token_id] = this.unkScore;
+        this.unk_score = this.minScore - 10.0;
+        this.scores[this.unk_token_id] = this.unk_score;
 
         this.trie = new CharTrie();
         this.trie.extend(this.vocab);
@@ -567,26 +568,27 @@ class Unigram extends TokenizerModel {
      * @param {TokenLattice} lattice The token lattice to populate with nodes.
      */
     populateNodes(lattice) {
-        const sentence = lattice.sentence;
-        const len = sentence.length;
+        const chars = lattice.chars;
+        const mblen = 1;
         let beginPos = 0;
-        while (beginPos < len) {
-            const mblen = 1;
+        while (beginPos < chars.length) {
             let hasSingleNode = false;
-            const tokens = [];
 
-            for (let token of this.trie.commonPrefixSearch(sentence.slice(beginPos))) {
+            const tokens = [];
+            const sliced = chars.slice(beginPos).join('');
+            const prefixedTokens = this.trie.commonPrefixSearch(sliced);
+            for (const token of prefixedTokens) {
                 tokens.push(token);
                 const tokenId = this.tokens_to_ids.get(token);
                 const tokenScore = this.scores[tokenId];
-                const n = token.length;
+                const n = len(token);
                 lattice.insert(beginPos, n, tokenScore, tokenId);
                 if (!hasSingleNode && n === mblen) {
                     hasSingleNode = true;
                 }
             }
             if (!hasSingleNode) {
-                lattice.insert(beginPos, mblen, this.unkScore, this.unk_token_id);
+                lattice.insert(beginPos, mblen, this.unk_score, this.unk_token_id);
             }
             beginPos += mblen;
         }
@@ -599,7 +601,7 @@ class Unigram extends TokenizerModel {
      * @returns {string[]} An array of subtokens obtained by encoding the input tokens using the unigram model.
      */
     tokenize(normalized) {
-        const lattice = new TokenLattice(normalized, this.bosTokenId, this.eosTokenId);
+        const lattice = new TokenLattice(normalized, this.bos_token_id, this.eos_token_id);
         this.populateNodes(lattice);
         return lattice.tokens();
     }
@@ -669,7 +671,7 @@ class BPE extends TokenizerModel {
      * Create a BPE instance.
      * @param {Object} config The configuration object for BPE.
      * @param {Object} config.vocab A mapping of tokens to ids.
-     * @param {string[]} config.merges An array of BPE merges as strings.
+     * @param {string[]|[string, string][]} config.merges An array of BPE merges as strings.
      * @param {string} config.unk_token The unknown token used for out of vocabulary words.
      * @param {string} config.end_of_word_suffix The suffix to place at the end of each word.
      * @param {string} [config.continuing_subword_suffix] The suffix to insert between words.
@@ -678,8 +680,6 @@ class BPE extends TokenizerModel {
      */
     constructor(config) {
         super(config);
-
-        this.BPE_SPLIT_TOKEN = ' ';
 
         /** @type {Map<string, number>} */
         this.tokens_to_ids = objectToMap(config.vocab);
@@ -692,8 +692,15 @@ class BPE extends TokenizerModel {
             this.vocab[value] = key;
         }
 
-        this.bpe_ranks = new Map(config.merges.map((x, i) => [x, i]));
-        this.merges = config.merges.map(x => x.split(this.BPE_SPLIT_TOKEN));
+        // Tokenizers >= 0.20.0 serializes BPE merges as a [string, string][] instead of a string[],
+        // which resolves the ambiguity for merges containing spaces.
+        const use_new_merge_format = Array.isArray(config.merges[0]);
+
+        /** @type {[string, string][]} */
+        this.merges = use_new_merge_format
+            ? /** @type {[string, string][]} */(config.merges)
+            : (/** @type {string[]} */(config.merges)).map(x => /** @type {[string, string]} */(x.split(' ', 2)));
+        this.bpe_ranks = new Map(this.merges.map((x, i) => [JSON.stringify(x), i]));
 
         this.end_of_word_suffix = config.end_of_word_suffix;
 
@@ -853,7 +860,7 @@ class BPE extends TokenizerModel {
         // `score` is a measure of the merge priority: lower means higher priority
         // We use the BPE rank as a measure of priority (i.e., the local of the merge in the merges list)
         // We also add a fractional component to the score to break ties (with the earlier character having higher priority)
-        const rank = this.bpe_ranks.get(node.token + this.BPE_SPLIT_TOKEN + node.next.token);
+        const rank = this.bpe_ranks.get(JSON.stringify([node.token, node.next.token]));
         if (rank !== undefined) {
             node.score = rank + node.bias;
             queue.push(node);
@@ -1214,7 +1221,8 @@ class BertNormalizer extends Normalizer {
      * @returns {string} The text with accents removed.
      */
     stripAccents(text) {
-        return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        // "Mark, Nonspacing" (Mn)
+        return text.normalize('NFD').replace(/\p{Mn}/gu, '');
     }
 
 
@@ -2332,7 +2340,7 @@ class Precompiled extends Normalizer {
         // TODO: detect when a different `this.charsmap` is used.
 
         text = text.replace(/[\u0001-\u0008\u000B\u000E-\u001F\u007F\u008F\u009F]/gm, ''); // Remove control characters
-        text = text.replace(/[\u0009\u000A\u000C\u000D\u1680\u200B\u200C\u200E\u200F\u2028\u2029\u2581\uFEFF\uFFFD]/gm, '\u0020'); // Replace certain characters with a space
+        text = text.replace(/[\u0009\u000A\u000C\u000D\u00A0\u1680\u2000-\u200F\u2028\u2029\u202F\u205F\u2581\u3000\uFEFF\uFFFD]/gm, '\u0020'); // Replace certain characters with a space
 
         if (text.includes('\uFF5E')) {
             // To match the sentencepiece implementation 100%, we must handle a very strange edge-case.

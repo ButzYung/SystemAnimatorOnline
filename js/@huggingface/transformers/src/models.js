@@ -146,7 +146,8 @@ const MODEL_CLASS_TO_NAME_MAPPING = new Map();
  * @private
  */
 async function getSession(pretrained_model_name_or_path, fileName, options) {
-    let device = options.device;
+    const custom_config = options.config?.['transformers.js_config'] ?? {};
+    let device = options.device ?? custom_config.device;
     if (device && typeof device !== 'string') {
         if (device.hasOwnProperty(fileName)) {
             device = device[fileName];
@@ -164,7 +165,7 @@ async function getSession(pretrained_model_name_or_path, fileName, options) {
 
     // If options.dtype is specified, we use it to choose the suffix for the model file.
     // Otherwise, we use the default dtype for the device.
-    let dtype = options.dtype;
+    let dtype = options.dtype ?? custom_config.dtype;
     if (typeof dtype !== 'string') {
         if (dtype && dtype.hasOwnProperty(fileName)) {
             dtype = dtype[fileName];
@@ -191,6 +192,16 @@ async function getSession(pretrained_model_name_or_path, fileName, options) {
     // Overwrite `executionProviders` if not specified
     session_options.executionProviders ??= executionProviders;
 
+    // Overwrite `freeDimensionOverrides` if specified in config and not set in session options
+    const free_dimension_overrides = custom_config.free_dimension_overrides;
+    if (free_dimension_overrides) {
+        session_options.freeDimensionOverrides ??= free_dimension_overrides;
+    } else if (selectedDevice.startsWith('webnn') && !session_options.freeDimensionOverrides) {
+        console.warn(
+            'WebNN does not currently support dynamic shapes and requires `free_dimension_overrides` to be set in config.json as a field within "transformers.js_config". ' +
+            'When `free_dimension_overrides` is not set, you may experience significant performance degradation.'
+        );
+    }
 
     const bufferPromise = getModelFile(pretrained_model_name_or_path, modelFileName, true, options);
 
@@ -391,37 +402,6 @@ function toI64Tensor(items) {
             BigInt64Array.from(items.map(x => BigInt(x))),
             [1, items.length]
         );
-    }
-}
-
-/**
- * Prepares an attention mask for a sequence of tokens based on configuration options.
- * @param {Object} self The calling object instance.
- * @param {Tensor} tokens The input tokens.
- * @returns {Tensor} The attention mask tensor.
- * @private
- */
-function prepareAttentionMask(self, tokens) {
-
-    // Prepare attention mask
-    let pad_token_id = self.config.pad_token_id ?? null;
-    let eos_token_id = self.config.eos_token_id ?? null;
-    if (isIntegralNumber(eos_token_id)) {
-        eos_token_id = [eos_token_id];
-    }
-
-    let is_pad_token_in_inputs = tokens.indexOf(pad_token_id) !== -1;
-    let is_pad_token_not_equal_to_eos_token_id = (eos_token_id === null) || !eos_token_id.includes(pad_token_id)
-
-    if (is_pad_token_in_inputs && is_pad_token_not_equal_to_eos_token_id) {
-        let data = BigInt64Array.from(
-            // Note: != so that int matches bigint
-            // @ts-ignore
-            tokens.data.map(x => x != pad_token_id)
-        )
-        return new Tensor('int64', data, tokens.dims)
-    } else {
-        return ones_like(tokens);
     }
 }
 
@@ -695,8 +675,8 @@ function image_text_to_text_prepare_inputs_for_generation(self, ...args) {
     } else {
         return decoder_prepare_inputs_for_generation(self, ...args);
     }
-
 }
+
 //////////////////////////////////////////////////
 
 //////////////////////////////////////////////////
@@ -1459,13 +1439,12 @@ export class PreTrainedModel extends Callable {
         // - GenerationMode.BEAM_SEARCH
         // - GenerationMode.BEAM_SAMPLE
         ////////////////////////////////////////////////////
-        let past_key_values = null;
+        let outputs;
         let attentions = {};
         while (true) {
             // prepare model inputs
             model_inputs = this.prepare_inputs_for_generation(all_input_ids, model_inputs, generation_config);
-
-            const outputs = await this.forward(model_inputs);
+            outputs = await this.forward(model_inputs);
 
             if (generation_config.output_attentions && generation_config.return_dict_in_generate) {
                 // Get attentions if they are present
@@ -1512,10 +1491,6 @@ export class PreTrainedModel extends Callable {
 
             const stop = prepared_stopping_criteria(all_input_ids);
             if (stop.every(x => x)) {
-                if (generation_config.return_dict_in_generate) {
-                    // Get past key values without disposing buffers
-                    past_key_values = this.getPastKeyValues(outputs, model_inputs.past_key_values, false);
-                }
                 break;
             }
 
@@ -1527,6 +1502,9 @@ export class PreTrainedModel extends Callable {
         if (streamer) {
             streamer.end();
         }
+
+        // Retrieve and dispose all final past key values (including encoder attentions)
+        const past_key_values = this.getPastKeyValues(outputs, model_inputs.past_key_values, true);
 
         // TODO: ensure all_input_ids is padded correctly...
         const sequences = new Tensor('int64', all_input_ids.flat(), [all_input_ids.length, all_input_ids[0].length]);
@@ -1541,6 +1519,12 @@ export class PreTrainedModel extends Callable {
                 // logits,
             }
         } else {
+            // Dispose all remaining tensors
+            for (const tensor of Object.values(outputs)) {
+                if (tensor.location === 'gpu-buffer') {
+                    tensor.dispose();
+                }
+            }
             return sequences;
         }
     }
@@ -1550,30 +1534,31 @@ export class PreTrainedModel extends Callable {
      *
      * @param {Object} decoderResults The decoder results object.
      * @param {Object} pastKeyValues The previous past key values.
-     * @param {boolean} [dispose=true] Whether to dispose of the old gpu buffer.
      * @returns {Object} An object containing past key values.
      */
-    getPastKeyValues(decoderResults, pastKeyValues, dispose = true) {
+    getPastKeyValues(decoderResults, pastKeyValues, disposeEncoderPKVs = false) {
         const pkvs = Object.create(null);
 
         for (const name in decoderResults) {
             if (name.startsWith('present')) {
                 const newName = name.replace('present', 'past_key_values');
-
-                if (pastKeyValues && name.includes('encoder')) {
-                    // Optimization introduced by optimum to reuse past key values. So, we just replace the constant
-                    // outputs with the previous past key values.
+                const is_encoder_pkv = name.includes('encoder');
+                if (is_encoder_pkv && pastKeyValues) {
+                    // Optimization introduced by optimum to reuse past key values.
+                    // So, we just replace the constant outputs (`decoderResults[name]`) with the previous past key values.
                     // https://github.com/huggingface/optimum/blob/0bf2c05fb7e1182b52d21b703cfc95fd9e4ea3dc/optimum/onnxruntime/base.py#L677-L704
                     pkvs[newName] = pastKeyValues[newName];
-                } else {
-                    if (dispose && pastKeyValues) {
-                        // Free old gpu buffer
-                        const t = pastKeyValues[newName];
-                        if (t.location === 'gpu-buffer') {
-                            t.dispose();
-                        }
-                    }
+                } else { // decoder or using first encoder PKVs
                     pkvs[newName] = decoderResults[name];
+                }
+
+                if (pastKeyValues && (!is_encoder_pkv || disposeEncoderPKVs)) {
+                    // - Always dispose decoder PKVs
+                    // - Only dispose encoder past key values when requested (after generation)
+                    const t = pastKeyValues[newName];
+                    if (t.location === 'gpu-buffer') {
+                        t.dispose();
+                    }
                 }
             }
         }

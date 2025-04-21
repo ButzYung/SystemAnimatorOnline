@@ -30,9 +30,11 @@ if (!self.System) {
       form_updated = true;
     }
 
-    const inputs = document.getElementsByTagName('input');
-    for (let i = 0, i_max = inputs.length; i < i_max; i++) {
-      inputs[i].addEventListener('change', update_form);
+    for (const name of ['input', 'select']) {
+      const inputs = document.getElementsByTagName(name);
+      for (let i = 0, i_max = inputs.length; i < i_max; i++) {
+        inputs[i].addEventListener('change', update_form);
+      }
     }
   });
 }

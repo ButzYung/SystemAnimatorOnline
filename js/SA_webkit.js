@@ -1,4 +1,4 @@
-// 2024-09-01
+// 2024-10-10
 
 var webkit_mode = true
 
@@ -186,13 +186,15 @@ else if (webkit_electron_mode) {
   };
 
   if (webkit_version_milestone["32.0.0"]) {
-    Object.defineProperty(File.prototype, "path", (()=>{
-      const { webUtils } = require('electron');
-      console.log('(electron 32+ - use webUtils.getPathForFile)');
-      return {
-        get: function () { return webUtils.getPathForFile(this); }
-      };
-    })());
+    window.addEventListener('load', ()=>{
+      Object.defineProperty(File.prototype, "path", (()=>{
+        const { webUtils } = (self.parent_window) ? parent_window.require('electron') : require('electron');
+        console.log('(electron 32+ - use webUtils.getPathForFile)');
+        return {
+          get: function () { return webUtils.getPathForFile(this); }
+        };
+      })());
+    });
   }
 }
 else {
@@ -308,27 +310,30 @@ return this._run(path, para, working_dir, false, callback);
     }
 
    ,_run: function (path, para, working_dir, blocking, callback) {
-path = toLocalPath(path)
+path = toLocalPath(path);
 // (START command) http://www.robvanderwoude.com/ntstart.php
-var command
+let command;
 if (windows_mode)
-  command = (/\.(js|wsf)$/i.test(path)) ? 'wscript ' : (/\.exe$/i.test(path)) ? '' : 'start "" '
+  command = (/\.(js|wsf)$/i.test(path)) ? 'wscript ' : (/\.exe$/i.test(path)) ? '' : 'start "" ';
 else if (linux_mode) {
-  var fs = SA_require('fs')
-  command = (!fs.existsSync(path) || (fs.lstatSync(path).isFile() && !/\.(\w+)$/.test(path))) ? "" : "xdg-open "
+  let fs = SA_require('fs');
+  command = (!fs.existsSync(path) || (fs.lstatSync(path).isFile() && !/\.(\w+)$/.test(path))) ? "" : "xdg-open ";
 }
-command += '"' + path + '"' + ((para) ? ' ' + para : '')
+command += '"' + path + '"' + ((para) ? ' ' + para : '');
 
-var options = (working_dir) ? {cwd:working_dir} : null
+let options = (working_dir) ? {cwd:working_dir} : null;
 
 return (blocking) ? this._execSync(command, options) : SA_require('child_process').exec(command, options, callback);
     }
 
     ,_execSync: function (command, options) {
 //console.log(command)
-var result = SA_require('child_process').execSync(command, options)
-//console.log(result.toString())
-return (result && result.toString())
+let result;
+
+result = SA_require('child_process').execSync(command, options);
+
+//console.log('child_process.execSync',result.toString())
+return (result && result.toString());
 /*
 var f, f_org
 f = f_org = 'sync' + Math.random();
@@ -772,11 +777,12 @@ return result
    }
 
    ,CreateShortcut: function (path) {
-return new this._shortcut(path)
+return new this._shortcut(path);
     }
    ,_shortcut: function (path) {
 function Save() {
-  SystemEXT.CreateShortcut([this.TargetPath, this._path, this.WorkingDirectory, this.Arguments, this.IconLocation])
+// supress occasional error when blocking is false
+  SystemEXT.CreateShortcut([this.TargetPath, this._path, this.WorkingDirectory, this.Arguments, this.IconLocation], false);
 }
 
 this._path = path

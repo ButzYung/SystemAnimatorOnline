@@ -1,4 +1,5 @@
-// Ammo worker "proxy" - v1.0.0
+// Ammo worker "proxy"
+// 2024-10-14
 
 var Ammo_local;
 if (self.Ammo) {
@@ -394,11 +395,11 @@ this.reset()
   }
 };
 
-this.cache_by_model = new Cache()
-this.cache_by_model_next = new Cache()
-this.cache_by_model_temp = new Cache()
+this.cache_by_model = new Cache();
+this.cache_by_model_next = new Cache();
+this.cache_by_model_temp = new Cache();
 
-window.addEventListener("MMDStarted", function (e) {
+!MMD_SA_options.MMD_disabled && window.addEventListener("MMDStarted", function (e) {
   var c_list = [that.cache_by_model, that.cache_by_model_next, that.cache_by_model_temp];
 
   c_list.forEach(function (cache, idx) {

@@ -26,9 +26,14 @@ export class PretrainedConfig {
      * @param {Object} configJSON The JSON of the config.
      */
     constructor(configJSON: any);
-    max_position_embeddings: any;
-    model_type: any;
+    /** @type {string|null} */
+    model_type: string | null;
+    /** @type {boolean} */
     is_encoder_decoder: boolean;
+    /** @type {number} */
+    max_position_embeddings: number;
+    /** @type {TransformersJSConfig} */
+    'transformers.js_config': TransformersJSConfig;
     normalized_config: any;
 }
 /**
@@ -54,6 +59,23 @@ export type PretrainedOptions = import('./utils/hub.js').PretrainedOptions;
  * Transformers.js-specific configuration, possibly present in config.json under the key `transformers.js_config`.
  */
 export type TransformersJSConfig = {
-    kv_cache_dtype?: import('./transformers.js').DataType;
+    /**
+     * The data type of the key-value cache.
+     */
+    kv_cache_dtype?: import('./utils/tensor.js').DataType;
+    /**
+     * Override the free dimensions of the model.
+     * See https://onnxruntime.ai/docs/tutorials/web/env-flags-and-session-options.html#freedimensionoverrides
+     * for more information.
+     */
+    free_dimension_overrides?: Record<string, number>;
+    /**
+     * The default device to use for the model.
+     */
+    device?: import('./utils/devices.js').DeviceType;
+    /**
+     * The default data type to use for the model.
+     */
+    dtype?: import('./utils/dtypes.js').DataType;
 };
 //# sourceMappingURL=configs.d.ts.map

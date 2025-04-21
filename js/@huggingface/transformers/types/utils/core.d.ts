@@ -88,4 +88,11 @@ export function calculateReflectOffset(i: number, w: number): number;
  * @returns {Object}
  */
 export function pick(o: any, props: string[]): any;
+/**
+ * Calculate the length of a string, taking multi-byte characters into account.
+ * This mimics the behavior of Python's `len` function.
+ * @param {string} s The string to calculate the length of.
+ * @returns {number} The length of the string.
+ */
+export function len(s: string): number;
 //# sourceMappingURL=core.d.ts.map

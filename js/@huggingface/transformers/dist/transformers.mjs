@@ -4301,16 +4301,23 @@ function getKeyValueShapes(config, {
 class PretrainedConfig {
     // NOTE: Typo in original
 
+    /** @type {string|null} */
+    model_type = null;
+
+    /** @type {boolean} */
+    is_encoder_decoder = false;
+
+    /** @type {number} */
     max_position_embeddings;
+
+    /** @type {TransformersJSConfig} */
+    'transformers.js_config';
 
     /**
      * Create a new PreTrainedTokenizer instance.
      * @param {Object} configJSON The JSON of the config.
      */
     constructor(configJSON) {
-        this.model_type = null;
-        this.is_encoder_decoder = false;
-
         Object.assign(this, configJSON);
         this.normalized_config = getNormalizedConfig(this);
     }
@@ -4362,7 +4369,12 @@ class AutoConfig {
 /**
  * Transformers.js-specific configuration, possibly present in config.json under the key `transformers.js_config`.
  * @typedef {Object} TransformersJSConfig
- * @property {import('./transformers.js').DataType} [kv_cache_dtype]
+ * @property {import('./utils/tensor.js').DataType} [kv_cache_dtype] The data type of the key-value cache.
+ * @property {Record<string, number>} [free_dimension_overrides] Override the free dimensions of the model.
+ * See https://onnxruntime.ai/docs/tutorials/web/env-flags-and-session-options.html#freedimensionoverrides
+ * for more information.
+ * @property {import('./utils/devices.js').DeviceType} [device] The default device to use for the model.
+ * @property {import('./utils/dtypes.js').DataType} [dtype] The default data type to use for the model.
  */
 
 
@@ -4410,7 +4422,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-const VERSION = '3.0.0-alpha.15';
+const VERSION = '3.0.0-alpha.19';
 
 // Check if various APIs are available (depends on environment)
 const IS_BROWSER_ENV = typeof self !== 'undefined';
@@ -6856,7 +6868,8 @@ const MODEL_CLASS_TO_NAME_MAPPING = new Map();
  * @private
  */
 async function getSession(pretrained_model_name_or_path, fileName, options) {
-    let device = options.device;
+    const custom_config = options.config?.['transformers.js_config'] ?? {};
+    let device = options.device ?? custom_config.device;
     if (device && typeof device !== 'string') {
         if (device.hasOwnProperty(fileName)) {
             device = device[fileName];
@@ -6874,7 +6887,7 @@ async function getSession(pretrained_model_name_or_path, fileName, options) {
 
     // If options.dtype is specified, we use it to choose the suffix for the model file.
     // Otherwise, we use the default dtype for the device.
-    let dtype = options.dtype;
+    let dtype = options.dtype ?? custom_config.dtype;
     if (typeof dtype !== 'string') {
         if (dtype && dtype.hasOwnProperty(fileName)) {
             dtype = dtype[fileName];
@@ -6901,6 +6914,16 @@ async function getSession(pretrained_model_name_or_path, fileName, options) {
     // Overwrite `executionProviders` if not specified
     session_options.executionProviders ??= executionProviders;
 
+    // Overwrite `freeDimensionOverrides` if specified in config and not set in session options
+    const free_dimension_overrides = custom_config.free_dimension_overrides;
+    if (free_dimension_overrides) {
+        session_options.freeDimensionOverrides ??= free_dimension_overrides;
+    } else if (selectedDevice.startsWith('webnn') && !session_options.freeDimensionOverrides) {
+        console.warn(
+            'WebNN does not currently support dynamic shapes and requires `free_dimension_overrides` to be set in config.json as a field within "transformers.js_config". ' +
+            'When `free_dimension_overrides` is not set, you may experience significant performance degradation.'
+        );
+    }
 
     const bufferPromise = (0,_utils_hub_js__WEBPACK_IMPORTED_MODULE_5__.getModelFile)(pretrained_model_name_or_path, modelFileName, true, options);
 
@@ -7101,37 +7124,6 @@ function toI64Tensor(items) {
             BigInt64Array.from(items.map(x => BigInt(x))),
             [1, items.length]
         );
-    }
-}
-
-/**
- * Prepares an attention mask for a sequence of tokens based on configuration options.
- * @param {Object} self The calling object instance.
- * @param {Tensor} tokens The input tokens.
- * @returns {Tensor} The attention mask tensor.
- * @private
- */
-function prepareAttentionMask(self, tokens) {
-
-    // Prepare attention mask
-    let pad_token_id = self.config.pad_token_id ?? null;
-    let eos_token_id = self.config.eos_token_id ?? null;
-    if ((0,_utils_core_js__WEBPACK_IMPORTED_MODULE_4__.isIntegralNumber)(eos_token_id)) {
-        eos_token_id = [eos_token_id];
-    }
-
-    let is_pad_token_in_inputs = tokens.indexOf(pad_token_id) !== -1;
-    let is_pad_token_not_equal_to_eos_token_id = (eos_token_id === null) || !eos_token_id.includes(pad_token_id)
-
-    if (is_pad_token_in_inputs && is_pad_token_not_equal_to_eos_token_id) {
-        let data = BigInt64Array.from(
-            // Note: != so that int matches bigint
-            // @ts-ignore
-            tokens.data.map(x => x != pad_token_id)
-        )
-        return new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.Tensor('int64', data, tokens.dims)
-    } else {
-        return (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.ones_like)(tokens);
     }
 }
 
@@ -7405,8 +7397,8 @@ function image_text_to_text_prepare_inputs_for_generation(self, ...args) {
     } else {
         return decoder_prepare_inputs_for_generation(self, ...args);
     }
-
 }
+
 //////////////////////////////////////////////////
 
 //////////////////////////////////////////////////
@@ -8169,13 +8161,12 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
         // - GenerationMode.BEAM_SEARCH
         // - GenerationMode.BEAM_SAMPLE
         ////////////////////////////////////////////////////
-        let past_key_values = null;
+        let outputs;
         let attentions = {};
         while (true) {
             // prepare model inputs
             model_inputs = this.prepare_inputs_for_generation(all_input_ids, model_inputs, generation_config);
-
-            const outputs = await this.forward(model_inputs);
+            outputs = await this.forward(model_inputs);
 
             if (generation_config.output_attentions && generation_config.return_dict_in_generate) {
                 // Get attentions if they are present
@@ -8222,10 +8213,6 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
 
             const stop = prepared_stopping_criteria(all_input_ids);
             if (stop.every(x => x)) {
-                if (generation_config.return_dict_in_generate) {
-                    // Get past key values without disposing buffers
-                    past_key_values = this.getPastKeyValues(outputs, model_inputs.past_key_values, false);
-                }
                 break;
             }
 
@@ -8237,6 +8224,9 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
         if (streamer) {
             streamer.end();
         }
+
+        // Retrieve and dispose all final past key values (including encoder attentions)
+        const past_key_values = this.getPastKeyValues(outputs, model_inputs.past_key_values, true);
 
         // TODO: ensure all_input_ids is padded correctly...
         const sequences = new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.Tensor('int64', all_input_ids.flat(), [all_input_ids.length, all_input_ids[0].length]);
@@ -8251,6 +8241,12 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
                 // logits,
             }
         } else {
+            // Dispose all remaining tensors
+            for (const tensor of Object.values(outputs)) {
+                if (tensor.location === 'gpu-buffer') {
+                    tensor.dispose();
+                }
+            }
             return sequences;
         }
     }
@@ -8260,30 +8256,31 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
      *
      * @param {Object} decoderResults The decoder results object.
      * @param {Object} pastKeyValues The previous past key values.
-     * @param {boolean} [dispose=true] Whether to dispose of the old gpu buffer.
      * @returns {Object} An object containing past key values.
      */
-    getPastKeyValues(decoderResults, pastKeyValues, dispose = true) {
+    getPastKeyValues(decoderResults, pastKeyValues, disposeEncoderPKVs = false) {
         const pkvs = Object.create(null);
 
         for (const name in decoderResults) {
             if (name.startsWith('present')) {
                 const newName = name.replace('present', 'past_key_values');
-
-                if (pastKeyValues && name.includes('encoder')) {
-                    // Optimization introduced by optimum to reuse past key values. So, we just replace the constant
-                    // outputs with the previous past key values.
+                const is_encoder_pkv = name.includes('encoder');
+                if (is_encoder_pkv && pastKeyValues) {
+                    // Optimization introduced by optimum to reuse past key values.
+                    // So, we just replace the constant outputs (`decoderResults[name]`) with the previous past key values.
                     // https://github.com/huggingface/optimum/blob/0bf2c05fb7e1182b52d21b703cfc95fd9e4ea3dc/optimum/onnxruntime/base.py#L677-L704
                     pkvs[newName] = pastKeyValues[newName];
-                } else {
-                    if (dispose && pastKeyValues) {
-                        // Free old gpu buffer
-                        const t = pastKeyValues[newName];
-                        if (t.location === 'gpu-buffer') {
-                            t.dispose();
-                        }
-                    }
+                } else { // decoder or using first encoder PKVs
                     pkvs[newName] = decoderResults[name];
+                }
+
+                if (pastKeyValues && (!is_encoder_pkv || disposeEncoderPKVs)) {
+                    // - Always dispose decoder PKVs
+                    // - Only dispose encoder past key values when requested (after generation)
+                    const t = pastKeyValues[newName];
+                    if (t.location === 'gpu-buffer') {
+                        t.dispose();
+                    }
                 }
             }
         }
@@ -20600,7 +20597,7 @@ function clean_up_tokenization(text) {
  * @returns {string} The text with accents removed.
  */
 function remove_accents(text) {
-    return text.replace(/[\u0300-\u036f]/g, '');
+    return text.replace(/\p{M}/gu, '');
 }
 
 /**
@@ -20946,18 +20943,18 @@ class Unigram extends TokenizerModel {
         this.unk_token = this.vocab[config.unk_id];
 
         this.tokens_to_ids = new Map(this.vocab.map((x, i) => [x, i]));
-        this.bosToken = ' '; // beginning of a sentence token
+        this.bos_token = ' '; // beginning of a sentence token
 
-        this.bosTokenId = this.tokens_to_ids.get(this.bosToken); // NOTE: may be undefined
-        this.eosToken = moreConfig.eos_token;
+        this.bos_token_id = this.tokens_to_ids.get(this.bos_token); // NOTE: may be undefined
+        this.eos_token = moreConfig.eos_token;
 
-        this.eosTokenId = this.tokens_to_ids.get(this.eosToken);
-        this.unkToken = this.vocab[this.unk_token_id];
+        this.eos_token_id = this.tokens_to_ids.get(this.eos_token);
+        this.unk_token = this.vocab[this.unk_token_id];
 
         this.minScore = (0,_utils_maths_js__WEBPACK_IMPORTED_MODULE_3__.min)(this.scores)[0];
 
-        this.unkScore = this.minScore - 10.0;
-        this.scores[this.unk_token_id] = this.unkScore;
+        this.unk_score = this.minScore - 10.0;
+        this.scores[this.unk_token_id] = this.unk_score;
 
         this.trie = new _utils_data_structures_js__WEBPACK_IMPORTED_MODULE_5__.CharTrie();
         this.trie.extend(this.vocab);
@@ -20972,26 +20969,27 @@ class Unigram extends TokenizerModel {
      * @param {TokenLattice} lattice The token lattice to populate with nodes.
      */
     populateNodes(lattice) {
-        const sentence = lattice.sentence;
-        const len = sentence.length;
+        const chars = lattice.chars;
+        const mblen = 1;
         let beginPos = 0;
-        while (beginPos < len) {
-            const mblen = 1;
+        while (beginPos < chars.length) {
             let hasSingleNode = false;
-            const tokens = [];
 
-            for (let token of this.trie.commonPrefixSearch(sentence.slice(beginPos))) {
+            const tokens = [];
+            const sliced = chars.slice(beginPos).join('');
+            const prefixedTokens = this.trie.commonPrefixSearch(sliced);
+            for (const token of prefixedTokens) {
                 tokens.push(token);
                 const tokenId = this.tokens_to_ids.get(token);
                 const tokenScore = this.scores[tokenId];
-                const n = token.length;
+                const n = (0,_utils_core_js__WEBPACK_IMPORTED_MODULE_1__.len)(token);
                 lattice.insert(beginPos, n, tokenScore, tokenId);
                 if (!hasSingleNode && n === mblen) {
                     hasSingleNode = true;
                 }
             }
             if (!hasSingleNode) {
-                lattice.insert(beginPos, mblen, this.unkScore, this.unk_token_id);
+                lattice.insert(beginPos, mblen, this.unk_score, this.unk_token_id);
             }
             beginPos += mblen;
         }
@@ -21004,7 +21002,7 @@ class Unigram extends TokenizerModel {
      * @returns {string[]} An array of subtokens obtained by encoding the input tokens using the unigram model.
      */
     tokenize(normalized) {
-        const lattice = new _utils_data_structures_js__WEBPACK_IMPORTED_MODULE_5__.TokenLattice(normalized, this.bosTokenId, this.eosTokenId);
+        const lattice = new _utils_data_structures_js__WEBPACK_IMPORTED_MODULE_5__.TokenLattice(normalized, this.bos_token_id, this.eos_token_id);
         this.populateNodes(lattice);
         return lattice.tokens();
     }
@@ -21074,7 +21072,7 @@ class BPE extends TokenizerModel {
      * Create a BPE instance.
      * @param {Object} config The configuration object for BPE.
      * @param {Object} config.vocab A mapping of tokens to ids.
-     * @param {string[]} config.merges An array of BPE merges as strings.
+     * @param {string[]|[string, string][]} config.merges An array of BPE merges as strings.
      * @param {string} config.unk_token The unknown token used for out of vocabulary words.
      * @param {string} config.end_of_word_suffix The suffix to place at the end of each word.
      * @param {string} [config.continuing_subword_suffix] The suffix to insert between words.
@@ -21083,8 +21081,6 @@ class BPE extends TokenizerModel {
      */
     constructor(config) {
         super(config);
-
-        this.BPE_SPLIT_TOKEN = ' ';
 
         /** @type {Map<string, number>} */
         this.tokens_to_ids = objectToMap(config.vocab);
@@ -21097,8 +21093,15 @@ class BPE extends TokenizerModel {
             this.vocab[value] = key;
         }
 
-        this.bpe_ranks = new Map(config.merges.map((x, i) => [x, i]));
-        this.merges = config.merges.map(x => x.split(this.BPE_SPLIT_TOKEN));
+        // Tokenizers >= 0.20.0 serializes BPE merges as a [string, string][] instead of a string[],
+        // which resolves the ambiguity for merges containing spaces.
+        const use_new_merge_format = Array.isArray(config.merges[0]);
+
+        /** @type {[string, string][]} */
+        this.merges = use_new_merge_format
+            ? /** @type {[string, string][]} */(config.merges)
+            : (/** @type {string[]} */(config.merges)).map(x => /** @type {[string, string]} */(x.split(' ', 2)));
+        this.bpe_ranks = new Map(this.merges.map((x, i) => [JSON.stringify(x), i]));
 
         this.end_of_word_suffix = config.end_of_word_suffix;
 
@@ -21258,7 +21261,7 @@ class BPE extends TokenizerModel {
         // `score` is a measure of the merge priority: lower means higher priority
         // We use the BPE rank as a measure of priority (i.e., the local of the merge in the merges list)
         // We also add a fractional component to the score to break ties (with the earlier character having higher priority)
-        const rank = this.bpe_ranks.get(node.token + this.BPE_SPLIT_TOKEN + node.next.token);
+        const rank = this.bpe_ranks.get(JSON.stringify([node.token, node.next.token]));
         if (rank !== undefined) {
             node.score = rank + node.bias;
             queue.push(node);
@@ -21619,7 +21622,8 @@ class BertNormalizer extends Normalizer {
      * @returns {string} The text with accents removed.
      */
     stripAccents(text) {
-        return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        // "Mark, Nonspacing" (Mn)
+        return text.normalize('NFD').replace(/\p{Mn}/gu, '');
     }
 
 
@@ -22737,7 +22741,7 @@ class Precompiled extends Normalizer {
         // TODO: detect when a different `this.charsmap` is used.
 
         text = text.replace(/[\u0001-\u0008\u000B\u000E-\u001F\u007F\u008F\u009F]/gm, ''); // Remove control characters
-        text = text.replace(/[\u0009\u000A\u000C\u000D\u1680\u200B\u200C\u200E\u200F\u2028\u2029\u2581\uFEFF\uFFFD]/gm, '\u0020'); // Replace certain characters with a space
+        text = text.replace(/[\u0009\u000A\u000C\u000D\u00A0\u1680\u2000-\u200F\u2028\u2029\u202F\u205F\u2581\u3000\uFEFF\uFFFD]/gm, '\u0020'); // Replace certain characters with a space
 
         if (text.includes('\uFF5E')) {
             // To match the sentencepiece implementation 100%, we must handle a very strange edge-case.
@@ -25590,6 +25594,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   escapeRegExp: () => (/* binding */ escapeRegExp),
 /* harmony export */   isIntegralNumber: () => (/* binding */ isIntegralNumber),
 /* harmony export */   isTypedArray: () => (/* binding */ isTypedArray),
+/* harmony export */   len: () => (/* binding */ len),
 /* harmony export */   mergeArrays: () => (/* binding */ mergeArrays),
 /* harmony export */   pick: () => (/* binding */ pick),
 /* harmony export */   pop: () => (/* binding */ pop),
@@ -25744,6 +25749,18 @@ function pick(o, props) {
             }
         })
     );
+}
+
+/**
+ * Calculate the length of a string, taking multi-byte characters into account.
+ * This mimics the behavior of Python's `len` function.
+ * @param {string} s The string to calculate the length of. 
+ * @returns {number} The length of the string.
+ */
+function len(s) {
+    let length = 0;
+    for (const c of s) ++length;
+    return length;
 }
 
 
@@ -25992,7 +26009,7 @@ class CharTrie {
      * @param {string[]} texts The strings to add to the trie.
      */
     extend(texts) {
-        for (let text of texts) {
+        for (const text of texts) {
             this.push(text);
         }
     }
@@ -26003,7 +26020,7 @@ class CharTrie {
      */
     push(text) {
         let node = this.root;
-        for (let ch of text) {
+        for (const ch of text) {
             let child = node.children.get(ch);
             if (child === undefined) {
                 child = CharTrieNode.default();
@@ -26021,12 +26038,14 @@ class CharTrie {
      */
     *commonPrefixSearch(text) {
         let node = this.root;
+        if (node === undefined) return;
+
         let prefix = "";
-        for (let i = 0; i < text.length && node !== undefined; ++i) {
-            const ch = text[i];
+        for (const ch of text) {
             prefix += ch;
             node = node.children.get(ch);
-            if (node !== undefined && node.isLeaf) {
+            if (node === undefined) return;
+            if (node.isLeaf) {
                 yield prefix;
             }
         }
@@ -26068,8 +26087,8 @@ class TokenLattice {
      * @param {number} eosTokenId The end-of-sequence token ID.
      */
     constructor(sentence, bosTokenId, eosTokenId) {
-        this.sentence = sentence;
-        this.len = sentence.length;
+        this.chars = Array.from(sentence);
+        this.len = this.chars.length;
         this.bosTokenId = bosTokenId;
         this.eosTokenId = eosTokenId;
         this.nodes = [];
@@ -26103,7 +26122,7 @@ class TokenLattice {
     /**
      * Implements the Viterbi algorithm to compute the most likely sequence of tokens.
      *
-     * @returns {TokenLatticeNode[]} The array of nodes representing the most likely sequence of tokens.
+     * @returns {TokenLatticeNode[]} The most likely sequence of tokens.
      */
     viterbi() {
         const len = this.len;
@@ -26157,11 +26176,11 @@ class TokenLattice {
      * @returns {string} The array of nodes representing the most likely sequence of tokens.
      */
     piece(node) {
-        return this.sentence.slice(node.pos, node.pos + node.length);
+        return this.chars.slice(node.pos, node.pos + node.length).join('');
     }
 
     /**
-     * @returns {Array} The array of nodes representing the most likely sequence of tokens.
+     * @returns {string[]} The most likely sequence of tokens.
      */
     tokens() {
         const nodes = this.viterbi();
@@ -26169,7 +26188,7 @@ class TokenLattice {
     }
 
     /**
-     * @returns {Array} The array of nodes representing the most likely sequence of tokens.
+     * @returns {number[]} The most likely sequence of token ids.
      */
     tokenIds() {
         const nodes = this.viterbi();
@@ -26406,7 +26425,7 @@ __webpack_require__.r(__webpack_exports__);
 /**
  * @typedef {Object} PretrainedOptions Options for loading a pretrained model.     
  * @property {function} [progress_callback=null] If specified, this function will be called during model construction, to provide the user with progress updates.
- * @property {Object} [config=null] Configuration for the model to use instead of an automatically loaded configuration. Configuration can be automatically loaded when:
+ * @property {import('../configs.js').PretrainedConfig} [config=null] Configuration for the model to use instead of an automatically loaded configuration. Configuration can be automatically loaded when:
  * - The model is a model provided by the library (loaded with the *model id* string of a pretrained model).
  * - The model is loaded by supplying a local directory as `pretrained_model_name_or_path` and a configuration JSON file named *config.json* is found in the directory.
  * @property {string} [cache_dir=null] Path to a directory in which a downloaded pretrained model configuration should be cached if the standard cache should not be used.

@@ -1,5 +1,5 @@
 // SA Electron - Main EXTENDED
-// (2024-04-02)
+// (2024-10-10)
 
 /*
 eval on Electron v1.6.x has some scope issues/bugs which makes the global variables on this script inaccessible inside functions.
@@ -818,10 +818,15 @@ global.electron_as_wallpaper = (function () {
     if (initialized) return;
     initialized = true;
 
-    const {attach, detach, refresh} = require('electron-as-wallpaper/node_modules/electron-as-wallpaper/dist/index');
+    const {attach, detach, refresh} = require('electron-as-wallpaper/node_modules/electron-as-wallpaper');
     e.attach = attach;
     e.detach = detach;
     e.refresh = refresh;
+
+    app.on('quit', ()=>{
+      if (attached)
+        e.refresh();
+    });
   }
 
   return function (attach) {
@@ -833,7 +838,9 @@ try {
     if (attach === true) {
       if (!attached) {
         attached = true;
-        e.attach(mainWindow, { transparent:global.is_transparent });
+        e.attach(mainWindow, {
+          transparent: global.is_transparent,
+        });
       }
     }
     else if (attach === false) {
@@ -846,7 +853,8 @@ try {
     else {
       e.refresh();
     }
-} catch (err) {};
+}
+catch (err) {};
   }
 })();
 
@@ -913,6 +921,43 @@ global.DropArea_drop = function (path) {
 }
 
 global.update_tray = function (para) {
+  function build_custom_menu(menu) {
+    menu.forEach((item)=>{
+if (item.submenu) {
+  item.submenu = build_custom_menu(item.submenu);
+}
+else {
+  if (!item.click) return;
+
+  item.click = (()=>{
+    let click = item.click;
+    let type = item.type;
+    return function (menuItem, browserWindow) {
+      let result = '';
+      switch (type) {
+        case 'checkbox':
+          result = "|" + ((menuItem.checked) ? 1 : 0);
+          break;
+      }
+//electron.dialog.showErrorBox('',click + result);
+      webContents.send('tray_menu', click + result);
+    };
+  })();
+}
+    });
+
+    return Menu.buildFromTemplate(menu);
+  }
+
+  function find_menu_item(label, menu) {
+    for (let i = 0, i_max = menu.items.length; i < i_max; i++) {
+      const menu_item = menu.items[i];
+      const item_found = (menu_item.submenu) ? find_menu_item(label, menu_item.submenu) : ((menu_item.label == label) ? menu_item : null);
+      if (item_found)
+        return item_found;
+    }
+  }
+
   if ("click_thru" in para) {
     contextMenu_click_thru.items[0].checked = para.click_thru
 //    contextMenu.items[menu_item_index['Active window']].enabled = para.click_thru
@@ -996,70 +1041,67 @@ global.update_tray = function (para) {
     contextMenu.items[menu_item_index['Media control']].enabled = para.media_control && mainWindow.isVisible()
 
   if ("custom_menu_para" in para) {
-    var custom_menu_para = para.custom_menu_para
-    var name = custom_menu_para.name
+    let custom_menu_para = para.custom_menu_para;
+    let name = custom_menu_para.name;
     if (name && (para.active_window_id == -1)) {
-      var menu_existed
-      for (var i = 0, i_max = contextMenu_Custom.items.length; i < i_max; i++) {
-        var menu_item = contextMenu_Custom.items[i]
+      let menu_existed;
+      for (let i = 0, i_max = contextMenu_Custom.items.length; i < i_max; i++) {
+        let menu_item = contextMenu_Custom.items[i];
         if (menu_item.label == name) {
-          menu_existed = true
-          menu_item.visible = true
+          menu_existed = true;
+          menu_item.visible = true;
         }
         else {
-          menu_item.visible = false
+          menu_item.visible = false;
         }
       }
 
       if (!menu_existed) {
-        custom_menu_para.menu.forEach(function (menu) {
-          if (!menu.click)
-            return
-          menu.click = (function () {
-var click = menu.click
-var type  = menu.type
-return function (menuItem, browserWindow) {
-  var result = "";
-  if (type == "checkbox") {
-    result = "|" + ((menuItem.checked) ? 1 : 0);
-  }
-  webContents.send('tray_menu', click + result)
-};
-          })();
-        });
-
-        contextMenu_Custom_submenu_by_name[name] = Menu.buildFromTemplate(custom_menu_para.menu)
+        contextMenu_Custom_submenu_by_name[name] = build_custom_menu(custom_menu_para.menu);
         contextMenu_Custom.append(new MenuItem({ label:name, submenu:contextMenu_Custom_submenu_by_name[name] }));
       }
-      contextMenu.items[menu_item_index['Custom']].visible = true
-//      contextMenu.items[menu_item_index['Custom']].enabled = true
+      contextMenu.items[menu_item_index['Custom']].visible = true;
+//      contextMenu.items[menu_item_index['Custom']].enabled = true;
     }
     else {
-      contextMenu.items[menu_item_index['Custom']].visible = false
-//      contextMenu.items[menu_item_index['Custom']].enabled = false
+      contextMenu.items[menu_item_index['Custom']].visible = false;
+//      contextMenu.items[menu_item_index['Custom']].enabled = false;
     }
   }
 
   if ("custom_menu_status" in para) {
-    var custom_menu_status = para.custom_menu_status
-    var name = custom_menu_status.name
+    let custom_menu_status = para.custom_menu_status;
+//electron.dialog.showErrorBox('',JSON.stringify(custom_menu_status.status));
+    let name = custom_menu_status.name;
     for (var i = 0, i_max = contextMenu_Custom.items.length; i < i_max; i++) {
       if (contextMenu_Custom.items[i].label != name)
-        continue
+        continue;
 
-      var submenu = contextMenu_Custom_submenu_by_name[name]
-      for (var k = 0, k_max = submenu.items.length; k < k_max; k++) {
-        var submenu_item = submenu.items[k]
-        var sta = custom_menu_status.status[k]
-        for (var key_name in sta)
-          submenu_item[key_name] = sta[key_name]
+      let submenu = contextMenu_Custom_submenu_by_name[name];
+      if (Array.isArray(custom_menu_status.status)) {
+        for (let k = 0, k_max = submenu.items.length; k < k_max; k++) {
+          let submenu_item = submenu.items[k];
+          const s = custom_menu_status.status[k];
+          Object.assign(submenu_item, s);
+//          for (const key_name in s) submenu_item[key_name] = s[key_name];
+        }
       }
-      break
+      else {
+        Object.keys(custom_menu_status.status).forEach((label)=>{
+          const submenu_item = find_menu_item(label, submenu);
+          if (submenu_item) {
+            const s = custom_menu_status.status[label];
+            Object.assign(submenu_item, s);
+          }
+        });
+      }
+
+      break;
     }
   }
 
   if ("MMD" in para) {
-    var _MMD = para.MMD
+    let _MMD = para.MMD;
     contextMenu.items[menu_item_index['MMD/3D']].enabled = !!_MMD
     if (_MMD) {
       contextMenu_MMD.items[0].checked = _MMD.look_at_camera

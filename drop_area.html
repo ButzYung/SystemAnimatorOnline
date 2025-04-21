@@ -38,6 +38,15 @@ div {
 
 <script>
 window.onload = function () {
+
+// assumed electron v32+
+  Object.defineProperty(File.prototype, "path", (()=>{
+    const { webUtils } = require('electron');
+    return {
+      get: function () { return webUtils.getPathForFile(this); }
+    };
+  })());
+
   document.ondblclick = function () { window.close() }
 
   var _dragCancelDefault = function (e) {

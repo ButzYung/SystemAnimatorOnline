@@ -1,5 +1,5 @@
 // System Animator core basics
-// (2024-09-01)
+// (2024-10-10)
 
 var use_SA_browser_mode
 
@@ -382,6 +382,107 @@ function getHTAUseGPUAcceleration() {
 
   HTA_use_GPU_acceleration = !!HTA_use_GPU_acceleration
   return HTA_use_GPU_acceleration
+}
+
+function electronRegisterCheck() {
+  if (!webkit_electron_mode)
+    return false;
+
+  if (windows_mode) {
+    let registered;
+    try {
+      registered = webkit_electron_remote.app.isDefaultProtocolClient("system-animator");
+    }
+    catch (err) {}
+    return registered;
+  }
+  else if (linux_mode) {
+    const SA_link = SA_require('process').env.HOME + "/Documents/system-animator";
+    if (FSO_OBJ.FileExists(SA_link)) {
+      const result = SA_require('fs').readlinkSync(SA_link);
+//      const result = SA_require('child_process').execSync('readlink -f ' + SA_link);
+      return (result && (webkit_path.indexOf(result.toString().replace(/\s+$/, "")) == 0));
+    }
+    return false;
+  }
+}
+
+function createAnimationShortcut(animation_path, no_alert) {
+  const alert_msg = 'NOTE: You have not registered System Animator to the OS. The current Electron path will be used to create the animation shortcut, which may become broken whenever Electron is upgraded in the future. Registration ensures that all animation shortcuts will remain valid as long as you register System Animator again whenever you upgrade Electron.\n\nTo register System Animator, go to the "Mode" tab and click the corresponding button.';
+
+  const win = self.parent_window || self;
+
+  if (!animation_path) animation_path = win.Settings.f_path;
+
+  let f_path = animation_path;
+  f_path = System.Gadget.document.parentWindow.path_demo_by_url[f_path] || f_path;
+
+  const script_name = 'SA' + System.Gadget.version.replace(/\..+$/, "") + ' - ' + animation_path.replace(/^.+[\/\\]/, "");
+
+  if (linux_mode) {
+    let webkit_shortcut;
+    if (electronRegisterCheck()) {
+      webkit_shortcut = SA_require('process').env.HOME + "/Documents/system-animator";
+    }
+    else {
+      if (!no_alert)
+        SA_alert(alert_msg);
+      webkit_shortcut = webkit_path.replace(/[\/\\][^\/\\]+$/, "");
+    }
+
+    let data = [
+  '[Desktop Entry]'
+ ,'Version=1.0'
+ ,'Name=' + script_name
+ ,'Comment=System Animator - animation shortcut'
+ ,'Exec="' + webkit_shortcut + '/electron" "' + f_path + '"'
+ ,'Icon='  + webkit_shortcut + '/resources/icon_SA_512x512.png'
+ ,'Terminal=false'
+ ,'Type=Application'
+ ,'Categories=Utility;Application;'
+    ];
+//console.log(data)
+    let shortcut_path = SA_require('process').env.HOME + "/Desktop/" + script_name + ".desktop";
+
+    const fs = SA_require('fs');
+// use parseInt to avoid problems for older browsers (0o777)
+    fs.writeFileSync(shortcut_path, data.join("\n"), {mode: parseInt("777",8)});
+
+    return;
+  }
+
+  let shortcut;
+  let desktop_path = (xul_mode) ? XPCOM_object._getSpecialPath("Desk") : System.Environment.getEnvironmentVariable("USERPROFILE") + '\\Desktop';
+
+  if (webkit_mode) {
+    shortcut = oShell.CreateShortcut(desktop_path + '\\' + script_name + '.lnk');
+    if (electronRegisterCheck()) {
+// use encodeURI instead of encodeURIComponent
+      shortcut.TargetPath = "system-animator://" + encodeURI(f_path);
+    }
+    else {
+      if (!no_alert)
+        SA_alert(alert_msg);
+      shortcut.TargetPath = SystemEXT.GetWebKitPath(webkit_path);
+      shortcut.Arguments = '"' + f_path + '"';
+    }
+  }
+  else if (xul_mode) {
+    shortcut = oShell.CreateShortcut(desktop_path + '\\' + script_name + ' - XUL.lnk');
+    let XUL_path = SystemEXT.GetXULPath();
+    shortcut.TargetPath = XUL_path;
+    shortcut.Arguments = ((/firefox.exe/i.test(XUL_path)) ? "-app " : "") + '"' + System.Gadget.path + '\\_xul_gadget\\application.ini" "' + f_path + '"';
+  }
+  else {
+    shortcut = oShell.CreateShortcut(desktop_path + '\\' + script_name + ' - HTA.lnk');
+    shortcut.TargetPath = System.Gadget.path + '\\SystemAnimator_ie.hta';
+    shortcut.Arguments = '"' + f_path + '"';
+  }
+  shortcut.IconLocation = System.Gadget.path + '\\icon_SA.ico, 0';
+
+  shortcut.WorkingDirectory = "";
+
+  shortcut.Save();
 }
 
 
