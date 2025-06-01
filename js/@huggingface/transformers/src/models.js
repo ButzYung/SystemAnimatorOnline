@@ -72,6 +72,10 @@ import {
 } from './utils/hub.js';
 
 import {
+    GITHUB_ISSUE_URL,
+} from './utils/constants.js';
+
+import {
     LogitsProcessorList,
     ForcedBOSTokenLogitsProcessor,
     ForcedEOSTokenLogitsProcessor,
@@ -142,7 +146,7 @@ const MODEL_CLASS_TO_NAME_MAPPING = new Map();
  * @param {string} pretrained_model_name_or_path The path to the directory containing the model file.
  * @param {string} fileName The name of the model file.
  * @param {import('./utils/hub.js').PretrainedModelOptions} options Additional options for loading the model.
- * @returns {Promise<{buffer: Uint8Array, session_options: Object}>} A Promise that resolves to the data needed to create an InferenceSession object.
+ * @returns {Promise<{buffer: Uint8Array, session_options: Object, session_config: Object}>} A Promise that resolves to the data needed to create an InferenceSession object.
  * @private
  */
 async function getSession(pretrained_model_name_or_path, fileName, options) {
@@ -183,11 +187,27 @@ async function getSession(pretrained_model_name_or_path, fileName, options) {
         throw new Error(`The device (${selectedDevice}) does not support fp16.`);
     }
 
+    // Only valid for models with a decoder
+    const kv_cache_dtype = custom_config.kv_cache_dtype
+        ? (typeof custom_config.kv_cache_dtype === 'string'
+            ? custom_config.kv_cache_dtype
+            : custom_config.kv_cache_dtype[selectedDtype] ?? 'float32')
+        : undefined;
+
+    if (kv_cache_dtype && !['float32', 'float16'].includes(kv_cache_dtype)) {
+        throw new Error(`Invalid kv_cache_dtype: ${kv_cache_dtype}. Should be one of: float32, float16`);
+    }
+
+    const session_config = {
+        dtype: selectedDtype,
+        kv_cache_dtype,
+    }
+
     // Construct the model file name
     const suffix = DEFAULT_DTYPE_SUFFIX_MAPPING[selectedDtype];
     const modelFileName = `${options.subfolder ?? ''}/${fileName}${suffix}.onnx`;
 
-    const session_options = { ...options.session_options } ?? {};
+    const session_options = { ...options.session_options };
 
     // Overwrite `executionProviders` if not specified
     session_options.executionProviders ??= executionProviders;
@@ -206,14 +226,15 @@ async function getSession(pretrained_model_name_or_path, fileName, options) {
     const bufferPromise = getModelFile(pretrained_model_name_or_path, modelFileName, true, options);
 
     // handle onnx external data files
+    const use_external_data_format = options.use_external_data_format ?? custom_config.use_external_data_format;
     /** @type {Promise<{path: string, data: Uint8Array}>[]} */
     let externalDataPromises = [];
-    if (options.use_external_data_format && (
-        options.use_external_data_format === true ||
+    if (use_external_data_format && (
+        use_external_data_format === true ||
         (
-            typeof options.use_external_data_format === 'object' &&
-            options.use_external_data_format.hasOwnProperty(fileName) &&
-            options.use_external_data_format[fileName] === true
+            typeof use_external_data_format === 'object' &&
+            use_external_data_format.hasOwnProperty(fileName) &&
+            use_external_data_format[fileName] === true
         )
     )) {
         if (apis.IS_NODE_ENV) {
@@ -257,7 +278,8 @@ async function getSession(pretrained_model_name_or_path, fileName, options) {
     }
 
     const buffer = await bufferPromise;
-    return { buffer, session_options };
+
+    return { buffer, session_options, session_config };
 }
 
 /**
@@ -272,9 +294,26 @@ async function getSession(pretrained_model_name_or_path, fileName, options) {
 async function constructSessions(pretrained_model_name_or_path, names, options) {
     return Object.fromEntries(await Promise.all(
         Object.keys(names).map(async (name) => {
-            const { buffer, session_options } = await getSession(pretrained_model_name_or_path, names[name], options);
-            const session = await createInferenceSession(buffer, session_options);
+            const { buffer, session_options, session_config } = await getSession(pretrained_model_name_or_path, names[name], options);
+            const session = await createInferenceSession(buffer, session_options, session_config);
             return [name, session];
+        })
+    ));
+}
+
+/**
+ * Helper function to load multiple optional configuration files
+ * @param {string} pretrained_model_name_or_path The path to the directory containing the config file.
+ * @param {Record<string, string>} names The names of the config files to load.
+ * @param {import('./utils/hub.js').PretrainedModelOptions} options Additional options for loading the configs.
+ * @returns {Promise<Record<string, any>>} A Promise that resolves to a dictionary of configuration objects.
+ * @private
+ */
+async function getOptionalConfigs(pretrained_model_name_or_path, names, options) {
+    return Object.fromEntries(await Promise.all(
+        Object.keys(names).map(async (name) => {
+            const config = await getModelJSON(pretrained_model_name_or_path, names[name], false, options);
+            return [name, config];
         })
     ));
 }
@@ -690,12 +729,14 @@ export class PreTrainedModel extends Callable {
      * Creates a new instance of the `PreTrainedModel` class.
      * @param {import('./configs.js').PretrainedConfig} config The model configuration.
      * @param {Record<string, any>} sessions The inference sessions for the model.
+     * @param {Record<string, Object>} configs Additional configuration files (e.g., generation_config.json).
      */
-    constructor(config, sessions) {
+    constructor(config, sessions, configs) {
         super();
 
         this.config = config;
         this.sessions = sessions;
+        this.configs = configs;
 
         const modelName = MODEL_CLASS_TO_NAME_MAPPING.get(this.constructor);
         const modelType = MODEL_TYPE_MAPPING.get(modelName);
@@ -811,7 +852,9 @@ export class PreTrainedModel extends Callable {
                 constructSessions(pretrained_model_name_or_path, {
                     model: options.model_file_name ?? 'model',
                 }, options),
-                getModelJSON(pretrained_model_name_or_path, 'generation_config.json', false, options),
+                getOptionalConfigs(pretrained_model_name_or_path, {
+                    generation_config: 'generation_config.json',
+                }, options),
             ]);
 
         } else if (modelType === MODEL_TYPES.Seq2Seq || modelType === MODEL_TYPES.Vision2Seq) {
@@ -820,7 +863,9 @@ export class PreTrainedModel extends Callable {
                     model: 'encoder_model',
                     decoder_model_merged: 'decoder_model_merged',
                 }, options),
-                getModelJSON(pretrained_model_name_or_path, 'generation_config.json', false, options),
+                getOptionalConfigs(pretrained_model_name_or_path, {
+                    generation_config: 'generation_config.json',
+                }, options),
             ]);
 
         } else if (modelType === MODEL_TYPES.MaskGeneration) {
@@ -850,7 +895,9 @@ export class PreTrainedModel extends Callable {
             }
             info = await Promise.all([
                 constructSessions(pretrained_model_name_or_path, sessions, options),
-                getModelJSON(pretrained_model_name_or_path, 'generation_config.json', false, options),
+                getOptionalConfigs(pretrained_model_name_or_path, {
+                    generation_config: 'generation_config.json',
+                }, options),
             ]);
 
         } else if (modelType === MODEL_TYPES.Musicgen) {
@@ -860,12 +907,14 @@ export class PreTrainedModel extends Callable {
                     decoder_model_merged: 'decoder_model_merged',
                     encodec_decode: 'encodec_decode',
                 }, options),
-                getModelJSON(pretrained_model_name_or_path, 'generation_config.json', false, options),
+                getOptionalConfigs(pretrained_model_name_or_path, {
+                    generation_config: 'generation_config.json',
+                }, options),
             ]);
 
         } else { // should be MODEL_TYPES.EncoderOnly
             if (modelType !== MODEL_TYPES.EncoderOnly) {
-                console.warn(`Model type for '${modelName ?? config?.model_type}' not found, assuming encoder-only architecture. Please report this at https://github.com/xenova/transformers.js/issues/new/choose.`)
+                console.warn(`Model type for '${modelName ?? config?.model_type}' not found, assuming encoder-only architecture. Please report this at ${GITHUB_ISSUE_URL}.`)
             }
             info = await Promise.all([
                 constructSessions(pretrained_model_name_or_path, {
@@ -896,6 +945,14 @@ export class PreTrainedModel extends Callable {
      */
     async forward(model_inputs) {
         return await this._forward(this, model_inputs);
+    }
+
+    /**
+     * Get the model's generation config, if it exists.
+     * @returns {GenerationConfig|null} The model's generation config if it exists, otherwise `null`.
+     */
+    get generation_config() {
+        return this.configs?.generation_config ?? null;
     }
 
     /**
@@ -1077,9 +1134,7 @@ export class PreTrainedModel extends Callable {
         const gen_config = new cls(config);
 
         // Apply model's generation config, if it exists
-        if ('generation_config' in this) {
-            Object.assign(gen_config, this.generation_config);
-        }
+        Object.assign(gen_config, this.generation_config ?? {});
 
         // Next, use any generation config specified by the user
         // when calling `generate`
@@ -1597,9 +1652,8 @@ export class PreTrainedModel extends Callable {
         if (pastKeyValues) {
             Object.assign(decoderFeeds, pastKeyValues)
         } else {
-
-            /** @type {import('./transformers.js').DataType} */
-            const dtype = this.custom_config.kv_cache_dtype ?? 'float32';
+            const session = this.sessions['decoder_model_merged'] ?? this.sessions['model'];
+            const dtype = session?.config?.kv_cache_dtype ?? 'float32';
             const empty = (dtype === 'float16') ? new Uint16Array() : [];
 
             const shapes = getKeyValueShapes(this.config);
@@ -2492,17 +2546,6 @@ export class T5PreTrainedModel extends PreTrainedModel {
         'decoder_attention_mask',
         'past_key_values',
     ];
-
-    /**
-     * Creates a new instance of the `T5PreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
 };
 
 export class T5Model extends T5PreTrainedModel { }
@@ -2519,18 +2562,7 @@ export class T5ForConditionalGeneration extends T5PreTrainedModel { }
 /**
  * An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained models.
  */
-export class LongT5PreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `LongT5ForConditionalGeneration` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-};
+export class LongT5PreTrainedModel extends PreTrainedModel { };
 
 /**
  * The bare LONGT5 Model transformer outputting raw hidden-states without any specific head on top.
@@ -2546,19 +2578,7 @@ export class LongT5ForConditionalGeneration extends LongT5PreTrainedModel { }
 
 //////////////////////////////////////////////////
 // MT5 models
-export class MT5PreTrainedModel extends PreTrainedModel {
-
-    /**
-     * Creates a new instance of the `MT5ForConditionalGeneration` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-};
+export class MT5PreTrainedModel extends PreTrainedModel { };
 
 export class MT5Model extends MT5PreTrainedModel { }
 
@@ -2570,19 +2590,7 @@ export class MT5ForConditionalGeneration extends MT5PreTrainedModel { }
 
 //////////////////////////////////////////////////
 // Bart models
-export class BartPretrainedModel extends PreTrainedModel {
-
-    /**
-     * Creates a new instance of the `BartForConditionalGeneration` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-};
+export class BartPretrainedModel extends PreTrainedModel { };
 
 /**
  * The bare BART Model outputting raw hidden-states without any specific head on top.
@@ -2613,19 +2621,7 @@ export class BartForSequenceClassification extends BartPretrainedModel {
 
 //////////////////////////////////////////////////
 // MBart models
-export class MBartPreTrainedModel extends PreTrainedModel {
-
-    /**
-     * Creates a new instance of the `MBartForConditionalGeneration` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-};
+export class MBartPreTrainedModel extends PreTrainedModel { };
 
 /**
  * The bare MBART Model outputting raw hidden-states without any specific head on top.
@@ -2659,19 +2655,7 @@ export class MBartForCausalLM extends MBartPreTrainedModel { }
 
 //////////////////////////////////////////////////
 // Blenderbot models
-export class BlenderbotPreTrainedModel extends PreTrainedModel {
-
-    /**
-     * Creates a new instance of the `BlenderbotForConditionalGeneration` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-};
+export class BlenderbotPreTrainedModel extends PreTrainedModel { };
 
 /**
  * The bare Blenderbot Model outputting raw hidden-states without any specific head on top.
@@ -2687,19 +2671,7 @@ export class BlenderbotForConditionalGeneration extends BlenderbotPreTrainedMode
 
 //////////////////////////////////////////////////
 // Blenderbot models
-export class BlenderbotSmallPreTrainedModel extends PreTrainedModel {
-
-    /**
-     * Creates a new instance of the `BlenderbotForConditionalGeneration` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-};
+export class BlenderbotSmallPreTrainedModel extends PreTrainedModel { };
 
 /**
  * The bare BlenderbotSmall Model outputting raw hidden-states without any specific head on top.
@@ -2948,17 +2920,6 @@ export class WhisperPreTrainedModel extends PreTrainedModel {
         'decoder_attention_mask',
         'past_key_values',
     ];
-
-    /**
-     * Creates a new instance of the `WhisperPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
 };
 
 /**
@@ -3229,16 +3190,6 @@ export class VisionEncoderDecoderModel extends PreTrainedModel {
         'encoder_hidden_states',
         'past_key_values',
     ];
-    /**
-     * Creates a new instance of the `VisionEncoderDecoderModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
 }
 //////////////////////////////////////////////////
 
@@ -3253,11 +3204,6 @@ export class LlavaPreTrainedModel extends PreTrainedModel {
         'position_ids',
         'past_key_values',
     ];
-
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
 }
 
 /**
@@ -3344,11 +3290,6 @@ export class Florence2PreTrainedModel extends PreTrainedModel {
         'past_key_values',
     ];
     main_input_name = 'inputs_embeds';
-
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
 }
 
 export class Florence2ForConditionalGeneration extends Florence2PreTrainedModel {
@@ -3768,18 +3709,7 @@ export class CLIPSegForImageSegmentation extends CLIPSegPreTrainedModel { }
 
 //////////////////////////////////////////////////
 // GPT2 models
-export class GPT2PreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `GPT2PreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+export class GPT2PreTrainedModel extends PreTrainedModel { }
 
 export class GPT2Model extends GPT2PreTrainedModel { }
 
@@ -3794,18 +3724,7 @@ export class GPT2LMHeadModel extends GPT2PreTrainedModel { }
 
 //////////////////////////////////////////////////
 // JAIS models
-export class JAISPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `JAISPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+export class JAISPreTrainedModel extends PreTrainedModel { }
 
 /**
  * The bare JAIS Model transformer outputting raw hidden-states without any specific head on top.
@@ -3821,18 +3740,7 @@ export class JAISLMHeadModel extends JAISPreTrainedModel { }
 
 //////////////////////////////////////////////////
 // GPTNeo models
-export class GPTNeoPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `GPTNeoPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+export class GPTNeoPreTrainedModel extends PreTrainedModel { }
 export class GPTNeoModel extends GPTNeoPreTrainedModel { }
 
 export class GPTNeoForCausalLM extends GPTNeoPreTrainedModel { }
@@ -3840,18 +3748,7 @@ export class GPTNeoForCausalLM extends GPTNeoPreTrainedModel { }
 
 //////////////////////////////////////////////////
 // GPTNeoX models
-export class GPTNeoXPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `GPTNeoXPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+export class GPTNeoXPreTrainedModel extends PreTrainedModel { }
 export class GPTNeoXModel extends GPTNeoXPreTrainedModel { }
 
 export class GPTNeoXForCausalLM extends GPTNeoXPreTrainedModel { }
@@ -3860,18 +3757,7 @@ export class GPTNeoXForCausalLM extends GPTNeoXPreTrainedModel { }
 
 //////////////////////////////////////////////////
 // GPT-J models
-export class GPTJPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `GPTJPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+export class GPTJPreTrainedModel extends PreTrainedModel { }
 
 export class GPTJModel extends GPTJPreTrainedModel { }
 
@@ -3881,18 +3767,7 @@ export class GPTJForCausalLM extends GPTJPreTrainedModel { }
 
 //////////////////////////////////////////////////
 // GPTBigCode models
-export class GPTBigCodePreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `GPTBigCodePreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+export class GPTBigCodePreTrainedModel extends PreTrainedModel { }
 
 export class GPTBigCodeModel extends GPTBigCodePreTrainedModel { }
 
@@ -3901,18 +3776,7 @@ export class GPTBigCodeForCausalLM extends GPTBigCodePreTrainedModel { }
 
 //////////////////////////////////////////////////
 // CodeGen models
-export class CodeGenPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `CodeGenPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+export class CodeGenPreTrainedModel extends PreTrainedModel { }
 /**
  * CodeGenModel is a class representing a code generation model without a language model head.
  */
@@ -3931,18 +3795,7 @@ export class CodeGenForCausalLM extends CodeGenPreTrainedModel { }
 /**
  * The bare LLama Model outputting raw hidden-states without any specific head on top.
  */
-export class LlamaPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `LlamaPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+export class LlamaPreTrainedModel extends PreTrainedModel { }
 /**
  * The bare LLaMA Model outputting raw hidden-states without any specific head on top.
  */
@@ -3951,24 +3804,22 @@ export class LlamaModel extends LlamaPreTrainedModel { }
 export class LlamaForCausalLM extends LlamaPreTrainedModel { }
 //////////////////////////////////////////////////
 
+
+//////////////////////////////////////////////////
+// Granite models
+export class GranitePreTrainedModel extends PreTrainedModel { }
+export class GraniteModel extends GranitePreTrainedModel { }
+export class GraniteForCausalLM extends GranitePreTrainedModel { }
+//////////////////////////////////////////////////
+
+
 //////////////////////////////////////////////////
 // Cohere models
 
 /**
  * The bare Cohere Model outputting raw hidden-states without any specific head on top.
  */
-export class CoherePreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `CoherePreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+export class CoherePreTrainedModel extends PreTrainedModel { }
 export class CohereModel extends CoherePreTrainedModel { }
 
 export class CohereForCausalLM extends CoherePreTrainedModel { }
@@ -3980,18 +3831,7 @@ export class CohereForCausalLM extends CoherePreTrainedModel { }
 /**
  * The bare Gemma Model outputting raw hidden-states without any specific head on top.
  */
-export class GemmaPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `GemmaPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+export class GemmaPreTrainedModel extends PreTrainedModel { }
 /**
  * The bare Gemma Model outputting raw hidden-states without any specific head on top.
  */
@@ -4006,18 +3846,7 @@ export class GemmaForCausalLM extends GemmaPreTrainedModel { }
 /**
  * The bare Gemma2 Model outputting raw hidden-states without any specific head on top.
  */
-export class Gemma2PreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `Gemma2PreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+export class Gemma2PreTrainedModel extends PreTrainedModel { }
 /**
  * The bare Gemma2 Model outputting raw hidden-states without any specific head on top.
  */
@@ -4027,18 +3856,7 @@ export class Gemma2ForCausalLM extends Gemma2PreTrainedModel { }
 //////////////////////////////////////////////////
 
 //////////////////////////////////////////////////
-export class OpenELMPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `OpenELMPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+export class OpenELMPreTrainedModel extends PreTrainedModel { }
 export class OpenELMModel extends OpenELMPreTrainedModel { }
 
 export class OpenELMForCausalLM extends OpenELMPreTrainedModel { }
@@ -4050,18 +3868,7 @@ export class OpenELMForCausalLM extends OpenELMPreTrainedModel { }
 /**
  * The bare Qwen2 Model outputting raw hidden-states without any specific head on top.
  */
-export class Qwen2PreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `Qwen2PreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+export class Qwen2PreTrainedModel extends PreTrainedModel { }
 /**
  * The bare Qwen2 Model outputting raw hidden-states without any specific head on top.
  */
@@ -4073,18 +3880,7 @@ export class Qwen2ForCausalLM extends Qwen2PreTrainedModel { }
 
 //////////////////////////////////////////////////
 // Phi models
-export class PhiPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `PhiPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+export class PhiPreTrainedModel extends PreTrainedModel { }
 /**
  * The bare Phi Model outputting raw hidden-states without any specific head on top.
  */
@@ -4095,18 +3891,7 @@ export class PhiForCausalLM extends PhiPreTrainedModel { }
 
 //////////////////////////////////////////////////
 // Phi3 models
-export class Phi3PreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `Phi3PreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+export class Phi3PreTrainedModel extends PreTrainedModel { }
 
 /**
  * The bare Phi3 Model outputting raw hidden-states without any specific head on top.
@@ -4122,18 +3907,7 @@ export class Phi3ForCausalLM extends Phi3PreTrainedModel { }
 /**
  * The Bloom Model transformer with a language modeling head on top (linear layer with weights tied to the input embeddings).
  */
-export class BloomPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `BloomPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+export class BloomPreTrainedModel extends PreTrainedModel { }
 
 /**
  * The bare Bloom Model transformer outputting raw hidden-states without any specific head on top.
@@ -4148,18 +3922,7 @@ export class BloomForCausalLM extends BloomPreTrainedModel { }
 
 //////////////////////////////////////////////////
 // MPT models
-export class MptPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `MptPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+export class MptPreTrainedModel extends PreTrainedModel { }
 
 /**
  * The bare Mpt Model transformer outputting raw hidden-states without any specific head on top.
@@ -4175,18 +3938,7 @@ export class MptForCausalLM extends MptPreTrainedModel { }
 
 //////////////////////////////////////////////////
 // OPT models
-export class OPTPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `OPTPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+export class OPTPreTrainedModel extends PreTrainedModel { }
 
 /**
  * The bare OPT Model outputting raw hidden-states without any specific head on top.
@@ -4662,6 +4414,11 @@ export class SapiensForNormalEstimation extends SapiensPreTrainedModel { }
 //////////////////////////////////////////////////
 
 //////////////////////////////////////////////////
+export class DepthProPreTrainedModel extends PreTrainedModel { }
+export class DepthProForDepthEstimation extends DepthProPreTrainedModel { }
+//////////////////////////////////////////////////
+
+//////////////////////////////////////////////////
 export class MaskFormerPreTrainedModel extends PreTrainedModel { }
 export class MaskFormerModel extends MaskFormerPreTrainedModel { }
 export class MaskFormerForInstanceSegmentation extends MaskFormerPreTrainedModel { }
@@ -5043,19 +4800,7 @@ export class SamImageSegmentationOutput extends ModelOutput {
 
 //////////////////////////////////////////////////
 // MarianMT models
-export class MarianPreTrainedModel extends PreTrainedModel {
-
-    /**
-     * Creates a new instance of the `MarianMTModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-};
+export class MarianPreTrainedModel extends PreTrainedModel { };
 
 export class MarianModel extends MarianPreTrainedModel { }
 
@@ -5064,19 +4809,7 @@ export class MarianMTModel extends MarianPreTrainedModel { }
 
 //////////////////////////////////////////////////
 // M2M100 models
-export class M2M100PreTrainedModel extends PreTrainedModel {
-
-    /**
-     * Creates a new instance of the `M2M100ForConditionalGeneration` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-};
+export class M2M100PreTrainedModel extends PreTrainedModel { };
 
 export class M2M100Model extends M2M100PreTrainedModel { }
 
@@ -5168,7 +4901,7 @@ export class PyAnnoteModel extends PyAnnotePreTrainedModel { }
  * **Example:** Load and run a `PyAnnoteForAudioFrameClassification` for speaker diarization.
  * 
  * ```javascript
- * import { AutoProcessor, AutoModelForAudioFrameClassification, read_audio } from '@xenova/transformers';
+ * import { AutoProcessor, AutoModelForAudioFrameClassification, read_audio } from '@huggingface/transformers';
  * 
  * // Load model and processor
  * const model_id = 'onnx-community/pyannote-segmentation-3.0';
@@ -5586,19 +5319,7 @@ export class WavLMForAudioFrameClassification extends WavLMPreTrainedModel {
 /**
  * An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained models.
  */
-export class SpeechT5PreTrainedModel extends PreTrainedModel {
-
-    /**
-     * Creates a new instance of the `SpeechT5ForTextToSpeech` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-};
+export class SpeechT5PreTrainedModel extends PreTrainedModel { };
 
 /**
  * The bare SpeechT5 Encoder-Decoder Model outputting raw hidden-states without any specific pre- or post-nets.
@@ -5759,18 +5480,7 @@ export class SpeechT5HifiGan extends PreTrainedModel {
 
 //////////////////////////////////////////////////
 // TrOCR models
-export class TrOCRPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `TrOCRPreTrainedModel` class.
-     * @param {Object} config The configuration of the model.
-     * @param {any} session The ONNX session containing the model weights.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, session, generation_config) {
-        super(config, session);
-        this.generation_config = generation_config;
-    }
-}
+export class TrOCRPreTrainedModel extends PreTrainedModel { }
 
 /**
  * The TrOCR Decoder with a language modeling head.
@@ -5785,18 +5495,7 @@ export class TrOCRForCausalLM extends TrOCRPreTrainedModel { }
 /**
  * The bare Mistral Model outputting raw hidden-states without any specific head on top.
  */
-export class MistralPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `MistralPreTrainedModel` class.
-     * @param {Object} config The configuration of the model.
-     * @param {any} session The ONNX session containing the model weights.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, session, generation_config) {
-        super(config, session);
-        this.generation_config = generation_config;
-    }
-}
+export class MistralPreTrainedModel extends PreTrainedModel { }
 
 export class MistralModel extends MistralPreTrainedModel { }
 
@@ -5809,18 +5508,7 @@ export class MistralForCausalLM extends MistralPreTrainedModel { }
 /**
  * The bare Starcoder2 Model outputting raw hidden-states without any specific head on top.
  */
-export class Starcoder2PreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `Starcoder2PreTrainedModel` class.
-     * @param {Object} config The configuration of the model.
-     * @param {any} session The ONNX session containing the model weights.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, session, generation_config) {
-        super(config, session);
-        this.generation_config = generation_config;
-    }
-}
+export class Starcoder2PreTrainedModel extends PreTrainedModel { }
 
 export class Starcoder2Model extends Starcoder2PreTrainedModel { }
 
@@ -5833,18 +5521,7 @@ export class Starcoder2ForCausalLM extends Starcoder2PreTrainedModel { }
 /**
  * The bare Falcon Model outputting raw hidden-states without any specific head on top.
  */
-export class FalconPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `FalconPreTrainedModel` class.
-     * @param {Object} config The configuration of the model.
-     * @param {any} session The ONNX session containing the model weights.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, session, generation_config) {
-        super(config, session);
-        this.generation_config = generation_config;
-    }
-}
+export class FalconPreTrainedModel extends PreTrainedModel { }
 
 export class FalconModel extends FalconPreTrainedModel { }
 
@@ -5994,18 +5671,7 @@ export class SegformerForSemanticSegmentation extends SegformerPreTrainedModel {
 
 //////////////////////////////////////////////////
 // StableLm models
-export class StableLmPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `StableLmPreTrainedModel` class.
-     * @param {Object} config The configuration of the model.
-     * @param {any} session The ONNX session containing the model weights.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, session, generation_config) {
-        super(config, session);
-        this.generation_config = generation_config;
-    }
-}
+export class StableLmPreTrainedModel extends PreTrainedModel { }
 
 /**
  * The bare StableLm Model transformer outputting raw hidden-states without any specific head on top.
@@ -6098,17 +5764,6 @@ export class MusicgenForConditionalGeneration extends PreTrainedModel { // NOTE:
         'decoder_attention_mask',
         'past_key_values',
     ];
-
-    /**
-     * Creates a new instance of the `MusicgenForConditionalGeneration` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
 
     /**
      * Apply the pattern mask to the final ids,
@@ -6465,6 +6120,7 @@ const MODEL_MAPPING_NAMES_DECODER_ONLY = new Map([
     ['gpt_neox', ['GPTNeoXModel', GPTNeoXModel]],
     ['codegen', ['CodeGenModel', CodeGenModel]],
     ['llama', ['LlamaModel', LlamaModel]],
+    ['granite', ['GraniteModel', GraniteModel]],
     ['cohere', ['CohereModel', CohereModel]],
     ['gemma', ['GemmaModel', GemmaModel]],
     ['gemma2', ['Gemma2Model', Gemma2Model]],
@@ -6553,6 +6209,7 @@ const MODEL_FOR_CAUSAL_LM_MAPPING_NAMES = new Map([
     ['gpt_neox', ['GPTNeoXForCausalLM', GPTNeoXForCausalLM]],
     ['codegen', ['CodeGenForCausalLM', CodeGenForCausalLM]],
     ['llama', ['LlamaForCausalLM', LlamaForCausalLM]],
+    ['granite', ['GraniteForCausalLM', GraniteForCausalLM]],
     ['cohere', ['CohereForCausalLM', CohereForCausalLM]],
     ['gemma', ['GemmaForCausalLM', GemmaForCausalLM]],
     ['gemma2', ['Gemma2ForCausalLM', Gemma2ForCausalLM]],
@@ -6719,6 +6376,7 @@ const MODEL_FOR_DEPTH_ESTIMATION_MAPPING_NAMES = new Map([
     ['depth_anything', ['DepthAnythingForDepthEstimation', DepthAnythingForDepthEstimation]],
     ['glpn', ['GLPNForDepthEstimation', GLPNForDepthEstimation]],
     ['sapiens', ['SapiensForDepthEstimation', SapiensForDepthEstimation]],
+    ['depth_pro', ['DepthProForDepthEstimation', DepthProForDepthEstimation]],
 ])
 
 const MODEL_FOR_NORMAL_ESTIMATION_MAPPING_NAMES = new Map([

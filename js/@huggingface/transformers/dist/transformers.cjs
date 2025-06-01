@@ -3866,7 +3866,13 @@ const supportedDevices = [];
 /** @type {ONNXExecutionProviders[]} */
 let defaultDevices;
 let ONNX;
-if (_env_js__WEBPACK_IMPORTED_MODULE_0__.apis.IS_NODE_ENV) {
+const ORT_SYMBOL = Symbol.for('onnxruntime');
+
+if (ORT_SYMBOL in globalThis) {
+  // If the JS runtime exposes their own ONNX runtime, use it
+  ONNX = globalThis[ORT_SYMBOL];
+
+} else if (_env_js__WEBPACK_IMPORTED_MODULE_0__.apis.IS_NODE_ENV) {
     ONNX = onnxruntime_node__WEBPACK_IMPORTED_MODULE_1__ ?? /*#__PURE__*/ (onnxruntime_node__WEBPACK_IMPORTED_MODULE_1___namespace_cache || (onnxruntime_node__WEBPACK_IMPORTED_MODULE_1___namespace_cache = __webpack_require__.t(onnxruntime_node__WEBPACK_IMPORTED_MODULE_1__, 2)));
 
     // Updated as of ONNX Runtime 1.18.0
@@ -3949,9 +3955,10 @@ let wasmInitPromise = null;
  * Create an ONNX inference session.
  * @param {Uint8Array} buffer The ONNX model buffer.
  * @param {import('onnxruntime-common').InferenceSession.SessionOptions} session_options ONNX inference session options.
- * @returns {Promise<import('onnxruntime-common').InferenceSession>} The ONNX inference session.
+ * @param {Object} session_config ONNX inference session configuration.
+ * @returns {Promise<import('onnxruntime-common').InferenceSession & { config: Object}>} The ONNX inference session.
  */
-async function createInferenceSession(buffer, session_options) {
+async function createInferenceSession(buffer, session_options, session_config) {
     if (wasmInitPromise) {
         // A previous session has already initialized the WASM runtime
         // so we wait for it to resolve before creating this new session.
@@ -3960,7 +3967,9 @@ async function createInferenceSession(buffer, session_options) {
 
     const sessionPromise = InferenceSession.create(buffer, session_options);
     wasmInitPromise ??= sessionPromise;
-    return await sessionPromise;
+    const session = await sessionPromise;
+    session.config = session_config;
+    return session;
 }
 
 /**
@@ -4122,6 +4131,7 @@ function getNormalizedConfig(config) {
             mapping['hidden_size'] = 'hidden_size';
             break;
         case 'llama':
+        case 'granite':
         case 'cohere':
         case 'mistral':
         case 'starcoder2':
@@ -4395,12 +4405,13 @@ class AutoConfig {
 /**
  * Transformers.js-specific configuration, possibly present in config.json under the key `transformers.js_config`.
  * @typedef {Object} TransformersJSConfig
- * @property {import('./utils/tensor.js').DataType} [kv_cache_dtype] The data type of the key-value cache.
+ * @property {import('./utils/tensor.js').DataType|Record<import('./utils/dtypes.js').DataType, import('./utils/tensor.js').DataType>} [kv_cache_dtype] The data type of the key-value cache.
  * @property {Record<string, number>} [free_dimension_overrides] Override the free dimensions of the model.
  * See https://onnxruntime.ai/docs/tutorials/web/env-flags-and-session-options.html#freedimensionoverrides
  * for more information.
  * @property {import('./utils/devices.js').DeviceType} [device] The default device to use for the model.
  * @property {import('./utils/dtypes.js').DataType} [dtype] The default data type to use for the model.
+ * @property {boolean|Record<string, boolean>} [use_external_data_format=false] Whether to load the model using the external data format (used for models >= 2GB in size).
  */
 
 
@@ -4449,7 +4460,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-const VERSION = '3.0.0-alpha.19';
+const VERSION = '3.0.0';
 
 // Check if various APIs are available (depends on environment)
 const IS_BROWSER_ENV = typeof self !== 'undefined';
@@ -6484,6 +6495,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   DeiTPreTrainedModel: () => (/* binding */ DeiTPreTrainedModel),
 /* harmony export */   DepthAnythingForDepthEstimation: () => (/* binding */ DepthAnythingForDepthEstimation),
 /* harmony export */   DepthAnythingPreTrainedModel: () => (/* binding */ DepthAnythingPreTrainedModel),
+/* harmony export */   DepthProForDepthEstimation: () => (/* binding */ DepthProForDepthEstimation),
+/* harmony export */   DepthProPreTrainedModel: () => (/* binding */ DepthProPreTrainedModel),
 /* harmony export */   DetrForObjectDetection: () => (/* binding */ DetrForObjectDetection),
 /* harmony export */   DetrForSegmentation: () => (/* binding */ DetrForSegmentation),
 /* harmony export */   DetrModel: () => (/* binding */ DetrModel),
@@ -6547,6 +6560,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   GemmaForCausalLM: () => (/* binding */ GemmaForCausalLM),
 /* harmony export */   GemmaModel: () => (/* binding */ GemmaModel),
 /* harmony export */   GemmaPreTrainedModel: () => (/* binding */ GemmaPreTrainedModel),
+/* harmony export */   GraniteForCausalLM: () => (/* binding */ GraniteForCausalLM),
+/* harmony export */   GraniteModel: () => (/* binding */ GraniteModel),
+/* harmony export */   GranitePreTrainedModel: () => (/* binding */ GranitePreTrainedModel),
 /* harmony export */   GroupViTModel: () => (/* binding */ GroupViTModel),
 /* harmony export */   GroupViTPreTrainedModel: () => (/* binding */ GroupViTPreTrainedModel),
 /* harmony export */   HieraForImageClassification: () => (/* binding */ HieraForImageClassification),
@@ -6794,15 +6810,16 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./utils/generic.js */ "./src/utils/generic.js");
 /* harmony import */ var _utils_core_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./utils/core.js */ "./src/utils/core.js");
 /* harmony import */ var _utils_hub_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./utils/hub.js */ "./src/utils/hub.js");
-/* harmony import */ var _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./generation/logits_process.js */ "./src/generation/logits_process.js");
-/* harmony import */ var _generation_configuration_utils_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./generation/configuration_utils.js */ "./src/generation/configuration_utils.js");
-/* harmony import */ var _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./utils/tensor.js */ "./src/utils/tensor.js");
-/* harmony import */ var _utils_maths_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./utils/maths.js */ "./src/utils/maths.js");
-/* harmony import */ var _generation_stopping_criteria_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./generation/stopping_criteria.js */ "./src/generation/stopping_criteria.js");
-/* harmony import */ var _generation_logits_sampler_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./generation/logits_sampler.js */ "./src/generation/logits_sampler.js");
-/* harmony import */ var _env_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./env.js */ "./src/env.js");
-/* harmony import */ var _models_whisper_generation_whisper_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./models/whisper/generation_whisper.js */ "./src/models/whisper/generation_whisper.js");
-/* harmony import */ var _models_whisper_common_whisper_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./models/whisper/common_whisper.js */ "./src/models/whisper/common_whisper.js");
+/* harmony import */ var _utils_constants_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./utils/constants.js */ "./src/utils/constants.js");
+/* harmony import */ var _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./generation/logits_process.js */ "./src/generation/logits_process.js");
+/* harmony import */ var _generation_configuration_utils_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./generation/configuration_utils.js */ "./src/generation/configuration_utils.js");
+/* harmony import */ var _utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./utils/tensor.js */ "./src/utils/tensor.js");
+/* harmony import */ var _utils_maths_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./utils/maths.js */ "./src/utils/maths.js");
+/* harmony import */ var _generation_stopping_criteria_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./generation/stopping_criteria.js */ "./src/generation/stopping_criteria.js");
+/* harmony import */ var _generation_logits_sampler_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./generation/logits_sampler.js */ "./src/generation/logits_sampler.js");
+/* harmony import */ var _env_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./env.js */ "./src/env.js");
+/* harmony import */ var _models_whisper_generation_whisper_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./models/whisper/generation_whisper.js */ "./src/models/whisper/generation_whisper.js");
+/* harmony import */ var _models_whisper_common_whisper_js__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./models/whisper/common_whisper.js */ "./src/models/whisper/common_whisper.js");
 
 /**
  * @file Definitions of all models available in Transformers.js.
@@ -6868,6 +6885,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+
 //////////////////////////////////////////////////
 // Model types: used internally
 const MODEL_TYPES = {
@@ -6897,7 +6916,7 @@ const MODEL_CLASS_TO_NAME_MAPPING = new Map();
  * @param {string} pretrained_model_name_or_path The path to the directory containing the model file.
  * @param {string} fileName The name of the model file.
  * @param {import('./utils/hub.js').PretrainedModelOptions} options Additional options for loading the model.
- * @returns {Promise<{buffer: Uint8Array, session_options: Object}>} A Promise that resolves to the data needed to create an InferenceSession object.
+ * @returns {Promise<{buffer: Uint8Array, session_options: Object, session_config: Object}>} A Promise that resolves to the data needed to create an InferenceSession object.
  * @private
  */
 async function getSession(pretrained_model_name_or_path, fileName, options) {
@@ -6914,7 +6933,7 @@ async function getSession(pretrained_model_name_or_path, fileName, options) {
 
     // If the device is not specified, we use the default (supported) execution providers.
     const selectedDevice = /** @type {import("./utils/devices.js").DeviceType} */(
-        device ?? (_env_js__WEBPACK_IMPORTED_MODULE_12__.apis.IS_NODE_ENV ? 'cpu' : 'wasm')
+        device ?? (_env_js__WEBPACK_IMPORTED_MODULE_13__.apis.IS_NODE_ENV ? 'cpu' : 'wasm')
     );
     const executionProviders = (0,_backends_onnx_js__WEBPACK_IMPORTED_MODULE_1__.deviceToExecutionProviders)(selectedDevice);
 
@@ -6938,11 +6957,27 @@ async function getSession(pretrained_model_name_or_path, fileName, options) {
         throw new Error(`The device (${selectedDevice}) does not support fp16.`);
     }
 
+    // Only valid for models with a decoder
+    const kv_cache_dtype = custom_config.kv_cache_dtype
+        ? (typeof custom_config.kv_cache_dtype === 'string'
+            ? custom_config.kv_cache_dtype
+            : custom_config.kv_cache_dtype[selectedDtype] ?? 'float32')
+        : undefined;
+
+    if (kv_cache_dtype && !['float32', 'float16'].includes(kv_cache_dtype)) {
+        throw new Error(`Invalid kv_cache_dtype: ${kv_cache_dtype}. Should be one of: float32, float16`);
+    }
+
+    const session_config = {
+        dtype: selectedDtype,
+        kv_cache_dtype,
+    }
+
     // Construct the model file name
     const suffix = _utils_dtypes_js__WEBPACK_IMPORTED_MODULE_2__.DEFAULT_DTYPE_SUFFIX_MAPPING[selectedDtype];
     const modelFileName = `${options.subfolder ?? ''}/${fileName}${suffix}.onnx`;
 
-    const session_options = { ...options.session_options } ?? {};
+    const session_options = { ...options.session_options };
 
     // Overwrite `executionProviders` if not specified
     session_options.executionProviders ??= executionProviders;
@@ -6961,17 +6996,18 @@ async function getSession(pretrained_model_name_or_path, fileName, options) {
     const bufferPromise = (0,_utils_hub_js__WEBPACK_IMPORTED_MODULE_5__.getModelFile)(pretrained_model_name_or_path, modelFileName, true, options);
 
     // handle onnx external data files
+    const use_external_data_format = options.use_external_data_format ?? custom_config.use_external_data_format;
     /** @type {Promise<{path: string, data: Uint8Array}>[]} */
     let externalDataPromises = [];
-    if (options.use_external_data_format && (
-        options.use_external_data_format === true ||
+    if (use_external_data_format && (
+        use_external_data_format === true ||
         (
-            typeof options.use_external_data_format === 'object' &&
-            options.use_external_data_format.hasOwnProperty(fileName) &&
-            options.use_external_data_format[fileName] === true
+            typeof use_external_data_format === 'object' &&
+            use_external_data_format.hasOwnProperty(fileName) &&
+            use_external_data_format[fileName] === true
         )
     )) {
-        if (_env_js__WEBPACK_IMPORTED_MODULE_12__.apis.IS_NODE_ENV) {
+        if (_env_js__WEBPACK_IMPORTED_MODULE_13__.apis.IS_NODE_ENV) {
             throw new Error('External data format is not yet supported in Node.js');
         }
         const path = `${fileName}${suffix}.onnx_data`;
@@ -7012,7 +7048,8 @@ async function getSession(pretrained_model_name_or_path, fileName, options) {
     }
 
     const buffer = await bufferPromise;
-    return { buffer, session_options };
+
+    return { buffer, session_options, session_config };
 }
 
 /**
@@ -7027,9 +7064,26 @@ async function getSession(pretrained_model_name_or_path, fileName, options) {
 async function constructSessions(pretrained_model_name_or_path, names, options) {
     return Object.fromEntries(await Promise.all(
         Object.keys(names).map(async (name) => {
-            const { buffer, session_options } = await getSession(pretrained_model_name_or_path, names[name], options);
-            const session = await (0,_backends_onnx_js__WEBPACK_IMPORTED_MODULE_1__.createInferenceSession)(buffer, session_options);
+            const { buffer, session_options, session_config } = await getSession(pretrained_model_name_or_path, names[name], options);
+            const session = await (0,_backends_onnx_js__WEBPACK_IMPORTED_MODULE_1__.createInferenceSession)(buffer, session_options, session_config);
             return [name, session];
+        })
+    ));
+}
+
+/**
+ * Helper function to load multiple optional configuration files
+ * @param {string} pretrained_model_name_or_path The path to the directory containing the config file.
+ * @param {Record<string, string>} names The names of the config files to load.
+ * @param {import('./utils/hub.js').PretrainedModelOptions} options Additional options for loading the configs.
+ * @returns {Promise<Record<string, any>>} A Promise that resolves to a dictionary of configuration objects.
+ * @private
+ */
+async function getOptionalConfigs(pretrained_model_name_or_path, names, options) {
+    return Object.fromEntries(await Promise.all(
+        Object.keys(names).map(async (name) => {
+            const config = await (0,_utils_hub_js__WEBPACK_IMPORTED_MODULE_5__.getModelJSON)(pretrained_model_name_or_path, names[name], false, options);
+            return [name, config];
         })
     ));
 }
@@ -7054,7 +7108,7 @@ function validateInputs(session, inputs) {
         // Rare case where one of the model's input names corresponds to a built-in
         // object name (e.g., toString), which would cause a simple (!tensor) check to fail,
         // because it's not undefined but a function.
-        if (!(tensor instanceof _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.Tensor)) {
+        if (!(tensor instanceof _utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.Tensor)) {
             missingInputs.push(inputName);
             continue;
         }
@@ -7116,7 +7170,7 @@ async function sessionRun(session, inputs) {
 function replaceTensors(obj) {
     for (let prop in obj) {
         if ((0,_backends_onnx_js__WEBPACK_IMPORTED_MODULE_1__.isONNXTensor)(obj[prop])) {
-            obj[prop] = new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.Tensor(obj[prop]);
+            obj[prop] = new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.Tensor(obj[prop]);
         } else if (typeof obj[prop] === 'object') {
             replaceTensors(obj[prop]);
         }
@@ -7133,7 +7187,7 @@ function replaceTensors(obj) {
  * @private
  */
 function toI64Tensor(items) {
-    if (items instanceof _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.Tensor) {
+    if (items instanceof _utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.Tensor) {
         return items;
     }
     // items is an array
@@ -7147,13 +7201,13 @@ function toI64Tensor(items) {
             throw Error("Unable to create tensor, you should probably activate truncation and/or padding with 'padding=True' and/or 'truncation=True' to have batched tensors with the same length.")
         }
 
-        return new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.Tensor('int64',
+        return new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.Tensor('int64',
             BigInt64Array.from(items.flat().map(x => BigInt(x))),
             [items.length, items[0].length]
         );
     } else {
         //flat
-        return new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.Tensor('int64',
+        return new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.Tensor('int64',
             BigInt64Array.from(items.map(x => BigInt(x))),
             [1, items.length]
         );
@@ -7167,7 +7221,7 @@ function toI64Tensor(items) {
  * @private
  */
 function boolTensor(value) {
-    return new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.Tensor('bool', [value], [1]);
+    return new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.Tensor('bool', [value], [1]);
 }
 
 // JS doesn't support mixins, so we define some reused functions here, and allow "this" to be passed in
@@ -7219,7 +7273,7 @@ async function encoderForward(self, model_inputs) {
     if (session.inputNames.includes('token_type_ids') && !encoderFeeds.token_type_ids) {
         // Assign default `token_type_ids` (all zeroes) to the `encoderFeeds` if the model expects it,
         // but they weren't created by the tokenizer.
-        encoderFeeds.token_type_ids = new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.Tensor(
+        encoderFeeds.token_type_ids = new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.Tensor(
             'int64',
             new BigInt64Array(encoderFeeds.input_ids.data.length),
             encoderFeeds.input_ids.dims
@@ -7313,8 +7367,8 @@ async function imageTextToTextForward(self, {
             const target_length = input_ids.dims[1]; // always 1
             const past_length = Object.values(past_key_values)[0].dims.at(-2);
 
-            attention_mask = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.cat)([
-                (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.ones)([input_ids.dims[0], past_length]),
+            attention_mask = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.cat)([
+                (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.ones)([input_ids.dims[0], past_length]),
                 attention_mask.slice(null, [attention_mask.dims[1] - target_length, attention_mask.dims[1]]),
             ], 1);
         }
@@ -7358,7 +7412,7 @@ function createPositionIds(model_inputs, past_key_values = null) {
         }
     }
 
-    let position_ids = new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.Tensor('int64', data, attention_mask.dims);
+    let position_ids = new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.Tensor('int64', data, attention_mask.dims);
     if (past_key_values) {
         const offset = -(input_ids ?? inputs_embeds).dims.at(1);
         position_ids = position_ids.slice(null, [offset, null]);
@@ -7405,7 +7459,7 @@ function decoder_prepare_inputs_for_generation(self, input_ids, model_inputs, ge
                 model_inputs.input_ids = input_ids.slice(null, [-num_new_tokens, null]);
 
                 // TODO: The attention mask should be formed from the attention mask passed in model_inputs
-                model_inputs.attention_mask = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.ones)([1, past_length + num_new_tokens]);
+                model_inputs.attention_mask = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.ones)([1, past_length + num_new_tokens]);
             }
         }
     }
@@ -7445,12 +7499,14 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
      * Creates a new instance of the `PreTrainedModel` class.
      * @param {import('./configs.js').PretrainedConfig} config The model configuration.
      * @param {Record<string, any>} sessions The inference sessions for the model.
+     * @param {Record<string, Object>} configs Additional configuration files (e.g., generation_config.json).
      */
-    constructor(config, sessions) {
+    constructor(config, sessions, configs) {
         super();
 
         this.config = config;
         this.sessions = sessions;
+        this.configs = configs;
 
         const modelName = MODEL_CLASS_TO_NAME_MAPPING.get(this.constructor);
         const modelType = MODEL_TYPE_MAPPING.get(modelName);
@@ -7566,7 +7622,9 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
                 constructSessions(pretrained_model_name_or_path, {
                     model: options.model_file_name ?? 'model',
                 }, options),
-                (0,_utils_hub_js__WEBPACK_IMPORTED_MODULE_5__.getModelJSON)(pretrained_model_name_or_path, 'generation_config.json', false, options),
+                getOptionalConfigs(pretrained_model_name_or_path, {
+                    generation_config: 'generation_config.json',
+                }, options),
             ]);
 
         } else if (modelType === MODEL_TYPES.Seq2Seq || modelType === MODEL_TYPES.Vision2Seq) {
@@ -7575,7 +7633,9 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
                     model: 'encoder_model',
                     decoder_model_merged: 'decoder_model_merged',
                 }, options),
-                (0,_utils_hub_js__WEBPACK_IMPORTED_MODULE_5__.getModelJSON)(pretrained_model_name_or_path, 'generation_config.json', false, options),
+                getOptionalConfigs(pretrained_model_name_or_path, {
+                    generation_config: 'generation_config.json',
+                }, options),
             ]);
 
         } else if (modelType === MODEL_TYPES.MaskGeneration) {
@@ -7605,7 +7665,9 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
             }
             info = await Promise.all([
                 constructSessions(pretrained_model_name_or_path, sessions, options),
-                (0,_utils_hub_js__WEBPACK_IMPORTED_MODULE_5__.getModelJSON)(pretrained_model_name_or_path, 'generation_config.json', false, options),
+                getOptionalConfigs(pretrained_model_name_or_path, {
+                    generation_config: 'generation_config.json',
+                }, options),
             ]);
 
         } else if (modelType === MODEL_TYPES.Musicgen) {
@@ -7615,12 +7677,14 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
                     decoder_model_merged: 'decoder_model_merged',
                     encodec_decode: 'encodec_decode',
                 }, options),
-                (0,_utils_hub_js__WEBPACK_IMPORTED_MODULE_5__.getModelJSON)(pretrained_model_name_or_path, 'generation_config.json', false, options),
+                getOptionalConfigs(pretrained_model_name_or_path, {
+                    generation_config: 'generation_config.json',
+                }, options),
             ]);
 
         } else { // should be MODEL_TYPES.EncoderOnly
             if (modelType !== MODEL_TYPES.EncoderOnly) {
-                console.warn(`Model type for '${modelName ?? config?.model_type}' not found, assuming encoder-only architecture. Please report this at https://github.com/xenova/transformers.js/issues/new/choose.`)
+                console.warn(`Model type for '${modelName ?? config?.model_type}' not found, assuming encoder-only architecture. Please report this at ${_utils_constants_js__WEBPACK_IMPORTED_MODULE_6__.GITHUB_ISSUE_URL}.`)
             }
             info = await Promise.all([
                 constructSessions(pretrained_model_name_or_path, {
@@ -7654,6 +7718,14 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
     }
 
     /**
+     * Get the model's generation config, if it exists.
+     * @returns {GenerationConfig|null} The model's generation config if it exists, otherwise `null`.
+     */
+    get generation_config() {
+        return this.configs?.generation_config ?? null;
+    }
+
+    /**
      * This function returns a [`LogitsProcessorList`] list object that contains all relevant [`LogitsWarper`]
      * instances used for multinomial sampling.
      * @param {GenerationConfig} generation_config The generation config.
@@ -7662,18 +7734,18 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
     _get_logits_warper(generation_config) {
 
         // instantiate warpers list
-        const warpers = new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_6__.LogitsProcessorList();
+        const warpers = new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_7__.LogitsProcessorList();
 
         if (generation_config.temperature !== null && generation_config.temperature !== 1.0) {
-            warpers.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_6__.TemperatureLogitsWarper(generation_config.temperature));
+            warpers.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_7__.TemperatureLogitsWarper(generation_config.temperature));
         }
         if (generation_config.top_k !== null && generation_config.top_k !== 0) {
             // TODO: add min_tokens_to_keep
-            warpers.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_6__.TopKLogitsWarper(generation_config.top_k));
+            warpers.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_7__.TopKLogitsWarper(generation_config.top_k));
         }
         if (generation_config.top_p !== null && generation_config.top_p < 1.0) {
             // TODO: add min_tokens_to_keep
-            warpers.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_6__.TopPLogitsWarper(generation_config.top_p));
+            warpers.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_7__.TopPLogitsWarper(generation_config.top_p));
         }
 
         return warpers;
@@ -7692,7 +7764,7 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
         // prefix_allowed_tokens_fn, TODO
         logits_processor = null
     ) {
-        const processors = new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_6__.LogitsProcessorList();
+        const processors = new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_7__.LogitsProcessorList();
 
         // if (generation_config.diversity_penalty !== null && generation_config.diversity_penalty > 0.0) {
         //     processors.push(new HammingDiversityLogitsProcessor(
@@ -7710,11 +7782,11 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
         // }
 
         if (generation_config.repetition_penalty !== null && generation_config.repetition_penalty !== 1.0) {
-            processors.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_6__.RepetitionPenaltyLogitsProcessor(generation_config.repetition_penalty));
+            processors.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_7__.RepetitionPenaltyLogitsProcessor(generation_config.repetition_penalty));
         }
 
         if (generation_config.no_repeat_ngram_size !== null && generation_config.no_repeat_ngram_size > 0) {
-            processors.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_6__.NoRepeatNGramLogitsProcessor(generation_config.no_repeat_ngram_size));
+            processors.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_7__.NoRepeatNGramLogitsProcessor(generation_config.no_repeat_ngram_size));
         }
 
         // if (generation_config.encoder_no_repeat_ngram_size !== null && generation_config.encoder_no_repeat_ngram_size > 0) {
@@ -7729,15 +7801,15 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
         // }
 
         if (generation_config.bad_words_ids !== null) {
-            processors.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_6__.NoBadWordsLogitsProcessor(generation_config.bad_words_ids, generation_config.eos_token_id));
+            processors.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_7__.NoBadWordsLogitsProcessor(generation_config.bad_words_ids, generation_config.eos_token_id));
         }
 
         if (generation_config.min_length !== null && generation_config.eos_token_id !== null && generation_config.min_length > 0) {
-            processors.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_6__.MinLengthLogitsProcessor(generation_config.min_length, generation_config.eos_token_id));
+            processors.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_7__.MinLengthLogitsProcessor(generation_config.min_length, generation_config.eos_token_id));
         }
 
         if (generation_config.min_new_tokens !== null && generation_config.eos_token_id !== null && generation_config.min_new_tokens > 0) {
-            processors.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_6__.MinNewTokensLengthLogitsProcessor(
+            processors.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_7__.MinNewTokensLengthLogitsProcessor(
                 input_ids_seq_length,
                 generation_config.min_new_tokens,
                 generation_config.eos_token_id
@@ -7753,11 +7825,11 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
 
 
         if (generation_config.forced_bos_token_id !== null) {
-            processors.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_6__.ForcedBOSTokenLogitsProcessor(generation_config.forced_bos_token_id));
+            processors.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_7__.ForcedBOSTokenLogitsProcessor(generation_config.forced_bos_token_id));
         }
 
         if (generation_config.forced_eos_token_id !== null) {
-            processors.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_6__.ForcedEOSTokenLogitsProcessor(
+            processors.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_7__.ForcedEOSTokenLogitsProcessor(
                 generation_config.max_length,
                 generation_config.forced_eos_token_id
             ));
@@ -7784,7 +7856,7 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
                 ? input_ids_seq_length
                 : input_ids_seq_length + 1;
 
-            processors.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_6__.SuppressTokensAtBeginLogitsProcessor(generation_config.begin_suppress_tokens, begin_index));
+            processors.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_7__.SuppressTokensAtBeginLogitsProcessor(generation_config.begin_suppress_tokens, begin_index));
         }
 
         // DEPRECATED: https://github.com/huggingface/transformers/pull/29485
@@ -7795,7 +7867,7 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
 
         // 8. prepare batched CFG externally
         if (generation_config.guidance_scale !== null && generation_config.guidance_scale > 1) {
-            processors.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_6__.ClassifierFreeGuidanceLogitsProcessor(generation_config.guidance_scale));
+            processors.push(new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_7__.ClassifierFreeGuidanceLogitsProcessor(generation_config.guidance_scale));
         }
 
         if (logits_processor !== null) {
@@ -7817,7 +7889,7 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
      * @param {Object} kwargs Additional generation parameters to be used in place of those in the `generation_config` object.
      * @returns {GenerationConfig} The final generation config object to be used by the model for text generation.
      */
-    _prepare_generation_config(generation_config, kwargs, cls = _generation_configuration_utils_js__WEBPACK_IMPORTED_MODULE_7__.GenerationConfig) {
+    _prepare_generation_config(generation_config, kwargs, cls = _generation_configuration_utils_js__WEBPACK_IMPORTED_MODULE_8__.GenerationConfig) {
         // Create empty generation config (contains defaults)
         // We pass `this.config` so that if `eos_token_id` or `bos_token_id` exist in the model's config, we will use them
         const config = { ...this.config };
@@ -7832,9 +7904,7 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
         const gen_config = new cls(config);
 
         // Apply model's generation config, if it exists
-        if ('generation_config' in this) {
-            Object.assign(gen_config, this.generation_config);
-        }
+        Object.assign(gen_config, this.generation_config ?? {});
 
         // Next, use any generation config specified by the user
         // when calling `generate`
@@ -7856,10 +7926,10 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
      * @param {StoppingCriteriaList} [stopping_criteria=null] 
      */
     _get_stopping_criteria(generation_config, stopping_criteria = null) {
-        const criteria = new _generation_stopping_criteria_js__WEBPACK_IMPORTED_MODULE_10__.StoppingCriteriaList();
+        const criteria = new _generation_stopping_criteria_js__WEBPACK_IMPORTED_MODULE_11__.StoppingCriteriaList();
 
         if (generation_config.max_length !== null) {
-            criteria.push(new _generation_stopping_criteria_js__WEBPACK_IMPORTED_MODULE_10__.MaxLengthCriteria(
+            criteria.push(new _generation_stopping_criteria_js__WEBPACK_IMPORTED_MODULE_11__.MaxLengthCriteria(
                 generation_config.max_length,
                 this.config.max_position_embeddings ?? null,
             ));
@@ -7868,7 +7938,7 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
         //     criteria.push(new MaxTimeCriteria(generation_config.max_time));
         // }
         if (generation_config.eos_token_id !== null) {
-            criteria.push(new _generation_stopping_criteria_js__WEBPACK_IMPORTED_MODULE_10__.EosTokenCriteria(generation_config.eos_token_id));
+            criteria.push(new _generation_stopping_criteria_js__WEBPACK_IMPORTED_MODULE_11__.EosTokenCriteria(generation_config.eos_token_id));
         }
 
         if (stopping_criteria) {
@@ -7929,14 +7999,14 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
         model_inputs['past_key_values'] = this.getPastKeyValues(outputs, model_inputs.past_key_values);
 
         // update inputs for next run
-        model_inputs['input_ids'] = new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.Tensor('int64', generated_input_ids.flat(), [generated_input_ids.length, 1]);
+        model_inputs['input_ids'] = new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.Tensor('int64', generated_input_ids.flat(), [generated_input_ids.length, 1]);
 
         if (!is_encoder_decoder) {
             // update attention mask
-            model_inputs.attention_mask = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.cat)(
+            model_inputs.attention_mask = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.cat)(
                 [
                     model_inputs.attention_mask,
-                    (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.ones)([model_inputs.attention_mask.dims[0], 1]),
+                    (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.ones)([model_inputs.attention_mask.dims[0], 1]),
                 ], 1
             );
         } else if ('decoder_attention_mask' in model_inputs) {
@@ -7996,15 +8066,15 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
         // for classifier free guidance we need to add a 'null' input to our encoder hidden states
         if (generation_config.guidance_scale !== null && generation_config.guidance_scale > 1) {
 
-            last_hidden_state = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.cat)([
+            last_hidden_state = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.cat)([
                 last_hidden_state,
-                (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.full_like)(last_hidden_state, 0.0),
+                (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.full_like)(last_hidden_state, 0.0),
             ], 0);
 
             if ('attention_mask' in model_inputs) {
-                model_inputs['attention_mask'] = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.cat)([
+                model_inputs['attention_mask'] = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.cat)([
                     model_inputs['attention_mask'],
-                    (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.zeros_like)(model_inputs['attention_mask']),
+                    (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.zeros_like)(model_inputs['attention_mask']),
                 ], 0);
             }
 
@@ -8018,7 +8088,7 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
                         `The encoder outputs have a different batch size (${last_hidden_state.dims[0]}) than the decoder inputs (${decoder_input_ids_batch_size}).`
                     )
                 }
-                last_hidden_state = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.cat)(Array.from({ length: decoder_input_ids_batch_size }, () => last_hidden_state), 0);
+                last_hidden_state = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.cat)(Array.from({ length: decoder_input_ids_batch_size }, () => last_hidden_state), 0);
             }
         }
         model_inputs['encoder_outputs'] = last_hidden_state;
@@ -8063,7 +8133,7 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
         }
 
         decoder_input_ids = toI64Tensor(decoder_input_ids);
-        model_kwargs['decoder_attention_mask'] = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.ones_like)(decoder_input_ids);
+        model_kwargs['decoder_attention_mask'] = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.ones_like)(decoder_input_ids);
 
         return { input_ids: decoder_input_ids, model_inputs };
     }
@@ -8173,7 +8243,7 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
         // when the beam is complete, and we keep track of the row index
         // const rowIndexToBatchIndex = new Map();
 
-        const sampler = _generation_logits_sampler_js__WEBPACK_IMPORTED_MODULE_11__.LogitsSampler.getSampler(generation_config);
+        const sampler = _generation_logits_sampler_js__WEBPACK_IMPORTED_MODULE_12__.LogitsSampler.getSampler(generation_config);
 
         // TODO make > numInputs
         const scores = new Array(numInputs).fill(0);
@@ -8262,7 +8332,7 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
         const past_key_values = this.getPastKeyValues(outputs, model_inputs.past_key_values, true);
 
         // TODO: ensure all_input_ids is padded correctly...
-        const sequences = new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.Tensor('int64', all_input_ids.flat(), [all_input_ids.length, all_input_ids[0].length]);
+        const sequences = new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.Tensor('int64', all_input_ids.flat(), [all_input_ids.length, all_input_ids[0].length]);
 
         if (generation_config.return_dict_in_generate) {
             return {
@@ -8352,15 +8422,14 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
         if (pastKeyValues) {
             Object.assign(decoderFeeds, pastKeyValues)
         } else {
-
-            /** @type {import('./transformers.js').DataType} */
-            const dtype = this.custom_config.kv_cache_dtype ?? 'float32';
+            const session = this.sessions['decoder_model_merged'] ?? this.sessions['model'];
+            const dtype = session?.config?.kv_cache_dtype ?? 'float32';
             const empty = (dtype === 'float16') ? new Uint16Array() : [];
 
             const shapes = (0,_configs_js__WEBPACK_IMPORTED_MODULE_0__.getKeyValueShapes)(this.config);
 
             for (const name in shapes) {
-                decoderFeeds[name] = new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.Tensor(dtype, empty, shapes[name]);
+                decoderFeeds[name] = new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.Tensor(dtype, empty, shapes[name]);
             }
         }
     }
@@ -9247,17 +9316,6 @@ class T5PreTrainedModel extends PreTrainedModel {
         'decoder_attention_mask',
         'past_key_values',
     ];
-
-    /**
-     * Creates a new instance of the `T5PreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
 };
 
 class T5Model extends T5PreTrainedModel { }
@@ -9274,18 +9332,7 @@ class T5ForConditionalGeneration extends T5PreTrainedModel { }
 /**
  * An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained models.
  */
-class LongT5PreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `LongT5ForConditionalGeneration` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-};
+class LongT5PreTrainedModel extends PreTrainedModel { };
 
 /**
  * The bare LONGT5 Model transformer outputting raw hidden-states without any specific head on top.
@@ -9301,19 +9348,7 @@ class LongT5ForConditionalGeneration extends LongT5PreTrainedModel { }
 
 //////////////////////////////////////////////////
 // MT5 models
-class MT5PreTrainedModel extends PreTrainedModel {
-
-    /**
-     * Creates a new instance of the `MT5ForConditionalGeneration` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-};
+class MT5PreTrainedModel extends PreTrainedModel { };
 
 class MT5Model extends MT5PreTrainedModel { }
 
@@ -9325,19 +9360,7 @@ class MT5ForConditionalGeneration extends MT5PreTrainedModel { }
 
 //////////////////////////////////////////////////
 // Bart models
-class BartPretrainedModel extends PreTrainedModel {
-
-    /**
-     * Creates a new instance of the `BartForConditionalGeneration` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-};
+class BartPretrainedModel extends PreTrainedModel { };
 
 /**
  * The bare BART Model outputting raw hidden-states without any specific head on top.
@@ -9368,19 +9391,7 @@ class BartForSequenceClassification extends BartPretrainedModel {
 
 //////////////////////////////////////////////////
 // MBart models
-class MBartPreTrainedModel extends PreTrainedModel {
-
-    /**
-     * Creates a new instance of the `MBartForConditionalGeneration` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-};
+class MBartPreTrainedModel extends PreTrainedModel { };
 
 /**
  * The bare MBART Model outputting raw hidden-states without any specific head on top.
@@ -9414,19 +9425,7 @@ class MBartForCausalLM extends MBartPreTrainedModel { }
 
 //////////////////////////////////////////////////
 // Blenderbot models
-class BlenderbotPreTrainedModel extends PreTrainedModel {
-
-    /**
-     * Creates a new instance of the `BlenderbotForConditionalGeneration` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-};
+class BlenderbotPreTrainedModel extends PreTrainedModel { };
 
 /**
  * The bare Blenderbot Model outputting raw hidden-states without any specific head on top.
@@ -9442,19 +9441,7 @@ class BlenderbotForConditionalGeneration extends BlenderbotPreTrainedModel { }
 
 //////////////////////////////////////////////////
 // Blenderbot models
-class BlenderbotSmallPreTrainedModel extends PreTrainedModel {
-
-    /**
-     * Creates a new instance of the `BlenderbotForConditionalGeneration` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-};
+class BlenderbotSmallPreTrainedModel extends PreTrainedModel { };
 
 /**
  * The bare BlenderbotSmall Model outputting raw hidden-states without any specific head on top.
@@ -9703,17 +9690,6 @@ class WhisperPreTrainedModel extends PreTrainedModel {
         'decoder_attention_mask',
         'past_key_values',
     ];
-
-    /**
-     * Creates a new instance of the `WhisperPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
 };
 
 /**
@@ -9728,7 +9704,7 @@ class WhisperModel extends WhisperPreTrainedModel { }
 class WhisperForConditionalGeneration extends WhisperPreTrainedModel {
 
     _prepare_generation_config(generation_config, kwargs) {
-        return /** @type {WhisperGenerationConfig} */ (super._prepare_generation_config(generation_config, kwargs, _models_whisper_generation_whisper_js__WEBPACK_IMPORTED_MODULE_13__.WhisperGenerationConfig));
+        return /** @type {WhisperGenerationConfig} */ (super._prepare_generation_config(generation_config, kwargs, _models_whisper_generation_whisper_js__WEBPACK_IMPORTED_MODULE_14__.WhisperGenerationConfig));
     }
 
     /**
@@ -9754,7 +9730,7 @@ class WhisperForConditionalGeneration extends WhisperPreTrainedModel {
             }
 
             // Add language token
-            const language_code = (0,_models_whisper_common_whisper_js__WEBPACK_IMPORTED_MODULE_14__.whisper_language_to_code)(language);
+            const language_code = (0,_models_whisper_common_whisper_js__WEBPACK_IMPORTED_MODULE_15__.whisper_language_to_code)(language);
             const language_token = `<|${language_code}|>`;
             init_tokens.push(generation_config.lang_to_id[language_token])
 
@@ -9811,16 +9787,16 @@ class WhisperForConditionalGeneration extends WhisperPreTrainedModel {
         const init_tokens = kwargs.decoder_input_ids ?? this._retrieve_init_tokens(generation_config);
 
         if (generation_config.return_timestamps) {
-            logits_processor ??= new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_6__.LogitsProcessorList();
+            logits_processor ??= new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_7__.LogitsProcessorList();
             logits_processor.push(
-                new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_6__.WhisperTimeStampLogitsProcessor(generation_config, init_tokens)
+                new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_7__.WhisperTimeStampLogitsProcessor(generation_config, init_tokens)
             );
         }
 
         if (generation_config.begin_suppress_tokens) {
-            logits_processor ??= new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_6__.LogitsProcessorList();
+            logits_processor ??= new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_7__.LogitsProcessorList();
             logits_processor.push(
-                new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_6__.SuppressTokensAtBeginLogitsProcessor(generation_config.begin_suppress_tokens, init_tokens.length)
+                new _generation_logits_process_js__WEBPACK_IMPORTED_MODULE_7__.SuppressTokensAtBeginLogitsProcessor(generation_config.begin_suppress_tokens, init_tokens.length)
             );
         }
 
@@ -9897,10 +9873,10 @@ class WhisperForConditionalGeneration extends WhisperPreTrainedModel {
         // (batch size, attention_heads, output length, input length).
         const cross_attentions = Array.from({ length: this.config.decoder_layers },
             // Concatenate the cross attentions for each layer across sequence length dimension.
-            (_, i) => (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.cat)(batch.map(x => x[i]), 2)
+            (_, i) => (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.cat)(batch.map(x => x[i]), 2)
         );
 
-        const weights = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.stack)(alignment_heads.map(([l, h]) => {
+        const weights = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.stack)(alignment_heads.map(([l, h]) => {
             if (l >= cross_attentions.length) {
                 throw new Error(`Layer index ${l} is out of bounds for cross attentions (length ${cross_attentions.length}).`)
             }
@@ -9909,7 +9885,7 @@ class WhisperForConditionalGeneration extends WhisperPreTrainedModel {
                 : cross_attentions[l].slice(null, h);
         })).transpose(1, 0, 2, 3);
 
-        const [std, calculatedMean] = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.std_mean)(weights, -2, 0, true);
+        const [std, calculatedMean] = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.std_mean)(weights, -2, 0, true);
 
         // Normalize and smoothen the weights.
         const smoothedWeights = weights.clone(); // [1, 8, seqLength, 1500]
@@ -9931,17 +9907,17 @@ class WhisperForConditionalGeneration extends WhisperPreTrainedModel {
                     }
 
                     // Apply median filter.
-                    cTensorData.set((0,_utils_maths_js__WEBPACK_IMPORTED_MODULE_9__.medianFilter)(cTensorData, median_filter_width))
+                    cTensorData.set((0,_utils_maths_js__WEBPACK_IMPORTED_MODULE_10__.medianFilter)(cTensorData, median_filter_width))
                 }
             }
         }
 
         // Average the different cross-attention heads.
-        const batchedMatrices = [(0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.mean)(smoothedWeights, 1)];
+        const batchedMatrices = [(0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.mean)(smoothedWeights, 1)];
 
         const timestampsShape = generate_outputs.sequences.dims;
 
-        const timestamps = new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.Tensor(
+        const timestamps = new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.Tensor(
             'float32',
             new Float32Array(timestampsShape[0] * timestampsShape[1]),
             timestampsShape
@@ -9952,7 +9928,7 @@ class WhisperForConditionalGeneration extends WhisperPreTrainedModel {
             // NOTE: Since we run only one batch at a time, we can squeeze to get the same dimensions
             // as the python implementation
             const matrix = batchedMatrices[batch_idx].neg().squeeze_(0);
-            const [text_indices, time_indices] = (0,_utils_maths_js__WEBPACK_IMPORTED_MODULE_9__.dynamic_time_warping)(matrix.tolist());
+            const [text_indices, time_indices] = (0,_utils_maths_js__WEBPACK_IMPORTED_MODULE_10__.dynamic_time_warping)(matrix.tolist());
 
             const diffs = Array.from({ length: text_indices.length - 1 }, (v, i) => text_indices[i + 1] - text_indices[i]);
             const jumps = (0,_utils_core_js__WEBPACK_IMPORTED_MODULE_4__.mergeArrays)([1], diffs).map(x => !!x); // convert to boolean
@@ -9984,16 +9960,6 @@ class VisionEncoderDecoderModel extends PreTrainedModel {
         'encoder_hidden_states',
         'past_key_values',
     ];
-    /**
-     * Creates a new instance of the `VisionEncoderDecoderModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
 }
 //////////////////////////////////////////////////
 
@@ -10008,11 +9974,6 @@ class LlavaPreTrainedModel extends PreTrainedModel {
         'position_ids',
         'past_key_values',
     ];
-
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
 }
 
 /**
@@ -10057,7 +10018,7 @@ class LlavaForConditionalGeneration extends LlavaPreTrainedModel {
             const im = image_features[i];
             const am = attention_mask[i];
             stacked.push(
-                (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.cat)([
+                (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.cat)([
                     e.slice([0, index]),
                     im,
                     e.slice([index + 1, e.dims[0]]),
@@ -10065,17 +10026,17 @@ class LlavaForConditionalGeneration extends LlavaPreTrainedModel {
             );
 
             stacked_attention_mask.push(
-                (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.cat)([
+                (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.cat)([
                     am.slice([0, index]),
-                    (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.ones)([im.dims[0]]),
+                    (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.ones)([im.dims[0]]),
                     am.slice([index + 1, am.dims[0]])
                 ], 0)
             )
         }
 
         return {
-            inputs_embeds: (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.stack)(stacked, 0),
-            attention_mask: (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.stack)(stacked_attention_mask, 0),
+            inputs_embeds: (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.stack)(stacked, 0),
+            attention_mask: (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.stack)(stacked_attention_mask, 0),
         }
     }
 }
@@ -10099,11 +10060,6 @@ class Florence2PreTrainedModel extends PreTrainedModel {
         'past_key_values',
     ];
     main_input_name = 'inputs_embeds';
-
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
 }
 
 class Florence2ForConditionalGeneration extends Florence2PreTrainedModel {
@@ -10115,12 +10071,12 @@ class Florence2ForConditionalGeneration extends Florence2PreTrainedModel {
         attention_mask,
     }) {
         return {
-            inputs_embeds: (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.cat)([
+            inputs_embeds: (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.cat)([
                 image_features, // image embeds
                 inputs_embeds, // task prefix embeds
             ], 1),
-            attention_mask: (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.cat)([
-                (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.ones)(image_features.dims.slice(0, 2)), // image attention mask
+            attention_mask: (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.cat)([
+                (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.ones)(image_features.dims.slice(0, 2)), // image attention mask
                 attention_mask, // task prefix attention mask
             ], 1),
         }
@@ -10523,18 +10479,7 @@ class CLIPSegForImageSegmentation extends CLIPSegPreTrainedModel { }
 
 //////////////////////////////////////////////////
 // GPT2 models
-class GPT2PreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `GPT2PreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+class GPT2PreTrainedModel extends PreTrainedModel { }
 
 class GPT2Model extends GPT2PreTrainedModel { }
 
@@ -10549,18 +10494,7 @@ class GPT2LMHeadModel extends GPT2PreTrainedModel { }
 
 //////////////////////////////////////////////////
 // JAIS models
-class JAISPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `JAISPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+class JAISPreTrainedModel extends PreTrainedModel { }
 
 /**
  * The bare JAIS Model transformer outputting raw hidden-states without any specific head on top.
@@ -10576,18 +10510,7 @@ class JAISLMHeadModel extends JAISPreTrainedModel { }
 
 //////////////////////////////////////////////////
 // GPTNeo models
-class GPTNeoPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `GPTNeoPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+class GPTNeoPreTrainedModel extends PreTrainedModel { }
 class GPTNeoModel extends GPTNeoPreTrainedModel { }
 
 class GPTNeoForCausalLM extends GPTNeoPreTrainedModel { }
@@ -10595,18 +10518,7 @@ class GPTNeoForCausalLM extends GPTNeoPreTrainedModel { }
 
 //////////////////////////////////////////////////
 // GPTNeoX models
-class GPTNeoXPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `GPTNeoXPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+class GPTNeoXPreTrainedModel extends PreTrainedModel { }
 class GPTNeoXModel extends GPTNeoXPreTrainedModel { }
 
 class GPTNeoXForCausalLM extends GPTNeoXPreTrainedModel { }
@@ -10615,18 +10527,7 @@ class GPTNeoXForCausalLM extends GPTNeoXPreTrainedModel { }
 
 //////////////////////////////////////////////////
 // GPT-J models
-class GPTJPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `GPTJPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+class GPTJPreTrainedModel extends PreTrainedModel { }
 
 class GPTJModel extends GPTJPreTrainedModel { }
 
@@ -10636,18 +10537,7 @@ class GPTJForCausalLM extends GPTJPreTrainedModel { }
 
 //////////////////////////////////////////////////
 // GPTBigCode models
-class GPTBigCodePreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `GPTBigCodePreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+class GPTBigCodePreTrainedModel extends PreTrainedModel { }
 
 class GPTBigCodeModel extends GPTBigCodePreTrainedModel { }
 
@@ -10656,18 +10546,7 @@ class GPTBigCodeForCausalLM extends GPTBigCodePreTrainedModel { }
 
 //////////////////////////////////////////////////
 // CodeGen models
-class CodeGenPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `CodeGenPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+class CodeGenPreTrainedModel extends PreTrainedModel { }
 /**
  * CodeGenModel is a class representing a code generation model without a language model head.
  */
@@ -10686,18 +10565,7 @@ class CodeGenForCausalLM extends CodeGenPreTrainedModel { }
 /**
  * The bare LLama Model outputting raw hidden-states without any specific head on top.
  */
-class LlamaPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `LlamaPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+class LlamaPreTrainedModel extends PreTrainedModel { }
 /**
  * The bare LLaMA Model outputting raw hidden-states without any specific head on top.
  */
@@ -10706,24 +10574,22 @@ class LlamaModel extends LlamaPreTrainedModel { }
 class LlamaForCausalLM extends LlamaPreTrainedModel { }
 //////////////////////////////////////////////////
 
+
+//////////////////////////////////////////////////
+// Granite models
+class GranitePreTrainedModel extends PreTrainedModel { }
+class GraniteModel extends GranitePreTrainedModel { }
+class GraniteForCausalLM extends GranitePreTrainedModel { }
+//////////////////////////////////////////////////
+
+
 //////////////////////////////////////////////////
 // Cohere models
 
 /**
  * The bare Cohere Model outputting raw hidden-states without any specific head on top.
  */
-class CoherePreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `CoherePreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+class CoherePreTrainedModel extends PreTrainedModel { }
 class CohereModel extends CoherePreTrainedModel { }
 
 class CohereForCausalLM extends CoherePreTrainedModel { }
@@ -10735,18 +10601,7 @@ class CohereForCausalLM extends CoherePreTrainedModel { }
 /**
  * The bare Gemma Model outputting raw hidden-states without any specific head on top.
  */
-class GemmaPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `GemmaPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+class GemmaPreTrainedModel extends PreTrainedModel { }
 /**
  * The bare Gemma Model outputting raw hidden-states without any specific head on top.
  */
@@ -10761,18 +10616,7 @@ class GemmaForCausalLM extends GemmaPreTrainedModel { }
 /**
  * The bare Gemma2 Model outputting raw hidden-states without any specific head on top.
  */
-class Gemma2PreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `Gemma2PreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+class Gemma2PreTrainedModel extends PreTrainedModel { }
 /**
  * The bare Gemma2 Model outputting raw hidden-states without any specific head on top.
  */
@@ -10782,18 +10626,7 @@ class Gemma2ForCausalLM extends Gemma2PreTrainedModel { }
 //////////////////////////////////////////////////
 
 //////////////////////////////////////////////////
-class OpenELMPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `OpenELMPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+class OpenELMPreTrainedModel extends PreTrainedModel { }
 class OpenELMModel extends OpenELMPreTrainedModel { }
 
 class OpenELMForCausalLM extends OpenELMPreTrainedModel { }
@@ -10805,18 +10638,7 @@ class OpenELMForCausalLM extends OpenELMPreTrainedModel { }
 /**
  * The bare Qwen2 Model outputting raw hidden-states without any specific head on top.
  */
-class Qwen2PreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `Qwen2PreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+class Qwen2PreTrainedModel extends PreTrainedModel { }
 /**
  * The bare Qwen2 Model outputting raw hidden-states without any specific head on top.
  */
@@ -10828,18 +10650,7 @@ class Qwen2ForCausalLM extends Qwen2PreTrainedModel { }
 
 //////////////////////////////////////////////////
 // Phi models
-class PhiPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `PhiPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+class PhiPreTrainedModel extends PreTrainedModel { }
 /**
  * The bare Phi Model outputting raw hidden-states without any specific head on top.
  */
@@ -10850,18 +10661,7 @@ class PhiForCausalLM extends PhiPreTrainedModel { }
 
 //////////////////////////////////////////////////
 // Phi3 models
-class Phi3PreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `Phi3PreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+class Phi3PreTrainedModel extends PreTrainedModel { }
 
 /**
  * The bare Phi3 Model outputting raw hidden-states without any specific head on top.
@@ -10877,18 +10677,7 @@ class Phi3ForCausalLM extends Phi3PreTrainedModel { }
 /**
  * The Bloom Model transformer with a language modeling head on top (linear layer with weights tied to the input embeddings).
  */
-class BloomPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `BloomPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+class BloomPreTrainedModel extends PreTrainedModel { }
 
 /**
  * The bare Bloom Model transformer outputting raw hidden-states without any specific head on top.
@@ -10903,18 +10692,7 @@ class BloomForCausalLM extends BloomPreTrainedModel { }
 
 //////////////////////////////////////////////////
 // MPT models
-class MptPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `MptPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+class MptPreTrainedModel extends PreTrainedModel { }
 
 /**
  * The bare Mpt Model transformer outputting raw hidden-states without any specific head on top.
@@ -10930,18 +10708,7 @@ class MptForCausalLM extends MptPreTrainedModel { }
 
 //////////////////////////////////////////////////
 // OPT models
-class OPTPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `OPTPreTrainedModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-}
+class OPTPreTrainedModel extends PreTrainedModel { }
 
 /**
  * The bare OPT Model outputting raw hidden-states without any specific head on top.
@@ -11417,6 +11184,11 @@ class SapiensForNormalEstimation extends SapiensPreTrainedModel { }
 //////////////////////////////////////////////////
 
 //////////////////////////////////////////////////
+class DepthProPreTrainedModel extends PreTrainedModel { }
+class DepthProForDepthEstimation extends DepthProPreTrainedModel { }
+//////////////////////////////////////////////////
+
+//////////////////////////////////////////////////
 class MaskFormerPreTrainedModel extends PreTrainedModel { }
 class MaskFormerModel extends MaskFormerPreTrainedModel { }
 class MaskFormerForInstanceSegmentation extends MaskFormerPreTrainedModel { }
@@ -11740,7 +11512,7 @@ class SamModel extends SamPreTrainedModel {
             // Set default input labels if they are missing
             const shape = model_inputs.input_points.dims.slice(0, -1);
             const numElements = shape.reduce((a, b) => a * b, 1);
-            model_inputs.input_labels = new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.Tensor(
+            model_inputs.input_labels = new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.Tensor(
                 'int64',
                 new BigInt64Array(numElements).fill(1n),
                 shape
@@ -11798,19 +11570,7 @@ class SamImageSegmentationOutput extends ModelOutput {
 
 //////////////////////////////////////////////////
 // MarianMT models
-class MarianPreTrainedModel extends PreTrainedModel {
-
-    /**
-     * Creates a new instance of the `MarianMTModel` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-};
+class MarianPreTrainedModel extends PreTrainedModel { };
 
 class MarianModel extends MarianPreTrainedModel { }
 
@@ -11819,19 +11579,7 @@ class MarianMTModel extends MarianPreTrainedModel { }
 
 //////////////////////////////////////////////////
 // M2M100 models
-class M2M100PreTrainedModel extends PreTrainedModel {
-
-    /**
-     * Creates a new instance of the `M2M100ForConditionalGeneration` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-};
+class M2M100PreTrainedModel extends PreTrainedModel { };
 
 class M2M100Model extends M2M100PreTrainedModel { }
 
@@ -11923,7 +11671,7 @@ class PyAnnoteModel extends PyAnnotePreTrainedModel { }
  * **Example:** Load and run a `PyAnnoteForAudioFrameClassification` for speaker diarization.
  * 
  * ```javascript
- * import { AutoProcessor, AutoModelForAudioFrameClassification, read_audio } from '@xenova/transformers';
+ * import { AutoProcessor, AutoModelForAudioFrameClassification, read_audio } from '@huggingface/transformers';
  * 
  * // Load model and processor
  * const model_id = 'onnx-community/pyannote-segmentation-3.0';
@@ -12341,19 +12089,7 @@ class WavLMForAudioFrameClassification extends WavLMPreTrainedModel {
 /**
  * An abstract class to handle weights initialization and a simple interface for downloading and loading pretrained models.
  */
-class SpeechT5PreTrainedModel extends PreTrainedModel {
-
-    /**
-     * Creates a new instance of the `SpeechT5ForTextToSpeech` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-};
+class SpeechT5PreTrainedModel extends PreTrainedModel { };
 
 /**
  * The bare SpeechT5 Encoder-Decoder Model outputting raw hidden-states without any specific pre- or post-nets.
@@ -12461,7 +12197,7 @@ class SpeechT5ForTextToSpeech extends SpeechT5PreTrainedModel {
             if (decoder_outputs) {
                 output_sequence = decoder_outputs.output_sequence_out;
             } else {
-                output_sequence = new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.Tensor(
+                output_sequence = new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.Tensor(
                     'float32',
                     new Float32Array(num_mel_bins),
                     [1, 1, num_mel_bins],
@@ -12490,7 +12226,7 @@ class SpeechT5ForTextToSpeech extends SpeechT5PreTrainedModel {
             }
         }
 
-        const spectrogram = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.cat)(spectrogramParts);
+        const spectrogram = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.cat)(spectrogramParts);
         const { waveform } = await sessionRun(vocoder.sessions['model'], { spectrogram });
 
         return {
@@ -12514,18 +12250,7 @@ class SpeechT5HifiGan extends PreTrainedModel {
 
 //////////////////////////////////////////////////
 // TrOCR models
-class TrOCRPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `TrOCRPreTrainedModel` class.
-     * @param {Object} config The configuration of the model.
-     * @param {any} session The ONNX session containing the model weights.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, session, generation_config) {
-        super(config, session);
-        this.generation_config = generation_config;
-    }
-}
+class TrOCRPreTrainedModel extends PreTrainedModel { }
 
 /**
  * The TrOCR Decoder with a language modeling head.
@@ -12540,18 +12265,7 @@ class TrOCRForCausalLM extends TrOCRPreTrainedModel { }
 /**
  * The bare Mistral Model outputting raw hidden-states without any specific head on top.
  */
-class MistralPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `MistralPreTrainedModel` class.
-     * @param {Object} config The configuration of the model.
-     * @param {any} session The ONNX session containing the model weights.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, session, generation_config) {
-        super(config, session);
-        this.generation_config = generation_config;
-    }
-}
+class MistralPreTrainedModel extends PreTrainedModel { }
 
 class MistralModel extends MistralPreTrainedModel { }
 
@@ -12564,18 +12278,7 @@ class MistralForCausalLM extends MistralPreTrainedModel { }
 /**
  * The bare Starcoder2 Model outputting raw hidden-states without any specific head on top.
  */
-class Starcoder2PreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `Starcoder2PreTrainedModel` class.
-     * @param {Object} config The configuration of the model.
-     * @param {any} session The ONNX session containing the model weights.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, session, generation_config) {
-        super(config, session);
-        this.generation_config = generation_config;
-    }
-}
+class Starcoder2PreTrainedModel extends PreTrainedModel { }
 
 class Starcoder2Model extends Starcoder2PreTrainedModel { }
 
@@ -12588,18 +12291,7 @@ class Starcoder2ForCausalLM extends Starcoder2PreTrainedModel { }
 /**
  * The bare Falcon Model outputting raw hidden-states without any specific head on top.
  */
-class FalconPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `FalconPreTrainedModel` class.
-     * @param {Object} config The configuration of the model.
-     * @param {any} session The ONNX session containing the model weights.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, session, generation_config) {
-        super(config, session);
-        this.generation_config = generation_config;
-    }
-}
+class FalconPreTrainedModel extends PreTrainedModel { }
 
 class FalconModel extends FalconPreTrainedModel { }
 
@@ -12749,18 +12441,7 @@ class SegformerForSemanticSegmentation extends SegformerPreTrainedModel { }
 
 //////////////////////////////////////////////////
 // StableLm models
-class StableLmPreTrainedModel extends PreTrainedModel {
-    /**
-     * Creates a new instance of the `StableLmPreTrainedModel` class.
-     * @param {Object} config The configuration of the model.
-     * @param {any} session The ONNX session containing the model weights.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, session, generation_config) {
-        super(config, session);
-        this.generation_config = generation_config;
-    }
-}
+class StableLmPreTrainedModel extends PreTrainedModel { }
 
 /**
  * The bare StableLm Model transformer outputting raw hidden-states without any specific head on top.
@@ -12855,17 +12536,6 @@ class MusicgenForConditionalGeneration extends PreTrainedModel { // NOTE: not Mu
     ];
 
     /**
-     * Creates a new instance of the `MusicgenForConditionalGeneration` class.
-     * @param {Object} config The model configuration.
-     * @param {Record<string, any>} sessions The inference sessions for the model.
-     * @param {GenerationConfig} generation_config The generation configuration.
-     */
-    constructor(config, sessions, generation_config) {
-        super(config, sessions);
-        this.generation_config = generation_config;
-    }
-
-    /**
      * Apply the pattern mask to the final ids,
      * then revert the pattern delay mask by filtering the pad token id in a single step.
      * @param {Tensor} outputs The output tensor from the model.
@@ -12894,7 +12564,7 @@ class MusicgenForConditionalGeneration extends PreTrainedModel { // NOTE: not Mu
         const batch_size = Math.floor(bs_x_codebooks / num_codebooks);
         const inferred = newDataSize / (batch_size * num_codebooks);
         // TODO: assert `inferred` is an integer
-        return new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.Tensor(
+        return new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.Tensor(
             outputs.type,
             outputs.data.slice(0, newDataSize),
             [batch_size, num_codebooks, inferred]
@@ -13220,6 +12890,7 @@ const MODEL_MAPPING_NAMES_DECODER_ONLY = new Map([
     ['gpt_neox', ['GPTNeoXModel', GPTNeoXModel]],
     ['codegen', ['CodeGenModel', CodeGenModel]],
     ['llama', ['LlamaModel', LlamaModel]],
+    ['granite', ['GraniteModel', GraniteModel]],
     ['cohere', ['CohereModel', CohereModel]],
     ['gemma', ['GemmaModel', GemmaModel]],
     ['gemma2', ['Gemma2Model', Gemma2Model]],
@@ -13308,6 +12979,7 @@ const MODEL_FOR_CAUSAL_LM_MAPPING_NAMES = new Map([
     ['gpt_neox', ['GPTNeoXForCausalLM', GPTNeoXForCausalLM]],
     ['codegen', ['CodeGenForCausalLM', CodeGenForCausalLM]],
     ['llama', ['LlamaForCausalLM', LlamaForCausalLM]],
+    ['granite', ['GraniteForCausalLM', GraniteForCausalLM]],
     ['cohere', ['CohereForCausalLM', CohereForCausalLM]],
     ['gemma', ['GemmaForCausalLM', GemmaForCausalLM]],
     ['gemma2', ['Gemma2ForCausalLM', Gemma2ForCausalLM]],
@@ -13474,6 +13146,7 @@ const MODEL_FOR_DEPTH_ESTIMATION_MAPPING_NAMES = new Map([
     ['depth_anything', ['DepthAnythingForDepthEstimation', DepthAnythingForDepthEstimation]],
     ['glpn', ['GLPNForDepthEstimation', GLPNForDepthEstimation]],
     ['sapiens', ['SapiensForDepthEstimation', SapiensForDepthEstimation]],
+    ['depth_pro', ['DepthProForDepthEstimation', DepthProForDepthEstimation]],
 ])
 
 const MODEL_FOR_NORMAL_ESTIMATION_MAPPING_NAMES = new Map([
@@ -20714,12 +20387,17 @@ function whitespace_split(text) {
 
 const PUNCTUATION_REGEX = '\\p{P}\\u0021-\\u002F\\u003A-\\u0040\\u005B-\\u0060\\u007B-\\u007E';
 const PUNCTUATION_ONLY_REGEX = new RegExp(`^[${PUNCTUATION_REGEX}]+$`, 'gu');
+const BLOOM_SPLIT_CHARS = '.,!?\u2026\u3002\uff0c\u3001\u0964\u06d4\u060c';
 
-// A mapping of regex patterns to their equivalent (but longer) JS-compatible versions.
+// A mapping of regex patterns to their equivalent (but possibly longer) JS-compatible versions.
 const PROBLEMATIC_REGEX_MAP = new Map([
     // This uses the case insensitive group modifier, which is not supported in JavaScript.
     // When parsing the regex, an "Invalid group" error is thrown.
     ["(?i:'s|'t|'re|'ve|'m|'ll|'d)", "(?:'([sS]|[tT]|[rR][eE]|[vV][eE]|[mM]|[lL][lL]|[dD]))"],
+
+    // Used to override the default (invalid) regex of the bloom pretokenizer.
+    // For more information, see https://github.com/huggingface/transformers.js/issues/94
+    [` ?[^(\\s|[${BLOOM_SPLIT_CHARS}])]+`, ` ?[^\\s${BLOOM_SPLIT_CHARS}]+`],
 ])
 
 
@@ -20797,14 +20475,21 @@ class TokenizerModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_0__.Call
             case 'Unigram':
                 // @ts-ignore
                 return new Unigram(config, ...args);
-
             case 'BPE':
                 return new BPE(config);
 
             default:
+                // Some tokenizers, like for google-t5/t5-small, do not have a `type` field.
+                // In this case, we can infer the tokenizer type based on the structure of the `vocab` field.
                 if (config.vocab) {
-                    // @ts-ignore
-                    return new LegacyTokenizerModel(config, ...args);
+                    if (Array.isArray(config.vocab)) {
+                        // config.vocab is of type `[string, number][]`
+                        // @ts-ignore
+                        return new Unigram(config, ...args);
+                    } else {
+                        // @ts-ignore
+                        return new LegacyTokenizerModel(config, ...args);
+                    }
                 }
                 throw new Error(`Unknown TokenizerModel type: ${config.type}`);
         }
@@ -23005,7 +22690,7 @@ class PreTrainedTokenizer extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_0__
 
             // Another slight hack to add `end_of_word_suffix` (if present) to the decoder
             // This is needed for cases where BPE model and ByteLevel decoder are used
-            // For more information, see https://github.com/xenova/transformers.js/issues/74
+            // For more information, see https://github.com/huggingface/transformers.js/issues/74
             // TODO: save this to the decoder when exporting?
             this.decoder.end_of_word_suffix = this.model.end_of_word_suffix;
         }
@@ -23767,19 +23452,7 @@ class MBart50Tokenizer extends MBartTokenizer { } // NOTE: extends MBartTokenize
 
 class RobertaTokenizer extends PreTrainedTokenizer { }
 
-class BloomTokenizer extends PreTrainedTokenizer {
-
-    constructor(tokenizerJSON, tokenizerConfig) {
-        // Override the default (invalid) regex of the pretokenizer.
-        // For more information, see https://github.com/xenova/transformers.js/issues/94
-        const splitChars = '.,!?\u2026\u3002\uff0c\u3001\u0964\u06d4\u060c';
-        const patternObject = tokenizerJSON.pre_tokenizer?.pretokenizers[0]?.pattern;
-        if (patternObject && patternObject.Regex === ` ?[^(\\s|[${splitChars}])]+`) {
-            patternObject.Regex = ` ?[^\\s${splitChars}]+`;
-        }
-        super(tokenizerJSON, tokenizerConfig);
-    }
-}
+class BloomTokenizer extends PreTrainedTokenizer { }
 
 const SPIECE_UNDERLINE = "▁";
 
@@ -24615,85 +24288,6 @@ class WhisperTokenizer extends PreTrainedTokenizer {
             newTokens.filter(x => x.length > 0),
             newIndices.filter(x => x.length > 0),
         ]
-    }
-
-    /**
-     * Helper function to build translation inputs for a `WhisperTokenizer`,
-     * depending on the language, task, and whether to predict timestamp tokens.
-     * 
-     * Used to override the prefix tokens appended to the start of the label sequence.
-     * 
-     * **Example: Get ids for a language**
-     * ```javascript
-     * // instantiate the tokenizer and set the prefix token to Spanish
-     * const tokenizer = await WhisperTokenizer.from_pretrained('Xenova/whisper-tiny');
-     * const forced_decoder_ids = tokenizer.get_decoder_prompt_ids({ language: 'spanish' });
-     * // [(1, 50262), (2, 50363)]
-     * ```
-     * 
-     * @param {Object} options Options to generate the decoder prompt.
-     * @param {string} [options.language] The language of the transcription text.
-     * The corresponding language id token is appended to the start of the sequence for multilingual
-     * speech recognition and speech translation tasks, e.g. for "Spanish" the token "<|es|>" is appended
-     * to the start of sequence.
-     * @param {string} [options.task] Task identifier to append at the start of sequence (if any).
-     * This should be used for mulitlingual fine-tuning, with "transcribe" for speech recognition and
-     * "translate" for speech translation.
-     * @param {boolean} [options.no_timestamps] Whether to add the <|notimestamps|> token at the start of the sequence.
-     * @returns {number[][]} The decoder prompt ids.
-     */
-    get_decoder_prompt_ids({
-        language = null,
-        task = null,
-        no_timestamps = true,
-    } = {}) {
-
-        // <|lang_id|> <|task|> <|notimestamps|>
-
-        const forced_decoder_ids = [];
-
-        if (language) {
-            // User wishes to specify the language
-            const language_code = (0,_models_whisper_common_whisper_js__WEBPACK_IMPORTED_MODULE_7__.whisper_language_to_code)(language);
-            const language_token_id = this.model.tokens_to_ids.get(`<|${language_code}|>`);
-            if (language_token_id === undefined) {
-                throw new Error(`Unable to find language "${language_code}" in model vocabulary. Please report this issue at ${_utils_constants_js__WEBPACK_IMPORTED_MODULE_8__.GITHUB_ISSUE_URL}.`)
-            }
-
-            forced_decoder_ids.push(language_token_id);
-        } else {
-            // No token will be forced, which leaves the model to predict the language
-            forced_decoder_ids.push(null);
-        }
-
-        if (task) {
-            task = task.toLowerCase();
-            if (task !== 'transcribe' && task !== 'translate') {
-                throw new Error(`Task "${task}" is not supported. Must be one of: ["transcribe", "translate"]`);
-            }
-
-            const task_token_id = this.model.tokens_to_ids.get(`<|${task}|>`);
-            if (task_token_id === undefined) {
-                throw new Error(`Unable to find task "${task}" in model vocabulary. Please report this issue at ${_utils_constants_js__WEBPACK_IMPORTED_MODULE_8__.GITHUB_ISSUE_URL}.`)
-            }
-
-            forced_decoder_ids.push(task_token_id);
-        } else {
-            // No token will be forced, which leaves the model to predict the task
-            forced_decoder_ids.push(null);
-        }
-
-        if (no_timestamps) {
-            const no_timestamps_id = this.model.tokens_to_ids.get(`<|notimestamps|>`);
-            if (no_timestamps_id === undefined) {
-                throw new Error(`Unable to find "<|notimestamps|>" in model vocabulary. Please report this issue at ${_utils_constants_js__WEBPACK_IMPORTED_MODULE_8__.GITHUB_ISSUE_URL}.`);
-            }
-
-            forced_decoder_ids.push(no_timestamps_id);
-        }
-
-        return forced_decoder_ids.map((x, i) => [i + 1, x]).filter(x => x[1] !== null);
-
     }
 }
 class CodeGenTokenizer extends PreTrainedTokenizer { }
@@ -25617,7 +25211,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   GITHUB_ISSUE_URL: () => (/* binding */ GITHUB_ISSUE_URL)
 /* harmony export */ });
 
-const GITHUB_ISSUE_URL = 'https://github.com/xenova/transformers.js/issues/new/choose';
+const GITHUB_ISSUE_URL = 'https://github.com/huggingface/transformers.js/issues/new/choose';
 
 /***/ }),
 
@@ -29017,10 +28611,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _ops_registry_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../ops/registry.js */ "./src/ops/registry.js");
 /**
  * @file Helper module for `Tensor` processing.
- * 
- * These functions and classes are only used internally, 
+ *
+ * These functions and classes are only used internally,
  * meaning an end-user shouldn't need to access anything here.
- * 
+ *
  * @module utils/tensor
  */
 
@@ -29181,9 +28775,9 @@ class Tensor {
     }
 
     /**
-     * @param {number} index 
-     * @param {number} iterSize 
-     * @param {any} iterDims 
+     * @param {number} index
+     * @param {number} iterSize
+     * @param {any} iterDims
      * @returns {Tensor}
      */
     _subarray(index, iterSize, iterDims) {
@@ -29236,6 +28830,30 @@ class Tensor {
         const this_data = this.data;
         for (let i = 0; i < this_data.length; ++i) {
             this_data[i] = 1 / (1 + Math.exp(-this_data[i]));
+        }
+        return this;
+    }
+
+    /**
+     * Return a new Tensor with a callback function applied to each element.
+     * @param {Function} callback - The function to apply to each element. It should take three arguments:
+     *                              the current element, its index, and the tensor's data array.
+     * @returns {Tensor} A new Tensor with the callback function applied to each element.
+     */
+    map(callback) {
+        return this.clone().map_(callback);
+    }
+
+    /**
+     * Apply a callback function to each element of the tensor in place.
+     * @param {Function} callback - The function to apply to each element. It should take three arguments:
+     *                              the current element, its index, and the tensor's data array.
+     * @returns {Tensor} Returns `this`.
+     */
+    map_(callback) {
+        const this_data = this.data;
+        for (let i = 0; i < this_data.length; ++i) {
+            this_data[i] = callback(this_data[i], i, this_data);
         }
         return this;
     }
@@ -29422,7 +29040,7 @@ class Tensor {
 
     /**
      * Returns the sum of each row of the input tensor in the given dimension dim.
-     * 
+     *
      * @param {number} [dim=null] The dimension or dimensions to reduce. If `null`, all dimensions are reduced.
      * @param {boolean} keepdim Whether the output tensor has `dim` retained or not.
      * @returns The summed tensor
@@ -29555,10 +29173,10 @@ class Tensor {
 
     /**
      * Returns a tensor with all specified dimensions of input of size 1 removed.
-     * 
+     *
      * NOTE: The returned tensor shares the storage with the input tensor, so changing the contents of one will change the contents of the other.
      * If you would like a copy, use `tensor.clone()` before squeezing.
-     * 
+     *
      * @param {number} [dim=null] If given, the input will be squeezed only in the specified dimensions.
      * @returns {Tensor} The squeezed tensor
      */
@@ -29580,9 +29198,9 @@ class Tensor {
 
     /**
      * Returns a new tensor with a dimension of size one inserted at the specified position.
-     * 
+     *
      * NOTE: The returned tensor shares the same underlying data with this tensor.
-     * 
+     *
      * @param {number} dim The index at which to insert the singleton dimension
      * @returns {Tensor} The unsqueezed tensor
      */
@@ -29733,7 +29351,7 @@ class Tensor {
 
 /**
  * This creates a nested array of a given type and depth (see examples).
- * 
+ *
  * @example
  *   NestArray<string, 1>; // string[]
  * @example
@@ -30060,7 +29678,7 @@ function calc_unsqueeze_dims(dims, dim) {
  * @param {number} size The size of the array.
  * @param {number} [dimension=null] The dimension that the index is for (optional).
  * @returns {number} The index, guaranteed to be non-negative and less than `arrayLength`.
- * 
+ *
  * @throws {Error} If the index is out of range.
  * @private
  */
@@ -30665,6 +30283,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   DepthAnythingForDepthEstimation: () => (/* reexport safe */ _models_js__WEBPACK_IMPORTED_MODULE_2__.DepthAnythingForDepthEstimation),
 /* harmony export */   DepthAnythingPreTrainedModel: () => (/* reexport safe */ _models_js__WEBPACK_IMPORTED_MODULE_2__.DepthAnythingPreTrainedModel),
 /* harmony export */   DepthEstimationPipeline: () => (/* reexport safe */ _pipelines_js__WEBPACK_IMPORTED_MODULE_1__.DepthEstimationPipeline),
+/* harmony export */   DepthProForDepthEstimation: () => (/* reexport safe */ _models_js__WEBPACK_IMPORTED_MODULE_2__.DepthProForDepthEstimation),
+/* harmony export */   DepthProPreTrainedModel: () => (/* reexport safe */ _models_js__WEBPACK_IMPORTED_MODULE_2__.DepthProPreTrainedModel),
 /* harmony export */   DetrFeatureExtractor: () => (/* reexport safe */ _processors_js__WEBPACK_IMPORTED_MODULE_4__.DetrFeatureExtractor),
 /* harmony export */   DetrForObjectDetection: () => (/* reexport safe */ _models_js__WEBPACK_IMPORTED_MODULE_2__.DetrForObjectDetection),
 /* harmony export */   DetrForSegmentation: () => (/* reexport safe */ _models_js__WEBPACK_IMPORTED_MODULE_2__.DetrForSegmentation),
@@ -30746,6 +30366,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   GemmaModel: () => (/* reexport safe */ _models_js__WEBPACK_IMPORTED_MODULE_2__.GemmaModel),
 /* harmony export */   GemmaPreTrainedModel: () => (/* reexport safe */ _models_js__WEBPACK_IMPORTED_MODULE_2__.GemmaPreTrainedModel),
 /* harmony export */   GemmaTokenizer: () => (/* reexport safe */ _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.GemmaTokenizer),
+/* harmony export */   GraniteForCausalLM: () => (/* reexport safe */ _models_js__WEBPACK_IMPORTED_MODULE_2__.GraniteForCausalLM),
+/* harmony export */   GraniteModel: () => (/* reexport safe */ _models_js__WEBPACK_IMPORTED_MODULE_2__.GraniteModel),
+/* harmony export */   GranitePreTrainedModel: () => (/* reexport safe */ _models_js__WEBPACK_IMPORTED_MODULE_2__.GranitePreTrainedModel),
 /* harmony export */   Grok1Tokenizer: () => (/* reexport safe */ _tokenizers_js__WEBPACK_IMPORTED_MODULE_3__.Grok1Tokenizer),
 /* harmony export */   GroupViTModel: () => (/* reexport safe */ _models_js__WEBPACK_IMPORTED_MODULE_2__.GroupViTModel),
 /* harmony export */   GroupViTPreTrainedModel: () => (/* reexport safe */ _models_js__WEBPACK_IMPORTED_MODULE_2__.GroupViTPreTrainedModel),

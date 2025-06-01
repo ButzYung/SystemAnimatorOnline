@@ -2249,7 +2249,7 @@ declare const SUPPORTED_TASKS: Readonly<{
     "automatic-speech-recognition": {
         tokenizer: typeof AutoTokenizer;
         pipeline: typeof AutomaticSpeechRecognitionPipeline;
-        model: (typeof AutoModelForSpeechSeq2Seq | typeof AutoModelForCTC)[];
+        model: (typeof AutoModelForSpeechSeq2Seq)[];
         processor: typeof AutoProcessor;
         default: {
             model: string;
@@ -2388,7 +2388,6 @@ import { AutoModelForAudioClassification } from './models.js';
 import { AutoProcessor } from './processors.js';
 import { AutoModel } from './models.js';
 import { AutoModelForSpeechSeq2Seq } from './models.js';
-import { AutoModelForCTC } from './models.js';
 import { AutoModelForTextToSpectrogram } from './models.js';
 import { AutoModelForTextToWaveform } from './models.js';
 import { AutoModelForVision2Seq } from './models.js';

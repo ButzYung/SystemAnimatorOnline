@@ -1,5 +1,5 @@
 // XR Animator
-// (2024-10-14)
+// (2024-10-31)
 
 var MMD_SA_options = {
 
@@ -7930,6 +7930,23 @@ const scene_json_for_export = {
 const onDrop_scene_JSON = (function () {
   const RE_arm = new RegExp("^(" + toRegExp(["左","右"],"|") + ")(" + toRegExp(["肩","腕","ひじ","手"],"|") + "|." + toRegExp("指") + ")(.*)$");
 
+  window.addEventListener('SA_XR_Animator_scene_onload', ()=>{
+const od = System._browser.camera.object_detection;
+MMD_SA.THREEX._XR_Animator_scene_?.object3D_list?.forEach(obj=>{
+  if (obj.model_para.object_detection) {
+    obj.model_para.object_detection.class_name_list.forEach(name=>{
+      od.options_by_class_name[name] = obj.object_detection;
+    });
+  }
+});
+  });
+
+  window.addEventListener('SA_XR_Animator_scene_onunload', ()=>{
+const od = System._browser.camera.object_detection;
+od.options_by_class_name = {};
+od.data_by_class_name = {};
+  });
+
   function adjust_parent_bone(p_bone, is_T_pose) {
 if (!RE_arm.test(p_bone.name)) return;
 
@@ -8316,6 +8333,8 @@ if (json.XR_Animator_scene.settings) {
 }
 
 MMD_SA.THREEX._XR_Animator_scene_ = json.XR_Animator_scene;
+
+window.dispatchEvent(new CustomEvent("SA_XR_Animator_scene_onload"));
     });
 
     return promise;
@@ -8403,8 +8422,10 @@ function export_scene_JSON(para) {
     const mesh = obj._obj;
     const ds = obj.user_data._default_state_;
 
-    const obj_json = { type:'object3D', path:obj.user_data.path.replace(/(\.zip)\#[^\#]+$/i, '$1') }
+    const obj_json = { type:'object3D', path:obj.user_data.path.replace(/(\.zip)\#[^\#]+$/i, '$1') };
     const model_para = obj_json.model_para = {};
+    if (obj.object_detection)
+      model_para.object_detection = obj.object_detection;
     if (obj.VMC_tracker_index != null)
       model_para.VMC_tracker_index = obj.VMC_tracker_index;
     const placement = model_para.placement = (obj.placement?.scale_offset) ? { scale:obj.placement.scale, scale_offset:obj.placement.scale_offset } : { scale:mesh.scale.x };
@@ -8810,6 +8831,7 @@ remove_HDRI();
 remove_object3D();
 
 scene_json_for_export.XR_Animator_scene = {};
+MMD_SA.THREEX._XR_Animator_scene_ = null;
 
 System._browser.camera.display_floating = false
 
@@ -9703,7 +9725,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  get content() { return 'XR Animator (v0.28.1)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
+  get content() { return 'XR Animator (v0.29.0)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -10484,26 +10506,10 @@ System._browser.save_file('XRA_settings.json', json, 'application/json');
 				"wireframe": {}
 			},
 			"ML_models": {
-				"pose": {
-					"shoulder_tracking": System._browser.camera.poseNet.shoulder_tracking,
-					"hip_adjustment_weight_percent": System._browser.camera.poseNet.hip_adjustment_weight_percent,
-					"hip_adjustment_head_weight_percent": System._browser.camera.poseNet.hip_adjustment_head_weight_percent,
-					"hip_adjustment_adjust_y_axis_percent": System._browser.camera.poseNet.hip_adjustment_adjust_y_axis_percent,
-					"hip_adjustment_scale_x_percent": System._browser.camera.poseNet.hip_adjustment_scale_x_percent,
-					"hip_adjustment_scale_y_percent": System._browser.camera.poseNet.hip_adjustment_scale_y_percent,
-					"hip_adjustment_scale_z_percent": System._browser.camera.poseNet.hip_adjustment_scale_z_percent,
-					"hip_adjustment_smoothing_percent": System._browser.camera.poseNet.hip_adjustment_smoothing_percent,
-				},
+				"pose": {},
 				"hands": {},
-				"facemesh": {
-					"eye_tracking": true,
-					"emotion_weight_percent": System._browser.camera.facemesh.emotion_weight_percent,
-					"emotion_joy_fun_percent": System._browser.camera.facemesh.emotion_joy_fun_percent,
-					"emotion_angry_percent": System._browser.camera.facemesh.emotion_angry_percent,
-					"emotion_sorrow_percent": System._browser.camera.facemesh.emotion_sorrow_percent,
-					"emotion_surprised_percent": System._browser.camera.facemesh.emotion_surprised_percent,
-					"emotion_others_percent": System._browser.camera.facemesh.emotion_others_percent,
-				},
+				"facemesh": {},
+				"object_detection": {},
 				"tilt_adjustment": Object.assign({}, System._browser.camera.tilt_adjustment),
 			},
 			"motion_recorder": {},
@@ -10937,17 +10943,19 @@ DEBUG_show('(Motion recording STARTED / x0.25 speed)', 3)
 // 29
      ,(()=>{
 const hand_page_index = 6;
-const tilt_page_index = 7;
+const tilt_page_index = hand_page_index+1;
+const object_tracking_page_index = tilt_page_index+1;
 return [
         {
           message: {
-  get content() { return System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options').replace(/\<smoothing\>/, System._browser.translation.get('Misc.' + ((System._browser.camera.mocap_data_smoothing == 1) ? 'Small' : ((System._browser.camera.mocap_data_smoothing == 2) ? 'Normal' : 'Min')))) + '\n7. ' + System._browser.translation.get('Misc.done'); }
+  get content() { return System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options').replace(/\<smoothing\>/, System._browser.translation.get('Misc.' + ((System._browser.camera.mocap_data_smoothing == 1) ? 'Small' : ((System._browser.camera.mocap_data_smoothing == 2) ? 'Normal' : 'Min')))) + '\n8. ' + System._browser.translation.get('Misc.done'); }
  ,bubble_index: 3
  ,branch_list: [
   { key:1, event_index:1 },
   { key:2, event_index:hand_page_index },
   { key:3, branch_index:facemesh_options_branch },
-  { key:4, event_id: {
+  { key:4, event_index:object_tracking_page_index },
+  { key:5, event_id: {
       func: function () {
 if (++System._browser.camera.mocap_data_smoothing > 2)
   System._browser.camera.mocap_data_smoothing = 0;
@@ -10961,8 +10969,8 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
     }
   },
-  { key:5, event_index:tilt_page_index },
-  { key:6, branch_index:mocap_options_branch+4,
+  { key:6, event_index:tilt_page_index },
+  { key:7, branch_index:mocap_options_branch+4,
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
@@ -10970,7 +10978,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
 );
     }
   },
-  { key:7, is_closing_event:true, branch_index:done_branch }
+  { key:8, is_closing_event:true, branch_index:done_branch }
   ]
           }
         },
@@ -12030,6 +12038,180 @@ MMD_SA_options.Dungeon.utils.tooltip(
 ],
           }
         },
+// 8
+        ...(()=>{
+          const _od = {};
+
+          let option_active = 'detection_score_threshold';
+          options = ['detection_score_threshold', 'tracking_score_threshold'];
+
+          return [
+            {
+              func: function () {
+const od = System._browser.camera.object_detection;
+_od.framework = od.framework;
+_od.model = od.model;
+              },
+              next_step: {},
+            },
+// 9
+            {
+              message: {
+  get content() {
+return [
+  '1. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.object_tracking_options.AI_framework') + ': ' + _od.framework,
+  '2. ┗ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.object_tracking_options.model') + ': ' + System._browser.camera.object_detection.framework_model[_od.framework][_od.model]?.option_name,
+  '3. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.object_tracking_options.detection_score_threshold') + ': ' + System._browser.camera.object_detection.detection_score_threshold_percent + '%' + ((option_active=='detection_score_threshold') ? '⬅️➡️' : '  　　'),
+  '4. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.object_tracking_options.tracking_score_threshold') + ': ' + System._browser.camera.object_detection.tracking_score_threshold_percent + '%' + ((option_active=='tracking_score_threshold') ? '⬅️➡️' : '  　　'),
+  '5. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.object_tracking_options.detection_interval') + ': ' + System._browser.camera.object_detection.detection_interval + 'ms',
+  '6. 🌐' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.object_tracking_options.download_trackable_props'),
+  '7. ' + System._browser.translation.get('Misc.done'),
+].join('\n');
+  },
+  bubble_index: 3,
+  branch_list: [
+  { key:'any', func:(e)=>{
+if (/Arrow(Up|Down)/.test(e.code)) {
+  let index = options.findIndex(v=>v==option_active);
+  index -= (e.code == 'ArrowUp') ? 1 : -1;
+  if (index < 0) {
+    index = options.length-1;
+  }
+  else if (index > options.length-1) {
+    index = 0;
+  }
+  option_active = options[index];
+}
+else if (/Arrow(Left|Right)/.test(e.code)) {
+  const v = (e.code == 'ArrowRight') ? 1 : -1;
+  switch (option_active) {
+    case 'detection_score_threshold':
+System._browser.camera.object_detection.detection_score_threshold_percent = THREE.Math.clamp(System._browser.camera.object_detection.detection_score_threshold_percent + v, 20,80);
+      break;
+    case 'tracking_score_threshold':
+System._browser.camera.object_detection.tracking_score_threshold_percent = THREE.Math.clamp(System._browser.camera.object_detection.tracking_score_threshold_percent + v, 20,80);
+      break;
+    default:
+      return false;
+  }
+}
+else {
+  return false;
+}
+
+MMD_SA_options.Dungeon.run_event(null,mocap_options_branch,object_tracking_page_index+1);
+
+return true;
+  } },
+  { key:1, event_id: {
+      func:()=>{
+const framework = Object.keys(System._browser.camera.object_detection.framework_model);
+
+let index = framework.indexOf(_od.framework);
+if (++index >= framework.length)
+  index = 0;
+_od.framework = framework[index];
+_od.model = Object.keys(System._browser.camera.object_detection.framework_model[_od.framework])[0];
+      },
+      goto_event: { branch_index:mocap_options_branch, step:object_tracking_page_index+1 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.object_tracking_options.AI_framework.tooltip')
+);
+    }
+  },
+  { key:2, event_id: {
+      func:()=>{
+const framework = Object.keys(System._browser.camera.object_detection.framework_model);
+const model = Object.keys(System._browser.camera.object_detection.framework_model[_od.framework]);
+
+let index = model.indexOf(_od.model);
+if (++index >= model.length)
+  index = 0;
+_od.model = model[index];
+      },
+      goto_event: { branch_index:mocap_options_branch, step:object_tracking_page_index+1 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.object_tracking_options.model.tooltip')
+);
+    }
+  },
+  { key:3, event_id: {
+      func:()=>{
+option_active = 'detection_score_threshold';
+      },
+      goto_event: { branch_index:mocap_options_branch, step:object_tracking_page_index+1 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.run_event(this.event_id);
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.object_tracking_options.detection_score_threshold.tooltip').replace(/\<press_to_change_value\>/, (option_active=='detection_score_threshold') ? ' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.object_tracking_options.press_to_change_value') + ')' : '')
+);
+    }
+  },
+  { key:4, event_id: {
+      func:()=>{
+option_active = 'tracking_score_threshold';
+      },
+      goto_event: { branch_index:mocap_options_branch, step:object_tracking_page_index+1 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.run_event(this.event_id);
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.object_tracking_options.tracking_score_threshold.tooltip').replace(/\<press_to_change_value\>/, (option_active=='tracking_score_threshold') ? ' (' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.object_tracking_options.press_to_change_value') + ')' : '')
+);
+    }
+  },
+  { key:5, event_id: {
+      func:()=>{
+const s = [0,250,500,1000];
+let index = s.indexOf(System._browser.camera.object_detection.detection_interval);
+if (++index >= s.length)
+  index = 0;
+System._browser.camera.object_detection.detection_interval = s[index];
+      },
+      goto_event: { branch_index:mocap_options_branch, step:object_tracking_page_index+1 },
+    },
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.object_tracking_options.detection_interval.tooltip')
+);
+    }
+  },
+  { key:6, event_id: {
+      func:()=>{
+var url = 'https://ko-fi.com/s/eae52effa9'
+if (webkit_electron_mode)
+  webkit_electron_remote.shell.openExternal(url)
+else
+  window.open(url)
+      },
+      goto_event: { branch_index:mocap_options_branch, step:object_tracking_page_index+1 },
+    }
+  },
+  { key:7, is_closing_event:true, event_id: {
+      func:()=>{
+const od = System._browser.camera.object_detection;
+od.framework = _od.framework;
+od.model = _od.model;
+      },
+      goto_event: { branch_index:done_branch },
+    },
+  },
+  ],
+              },
+            },
+          ];
+        })(),
+
       ];
 })()
 
@@ -13219,6 +13401,13 @@ config.user_camera = {
       emotion_tongue_out_percent: System._browser.camera.facemesh.emotion_tongue_out_percent,
       emotion_others_percent: System._browser.camera.facemesh.emotion_others_percent,
     },
+    object_detection: {
+      framework: System._browser.camera.object_detection.framework,
+      model: System._browser.camera.object_detection.model,
+      detection_score_threshold_percent: System._browser.camera.object_detection.detection_score_threshold_percent,
+      tracking_score_threshold_percent: System._browser.camera.object_detection.tracking_score_threshold_percent,
+      detection_interval: System._browser.camera.object_detection.detection_interval,
+    },
     mocap_data_smoothing: System._browser.camera.mocap_data_smoothing,
     tilt_adjustment: Object.assign({}, System._browser.camera.tilt_adjustment),
     debug_hidden: MMD_SA_options.user_camera.ML_models.debug_hidden,
@@ -13441,6 +13630,12 @@ try {
         System._browser.camera.facemesh.emotion_surprised_percent = config[p].ML_models.facemesh.emotion_surprised_percent;
         System._browser.camera.facemesh.emotion_tongue_out_percent = config[p].ML_models.facemesh.emotion_tongue_out_percent;
         System._browser.camera.facemesh.emotion_others_percent = config[p].ML_models.facemesh.emotion_others_percent;
+
+        System._browser.camera.object_detection.framework = config[p].ML_models.object_detection?.framework;
+        System._browser.camera.object_detection.model = config[p].ML_models.object_detection?.model;
+        System._browser.camera.object_detection.detection_score_threshold_percent = config[p].ML_models.object_detection?.detection_score_threshold_percent;
+        System._browser.camera.object_detection.tracking_score_threshold_percent = config[p].ML_models.object_detection?.tracking_score_threshold_percent;
+        System._browser.camera.object_detection.detection_interval = config[p].ML_models.object_detection?.detection_interval;
 
         System._browser.camera.mocap_data_smoothing = config[p].ML_models.mocap_data_smoothing;
 

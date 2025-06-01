@@ -203,6 +203,20 @@ export class Tensor {
      */
     sigmoid_(): Tensor;
     /**
+     * Return a new Tensor with a callback function applied to each element.
+     * @param {Function} callback - The function to apply to each element. It should take three arguments:
+     *                              the current element, its index, and the tensor's data array.
+     * @returns {Tensor} A new Tensor with the callback function applied to each element.
+     */
+    map(callback: Function): Tensor;
+    /**
+     * Apply a callback function to each element of the tensor in place.
+     * @param {Function} callback - The function to apply to each element. It should take three arguments:
+     *                              the current element, its index, and the tensor's data array.
+     * @returns {Tensor} Returns `this`.
+     */
+    map_(callback: Function): Tensor;
+    /**
      * Return a new Tensor with every element multiplied by a constant.
      * @param {number} val The value to multiply by.
      * @returns {Tensor} The new tensor.

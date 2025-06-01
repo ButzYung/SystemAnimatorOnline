@@ -8,9 +8,12 @@ export function deviceToExecutionProviders(device?: import("../utils/devices.js"
  * Create an ONNX inference session.
  * @param {Uint8Array} buffer The ONNX model buffer.
  * @param {import('onnxruntime-common').InferenceSession.SessionOptions} session_options ONNX inference session options.
- * @returns {Promise<import('onnxruntime-common').InferenceSession>} The ONNX inference session.
+ * @param {Object} session_config ONNX inference session configuration.
+ * @returns {Promise<import('onnxruntime-common').InferenceSession & { config: Object}>} The ONNX inference session.
  */
-export function createInferenceSession(buffer: Uint8Array, session_options: import('onnxruntime-common').InferenceSession.SessionOptions): Promise<import('onnxruntime-common').InferenceSession>;
+export function createInferenceSession(buffer: Uint8Array, session_options: import('onnxruntime-common').InferenceSession.SessionOptions, session_config: any): Promise<import('onnxruntime-common').InferenceSession & {
+    config: any;
+}>;
 /**
  * Check if an object is an ONNX tensor.
  * @param {any} x The object to check

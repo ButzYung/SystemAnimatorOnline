@@ -1,9 +1,9 @@
-// 2023-07-11
+// 2024-10-16
 
 (()=>{
   function load_module(m) {
 //    console.log(m);
-    for (const name of ['FilesetResolver', 'FaceLandmarker', 'PoseLandmarker', 'HandLandmarker', 'HolisticLandmarker'])
+    for (const name of ['FilesetResolver', 'FaceLandmarker', 'PoseLandmarker', 'HandLandmarker', 'HolisticLandmarker', 'ObjectDetector'])
       self[name] = m[name];
   }
 

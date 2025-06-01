@@ -1,4 +1,4 @@
-// (2024-10-14)
+// (2024-10-31)
 
 var MMD_SA_options = {
   MMD_disabled: true
@@ -282,7 +282,7 @@ MMD_SA.Wallpaper3D.options.pos_y_offset_percent += mov_offset_smoothed.y * 100;
     DEBUG_show('Loading 3D wallpaper...', 5);
 
     let wallpaper_src = LABEL_LoadSettings('LABEL_Wallpaper3D_src', null);
-    if (wallpaper_src) {}
+    if (wallpaper_src && FSO_OBJ.FileExists(wallpaper_src)) {}
     else if (/url\((.+)\)/.test(LdesktopBG.style.backgroundImage)) {
       wallpaper_src = RegExp.$1.replace(/[\'\"]/g, '');
       wallpaper_src = toLocalPath(wallpaper_src);

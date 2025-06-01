@@ -1,4 +1,4 @@
-// 2024-10-02
+// 2024-10-31
 
 const is_worker = (typeof window !== "object");
 
@@ -724,6 +724,9 @@ var resolve_hands_worker_parallel;
 
 var pose_last;
 
+var object_detection_worker, object_detection_worker_ready;
+var object_detection_data;
+
 var use_human_only, use_human_pose, use_human_hands;
 
 var human;
@@ -1249,15 +1252,18 @@ hand.annotations = {
     return _hands;
   }
 
-  function is_hand_visible(pose) {
+  function is_hand_visible(pose, limit_ratio=1) {
     if (!pose || (pose.score < 0.1)) return false;
 
-    const limit = shoulder_width/Math.max(w,h)/1.7;
+    const limit = shoulder_width/Math.max(w,h) * 0.5 * limit_ratio;
 
-    return [9,10].some((id)=>{
-      var kp = pose.keypoints[get_pose_index(id)];
+    const hand_visible = ['left','right'].filter((side)=>{
+      const id = (side == 'left') ? 9 : 10;
+      const kp = pose.keypoints[id+6];//get_pose_index(id)];
       return (kp.score > score_threshold) && (kp.position.x > -w*limit) && (kp.position.x < w*(1+limit)) && (kp.position.y > -h*limit) && (kp.position.y < h*(1+limit));
     });
+
+    return (hand_visible.length) ? hand_visible : false;
   }
 
   hand_clip.length = 0;
@@ -1651,6 +1657,53 @@ hands_worker_ready = false;
 
     if (use_hands_worker_parallel) pose_last = pose;
 
+    if (options.object_detection?.enabled) {
+      if (!object_detection_worker) {
+        await new Promise((resolve)=>{
+          object_detection_worker = new Worker('object_detection_worker.js');
+          object_detection_worker.onmessage = function (e) {
+let data = ((typeof e.data == "string") && (e.data.charAt(0) === "{")) ? JSON.parse(e.data) : e.data;
+
+if (typeof data === "string") {
+  if (data == 'OK') {
+    console.log('(Object Detection worker loaded)');
+    resolve();
+  }
+  object_detection_worker_ready = true;
+}
+else {
+  object_detection_data = data;
+//  console.log(Date.now(), object_detection_data);
+}
+          };
+        });
+      }
+      else if (object_detection_worker_ready) {
+const hand_visible = is_hand_visible(pose, 0.2);
+if (hand_visible) {
+  object_detection_worker_ready = false;
+
+  options.pose = pose;
+  options.hand_visible = hand_visible;
+  options.vt = vt;
+
+  let _rgba = await createImageBitmap(rgba);
+
+  let data_to_transfer = [_rgba];
+  let data = { w:w, h:h, options:options, rgba:_rgba };
+  object_detection_worker.postMessage(data, data_to_transfer);
+
+  _rgba = undefined;
+}
+else {
+  object_detection_data = null;
+}
+      }
+    }
+    else {
+      object_detection_data = null;
+    }
+
     if (options.use_holistic_landmarker) {
       hands = hands_adjust(result, vt, pose);
 
@@ -1774,7 +1827,7 @@ hands_worker_ready = false;
     facemesh.fps = fps
   }
 
-  postMessageAT(JSON.stringify({ posenet:pose, handpose:hands, facemesh:facemesh, _t:_t, fps:fps, _t_hands:_t_hands, fps_hands:fps_hands }));
+  postMessageAT(JSON.stringify({ posenet:pose, object_detection:object_detection_data, handpose:hands, facemesh:facemesh, _t:_t, fps:fps, _t_hands:_t_hands, fps_hands:fps_hands }));
 }
 
 async function HandsAT_process_video_buffer() {

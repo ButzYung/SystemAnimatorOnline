@@ -1,5 +1,5 @@
 // auto fit
-// (2024-06-10)
+// (2024-10-31)
 
 const v1 = new THREE.Vector3();
 const v2 = new THREE.Vector3();
@@ -462,6 +462,9 @@ function process_gesture() {
         }
       }
     }
+    if (para.invert) {
+      obj[p] = -obj[p];
+    }
     if (para.multiply != null) {
       let multiply = para.multiply;
       if (typeof multiply == 'number') {
@@ -605,6 +608,43 @@ function process_gesture() {
                 if ((typeof g_event[name_ext] == 'string') ? g_event[name_ext].indexOf(dir) != -1 : d == '右')
                   gestures.push(name_ext);
               }
+            }
+          }
+        }
+      }
+
+      const od = System._browser.camera.object_detection;
+      if (od.enabled) {
+        para.json.XR_Animator_scene.object3D_list.find(obj=>{
+          obj.model_para.object_detection?.class_name_list.forEach(class_name=>{
+            const data = od.data_by_class_name[class_name];
+            const k_name = (data) ? ((data.hand == ((d=='左')?'left':'right')) ? class_name+'|object_detection|visible' : '') : ((d == '右') ? class_name+'|object_detection|hidden' : '');
+            if (k_name && g_event[k_name]) {
+//System._browser.camera.DEBUG_show(k_name);
+              if ((typeof g_event[k_name] == 'string') ? g_event[k_name].indexOf(dir) != -1 : true)
+                gestures.push(k_name);
+              for (let i = 0; i <= 3; i++) {
+                const name_ext = k_name + '#' + i;
+                if (g_event[name_ext]) {
+                  if ((typeof g_event[name_ext] == 'string') ? g_event[name_ext].indexOf(dir) != -1 : d == '右')
+                    gestures.push(name_ext);
+                }
+              }
+            }
+          });
+        });
+      }
+      else {
+        const k_name = 'object_detection|disabled';
+        if (k_name && g_event[k_name]) {
+//System._browser.camera.DEBUG_show(k_name);
+          if ((typeof g_event[k_name] == 'string') ? ((/^(left|right)/.test(g_event[k_name])) ? g_event[k_name].indexOf(dir) != -1 : d == '右') : true)
+            gestures.push(k_name);
+          for (let i = 0; i <= 3; i++) {
+            const name_ext = k_name + '#' + i;
+            if (g_event[name_ext]) {
+              if ((typeof g_event[name_ext] == 'string') ? g_event[name_ext].indexOf(dir) != -1 : d == '右')
+                gestures.push(name_ext);
             }
           }
         }
@@ -851,6 +891,14 @@ System._browser.camera.DEBUG_show(condition.contact_target.name+':'+dis)
               const q = MMD_SA.TEMP_q.setFromEuler(MMD_SA.TEMP_v3.copy(p_bone.rotation).multiplyScalar(Math.PI/180).multiply(v1.set(-1,1,-1)), 'YXZ');
               q.x *= -1;
               q.w *= -1;
+
+              if (p_bone.rotation.offset_to_flip) {
+                q.multiply(MMD_SA._q1.setFromEuler(MMD_SA.TEMP_v3.copy(p_bone.rotation.offset_to_flip).multiplyScalar(Math.PI/180), 'YXZ'));
+                p_bone.rotation.offset_to_flip.x *= -1;
+                p_bone.rotation.offset_to_flip.y *= -1;
+                p_bone.rotation.offset_to_flip.z *= -1;
+              }
+
               const rot = MMD_SA.TEMP_v3.setEulerFromQuaternion(q, 'YXZ').multiplyScalar(180/Math.PI).multiply(v1);
               p_bone.rotation.x = rot.x;
               p_bone.rotation.y = rot.y;

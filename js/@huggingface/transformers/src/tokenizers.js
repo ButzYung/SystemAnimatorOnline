@@ -274,12 +274,17 @@ function whitespace_split(text) {
 
 const PUNCTUATION_REGEX = '\\p{P}\\u0021-\\u002F\\u003A-\\u0040\\u005B-\\u0060\\u007B-\\u007E';
 const PUNCTUATION_ONLY_REGEX = new RegExp(`^[${PUNCTUATION_REGEX}]+$`, 'gu');
+const BLOOM_SPLIT_CHARS = '.,!?\u2026\u3002\uff0c\u3001\u0964\u06d4\u060c';
 
-// A mapping of regex patterns to their equivalent (but longer) JS-compatible versions.
+// A mapping of regex patterns to their equivalent (but possibly longer) JS-compatible versions.
 const PROBLEMATIC_REGEX_MAP = new Map([
     // This uses the case insensitive group modifier, which is not supported in JavaScript.
     // When parsing the regex, an "Invalid group" error is thrown.
     ["(?i:'s|'t|'re|'ve|'m|'ll|'d)", "(?:'([sS]|[tT]|[rR][eE]|[vV][eE]|[mM]|[lL][lL]|[dD]))"],
+
+    // Used to override the default (invalid) regex of the bloom pretokenizer.
+    // For more information, see https://github.com/huggingface/transformers.js/issues/94
+    [` ?[^(\\s|[${BLOOM_SPLIT_CHARS}])]+`, ` ?[^\\s${BLOOM_SPLIT_CHARS}]+`],
 ])
 
 
@@ -357,14 +362,21 @@ export class TokenizerModel extends Callable {
             case 'Unigram':
                 // @ts-ignore
                 return new Unigram(config, ...args);
-
             case 'BPE':
                 return new BPE(config);
 
             default:
+                // Some tokenizers, like for google-t5/t5-small, do not have a `type` field.
+                // In this case, we can infer the tokenizer type based on the structure of the `vocab` field.
                 if (config.vocab) {
-                    // @ts-ignore
-                    return new LegacyTokenizerModel(config, ...args);
+                    if (Array.isArray(config.vocab)) {
+                        // config.vocab is of type `[string, number][]`
+                        // @ts-ignore
+                        return new Unigram(config, ...args);
+                    } else {
+                        // @ts-ignore
+                        return new LegacyTokenizerModel(config, ...args);
+                    }
                 }
                 throw new Error(`Unknown TokenizerModel type: ${config.type}`);
         }
@@ -2565,7 +2577,7 @@ export class PreTrainedTokenizer extends Callable {
 
             // Another slight hack to add `end_of_word_suffix` (if present) to the decoder
             // This is needed for cases where BPE model and ByteLevel decoder are used
-            // For more information, see https://github.com/xenova/transformers.js/issues/74
+            // For more information, see https://github.com/huggingface/transformers.js/issues/74
             // TODO: save this to the decoder when exporting?
             this.decoder.end_of_word_suffix = this.model.end_of_word_suffix;
         }
@@ -3327,19 +3339,7 @@ export class MBart50Tokenizer extends MBartTokenizer { } // NOTE: extends MBartT
 
 export class RobertaTokenizer extends PreTrainedTokenizer { }
 
-export class BloomTokenizer extends PreTrainedTokenizer {
-
-    constructor(tokenizerJSON, tokenizerConfig) {
-        // Override the default (invalid) regex of the pretokenizer.
-        // For more information, see https://github.com/xenova/transformers.js/issues/94
-        const splitChars = '.,!?\u2026\u3002\uff0c\u3001\u0964\u06d4\u060c';
-        const patternObject = tokenizerJSON.pre_tokenizer?.pretokenizers[0]?.pattern;
-        if (patternObject && patternObject.Regex === ` ?[^(\\s|[${splitChars}])]+`) {
-            patternObject.Regex = ` ?[^\\s${splitChars}]+`;
-        }
-        super(tokenizerJSON, tokenizerConfig);
-    }
-}
+export class BloomTokenizer extends PreTrainedTokenizer { }
 
 const SPIECE_UNDERLINE = "▁";
 
@@ -4175,85 +4175,6 @@ export class WhisperTokenizer extends PreTrainedTokenizer {
             newTokens.filter(x => x.length > 0),
             newIndices.filter(x => x.length > 0),
         ]
-    }
-
-    /**
-     * Helper function to build translation inputs for a `WhisperTokenizer`,
-     * depending on the language, task, and whether to predict timestamp tokens.
-     * 
-     * Used to override the prefix tokens appended to the start of the label sequence.
-     * 
-     * **Example: Get ids for a language**
-     * ```javascript
-     * // instantiate the tokenizer and set the prefix token to Spanish
-     * const tokenizer = await WhisperTokenizer.from_pretrained('Xenova/whisper-tiny');
-     * const forced_decoder_ids = tokenizer.get_decoder_prompt_ids({ language: 'spanish' });
-     * // [(1, 50262), (2, 50363)]
-     * ```
-     * 
-     * @param {Object} options Options to generate the decoder prompt.
-     * @param {string} [options.language] The language of the transcription text.
-     * The corresponding language id token is appended to the start of the sequence for multilingual
-     * speech recognition and speech translation tasks, e.g. for "Spanish" the token "<|es|>" is appended
-     * to the start of sequence.
-     * @param {string} [options.task] Task identifier to append at the start of sequence (if any).
-     * This should be used for mulitlingual fine-tuning, with "transcribe" for speech recognition and
-     * "translate" for speech translation.
-     * @param {boolean} [options.no_timestamps] Whether to add the <|notimestamps|> token at the start of the sequence.
-     * @returns {number[][]} The decoder prompt ids.
-     */
-    get_decoder_prompt_ids({
-        language = null,
-        task = null,
-        no_timestamps = true,
-    } = {}) {
-
-        // <|lang_id|> <|task|> <|notimestamps|>
-
-        const forced_decoder_ids = [];
-
-        if (language) {
-            // User wishes to specify the language
-            const language_code = whisper_language_to_code(language);
-            const language_token_id = this.model.tokens_to_ids.get(`<|${language_code}|>`);
-            if (language_token_id === undefined) {
-                throw new Error(`Unable to find language "${language_code}" in model vocabulary. Please report this issue at ${GITHUB_ISSUE_URL}.`)
-            }
-
-            forced_decoder_ids.push(language_token_id);
-        } else {
-            // No token will be forced, which leaves the model to predict the language
-            forced_decoder_ids.push(null);
-        }
-
-        if (task) {
-            task = task.toLowerCase();
-            if (task !== 'transcribe' && task !== 'translate') {
-                throw new Error(`Task "${task}" is not supported. Must be one of: ["transcribe", "translate"]`);
-            }
-
-            const task_token_id = this.model.tokens_to_ids.get(`<|${task}|>`);
-            if (task_token_id === undefined) {
-                throw new Error(`Unable to find task "${task}" in model vocabulary. Please report this issue at ${GITHUB_ISSUE_URL}.`)
-            }
-
-            forced_decoder_ids.push(task_token_id);
-        } else {
-            // No token will be forced, which leaves the model to predict the task
-            forced_decoder_ids.push(null);
-        }
-
-        if (no_timestamps) {
-            const no_timestamps_id = this.model.tokens_to_ids.get(`<|notimestamps|>`);
-            if (no_timestamps_id === undefined) {
-                throw new Error(`Unable to find "<|notimestamps|>" in model vocabulary. Please report this issue at ${GITHUB_ISSUE_URL}.`);
-            }
-
-            forced_decoder_ids.push(no_timestamps_id);
-        }
-
-        return forced_decoder_ids.map((x, i) => [i + 1, x]).filter(x => x[1] !== null);
-
     }
 }
 export class CodeGenTokenizer extends PreTrainedTokenizer { }

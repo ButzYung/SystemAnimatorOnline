@@ -445,7 +445,6 @@ export class MBart50Tokenizer extends MBartTokenizer {
 export class RobertaTokenizer extends PreTrainedTokenizer {
 }
 export class BloomTokenizer extends PreTrainedTokenizer {
-    constructor(tokenizerJSON: any, tokenizerConfig: any);
 }
 export class LlamaTokenizer extends PreTrainedTokenizer {
     constructor(tokenizerJSON: any, tokenizerConfig: any);
@@ -593,36 +592,6 @@ export class WhisperTokenizer extends PreTrainedTokenizer {
      * @private
      */
     private mergePunctuations;
-    /**
-     * Helper function to build translation inputs for a `WhisperTokenizer`,
-     * depending on the language, task, and whether to predict timestamp tokens.
-     *
-     * Used to override the prefix tokens appended to the start of the label sequence.
-     *
-     * **Example: Get ids for a language**
-     * ```javascript
-     * // instantiate the tokenizer and set the prefix token to Spanish
-     * const tokenizer = await WhisperTokenizer.from_pretrained('Xenova/whisper-tiny');
-     * const forced_decoder_ids = tokenizer.get_decoder_prompt_ids({ language: 'spanish' });
-     * // [(1, 50262), (2, 50363)]
-     * ```
-     *
-     * @param {Object} options Options to generate the decoder prompt.
-     * @param {string} [options.language] The language of the transcription text.
-     * The corresponding language id token is appended to the start of the sequence for multilingual
-     * speech recognition and speech translation tasks, e.g. for "Spanish" the token "<|es|>" is appended
-     * to the start of sequence.
-     * @param {string} [options.task] Task identifier to append at the start of sequence (if any).
-     * This should be used for mulitlingual fine-tuning, with "transcribe" for speech recognition and
-     * "translate" for speech translation.
-     * @param {boolean} [options.no_timestamps] Whether to add the <|notimestamps|> token at the start of the sequence.
-     * @returns {number[][]} The decoder prompt ids.
-     */
-    get_decoder_prompt_ids({ language, task, no_timestamps, }?: {
-        language?: string;
-        task?: string;
-        no_timestamps?: boolean;
-    }): number[][];
 }
 export class CodeGenTokenizer extends PreTrainedTokenizer {
 }

@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-10-14)
+// (2024-10-31)
 
 var use_full_spectrum = true
 
@@ -9230,7 +9230,7 @@ if (!model_para._materials)
 
 const _model_para = this.model_para;
 vrm.materials.forEach((m,i)=>{
-console.log(m,i,m.outlineWidthMode)
+//console.log(m,i,m.outlineWidthMode)
   const outlineWidthFactor = (_model_para?.material_para?.[i] || _model_para?.material_para?.[m.name])?.outlineWidthFactor;
   if (outlineWidthFactor != null) {
     m.outlineWidthFactor = outlineWidthFactor;
@@ -9692,7 +9692,8 @@ if (MMD_SA.OSC.VMC.sender_enabled && MMD_SA.OSC.VMC.ready) {
     if (!bone) continue;
 
     let b_pos, b_rot;
-    if (this.is_VRM1 && VNyan_mode) {
+// for simplicity, flip pos/rot for VRM1.0 model in all app modes (including "Others"), since Warudo and VNyan need it anyways
+    if (this.is_VRM1) {
       b_pos = v1.copy(bone.position);
       b_pos.x *= -1;
       b_pos.z *= -1;
@@ -9758,7 +9759,7 @@ camera.fov,
     const p_bone = x_object.parent_bone;
     if (p_bone) {
       const obj = x_object._mesh;
-      const obj_pos = (p_bone.disabled) ? v1.set(0,-999,0) : v1.copy(obj.position).sub(mesh.position).multiplyScalar(model_pos_scale);
+      const obj_pos = (p_bone.disabled && !obj.visible) ? v1.set(0,-999,0) : v1.copy(obj.position).sub(mesh.position).multiplyScalar(model_pos_scale);
 
       const obj_rot = q1.copy(obj.quaternion);
       let sign = 1;

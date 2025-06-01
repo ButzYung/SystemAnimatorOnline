@@ -181,7 +181,7 @@ onmessage = async (e)=>{
     t = performance.now();
 
 // Predict depth of an image
-    let { depth } = await depth_estimator.pipeline(new RawImage(ctx.getImageData(0,0,sw,sh).data, sw, sh, 4));
+    let { depth } = await depth_estimator.pipeline(RawImage.fromCanvas(canvas));//new RawImage(ctx.getImageData(0,0,sw,sh).data, sw, sh, 4));
 
     const t_depth = performance.now() - t;
 

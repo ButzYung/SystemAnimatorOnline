@@ -524,7 +524,7 @@
 					"full_body_legacy_holistic": {
 						"tooltip": {
 							"_translation_": {
-								"_default_": "Full body (Legacy Holistic):\nThis version of full body tracking uses the legacy MediaPipe Holistic AI model, which combines face, body and hand tracking into one model. This requires less system resource and makes it faster in some cases, at the expense of losing some mocap accuracy and features from the latest MediaPipe Vision.",
+								"_default_": "Full body (Legacy Holistic):\nThis version of full body tracking uses the legacy MediaPipe Holistic AI model, which combines face, body and hand tracking into one model. This requires less system resource and makes it faster in some cases, but loses some mocap accuracy and features from the latest MediaPipe Vision.",
 								"ja": "全身 (Legacy Holistic):\nこのバージョンの全身追跡では、顔、体、手の追跡を 1 つのモデルに組み合わせた古い MediaPipe Holistic AI モデルを使用します。 これにより、必要なシステム リソースが減り、場合によっては高速になりますが、最新の MediaPipe Vision の一部のモーキャプの精度と機能が失われます。",
 								"zh": "全身 (Legacy Holistic):\n此乃舊版的 MediaPipe Holistic AI 模型, 將臉、手和身體的動態捕捉模型合而為一。 此版本系統要求比較低，一般而言速度亦較快，但缺少了最新版 MediaPipe Vision 的一些功能和精確度。"
 							}
@@ -626,9 +626,9 @@
 				},
 				"mocap_options": {
 					"_translation_": {
-						"_default_": "1. Body tracking options\n2. Hand tracking options\n3. Face tracking options\n4. Mocap data smoothing: <smoothing>\n5. Webcam angle offset correction\n6. Clear bounding box",
-						"ja": "1. ボディトラッキング設定\n2. ハンドトラッキング設定\n3. フェイストラッキング設定\n4. モーキャプデータ平滑化: <smoothing>\n5. Webカメラの角度オフセット補正\n6. 境界ボックスをクリアする",
-						"zh": "1. 身體追蹤設定\n2. 手部追蹤設定\n3. 面部追蹤設定\n4. 動態捕捉數據平滑化: <smoothing>\n5. 攝影機角度偏移補正\n6. 清除邊界框"
+						"_default_": "1. Body tracking options\n2. Hand tracking options\n3. Face tracking options\n4. Object tracking options\n5. Mocap data smoothing: <smoothing>\n6. Webcam angle offset correction\n7. Clear bounding box",
+						"ja": "1. ボディトラッキング設定\n2. ハンドトラッキング設定\n3. フェイストラッキング設定\n4. オブジェクトトラッキング設定\n5. モーキャプデータ平滑化: <smoothing>\n6. Webカメラの角度オフセット補正\n7. 境界ボックスをクリアする",
+						"zh": "1. 身體追蹤設定\n2. 手部追蹤設定\n3. 面部追蹤設定\n4. 物體追蹤設定\n5. 動態捕捉數據平滑化: <smoothing>\n6. 攝影機角度偏移補正\n7. 清除邊界框"
 					},
 					"body_tracking_options": {
 						"AI_model_quality": {
@@ -1234,7 +1234,7 @@
 								},
 								"tooltip": {
 									"_translation_": {
-										"_default_": "This option determines the amount of time required to stabilize arm tracking, which improves the result at the expense of increased lag for hands to show up on screen. You can just leave it to the default value in most cases. Default is \"0\" (no delay).",
+										"_default_": "This option determines the amount of time required to stabilize arm tracking, which improves the result but increases lag for hands to show up on screen. You can just leave it to the default value in most cases. Default is \"0\" (no delay).",
 										"ja": "このオプションは、腕の追跡を安定させるのに必要な時間を決定します。これにより、手が画面に表示されるまでの遅延が増加しますが、結果は改善されます。 ほとんどの場合、デフォルト値のままで問題ありません。 デフォルトは「0」（遅延なし）です。",
 										"zh": "此設定可增加穩定位置所需時間以提升準確性，而代價是反應時間較慢。 一般而言，用預設值已足夠。 預設是「0」(沒有延遲）。"
 									}
@@ -1291,8 +1291,8 @@
 							},
 							"tooltip": {
 								"_translation_": {
-									"_default_": "When enabled, this experimental option separates the processing of hand tracking from body tracking, and runs hand tracking model on an independent web worker, which aims to give priority for body mocap to achieve higher fps, at the expense of possibly lower fps for hand tracking, when system resource is tight. Default is \"OFF\".",
-									"ja": "この実験的オプションを有効にすると、ハンド トラッキングの処理がボディ トラッキングから分離され、独立したウェブワーカーでハンド トラッキング モデルが実行されます。これは、ハンド トラッキングの fps が低下する可能性を犠牲にして、ボディ モーキャプを優先してより高い fps を達成することを目的としています。 デフォルトは「OFF」です。",
+									"_default_": "When enabled, this experimental option separates the processing of hand tracking from body tracking, and runs hand tracking model on an independent web worker, which aims to give priority for body mocap to achieve higher fps, but possibly lower fps for hand tracking, when system resource is tight. Default is \"OFF\".",
+									"ja": "この実験的な設定を有効にすると、ハンドトラッキングの処理がボディトラッキングから分離され、独立したウェブワーカーでハンドトラッキング モデルが実行されます。 これにより、ボディのモーキャプを優先してより高いfpsを実現しますが、システム資源が不足している場合は、ハンドトラッキングのfpsが低くなる可能性があります。 デフォルトは「OFF」。",
 									"zh": "此實驗性功能將手部追蹤的處理和身體追蹤分開。 當系統資源不足時，此功能會優先處理身體追蹤以增加動捕幀率，而代價是手部追蹤的幀率有可能下降。 預設是「OFF」。"
 								}
 							}
@@ -1321,7 +1321,7 @@
 							},
 							"tooltip": {
 								"_translation_": {
-									"_default_": "Blink LR sync:\nFor various reasons, blink tracking may not be ideal and lead to some size differences between the eyes that don't look good. Turn on this option to synchronize the blink of both eyes, at the expense of losing the ability to wink. Default is \"OFF\".",
+									"_default_": "Blink LR sync:\nFor various reasons, blink tracking may not be ideal and lead to some size differences between the eyes that don't look good. Turn on this option to synchronize the blink of both eyes, but lose the ability to wink. Default is \"OFF\".",
 									"ja": "まばたきの左右同期:\nさまざまな理由により、まばたきの追跡は理想的ではない可能性があり、目の大きさに多少の違いが生じ、見栄えが悪くなります。 このオプションをオンにすると、ウィンクする機能が失われますが、両目のまばたきが同期されます。 デフォルトは「OFF」です。",
 									"zh": "眨眼左右同步:\n人物左右眼的大小可能在環境狀況不佳或其他原因下出現不自然狀況。 你可選擇開啟此選項以同步左右眼的眨眼狀態和大小。 預設是「OFF」。"
 								}
@@ -1568,11 +1568,97 @@
 							}
 						}
 					},
+					"object_tracking_options": {
+						"press_to_change_value": {
+							"_translation_": {
+								"_default_": "press ⬅️➡️ to change value",
+								"ja": "⬅️➡️キーで値を変更する",
+								"zh": "按️⬅️➡️鍵更改數值"
+							}
+						},
+						"AI_framework": {
+							"_translation_": {
+								"_default_": "AI framework",
+								"ja": "AI フレームワーク",
+								"zh": "AI 框架"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "AI framework:\nXR Animator supports object detection via AI model and props that support this feature. It supports either \"MediaPipe\" or \"Transformers.js\" AI framework, each with its own supported AI models. \"Transformers.js\" is generally more accurate, at the expense of extra system resource usage. Default is \"MediaPipe\".",
+									"ja": "AI フレームワーク:\nXR Animator は、AI モデルとこの機能をサポートするプロップによるオブジェクト検出をサポートします。 「MediaPipe」または「Transformers.js」AI フレームワークのいずれかをサポートし、それぞれ独自の AI モデルがサポートされています。 「Transformers.js」は一般的に精度が高くなりますが、システム資源の使用量が増えます。 デフォルトは「MediaPipe」。",
+									"zh": "AI 框架:\nXR Animator 支援透過 AI 模型和支援此功能的小道具進行物件偵測。 它支援「MediaPipe」或「Transformers.js」 AI 框架，每個框架都有自己支援的 AI 模型。 「Transformers.js」通常更準確，但會消耗額外的系統資源。 預設為「MediaPipe」。"
+								}
+							}
+						},
+						"model": {
+							"_translation_": {
+								"_default_": "Model",
+								"ja": "モデル",
+								"zh": "模型"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Model:\nThis setting determines the AI model used for object detection. The circled number shows the model liteness ranking. The smaller the number, the lighter the model and faster the inference speed is, at the expense of detection quality. CPU model is relatively lighter, slower, but doesn't require GPU resource, meaning less strain on mocap and other GPU usage.",
+									"ja": "モデル:\nこの設定は、オブジェクト検出に使用される AI モデルを決定します。丸で囲まれた数字は、モデルの軽量度のランキングを示します。 数字が小さいほど、モデルは軽量で推論速度が速くなりますが、検出品質は低下します。 CPU モデルは比較的軽量で低速ですが、GPU リソースを必要としないため、モーキャプやその他の GPU 使用に対する負担が軽減されます。",
+									"zh": "模型:\n此設定決定用於物件偵測的 AI 模型。 圓圈中的數字表示模型精簡度排名。 數字越小，模型越輕，推理速度越快，但會犧牲檢測品質。 CPU 模型相對較輕、較慢，但不需要 GPU 資源，這意味著對動作捕捉和其他 GPU 使用的壓力較小。"
+								}
+							}
+						},
+						"detection_score_threshold": {
+							"_translation_": {
+								"_default_": "Detection score threshold",
+								"ja": "検出スコア閾値",
+								"zh": "檢測分數閾值"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Detection score threshold<press_to_change_value>:\nThis setting determines the score threshold for an object to be considered successfully detected from a hidden state. Hidden state is either when an object hasn't appeared for the first time, or after it has been detached from hand. Higher score threshold prevents random false-positive detection. Default is \"50%\".",
+									"ja": "検出スコア閾値<press_to_change_value>:\nこの設定は、オブジェクトが非表示状態から正常に検出されたと見なされるスコアしきい値を決定します。 非表示状態とは、オブジェクトが初めて表示されていないとき、または手から切り離された後です。 スコアしきい値を高くすると、ランダムな誤検出が防止されます。 デフォルトは「50%」です。",
+									"zh": "檢測分數閾值<press_to_change_value>:\n此設定決定被視為從隱藏狀態成功偵測到的物件的分數閾值。 隱藏狀態是指物體從未出現時，或當物體脫離手之後。 較高的分數閾值可防止隨機誤報檢測。 預設值為「50%」。"
+								}
+							}
+						},
+						"tracking_score_threshold": {
+							"_translation_": {
+								"_default_": "Tracking score threshold",
+								"ja": "追跡スコア閾値",
+								"zh": "追蹤分數閾值"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Tracking score threshold<press_to_change_value>:\nThis setting determines the score threshold for an object to be considered successfully tracked continuously. Lower score threshold makes it easier for an object to be continuously tracked. Default is \"20%\".",
+									"ja": "追跡スコア閾値<press_to_change_value>:\nこの設定は、オブジェクトが継続的に正常に追跡されたと見なされるスコアしきい値を決定します。 スコアしきい値が低いほど、オブジェクトが継続的に追跡されやすくなります。 デフォルトは「20%」です。",
+									"zh": "追蹤分數閾值<press_to_change_value>:\n此設定決定被視為連續成功追蹤的物件的分數閾值。 較低的分數閾值使得物件更容易被連續追蹤。 預設值為「20%」。"
+								}
+							}
+						},
+						"detection_interval": {
+							"_translation_": {
+								"_default_": "Detection interval",
+								"ja": "検出間隔",
+								"zh": "偵測間隔"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Detection interval:\nThis setting determines the detection interval. Shorter interval increases the number of detections per second, at the expense of extra system resource usage. Default is \"500ms\".",
+									"ja": "検出間隔:\nこの設定は検出間隔を決定します。 間隔が短いほど、1 秒あたりの検出回数は増えますが、システム リソースの使用量が増えます。 デフォルトは「500ms」です。",
+									"zh": "偵測間隔:\n此設定決定檢測間隔。 較短的間隔會增加每秒的偵測次數，但會佔用更多的系統資源。 預設值為「500ms」。"
+								}
+							}
+						},
+						"download_trackable_props": {
+							"_translation_": {
+								"_default_": "Download trackable props",
+								"ja": "追跡可能な小道具をダウンロード",
+								"zh": "下載可追蹤道具"
+							}
+						}
+					},
 					"mocap_data_smoothing": {
 						"tooltip": {
 							"_translation_": {
-								"_default_": "Mocap data smoothing:\nThis option determines how much smoothing should be applied to real-time mocap and motion recording. Less smoothing preserves more motion details, at the expense of increased jitters during subtle motion. \"Min\" uses no extra smoothing other than the minimum required. Default is \"Normal\".",
-								"ja": "モーキャプデータ平滑化:\nこのオプションは、リアルタイムのモーションキャプチャとモーション記録にどの程度のスムージングを適用するかを決定します。 スムージングが少ないほど、微妙な動きの際に不安定さが増す代わりに、より多くのモーションの詳細が保持されます。 「最小」では、必要最小限以外の追加のスムージングは使用されません。 デフォルトは「普通」です。",
+								"_default_": "Mocap data smoothing:\nThis option determines how much smoothing should be applied to real-time mocap and motion recording. Less smoothing preserves more motion details, but increases jitters during subtle motion. \"Min\" uses no extra smoothing other than the minimum required. Default is \"Normal\".",
+								"ja": "モーキャプデータ平滑化:\nこのオプションは、リアルタイムのモーションキャプチャとモーション記録にどの程度のスムージングを適用するかを決定します。 スムージングを少なくすると、より多くのモーションの詳細が保持されますが、微妙なモーションの際の不安定性が増します。 「最小」では、必要最小限以外の追加のスムージングは使用されません。 デフォルトは「普通」です。",
 								"zh": "動態捕捉數據平滑化:\n此選項決定應對實時動作捕捉和動作記錄應用多少平滑度。 較少的平滑可以保留更多的動作細節，但代價是細微的動作會增加不穩定性。 「最小」除了所需的最小值之外，不會使用額外的平滑。 預設為「普通」。"
 							}
 						}
@@ -2868,7 +2954,7 @@
 							},
 							"list": {
 								"_translation_": {
-									"_default_": "NewruGuru, Nymph, KuraiNoOni, Kai, Prajzis, LouLi Lou, coffee-addict, skeh, YAR, Swoonifer, CoCoNo, JM Choi, Motoko Library,"
+									"_default_": "NewruGuru, Nymph, KuraiNoOni, Kai, LouLi Lou, coffee-addict, skeh, Swoonifer, reitoi, Blitzdame, CoCoNo, JM Choi, Motoko Library,"
 								}
 							}
 						}

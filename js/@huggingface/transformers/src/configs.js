@@ -91,6 +91,7 @@ function getNormalizedConfig(config) {
             mapping['hidden_size'] = 'hidden_size';
             break;
         case 'llama':
+        case 'granite':
         case 'cohere':
         case 'mistral':
         case 'starcoder2':
@@ -364,10 +365,11 @@ export class AutoConfig {
 /**
  * Transformers.js-specific configuration, possibly present in config.json under the key `transformers.js_config`.
  * @typedef {Object} TransformersJSConfig
- * @property {import('./utils/tensor.js').DataType} [kv_cache_dtype] The data type of the key-value cache.
+ * @property {import('./utils/tensor.js').DataType|Record<import('./utils/dtypes.js').DataType, import('./utils/tensor.js').DataType>} [kv_cache_dtype] The data type of the key-value cache.
  * @property {Record<string, number>} [free_dimension_overrides] Override the free dimensions of the model.
  * See https://onnxruntime.ai/docs/tutorials/web/env-flags-and-session-options.html#freedimensionoverrides
  * for more information.
  * @property {import('./utils/devices.js').DeviceType} [device] The default device to use for the model.
  * @property {import('./utils/dtypes.js').DataType} [dtype] The default data type to use for the model.
+ * @property {boolean|Record<string, boolean>} [use_external_data_format=false] Whether to load the model using the external data format (used for models >= 2GB in size).
  */

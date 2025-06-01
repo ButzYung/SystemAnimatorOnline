@@ -62,7 +62,7 @@ export type TransformersJSConfig = {
     /**
      * The data type of the key-value cache.
      */
-    kv_cache_dtype?: import('./utils/tensor.js').DataType;
+    kv_cache_dtype?: import('./utils/tensor.js').DataType | Record<import('./utils/dtypes.js').DataType, import('./utils/tensor.js').DataType>;
     /**
      * Override the free dimensions of the model.
      * See https://onnxruntime.ai/docs/tutorials/web/env-flags-and-session-options.html#freedimensionoverrides
@@ -77,5 +77,9 @@ export type TransformersJSConfig = {
      * The default data type to use for the model.
      */
     dtype?: import('./utils/dtypes.js').DataType;
+    /**
+     * Whether to load the model using the external data format (used for models >= 2GB in size).
+     */
+    use_external_data_format?: boolean | Record<string, boolean>;
 };
 //# sourceMappingURL=configs.d.ts.map
