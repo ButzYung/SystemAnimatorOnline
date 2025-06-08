@@ -290,11 +290,13 @@ target_offset.copy(cam_offset).multiplyScalar(s_target).setZ(cz);
 MMD_SA._trackball_camera.object.position.fromArray(MMD_SA_options.camera_position_base).add(cam_offset);
 MMD_SA._trackball_camera.target.set(0,MMD_SA_options.camera_position_base[1],0).add(target_offset);
 
+const diff_factor = (idled || !use_deviceorientation) ? 0.5 : 1;
+
 if (ar < 1) {
   let y_target = (1-ar) * y;
   let y_current = MMD_SA.Wallpaper3D.options.pos_y_offset_percent/100;
   let y_diff = y_target - y_current;
-  y_diff = Math.sign(y_diff) * Math.min(Math.abs(y_diff), 0.5) * Math.min(RAF_timestamp_delta/1000,0.1) * 0.5;
+  y_diff = Math.sign(y_diff) * Math.min(Math.abs(y_diff), 0.5) * Math.min(RAF_timestamp_delta/1000,0.1) * diff_factor;
   mov_offset = [0, y_diff, 0];
 //DEBUG_show([(1/ar-1)/ar_cam, y, mov_offset[1], MMD_SA.Wallpaper3D.options.pos_y_offset_percent].join('\n'))
 }
@@ -302,7 +304,7 @@ else if (ar > 1) {
   let x_target = (1-1/ar) * x;
   let x_current = MMD_SA.Wallpaper3D.options.pos_x_offset_percent/100;
   let x_diff = x_target - x_current;
-  x_diff = Math.sign(x_diff) * Math.min(Math.abs(x_diff), 0.5) * Math.min(RAF_timestamp_delta/1000,0.1) * 0.5;
+  x_diff = Math.sign(x_diff) * Math.min(Math.abs(x_diff), 0.5) * Math.min(RAF_timestamp_delta/1000,0.1) * diff_factor;
   mov_offset = [x_diff, 0, 0];
 }
 else {
