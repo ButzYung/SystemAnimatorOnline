@@ -347,7 +347,7 @@ MMD_SA.Wallpaper3D.options.pos_y_offset_percent += mov_offset_smoothed.y * 100;
     let ox, oy, oz;
     let ox_ref, oy_ref, oz_ref;
     let deviceorientation_initialized;
-    let use_deviceorientation;// = is_mobile && window.DeviceOrientationEvent;
+    let use_deviceorientation = is_mobile && window.DeviceOrientationEvent;
     function set_deviceorientation_reference() {
       if (use_deviceorientation) {
         deviceorientation_initialized = true;
