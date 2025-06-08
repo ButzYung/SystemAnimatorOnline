@@ -477,7 +477,7 @@ MMD_SA.Wallpaper3D.options.pos_y_offset_percent += mov_offset_smoothed.y * 100;
             oz = e.alpha; // alpha: rotation around z-axis
             oy = e.gamma; // gamma: left to right
             ox = e.beta; // beta: front back motion
-
+DEBUG_show(ox+','+oy)
             if (deviceorientation_initialized) {
               let dx = ox - ox_ref;
               let dy = oy - oy_ref;
