@@ -133,6 +133,8 @@ switch (para[1]) {
 
   window.addEventListener('MMDStarted', ()=>{
     function wallpaper3D_on_finish() {
+      set_deviceorientation_reference();
+
       if (is_mobile)
         System._browser.overlay_mode = 1;
 
@@ -345,9 +347,11 @@ MMD_SA.Wallpaper3D.options.pos_y_offset_percent += mov_offset_smoothed.y * 100;
     let ox, oy, oz;
     let ox_ref, oy_ref, oz_ref;
     let deviceorientation_initialized;
+    let use_deviceorientation;// = is_mobile && window.DeviceOrientationEvent;
     function set_deviceorientation_reference() {
-      if (is_mobile && window.DeviceOrientationEvent) {
+      if (use_deviceorientation) {
         deviceorientation_initialized = true;
+
         ox_ref = ox;
         oy_ref = oy;
         oz_ref = oz;
@@ -477,8 +481,8 @@ MMD_SA.Wallpaper3D.options.pos_y_offset_percent += mov_offset_smoothed.y * 100;
             oz = e.alpha; // alpha: rotation around z-axis
             oy = e.gamma; // gamma: left to right
             ox = e.beta; // beta: front back motion
-DEBUG_show(ox+','+oy)
-            if (deviceorientation_initialized) {
+//DEBUG_show(Math.round(ox)+','+Math.round(oy))
+            if (use_deviceorientation && deviceorientation_initialized) {
               let dx = ox - ox_ref;
               let dy = oy - oy_ref;
               let dz = 0;//oz - oz_ref;
