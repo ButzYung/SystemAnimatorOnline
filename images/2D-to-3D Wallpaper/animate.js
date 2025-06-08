@@ -496,8 +496,9 @@ MMD_SA.Wallpaper3D.options.pos_y_offset_percent += mov_offset_smoothed.y * 100;
 
                 cx = cx/2 + 0.5;
                 cy = cy/2 + 0.5;
-                mx = cx * MMD_SA.THREEX.SL.width;
-                my = cy * MMD_SA.THREEX.SL.height;
+
+                mx = cy * MMD_SA.THREEX.SL.width;
+                my = cx * MMD_SA.THREEX.SL.height;
               }
             }
           });
