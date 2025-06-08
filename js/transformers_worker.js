@@ -1,27 +1,40 @@
-// 2024-10-02
+// 2024-12-15
 
 // https://huggingface.co/onnx-community/depth-anything-v2-small
 // https://github.com/xenova/transformers.js
 // https://huggingface.co/docs/transformers.js/en/tutorials/vanilla-js
 
 // npm i @huggingface/transformers
-import { pipeline, env, RawImage } from './@huggingface/transformers/dist/transformers.js';
-//const { pipeline, env } = await import('./@huggingface/transformers/dist/transformers.js');
+import { pipeline, env, RawImage, AutoProcessor, AutoModelForDepthEstimation } from './@huggingface/transformers/dist/transformers.js';
 
 env.allowLocalModels = false;
 
+let webgpu;
+const webgpu_check = (()=>{
+  let initialized;
+  return async ()=>{
+    if (!initialized) {
+      webgpu = (await navigator.gpu?.requestAdapter()) ? 'webgpu' : undefined;
+      console.log('WebGPU supported:' + !!webgpu);
+      initialized = true;
+    }
+  };
+})();
+await webgpu_check();
+
 class Transformers_pipeline {
-  constructor(task, model, para={ dtype:undefined, device:'webgpu' }, options={}) {
+  constructor(task, model, para={ dtype:undefined, device:webgpu }, options={}) {
     this.task_default = task;
     this.model_default = model;
     this.para_default = para;
     this.options = options;
 
     this.model = null;
-    this.pipeline = null;
+    this._pipeline = null;
   }
 
   async init(model=this.model_default, para) {
+//model='onnx-community/depth-anything-v2-large';//'onnx-community/DepthPro-ONNX';
     if (this.model == model) return this.pipeline;
     this.model = model;
 
@@ -29,17 +42,58 @@ class Transformers_pipeline {
       postMessage(this.options.loading_message);
 
 // https://huggingface.co/docs/transformers.js/main/en/api/pipelines#module_pipelines.Pipeline+dispose
-    if (this.pipeline) {
+    if (this._pipeline) {
       console.log('(disposing old pipeline...)');
-      await this.pipeline.dispose();
+      await this._pipeline.dispose();
     }
 
-    this.pipeline = await pipeline(this.task_default, model, para||this.para_default);
+    if (model == 'onnx-community/DepthPro-ONNX') {
+      this._pipeline = await AutoModelForDepthEstimation.from_pretrained(model, { dtype: 'q4' });//{ dtype:'fp16', device:'webgpu' });//
+      this._processor = await AutoProcessor.from_pretrained(model);
+    }
+    else {
+      this._pipeline = await pipeline(this.task_default, model, para||this.para_default);
+    }
+
     return this.pipeline;
+  }
+
+  async pipeline(img) {
+    if (this.model == 'onnx-community/DepthPro-ONNX') {
+// https://huggingface.co/onnx-community/DepthPro-ONNX
+
+const inputs = await this._processor(img);
+
+// Run depth estimation model
+const { predicted_depth, focallength_px } = await this._pipeline(inputs);
+
+// Normalize the depth map to [0, 1]
+const depth_map_data = predicted_depth.data;
+let minDepth = Infinity;
+let maxDepth = -Infinity;
+for (let i = 0; i < depth_map_data.length; ++i) {
+  minDepth = Math.min(minDepth, depth_map_data[i]);
+  maxDepth = Math.max(maxDepth, depth_map_data[i]);
+}
+const depth_tensor = predicted_depth
+  .sub_(minDepth)
+  .div_(-(maxDepth - minDepth)) // Flip for visualization purposes
+  .add_(1)
+  .clamp_(0, 1)
+  .mul_(255)
+  .round_()
+  .to("uint8");
+
+// Save the depth map
+return RawImage.fromTensor(depth_tensor);
+    }
+    else {
+      return await this._pipeline(img);
+    }
   }
 }
 
-const depth_estimator = new Transformers_pipeline('depth-estimation', 'onnx-community/depth-anything-v2-small', undefined, { loading_message:'(🌐Loading Depth Estimation AI...)' });
+const depth_estimator = new Transformers_pipeline('depth-estimation', 'onnx-community/depth-anything-v2-small', undefined);//, { loading_message:'(🌐Loading Depth Estimation AI...)' });
 const upscaler = new Transformers_pipeline('image-to-image', 'Xenova/swin2SR-lightweight-x2-64', undefined, { loading_message:'(🌐Loading Super Resolution AI...)' });
 
 const SR_model_settings = {
@@ -189,6 +243,7 @@ onmessage = async (e)=>{
     data.depth_width = depth.width;
     data.depth_height = depth.height;
     data.t_depth = t_depth;
+    data.get_map_only = e.data.options.depth.get_map_only;
     transferred.push(data.depth_rgba);
 
     depth = undefined;
@@ -196,10 +251,11 @@ onmessage = async (e)=>{
     msg_final = '(✅3D mesh generated - ' + Math.round(t_depth) + 'ms)';
   }
 
+// BEFORE data transfer as worker may be closed afterwards
+  if (msg_final)
+    postMessage(msg_final);
+
   postMessage(data, transferred);
 
   data = data.depth_rgba = data.upscaled_rgba = transferred = undefined;
-
-  if (msg_final)
-    setTimeout(()=> { postMessage(msg_final); }, 0);
 };
