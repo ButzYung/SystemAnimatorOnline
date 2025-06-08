@@ -1,0 +1,9 @@
+{
+
+  "folder_list": ["animate.js", "wallpaper.jpg"]
+
+ ,"config_default": {
+    "DisableBackgroundThrottling": "non_default"
+  }
+
+}
