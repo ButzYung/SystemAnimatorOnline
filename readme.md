@@ -36,7 +36,7 @@ The Windows/Linux/macOS app version (powered by [Electron](https://www.electronj
 
 - Support VMC-protocol to animate a 3D model elsewhere in other VMC-enabled applications such as VSeeFace, VNyan and Warudo (Electron mode only)
 
-- Support 2D image as 3D backdrop by assigning an AI-generated depth map, with a specialized mode to run separately on Windows background (Electron) as 3D wallpaper gadget, and web app mode as a [2D-to-3D image viewer](https://sao.animetheme.com/SystemAnimator_online.html?cmd_line=demo21)
+- Support 2D image as 3D backdrop by assigning an AI-generated depth map, with a special mode to run independently on Windows background (Electron) as 3D wallpaper gadget, and web app mode as a [2D-to-3D image viewer](https://sao.animetheme.com/SystemAnimator_online.html?cmd_line=demo21)
 
 - Support frameless window with transparent background on video capture apps such as OBS (Electron mode only) (*)
 
