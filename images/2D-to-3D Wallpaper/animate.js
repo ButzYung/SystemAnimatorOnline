@@ -1,4 +1,4 @@
-// (2025-06-08)
+// (2025-06-09)
 
 var MMD_SA_options = {
   MMD_disabled: true
@@ -14,6 +14,9 @@ var MMD_SA_options = {
     MMD_SA_options.width  = 960
     MMD_SA_options.height = 540
   }
+
+// needed for web app mode
+  RAF_animation_frame_unlimited = true;
 
   Settings_default._custom_.EventToMonitor = "SOUND_ALL";//"FIXED_VALUE_50";//
   Settings_default._custom_.UseAudioFFT = "non_default"
@@ -293,7 +296,7 @@ target_offset.copy(cam_offset).multiplyScalar(s_target).setZ(cz);
 MMD_SA._trackball_camera.object.position.fromArray(MMD_SA_options.camera_position_base).add(cam_offset);
 MMD_SA._trackball_camera.target.set(0,MMD_SA_options.camera_position_base[1],0).add(target_offset);
 
-const diff_factor = (idled || !use_deviceorientation) ? 0.5 : 1;
+const diff_factor = (idled || returnBoolean("AutoItStayOnDesktop")) ? 0.5 : ((use_deviceorientation) ? 2 : 1);
 
 if (ar < 1) {
   let y_target = (1-ar) * y;
@@ -301,7 +304,7 @@ if (ar < 1) {
   let y_diff = y_target - y_current;
   y_diff = Math.sign(y_diff) * Math.min(Math.abs(y_diff), 0.5) * Math.min(RAF_timestamp_delta/1000,0.1) * diff_factor;
   mov_offset = [0, y_diff, 0];
-//DEBUG_show([(1/ar-1)/ar_cam, y, mov_offset[1], MMD_SA.Wallpaper3D.options.pos_y_offset_percent].join('\n'))
+//DEBUG_show([y_target, y_current, y_diff].join('\n'))
 }
 else if (ar > 1) {
   let x_target = (1-1/ar) * x;
@@ -313,10 +316,9 @@ else if (ar > 1) {
 else {
   mov_offset = [0,0,0];
 }
-mov_offset_smoothed.fromArray(mov_smoother.filter(mov_offset));
 
-MMD_SA.Wallpaper3D.options.pos_x_offset_percent += mov_offset_smoothed.x * 100;
-MMD_SA.Wallpaper3D.options.pos_y_offset_percent += mov_offset_smoothed.y * 100;
+MMD_SA.Wallpaper3D.options.pos_x_offset_percent += mov_offset[0] * 100;
+MMD_SA.Wallpaper3D.options.pos_y_offset_percent += mov_offset[1] * 100;
       },0,0,-1);
 
       DEBUG_show();
@@ -411,18 +413,16 @@ MMD_SA.Wallpaper3D.options.pos_y_offset_percent += mov_offset_smoothed.y * 100;
     const cam_offset = new THREE.Vector3();
     const target_offset = new THREE.Vector3();
     let mov_offset = [0,0,0];
-    const mov_offset_smoothed = new THREE.Vector3();
     const beta = 0;//0.01/5;
     const cam_smoother = new System._browser.data_filter([{ type:'one_euro', id:'cam_smoother', transition_time:0.5, para:[30, 1,beta,1, 3] }]);
-    const mov_smoother = new System._browser.data_filter([{ type:'one_euro', id:'mov_smoother', transition_time:0.5, para:[30, 1,beta,1, 3] }]);
 
     let x_last, y_last;
     let idle_time = 0;
     let idle_timestamp = 0;
-    const idle_time_threshold = 6*1000;
+    const idle_time_threshold = 5*1000;
 
     const animation_path = [[0,0], [1,0], [0,1], [1,1], [0,0], [0,1], [1,0], [1,1]];
-    const animation_node_duration = 3*1000;
+    const animation_node_duration = 5*1000;
     let animation_time = 0;
 
 //    MMD_SA.Wallpaper3D.depth_effect.load('C:\\Users\\user\\Downloads\\fog-overlay-free.jpg');
@@ -439,7 +439,6 @@ MMD_SA.Wallpaper3D.options.pos_y_offset_percent += mov_offset_smoothed.y * 100;
           mx = MMD_SA.THREEX.SL.width /2;
           my = MMD_SA.THREEX.SL.height/2;
 
-          mov_offset_smoothed.set(0,0,0);
           MMD_SA.Wallpaper3D.options.pos_x_offset_percent = MMD_SA.Wallpaper3D.options.pos_y_offset_percent = 0;
 
 //          MMD_SA.Wallpaper3D.update_transform();
