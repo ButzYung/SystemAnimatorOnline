@@ -45,6 +45,9 @@ var MMD_SA_options = {
     MMD_SA.Wallpaper3D.options_general.SR_mode = parseInt(LABEL_LoadSettings('LABEL_Wallpaper3D_SR_mode', 0));
     MMD_SA.Wallpaper3D.options_general.SR_model = LABEL_LoadSettings('LABEL_Wallpaper3D_SR_model', null);
 
+    if (browser_native_mode)
+      MMD_SA.Wallpaper3D.options.keeps_worker_thread = true;
+
     System._browser.tray_menu_custom = {
       para: {
         name: '3D Wallpaper',
