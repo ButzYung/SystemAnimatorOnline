@@ -32,11 +32,11 @@ The Windows/Linux/macOS app version (powered by [Electron](https://www.electronj
 
 - Export FBX/BVH motions to VMD format
 
-- Customize the background and 3D scene with 2D image/video , 3D panorama and 3D objects (.x/.glb format)
-
 - Support VMC-protocol to animate a 3D model elsewhere in other VMC-enabled applications such as VSeeFace, VNyan and Warudo (Electron mode only)
 
-- Support 2D image as 3D backdrop by assigning an AI-generated depth map, with a special mode to run independently on Windows background (Electron) as 3D wallpaper gadget, and web app mode as a [2D-to-3D image viewer](https://sao.animetheme.com/SystemAnimator_online.html?cmd_line=demo21)
+- Customize the background and 3D scene with 2D image/video , 3D panorama and 3D objects (.x/.glb format)
+
+- Support 2D image as 3D backdrop by assigning an auto AI-generated depth map, as well as optionally running independently on Windows background (Electron mode) as 3D wallpaper gadget, and web app mode as a ["2D-to-3D image viewer"](https://sao.animetheme.com/SystemAnimator_online.html?cmd_line=demo21)
 
 - Support frameless window with transparent background on video capture apps such as OBS (Electron mode only) (*)
 
