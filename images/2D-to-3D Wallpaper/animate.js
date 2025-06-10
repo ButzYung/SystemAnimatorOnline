@@ -501,6 +501,12 @@ MMD_SA.Wallpaper3D.options.pos_y_offset_percent += mov_offset[1] * 100;
                 cx = cx/2 + 0.5;
                 cy = cy/2 + 0.5;
 
+                if (/landscape/.test(screen.orientation.type)) {
+                  const cx_ = cx;
+                  cx = cy;
+                  cy = cx_;
+                }
+
                 mx = cy * MMD_SA.THREEX.SL.width;
                 my = cx * MMD_SA.THREEX.SL.height;
               }
