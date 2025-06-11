@@ -1,4 +1,4 @@
-// 2024-12-15
+// 2025-06-11
 
 // https://huggingface.co/onnx-community/depth-anything-v2-small
 // https://github.com/xenova/transformers.js
@@ -21,6 +21,9 @@ const webgpu_check = (()=>{
   };
 })();
 await webgpu_check();
+
+const use_low_res_depth_map = !webgpu || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+console.log('Use low-res depth map:' + !!use_low_res_depth_map);
 
 class Transformers_pipeline {
   constructor(task, model, para={ dtype:undefined, device:webgpu }, options={}) {
@@ -211,7 +214,15 @@ onmessage = async (e)=>{
     postMessage('(⏳Analyzing image depth...)');
 
     let sw, sh;
-    if (w * h > 1920*1080) {
+    if (use_low_res_depth_map && (w*h > 512*512)) {
+      sh = 512;
+      sw = 512;
+
+      canvas.width  = sw;
+      canvas.height = sh;
+      ctx.drawImage(e.data.rgba, 0,0,w,h, 0,0,sw,sh);
+    }
+    else if (w*h > 1920*1080) {
 // sh*ar * sh = 1920*1080
       const ar = w/h;
       sh = Math.round(Math.sqrt(1920*1080/ar));
