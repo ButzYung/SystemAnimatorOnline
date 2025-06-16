@@ -80,7 +80,7 @@ After the page has been fully loaded, click on the little phone button on the to
 
 The future of XR Animator relies on your support🙇 Some IRL family issues have significantly increased my financial burden. While it was fun to develop the app, financial return was next to minimal. Reality forces me to evaluate the sustainability of this project, or soon I will have to give up...😢
 
-If you like XR Animator, please consider making a donation🙇 Or even better, join my membership with perks such as ***EARLY ACCESS to the latest version XR Animator*** (at least 3 months ahead of the public release on GitHub), insider stories/tips and other benefits🎁 Sponsor us, and help keep this project free and sustainable🙏
+If you like XR Animator, please consider making a donation🙇 Or even better, join my membership with perks such as ***EARLY ACCESS to the latest version XR Animator*** (at least 5 months ahead of the public release on GitHub), insider stories/tips and other benefits🎁 Sponsor us, and help keep this project free and sustainable🙏
 
 - ☕[Ko-fi (Membership)](https://ko-fi.com/butzyung/tiers)
 - 🎁[FANBOX (メンバーシップ)](https://xra.fanbox.cc/)
