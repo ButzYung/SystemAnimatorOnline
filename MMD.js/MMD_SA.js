@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-10-31)
+// (2024-11-10)
 
 var use_full_spectrum = true
 
@@ -15010,6 +15010,109 @@ this.visible = v;
     depth_effect: depth_effect,
 
     init: async function () {
+if (!transformers_worker) {
+
+await new Promise((resolve)=>{
+//  MMD_SA_options._Wallpaper3D_status_ = '(🌐Loading Transformers.js...)';
+  transformers_worker = new Worker('js/transformers_worker.js', {type: 'module'});
+
+  transformers_worker.onmessage = (e)=>{
+    if (typeof e.data == 'string') {
+      if (e.data == 'OK') {
+        resolve();
+      }
+      else {
+        MMD_SA_options._Wallpaper3D_status_ = e.data;
+      }
+    }
+    else {
+      let img_raw = new Uint8ClampedArray(e.data.depth_rgba);
+      let image_data = new ImageData(e.data.depth_width, e.data.depth_height);
+      for (let i = 0, i_max = image_data.data.length/4; i < i_max; i++) {
+        image_data.data[i*4] = image_data.data[i*4+1] = image_data.data[i*4+2] = img_raw[i];
+        image_data.data[i*4+3] = 255;
+      }
+//console.log(image_data);
+/*
+canvas_tex.depth_width  = e.data.depth_width;
+canvas_tex.depth_height = e.data.depth_height;
+canvas_tex.getContext('2d').putImageData(image_data, 0,0);
+this.mesh.material.map.needsUpdate = true;
+*/
+
+      let ctx = canvas_tex.getContext('2d');
+      if (!e.data.upscaled_rgba) {
+        canvas_img.width  = canvas_tex.width;
+        canvas_img.height = canvas_tex.height;
+        canvas_img.getContext('2d').drawImage(img, 0,0,canvas_tex.width,canvas_tex.height);
+
+        ctx.drawImage(canvas_img, 0,0);
+      }
+      else {
+        canvas_img.width  = e.data.upscaled_width;
+        canvas_img.height = e.data.upscaled_height;
+        canvas_img.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(e.data.upscaled_rgba), e.data.upscaled_width,e.data.upscaled_height), 0,0);
+        System._browser.save_file(this.filename.replace(/\.\w+$/, '') + '_SR.png', canvas_img.toDataURL('image/png'), 'Data URL');
+
+        ctx.drawImage(canvas_img, 0,0,canvas_tex.width,canvas_tex.height);
+
+        canvas_img.width  = canvas_tex.width;
+        canvas_img.height = canvas_tex.height;
+        canvas_img.getContext('2d').drawImage(canvas_tex, 0,0);
+      }
+
+      this.mesh.material.map.needsUpdate = true;
+      this.update_transform();
+
+      canvas_depth.width  = e.data.depth_width;
+      canvas_depth.height = e.data.depth_height;
+      ctx = canvas_depth.getContext('2d');
+      ctx.putImageData(image_data, 0,0);
+
+      this.depth_map_ready = true;
+      this.mesh.visible = true;
+      this.update_mesh();
+
+      canvas_depth_effect.width  = canvas_depth.width;
+      canvas_depth_effect.height = canvas_depth.height
+      ctx = canvas_depth_effect.getContext('2d');
+      ctx.filter = 'brightness(300%) invert(100%) brightness(75%)';
+      ctx.drawImage(canvas_depth, 0,0);
+      ctx.filter = 'none';
+
+  // CONV. STEP: move a component channel to alpha-channel
+const idata = ctx.getImageData(0, 0, canvas_depth_effect.width, canvas_depth_effect.height);
+const data32 = new Uint32Array(idata.data.buffer);
+let i = 0, len = data32.length;
+while(i < len) {
+  data32[i] = data32[i++] << 8; // shift blue channel into alpha (little-endian)
+}
+// update canvas
+ctx.putImageData(idata, 0, 0);
+
+      depth_effect.needsUpdate = true;
+
+      System._browser.camera.display_floating = (MMD_SA_options.user_camera.display.floating_auto !== false);
+
+      e.data = e.data.depth_rgba = e.data.upscaled_rgba = img_raw = image_data = undefined;
+
+      this.busy = false;
+
+      if (resolve_loaded) {
+        resolve_loaded();
+        resolve_loaded = null;
+      }
+
+      if (!this.options.keeps_worker_thread) {
+        transformers_worker.terminate();
+        transformers_worker = null;
+      }
+    }
+  }
+});
+
+}
+
 if (this.mesh) return;
 
 img = new Image();
@@ -15133,100 +15236,6 @@ if (!MMD_SA.THREEX.enabled) {
   if (MMD_SA.WebXR.ground_plane) MMD_SA.WebXR.ground_plane.visible = false;
   System._browser.camera.poseNet.ground_plane_visible = false;
 }
-
-await new Promise((resolve)=>{
-//  MMD_SA_options._Wallpaper3D_status_ = '(🌐Loading Transformers.js...)';
-  transformers_worker = new Worker('js/transformers_worker.js', {type: 'module'});
-
-  transformers_worker.onmessage = (e)=>{
-    if (typeof e.data == 'string') {
-      if (e.data == 'OK') {
-        resolve();
-      }
-      else {
-        MMD_SA_options._Wallpaper3D_status_ = e.data;
-      }
-    }
-    else {
-      let img_raw = new Uint8ClampedArray(e.data.depth_rgba);
-      let image_data = new ImageData(e.data.depth_width, e.data.depth_height);
-      for (let i = 0, i_max = image_data.data.length/4; i < i_max; i++) {
-        image_data.data[i*4] = image_data.data[i*4+1] = image_data.data[i*4+2] = img_raw[i];
-        image_data.data[i*4+3] = 255;
-      }
-//console.log(image_data);
-/*
-canvas_tex.depth_width  = e.data.depth_width;
-canvas_tex.depth_height = e.data.depth_height;
-canvas_tex.getContext('2d').putImageData(image_data, 0,0);
-this.mesh.material.map.needsUpdate = true;
-*/
-
-      let ctx = canvas_tex.getContext('2d');
-      if (!e.data.upscaled_rgba) {
-        canvas_img.width  = canvas_tex.width;
-        canvas_img.height = canvas_tex.height;
-        canvas_img.getContext('2d').drawImage(img, 0,0,canvas_tex.width,canvas_tex.height);
-
-        ctx.drawImage(canvas_img, 0,0);
-      }
-      else {
-        canvas_img.width  = e.data.upscaled_width;
-        canvas_img.height = e.data.upscaled_height;
-        canvas_img.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(e.data.upscaled_rgba), e.data.upscaled_width,e.data.upscaled_height), 0,0);
-        System._browser.save_file(this.filename.replace(/\.\w+$/, '') + '_SR.png', canvas_img.toDataURL('image/png'), 'Data URL');
-
-        ctx.drawImage(canvas_img, 0,0,canvas_tex.width,canvas_tex.height);
-
-        canvas_img.width  = canvas_tex.width;
-        canvas_img.height = canvas_tex.height;
-        canvas_img.getContext('2d').drawImage(canvas_tex, 0,0);
-      }
-
-      this.mesh.material.map.needsUpdate = true;
-      this.update_transform();
-
-      canvas_depth.width  = e.data.depth_width;
-      canvas_depth.height = e.data.depth_height;
-      ctx = canvas_depth.getContext('2d');
-      ctx.putImageData(image_data, 0,0);
-
-      this.depth_map_ready = true;
-      this.mesh.visible = true;
-      this.update_mesh();
-
-      canvas_depth_effect.width  = canvas_depth.width;
-      canvas_depth_effect.height = canvas_depth.height
-      ctx = canvas_depth_effect.getContext('2d');
-      ctx.filter = 'brightness(300%) invert(100%) brightness(75%)';
-      ctx.drawImage(canvas_depth, 0,0);
-      ctx.filter = 'none';
-
-  // CONV. STEP: move a component channel to alpha-channel
-const idata = ctx.getImageData(0, 0, canvas_depth_effect.width, canvas_depth_effect.height);
-const data32 = new Uint32Array(idata.data.buffer);
-let i = 0, len = data32.length;
-while(i < len) {
-  data32[i] = data32[i++] << 8; // shift blue channel into alpha (little-endian)
-}
-// update canvas
-ctx.putImageData(idata, 0, 0);
-
-      depth_effect.needsUpdate = true;
-
-      System._browser.camera.display_floating = (MMD_SA_options.user_camera.display.floating_auto !== false);
-
-      e.data = e.data.depth_rgba = e.data.upscaled_rgba = img_raw = image_data = undefined;
-
-      this.busy = false;
-
-      if (resolve_loaded) {
-        resolve_loaded();
-        resolve_loaded = null;
-      }
-    }
-  }
-});
     },
 
     options_by_filename: {},
@@ -15258,9 +15267,11 @@ pos_x_offset_percent: 0,
 pos_y_offset_percent: 0,
 pos_z_offset_percent: 0,
 
+// general options
 depth_model: 'onnx-community/depth-anything-v2-small',
 SR_mode: 0,
 SR_model: 'Xenova/swin2SR-lightweight-x2-64',
+keeps_worker_thread: false,
       };
 
       const options_general = {};
@@ -15290,6 +15301,7 @@ switch (prop) {
   case 'depth_model':
   case 'SR_mode':
   case 'SR_model':
+  case 'keeps_worker_thread':
     options_general[prop] = value;
     return;
 }

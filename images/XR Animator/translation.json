@@ -439,9 +439,9 @@
 						},
 						"tooltip": {
 							"_translation_": {
-								"_default_": "Change resolution limit:\nResolution limit determines the target resolution for live webcam, as well as pixel limit for local media file. \"Auto / No limit\" requests no target resolution for live webcam (sometimes needed for compatibility), and no pixel limit for local media file. Default is 1280x720.",
-								"ja": "解像度制限を変更する:\n解像度制限は、ライブ Webカメラのターゲット解像度と、ローカル メディア ファイルのピクセル制限を決定します。 「自動 / 制限なし」は、ライブ Web カメラのターゲット解像度 (互換性のために必要な場合があります) を要求せず、ローカル メディア ファイルのピクセル制限も要求しません。 デフォルトは 1280x720 です。",
-								"zh": "變更解像度限制:\n解像度限制決定網路攝影機的目標解像度，或於使用影像媒體檔案時作為像素上限。 「自動 / 不設限」代表在使用網路攝影機時不會向系統要求特定解像度 (當有兼容性需要時)，及在使用影像媒體檔案時不設像素上限。 預設是 1280x720。"
+								"_default_": "Resolution limit:\nResolution limit determines the target resolution for live webcam, as well as pixel limit for local media file. \"Auto / No limit\" requests no target resolution for live webcam (sometimes needed for compatibility), and no pixel limit for local media file. Default is 1280x720.",
+								"ja": "解像度の制限:\n解像度制限は、ライブ Webカメラのターゲット解像度と、ローカル メディア ファイルのピクセル制限を決定します。 「自動 / 制限なし」は、ライブ Web カメラのターゲット解像度 (互換性のために必要な場合があります) を要求せず、ローカル メディア ファイルのピクセル制限も要求しません。 デフォルトは 1280x720 です。",
+								"zh": "解像度限制:\n解像度限制決定網路攝影機的目標解像度，或於使用影像媒體檔案時作為像素上限。 「自動 / 不設限」代表在使用網路攝影機時不會向系統要求特定解像度 (當有兼容性需要時)，及在使用影像媒體檔案時不設像素上限。 預設是 1280x720。"
 							}
 						}
 					},
@@ -450,6 +450,41 @@
 							"_default_": "Auto / No limit",
 							"ja": "自動 / 制限なし",
 							"zh": "自動 / 不設限"
+						}
+					},
+					"portrait_mode": {
+						"_translation_": {
+							"_default_": "Portrait mode",
+							"ja": "ポートレート モード",
+							"zh": "肖像模式"
+						},
+						"tooltip": {
+							"_translation_": {
+								"_default_": "Portrait mode:\nThis option allows you to use your webcam vertically, via either native vertical-screen resolution support or rotating your webcam physically. \"Height x Width\" works with webcam supporting native vertical-screen resolution, so that \"Resolution limit\" would be interpreted as height x width (e.g. 1280x720➡️720x1280). Default is \"OFF\".",
+								"ja": "ポートレート モード:\nこのオプションを使用すると、ネイティブの縦画面解像度サポートまたはウェブカメラを物理的に回転させることにより、ウェブカメラを縦向きで使用できます。 「高さ x 幅」 は、ネイティブの縦画面解像度をサポートするウェブカメラで機能するため、「解像度の制限」 は高さ x 幅として解釈されます (例: 1280x720➡️720x1280)。 デフォルトは 「OFF」 です。",
+								"zh": "肖像模式:\n此選項可讓您透過本機垂直螢幕解析度支援或實體旋轉網路攝影機來垂直使用網路攝影機。 「高度 x 寬度」可與支援本機垂直螢幕解析度的網路攝影機搭配使用，從而令「解像度限制」被解釋為高度 x 寬度（例如 1280x720➡️720x1280）。 預設為「OFF」。"
+							}
+						},
+						"height_x_width": {
+							"_translation_": {
+								"_default_": "Height x Width",
+								"ja": "高さ × 幅",
+								"zh": "高度 x 寬度"
+							}
+						},
+						"rotate_90d_clockwise": {
+							"_translation_": {
+								"_default_": "Rotate 90° ↻",
+								"ja": "時計回りに90°回転",
+								"zh": "順時針旋轉90°"
+							}
+						},
+						"rotate_90d_anticlockwise": {
+							"_translation_": {
+								"_default_": "Rotate 90° ↺",
+								"ja": "反時計回りに90°回転",
+								"zh": "逆時針旋轉90°"
+							}
 						}
 					},
 					"frame_rate": {
@@ -466,11 +501,11 @@
 							}
 						}
 					},
-					"extra": {
+					"save_and_return": {
 						"_translation_": {
-							"_default_": "1. Change resolution limit\n2. Change frame rate\n3. Save and return",
-							"ja": "1. 解像度制限を変更する\n2. フレームレートを変更する\n3. 保存して戻る",
-							"zh": "1. 變更解像度限制\n2. 變更幀率\n3. 儲存並返回"
+							"_default_": "Save and return",
+							"ja": "保存して戻る",
+							"zh": "儲存並返回"
 						}
 					}
 				}
@@ -684,6 +719,20 @@
 									"_default_": "Leg IK:\nWhen enabled, inverse kinematics (IK) will be used to calculate avatar's leg motions. When motion recording is on, IK data will be recorded, which makes editing on MMD easier for exported VMD motion. Default is \"OFF\".",
 									"ja": "足IK:\n有効にすると、インバースキネマティクス (IK) を使用してアバターの足の動きを計算します。 モーション記録がオンの場合、IK データが記録されるため、エクスポートされた VMD モーションを MMD 上で編集しやすくなります。 デフォルトは「OFF」です。",
 									"zh": "足IK:\n當此設定為有效時，逆運動學 (IK) 會被用作腳部動作的計算。 在記錄動作時，IK 數據會被記錄，而當匯出成 VMD 時，在 MMD 上使用的時候會較方便修改。 預設是「OFF」。"
+								}
+							}
+						},
+						"arm_IK": {
+							"_translation_": {
+								"_default_": "Arm IK",
+								"ja": "腕IK",
+								"zh": "手臂IK"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Arm IK:\nBy default, inverse kinematics (IK) is used to calculate avatar's arm motions during upper body mocap or when you are near the camera, but not during full body mocap when lower body is visible. When this option is on, IK will always be used, which prevents potential jiggle when switching between FK and IK. Default is \"ON\".",
+									"ja": "腕IK:\nデフォルトでは、逆運動学 (IK) は、上半身のモーキャプ中またはカメラの近くにいるときにアバターの腕の動きを計算するために使用されますが、下半身が見える全身のモーキャプ中には使用されません。 このオプションをオンにすると、IK が常に使用されるため、FK と IK を切り替えるときに発生する可能性のある揺れが防止されます。 デフォルトは「ON」です。",
+									"zh": "手臂IK:\n預設情況下，逆向運動學 (IK) 用於在上半身動捕期間或當您靠近鏡頭時計算人物的手臂運動，但在腰部以下可見時的全身動捕期間則不會使用 IK。 啟用此選項後，將在所有場合使用 IK，這可防止在 FK 和 IK 之間切換時出現潛在的抖動。 預設為「ON」。"
 								}
 							}
 						},
@@ -2150,6 +2199,20 @@
 									}
 								}
 							},
+							"keep_worker_thread": {
+								"_translation_": {
+									"_default_": "Keep worker thread",
+									"ja": "ワーカースレッドを保持する",
+									"zh": "保留工作執行緒"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "Keep worker thread:\nDepth estimation and super resolution model is run on a worker thread. This settings determines whether to keep the worker thread after use. Keeping the worker thread allows faster reuse, at the expense of resident memory usage. Default is \"No\".",
+										"ja": "ワーカースレッドを保持する:\n深度推定と超解像モデルはワーカー スレッドで実行されます。 この設定は、使用後にワーカー スレッドを保持するかどうかを決定します。 ワーカー スレッドを保持すると、常駐メモリの使用量を犠牲にして、再利用が高速化されます。 デフォルトは「いいえ」です。",
+										"zh": "保留工作執行緒:\n深度推算和超解析度模型在工作執行緒上運行。 該設定決定工作執行緒使用後是否保留。 保留工作執行緒可以加快重複使用速度，但會佔用常駐記憶體。 預設為「否」。"
+									}
+								}
+							},
 							"create_desktop_shortcut": {
 								"_translation_": {
 									"_default_": "Create 3D wallpaper desktop shortcut",
@@ -2954,7 +3017,7 @@
 							},
 							"list": {
 								"_translation_": {
-									"_default_": "NewruGuru, Nymph, KuraiNoOni, Kai, LouLi Lou, coffee-addict, skeh, Swoonifer, reitoi, Blitzdame, CoCoNo, JM Choi, Motoko Library,"
+									"_default_": "NewruGuru, Kai, Nymph, KuraiNoOni, LouLi Lou, coffee-addict, skeh, Swoonifer, reitoi, Blitzdame, Nyaarium, reitoi, CoCoNo, Motoko Library,"
 								}
 							}
 						}

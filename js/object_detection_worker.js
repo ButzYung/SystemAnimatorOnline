@@ -1,4 +1,4 @@
-// 2024-10-31
+// 2024-11-10
 
 class Object_Detector {
   constructor(options) {
@@ -83,7 +83,7 @@ else {
 // https://huggingface.co/onnx-community/yolov10s
 // https://viso.ai/deep-learning/yolov10/
     if (/yolov10/.test(this.base_options.model)) {
-this.objectDetector = await this.module.AutoModel.from_pretrained(this.base_options.model, { dtype:undefined, device:'webgpu' });//'uint8' });//
+this.objectDetector = await this.module.AutoModel.from_pretrained(this.base_options.model, { dtype:undefined, device:'webgpu' });
 this._processor = await this.module.AutoProcessor.from_pretrained(this.base_options.model);
     }
     else {

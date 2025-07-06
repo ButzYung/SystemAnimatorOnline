@@ -1,5 +1,5 @@
 // auto fit
-// (2024-10-31)
+// (2024-11-10)
 
 const v1 = new THREE.Vector3();
 const v2 = new THREE.Vector3();
@@ -922,6 +922,7 @@ System._browser.camera.DEBUG_show(condition.contact_target.name+':'+dis)
 //            if (p_bone.name.charAt(0) != d) continue;
 
             p_bone.disabled = true;
+            p_bone.attached = false;
 // object cannot be hidden if position is defined
             if (x_object.placement?.position) {
               x_object.placement._position_ = x_object.placement.position;

@@ -1,4 +1,4 @@
-// (2024-10-14)
+// (2024-11-1)
 
 MMD_SA.fn = {
 /*
@@ -769,7 +769,7 @@ if (p_bone.rotation) {
         }
 
         axis_ext.sub(axis_origin);
-        if (transfer_to_parent_bone) {
+        if (0) {//transfer_to_parent_bone) {
           let v_dot2 = MMD_SA.TEMP_v3.copy(axis_ext).normalize().dot(v_ext);
           let dis2 = axis_ext.length();
 //System._browser.camera.DEBUG_show(axis_ext.clone().normalize().toArray().join('\n'));
@@ -790,12 +790,16 @@ if (p_bone.rotation) {
         axis_ext.sub(axis_origin);
       }
 
+      const axis_ext_length = axis_ext.length();
+
       let axis_ref = MMD_SA._v3a.copy(rot_adjust.reference_point).sub(reference_origin);
       axis_ref.normalize().applyQuaternion(obj.quaternion);
-      axis_ref.multiplyScalar(axis_ext.length()).add(axis_origin).sub(obj.position);
+      axis_ref.multiplyScalar(axis_ext_length).add(axis_origin).sub(obj.position);
 
       axis_ext = axis_ext.add(axis_origin).sub(obj.position);
-//System._browser.camera.DEBUG_show('axis_ext.length:'+axis_ext.length());
+//System._browser.camera.DEBUG_show('axis_ext_length:'+axis_ext_length);
+      if (axis_ext_length < 0.75) weight *= Math.max(axis_ext_length-0.25,0)/(0.75-0.25);
+
       axis_ref.normalize();
       axis_ext.normalize();
       const obj_rot_aligned = MMD_SA.TEMP_q.setFromUnitVectors(axis_ref, axis_ext);
