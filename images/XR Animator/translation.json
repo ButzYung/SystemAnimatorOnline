@@ -884,9 +884,9 @@
 							},
 							"tooltip": {
 								"_translation_": {
-									"_default_": "This setting applies a fixed offset on the vertical position of hip during full body mocap or when \"Hip camera\" is on, mainly to adjust the case when near the camera. Press ➕➖ key to change value. Default is \"0%\".",
-									"ja": "この設定は、全身モーションキャプチャ中または「ヒップカメラ」がオンのときにヒップの垂直位置に固定オフセットを適用し、主にカメラの近くにある場合を調整します。 ➕➖キーを押して値を変更します。 デフォルトは「0%」です。",
-									"zh": "此設定在使用全身動作捕捉期間或「腰間攝影機」開啟時， 對腰部的垂直位置追加固定數值的偏移， 主要用於接近鏡頭時的調整。 按➕➖鍵更改數值。 預設是「100%」。"
+									"_default_": "This setting applies a fixed offset on the vertical position of hip during full body mocap or when \"Hip camera\" is on, mainly to adjust the case when near the camera or get a better feet grounding on 3D stage. Press ➕➖ key to change value. Default is \"0%\".",
+									"ja": "この設定は、全身モーキャプ中または「ヒップカメラ」がオンのときに、ヒップの垂直位置に固定オフセットを適用します。 主に、カメラに近い場合のケースを調整したり、3D ステージ上で足の接地を改善したりするために使用します。 ➕➖キーを押して値を変更します。 デフォルトは「0%」です。",
+									"zh": "此設定在使用全身動作捕捉期間或「腰間攝影機」開啟時， 對腰部的垂直位置追加固定數值的偏移， 主要是為了在靠近相機時調整情況或在 3D 舞台上獲得更好的腳部接地。 按➕➖鍵更改數值。 預設是「100%」。"
 								}
 							}
 						},
@@ -1443,6 +1443,20 @@
 									"_default_": "Mouth tracking sensitivity:\nThis option determines the sensitivity of mouth tracking when mouth motion is subtle. \"Very high/Max\" boosts mid-range mouth blendshape values as well. Lower the setting if avatar's mouth is open even when idle. Default is \"High\".",
 									"ja": "口追跡感度:\nこのオプションは、口の動きが微妙な場合の口トラッキングの感度を決定します。 「とても高い/最大」は、中程度の口のブレンドシェイプ値もブーストします。 アイドル状態でもアバターの口が開いている場合は設定を下げます。 デフォルトは「高」です。",
 									"zh": "嘴部追蹤靈敏度:\n此選項決定當嘴部動作微細時的追蹤靈敏度。 「非常高/最大」亦會增強中等程度的嘴部混合變形數值。 如果人物的口部在沒有嘴部動作時仍然張開，可降低設定值。 預設是「高」。"
+								}
+							}
+						},
+						"AI_model_inference_device": {
+							"_translation_": {
+								"_default_": "AI model inference device",
+								"ja": "AIモデル推論装置",
+								"zh": "AI模型推理裝置"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "AI model inference device:\nThis option determines whether to use CPU or GPU to run the face tracking model. While GPU inference is slightly faster, face tracking model is fairly optimized for CPU, and by using CPU instead, you save some valuable GPU resources usable for other tasks. Default is \"CPU\".",
+									"ja": "AIモデル推論装置:\nこのオプションは、顔追跡モデルを実行するために CPU を使用するか GPU を使用するかを決定します。 GPU 推論の方がわずかに高速ですが、顔追跡モデルは CPU 用にかなり最適化されており、代わりに CPU を使用することで、他のタスクに使用できる貴重な GPU リソースを節約できます。 デフォルトは「CPU」です。",
+									"zh": "AI模型推理裝置:\n此選項決定是使用CPU還是GPU來運行人臉追蹤模型。 雖然 GPU 推理速度稍快，但臉部追蹤模型針對 CPU 進行了相當最佳化，透過使用 CPU，您可以節省一些可用於其他任務的寶貴 GPU 資源。 預設為「CPU」。"
 								}
 							}
 						},
@@ -2207,9 +2221,58 @@
 								},
 								"tooltip": {
 									"_translation_": {
-										"_default_": "Keep worker thread:\nDepth estimation and super resolution model is run on a worker thread. This settings determines whether to keep the worker thread after use. Keeping the worker thread allows faster reuse, at the expense of resident memory usage. Default is \"No\".",
+										"_default_": "Keep worker thread:\nDepth estimation and super resolution model is run on a worker thread. This setting determines whether to keep the worker thread after use. Keeping the worker thread allows faster reuse, at the expense of resident memory usage. Default is \"No\".",
 										"ja": "ワーカースレッドを保持する:\n深度推定と超解像モデルはワーカー スレッドで実行されます。 この設定は、使用後にワーカー スレッドを保持するかどうかを決定します。 ワーカー スレッドを保持すると、常駐メモリの使用量を犠牲にして、再利用が高速化されます。 デフォルトは「いいえ」です。",
 										"zh": "保留工作執行緒:\n深度推算和超解析度模型在工作執行緒上運行。 該設定決定工作執行緒使用後是否保留。 保留工作執行緒可以加快重複使用速度，但會佔用常駐記憶體。 預設為「否」。"
+									}
+								}
+							},
+							"export_3D_wallpaper_model": {
+								"_translation_": {
+									"_default_": "Export 3D wallpaper model",
+									"ja": "3D壁紙モデルをエクスポート",
+									"zh": "匯出3D桌布模型"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "Export 3D wallpaper model:\nClick to export current 3D wallpaper as a glTF(GLB) model, which can be used on external apps such as Blender and Unity (e.g. VNyan, Warudo with their SDK). Unlike the dynamic nature of 3D wallpaper in XR Animator, exported 3D wallpaper is static and you will need to export again for any changed settings to apply.",
+										"ja": "3D壁紙モデルをエクスポート:\nクリックすると、現在の 3D 壁紙が glTF(GLB) モデルとしてエクスポートされます。 これは、Blender や Unity (例: VNyan、Warudo とその SDK) などの外部アプリで使用できます。 XR Animator の 3D 壁紙の動的な性質とは異なり、エクスポートされた 3D 壁紙は静的であるため、変更した設定を適用するには再度エクスポートする必要があります。",
+										"zh": "匯出3D桌布模型:\n按一下可將目前 3D 桌布匯出為 glTF(GLB) 模型，可用於 Blender 和 Unity 等外部應用程式（例如 VNyan、Warudo 及其 SDK）。 與 XR Animator 中 3D 桌布的動態特性不同，匯出的 3D 桌布是靜態的，您需要再次匯出才能套用任何變更的設定。"
+									}
+								},
+								"inactive": {
+									"_translation_": {
+										"_default_": "3D wallpaper is currently inactive.",
+										"ja": "3D 壁紙は現在非アクティブです。",
+										"zh": "3D 壁紙目前處於非活動狀態。"
+									}
+								},
+								"press_to_change_value": {
+									"_translation_": {
+										"_default_": "press ➕➖ key to change value",
+										"ja": "➕➖キーで値を変更する",
+										"zh": "按️➕➖鍵更改數值"
+									}
+								},
+								"camera_position_y": {
+									"_translation_": {
+										"_default_": "Camera position Y",
+										"ja": "カメラの位置 Y",
+										"zh": "相機位置 Y"
+									},
+									"tooltip": {
+										"_translation_": {
+											"_default_": "Camera position<press_to_change_value>:\nWhen exporting 3D wallpaper, 3D camera's position need to be specified so that the 3D wallpaper will look perfectly 2D when camera is placed at that position. \"Auto\" uses the same camera settings of the current avatar and pose, convenient if you use the exported wallpaper in VMC-connected apps (with camera synced) such as VNyan or Warudo. Default is \"Auto\".",
+											"ja": "カメラの位置<press_to_change_value>:\n3D 壁紙をエクスポートする場合、3Dカメラの位置を指定して、その位置にカメラを配置した状態で3D壁紙が完全に2Dに見えるようにする必要があります。 「自動」は、現在のアバターとポーズと同じ設定を使用します。 これは、WarudoなどのVMC接続アプリ(カメラが同期されている)でエクスポートした壁紙を使用する場合に便利です。 デフォルトは「自動」。",
+											"zh": "相機位置<press_to_change_value>:\n匯出 3D 桌布時，需要指定 3D 相機的位置，以便當相機放置在該位置時，3D 桌布看起來會是完美的 2D。 「自動」使用與目前人物和姿勢相同的設置，如果您在 VNyan 或 Warudo 等 VMC 連接的應用程式（與相機同步）中使用匯出的壁紙，會較為方便。 預設為「自動」。"
+										}
+									}
+								},
+								"camera_position_z": {
+									"_translation_": {
+										"_default_": "Camera location Z",
+										"ja": "カメラの位置 Z",
+										"zh": "相機位置 Y"
 									}
 								}
 							},
@@ -3017,7 +3080,7 @@
 							},
 							"list": {
 								"_translation_": {
-									"_default_": "NewruGuru, Kai, Nymph, KuraiNoOni, LouLi Lou, coffee-addict, skeh, Swoonifer, reitoi, Blitzdame, Nyaarium, reitoi, CoCoNo, Motoko Library,"
+									"_default_": "NewruGuru, Kai, Nymph, KuraiNoOni, LouLi Lou, coffee-addict, skeh, Swoonifer, reitoi, Nyaarium, mirai, CoCoNo, Motoko Library,"
 								}
 							}
 						}

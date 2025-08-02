@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-11-10)
+// (2024-11-23)
 
 var use_full_spectrum = true
 
@@ -9145,9 +9145,10 @@ const settings_default = this._joints_settings;
 // Set has no index
 let i = 0;
 for ( const e of this.model.springBoneManager.joints ) {
-//e.settings.dragForce = 1;//settings_default[i].dragForce;
-  e.settings.stiffness = settings_default[i].stiffness * ((restrict_physics) ? 10 : 1) * VRM.joint_stiffness_percent/100 * vrm_scale;//this.mesh.scale.x;
-  e.settings.gravityPower = settings_default[i].gravityPower;
+  const _scale = (e.center) ? 1 : vrm_scale;
+//  e.settings.dragForce = (_scale > 1) ? 1 - (1-settings_default[i].dragForce)/_scale : settings_default[i].dragForce/_scale;
+  e.settings.stiffness = settings_default[i].stiffness * ((restrict_physics) ? 10 : 1) * VRM.joint_stiffness_percent/100 * _scale;
+  e.settings.gravityPower = settings_default[i].gravityPower * _scale;
   i++;
 };
 
@@ -9199,7 +9200,10 @@ if (vrm.springBoneManager) {
         j = model_para._joints[i] = { settings:this._joints_settings[i] };
       i++;
 
-      joint.settings.stiffness = j.settings.stiffness * scale;
+      const _scale = (joint._center) ? 1 : scale;
+      joint.settings.stiffness = j.settings.stiffness * _scale;
+      joint.settings.gravityPower = j.settings.gravityPower * _scale;
+
       joint.settings.hitRadius = j.settings.hitRadius * scale;
     }
 
@@ -9212,15 +9216,13 @@ if (vrm.springBoneManager) {
 
       let c = model_para._colliders[i];
       if (!c)
-        c = model_para._colliders[i] = { shape:{ radius:shape.radius, tail:shape.tail?.clone() } };
+        c = model_para._colliders[i] = { shape:{ radius:shape.radius, tail:shape.tail?.clone() } };//, offset:shape.offset?.clone() } };
       i++;
-
-      if ( shape instanceof THREE.VRMSpringBoneColliderShapeCapsule ) {
-        shape.radius = c.shape.radius * scale;
-        shape.tail.copy(c.shape.tail).multiplyScalar( scale );
-      } else if ( shape instanceof THREE.VRMSpringBoneColliderShapeSphere ) {
-        shape.radius = c.shape.radius * scale;
-      }
+// shape instanceof THREE.VRMSpringBoneColliderShapeCapsule
+// shape instanceof THREE.VRMSpringBoneColliderShapeSphere
+      shape.radius = c.shape.radius * scale;
+      shape.tail?.copy(c.shape.tail).multiplyScalar( scale );
+//shape.offset?.copy(c.shape.offset).multiplyScalar( scale );
     }
   }
 }
@@ -9723,9 +9725,8 @@ b_pos.x, b_pos.y, -b_pos.z,
   for (const name in blendshape_weight) {
     const name_for_blendshapes = (use_faceBlendshapes && this.faceBlendshapes_map_reversed[name]) || name;
     morph_msgs.push([
-// three-vrm 1.0
-// use VRM0 name unless VRM1 model is used (with VNyan mode)
-this.blendshape_map_name(name_for_blendshapes, this.is_VRM1 && VNyan_mode),
+// Recent Warudo no longer uses VRM0 blendshape names for VRM1 model. Use VRM1 blendshape names for VRM1 model by default.
+this.blendshape_map_name(name_for_blendshapes, this.is_VRM1),
 
 blendshape_weight[name],
     ]);
@@ -13683,15 +13684,23 @@ for (const name of name_sync) {
 
   if (bk_keys_full.length < f_max) {
     const k_last = bk_keys_full[bk_keys_full.length-1];
-    for (let i = bk_keys_full.length; i < f_max; i++)
-      bk_keys_full.push(k_last);
+    for (let i = bk_keys_full.length; i < f_max; i++) {
+      const k = Object.assign({}, k_last);
+      k.time = i/30;
+      bk_keys_full.push(k);
+    }
   }
 }
 
 const tracks = [];
 
 for (const name_MMD in boneKeys_by_name) {
-  const name = VRM.bone_map_MMD_to_VRM[name_MMD];
+  let name = VRM.bone_map_MMD_to_VRM[name_MMD];
+  let name_MMD_translated = name_MMD;
+  if (!name && (name_MMD.indexOf('足ＩＫ') != -1)) {
+    name_MMD_translated = name_MMD.charAt(0) + '足首';
+    name = VRM.bone_map_MMD_to_VRM[name_MMD_translated];
+  }
 
   if (name) {
     const d = (/(left|right)LowerArm/.test(name)) ? ((RegExp.$1 == 'left') ? '左' : '右') : null;
@@ -13742,7 +13751,7 @@ for (const name_MMD in boneKeys_by_name) {
     });
 
 // need to use normalized bones, or the rotations will be transformed when exported
-    const node_name = model.get_bone_by_MMD_name(name_MMD).name;//.replace(/Normalized_/, '');
+    const node_name = model.get_bone_by_MMD_name(name_MMD_translated).name;//.replace(/Normalized_/, '');
 
     if (v_values.length)
       tracks.push(new THREE.VectorKeyframeTrack(node_name+'.position', times, v_values));
@@ -15009,6 +15018,105 @@ this.visible = v;
 
     depth_effect: depth_effect,
 
+    generate_mesh: function (use_depth_transform_shader=MMD_SA.THREEX.enabled) {
+const THREE = MMD_SA.THREEX.THREE;
+
+const geometry = new THREE.PlaneGeometry(1,1, (this.depth_dim-1),(this.depth_dim-1));
+
+let material;
+if (!use_depth_transform_shader) {
+  material = new THREE.MeshBasicMaterial( { map:this.texture, fog:false } );
+}
+else {
+  vertexShader = THREE.ShaderLib.basic.vertexShader.replace(
+'void main() {',
+[
+  'uniform sampler2D Wallpaper3D_displacementMap;',
+  'uniform float Wallpaper3D_camera_factor;',
+  'uniform float Wallpaper3D_camera_distance_offset;',
+  'uniform float Wallpaper3D_scale_z;',
+  'uniform vec3 Wallpaper3D_pos_offset;',
+  'uniform mat4 Wallpaper3D_modelViewMatrix;',
+
+  'void main() {',
+].join('\n')
+  ).replace(
+'#include <project_vertex>',
+[
+  'float _depth = texture2D( Wallpaper3D_displacementMap, vMapUv ).x;',
+  'float _depth_factor = max((1.0 - _depth) * (1.0 - Wallpaper3D_pos_offset.z) * Wallpaper3D_scale_z + (Wallpaper3D_camera_distance_offset + Wallpaper3D_pos_offset.z * Wallpaper3D_scale_z), Wallpaper3D_camera_distance_offset) * Wallpaper3D_camera_factor;',
+  'transformed.xy += Wallpaper3D_pos_offset.xy;',
+  'transformed.xy *= _depth_factor;',
+  'transformed.z += _depth;',
+
+  '#include <project_vertex>',
+].join('\n')	
+  );
+
+  const uniforms = THREE.UniformsUtils.clone(THREE.ShaderLib.basic.uniforms);
+  canvas_depth_transformed.width = canvas_depth_transformed.height = this.depth_dim;
+  uniforms.Wallpaper3D_displacementMap = { value:new THREE.Texture(canvas_depth_transformed) };
+  uniforms.Wallpaper3D_camera_factor = { get value() { return camera_factor; } };
+  uniforms.Wallpaper3D_camera_distance_offset = { get value() { return (MMD_SA_options.camera_position_base[2] + MMD_SA.center_view[2]) / _wallpaper_3D.scale_base; } };
+  uniforms.Wallpaper3D_scale_z = { get value() { return _wallpaper_3D.options.scale_z_percent/100; } };
+  uniforms.Wallpaper3D_pos_offset = (()=>{
+    let update_timestamp = 0;
+    const pos = new THREE.Vector3();
+
+    return {
+      get value() {
+if (update_timestamp != RAF_timestamp) {
+  update_timestamp = RAF_timestamp;
+
+  let pos_x_offset_percent = _wallpaper_3D.options.pos_x_offset_percent;
+  let pos_y_offset_percent = _wallpaper_3D.options.pos_y_offset_percent;
+  let pos_z_offset_percent = _wallpaper_3D.options.pos_z_offset_percent;
+
+  pos.set(pos_x_offset_percent/100, pos_y_offset_percent/100, pos_z_offset_percent/100);
+}
+return pos;
+      }
+    }
+  })();
+
+  material = new THREE.ShaderMaterial({
+    vertexShader: vertexShader,
+    fragmentShader: THREE.ShaderLib.basic.fragmentShader,
+    uniforms: uniforms
+  });
+  material.color = new THREE.Color( 0xffffff );
+  material.map = this.texture;
+  material.fog = false;
+  material.isMeshBasicMaterial = true;
+
+// https://stackoverflow.com/questions/77534730/the-fps-reduced-to-half-when-i-set-the-encoding-of-a-realtime-updated-texture-to
+  material.onBeforeCompile = function ( shader ) {
+    shader.fragmentShader = shader.fragmentShader.replace(
+                        '#include <map_fragment>',
+                            `
+              #ifdef USE_MAP
+              
+                 vec4 sampledDiffuseColor = texture2D( map, vMapUv );
+              
+                 // inline sRGB decode
+                 sampledDiffuseColor = vec4( mix( pow( sampledDiffuseColor.rgb * 0.9478672986 + vec3( 0.0521327014 ), vec3( 2.4 ) ), sampledDiffuseColor.rgb * 0.0773993808, vec3( lessThanEqual( sampledDiffuseColor.rgb, vec3( 0.04045 ) ) ) ), sampledDiffuseColor.a );
+
+                diffuseColor *= sampledDiffuseColor;
+
+              #endif
+
+                            `
+    );
+  };
+
+}
+
+const mesh = new THREE.Mesh( geometry, material )
+mesh.userData.use_depth_transform_shader = use_depth_transform_shader;
+
+return mesh;
+    },
+
     init: async function () {
 if (!transformers_worker) {
 
@@ -15123,109 +15231,18 @@ canvas_img = document.createElement('canvas');
 canvas_temp1 = document.createElement('canvas');
 
 const THREE = MMD_SA.THREEX.THREE;
-const geometry = new THREE.PlaneGeometry(1,1, (this.depth_dim-1),(this.depth_dim-1));
 
 canvas_tex = document.createElement('canvas');
 canvas_tex.width = canvas_tex.height = this.tex_dim;
 canvas_tex.getContext('2d').clearRect(0,0,canvas_tex.width,canvas_tex.height);
 
-const texture = new THREE.Texture(canvas_tex);
+this.texture = new THREE.Texture(canvas_tex);
 
 // NOTE: Updating sRGB texture is very slow on some devices. Use inline shader to convert sRGB instead
 // https://github.com/mrdoob/three.js/issues/26183
 //if (MMD_SA.THREEX.enabled && MMD_SA.THREEX.use_sRGBEncoding) texture.colorSpace = THREE.SRGBColorSpace;
 
-this.use_depth_transform_shader = MMD_SA.THREEX.enabled;
-
-let material;
-if (!this.use_depth_transform_shader) {
-  material = new THREE.MeshBasicMaterial( { map:texture, fog:false } );
-}
-else {
-  vertexShader = THREE.ShaderLib.basic.vertexShader.replace(
-'void main() {',
-[
-  'uniform sampler2D Wallpaper3D_displacementMap;',
-  'uniform float Wallpaper3D_camera_factor;',
-  'uniform float Wallpaper3D_camera_distance_offset;',
-  'uniform float Wallpaper3D_scale_z;',
-  'uniform vec3 Wallpaper3D_pos_offset;',
-  'uniform mat4 Wallpaper3D_modelViewMatrix;',
-
-  'void main() {',
-].join('\n')
-  ).replace(
-'#include <project_vertex>',
-[
-  'float _depth = texture2D( Wallpaper3D_displacementMap, vMapUv ).x;',
-  'float _depth_factor = max((1.0 - _depth) * (1.0 - Wallpaper3D_pos_offset.z) * Wallpaper3D_scale_z + (Wallpaper3D_camera_distance_offset + Wallpaper3D_pos_offset.z * Wallpaper3D_scale_z), Wallpaper3D_camera_distance_offset) * Wallpaper3D_camera_factor;',
-  'transformed.xy += Wallpaper3D_pos_offset.xy;',
-  'transformed.xy *= _depth_factor;',
-  'transformed.z += _depth;',
-
-  '#include <project_vertex>',
-].join('\n')	
-  );
-
-  const uniforms = THREE.UniformsUtils.clone(THREE.ShaderLib.basic.uniforms);
-  canvas_depth_transformed.width = canvas_depth_transformed.height = this.depth_dim;
-  uniforms.Wallpaper3D_displacementMap = { value:new THREE.Texture(canvas_depth_transformed) };
-  uniforms.Wallpaper3D_camera_factor = { get value() { return camera_factor; } };
-  uniforms.Wallpaper3D_camera_distance_offset = { get value() { return (MMD_SA_options.camera_position_base[2] + MMD_SA.center_view[2]) / _wallpaper_3D.scale_base; } };
-  uniforms.Wallpaper3D_scale_z = { get value() { return _wallpaper_3D.options.scale_z_percent/100; } };
-  uniforms.Wallpaper3D_pos_offset = (()=>{
-    let update_timestamp = 0;
-    const pos = new THREE.Vector3();
-
-    return {
-      get value() {
-if (update_timestamp != RAF_timestamp) {
-  update_timestamp = RAF_timestamp;
-
-  let pos_x_offset_percent = _wallpaper_3D.options.pos_x_offset_percent;
-  let pos_y_offset_percent = _wallpaper_3D.options.pos_y_offset_percent;
-  let pos_z_offset_percent = _wallpaper_3D.options.pos_z_offset_percent;
-
-  pos.set(pos_x_offset_percent/100, pos_y_offset_percent/100, pos_z_offset_percent/100);
-}
-return pos;
-      }
-    }
-  })();
-
-  material = new THREE.ShaderMaterial({
-    vertexShader: vertexShader,
-    fragmentShader: THREE.ShaderLib.basic.fragmentShader,
-    uniforms: uniforms
-  });
-  material.color = new THREE.Color( 0xffffff );
-  material.map = texture;
-  material.fog = false;
-  material.isMeshBasicMaterial = true;
-
-// https://stackoverflow.com/questions/77534730/the-fps-reduced-to-half-when-i-set-the-encoding-of-a-realtime-updated-texture-to
-  material.onBeforeCompile = function ( shader ) {
-    shader.fragmentShader = shader.fragmentShader.replace(
-                        '#include <map_fragment>',
-                            `
-              #ifdef USE_MAP
-              
-                 vec4 sampledDiffuseColor = texture2D( map, vMapUv );
-              
-                 // inline sRGB decode
-                 sampledDiffuseColor = vec4( mix( pow( sampledDiffuseColor.rgb * 0.9478672986 + vec3( 0.0521327014 ), vec3( 2.4 ) ), sampledDiffuseColor.rgb * 0.0773993808, vec3( lessThanEqual( sampledDiffuseColor.rgb, vec3( 0.04045 ) ) ) ), sampledDiffuseColor.a );
-
-                diffuseColor *= sampledDiffuseColor;
-
-              #endif
-
-                            `
-    );
-  };
-
-}
-
-this.mesh = new THREE.Mesh( geometry, material );
+this.mesh = this.mesh_default = this.generate_mesh();
 
 MMD_SA.THREEX.scene.add(this.mesh);
 
@@ -15272,6 +15289,8 @@ depth_model: 'onnx-community/depth-anything-v2-small',
 SR_mode: 0,
 SR_model: 'Xenova/swin2SR-lightweight-x2-64',
 keeps_worker_thread: false,
+exported_camera_position_y: 0,
+exported_camera_position_z: 0,
       };
 
       const options_general = {};
@@ -15284,6 +15303,9 @@ switch (prop) {
   case 'depth_model':
   case 'SR_mode':
   case 'SR_model':
+  case 'keeps_worker_thread':
+  case 'exported_camera_position_y':
+  case 'exported_camera_position_z':
     return (options_general[prop] == null) ? options_default[prop] : options_general[prop];
 }
 
@@ -15302,6 +15324,8 @@ switch (prop) {
   case 'SR_mode':
   case 'SR_model':
   case 'keeps_worker_thread':
+  case 'exported_camera_position_y':
+  case 'exported_camera_position_z':
     options_general[prop] = value;
     return;
 }
@@ -15323,7 +15347,7 @@ switch (prop) {
   case 'pos_x_offset_percent':
   case 'pos_y_offset_percent':
   case 'pos_z_offset_percent':
-    if (_wallpaper_3D.use_depth_transform_shader) {
+    if (_wallpaper_3D.mesh?.userData.use_depth_transform_shader) {
       _wallpaper_3D.update_transform();
       break;
     }
@@ -15401,7 +15425,7 @@ const ar_camera = MMD_SA.THREEX.SL.width/MMD_SA.THREEX.SL.height;
 camera_factor = 2 * Math.tan(MMD_SA.THREEX.camera.obj.fov * Math.PI/180 / 2) * ar_camera / ((ar > 1) ? ar : 1) * ((ar > ar_camera) ? ar/ar_camera : 1);
     },
 
-    update_transform: function () {
+    update_transform: function (options={}) {
 let scale_xy = this.options.scale_xy_percent/100;
 let scale_z = this.options.scale_z_percent/100;
 let pos_z_offset_percent = this.options.pos_z_offset_percent;
@@ -15410,12 +15434,19 @@ this.update_camera_factor();
 
 this.mesh.scale.set(((ar>1)?ar:1)*scale_xy, ((ar>1)?1:1/ar)*scale_xy, scale_z).multiplyScalar(this.scale_base);
 
+const camera_position = options.camera_position || [0,0,0];
 const center_view = MMD_SA.center_view;
-d_to_full_screen = this.scale_base * scale_z + (MMD_SA_options.camera_position_base[2] + center_view[2])
+for (let i = 1; i < 3; i++) {
+  if (!camera_position[i])
+    camera_position[i] = MMD_SA_options.camera_position_base[i] + center_view[i];
+}
+//console.log(camera_position)
+
+d_to_full_screen = this.scale_base * scale_z + camera_position[2];
 
 this.mesh.position.copy((!MMD_SA_options.MMD_disabled) ? MMD_SA.THREEX.get_model(0).mesh.position : MMD_SA.TEMP_v3.set(0,0,0));
-this.mesh.position.y += (MMD_SA_options.camera_position_base[1] + center_view[1]);
-this.mesh.position.z += (MMD_SA_options.camera_position_base[2] + center_view[2]) - d_to_full_screen - this.mesh.scale.z * pos_z_offset_percent/100;
+this.mesh.position.y += camera_position[1];
+this.mesh.position.z += camera_position[2] - d_to_full_screen - this.mesh.scale.z * pos_z_offset_percent/100;
     },
 
     update_mesh: function () {
@@ -15508,7 +15539,7 @@ else {
   ctx.drawImage(canvas_depth, 0,0,canvas_depth_transformed.width,canvas_depth_transformed.height);
 }
 
-if (this.use_depth_transform_shader) {
+if (this.mesh.userData.use_depth_transform_shader) {
   this.mesh.material.uniforms.Wallpaper3D_displacementMap.value.needsUpdate = true;
   return;
 }
@@ -15590,6 +15621,40 @@ else {
 
   this.mesh.geometry.verticesNeedUpdate = true;
 }
+    },
+
+    export_mesh: async function () {
+if (!MMD_SA.THREEX.enabled) {
+  return;
+}
+
+this.mesh = this.generate_mesh(false);
+
+MMD_SA.THREEX.scene.add(this.mesh);
+
+const scale = 1 / MMD_SA.THREEX.VRM.vrm_scale;
+
+this.update_transform({ camera_position:[0, this.options.exported_camera_position_y/scale, this.options.exported_camera_position_z/scale] });
+this.update_mesh();
+
+this.mesh_default.visible = false;
+if (!MMD_SA_options.MMD_disabled) {
+  this.mesh.position.sub(MMD_SA.THREEX.get_model(0).mesh.position);
+}
+
+this.mesh.quaternion.set(0,1,0,0);
+
+this.mesh.position.multiplyScalar(scale).applyQuaternion(this.mesh.quaternion);
+this.mesh.scale.multiplyScalar(scale);
+
+await MMD_SA.THREEX.utils.export_GLTF('wallpaper_3d', this.mesh);
+
+MMD_SA.THREEX.scene.remove(this.mesh);
+this.mesh.geometry.dispose();
+this.mesh.material.dispose();
+
+this.mesh_default.visible = true;
+this.mesh = this.mesh_default;
     },
 
     get visible() { return this.mesh?.visible; },

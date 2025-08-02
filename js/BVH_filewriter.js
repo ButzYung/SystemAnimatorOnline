@@ -1,5 +1,5 @@
 // BVH FileWriter
-// (2024-05-08)
+// (2024-11-23)
 
 var BVH_FileWriter = (()=>{
   let v1 = new THREE.Vector3();
@@ -11,7 +11,7 @@ var BVH_FileWriter = (()=>{
   const vrm = modelX.model;
   const para = modelX.para;
   const bone_three_to_vrm_name = modelX.bone_three_to_vrm_name;
-  const vrm_scale = MMD_SA.THREEX.VRM.vrm_scale;
+  const vrm_scale = 10;//MMD_SA.THREEX.VRM.vrm_scale;
   const humanBones = vrm.humanoid.humanBones;
 
   function bvh_parse(bone, hierarchy, hierarchy_list) {
@@ -103,7 +103,14 @@ if (hierarchy.children.length) {
 else {
   lines.push(tabs_txt + tab + 'End Site');
   lines.push(tabs_txt + tab + '{');
-  lines.push(tabs_txt + tab+tab + 'OFFSET ' + hierarchy.pos.join(' '));
+
+  let pos = hierarchy.pos.slice();
+  if (/foot|toes/i.test(hierarchy.name)) {
+    let y_diff = -para.pos0[hierarchy.name][1] * vrm_scale;
+    pos[1] = y_diff;
+  }
+
+  lines.push(tabs_txt + tab+tab + 'OFFSET ' + pos.join(' '));
   lines.push(tabs_txt + tab + '}');
 }
 
@@ -130,7 +137,7 @@ boneKeys.forEach((k,idx)=>{
   time_max = Math.max(time_max, k.time);
 });
 
-const f_max = Math.round(time_max*30) + 1;
+const f_max = Math.round(time_max*30);
 
 for (const name in boneKeys_by_name) {
   let f = 0;
@@ -155,22 +162,26 @@ for (const name in boneKeys_by_name) {
 
   if (bk_keys_full.length < f_max) {
     const k_last = bk_keys_full[bk_keys_full.length-1];
-    for (let i = bk_keys_full.length; i < f_max; i++)
-      bk_keys_full.push(k_last);
+    for (let i = bk_keys_full.length; i < f_max; i++) {
+      const k = Object.assign({}, k_last);
+      k.time = i/30;
+      bk_keys_full.push(k);
+    }
   }
 }
 
-
 //console.log(boneKeys_by_name, f_max)
 
-let root_pos_offset;
+const pos_scale = vrm_scale/MMD_SA.THREEX.VRM.vrm_scale;
 
 let data_lines = [];
 for (let f = 0; f < f_max; f++) {
   let data = [];
   modelX.bvh_hierarchy.list.forEach(item=>{
     const name = item.name;
-    const name_MMD = item.name_MMD;
+    let name_MMD = item.name_MMD;
+    if (!boneKeys_by_name[name_MMD] && (name_MMD.indexOf('足首') != -1))
+      name_MMD = name_MMD.charAt(0) + '足ＩＫ';
 
     if (!name_MMD || !boneKeys_by_name[name_MMD]) {
 //if (f==0) console.log(name, name_MMD);
@@ -190,13 +201,8 @@ for (let f = 0; f < f_max; f++) {
           pos.add(v2.fromArray(bone_move.keys_full[f].pos));
         }
 
-        if (f == 0) {
-          root_pos_offset = pos.clone();
-//console.log(root_pos_offset)
-        }
-        else {
-          pos.add(root_pos_offset);
-        }
+        pos.multiplyScalar(pos_scale);
+        pos.add(v2.fromArray(para.pos0['hips']).multiplyScalar(vrm_scale));
 
         v += pos.toArray().join(' ') + ' ';
 
@@ -225,7 +231,9 @@ for (let f = 0; f < f_max; f++) {
       v += [rot_euler.y, rot_euler.x, rot_euler.z].join(' ');
       data.push(v);
     }
+//if (f==f_max-1) console.log(name, data[data.length-1])
   });
+
   data_lines.push(data.join(' '));
 }
 

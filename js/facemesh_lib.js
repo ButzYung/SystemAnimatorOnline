@@ -1,4 +1,4 @@
-// (2023-07-13)
+// (2024-11-23)
 
 var FacemeshAT = (function () {
 
@@ -68,10 +68,23 @@ postMessageAT('OK')
 
   var facemesh_initialized;
   async function load_lib(options) {
-if (facemesh_initialized) return;
+if (facemesh_initialized) {
+  if (use_mediapipe_face_landmarker && (model_inference_device != options.model_inference_device)) {
+    model_inference_device = options.model_inference_device;
+    await model.f.setOptions(
+{
+  baseOptions: {
+    delegate: model_inference_device
+  },
+}
+    );
+    console.log('Facemesh - delegate:' + model_inference_device);
+  }
+  return;
+}
 
 if (use_mediapipe_facemesh) {
-  await _init()
+  await _init(options);
 }
 else {
 // https://github.com/GoogleChromeLabs/wasm-feature-detect
@@ -239,6 +252,8 @@ var face_cover;
 
 var vt, vt_offset=0, vt_last=-1;
 
+var model_inference_device;
+
 var gray, gray_w, gray_h;
 var eyes;
 var eyes_xy_last = [[0,0],[0,0]];
@@ -340,7 +355,7 @@ function rgba_to_grayscale(rgba, center, radius) {
 
 var recalculate_z_rotation_from_scaledMesh;
 
-async function _init() {
+async function _init(options) {
   if (use_mediapipe_facemesh) {
     if (use_mediapipe_face_landmarker) {
       await load_scripts('@mediapipe/tasks/tasks-vision/XRA_module_loader.js');
@@ -360,20 +375,24 @@ const timerID = setInterval(()=>{
 path_adjusted('@mediapipe/tasks/tasks-vision/wasm')
       );
 
+      model_inference_device = options.model_inference_device;
+
       const f = await FaceLandmarker.createFromOptions(
 vision,
 {
   baseOptions: {
     modelAssetPath: path_adjusted('@mediapipe/tasks/face_landmarker.task'),
-    delegate: "GPU"
+    delegate: model_inference_device
   },
   outputFaceBlendshapes: true,
   runningMode: 'VIDEO',
   numFaces: 1
 }
       );
+      console.log('Facemesh - delegate:' + model_inference_device);
 
       model = {
+f: f,
 detect: function (video, nowInMs) {
   const result = f.detectForVideo(video, nowInMs);
 //console.log(result)
