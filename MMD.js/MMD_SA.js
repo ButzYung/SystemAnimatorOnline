@@ -6060,10 +6060,6 @@ anchor._data.update(anchor._data.obj);
     this.camera.position.getPositionFromMatrix(this.camera.matrix)
   }
 
-const pqs = this.camera.matrix.decompose();
-this.camera.position.copy(pqs[0]);
-this.camera.quaternion.copy(pqs[1]);
-
   this.camera.updateMatrixWorld(true);
 }
 //else { DEBUG_show(0,0,1) }
