@@ -1,5 +1,5 @@
 // auto fit
-// (2024-11-10)
+// (2024-12-15)
 
 const v1 = new THREE.Vector3();
 const v2 = new THREE.Vector3();
@@ -620,13 +620,14 @@ function process_gesture() {
             const data = od.data_by_class_name[class_name];
             const k_name = (data) ? ((data.hand == ((d=='左')?'left':'right')) ? class_name+'|object_detection|visible' : '') : ((d == '右') ? class_name+'|object_detection|hidden' : '');
             if (k_name && g_event[k_name]) {
-//System._browser.camera.DEBUG_show(k_name);
-              if ((typeof g_event[k_name] == 'string') ? g_event[k_name].indexOf(dir) != -1 : true)
+              if ((typeof g_event[k_name] == 'string') ? true : true) {
                 gestures.push(k_name);
+//System._browser.camera.DEBUG_show(k_name+'/'+d+'/'+Date.now());
+              }
               for (let i = 0; i <= 3; i++) {
                 const name_ext = k_name + '#' + i;
                 if (g_event[name_ext]) {
-                  if ((typeof g_event[name_ext] == 'string') ? g_event[name_ext].indexOf(dir) != -1 : d == '右')
+                  if ((typeof g_event[name_ext] == 'string') ? true : true)
                     gestures.push(name_ext);
                 }
               }
@@ -742,6 +743,16 @@ function process_gesture() {
             }
 
             if (!key_pressed_passed) return false;
+          }
+
+          if (condition.object_detection) {
+            const od = System._browser.camera.object_detection;
+            if (!od.enabled) return false;
+
+            const class_name = condition.object_detection.class_name.find(c=>od.data_by_class_name[c]);
+            if (condition.object_detection.visible == !class_name) return false;
+
+            if (condition.object_detection.hand && (condition.object_detection.hand != od.data_by_class_name[class_name].hand)) return false;
           }
 
           if (condition.hand_hidden) {

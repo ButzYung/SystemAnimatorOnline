@@ -814,9 +814,30 @@
 							},
 							"tooltip": {
 								"_translation_": {
-									"_default_": "Use this option to apply a rotation offset to the upper body of your avatar while rotating the root in the opposite direction, as if only your lower body is rotated while the upper body stays still. This can be useful if you are at a certain angle sideway to the camera instead of facing the camera straightly. Press ➕➖ key to change value. Default is \"0°\".",
-									"ja": "このオプションを使用して、アバターの上半身に回転オフセットを適用しながら、上半身は静止したまま下半身だけを回転させるかのように、ルートを反対方向に回転させます。 これは、カメラに真正面を向くのではなく、カメラに対して一定の角度で横にいる場合に便利です。 ➕➖キーを押して値を変更します。 デフォルトは「0°」です。",
-									"zh": "在特別情況下，可使用此選項調整人物上半身回轉偏移，同時系統會在人物的底部作出相反的回轉，以達至彷彿是上半身不動而是下半身回轉的效果。 此選項方便當鏡頭位置是側面面向你的時候使用。 按➕➖鍵更改數值。 預設是「0°」。"
+									"_default_": "During upper body mocap, use this setting to apply a rotation offset to the upper body of your avatar while rotating the root in the opposite direction, as if only your lower body is rotated while the upper body stays still. This can be useful if you are at a certain angle sideway to the camera instead of facing the camera straightly. Default is \"0°\".",
+									"ja": "上半身のモーキャップ中に、この設定を使用して、あたかも上半身が静止したまま下半身だけが回転しているかのように、ルートを反対方向に回転しながら、アバターの上半身に回転オフセットを適用します。 これは、カメラに真正面を向くのではなく、カメラに対して一定の角度で横にいる場合に便利です。 デフォルトは「0°」です。",
+									"zh": "在上半身動作捕捉期間，使用此設定可對人物的上半身施加旋轉偏移，同時沿相反方向旋轉整個人物，就好像只有下半身旋轉而上半身保持靜止一樣。 此選項方便當鏡頭位置是側面面向你的時候使用。 預設是「0°」。"
+								}
+							}
+						},
+						"hide_avatar_on_tracking_loss": {
+							"_translation_": {
+								"_default_": "Hide on tracking loss",
+								"ja": "追跡喪失時にアバターを隠す",
+								"zh": "動捕失效時隱藏人物"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Hide avatar on tracking loss:\nDuring full body mocap, this setting determines whether to hide the avatar or just freeze the pose when body tracking is lost. When VMC is on, pseudo hiding of avatar is achieved by applying a vertical position offset (-999) to the avatar on the other side. Choose \"non-VMC\" to disable this behavior. Default is \"non-VMC\".",
+									"ja": "追跡喪失時にアバターを隠す:\nこの設定は、全身モーキャプ中に、ボディトラッキングが失われたときにアバターを非表示にするか、ポーズをフリーズするかを決定します。 VMC がオンの場合、反対側のアバターに垂直位置オフセット (-999) を適用することで、アバターの擬似非表示が実現されます。 この動作を無効にするには、「非VMC」を選択します。 デフォルトは「非VMC」です。",
+									"zh": "動捕失效時隱藏人物:\n在全身動作捕捉期間，此設定決定當身體追蹤失效時是隱藏人物還是僅凍結姿勢。 當VMC開啟時，透過對另一側的人物套用垂直位置偏移（-999）來模擬人物的隱藏。 選擇「非VMC」以停用此行為。 預設是「非VMC」。"
+								}
+							},
+							"non_VMC": {
+								"_translation_": {
+									"_default_": "Non-VMC",
+									"ja": "非VMC",
+									"zh": "非VMC"
 								}
 							}
 						},
@@ -1340,9 +1361,23 @@
 							},
 							"tooltip": {
 								"_translation_": {
-									"_default_": "When enabled, this experimental option separates the processing of hand tracking from body tracking, and runs hand tracking model on an independent web worker, which aims to give priority for body mocap to achieve higher fps, but possibly lower fps for hand tracking, when system resource is tight. Default is \"OFF\".",
-									"ja": "この実験的な設定を有効にすると、ハンドトラッキングの処理がボディトラッキングから分離され、独立したウェブワーカーでハンドトラッキング モデルが実行されます。 これにより、ボディのモーキャプを優先してより高いfpsを実現しますが、システム資源が不足している場合は、ハンドトラッキングのfpsが低くなる可能性があります。 デフォルトは「OFF」。",
-									"zh": "此實驗性功能將手部追蹤的處理和身體追蹤分開。 當系統資源不足時，此功能會優先處理身體追蹤以增加動捕幀率，而代價是手部追蹤的幀率有可能下降。 預設是「OFF」。"
+									"_default_": "When enabled, the processing of hand tracking will be separated from body tracking and run on a web worker. \"Parallel\" runs parallelly without sync, aiming to give priority for body mocap to achieve higher fps, but possibly lower fps for hand tracking. \"Synced\" provides less fps boost but syncs mocap result as if web worker is off. Default is \"OFF\".",
+									"ja": "有効にすると、手の追跡の処理が身体の追跡から分離され、Webワーカー上で実行されます。 「並列」は同期なしで並列実行され、身体を優先してより高いfpsを実現しますが、手のfpsは低くなる可能性があります。 「同期」ではfpsブーストは少なくなりますが、Webワーカーがオフの場合と同様にモーキャプの結果が同期されます。 デフォルトは「OFF」。",
+									"zh": "啟用後，手部追蹤的處理將與身體追蹤分開並在web worker上運行。 「並行」在沒有同步的情況下並行運行，旨在優先考慮身體動作捕捉以實現更高的 fps，但可能會降低手部追蹤的 fps。 「同步」提供較少的 fps 提升，但會同步動作捕捉結果，就像web worker關閉時一樣。 預設是「OFF」。"
+								}
+							},
+							"parallel": {
+								"_translation_": {
+									"_default_": "Parallel",
+									"ja": "並列",
+									"zh": "並行"
+								}
+							},
+							"synced": {
+								"_translation_": {
+									"_default_": "Synced",
+									"ja": "同期",
+									"zh": "同步"
 								}
 							}
 						}
@@ -2067,21 +2102,21 @@
 								},
 								"tooltip": {
 									"_translation_": {
-										"_default_": "Scale Z<press_to_change_value>:\nUse this setting to adjust the depth of the 3D wallpaper. Increasing the value can enhance the 3D visual effect based on depth when used with other settings such as \"Depth shift\" and \"Depth contrast\". Default is \"100%\".",
-										"ja": "スケール Z<press_to_change_value>:\nこの設定を使用して、3D 壁紙の深さを調整します。 値を大きくすると、「深さの変化」や「深度對比」などの他の設定と組み合わせて使用することで、深さに基づいた 3D 視覚効果を高めることができます。 デフォルトは「100%」です。",
-										"zh": "縮放 Z<press_to_change_value>:\n使用此設定來調整 3D 桌布的深度。 與「深度偏移」和「深度對比」等其他設定一起使用時，增加該值可以增強基於深度的 3D 視覺效果。 預設是「100%」。"
+										"_default_": "Scale Z<press_to_change_value>:\nUse this setting to adjust the depth of the 3D wallpaper. Changing the value can enhance the 3D visual effect based on camera movement when used with other settings such as \"Depth shift\" and \"Depth contrast\". Default is \"100%\".",
+										"ja": "スケール Z<press_to_change_value>:\nこの設定を使用して、3D 壁紙の深さを調整します。 値を変更すると、「深さのシフト」や「深さのコントラスト」などの他の設定と組み合わせて使用することで、カメラの動きに基づいた 3D 視覚効果を高めることができます。 デフォルトは「100%」です。",
+										"zh": "縮放 Z<press_to_change_value>:\n使用此設定來調整 3D 桌布的深度。 與「深度偏移」和「深度對比」等其他設定一起使用時，變更該值可增強基於相機移動的 3D 視覺效果。 預設是「100%」。"
 									}
 								},
 								"depth_shift": {
 									"_translation_": {
 										"_default_": "Depth shift",
-										"ja": "深さの変化",
+										"ja": "深さのシフト",
 										"zh": "深度偏移"
 									},
 									"tooltip": {
 										"_translation_": {
 											"_default_": "Depth shift<press_to_change_value>:\nUse this setting to shift the depth values to either end of the spectrum. Positive value shifts depth towards the camera, making closer objects look even closer. Negative value does the opposite. Default is \"0%\".",
-											"ja": "深さの変化<press_to_change_value>:\nこの設定を使用して、深度値をスペクトルの両端にシフトします。 正の値は深度をカメラの方向にシフトし、近くにあるオブジェクトがさらに近くに見えるようにします。 負の値は逆の効果をもたらします。 デフォルトは「0%」です。",
+											"ja": "深さのシフト<press_to_change_value>:\nこの設定を使用して、深度値をスペクトルの両端にシフトします。 正の値は深度をカメラの方向にシフトし、近くにあるオブジェクトがさらに近くに見えるようにします。 負の値は逆の効果をもたらします。 デフォルトは「0%」です。",
 											"zh": "深度偏移<press_to_change_value>:\n使用此設定可將深度值移至頻譜的任何一端。 正值會將深度移向相機，使較近的物體看起來更近。 負值則相反。 預設是「0%」。"
 										}
 									}
@@ -2095,7 +2130,7 @@
 									"tooltip": {
 										"_translation_": {
 											"_default_": "Depth contrast<press_to_change_value>:\nUse this setting to change the contrast of the depth values. Use a smaller contrast when some depth values are unnaturally stuck at either end of the spectrum, making them movable using the \"Depth shift\" setting. Default is \"0%\".",
-											"ja": "深さのコントラスト<press_to_change_value>:\nこの設定を使用して、深度値のコントラストを変更します。 深度値がスペクトルのどちらかの端に不自然に固定されている場合は、コントラストを小さくして、「深さの変化」設定を使用して移動できるようにします。 デフォルトは「0%」です。",
+											"ja": "深さのコントラスト<press_to_change_value>:\nこの設定を使用して、深度値のコントラストを変更します。 深度値がスペクトルのどちらかの端に不自然に固定されている場合は、コントラストを小さくして、「深さのシフト」設定を使用して移動できるようにします。 デフォルトは「0%」です。",
 											"zh": "深度對比<press_to_change_value>:\n使用此設定更改深度值的對比度。 當某些深度值不自然地卡在光譜的兩端時，可使用較小的對比度，使它們可以使用「深度偏移」設定進行移動。 預設是「0%」。"
 										}
 									}
@@ -2111,6 +2146,20 @@
 											"_default_": "Depth blur<press_to_change_value>:\nUse this setting to blur the depth. Larger value smooths changes betwen adjacent depth values. Default is \"2px\".",
 											"ja": "深さのぼかし<press_to_change_value>:\nこの設定を使用して深度をぼかします。 値が大きいほど、隣接する深度値間の変化が滑らかになります。 デフォルトは「2px」です。",
 											"zh": "深度模糊<press_to_change_value>:\n使用此設定來模糊深度。 較大的值可以平滑相鄰深度值之間的變化。 預設是「2px」。"
+										}
+									}
+								},
+								"depth_smoothing": {
+									"_translation_": {
+										"_default_": "Depth smoothing",
+										"ja": "深さの平滑化",
+										"zh": "深度平滑化"
+									},
+									"tooltip": {
+										"_translation_": {
+											"_default_": "Depth smoothing<press_to_change_value>:\nXR Animator supports using converted video file as 3D animated wallpaper. However, depth map of a video can be inconsistent across frames, causing distortion. Increase this setting to reduce distortion. \"100%\" practically freezes the depth map on the first/current frame. Default is \"80%\".",
+											"ja": "深さの平滑化<press_to_change_value>:\nXR Animator は、変換されたビデオ ファイルを 3D アニメーション壁紙として使用することをサポートしています。 ただし、ビデオの深度マップはフレーム間で一貫性がなく、歪みが生じる可能性があります。 歪みを軽減するには、この設定を増やします。 「100%」は、最初のフレームまたは現在のフレームの深度マップを固定します。 デフォルトは「80%」。",
+											"zh": "深度平滑化<press_to_change_value>:\nXR Animator 支援使用轉換後的影片檔案作為 3D 動畫桌布。 然而，影片的深度圖在幀之間可能不一致，從而導致失真。 增加此設定可減少失真。 「100%」 實際上凍結了第一幀/當前幀上的深度圖。 預設是「80%」。"
 										}
 									}
 								}
@@ -2179,9 +2228,9 @@
 								},
 								"tooltip": {
 									"_translation_": {
-										"_default_": "Depth model:\nThis setting determines the AI model used to generate the depth map for 3D wallpaper. \"Depth Anything v2 base\" offers better quality at the expense of extra system resource usage. Default is \"Depth Anything v2 small\".",
-										"ja": "深度モデル:\nこの設定は、3D 壁紙の深度マップを生成するために使用される AI モデルを決定します。 「Depth Anything v2 base」 は、システム リソースの使用量が増える代わりに、より優れた品質を提供します。 デフォルトは 「Depth Anything v2 small」 です。",
-										"zh": "深度模型:\n此設定決定用於產生 3D 壁紙深度圖的 AI 模型。 「Depth Anything v2 base」提供更好的質量，但會佔用額外的系統資源。 預設值為「Depth Anything v2 small」。"
+										"_default_": "Depth model:\nThis setting determines the AI model used to generate the depth map for 3D wallpaper. \"Depth Anything v2 base/large\" offers better quality at the expense of extra system resource usage. Default is \"Depth Anything v2 small\".",
+										"ja": "深度モデル:\nこの設定は、3D 壁紙の深度マップを生成するために使用される AI モデルを決定します。 「Depth Anything v2 base/large」 は、システム リソースの使用量が増える代わりに、より優れた品質を提供します。 デフォルトは 「Depth Anything v2 small」 です。",
+										"zh": "深度模型:\n此設定決定用於產生 3D 壁紙深度圖的 AI 模型。 「Depth Anything v2 base/large」提供更好的質量，但會佔用額外的系統資源。 預設值為「Depth Anything v2 small」。"
 									}
 								}
 							},
@@ -2273,6 +2322,83 @@
 										"_default_": "Camera location Z",
 										"ja": "カメラの位置 Z",
 										"zh": "相機位置 Y"
+									}
+								}
+							},
+							"convert_3D_wallpaper": {
+								"_translation_": {
+									"_default_": "Convert 3D wallpaper",
+									"ja": "3D壁紙を変換する",
+									"zh": "轉換 3D 壁紙"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "Convert 3D wallpaper:\nClick to open a new section where you can drop an image, folder of images, or a video file and convert it to 3D format with depth map attached. Converted file can be used directly in XR Animator as 3D backdrop without further conversion, saving time and system resource usage as there is no need to re-calculate depth map.",
+										"ja": "3D壁紙を変換する:\nクリックすると新しいセクションが開き、画像、画像フォルダー、またはビデオ ファイルをドロップして、深度マップが添付された 3D 形式に変換できます。 変換されたファイルは、それ以上変換せずに XR Animator で 3D 背景として直接使用できます。 深度マップを再計算する必要がないため、時間とシステム リソースの使用量を節約できます。",
+										"zh": "轉換 3D 壁紙:\n點擊可開啟一個新部分，您可以在其中放置圖像、圖像資料夾或視訊文件，並將其轉換為附加深度圖的 3D 格式。 轉換後的文件可以直接在 XR Animator 中用作 3D 背景，無需進一步轉換，無需重新計算深度圖，從而節省時間和系統資源使用。"
+									}
+								},
+								"converter": {
+									"_translation_": {
+										"_default_": "Drop an image, video or folder of images to begin 3D wallpaper conversion.",
+										"ja": "画像、ビデオ、または画像フォルダーをドロップして、3D 壁紙の変換を開始します。",
+										"zh": "拖放影像、影片或影像資料夾即可開始 3D 桌布轉換。"
+									},
+									"pause_resume": {
+										"_translation_": {
+											"_default_": "Pause/Resume",
+											"ja": "一時停止/再開",
+											"zh": "暫停/恢復"
+										}
+									},
+									"stop": {
+										"_translation_": {
+											"_default_": "Stop",
+											"ja": "停止",
+											"zh": "停止"
+										}
+									},
+									"resume_from_last_conversion": {
+										"_translation_": {
+											"_default_": "Resume from last conversion",
+											"ja": "前回の変換から再開",
+											"zh": "從上次轉換恢復"
+										}
+									},
+									"note_on_conversion": {
+										"_translation_": {
+											"_default_": "Note on conversion",
+											"ja": "変換時の注意点",
+											"zh": "轉換時的注意事項"
+										}
+									},
+									"batch_conversion_format": {
+										"_translation_": {
+											"_default_": "Batch conversion format",
+											"ja": "バッチ変換形式",
+											"zh": "批量轉換格式"
+										},
+										"tooltip": {
+											"_translation_": {
+												"_default_": "Batch conversion format:\nThis setting determines the image format used for the intermediate/final output when dropping an image folder or video file. PNG is bigger in filesize but without quality loss, while other formats are smaller at the expense of image quality (determined by \"Quality\" setting). Default is \"JPEG\".",
+												"ja": "バッチ変換形式:\nこの設定は、画像フォルダまたはビデオ ファイルをドロップするときに中間/最終出力に使用される画像形式を決定します。 PNG はファイル サイズが大きくなりますが、品質は低下しません。一方、他の形式は画像品質を犠牲にしてサイズが小さくなります (「品質」 設定によって決定されます)。 デフォルトは「JPEG」です。",
+												"zh": "批量轉換格式:\n此設定決定放置影像資料夾或視訊檔案時用於中間/最終輸出的影像格式。 PNG 檔案大小較大，但沒有品質損失，而其他格式較小，但會犧牲影像品質（由「品質」設定決定）。 預設為「JPEG」。"
+											}
+										},
+										"quality": {
+											"_translation_": {
+												"_default_": "Quality",
+												"ja": "品質",
+												"zh": "品質"
+											},
+											"tooltip": {
+												"_translation_": {
+													"_default_": "Quality (press ⬅️➡️ key to change value):\nWhen batch conversion format is non-PNG, this setting determines the compression quality. Bigger number means better image quality, at the expense of filesize. Default is \"95\".",
+													"ja": "品質 (⬅️➡️キーで値を変更する):\nバッチ変換形式が PNG 以外の場合、この設定によって圧縮品質が決まります。 数値が大きいほど画像品質は向上しますが、ファイル サイズは大きくなります。 デフォルトは「95」です。",
+													"zh": "品質 (按️⬅️➡️鍵更改數值):\n當批量轉換格式為非PNG時，此設定決定壓縮品質。 數字越大意味著影像品質越好，但會犧牲檔案大小。 預設為「95」。"
+												}
+											}
+										}
 									}
 								}
 							},

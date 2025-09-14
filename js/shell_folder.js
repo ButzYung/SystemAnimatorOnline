@@ -1,4 +1,4 @@
-// SA_ReturnItemsFromFolder (v1.0.4)
+// 2024-12-09
 /*
 Required:
 	toFileProtocol()
@@ -6,72 +6,71 @@ Required:
 
 function Shell_ReturnItemsFromFolder(path, para_obj, is_subfolder) {
   if (!para_obj)
-    para_obj = {}
+    para_obj = {};
   if (!para_obj.RE_items)
-    para_obj.RE_items = /\.(bmp|gif|jpg|jpeg|png)$/i
+    para_obj.RE_items = /\.(bmp|gif|jpg|jpeg|png)$/i;
   if (!para_obj.gallery)
-    para_obj.gallery = []
-  if (!is_subfolder)
-    para_obj._shell_item_count = 0
+    para_obj.gallery = [];
+  if (!para_obj.item_limit)
+    para_obj.item_limit = 9999;
 
-  var f
+  if (!is_subfolder)
+    para_obj._shell_item_count = 0;
+
+  let f;
 
   try {
-    f = System.Shell.itemFromPath(path)
+    f = System.Shell.itemFromPath(path);
   }
   catch (ex) {}
 
   if (!f)
-    return ((is_subfolder) ? null : [])
+    return ((is_subfolder) ? null : []);
 
-  var items = f.SHFolder.Items
-  for (var i = 0, i_max = items.count; i < i_max; i++) {
-    if (++para_obj._shell_item_count > 9999) {
+  let items = f.SHFolder.Items;
+  for (let i = 0, i_max = items.count; i < i_max; i++) {
+    if (++para_obj._shell_item_count > para_obj.item_limit) {
       if (is_subfolder)
         return null
       else
         break
     }
 
-    var item = items.item(i)
+    let item = items.item(i);
 
     if (item.isLink) {
-      var item_linked
+      if (para_obj.skip_link) continue;
+
+      let item_linked;
       try {
-        item_linked = System.Shell.itemFromPath(item.link.path)
+        item_linked = System.Shell.itemFromPath(item.link.path);
       }
       catch (ex) {}
 
       if (!item_linked)
-        continue
+        continue;
 
-      item = item_linked
+      item = item_linked;
     }
 
     if (item.isFolder) {
+      if (para_obj.skip_subfolder) continue;
+
       if (!Shell_ReturnItemsFromFolder(item.path, para_obj, true)) {
         if (is_subfolder)
-          return null
+          return null;
       }
     }
     else if (item.isFileSystem) {
-      var path = item.path
+      let path = item.path;
 
       if (!para_obj.RE_items.test(path))
-        continue
+        continue;
 
-      var obj = { index:para_obj.gallery.length, path:path, path_file:toFileProtocol(path) }
-      para_obj.gallery.push(obj)
-/*
-      if (para_obj.gallery.length > 9999) {
-        if (is_subfolder)
-          return null
-        else
-          break
-      }
-*/
+      let obj = { index:para_obj.gallery.length, path:path, path_file:toFileProtocol(path) };
+      para_obj.gallery.push(obj);
     }
   }
 
-  return para_obj.gallery
+  return para_obj.gallery;
 }

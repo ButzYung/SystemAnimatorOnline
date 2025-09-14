@@ -1,4 +1,4 @@
-// 2024-11-23
+// 2024-12-15
 
 const is_worker = (typeof window !== "object");
 
@@ -492,7 +492,7 @@ else {
 }
 
 use_hands_worker = options.use_hands_worker;// = true;
-//use_hands_worker_parallel = use_hands_worker;
+use_hands_worker_parallel = (use_hands_worker == 2);
 
 if (use_hands_worker) {
   if (!hands_worker)

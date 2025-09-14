@@ -211,9 +211,12 @@ function camera_limit1() {
 if (this.rotate_with_up_fixed) {
   if (_rotateStart_fixed_up.distanceToSquared(_rotateEnd_fixed_up) > this.EPS) {//(true) {//
 // AT: Camera_MOD
-const pos_raw = MMD_SA._v3a.copy(MMD_SA.Camera_MOD.get_camera_base(true).pos);
-const pos_offset = MMD_SA.THREEX.v4.copy(MMD_SA.Camera_MOD.get_camera_base().pos).sub(pos_raw);
-this._eye.add(pos_offset);
+let pos_offset;
+if (MMD_SA_options.is_XR_Animator) {
+  const pos_raw = MMD_SA._v3a.copy(MMD_SA.Camera_MOD.get_camera_base(true).pos);
+  pos_offset = MMD_SA.THREEX.v4.copy(MMD_SA.Camera_MOD.get_camera_base().pos).sub(pos_raw);
+  this._eye.add(pos_offset);
+}
 
 // v0.25.0 (scale _eye to consider zoom distance)
     _eye.subVectors( this.position0, this.target ).normalize().multiplyScalar(this._eye.length());
@@ -261,7 +264,7 @@ this._eye.add(pos_offset);
     }
 
 // AT: Camera_MOD
-this._eye.sub(pos_offset);
+if (pos_offset) this._eye.sub(pos_offset);
   }
   return
 }
@@ -320,8 +323,7 @@ if (camera_limit1.call(this)) {
 
 }
 // AT: Camera_MOD
-if (pos_offset)
-  this._eye.sub(pos_offset);
+if (pos_offset) this._eye.sub(pos_offset);
 			}
 		};
 

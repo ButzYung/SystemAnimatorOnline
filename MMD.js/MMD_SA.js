@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-11-23)
+// (2024-12-15)
 
 var use_full_spectrum = true
 
@@ -6300,10 +6300,16 @@ return Promise.all([
  ,Camera_MOD: (function () {
     let camera_mod;
 
-    let v1, v2;
+    let vp, vt;
+    let v1, v2, v3, v4;
     window.addEventListener('jThree_ready', ()=>{
+      vp = new THREE.Vector3();
+      vt = new THREE.Vector3();
       v1 = new THREE.Vector3();
       v2 = new THREE.Vector3();
+      v3 = new THREE.Vector3();
+      v4 = new THREE.Vector3();
+      v5 = new THREE.Vector3();
 
       camera_mod = class Camera_mod {
 constructor(id) {
@@ -6406,23 +6412,65 @@ return c_mod;
 return camera_mod.get_mod(id);
       },
 
-      get_camera_base: function (ignore_list) {
-camera_mod.update_camera_base();
+      get_camera_base: function (ignore_list, update_camera_base) {
+if (update_camera_base !== false)
+  camera_mod.update_camera_base();
 
-const pos = v1.copy(camera_mod.c_pos);
-const target = v2.copy(camera_mod.c_target);
+const pos = vp.copy(camera_mod.c_pos);
+const target = vt.copy(camera_mod.c_target);
+let up_z = camera_mod.up_z_last;
 
 ((ignore_list === true) ? Object.keys(camera_mod.mod_list) : ignore_list)?.forEach(id=>{
   const c = camera_mod.mod_list[id];
   if (c) {
     pos.add(c.pos_last);
     target.add(c.target_last);
+    up_z += c.up_z_last;
   }
 });
 
 return {
   pos:pos,
   target:target,
+  up_z: up_z,
+};
+      },
+
+      get_camera_raw: function (update_camera_base, offset_rotation) {
+const obj = MMD_SA._trackball_camera;
+
+const cam_base_mod = this.get_camera_base(true, update_camera_base);
+const pos_base = v4.copy(cam_base_mod.pos);
+const target_base = v5.copy(cam_base_mod.target);
+const up_z_base = cam_base_mod.up_z;
+      
+const cam_base_mod2 = this.get_camera_base(null, false);
+
+let z = v1.setEulerFromQuaternion(obj.object.quaternion, 'YXZ').z;
+const z_offset = up_z_base - cam_base_mod2.up_z;
+z -= z_offset;
+
+const pos = v2.copy(obj.object.position);
+const pos_offset = pos_base.sub(cam_base_mod2.pos);
+pos.sub(pos_offset);
+
+const target = v3.copy(obj.target);
+const target_offset = target_base.sub(cam_base_mod2.target);
+target.sub(target_offset);
+
+const model_pos = THREE.MMD.getModels()[0].mesh.position;
+const cam_base_pos = v4.fromArray(MMD_SA_options.camera_position_base).add(MMD_SA.TEMP_v3.fromArray(MMD_SA.center_view)).add(model_pos);
+const cam_base_target = v5.copy(THREE.MMD.getModels()[0].mesh.position).add(MMD_SA.TEMP_v3.fromArray(MMD_SA.center_view_lookAt)).add(MMD_SA.TEMP_v3.fromArray(MMD_SA_options.camera_lookAt));
+if (offset_rotation) {
+  const axis = v1.copy(cam_base_pos).sub(cam_base_target).normalize();
+  const q = MMD_SA.TEMP_q.setFromUnitVectors(axis, MMD_SA.TEMP_v3.copy(pos).sub(target).normalize());
+  pos.sub(target).applyQuaternion(q.conjugate()).add(target);
+}
+
+return {
+  pos: pos.sub(cam_base_pos),
+  target: target.sub(cam_base_target),
+  up_z: z,
 };
       },
     };
@@ -9145,7 +9193,8 @@ const settings_default = this._joints_settings;
 // Set has no index
 let i = 0;
 for ( const e of this.model.springBoneManager.joints ) {
-  const _scale = (e.center) ? 1 : vrm_scale;
+// fixed in three-vrm v3.3.0
+  const _scale = vrm_scale;//(e.center) ? 1 : vrm_scale;
 //  e.settings.dragForce = (_scale > 1) ? 1 - (1-settings_default[i].dragForce)/_scale : settings_default[i].dragForce/_scale;
   e.settings.stiffness = settings_default[i].stiffness * ((restrict_physics) ? 10 : 1) * VRM.joint_stiffness_percent/100 * _scale;
   e.settings.gravityPower = settings_default[i].gravityPower * _scale;
@@ -9686,9 +9735,10 @@ if (MMD_SA.OSC.VMC.sender_enabled && MMD_SA.OSC.VMC.ready) {
 ...((VSeeFace_mode) ? ((System._browser.camera.poseNet.enabled && MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only && MMD_SA.MMD.motionManager.para_SA.center_view_enforced) ? [0,0,-5/10] : [0, 5/10, -60/10]) : [model_position_offset.x*((root_turned_around)?-1:1), model_position_offset.y, -model_position_offset.z*((root_turned_around)?-1:1)]),
 -model_rot.x, -model_rot.y, model_rot.z, model_rot.w,
   ];
+  if (System._browser.camera.poseNet.no_pose_data && (System._browser.camera.poseNet.hide_avatar_on_tracking_loss > 1)) pos_msgs[2] -= 999;
 
   const bone_msgs = [];
-  for (let name_VMC in ((MMD_SA.OSC.VMC.send_avatar_data) ? VRMSchema.HumanoidBoneName : {})) {
+  for (let name_VMC in VRMSchema.HumanoidBoneName) {
     const name = VRMSchema.HumanoidBoneName[name_VMC];
     const bone = this.getBoneNode(name);
     if (!bone) continue;
@@ -9722,7 +9772,7 @@ b_pos.x, b_pos.y, -b_pos.z,
       blendshape_weight[name] = v;
   }
 
-  for (const name in ((MMD_SA.OSC.VMC.send_avatar_data) ? blendshape_weight : {})) {
+  for (const name in blendshape_weight) {
     const name_for_blendshapes = (use_faceBlendshapes && this.faceBlendshapes_map_reversed[name]) || name;
     morph_msgs.push([
 // Recent Warudo no longer uses VRM0 blendshape names for VRM1 model. Use VRM1 blendshape names for VRM1 model by default.
@@ -10150,6 +10200,9 @@ GLTF_loader.load(
   // called when the resource is loaded
   (function () {
     function main(vrm) {
+// https://github.com/pixiv/three-vrm/releases/tag/v3.3.0
+THREE.VRMUtils.combineMorphs?.( vrm );
+
 console.log(vrm);
 
 const mesh_obj = vrm.scene
@@ -10267,7 +10320,9 @@ resolve();
 // https://pixiv.github.io/three-vrm/packages/three-vrm/examples/basic.html
 // calling these functions greatly improves the performance
 THREE.VRMUtils.removeUnnecessaryVertices( gltf.scene );
-THREE.VRMUtils.removeUnnecessaryJoints( gltf.scene );
+// https://github.com/pixiv/three-vrm/releases/tag/v3.2.0
+THREE.VRMUtils.combineSkeletons( gltf.scene );
+//THREE.VRMUtils.removeUnnecessaryJoints( gltf.scene );
 
 // three-vrm 1.0
 if (use_VRM1) {
@@ -13101,8 +13156,14 @@ if (skeletons.length) {
   console.log('_hips_height', _hips_height, motionHipsHeight);
 }
 else {
+  const hips = bone_clones['hips'].bone.getWorldPosition(v1);
+  const feet = (bone_clones['leftToes'] || bone_clones['leftFoot']).bone.getWorldPosition(v2);
+  if (feet.y < 0) {
+console.log('feet.y',feet.y);
+    hips.y -= feet.y;
+  }
 // can be negative
-  motionHipsHeight = bone_clones['hips'].bone.getWorldPosition(v1).applyQuaternion(bone_clones['hips'].bone.getWorldQuaternion(q1).conjugate().premultiply(rig_rot)).y;
+  motionHipsHeight = hips.applyQuaternion(bone_clones['hips'].bone.getWorldQuaternion(q1).conjugate().premultiply(rig_rot)).y;
 //  motionHipsHeight = v1.copy((motion_hips.position.lengthSq()) ? motion_hips.position : motion_hips.parent.position).applyQuaternion(q1.copy(motion_hips.quaternion).conjugate().premultiply(rig_rot)).y;
   hipsPositionScale = hips_height / motionHipsHeight;
 }
@@ -13919,15 +13980,16 @@ if (!target_current.enabled && ((target_current.enabled === false) || (target_cu
 var target_pos = v4.fromArray(target_data.filter(target_current.get_target_position().toArray()));//target_current.get_target_position();//
 //System._browser.camera.DEBUG_show(target_pos.toArray().join('\n') + '\n' + Date.now());
 
+const cam_base = v2.fromArray(MMD_SA_options.camera_position_base).add(MMD_SA.TEMP_v3.fromArray(MMD_SA.center_view));
+
 const cam_pos = v1.copy(target_pos);
 cam_pos.x *= MMD_SA_options.camera_face_locking_movement_x_percent/100;
 cam_pos.y *= MMD_SA_options.camera_face_locking_movement_y_percent/100;
 
 const model_scale = MMD_SA.THREEX.get_model(0).para.spine_length / 4.97462;
-const z_base = MMD_SA_options.camera_position_base[2] + MMD_SA.center_view[2];
+const z_base = cam_base.z;
 let z = z_base - target_pos.z;
 z = (System._browser.camera.ML_enabled) ? Math.max(z - Math.min(MMD_SA_options.camera_face_locking_z_min*10 * model_scale, z_base), 0) : z - Math.min(MMD_SA_options.camera_face_locking_z_min*10 * model_scale, z_base);
-//System._browser.camera.DEBUG_show(z)
 cam_pos.z = (z < 0) ? -z : -z * MMD_SA_options.camera_face_locking_movement_z_percent/100;
 
 target_pos.multiplyScalar(MMD_SA_options.camera_face_locking_look_at_target_percent/100);
@@ -13959,10 +14021,18 @@ pos.add(model.get_bone_position_by_MMD_name('センター',true).setY(0).applyQu
 head_pos = model.get_bone_position_by_MMD_name('頭').sub(model.get_bone_position_by_MMD_name('上半身')).add(v2.set(0,neck_y,0).applyQuaternion(model.get_bone_rotation_by_MMD_name('頭')));
 head_pos.sub(head_pos_ref);
 
-const c_base = MMD_SA.Camera_MOD.get_camera_base(['camera_lock']);
+const c_base = MMD_SA.Camera_MOD.get_camera_base();//['camera_lock']);//,'face']);
+//DEBUG_show(c_base.target.toArray().join('\n'))
 pos.sub(c_base.target);
 
-return head_pos.add(pos).multiplyScalar(MMD_SA_options.camera_face_locking_percent/100);
+head_pos.add(pos).multiplyScalar(MMD_SA_options.camera_face_locking_percent/100);
+
+if (MMD_SA_options.Dungeon.started) {
+  const camera_raw = MMD_SA.Camera_MOD.get_camera_raw(false, true);
+  head_pos.add(MMD_SA.TEMP_v3.copy(camera_raw.pos).setZ(0));
+}
+
+return head_pos;
   },
         };
 
@@ -14245,9 +14315,6 @@ if (!options.plugin) {
   };
 }
 
-if (!options.protocol)
-  options.protocol = (webkit_electron_mode) ? 'UDP' : 'WebSocket';
-
 this.options = options;
 this.options_default = Object.clone(options);
     }
@@ -14257,7 +14324,6 @@ this.options_default = Object.clone(options);
     #VMC_ready;
     #VMC_sender_enabled=false;
     #VMC_receiver_enabled=false;
-    #VMC_delay = 0;
 
     get enabled() { return this.#VMC_enabled; }
     set enabled(v) {
@@ -14268,10 +14334,16 @@ this.#VMC_enabled = !!v;
 if (this.#VMC_enabled) {
   _OSC.enabled = true;
   this.init();
+  DEBUG_show('(OSC/VMC client:ON/Port:' + this.options.plugin.send.port + ')', 5)
 }
 else {
   this.#VMC_sender_enabled = this.#VMC_receiver_enabled = false;
+  DEBUG_show('(OSC/VMC client:OFF)', 3)
 }
+
+// Warudo mode
+_OSC.VMC_camera.sender_enabled = v;
+_OSC.VMC_misc.sender_enabled = v;
     }
 
     get sender_enabled() { return this.#VMC_sender_enabled; }
@@ -14282,146 +14354,35 @@ this.#VMC_sender_enabled = !!v;
 
 if (this.#VMC_sender_enabled) {
   this.enabled = true;
-  DEBUG_show('(OSC/VMC sender:ON/Port:' + this.options.plugin.send.port + ')', 5);
 }
 else {
-  if (!this.#VMC_receiver_enabled)
-    this.enabled = false;
-
-// a trick to allow reconnection to WebSocket server when enabled again
-  if (this.#VMC_initialized == 'WebSocket') {
-    this.#VMC_initialized = this.#VMC_ready = false;
-    this.vmc.close();
-    console.log('OSC/VMC plugin closed:WebSocket');
-  }
-
-  DEBUG_show('(OSC/VMC sender:OFF)', 3)
-}
-
-// Warudo mode
-_OSC.VMC_camera.sender_enabled = v;
-_OSC.VMC_misc.sender_enabled = v;
-    }
-
-    get receiver_enabled() { return this.#VMC_receiver_enabled; }
-    set receiver_enabled(v) {
-if (this.#VMC_receiver_enabled == !!v) return;
-
-this.#VMC_receiver_enabled = !!v;
-
-if (this.#VMC_receiver_enabled) {
-// socket has to be recreated
-// https://stackoverflow.com/questions/56003679/check-if-udp-socket-is-runing-on-a-certain-port-close-it-then-run-it-again
-  if (!this.vmc) {
-    this.enabled = false;
-    this.#VMC_initialized = false;
-  }
-
-  this.enabled = true;
-  this.vmc.open();
-}
-else {
-  if (!this.#VMC_sender_enabled) this.enabled = false;
-  this.vmc.close();
-  console.log('OSC/VMC receiver(' + this.#VMC_initialized + '):Closed');
-
-  this.vmc = null;
+  if (!this.#VMC_receiver_enabled) this.enabled = false;
 }
     }
 
     get ready() { return this.#VMC_enabled && this.#VMC_ready; }
     set ready(v) { this.#VMC_ready = v; }
 
-    get delay() { return this.#VMC_delay; }
-    set delay(v) { this.#VMC_delay = v || 0; }
-
     init() {
-if (!webkit_electron_mode)
-  this.options.protocol = 'WebSocket';
-
-if (this.#VMC_initialized == this.options.protocol) return;
-
-this.#VMC_ready = false;
-if (this.#VMC_initialized) {
-  this.vmc.close();
-  console.log('OSC/VMC plugin closed:' + this.#VMC_initialized);
-}
-this.#VMC_initialized = this.options.protocol;
-
-console.log('OSC/VMC plugin initializing:' + this.options.protocol);
+if (this.#VMC_initialized) return;
+this.#VMC_initialized = true;
 
 OSC_init();
 
-// v0.34.4-b
-if (this.options.plugin.open)
-  this.options.plugin.open.host = undefined;
-
-let plugin_type, options;
-if (this.options.protocol == 'UDP') {
-  plugin_type = 'DatagramPlugin';
-  options = this.options.plugin;
-}
-else {
-  if (this.options.plugin.send) {
-    plugin_type = 'WebsocketClientPlugin';
-    options = this.options.plugin.send;
-  }
-  else {
-    plugin_type = 'WebsocketServerPlugin';
-    options = this.options.plugin.open;
-  }
-}
-
-this.plugin = new OSC[plugin_type](options);
+this.plugin = new OSC.DatagramPlugin(this.options.plugin);
 this.vmc = new OSC({ plugin:this.plugin });
 
-if (this.options.protocol == 'WebSocket') {
-  this.vmc.on('open', () => {
-    if (this.options.protocol != 'WebSocket') return;
-
-    this.#VMC_ready = true;
-    console.log('OSC/VMC Websocket:Connected');
-  });
-
-  this.vmc.on('close', () => {
-    if (this.options.protocol != 'WebSocket') return;
-
-    this.#VMC_ready = false;
-  });
-
-  this.vmc.on('error', (()=>{
-    let timerID;
-    return (err) => {
-      if (this.options.protocol != 'WebSocket') return;
-
-      if (this.#VMC_ready) {
-//      console.log('OSC/VMC Websocket:Error', err);
-        return;
-      }
-
-      this.vmc.close();
-
-      if (timerID) clearTimeout(timerID);
-      timerID = setTimeout(()=>{
-        if (this.#VMC_ready || (this.#VMC_initialized != 'WebSocket')) return;
-
-        timerID = null;
-        console.log('OSC/VMC Websocket:Reconnecting');
-        this.vmc.open();
-      }, 1000*5);
-    };
-  })());
-
-  this.vmc.open();
-}
-else {
-  this.vmc.on('open', () => {
-//  this.#VMC_ready = true;
-    DEBUG_show('(OSC/VMC receiver:ON/Port:' + this.options.plugin.open.port + ')', 5);
-  });
-
+this.vmc.on('open', () => {
   this.#VMC_ready = true;
-}
+//  console.log(this.#vmc);
+});
+
+this.vmc.on('*', (msg) => {
+  if (!this.#VMC_receiver_enabled) return;
+});
+
+//this.vmc.open();
+this.#VMC_ready = true;
     }
 
     Message(address, args=[], types) {
@@ -14431,57 +14392,19 @@ return msg;
     }
 
     Bundle(...args) {
-return (args[0]) ? new OSC.Bundle([...args], 0) : null;
+return new OSC.Bundle(...args);
     }
 
     send(...args) {
-if (args[0])
-  this.vmc.send(...args);
-    }
-
-//const msg_obj = MMD_SA.OSC.VMC.time_control({ pos_msgs, bone_msgs, morph_msgs, camera_msgs, tracker_msgs });
-    static msg_obj_list = [];
-
-    time_control(msg_obj) {
-msg_obj.timestamp = RAF_timestamp;
-VMC.msg_obj_list.unshift(msg_obj);
-
-const target_timestamp = RAF_timestamp - MMD_SA.OSC.VMC.delay;
-
-let msg_obj_timed;
-
-for (let i = 0, i_max = VMC.msg_obj_list.length; i < i_max; i++) {
-  const _msg_obj = VMC.msg_obj_list[i];
-  let time_matched = _msg_obj.timestamp <= target_timestamp;
-  if (time_matched || (i == i_max-1)) {
-    msg_obj_timed = _msg_obj;
-    if (time_matched) {
-      VMC.msg_obj_list.length = i;
-    }
-    else if (i > 0) {
-      const msg_obj_previous = VMC.msg_obj_list[i-1];
-      if (Math.abs(msg_obj_previous.timestamp - target_timestamp) < Math.abs(msg_obj.timestamp - target_timestamp))
-        msg_obj_timed = msg_obj_previous;
-    }
-    break;
-  }
-}
-
-return msg_obj_timed;
+this.vmc.send(...args);
     }
   }
 
-  async function OSC_init() {
+  function OSC_init() {
 if (initialized) return;
 initialized = true;
 
-if (webkit_electron_mode) {
-  OSC = require('node_modules.asar/OSC-js/node_modules/osc-js');
-}
-else {
-  await System._browser.load_script(toFileProtocol(System.Gadget.path + '/js/osc.min.js'))
-  OSC = self.OSC;
-}
+OSC = require('node_modules.asar/OSC-js/node_modules/osc-js');
 //console.log(OSC)
 
 ready = true;
@@ -14514,7 +14437,7 @@ if (enabled) {
 
   (()=>{
     function VMC_warudo() {
-if ((_OSC.app_mode == 'Warudo') && webkit_electron_mode) {
+if (_OSC.app_mode == 'Warudo') {
   _OSC._VMC_warudo = _OSC._VMC_warudo || new VMC({ plugin:{ send: { port:19190, host:_OSC.VMC.options.plugin.send.host||'localhost' } } });
   if (_OSC.VMC.options.plugin.send.host && _OSC._VMC_warudo.plugin && (_OSC._VMC_warudo.plugin.options.send.host != _OSC.VMC.options.plugin.send.host))
     _OSC._VMC_warudo.plugin.options.send.host = _OSC.VMC.options.plugin.send.host
@@ -14539,41 +14462,7 @@ return VMC_warudo();
     });
   })();
 
-  window.addEventListener('load', ()=>{
-    _OSC.VMC = new VMC();//{ plugin:{ send:MMD_SA_options.OSC?.VMC.send } });
-
-    if (!webkit_electron_mode)
-      OSC_init();
-  });
-
-  window.addEventListener('SA_Dungeon_onstart', ()=>{
-if (webkit_electron_mode) return;
-
-const vmc_sender_para = System._browser.url_search_params.vmc_sender_para?.split('|');
-if (!vmc_sender_para) return;
-//console.log(vmc_sender_para)
-if (vmc_sender_para[0]) {
-  const host = vmc_sender_para[0];
-  MMD_SA.OSC.VMC.options.plugin.send.host = host;
-  if (MMD_SA.OSC.VMC.plugin)
-    MMD_SA.OSC.VMC.plugin.options.send.host = host;
-}
-
-if (vmc_sender_para[1]) {
-  const port_number = parseInt(vmc_sender_para[1]);
-  MMD_SA.OSC.VMC.options.plugin.send.port = port_number;
-  if (MMD_SA.OSC.VMC.plugin)
-    MMD_SA.OSC.VMC.plugin.options.send.port = port_number;
-}
-
-MMD_SA.OSC.VMC.sender_enabled = !!parseInt(vmc_sender_para[2]) || !!parseInt(vmc_sender_para[3]);
-
-if (parseInt(vmc_sender_para[3])) {
-  MMD_SA.OSC.VMC.send_camera_data = true;
-  if (!parseInt(vmc_sender_para[2]))
-    MMD_SA.OSC.VMC.send_avatar_data = false;
-}
-  });
+  _OSC.VMC = new VMC();
 
   return _OSC;
 
@@ -15019,7 +14908,7 @@ gamepads.push(new Gamepad(id));
 
 
 MMD_SA.Wallpaper3D = (()=>{
-  let img
+  let img, video;
   let canvas_tex, canvas_depth, canvas_depth_transformed, canvas_depth_effect, canvas_img, canvas_temp1;
   let transformers_worker;
   let ar;
@@ -15037,6 +14926,7 @@ MMD_SA.Wallpaper3D = (()=>{
   const depth_model_name = {
 'onnx-community/depth-anything-v2-small': 'Depth Anything v2 small',
 'onnx-community/depth-anything-v2-base' : 'Depth Anything v2 base',
+'onnx-community/depth-anything-v2-large': 'Depth Anything v2 large',
   };
 
   const SR_model_name = {
@@ -15061,6 +14951,8 @@ update_depth_transform_timerID = setTimeout(()=>{
   window.addEventListener('SA_MMD_camera_FOV_on_change', ()=>{ update_depth(100); });
 
   const depth_effect = (()=>{
+    let enabled = false;
+
     let effect_obj;
 
     let busy;
@@ -15079,13 +14971,46 @@ _depth_effect.needsUpdate = true;
     }
 
     const _depth_effect = {
-      enabled: true,
+      get enabled() { return enabled; },
+      set enabled(v) {
+if (!!v == !!enabled) return;
+
+enabled = v;
+if (enabled) {
+  this.update_depth();
+}
+      },
 
       get ready() { return this.enabled && !busy && effect_obj && _wallpaper_3D.depth_map_ready; },
 
       needsUpdate: false,
 
       type: '',
+
+      update_depth: function () {
+if (!this.ready) return;
+
+let ctx;
+
+canvas_depth_effect.width  = canvas_depth.width;
+canvas_depth_effect.height = canvas_depth.height
+ctx = canvas_depth_effect.getContext('2d');
+ctx.filter = 'brightness(300%) invert(100%) brightness(75%)';
+ctx.drawImage(canvas_depth, 0,0);
+ctx.filter = 'none';
+
+  // CONV. STEP: move a component channel to alpha-channel
+const idata = ctx.getImageData(0, 0, canvas_depth_effect.width, canvas_depth_effect.height);
+const data32 = new Uint32Array(idata.data.buffer);
+let i = 0, len = data32.length;
+while(i < len) {
+  data32[i] = data32[i++] << 8; // shift blue channel into alpha (little-endian)
+}
+// update canvas
+ctx.putImageData(idata, 0, 0);
+
+this.needsUpdate = true;
+      },
 
       load: async function (src) {
 if (busy) return;
@@ -15131,6 +15056,8 @@ System._browser.on_animation_update.remove(apply_effect, 0);
 System._browser.on_animation_update.add(apply_effect, 0,0,-1);
 
 busy = false;
+
+this.enabled = true;
       },
 
       stop: function () {
@@ -15192,6 +15119,11 @@ _wallpaper_3D.mesh.material.map.needsUpdate = true;
     set enabled(v) {
 enabled = !!v;
 this.visible = v;
+
+if (v) {
+  if (this.is_video && video.paused)
+    video.play();
+}
     },
 
     depth_model_name: depth_model_name,
@@ -15298,10 +15230,451 @@ mesh.userData.use_depth_transform_shader = use_depth_transform_shader;
 return mesh;
     },
 
-    init: async function () {
-if (!transformers_worker) {
+    generate_depth_map: async function (src) {
+await this.init_worker();
 
+let img = src;
+if (typeof img == 'string') {
+  img = new Image();
+  await new Promise((resolve)=>{
+    img.onload = function () {
+      resolve();
+    };
+    img.src = toFileProtocol(src);
+  });
+}
+
+let w = img.width;
+let h = img.height;
+
+const bitmap = await createImageBitmap(img);
+
+const options = {
+  depth:{
+    enabled: true,
+    model: this.options.depth_model,
+    get_map_only: true,
+  },
+  SR:{
+    model: this.options.SR_model,
+  },
+};
+
+//options.SR.enabled = this.options.SR_mode && (((w < 1280) || (h < 720)) && (w*h < 1920*1080));
+
+let data = { rgba:bitmap, width:w, height:h, options:options };
+transformers_worker.postMessage(data, [data.rgba]);
+
+data = data.rgba = undefined;
+
+return new Promise((resolve)=>{
+  resolve_loaded = resolve;
+});
+    },
+
+    converter: (()=>{
+      let c_img;
+
+      let running, paused, stopping;
+      let stage;
+      let resolve_paused;
+
+      let fs, spawn, execSync;
+      let cp;
+      let resolve_cp;
+
+      let converter_image_format, converter_image_quality;
+
+      async function ffmpeg(path, args) {
+return new Promise((resolve)=>{
+  resolve_cp = resolve;
+
+  try {
+    cp = spawn(
+      (linux_mode) ? toLocalPath(path + '/ffmpeg') : 'ffmpeg',
+      args,
+      {
+        cwd: path
+      }
+    );
+
+    const log = [];
+    cp.stderr.on('data', (data) => {
+      data = data.toString();
+      log.push(data);
+      if (/^frame\=\s*(\d+).+speed\=([\d\.]+)x/i.test(data)) {
+        MMD_SA_options._Wallpaper3D_status2_ = ((stage == 0) ? 'Decoding' : 'Encoding') + ' (frame=' + RegExp.$1 + '/speed=' + parseFloat(RegExp.$2).toFixed(1) + 'x)';
+      }
+    });
+
+    cp.on('close', (code) => {
+      if (code) {
+        console.error('FFMPEG decoding failed', log);
+      }
+      cp = resolve_cp = undefined;
+      resolve(!code);
+    });
+  }
+  catch (err) {
+    console.error(err);
+    cp = resolve_cp = undefined;
+    resolve(false);
+  }
+});
+      }
+
+      async function process_image(src, is_folder) {
+const items = (is_folder) ? Shell_ReturnItemsFromFolder(src, { skip_subfolder:true, skip_link:true, RE_items:/\.(png|jpg|jpeg|bmp|webp)$/i }) : [{ path:src, path_file:toFileProtocol(src) }];
+
+if (is_folder) {
+  let dir_path = toLocalPath(src + '/_XRA_');
+  try {
+    if (!fs.existsSync(dir_path))
+      fs.mkdirSync(dir_path);
+  }
+  catch (err) {
+    running = false;
+    MMD_SA_options._Wallpaper3D_status2_ = '❌ERROR: Failed to create folder';
+    console.error(err);
+    return;
+  }
+}
+
+const i_max = items.length;
+let i;
+for (i = 0; i < i_max; i++) {
+  if (paused) {
+    await new Promise((resolve)=>{
+      resolve_paused = resolve;
+    });
+  }
+
+  if (stopping) break;
+
+  const item = items[i];
+
+  let path_to_write;
+  if (is_folder) {
+    path_to_write = toLocalPath(src + '/_XRA_/xra-3d-wallpaper_' + item.path.replace(/^.+[\/\\]/, '').replace(/\.(\w+)$/, '') + '.' + converter_image_format.replace('jpeg', 'jpg'));
+    if (fs.existsSync(path_to_write)) continue;
+  }
+
+  MMD_SA_options._Wallpaper3D_status2_ = 'Processing depth (image ' + (i+1) + '/' + i_max + ')';
+
+  const img = new Image();
+  await new Promise((resolve)=>{
+    img.onload = function () {
+      resolve();
+    };
+    img.src = item.path_file;
+  });
+
+  let w = img.width;
+  let h = img.height;
+
+  let image_data = await _wallpaper_3D.generate_depth_map(img);
+
+  let ctx;
+
+  canvas_temp1 = canvas_temp1 || document.createElement('canvas');
+
+  canvas_temp1.width  = image_data.width;
+  canvas_temp1.height = image_data.height;
+  ctx = canvas_temp1.getContext('2d');
+  ctx.putImageData(image_data, 0,0);
+
+  if (options.downscale_allowed) {
+    w = image_data.width;
+    h = image_data.height;
+  }
+
+  c_img = c_img || document.createElement('canvas');
+
+  c_img.width  = w*2;
+  c_img.height = h;
+  ctx = c_img.getContext('2d');
+  ctx.drawImage(img, 0,0,img.width,img.height, 0,0,w,h);
+  ctx.drawImage(canvas_temp1, 0,0,canvas_temp1.width,canvas_temp1.height, w,0,w,h);
+
+  if (is_folder) {
+    await new Promise((resolve)=>{
+      c_img.toBlob(
+async (blob)=>{
+  const b = Buffer.from(await blob.arrayBuffer());
+  try {
+    fs.writeFileSync(path_to_write, b);
+  }
+  catch (err) {
+    console.error(err);
+  }
+
+  resolve();
+},
+'image/' + converter_image_format,
+(converter_image_format == 'png') ? 1 : converter_image_quality/100,
+      );
+    });
+  }
+  else {
+    System._browser.save_file('xra-3d-wallpaper_' + item.path.replace(/^.+[\/\\]/, '').replace(/\.\w+$/, '') + '.png', c_img.toDataURL('image/png'), 'Data URL');
+  }
+}
+
+MMD_SA_options._Wallpaper3D_status2_ = (stopping) ? '🛑Some images processed (' + (i+1) + '/' + i_max + ')' : '✔️All images processed (' + i_max + '/' + i_max + ')';
+
+_wallpaper_3D.end_worker();
+
+return true;
+      }
+
+      const _converter = {
+        get running() { return running; },
+
+        get stage() { return (running) ? stage : -1; },
+
+        start: async function (src, is_folder, options={}) {
+if (running) {
+  MMD_SA_options._Wallpaper3D_status2_ = 'Existing conversion still in progress';
+  return;
+}
+
+running = true;
+paused = false;
+stopping = false;
+
+stage = -1;
+
+resolve_paused = null;
+
+if (webkit_electron_mode && !fs) {
+  try {
+    fs = SA_require('fs');
+    ({ spawn, execSync } = SA_require('child_process'));
+  }
+  catch (err) {
+    running = false;
+    MMD_SA_options._Wallpaper3D_status2_ = '❌ERROR: Failed to initialize';
+    console.error(err);
+    return;
+  }
+}
+
+let is_video;
+let session, session_to_save;
+if (!src) {
+  session = session_to_save = _wallpaper_3D.options.converter_session;
+  src = session.src;
+
+  try {
+    if (!fs.existsSync(src))
+      src = null;
+  }
+  catch (err) {
+    src = null;
+  }
+
+  if (!src) {
+    running = false;
+    _wallpaper_3D.options.converter_session = null;
+    MMD_SA_options._Wallpaper3D_status2_ = '❌Last session not found';
+    return;
+  }
+
+  is_folder = session.is_folder;
+  is_video = session.is_video;
+  converter_image_format  = session.converter_image_format  || _wallpaper_3D.options.converter_image_format;
+  converter_image_quality = session.converter_image_quality || _wallpaper_3D.options.converter_image_quality;
+}
+else {
+  is_video = !is_folder && /\.(mp4|mkv|webm|mov)$/i.test(src);
+
+  converter_image_format  = _wallpaper_3D.options.converter_image_format;
+  converter_image_quality = _wallpaper_3D.options.converter_image_quality;
+
+  _wallpaper_3D.options.converter_session = null;
+
+  session_to_save = {
+    src, is_folder, is_video, converter_image_format, converter_image_quality
+  };
+}
+
+MMD_SA_options._Wallpaper3D_status2_ = (session) ? 'Resuming from last session...' : 'Starting...';
 await new Promise((resolve)=>{
+  System._browser.on_animation_update.add(resolve, 1,0);
+});
+
+let ffmpeg_path;
+let src_folder;
+if (is_video) {
+  stage = 0;
+
+  ffmpeg_path = toLocalPath(System.Gadget.path.replace(/[^\/\\]+$/, '') + '/accessories/ffmpeg');
+
+  if (!session) {
+    if (linux_mode) {
+      try {
+        const ffmpeg = toLocalPath(ffmpeg_path + '/ffmpeg');
+        try {
+          fs.accessSync(ffmpeg, fs.constants.X_OK);
+        }
+        catch (err) {
+          execSync('chmod +x "' + ffmpeg + '"');
+        }
+      }
+      catch (err) {
+        running = false;
+        MMD_SA_options._Wallpaper3D_status2_ = '❌ERROR: Failed to execute FFmpeg';
+        console.error(err);
+        return;
+      }
+    }
+
+    let dir_path = toLocalPath(ffmpeg_path + '/TEMP');
+    try {
+      if (fs.existsSync(dir_path)) {
+        fs.rmSync(dir_path, { recursive: true, force: true });
+      }
+      fs.mkdirSync(dir_path);
+    }
+    catch (err) {
+      running = false;
+      MMD_SA_options._Wallpaper3D_status2_ = '❌ERROR: Failed to create folder';
+      console.error(err);
+      return;
+    }
+
+    let result0 = await ffmpeg(ffmpeg_path, [
+'-i', src, '-vf', 'fps=30, scale=if(gte(iw\\,ih)\\,min(1920\\,iw)\\,-2):if(lt(iw\\,ih)\\,min(1920\\,ih)\\,-2)', '-qscale:v', '2', 'TEMP/output_%05d.' + ((converter_image_format == 'png') ? 'png' : 'jpg')
+    ]);
+
+    if (!result0) {
+      running = false;
+      MMD_SA_options._Wallpaper3D_status2_ = (stopping) ? '🛑Decoding stopped' :  '❌Decoding ERROR (check console)';
+      return;
+    }
+
+    MMD_SA_options._Wallpaper3D_status2_ = '✔️Decoding finished';
+  }
+
+  src_folder = toLocalPath(ffmpeg_path + '/TEMP');
+  is_folder = true;
+}
+else {
+  src_folder = src;
+}
+
+_wallpaper_3D.options.converter_session = session_to_save;
+
+stage = 1;
+let result1 = await process_image(src_folder, is_folder);
+
+if (result1 && is_video && !stopping) {
+  stage = 2;
+
+  const output_file = src.replace(/([^\/\\]+)\.\w+$/, 'xra-3d-wallpaper_$1.mp4');
+
+  try {
+    if (fs.existsSync(output_file)) {
+      fs.unlinkSync(output_file);
+    }
+
+    let result2 = await ffmpeg(ffmpeg_path, [
+'-framerate', '30', '-i', 'TEMP/_XRA_/xra-3d-wallpaper_output_%05d.' + converter_image_format.replace('jpeg','jpg'), '-c:v', 'libx264', '-r', '30', '-pix_fmt', 'yuv420p', '-b:v', '15M', output_file
+    ]);
+
+    if (!result2) {
+      running = false;
+      MMD_SA_options._Wallpaper3D_status2_ = (stopping) ? '🛑Encoding stopped' :  '❌Encoding ERROR (check console)';
+      return;
+    }
+
+//    const output_path = src.replace(/[\/\\][^\/\\]+$/, '');
+    MMD_SA_options._Wallpaper3D_status2_ = '✔️Finished';
+  }
+  catch (err) {
+    running = false;
+    MMD_SA_options._Wallpaper3D_status2_ = '❌ERROR: Failed to output file';
+    console.error(err);
+    return;
+  }
+}
+
+if (!stopping)
+  _wallpaper_3D.options.converter_session = null;
+
+running = false;
+
+// refresh branch options on speech bubble dialog
+MMD_SA_options._Wallpaper3D_status2_ = MMD_SA_options._Wallpaper3D_status2_;
+        },
+
+        pause: function () {
+if (!running) {
+  MMD_SA_options._Wallpaper3D_status2_ = 'No conversion in progress';
+}
+else if (stage != 1) {
+  MMD_SA_options._Wallpaper3D_status2_ = 'No pausing in this stage';
+}
+else if (!paused) {
+  paused = true;
+  MMD_SA_options._Wallpaper3D_status2_ = '⏸️Conversion PAUSED';
+}
+else {
+  paused = false;
+  if (resolve_paused) {
+    resolve_paused();
+    resolve_paused = null;
+  }
+}
+        },
+
+        play: function () {
+if (paused) this.pause();
+        },
+
+        stop: function () {
+if (!running) {
+  MMD_SA_options._Wallpaper3D_status2_ = 'No conversion in progress';
+}
+else {
+  stopping = true;
+
+  if (stage == 1) {
+    MMD_SA_options._Wallpaper3D_status2_ = 'Stopping conversion...';
+    this.play();
+  }
+  else {
+    if (cp) {
+      try {
+        cp.kill();
+      }
+      catch (err) {
+        MMD_SA_options._Wallpaper3D_status2_ = '❌ERROR: Failed to kill FFmpeg process';
+        console.error(err);
+      }
+
+      resolve_cp(false);
+      cp = resolve_cp = undefined;
+    }
+  }
+}
+        },
+      };
+
+      return _converter;
+    })(),
+
+    end_worker: function () {
+if (transformers_worker && !this.options.keeps_worker_thread) {
+  transformers_worker.terminate();
+  transformers_worker = null;
+}
+    },
+
+    init_worker: async function () {
+if (transformers_worker) return;
+
+return new Promise((resolve)=>{
 //  MMD_SA_options._Wallpaper3D_status_ = '(🌐Loading Transformers.js...)';
   transformers_worker = new Worker('js/transformers_worker.js', {type: 'module'});
 
@@ -15329,7 +15702,18 @@ canvas_tex.getContext('2d').putImageData(image_data, 0,0);
 this.mesh.material.map.needsUpdate = true;
 */
 
-      let ctx = canvas_tex.getContext('2d');
+      if (e.data.get_map_only) {
+        if (resolve_loaded) {
+          resolve_loaded(image_data);
+          resolve_loaded = null;
+        }
+        image_data = undefined;
+        return;
+      }
+
+      let ctx;
+
+      ctx = canvas_tex.getContext('2d');
       if (!e.data.upscaled_rgba) {
         canvas_img.width  = canvas_tex.width;
         canvas_img.height = canvas_tex.height;
@@ -15350,40 +15734,14 @@ this.mesh.material.map.needsUpdate = true;
         canvas_img.getContext('2d').drawImage(canvas_tex, 0,0);
       }
 
-      this.mesh.material.map.needsUpdate = true;
-      this.update_transform();
-
       canvas_depth.width  = e.data.depth_width;
       canvas_depth.height = e.data.depth_height;
       ctx = canvas_depth.getContext('2d');
       ctx.putImageData(image_data, 0,0);
 
-      this.depth_map_ready = true;
-      this.mesh.visible = true;
-      this.update_mesh();
-
-      canvas_depth_effect.width  = canvas_depth.width;
-      canvas_depth_effect.height = canvas_depth.height
-      ctx = canvas_depth_effect.getContext('2d');
-      ctx.filter = 'brightness(300%) invert(100%) brightness(75%)';
-      ctx.drawImage(canvas_depth, 0,0);
-      ctx.filter = 'none';
-
-  // CONV. STEP: move a component channel to alpha-channel
-const idata = ctx.getImageData(0, 0, canvas_depth_effect.width, canvas_depth_effect.height);
-const data32 = new Uint32Array(idata.data.buffer);
-let i = 0, len = data32.length;
-while(i < len) {
-  data32[i] = data32[i++] << 8; // shift blue channel into alpha (little-endian)
-}
-// update canvas
-ctx.putImageData(idata, 0, 0);
-
-      depth_effect.needsUpdate = true;
-
-      System._browser.camera.display_floating = (MMD_SA_options.user_camera.display.floating_auto !== false);
-
       e.data = e.data.depth_rgba = e.data.upscaled_rgba = img_raw = image_data = undefined;
+
+      this.update_frame_common();
 
       this.busy = false;
 
@@ -15392,15 +15750,57 @@ ctx.putImageData(idata, 0, 0);
         resolve_loaded = null;
       }
 
-      if (!this.options.keeps_worker_thread) {
-        transformers_worker.terminate();
-        transformers_worker = null;
-      }
+      this.end_worker();
     }
   }
 });
+    },
 
+    update_frame_common: function () {
+this.mesh.material.map.needsUpdate = true;
+this.update_transform();
+
+this.depth_map_ready = true;
+this.mesh.visible = true;
+this.update_mesh();
+
+depth_effect.update_depth();
+
+System._browser.camera.display_floating = (MMD_SA_options.user_camera.display.floating_auto !== false);
+    },
+
+    update_frame: function (c, w,h) {
+let ctx;
+
+if ((canvas_img.width != w) || (canvas_img.height != h)) {
+  canvas_img.width  = w;
+  canvas_img.height = h;
 }
+ctx = canvas_img.getContext('2d');
+ctx.drawImage(c, 0,0,w,h, 0,0,w,h);
+
+ctx = canvas_tex.getContext('2d');
+ctx.drawImage(canvas_img, 0,0,canvas_tex.width,canvas_tex.height);
+
+ctx = canvas_depth.getContext('2d');
+if ((canvas_depth.width != w) || (canvas_depth.height != h)) {
+  canvas_depth.width  = w;
+  canvas_depth.height = h;
+  ctx.globalAlpha = 1;
+}
+else if (c == video) {
+  ctx.globalAlpha = 1 - this.options.depth_smoothing_percent/100;
+  ctx.globalCompositeOperation = 'source-over';
+//DEBUG_show(ctx.globalCompositeOperation+'/'+Date.now())
+}
+ctx.drawImage(c, w,0,w,h, 0,0,w,h);
+ctx.globalAlpha = 1;
+
+this.update_frame_common();
+    },
+
+    init: async function () {
+await this.init_worker();
 
 if (this.mesh) return;
 
@@ -15409,7 +15809,8 @@ canvas_depth = document.createElement('canvas');
 canvas_depth_transformed = document.createElement('canvas');
 canvas_depth_effect = document.createElement('canvas');
 canvas_img = document.createElement('canvas');
-canvas_temp1 = document.createElement('canvas');
+
+canvas_temp1 = canvas_temp1 || document.createElement('canvas');
 
 const THREE = MMD_SA.THREEX.THREE;
 
@@ -15436,6 +15837,8 @@ if (!MMD_SA.THREEX.enabled) {
 }
     },
 
+    options_to_save: ['enabled', 'scale_xy_percent', 'scale_z_percent', 'depth_shift_percent', 'depth_contrast_percent', 'depth_blur', 'depth_smoothing_percent', 'pos_x_offset_percent', 'pos_y_offset_percent', 'pos_z_offset_percent', 'depth_model', 'SR_mode', 'SR_model', 'keeps_worker_thread', 'converter_image_format', 'converter_image_quality', 'converter_session'],
+
     options_by_filename: {},
 
     options_general: new Proxy({}, {
@@ -15460,7 +15863,7 @@ scale_z_percent: 100,
 depth_shift_percent: 0,
 depth_contrast_percent: 0,
 depth_blur: 2,
-// depth_scale_percent
+depth_smoothing_percent: 80,
 pos_x_offset_percent: 0,
 pos_y_offset_percent: 0,
 pos_z_offset_percent: 0,
@@ -15472,6 +15875,10 @@ SR_model: 'Xenova/swin2SR-lightweight-x2-64',
 keeps_worker_thread: false,
 exported_camera_position_y: 0,
 exported_camera_position_z: 0,
+
+converter_image_format: 'jpeg',
+converter_image_quality: 95,
+converter_session: null,
       };
 
       const options_general = {};
@@ -15487,6 +15894,9 @@ switch (prop) {
   case 'keeps_worker_thread':
   case 'exported_camera_position_y':
   case 'exported_camera_position_z':
+  case 'converter_image_format':
+  case 'converter_image_quality':
+  case 'converter_session':
     return (options_general[prop] == null) ? options_default[prop] : options_general[prop];
 }
 
@@ -15507,6 +15917,9 @@ switch (prop) {
   case 'keeps_worker_thread':
   case 'exported_camera_position_y':
   case 'exported_camera_position_z':
+  case 'converter_image_format':
+  case 'converter_image_quality':
+  case 'converter_session':
     options_general[prop] = value;
     return;
 }
@@ -15541,7 +15954,45 @@ switch (prop) {
 
     busy: false,
 
-    load: async function (src) {
+    load: (()=>{
+      function v_update_frame() {
+v_timerID = null;
+
+if (_wallpaper_3D.enabled) {
+  _wallpaper_3D.update_frame(video, w,h);
+}
+else {
+  if (!video.paused) video.pause();
+}
+
+requestVideoFrameCallback();
+      }
+
+      function draw_bg() {
+const c = document.getElementById('Cwallpaper3D_bg');
+c.width  = canvas_img.width;
+c.height = canvas_img.height;
+c.getContext('2d').drawImage(canvas_img, 0,0);
+c.style.visibility = 'inherit';
+      }
+
+      function video_loaded() {
+v_resolve();
+requestVideoFrameCallback();
+      }
+
+      let v_timerID;
+      function requestVideoFrameCallback() {
+if (v_timerID) video.cancelVideoFrameCallback(v_timerID);
+v_timerID = video.requestVideoFrameCallback(v_update_frame);
+      }
+
+      let w, h;
+      let v_resolve;
+
+      return async function (src) {
+if (/xra\-3d\-wallpaper_[^\/\\]+$/i.test(src)) this.enabled = true;
+
 if (!this.enabled) return;
 
 if (this.busy) return;
@@ -15552,7 +16003,7 @@ this.depth_map_ready = false
 this.filename = src.replace(/^.+[\/\\]/, '');
 if (!this.options_by_filename[this.filename]) {
   const options = {};
-  for (const p of ['scale_xy_percent', 'scale_z_percent', 'depth_shift_percent', 'depth_contrast_percent', 'depth_blur', 'pos_x_offset_percent', 'pos_y_offset_percent', 'pos_z_offset_percent']) {
+  for (const p of ['scale_xy_percent', 'scale_z_percent', 'depth_shift_percent', 'depth_contrast_percent', 'depth_blur', 'depth_smoothing_percent', 'pos_x_offset_percent', 'pos_y_offset_percent', 'pos_z_offset_percent']) {
     options[p] = this.options[p];
   }
 // after values are copied from general options
@@ -15563,19 +16014,84 @@ await this.init();
 
 this.mesh.visible = false;
 
-await new Promise((resolve)=>{
-  img.onload = function () {
-    resolve();
-  };
-  img.src = toFileProtocol(src);
-});
+let c;
+if (/xra\-3d\-wallpaper_[^\/\\]+\.mp4$/i.test(src)) {
+  this.is_video = true;
 
-let w = img.width;
-let h = img.height;
+  if (!video) {
+    video = document.createElement('video');
+//    video.autoplay = true;
+    video.loop = true;
+  }
+
+// 'canplay' event may return 0 for videoWidth/videoHeight
+  video.removeEventListener('loadedmetadata', video_loaded);
+  video.addEventListener('loadedmetadata', video_loaded);
+
+  c = video;
+
+  await new Promise((resolve)=>{
+    v_resolve = resolve;
+    c.src = toFileProtocol(src);
+  });
+
+  w = c.videoWidth;
+  h = c.videoHeight;
+
+// force resizing of canvas, indicating that this is the first frame, skipping depth map smoothing
+  canvas_depth.width = canvas_depth.height = 1;
+
+  video.play();
+}
+else {
+  this.is_video = false;
+
+  c = img;
+  if (video) video.pause();
+
+  await new Promise((resolve)=>{
+    c.onload = function () {
+      resolve();
+    };
+    c.src = toFileProtocol(src);
+  });
+
+  w = c.width;
+  h = c.height;
+}
+
+if (src.indexOf('xra-3d-wallpaper_') != -1) {
+  if (!document.getElementById('Cwallpaper3D_bg')) {
+    const c = document.createElement('canvas');
+    c.id = 'Cwallpaper3D_bg';
+    const cs = c.style;
+    cs.position = 'absolute';
+    cs.top = cs.left = '0px';
+    cs.width = cs.height = '100%';
+    cs.objectFit = "cover";
+    LdesktopBG_host.appendChild(c);
+  }
+
+  w /= 2;
+  ar = w/h;
+
+  this.update_frame(c, w,h);
+
+  if (/mp4$/i.test(src)) {
+    video.requestVideoFrameCallback(draw_bg);
+  }
+  else {
+    draw_bg();
+  }
+
+  this.busy = false;
+
+  return;
+}
 
 ar = w/h;
 
-const bitmap = await createImageBitmap(img);
+const bitmap = await createImageBitmap(c);
 
 const options = {
   depth:{
@@ -15592,12 +16108,13 @@ options.SR.enabled = this.options.SR_mode && (((w < 1280) || (h < 720)) && (w*h 
 let data = { rgba:bitmap, width:w, height:h, options:options };
 transformers_worker.postMessage(data, [data.rgba]);
 
-data = data.rgba = rgba = undefined;
+data = data.rgba = undefined;
 
 return new Promise((resolve)=>{
   resolve_loaded = resolve;
 });
-    },
+      };
+    })(),
 
     update_camera_factor: function () {
 // https://hofk.de/main/discourse.threejs/2022/CalculateCameraDistance/CalculateCameraDistance.html
@@ -15607,6 +16124,8 @@ camera_factor = 2 * Math.tan(MMD_SA.THREEX.camera.obj.fov * Math.PI/180 / 2) * a
     },
 
     update_transform: function (options={}) {
+if (!this.mesh) return;
+
 let scale_xy = this.options.scale_xy_percent/100;
 let scale_z = this.options.scale_z_percent/100;
 let pos_z_offset_percent = this.options.pos_z_offset_percent;
@@ -15628,6 +16147,8 @@ d_to_full_screen = this.scale_base * scale_z + camera_position[2];
 this.mesh.position.copy((!MMD_SA_options.MMD_disabled) ? MMD_SA.THREEX.get_model(0).mesh.position : MMD_SA.TEMP_v3.set(0,0,0));
 this.mesh.position.y += camera_position[1];
 this.mesh.position.z += camera_position[2] - d_to_full_screen - this.mesh.scale.z * pos_z_offset_percent/100;
+
+window.dispatchEvent(new CustomEvent('SA_MMD_Wallpaper3D_on_update_transform'));
     },
 
     update_mesh: function () {
@@ -15844,6 +16365,10 @@ if (this.mesh)
   this.mesh.visible = !!v;
 if (v)
   MMD_SA_options._Wallpaper3D_status_ = '(✔️Ready)';
+
+const c = document.getElementById('Cwallpaper3D_bg');
+if (c)
+  c.style.visibility = (v) ? 'inherit' : 'hidden';
     },
 
     get ar() { return ar; },
