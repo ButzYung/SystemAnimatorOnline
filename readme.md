@@ -40,13 +40,11 @@ The Windows/Linux/macOS app version (powered by [Electron](https://www.electronj
 
 - Support webcam object tracking, mapping tracked IRL objects to 3D props [(video demo)](https://www.youtube.com/watch?v=Da4UKNbhmYY)
 
-- Support frameless window with transparent background on video capture apps such as OBS (Electron mode only) (*)
+- Support frameless window with transparent background on video capture apps such as OBS (Electron mode only)
 
 - Support AR (Augmented Reality) on Android Chrome browser
 
-Check out these [video demos and tutorials](https://youtube.com/playlist?list=PLLpwhHMvOCSt3i7NQcyJq1fFhoMiSmm5H) and watch XR Animator in action!
-
-(*) - To capture the web app version of XR Animator on OBS without the browser UI, you have to open XR Animator on OBS browser. A few extra command line parameters on OBS are required to allow camera access. [Details](https://twitter.com/yeemachine/status/1461908260638785540)
+**_Check out these [video demos and tutorials](https://youtube.com/playlist?list=PLLpwhHMvOCSt3i7NQcyJq1fFhoMiSmm5H) and watch XR Animator in action!_**
 
 # Performance
 
