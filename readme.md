@@ -36,7 +36,7 @@ The Windows/Linux/macOS app version (powered by [Electron](https://www.electronj
 
 - Customize the background and 3D scene with 2D image/video, 3D panorama and 3D objects (.x/.glb format)
 
-- Support 2D image as 3D backdrop by assigning an auto AI-generated depth map [(video demo)](https://www.youtube.com/watch?v=rrQo76al8pk), as well as optionally running independently on Windows background (Electron mode) as 3D wallpaper gadget, and web app mode as a ["2D-to-3D image viewer"](https://sao.animetheme.com/SystemAnimator_online.html?cmd_line=demo21)
+- Support 2D image as 3D backdrop by assigning an auto AI-generated depth map [(video demo)](https://www.youtube.com/watch?v=rrQo76al8pk), as well as optionally running independently on Windows background (Electron mode) as 3D wallpaper gadget [(video demo)](https://www.youtube.com/watch?v=0iufChshAkE&t=63s), and web app mode as a [2D-to-3D image viewer](https://sao.animetheme.com/SystemAnimator_online.html?cmd_line=demo21)
 
 - Support webcam object tracking, mapping tracked IRL objects to 3D props [(video demo)](https://www.youtube.com/watch?v=Da4UKNbhmYY)
 
