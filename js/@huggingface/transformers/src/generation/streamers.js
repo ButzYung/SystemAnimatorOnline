@@ -34,7 +34,12 @@ const stdout_write = apis.IS_PROCESS_AVAILABLE
 export class TextStreamer extends BaseStreamer {
     /**
      * 
-     * @param {import('../tokenizers.js').PreTrainedTokenizer} tokenizer 
+     * @param {import('../tokenizers.js').PreTrainedTokenizer} tokenizer
+     * @param {Object} options
+     * @param {boolean} [options.skip_prompt=false] Whether to skip the prompt tokens
+     * @param {function(string): void} [options.callback_function=null] Function to call when a piece of text is ready to display
+     * @param {function(bigint[]): void} [options.token_callback_function=null] Function to call when a new token is generated
+     * @param {Object} [options.decode_kwargs={}] Additional keyword arguments to pass to the tokenizer's decode method
      */
     constructor(tokenizer, {
         skip_prompt = false,
@@ -143,7 +148,7 @@ export class WhisperTextStreamer extends TextStreamer {
      * @param {Object} options
      * @param {boolean} [options.skip_prompt=false] Whether to skip the prompt tokens
      * @param {function(string): void} [options.callback_function=null] Function to call when a piece of text is ready to display
-     * @param {function(string): void} [options.token_callback_function=null] Function to call when a new token is generated
+     * @param {function(bigint[]): void} [options.token_callback_function=null] Function to call when a new token is generated
      * @param {function(number): void} [options.on_chunk_start=null] Function to call when a new chunk starts
      * @param {function(number): void} [options.on_chunk_end=null] Function to call when a chunk ends
      * @param {function(): void} [options.on_finalize=null] Function to call when the stream is finalized

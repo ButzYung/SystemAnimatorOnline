@@ -1,6 +1,6 @@
 {
   "name": "@mediapipe/tasks-vision",
-  "version": "0.10.18",
+  "version": "0.10.20",
   "description": "MediaPipe Vision Tasks",
   "main": "vision_bundle.cjs",
   "browser": "vision_bundle.mjs",

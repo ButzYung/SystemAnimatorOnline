@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-12-15)
+// (2024-12-29)
 
 var use_full_spectrum = true
 
@@ -9165,7 +9165,7 @@ if (!MMD_SA.MMD_started)
         get: ()=>{ return bone_map_MMD_to_VRM; }
       },
 
-      get_bone_by_MMD_name : {
+      get_bone_by_MMD_name: {
         value: function (name) {
 name = bone_map_MMD_to_VRM[name];
 return (!name) ? null : this.getBoneNode(name);
@@ -10425,10 +10425,13 @@ System._browser.on_animation_update.add(()=>{
 
   threeX.scene.add(model_new.model.scene);
 
-  const canvas = MMD_SA_options.Dungeon.character.icon;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage((model_new.is_VRM1)?model_new.model.meta.thumbnailImage:model_new.model.meta.texture.source.data, 0,0,64,64);
-  MMD_SA_options.Dungeon.update_status_bar(true);
+  const icon = (model_new.is_VRM1) ? model_new.model.meta.thumbnailImage : model_new.model.meta.texture?.source.data;
+  if (icon) {
+    const canvas = MMD_SA_options.Dungeon.character.icon;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(icon, 0,0,64,64);
+    MMD_SA_options.Dungeon.update_status_bar(true);
+  }
 
   MMD_SA._force_motion_shuffle = true;
 
@@ -14227,6 +14230,139 @@ obj.traverse(node => {
 console.log('geo_disposed:' + geo_disposed, 'map_disposed:' + map_disposed, 'mtrl_disposed:' + mtrl_disposed, 'misc_disposed:' + misc_disposed);
       },
 
+      display_helper: (()=>{
+        const helpers = {};
+
+        let position, quaternion, scale, matrixWorld;
+        let _q1, _e1;
+        window.addEventListener('jThree_ready', ()=>{
+position = new THREE.Vector3();
+quaternion = new THREE.Quaternion();
+scale = new THREE.Vector3();
+matrixWorld = new THREE.Matrix4();
+
+_q1 = new THREE.Quaternion();
+_e1 = new THREE.Euler();
+        });
+
+        window.addEventListener('SA_MMD_before_render', ()=>{
+for (const id in helpers) {
+  const helper_para = helpers[id];
+  const helper = helper_para.obj;
+  if (RAF_timestamp < helper_para.timestamp_ini + helper_para.duration) {
+    let helper_parent = helper_para.parent;
+    if (typeof helper_parent == 'string') {
+      const modelX = threeX.get_model(0);
+      const is_MMD_dummy = (modelX.type=='MMD_dummy');
+
+      const bone = modelX.get_bone_by_MMD_name(VRM.bone_map_VRM_to_MMD[helper_parent]);
+      const bone_matrix = (is_MMD_dummy) ? bone.skinMatrix : bone.matrixWorld;
+
+      position.setFromMatrixPosition(bone_matrix);
+      quaternion.setFromRotationMatrix(matrixWorld.extractRotation(bone_matrix));
+
+// multiply, instead of premultiply
+      if (!is_MMD_dummy && !modelX.is_VRM1) quaternion.multiply(_q1.set(0,-1,0,0));
+
+      if (is_MMD_dummy) {
+        position.applyQuaternion(modelX.mesh.quaternion).add(modelX.mesh.position);
+        quaternion.premultiply(modelX.mesh.quaternion);
+      }
+
+      matrixWorld.compose(position, quaternion, scale.set(1,1,1));
+    }
+    else {
+      matrixWorld.copy(helper_parent.matrixWorld).decompose(position, quaternion, scale);
+    }
+
+    if (!helper_para.use_parent_scale)
+      helper.scale.set(1/scale.x, 1/scale.y, 1/scale.z);
+    helper.updateMatrix();
+
+    helper.matrixWorld.multiplyMatrices( matrixWorld, helper.matrix );
+    helper.matrix.copy(helper.matrixWorld);
+
+    helper.visible = true;
+  }
+  else {
+    helper.visible = false;
+  }
+}
+        });
+
+        return function (helper_id, helper_parent, para) {
+let helper;
+let helper_para = helpers[helper_id];
+if (!helper_para) {
+  helper_para = helpers[helper_id] = {};
+
+  const THREE = threeX.THREE;
+  if (para.type == 'plane') {
+    helper = helper_para.obj = new THREE.GridHelper(3, 30, '#ff8', '#ff8');
+  }
+  else if (para.type == 'line') {
+    const material = new THREE.LineBasicMaterial({ color:'#8ff' });
+
+    let geometry;
+    if (threeX.enabled) {
+      geometry = new THREE.BufferGeometry().setFromPoints( para.line.map(p=>new THREE.Vector3().copy(p)) );
+    }
+    else {
+      geometry = new THREE.Geometry();
+      geometry.vertices.push(...para.line.map(p=>new THREE.Vector3().copy(p)));
+    }
+
+    helper = helper_para.obj = new THREE.Line( geometry, material );
+
+    helper_para.use_parent_scale = true;
+  }
+  else {
+    helper = helper_para.obj = new THREE[(threeX.enabled)?'AxesHelper':'AxisHelper'](1);
+  }
+
+  helper.matrixAutoUpdate = false;
+  if (threeX.enabled)
+    helper.renderOrder = 99;
+  helper.material.depthTest = false;
+
+  threeX.scene.add(helper);
+}
+else {
+  helper = helper_para.obj;
+  if (para.type == 'line') {
+    if (threeX.enabled) {
+      const pos = helper.geometry.getAttribute('position');
+      para.line.forEach((v,i)=>{
+        pos.array[i*3+0] = v.x;
+        pos.array[i*3+1] = v.y;
+        pos.array[i*3+2] = v.z;
+      });
+      pos.needsUpdate = true;
+    }
+    else {
+      const geometry = helper.geometry;
+      geometry.vertices.forEach((v,i)=>{
+        v.copy(para.line[i]);
+      });
+      geometry.verticesNeedUpdate = true;
+    }
+  }
+}
+
+helper_para.parent = helper_parent;
+helper_para.timestamp_ini = RAF_timestamp;
+helper_para.duration = 5000;
+
+if (para.pos)
+  helper.position.set(para.pos.x, para.pos.y, para.pos.z);
+
+if (para.rot) {
+  d2r = Math.PI/180;
+  helper.quaternion.copy(quaternion.setFromEuler(_e1.set(para.rot.x*d2r, para.rot.y*d2r, para.rot.z*d2r)));
+}
+        };
+      })(),
+
 // headless_mode
       press_key: function (k) {
 const ck = k.split('+');
@@ -15131,7 +15267,7 @@ if (v) {
 
     depth_effect: depth_effect,
 
-    generate_mesh: function (use_depth_transform_shader=MMD_SA.THREEX.enabled) {
+    generate_mesh: function (use_depth_transform_shader=true) {//MMD_SA.THREEX.enabled) {
 const THREE = MMD_SA.THREEX.THREE;
 
 const geometry = new THREE.PlaneGeometry(1,1, (this.depth_dim-1),(this.depth_dim-1));
@@ -15141,7 +15277,9 @@ if (!use_depth_transform_shader) {
   material = new THREE.MeshBasicMaterial( { map:this.texture, fog:false } );
 }
 else {
-  vertexShader = THREE.ShaderLib.basic.vertexShader.replace(
+  let vertexShader;
+  if (MMD_SA.THREEX.enabled) {
+    vertexShader = THREE.ShaderLib.basic.vertexShader.replace(
 'void main() {',
 [
   'uniform sampler2D Wallpaper3D_displacementMap;',
@@ -15149,7 +15287,7 @@ else {
   'uniform float Wallpaper3D_camera_distance_offset;',
   'uniform float Wallpaper3D_scale_z;',
   'uniform vec3 Wallpaper3D_pos_offset;',
-  'uniform mat4 Wallpaper3D_modelViewMatrix;',
+//  'uniform mat4 Wallpaper3D_modelViewMatrix;',
 
   'void main() {',
 ].join('\n')
@@ -15164,9 +15302,11 @@ else {
 
   '#include <project_vertex>',
 ].join('\n')	
-  );
+    );
+  }
 
-  const uniforms = THREE.UniformsUtils.clone(THREE.ShaderLib.basic.uniforms);
+  const uniforms = (MMD_SA.THREEX.enabled) ? THREE.UniformsUtils.clone(THREE.ShaderLib.basic.uniforms) : {};
+
   canvas_depth_transformed.width = canvas_depth_transformed.height = this.depth_dim;
   uniforms.Wallpaper3D_displacementMap = { value:new THREE.Texture(canvas_depth_transformed) };
   uniforms.Wallpaper3D_camera_factor = { get value() { return camera_factor; } };
@@ -15192,19 +15332,26 @@ return pos;
     }
   })();
 
-  material = new THREE.ShaderMaterial({
-    vertexShader: vertexShader,
-    fragmentShader: THREE.ShaderLib.basic.fragmentShader,
-    uniforms: uniforms
-  });
-  material.color = new THREE.Color( 0xffffff );
-  material.map = this.texture;
-  material.fog = false;
-  material.isMeshBasicMaterial = true;
+  if (!MMD_SA.THREEX.enabled) {
+    uniforms.Wallpaper3D_displacementMap.type = 't';
+    uniforms.Wallpaper3D_camera_factor.type = 'f';
+    uniforms.Wallpaper3D_camera_distance_offset.type = 'f';
+    uniforms.Wallpaper3D_scale_z.type = 'f';
+    uniforms.Wallpaper3D_pos_offset.type = 'v3';
+  }
+
+  if (MMD_SA.THREEX.enabled) {
+    material = new THREE.ShaderMaterial({
+      vertexShader: vertexShader,
+      fragmentShader: THREE.ShaderLib.basic.fragmentShader,
+      uniforms: uniforms
+    });
+    material.color = new THREE.Color( 0xffffff );
+    material.isMeshBasicMaterial = true;
 
 // https://stackoverflow.com/questions/77534730/the-fps-reduced-to-half-when-i-set-the-encoding-of-a-realtime-updated-texture-to
-  material.onBeforeCompile = function ( shader ) {
-    shader.fragmentShader = shader.fragmentShader.replace(
+    material.onBeforeCompile = function ( shader ) {
+      shader.fragmentShader = shader.fragmentShader.replace(
                         '#include <map_fragment>',
                             `
               #ifdef USE_MAP
@@ -15219,9 +15366,26 @@ return pos;
               #endif
 
                             `
-    );
-  };
+      );
+    };
+  }
+  else {
+    material = new THREE.MeshBasicMaterial({});
+    material.XRA_WALLPAPER_3D = true;
+    material._uniforms_append = uniforms;
+/*
+    material = new THREE.ShaderMaterial({
+      vertexShader: THREE.ShaderLib.basic.vertexShader,
+      fragmentShader: THREE.ShaderLib.basic.fragmentShader,
+      uniforms: uniforms
+    });
+*/
+console.log(material)
+  }
 
+  material.color = new THREE.Color( 0xffffff );
+  material.map = this.texture;
+  material.fog = false;
 }
 
 const mesh = new THREE.Mesh( geometry, material )
@@ -16242,7 +16406,13 @@ else {
 }
 
 if (this.mesh.userData.use_depth_transform_shader) {
-  this.mesh.material.uniforms.Wallpaper3D_displacementMap.value.needsUpdate = true;
+  if (this.mesh.material.uniforms?.Wallpaper3D_displacementMap) {
+    this.mesh.material.uniforms.Wallpaper3D_displacementMap.value.needsUpdate = true;
+  }
+  else {
+// MMD mode doesn't have material.uniforms until program has compiled
+    System._browser.on_animation_update.add(()=>{ this.mesh.material.uniforms.Wallpaper3D_displacementMap.value.needsUpdate = true; }, 1,0);
+  }
   return;
 }
 
@@ -17372,7 +17542,7 @@ case "口角上げ":
   morph_alt.push(m, '∪', 'スマイル');
   break;
 case "口角下げ":
-  morph_alt.push(m, '∩', 'む');
+  morph_alt.push(m, '∩', 'む', 'ん', 'んあ');
   break;
 case "上":
 case "下":

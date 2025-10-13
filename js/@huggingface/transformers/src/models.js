@@ -61,7 +61,6 @@ import {
 } from './utils/generic.js';
 
 import {
-    isIntegralNumber,
     mergeArrays,
     pick,
 } from './utils/core.js';
@@ -99,17 +98,20 @@ import {
 
 import {
     cat,
-    full_like,
     mean,
+    zeros,
+    zeros_like,
     ones,
     ones_like,
+    full,
+    full_like,
     stack,
     std_mean,
     Tensor,
-    zeros_like,
 } from './utils/tensor.js';
+import { RawImage } from './utils/image.js';
 
-import { dynamic_time_warping, medianFilter } from './utils/maths.js';
+import { dynamic_time_warping, max, medianFilter } from './utils/maths.js';
 import { EosTokenCriteria, MaxLengthCriteria, StoppingCriteriaList } from './generation/stopping_criteria.js';
 import { LogitsSampler } from './generation/logits_sampler.js';
 import { apis } from './env.js';
@@ -128,6 +130,8 @@ const MODEL_TYPES = {
     MaskGeneration: 5,
     ImageTextToText: 6,
     Musicgen: 7,
+    MultiModality: 8,
+    Phi3V: 9,
 }
 //////////////////////////////////////////////////
 
@@ -176,6 +180,22 @@ async function getSession(pretrained_model_name_or_path, fileName, options) {
         } else {
             dtype = DEFAULT_DEVICE_DTYPE_MAPPING[selectedDevice] ?? DATA_TYPES.fp32;
             console.warn(`dtype not specified for "${fileName}". Using the default dtype (${dtype}) for this device (${selectedDevice}).`);
+        }
+    }
+
+    if (dtype === DATA_TYPES.auto) {
+        // Try to choose the auto dtype based on the custom config
+        let config_dtype = custom_config.dtype;
+        if (typeof config_dtype !== 'string') {
+            config_dtype = config_dtype[fileName];
+        }
+
+        if (config_dtype && config_dtype !== DATA_TYPES.auto && DATA_TYPES.hasOwnProperty(config_dtype)) {
+            // Defined by the custom config, and is not "auto"
+            dtype = config_dtype;
+        } else {
+            // Choose default dtype based on device, falling back to fp32
+            dtype = DEFAULT_DEVICE_DTYPE_MAPPING[selectedDevice] ?? DATA_TYPES.fp32;
         }
     }
 
@@ -384,9 +404,17 @@ async function sessionRun(session, inputs) {
         output = replaceTensors(output);
         return output;
     } catch (e) {
+        // Error messages can be long (nested) and uninformative. For this reason,
+        // we apply minor formatting to show the most important information
+        const formatted = Object.fromEntries(Object.entries(checkedInputs)
+            .map(([k, { type, dims, data }]) => [k, {
+                // Extract these properties from the underlying ORT tensor
+                type, dims, data,
+            }]));
+
         // This usually occurs when the inputs are of the wrong type.
         console.error(`An error occurred during model execution: "${e}".`);
-        console.error('Inputs given to model:', checkedInputs);
+        console.error('Inputs given to model:', formatted);
         throw e;
     }
 }
@@ -411,7 +439,7 @@ function replaceTensors(obj) {
 
 /**
  * Converts an array or Tensor of integers to an int64 Tensor.
- * @param {Array|Tensor} items The input integers to be converted.
+ * @param {any[]|Tensor} items The input integers to be converted.
  * @returns {Tensor} The int64 Tensor with the converted values.
  * @throws {Error} If the input array is empty or the input is a batched Tensor and not all sequences have the same length.
  * @private
@@ -531,7 +559,9 @@ async function decoderForward(self, model_inputs, is_encoder_decoder = false) {
         new_model_inputs.use_cache_branch = boolTensor(!!past_key_values);
     }
     if (session.inputNames.includes('position_ids') && new_model_inputs.attention_mask && !new_model_inputs.position_ids) {
-        new_model_inputs.position_ids = createPositionIds(new_model_inputs, past_key_values);
+        // NOTE: Handle a special case for paligemma models, where positions are 1-indexed
+        const start_index = self.config.model_type === 'paligemma' ? 1 : 0;
+        new_model_inputs.position_ids = createPositionIds(new_model_inputs, past_key_values, start_index);
     }
 
     // Unpack the `past_key_values` object into model inputs
@@ -540,6 +570,39 @@ async function decoderForward(self, model_inputs, is_encoder_decoder = false) {
     // Select only the inputs that are needed for the current session
     const fixed = pick(new_model_inputs, session.inputNames);
     return await sessionRun(session, fixed);
+}
+
+
+
+function default_merge_input_ids_with_image_features({
+    image_token_id,
+    inputs_embeds,
+    image_features,
+    input_ids,
+    attention_mask,
+}) {
+    const image_tokens = input_ids.tolist().map(ids =>
+        ids.reduce((acc, x, idx) => {
+            if (x == image_token_id) acc.push(idx);
+            return acc;
+        }, [])
+    );
+    const n_image_tokens = image_tokens.reduce((acc, x) => acc + x.length, 0);
+    const n_image_features = image_features.dims[0];
+    if (n_image_tokens !== n_image_features) {
+        throw new Error(`Image features and image tokens do not match: tokens: ${n_image_tokens}, features ${n_image_features}`);
+    }
+
+    // Equivalent to performing a masked_scatter
+    let img = 0;
+    for (let i = 0; i < image_tokens.length; ++i) {
+        const tokens = image_tokens[i];
+        const embeds = inputs_embeds[i];
+        for (let j = 0; j < tokens.length; ++j) {
+            embeds[tokens[j]].data.set(image_features[img++].data)
+        }
+    }
+    return { inputs_embeds, attention_mask }
 }
 
 
@@ -579,11 +642,11 @@ async function imageTextToTextForward(self, {
 
     if (!inputs_embeds) {
         // 1. Extract the input embeddings
-        inputs_embeds = await self.encode_text({ input_ids });
+        inputs_embeds = await self.encode_text({ input_ids, ...kwargs });
 
         // 2. Possibly, merge text and images
         if (pixel_values && input_ids.dims[1] !== 1) {
-            const image_features = await self.encode_image({ pixel_values });
+            const image_features = await self.encode_image({ pixel_values, ...kwargs });
 
             ({ inputs_embeds, attention_mask } = self._merge_input_ids_with_image_features({
                 image_features,
@@ -604,6 +667,16 @@ async function imageTextToTextForward(self, {
         }
     }
 
+    if (!position_ids) {
+
+        if (self.config.model_type === 'qwen2_vl') {
+            // Special case for qwen2_vl models
+            // @ts-ignore
+            const { image_grid_thw, video_grid_thw } = kwargs;
+            [position_ids] = self.get_rope_index(input_ids, image_grid_thw, video_grid_thw, attention_mask)
+        }
+    }
+
     const outputs = await decoderForward(self, {
         inputs_embeds,
         past_key_values,
@@ -615,34 +688,54 @@ async function imageTextToTextForward(self, {
     return outputs;
 }
 
-function createPositionIds(model_inputs, past_key_values = null) {
-    // If the model supports providing position_ids, we create position_ids on the fly for batch generation,
-    // by computing the cumulative sum of the attention mask along the sequence length dimension.
-    // 
-    // Equivalent to:
-    // position_ids = attention_mask.long().cumsum(-1) - 1
-    // position_ids.masked_fill_(attention_mask == 0, 1)
-    // if past_key_values:
-    //     position_ids = position_ids[:, -input_ids.shape[1] :]
-    const { input_ids, inputs_embeds, attention_mask } = model_inputs;
+/**
+ * Helper function to perform the following:
+ * ```python
+ * x = attention_mask.long().cumsum(-1) - 1
+ * x.masked_fill_(attention_mask == 0, 1)
+ * ```
+ * @param {Tensor} attention_mask
+ * @returns {{data: BigInt64Array, dims: number[]}}
+ */
+function cumsum_masked_fill(attention_mask, start_index = 0) {
     const [bz, seq_len] = attention_mask.dims;
+    const attn_mask_data = attention_mask.data;
 
-    const data = new BigInt64Array(attention_mask.data.length);
+    const data = new BigInt64Array(attn_mask_data.length);
     for (let i = 0; i < bz; ++i) {
         const start = i * seq_len;
-        let sum = BigInt(0);
+        let sum = BigInt(start_index);
         for (let j = 0; j < seq_len; ++j) {
             const index = start + j;
-            if (attention_mask.data[index] === 0n) {
+            if (attn_mask_data[index] === 0n) {
                 data[index] = BigInt(1);
             } else { // === 1n
                 data[index] = sum;
-                sum += attention_mask.data[index];
+                sum += attn_mask_data[index];
             }
         }
     }
+    return { data, dims: attention_mask.dims };
 
-    let position_ids = new Tensor('int64', data, attention_mask.dims);
+}
+
+/**
+ * If the model supports providing position_ids, we create position_ids on the fly for batch generation,
+ * by computing the cumulative sum of the attention mask along the sequence length dimension.
+ * 
+ * Equivalent to:
+ * ```python
+ * position_ids = attention_mask.long().cumsum(-1) - 1
+ * position_ids.masked_fill_(attention_mask == 0, 1)
+ * if past_key_values:
+ *     position_ids = position_ids[:, -input_ids.shape[1] :]
+ * ```
+ */
+function createPositionIds(model_inputs, past_key_values = null, start_index = 0) {
+    const { input_ids, inputs_embeds, attention_mask } = model_inputs;
+
+    const { data, dims } = cumsum_masked_fill(attention_mask, start_index);
+    let position_ids = new Tensor('int64', data, dims);
     if (past_key_values) {
         const offset = -(input_ids ?? inputs_embeds).dims.at(1);
         position_ids = position_ids.slice(null, [offset, null]);
@@ -716,6 +809,52 @@ function image_text_to_text_prepare_inputs_for_generation(self, ...args) {
     }
 }
 
+function multimodality_prepare_inputs_for_generation(self, input_ids, model_inputs, generation_config) {
+    const has_past_key_values = !!model_inputs.past_key_values;
+
+    if (generation_config.guidance_scale !== null && generation_config.guidance_scale > 1) {
+        if (has_past_key_values) {
+            model_inputs.input_ids = cat([
+                model_inputs.input_ids,
+                model_inputs.input_ids,
+            ], 0)
+            // NOTE: attention_mask handled in generation
+        } else {
+            model_inputs.input_ids = cat([
+                model_inputs.input_ids,
+                full_like(model_inputs.input_ids, BigInt(generation_config.pad_token_id)),
+            ], 0);
+            model_inputs.attention_mask = cat([
+                model_inputs.attention_mask,
+                full_like(model_inputs.attention_mask, 0n),
+            ], 0);
+        }
+    }
+
+    if (has_past_key_values || !model_inputs.pixel_values) {
+        model_inputs.pixel_values = full([0, 0, 3, 384, 384], 1.0);
+    }
+
+    if (has_past_key_values) {
+        const num_img_tokens = 0;
+        const num_text_tokens = 1;
+        const has_image = num_img_tokens > 0 ? 1 : 0;
+
+        const batch_size = 1;
+        model_inputs.images_seq_mask = new Tensor(
+            'bool',
+            new Array(num_img_tokens + num_text_tokens).fill(true).fill(false, 0, num_text_tokens),
+            [batch_size, num_img_tokens + num_text_tokens],
+        );
+        model_inputs.images_emb_mask = new Tensor(
+            'bool',
+            new Array(num_img_tokens).fill(!!has_image),
+            [batch_size, 1, num_img_tokens],
+        );
+    }
+    return model_inputs;
+}
+
 //////////////////////////////////////////////////
 
 //////////////////////////////////////////////////
@@ -767,6 +906,15 @@ export class PreTrainedModel extends Callable {
                 this.can_generate = true;
                 this._forward = imageTextToTextForward;
                 this._prepare_inputs_for_generation = image_text_to_text_prepare_inputs_for_generation;
+                break;
+            case MODEL_TYPES.Phi3V:
+                this.can_generate = true;
+                this._prepare_inputs_for_generation = image_text_to_text_prepare_inputs_for_generation;
+                break;
+
+            case MODEL_TYPES.MultiModality:
+                this.can_generate = true;
+                this._prepare_inputs_for_generation = multimodality_prepare_inputs_for_generation;
                 break;
 
             default:
@@ -912,9 +1060,39 @@ export class PreTrainedModel extends Callable {
                 }, options),
             ]);
 
+        } else if (modelType === MODEL_TYPES.MultiModality) {
+            info = await Promise.all([
+                constructSessions(pretrained_model_name_or_path, {
+                    prepare_inputs_embeds: 'prepare_inputs_embeds',
+                    model: 'language_model',
+                    lm_head: 'lm_head',
+                    gen_head: 'gen_head',
+                    gen_img_embeds: 'gen_img_embeds',
+                    image_decode: 'image_decode',
+                }, options),
+                getOptionalConfigs(pretrained_model_name_or_path, {
+                    generation_config: 'generation_config.json',
+                }, options),
+            ]);
+
+        } else if (modelType === MODEL_TYPES.Phi3V) {
+            info = await Promise.all([
+                constructSessions(pretrained_model_name_or_path, {
+                    prepare_inputs_embeds: 'prepare_inputs_embeds',
+                    model: 'model',
+                    vision_encoder: 'vision_encoder',
+                }, options),
+                getOptionalConfigs(pretrained_model_name_or_path, {
+                    generation_config: 'generation_config.json',
+                }, options),
+            ]);
+
         } else { // should be MODEL_TYPES.EncoderOnly
             if (modelType !== MODEL_TYPES.EncoderOnly) {
-                console.warn(`Model type for '${modelName ?? config?.model_type}' not found, assuming encoder-only architecture. Please report this at ${GITHUB_ISSUE_URL}.`)
+                const type = modelName ?? config?.model_type;
+                if (type !== 'custom') {
+                    console.warn(`Model type for '${type}' not found, assuming encoder-only architecture. Please report this at ${GITHUB_ISSUE_URL}.`)
+                }
             }
             info = await Promise.all([
                 constructSessions(pretrained_model_name_or_path, {
@@ -1334,35 +1512,37 @@ export class PreTrainedModel extends Callable {
         let { decoder_input_ids, ...model_inputs } = model_kwargs;
 
         // Prepare input ids if the user has not defined `decoder_input_ids` manually.
-        if (!decoder_input_ids) {
-            decoder_start_token_id ??= bos_token_id;
+        if (!(decoder_input_ids instanceof Tensor)) {
+            if (!decoder_input_ids) {
+                decoder_start_token_id ??= bos_token_id;
 
-            if (this.config.model_type === 'musicgen') {
-                // Custom logic (TODO: move to Musicgen class)
-                decoder_input_ids = Array.from({
-                    length: batch_size * this.config.decoder.num_codebooks
-                }, () => [decoder_start_token_id]);
+                if (this.config.model_type === 'musicgen') {
+                    // Custom logic (TODO: move to Musicgen class)
+                    decoder_input_ids = Array.from({
+                        length: batch_size * this.config.decoder.num_codebooks
+                    }, () => [decoder_start_token_id]);
 
-            } else if (Array.isArray(decoder_start_token_id)) {
-                if (decoder_start_token_id.length !== batch_size) {
-                    throw new Error(
-                        `\`decoder_start_token_id\` expcted to have length ${batch_size} but got ${decoder_start_token_id.length}`
-                    )
+                } else if (Array.isArray(decoder_start_token_id)) {
+                    if (decoder_start_token_id.length !== batch_size) {
+                        throw new Error(
+                            `\`decoder_start_token_id\` expcted to have length ${batch_size} but got ${decoder_start_token_id.length}`
+                        )
+                    }
+                    decoder_input_ids = decoder_start_token_id;
+                } else {
+                    decoder_input_ids = Array.from({
+                        length: batch_size,
+                    }, () => [decoder_start_token_id]);
                 }
-                decoder_input_ids = decoder_start_token_id;
-            } else {
+            } else if (!Array.isArray(decoder_input_ids[0])) {
+                // Correct batch size
                 decoder_input_ids = Array.from({
                     length: batch_size,
-                }, () => [decoder_start_token_id]);
+                }, () => decoder_input_ids);
             }
-        } else if (!Array.isArray(decoder_input_ids[0])) {
-            // Correct batch size
-            decoder_input_ids = Array.from({
-                length: batch_size,
-            }, () => decoder_input_ids);
+            decoder_input_ids = toI64Tensor(decoder_input_ids);
         }
 
-        decoder_input_ids = toI64Tensor(decoder_input_ids);
         model_kwargs['decoder_attention_mask'] = ones_like(decoder_input_ids);
 
         return { input_ids: decoder_input_ids, model_inputs };
@@ -1656,7 +1836,8 @@ export class PreTrainedModel extends Callable {
             const dtype = session?.config?.kv_cache_dtype ?? 'float32';
             const empty = (dtype === 'float16') ? new Uint16Array() : [];
 
-            const shapes = getKeyValueShapes(this.config);
+            const batch_size = (decoderFeeds[this.main_input_name] ?? decoderFeeds.attention_mask)?.dims?.[0] ?? 1;
+            const shapes = getKeyValueShapes(this.config, { batch_size });
 
             for (const name in shapes) {
                 decoderFeeds[name] = new Tensor(dtype, empty, shapes[name]);
@@ -1769,6 +1950,49 @@ export class BertForQuestionAnswering extends BertPreTrainedModel {
     }
 }
 //////////////////////////////////////////////////
+
+//////////////////////////////////////////////////
+// ModernBert models
+export class ModernBertPreTrainedModel extends PreTrainedModel { }
+export class ModernBertModel extends ModernBertPreTrainedModel { }
+
+export class ModernBertForMaskedLM extends ModernBertPreTrainedModel {
+    /**
+     * Calls the model on new inputs.
+     *
+     * @param {Object} model_inputs The inputs to the model.
+     * @returns {Promise<MaskedLMOutput>} An object containing the model's output logits for masked language modeling.
+     */
+    async _call(model_inputs) {
+        return new MaskedLMOutput(await super._call(model_inputs));
+    }
+}
+
+export class ModernBertForSequenceClassification extends ModernBertPreTrainedModel {
+    /**
+     * Calls the model on new inputs.
+     *
+     * @param {Object} model_inputs The inputs to the model.
+     * @returns {Promise<SequenceClassifierOutput>} An object containing the model's output logits for sequence classification.
+     */
+    async _call(model_inputs) {
+        return new SequenceClassifierOutput(await super._call(model_inputs));
+    }
+}
+
+export class ModernBertForTokenClassification extends ModernBertPreTrainedModel {
+    /**
+     * Calls the model on new inputs.
+     *
+     * @param {Object} model_inputs The inputs to the model.
+     * @returns {Promise<TokenClassifierOutput>} An object containing the model's output logits for token classification.
+     */
+    async _call(model_inputs) {
+        return new TokenClassifierOutput(await super._call(model_inputs));
+    }
+}
+//////////////////////////////////////////////////
+
 
 //////////////////////////////////////////////////
 // NomicBert models
@@ -3178,6 +3402,29 @@ export class WhisperForConditionalGeneration extends WhisperPreTrainedModel {
 }
 //////////////////////////////////////////////////
 
+
+//////////////////////////////////////////////////
+// Moonshine models
+export class MoonshinePreTrainedModel extends PreTrainedModel {
+
+    requires_attention_mask = false;
+    main_input_name = 'input_values';
+    forward_params = [
+        'input_values',
+        'decoder_input_ids',
+        'past_key_values',
+    ];
+};
+
+/**
+ * MoonshineModel class for training Moonshine models without a language model head.
+ */
+export class MoonshineModel extends MoonshinePreTrainedModel { }
+
+export class MoonshineForConditionalGeneration extends MoonshinePreTrainedModel { }
+//////////////////////////////////////////////////
+
+
 //////////////////////////////////////////////////
 /**
  * Vision Encoder-Decoder model based on OpenAI's GPT architecture for image captioning and other vision tasks
@@ -3185,8 +3432,11 @@ export class WhisperForConditionalGeneration extends WhisperPreTrainedModel {
 export class VisionEncoderDecoderModel extends PreTrainedModel {
     main_input_name = 'pixel_values';
     forward_params = [
+        // Encoder inputs
         'pixel_values',
-        'input_ids',
+
+        // Decoder inpputs
+        'decoder_input_ids',
         'encoder_hidden_states',
         'past_key_values',
     ];
@@ -3199,8 +3449,8 @@ export class VisionEncoderDecoderModel extends PreTrainedModel {
 export class LlavaPreTrainedModel extends PreTrainedModel {
     forward_params = [
         'input_ids',
-        'pixel_values',
         'attention_mask',
+        'pixel_values',
         'position_ids',
         'past_key_values',
     ];
@@ -3272,6 +3522,7 @@ export class LlavaForConditionalGeneration extends LlavaPreTrainedModel {
 }
 //////////////////////////////////////////////////
 
+export class LlavaOnevisionForConditionalGeneration extends LlavaForConditionalGeneration { } // NOTE: extends LlavaForConditionalGeneration
 export class Moondream1ForConditionalGeneration extends LlavaForConditionalGeneration { } // NOTE: extends LlavaForConditionalGeneration
 
 export class Florence2PreTrainedModel extends PreTrainedModel {
@@ -3381,6 +3632,141 @@ export class Florence2ForConditionalGeneration extends Florence2PreTrainedModel 
         return decoder_outputs;
     }
 }
+
+export class PaliGemmaPreTrainedModel extends PreTrainedModel {
+    forward_params = [
+        'input_ids',
+        // 'inputs_embeds',
+        'attention_mask',
+        'pixel_values',
+        'position_ids',
+        'past_key_values',
+    ];
+}
+
+export class PaliGemmaForConditionalGeneration extends PaliGemmaPreTrainedModel {
+    _merge_input_ids_with_image_features(kwargs) {
+        const vision_hidden_size = kwargs.image_features.dims.at(-1);
+        const reshaped_image_hidden_states = kwargs.image_features.view(-1, vision_hidden_size);
+
+        return default_merge_input_ids_with_image_features({
+            // @ts-ignore
+            image_token_id: this.config.image_token_index,
+            ...kwargs,
+            image_features: reshaped_image_hidden_states,
+        })
+    }
+}
+
+//////////////////////////////////////////////////
+// Idefics3 Models
+export class Idefics3PreTrainedModel extends PreTrainedModel {
+    forward_params = [
+        'input_ids',
+        'attention_mask',
+        'pixel_values',
+        'pixel_attention_mask',
+        'position_ids',
+        'past_key_values',
+    ];
+}
+
+/**
+ * The LLAVA model which consists of a vision backbone and a language model.
+ */
+export class Idefics3ForConditionalGeneration extends Idefics3PreTrainedModel {
+
+    async encode_image({ pixel_values, pixel_attention_mask }) {
+        const features = (await sessionRun(this.sessions['vision_encoder'], { pixel_values, pixel_attention_mask })).image_features;
+        return features;
+    }
+
+    _merge_input_ids_with_image_features(kwargs) {
+        const vision_hidden_size = kwargs.image_features.dims.at(-1);
+        const reshaped_image_hidden_states = kwargs.image_features.view(-1, vision_hidden_size);
+
+        return default_merge_input_ids_with_image_features({
+            // @ts-ignore
+            image_token_id: this.config.image_token_id,
+            ...kwargs,
+            image_features: reshaped_image_hidden_states,
+        })
+    }
+}
+//////////////////////////////////////////////////
+
+export class Phi3VPreTrainedModel extends PreTrainedModel {
+    forward_params = [
+        'input_ids',
+        'inputs_embeds',
+        'attention_mask',
+        'position_ids',
+        'pixel_values',
+        'image_sizes',
+        'past_key_values',
+    ];
+}
+export class Phi3VForCausalLM extends Phi3VPreTrainedModel {
+
+    async forward({
+        // Produced by the tokenizer/processor:
+        input_ids = null,
+        attention_mask = null,
+        pixel_values = null,
+        image_sizes = null,
+
+        // Used during generation:
+        position_ids = null,
+        inputs_embeds = null,
+        past_key_values = null,
+
+        // Generic generation parameters
+        generation_config = null,
+        logits_processor = null,
+
+        // TODO: needed?
+        ...kwargs
+    }) {
+        if (!inputs_embeds) {
+            let image_features;
+            if (pixel_values && input_ids.dims[1] !== 1) {
+                if (!image_sizes) {
+                    throw new Error('`image_sizes` must be provided when `pixel_values` is provided.');
+                }
+
+                // Encode the image
+                ({ image_features } = await sessionRun(this.sessions['vision_encoder'], {
+                    pixel_values,
+                    image_sizes,
+                }));
+            } else {
+                const hidden_size = this.config.normalized_config.hidden_size;
+                image_features = new Tensor(
+                    'float32',
+                    [],
+                    [0, hidden_size],
+                );
+            }
+
+            ({ inputs_embeds } = await sessionRun(this.sessions['prepare_inputs_embeds'], {
+                input_ids,
+                image_features,
+            }));
+        }
+
+        const outputs = await decoderForward(this, {
+            inputs_embeds,
+            past_key_values,
+            attention_mask,
+            position_ids,
+            generation_config,
+            logits_processor,
+        }, false);
+        return outputs;
+    }
+}
+
+//////////////////////////////////////////////////
 export class CLIPPreTrainedModel extends PreTrainedModel { }
 
 /**
@@ -3432,11 +3818,13 @@ export class CLIPModel extends CLIPPreTrainedModel { }
  * The text model from CLIP without any head or projection on top.
  */
 export class CLIPTextModel extends CLIPPreTrainedModel {
-    /** @type {PreTrainedModel.from_pretrained} */
+    /** @type {typeof PreTrainedModel.from_pretrained} */
     static async from_pretrained(pretrained_model_name_or_path, options = {}) {
-        // Update default model file name if not provided
-        options.model_file_name ??= 'text_model';
-        return super.from_pretrained(pretrained_model_name_or_path, options);
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            // Update default model file name if not provided
+            model_file_name: options.model_file_name ?? 'text_model',
+        });
     }
 }
 
@@ -3467,11 +3855,13 @@ export class CLIPTextModel extends CLIPPreTrainedModel {
  * ```
  */
 export class CLIPTextModelWithProjection extends CLIPPreTrainedModel {
-    /** @type {PreTrainedModel.from_pretrained} */
+    /** @type {typeof PreTrainedModel.from_pretrained} */
     static async from_pretrained(pretrained_model_name_or_path, options = {}) {
-        // Update default model file name if not provided
-        options.model_file_name ??= 'text_model';
-        return super.from_pretrained(pretrained_model_name_or_path, options);
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            // Update default model file name if not provided
+            model_file_name: options.model_file_name ?? 'text_model',
+        });
     }
 }
 
@@ -3479,11 +3869,13 @@ export class CLIPTextModelWithProjection extends CLIPPreTrainedModel {
  * The vision model from CLIP without any head or projection on top.
  */
 export class CLIPVisionModel extends CLIPPreTrainedModel {
-    /** @type {PreTrainedModel.from_pretrained} */
+    /** @type {typeof PreTrainedModel.from_pretrained} */
     static async from_pretrained(pretrained_model_name_or_path, options = {}) {
-        // Update default model file name if not provided
-        options.model_file_name ??= 'vision_model';
-        return super.from_pretrained(pretrained_model_name_or_path, options);
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            // Update default model file name if not provided
+            model_file_name: options.model_file_name ?? 'vision_model',
+        });
     }
 }
 
@@ -3514,11 +3906,13 @@ export class CLIPVisionModel extends CLIPPreTrainedModel {
  * ```
  */
 export class CLIPVisionModelWithProjection extends CLIPPreTrainedModel {
-    /** @type {PreTrainedModel.from_pretrained} */
+    /** @type {typeof PreTrainedModel.from_pretrained} */
     static async from_pretrained(pretrained_model_name_or_path, options = {}) {
-        // Update default model file name if not provided
-        options.model_file_name ??= 'vision_model';
-        return super.from_pretrained(pretrained_model_name_or_path, options);
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            // Update default model file name if not provided
+            model_file_name: options.model_file_name ?? 'vision_model',
+        });
     }
 }
 //////////////////////////////////////////////////
@@ -3600,12 +3994,13 @@ export class SiglipModel extends SiglipPreTrainedModel { }
  * ```
  */
 export class SiglipTextModel extends SiglipPreTrainedModel {
-
-    /** @type {PreTrainedModel.from_pretrained} */
+    /** @type {typeof PreTrainedModel.from_pretrained} */
     static async from_pretrained(pretrained_model_name_or_path, options = {}) {
-        // Update default model file name if not provided
-        options.model_file_name ??= 'text_model';
-        return super.from_pretrained(pretrained_model_name_or_path, options);
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            // Update default model file name if not provided
+            model_file_name: options.model_file_name ?? 'text_model',
+        });
     }
 }
 
@@ -3636,11 +4031,13 @@ export class SiglipTextModel extends SiglipPreTrainedModel {
  * ```
  */
 export class SiglipVisionModel extends CLIPPreTrainedModel {
-    /** @type {PreTrainedModel.from_pretrained} */
+    /** @type {typeof PreTrainedModel.from_pretrained} */
     static async from_pretrained(pretrained_model_name_or_path, options = {}) {
-        // Update default model file name if not provided
-        options.model_file_name ??= 'vision_model';
-        return super.from_pretrained(pretrained_model_name_or_path, options);
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            // Update default model file name if not provided
+            model_file_name: options.model_file_name ?? 'vision_model',
+        });
     }
 }
 //////////////////////////////////////////////////
@@ -3648,6 +4045,71 @@ export class SiglipVisionModel extends CLIPPreTrainedModel {
 export class ChineseCLIPPreTrainedModel extends PreTrainedModel { }
 
 export class ChineseCLIPModel extends ChineseCLIPPreTrainedModel { }
+//////////////////////////////////////////////////
+
+//////////////////////////////////////////////////
+// JinaCLIP models
+export class JinaCLIPPreTrainedModel extends PreTrainedModel { }
+
+export class JinaCLIPModel extends JinaCLIPPreTrainedModel {
+    async forward(model_inputs) {
+        const missing_text_inputs = !model_inputs.input_ids;
+        const missing_image_inputs = !model_inputs.pixel_values;
+
+        if (missing_text_inputs && missing_image_inputs) {
+            throw new Error('Either `input_ids` or `pixel_values` should be provided.');
+        }
+
+        // If either `input_ids` or `pixel_values` aren't passed, we need to create dummy input since the model requires a value to be specified.
+        if (missing_text_inputs) {
+            // NOTE: We cannot pass zero-dimension tensor as input for input_ids.
+            // Fortunately, the majority of time is spent in the vision encoder, so this shouldn't significantly impact performance.
+            model_inputs.input_ids = ones([model_inputs.pixel_values.dims[0], 1]);
+        }
+
+        if (missing_image_inputs) {
+            // NOTE: Since we create a zero-sized tensor, this does not increase computation time.
+            // @ts-ignore
+            const { image_size } = this.config.vision_config;
+            model_inputs.pixel_values = full([0, 3, image_size, image_size], 0.0); // (pass zero-dimension tensor)
+        }
+
+        const { text_embeddings, image_embeddings, l2norm_text_embeddings, l2norm_image_embeddings } = await super.forward(model_inputs);
+
+        const result = {};
+        if (!missing_text_inputs) {
+            result.text_embeddings = text_embeddings;
+            result.l2norm_text_embeddings = l2norm_text_embeddings;
+        }
+        if (!missing_image_inputs) {
+            result.image_embeddings = image_embeddings;
+            result.l2norm_image_embeddings = l2norm_image_embeddings;
+        }
+        return result
+    }
+}
+
+export class JinaCLIPTextModel extends JinaCLIPPreTrainedModel {
+    /** @type {typeof PreTrainedModel.from_pretrained} */
+    static async from_pretrained(pretrained_model_name_or_path, options = {}) {
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            // Update default model file name if not provided
+            model_file_name: options.model_file_name ?? 'text_model',
+        });
+    }
+}
+
+export class JinaCLIPVisionModel extends JinaCLIPPreTrainedModel {
+    /** @type {typeof PreTrainedModel.from_pretrained} */
+    static async from_pretrained(pretrained_model_name_or_path, options = {}) {
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            // Update default model file name if not provided
+            model_file_name: options.model_file_name ?? 'vision_model',
+        });
+    }
+}
 //////////////////////////////////////////////////
 
 
@@ -3806,6 +4268,37 @@ export class LlamaForCausalLM extends LlamaPreTrainedModel { }
 
 
 //////////////////////////////////////////////////
+// EXAONE models
+export class ExaonePreTrainedModel extends PreTrainedModel { }
+export class ExaoneModel extends ExaonePreTrainedModel { }
+export class ExaoneForCausalLM extends ExaonePreTrainedModel { }
+//////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////
+// MobileLLM models
+export class MobileLLMPreTrainedModel extends PreTrainedModel { }
+export class MobileLLMModel extends MobileLLMPreTrainedModel { }
+export class MobileLLMForCausalLM extends MobileLLMPreTrainedModel { }
+//////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////
+// OLMo models
+export class OlmoPreTrainedModel extends PreTrainedModel { }
+export class OlmoModel extends OlmoPreTrainedModel { }
+export class OlmoForCausalLM extends OlmoPreTrainedModel { }
+//////////////////////////////////////////////////
+
+//////////////////////////////////////////////////
+// OLMo2 models
+export class Olmo2PreTrainedModel extends PreTrainedModel { }
+export class Olmo2Model extends Olmo2PreTrainedModel { }
+export class Olmo2ForCausalLM extends Olmo2PreTrainedModel { }
+//////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////
 // Granite models
 export class GranitePreTrainedModel extends PreTrainedModel { }
 export class GraniteModel extends GranitePreTrainedModel { }
@@ -3876,6 +4369,261 @@ export class Qwen2Model extends Qwen2PreTrainedModel { }
 
 export class Qwen2ForCausalLM extends Qwen2PreTrainedModel { }
 //////////////////////////////////////////////////
+
+export class Qwen2VLPreTrainedModel extends PreTrainedModel {
+    forward_params = [
+        // Text inputs
+        'input_ids',
+        'attention_mask',
+        'position_ids',
+        'past_key_values',
+
+        // Vision inputs
+        'pixel_values',
+        'image_grid_thw',
+    ];
+}
+export class Qwen2VLForConditionalGeneration extends Qwen2VLPreTrainedModel {
+
+    /**
+     * Calculate the 3D rope index based on image and video's temporal, height and width in LLM.
+     *
+     * Explanation:
+     *     Each embedding sequence contains vision embedding and text embedding or just contains text embedding.
+     *
+     *     For pure text embedding sequence, the rotary position embedding has no difference with mordern LLMs.
+     *     Examples:
+     *         input_ids: [T T T T T], here T is for text.
+     *         temporal position_ids: [0, 1, 2, 3, 4]
+     *         height position_ids: [0, 1, 2, 3, 4]
+     *         width position_ids: [0, 1, 2, 3, 4]
+     *
+     *     For vision and text embedding sequence, we calculate 3D rotary position embedding for vision part
+     *     and 1D rotary position embeddin for text part.
+     *     Examples:
+     *         Assume we have a video input with 3 temporal patches, 2 height patches and 2 width patches.
+     *         input_ids: [V V V V V V V V V V V V T T T T T], here V is for vision.
+     *         vision temporal position_ids: [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2]
+     *         vision height position_ids: [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
+     *         vision width position_ids: [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
+     *         text temporal position_ids: [3, 4, 5, 6, 7]
+     *         text height position_ids: [3, 4, 5, 6, 7]
+     *         text width position_ids: [3, 4, 5, 6, 7]
+     *         Here we calculate the text start position_ids as the max vision position_ids plus 1.
+     * 
+     * @param {Tensor} input_ids Indices of input sequence tokens in the vocabulary. Tensor of shape `(batch_size, sequence_length)`.
+     * @param {Tensor} image_grid_thw (Optional) The temporal, height and width of feature shape of each image in LLM. Tensor of shape `(num_images, 3)`.
+     * @param {Tensor} video_grid_thw (Optional) The temporal, height and width of feature shape of each video in LLM. Tensor of shape `(num_videos, 3)`.
+     * @param {Tensor} attention_mask (Optional) Mask to avoid performing attention on padding token indices. Tensor of shape `(batch_size, sequence_length)`. Mask values selected in `[0, 1]`:
+     * - 1 for tokens that are **not masked**,
+     * - 0 for tokens that are **masked**.
+     * @returns {[Tensor, Tensor]} [position_ids, mrope_position_deltas] with:
+     * - position_ids: Tensor of shape `(3, batch_size, sequence_length)`.
+     * - mrope_position_deltas: Tensor of shape `(batch_size)`.
+     */
+    get_rope_index(input_ids, image_grid_thw, video_grid_thw, attention_mask) {
+        // @ts-ignore
+        const { vision_config, image_token_id, video_token_id, vision_start_token_id } = this.config;
+        const spatial_merge_size = vision_config.spatial_merge_size ?? 2;
+
+        const mrope_position_deltas = [];
+        if (image_grid_thw || video_grid_thw) {
+            let total_input_ids = input_ids.tolist();
+            if (!attention_mask) {
+                attention_mask = ones_like(input_ids);
+            }
+
+            const attention_mask_list = attention_mask.tolist();
+            const position_ids_list = Array.from({ length: 3 }, _ => Array.from({ length: input_ids.dims[0] }, _ => Array.from({ length: input_ids.dims[1] }, _ => 1)));
+
+            const image_grid_thw_list = image_grid_thw ? image_grid_thw.tolist() : [];
+            const video_grid_thw_list = video_grid_thw ? video_grid_thw.tolist() : [];
+
+            let image_index = 0;
+            let video_index = 0;
+            for (let i = 0; i < total_input_ids.length; ++i) {
+                const ids = total_input_ids[i].filter((_, j) => attention_mask_list[i][j] == 1);
+
+                const vision_start_indices = ids.reduce((acc, x, idx) => {
+                    if (x == vision_start_token_id) acc.push(idx);
+                    return acc;
+                }, []);
+
+                const vision_tokens = vision_start_indices.map(x => ids[x + 1]);
+                const image_nums = vision_tokens.filter(x => x == image_token_id).length;
+                const video_nums = vision_tokens.filter(x => x == video_token_id).length;
+
+                let llm_pos_ids_list = [];
+                let st = 0;
+                let remain_images = image_nums;
+                let remain_videos = video_nums;
+                for (let j = 0; j < vision_tokens.length; ++j) {
+                    const next_image_token = ids.findIndex((x, i) => i > st && x == image_token_id);
+                    const next_video_token = ids.findIndex((x, i) => i > st && x == video_token_id);
+
+                    const ed_image = (remain_images > 0 && next_image_token !== -1)
+                        ? next_image_token
+                        : ids.length + 1;
+
+                    const ed_video = (remain_videos > 0 && next_video_token !== -1)
+                        ? next_video_token
+                        : ids.length + 1;
+
+                    let ed;
+                    let t, h, w;
+                    if (ed_image < ed_video) {
+                        ([t, h, w] = image_grid_thw_list[image_index]);
+                        ++image_index;
+                        --remain_images;
+                        ed = ed_image;
+                    } else {
+                        ([t, h, w] = video_grid_thw_list[video_index]);
+                        ++video_index;
+                        --remain_videos;
+                        ed = ed_video;
+                    }
+
+                    const [llm_grid_t, llm_grid_h, llm_grid_w] = [
+                        Number(t),
+                        Math.floor(Number(h) / spatial_merge_size),
+                        Math.floor(Number(w) / spatial_merge_size)
+                    ]
+                    const text_len = ed - st;
+                    const st_idx = llm_pos_ids_list.length > 0
+                        ? max(llm_pos_ids_list.at(-1))[0] + 1
+                        : 0;
+
+                    llm_pos_ids_list.push(
+                        Array.from({ length: 3 * text_len }, (_, i) => st_idx + (i % text_len))
+                    )
+
+                    const offset = text_len + st_idx;
+                    const grid_size = llm_grid_t * llm_grid_h * llm_grid_w;
+                    const t_index = Array.from({ length: grid_size }, (_, i) => offset + Math.floor(i / (llm_grid_h * llm_grid_w)))
+                    const h_index = Array.from({ length: grid_size }, (_, i) => offset + Math.floor(i / llm_grid_w) % llm_grid_h)
+                    const w_index = Array.from({ length: grid_size }, (_, i) => offset + i % llm_grid_w)
+
+                    llm_pos_ids_list.push([t_index, h_index, w_index].flat())
+
+                    st = ed + grid_size;
+                }
+
+                if (st < ids.length) {
+                    const st_idx = llm_pos_ids_list.length > 0
+                        ? max(llm_pos_ids_list.at(-1))[0] + 1
+                        : 0;
+                    const text_len = ids.length - st;
+
+                    llm_pos_ids_list.push(
+                        Array.from({ length: 3 * text_len }, (_, i) => (st_idx + (i % text_len)))
+                    )
+                }
+
+                // NOTE: Each item in llm_pos_ids_list is an array of shape (3, text_len),
+                // meaning to perform concatenation along dim=1, we can do the following:
+                const num_items = llm_pos_ids_list.reduce((acc, x) => acc + x.length, 0);
+                const llm_positions = new Array(num_items);
+                let index = 0;
+                for (let x = 0; x < 3; ++x) {
+                    for (let y = 0; y < llm_pos_ids_list.length; ++y) {
+                        const val = llm_pos_ids_list[y];
+                        const text_len = val.length / 3;
+                        for (let z = x * text_len; z < (x + 1) * text_len; ++z) {
+                            llm_positions[index++] = val[z];
+                        }
+                    }
+                }
+
+                let count = 0;
+                const attn_mask = attention_mask_list[i];
+                for (let y = 0; y < attn_mask.length; ++y) {
+                    if (attn_mask[y] == 1) {
+                        for (let x = 0; x < 3; ++x) {
+                            position_ids_list[x][i][y] = llm_positions[x * num_items / 3 + count];
+                        }
+                        ++count;
+                    }
+                }
+
+                const max_llm_positions = max(llm_positions)[0];
+                mrope_position_deltas.push(max_llm_positions + 1 - total_input_ids[i].length);
+            }
+
+            return [
+                new Tensor('int64', position_ids_list.flat(Infinity), [3, input_ids.dims[0], input_ids.dims[1]]),
+                new Tensor('int64', mrope_position_deltas, [mrope_position_deltas.length, 1]),
+            ];
+
+        } else { // Text-only
+            if (attention_mask) {
+                const { data, dims } = cumsum_masked_fill(attention_mask);
+
+                const position_ids = BigInt64Array.from(
+                    { length: 3 * data.length },
+                    (_, i) => data[i % data.length]
+                );
+                const mrope_position_deltas = Array.from(
+                    { length: dims[0] },
+                    (_, i) => max(data.subarray(dims[1] * i, dims[1] * (i + 1)))[0] + 1 + dims[1]
+                );
+
+                return [
+                    new Tensor('int64', position_ids, [3, ...dims]),
+                    new Tensor('int64', mrope_position_deltas, [mrope_position_deltas.length, 1]),
+                ]
+            } else {
+                const [batch_size, seq_length] = input_ids.dims;
+                const position_ids = BigInt64Array.from(
+                    { length: 3 * batch_size * seq_length },
+                    (_, i) => BigInt(Math.floor(i % seq_length / batch_size)),
+                );
+
+                return [
+                    new Tensor('int64', position_ids, [3, ...input_ids.dims]),
+                    zeros([batch_size, 1]),
+                ]
+            }
+        }
+    }
+
+    async encode_image({ pixel_values, image_grid_thw }) {
+        const features = (await sessionRun(this.sessions['vision_encoder'], { pixel_values, grid_thw: image_grid_thw })).image_features;
+        return features;
+    }
+
+    _merge_input_ids_with_image_features(kwargs) {
+        return default_merge_input_ids_with_image_features({
+            // @ts-ignore
+            image_token_id: this.config.image_token_id,
+            ...kwargs
+        })
+    }
+
+    prepare_inputs_for_generation(input_ids, model_inputs, generation_config) {
+        // Overwritten -- in specific circumstances we don't want to forward image inputs to the model
+        if (model_inputs.attention_mask && !model_inputs.position_ids) {
+            // Calculate position_ids and rope_deltas
+            if (!model_inputs.past_key_values) {
+                ([model_inputs.position_ids, model_inputs.rope_deltas] = this.get_rope_index(
+                    model_inputs.input_ids,
+                    model_inputs.image_grid_thw,
+                    model_inputs.video_grid_thw,
+                    model_inputs.attention_mask,
+                ));
+
+            } else {
+                model_inputs.pixel_values = null;
+                // model_inputs.pixel_values_videos = null;
+
+                const delta = BigInt(Object.values(model_inputs.past_key_values)[0].dims.at(-2));
+                const rope_deltas_list = model_inputs.rope_deltas.map(x => delta + x);
+                model_inputs.position_ids = stack([rope_deltas_list, rope_deltas_list, rope_deltas_list], 0)
+            }
+        }
+
+        return model_inputs;
+    }
+}
 
 
 //////////////////////////////////////////////////
@@ -3963,6 +4711,31 @@ export class ViTForImageClassification extends ViTPreTrainedModel {
     }
 }
 //////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////
+export class IJepaPreTrainedModel extends PreTrainedModel { }
+export class IJepaModel extends IJepaPreTrainedModel { }
+export class IJepaForImageClassification extends IJepaPreTrainedModel {
+    /**
+     * @param {any} model_inputs
+     */
+    async _call(model_inputs) {
+        return new SequenceClassifierOutput(await super._call(model_inputs));
+    }
+}
+//////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////
+export class VitPosePreTrainedModel extends PreTrainedModel { }
+
+/**
+ * The VitPose model with a pose estimation head on top.
+ */
+export class VitPoseForPoseEstimation extends VitPosePreTrainedModel { }
+//////////////////////////////////////////////////
+
 
 //////////////////////////////////////////////////
 export class PvtPreTrainedModel extends PreTrainedModel { }
@@ -4616,6 +5389,26 @@ export class Dinov2ForImageClassification extends Dinov2PreTrainedModel {
 }
 //////////////////////////////////////////////////
 
+//////////////////////////////////////////////////
+export class Dinov2WithRegistersPreTrainedModel extends PreTrainedModel { }
+
+/**
+ * The bare Dinov2WithRegisters Model transformer outputting raw hidden-states without any specific head on top.
+ */
+export class Dinov2WithRegistersModel extends Dinov2WithRegistersPreTrainedModel { }
+
+/**
+ * Dinov2WithRegisters Model transformer with an image classification head on top (a linear layer on top of the final hidden state of the [CLS] token) e.g. for ImageNet.
+ */
+export class Dinov2WithRegistersForImageClassification extends Dinov2WithRegistersPreTrainedModel {
+    /**
+     * @param {any} model_inputs
+     */
+    async _call(model_inputs) {
+        return new SequenceClassifierOutput(await super._call(model_inputs));
+    }
+}
+//////////////////////////////////////////////////
 
 //////////////////////////////////////////////////
 export class YolosPreTrainedModel extends PreTrainedModel { }
@@ -5562,12 +6355,13 @@ export class ClapModel extends ClapPreTrainedModel { }
  * ```
  */
 export class ClapTextModelWithProjection extends ClapPreTrainedModel {
-
-    /** @type {PreTrainedModel.from_pretrained} */
+    /** @type {typeof PreTrainedModel.from_pretrained} */
     static async from_pretrained(pretrained_model_name_or_path, options = {}) {
-        // Update default model file name if not provided
-        options.model_file_name ??= 'text_model';
-        return super.from_pretrained(pretrained_model_name_or_path, options);
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            // Update default model file name if not provided
+            model_file_name: options.model_file_name ?? 'text_model',
+        });
     }
 }
 
@@ -5598,11 +6392,13 @@ export class ClapTextModelWithProjection extends ClapPreTrainedModel {
  * ```
  */
 export class ClapAudioModelWithProjection extends ClapPreTrainedModel {
-    /** @type {PreTrainedModel.from_pretrained} */
+    /** @type {typeof PreTrainedModel.from_pretrained} */
     static async from_pretrained(pretrained_model_name_or_path, options = {}) {
-        // Update default model file name if not provided
-        options.model_file_name ??= 'audio_model';
-        return super.from_pretrained(pretrained_model_name_or_path, options);
+        return super.from_pretrained(pretrained_model_name_or_path, {
+            ...options,
+            // Update default model file name if not provided
+            model_file_name: options.model_file_name ?? 'audio_model',
+        });
     }
 }
 //////////////////////////////////////////////////
@@ -5949,6 +6745,170 @@ export class DecisionTransformerModel extends DecisionTransformerPreTrainedModel
 
 //////////////////////////////////////////////////
 
+export class MultiModalityPreTrainedModel extends PreTrainedModel { }
+export class MultiModalityCausalLM extends MultiModalityPreTrainedModel {
+    forward_params = [
+        // prepare_inputs_embeds
+        'input_ids',
+        'pixel_values',
+        'images_seq_mask',
+        'images_emb_mask',
+
+        // language_model
+        'attention_mask',
+        'position_ids',
+        'past_key_values',
+    ];
+
+    constructor(...args) {
+        super(...args);
+
+        // State-based approach to switch out which heads to use during generation
+        this._generation_mode = 'text';
+    }
+
+    async forward(model_inputs) {
+        const mode = this._generation_mode ?? 'text';
+
+        // TODO support re-using PKVs for input_ids.dims[1] !== 1
+        // if (model_inputs.past_key_values) {
+        //     //  && model_inputs.input_ids.dims[1] === 1
+        // }
+
+        let output_1;
+        if (mode === 'text' || !model_inputs.past_key_values) {
+            const session = this.sessions['prepare_inputs_embeds'];
+            const prep_inputs = pick(model_inputs, session.inputNames);
+            output_1 = await sessionRun(session, prep_inputs);
+        } else {
+            const session = this.sessions['gen_img_embeds'];
+            const prep_inputs = pick({
+                image_ids: model_inputs.input_ids,
+            }, session.inputNames);
+            output_1 = await sessionRun(session, prep_inputs);
+        }
+
+        const input_2 = { ...model_inputs, ...output_1 }
+        const output_2 = await decoderForward(this, input_2);
+
+        const head = this.sessions[
+            mode === 'text'
+                ? 'lm_head'
+                : 'gen_head'
+        ];
+        if (!head) {
+            throw new Error(`Unable to find "${head}" generation head`);
+        }
+
+        const output_3 = await sessionRun(head, pick(output_2, head.inputNames))
+
+        return {
+            ...output_1,
+            ...output_2,
+            ...output_3,
+        };
+    }
+
+    /**
+     * @param {import('./generation/parameters.js').GenerationFunctionParameters} options
+     */
+    async generate(options) {
+        this._generation_mode = 'text';
+        return super.generate(options);
+    }
+
+    /**
+     * @param {import('./generation/parameters.js').GenerationFunctionParameters} options
+     */
+    async generate_images(options) {
+        this._generation_mode = 'image';
+
+        const start_num_tokens = (options.inputs ?? options[this.main_input_name]).dims[1];
+        const all_tokens = await super.generate(options);
+
+        const generated_tokens = (/** @type {Tensor} */(all_tokens)).slice(null, [start_num_tokens, null])
+
+        const image_decode = this.sessions['image_decode'];
+        const { decoded_image } = await sessionRun(image_decode, {
+            generated_tokens,
+        });
+
+        // Equivalent to `np.clip((dec + 1) / 2 * 255, 0, 255)`
+        const clamped = decoded_image
+            .add_(1)
+            .mul_(255 / 2)
+            .clamp_(0, 255)
+            .to('uint8');
+
+        // Return as a list of images
+        const images = [];
+        for (const tensor of clamped) {
+            const img = RawImage.fromTensor(tensor);
+            images.push(img);
+        }
+        return images;
+    }
+}
+
+export class MgpstrModelOutput extends ModelOutput {
+    constructor({ char_logits, bpe_logits, wp_logits }) {
+        super();
+        this.char_logits = char_logits;
+        this.bpe_logits = bpe_logits;
+        this.wp_logits = wp_logits;
+    }
+
+    get logits() {
+        return [this.char_logits, this.bpe_logits, this.wp_logits];
+    }
+}
+
+export class MgpstrPreTrainedModel extends PreTrainedModel { }
+
+/**
+ * MGP-STR Model transformer with three classification heads on top
+ * (three A^3 modules and three linear layer on top of the transformer encoder output) for scene text recognition (STR).
+ */
+export class MgpstrForSceneTextRecognition extends MgpstrPreTrainedModel {
+    /**
+     * @param {any} model_inputs
+     */
+    async _call(model_inputs) {
+        return new MgpstrModelOutput(await super._call(model_inputs));
+    }
+}
+
+//////////////////////////////////////////////////
+// PatchTST Transformer models
+export class PatchTSTPreTrainedModel extends PreTrainedModel { }
+
+/**
+ * The bare PatchTST Model outputting raw hidden-states without any specific head.
+ */
+export class PatchTSTModel extends PatchTSTPreTrainedModel { }
+
+/**
+ * The PatchTST for prediction model.
+ */
+export class PatchTSTForPrediction extends PatchTSTPreTrainedModel { }
+//////////////////////////////////////////////////
+
+//////////////////////////////////////////////////
+// PatchTSMixer Transformer models
+export class PatchTSMixerPreTrainedModel extends PreTrainedModel { }
+
+/**
+ * The bare PatchTSMixer Model outputting raw hidden-states without any specific head.
+ */
+export class PatchTSMixerModel extends PatchTSMixerPreTrainedModel { }
+
+/**
+ * The PatchTSMixer for prediction model.
+ */
+export class PatchTSMixerForPrediction extends PatchTSMixerPreTrainedModel { }
+//////////////////////////////////////////////////
+
+
 //////////////////////////////////////////////////
 // AutoModels, used to simplify construction of PreTrainedModels
 // (uses config to instantiate correct class)
@@ -6024,6 +6984,7 @@ export class PretrainedMixin {
 
 const MODEL_MAPPING_NAMES_ENCODER_ONLY = new Map([
     ['bert', ['BertModel', BertModel]],
+    ['modernbert', ['ModernBertModel', ModernBertModel]],
     ['nomic_bert', ['NomicBertModel', NomicBertModel]],
     ['roformer', ['RoFormerModel', RoFormerModel]],
     ['electra', ['ElectraModel', ElectraModel]],
@@ -6043,6 +7004,7 @@ const MODEL_MAPPING_NAMES_ENCODER_ONLY = new Map([
     ['clipseg', ['CLIPSegModel', CLIPSegModel]],
     ['chinese_clip', ['ChineseCLIPModel', ChineseCLIPModel]],
     ['siglip', ['SiglipModel', SiglipModel]],
+    ['jina_clip', ['JinaCLIPModel', JinaCLIPModel]],
     ['mobilebert', ['MobileBertModel', MobileBertModel]],
     ['squeezebert', ['SqueezeBertModel', SqueezeBertModel]],
     ['wav2vec2', ['Wav2Vec2Model', Wav2Vec2Model]],
@@ -6060,6 +7022,7 @@ const MODEL_MAPPING_NAMES_ENCODER_ONLY = new Map([
     ['rt_detr', ['RTDetrModel', RTDetrModel]],
     ['table-transformer', ['TableTransformerModel', TableTransformerModel]],
     ['vit', ['ViTModel', ViTModel]],
+    ['ijepa', ['IJepaModel', IJepaModel]],
     ['pvt', ['PvtModel', PvtModel]],
     ['vit_msn', ['ViTMSNModel', ViTMSNModel]],
     ['vit_mae', ['ViTMAEModel', ViTMAEModel]],
@@ -6075,6 +7038,7 @@ const MODEL_MAPPING_NAMES_ENCODER_ONLY = new Map([
     ['convnext', ['ConvNextModel', ConvNextModel]],
     ['convnextv2', ['ConvNextV2Model', ConvNextV2Model]],
     ['dinov2', ['Dinov2Model', Dinov2Model]],
+    ['dinov2_with_registers', ['Dinov2WithRegistersModel', Dinov2WithRegistersModel]],
     ['resnet', ['ResNetModel', ResNetModel]],
     ['swin', ['SwinModel', SwinModel]],
     ['swin2sr', ['Swin2SRModel', Swin2SRModel]],
@@ -6087,6 +7051,8 @@ const MODEL_MAPPING_NAMES_ENCODER_ONLY = new Map([
     ['efficientnet', ['EfficientNetModel', EfficientNetModel]],
 
     ['decision_transformer', ['DecisionTransformerModel', DecisionTransformerModel]],
+    ['patchtst', ['PatchTSTForPrediction', PatchTSTModel]],
+    ['patchtsmixer', ['PatchTSMixerForPrediction', PatchTSMixerModel]],
 
     ['mobilenet_v1', ['MobileNetV1Model', MobileNetV1Model]],
     ['mobilenet_v2', ['MobileNetV2Model', MobileNetV2Model]],
@@ -6094,6 +7060,7 @@ const MODEL_MAPPING_NAMES_ENCODER_ONLY = new Map([
     ['mobilenet_v4', ['MobileNetV4Model', MobileNetV4Model]],
 
     ['maskformer', ['MaskFormerModel', MaskFormerModel]],
+    ['mgp-str', ['MgpstrForSceneTextRecognition', MgpstrForSceneTextRecognition]],
 ]);
 
 const MODEL_MAPPING_NAMES_ENCODER_DECODER = new Map([
@@ -6120,6 +7087,10 @@ const MODEL_MAPPING_NAMES_DECODER_ONLY = new Map([
     ['gpt_neox', ['GPTNeoXModel', GPTNeoXModel]],
     ['codegen', ['CodeGenModel', CodeGenModel]],
     ['llama', ['LlamaModel', LlamaModel]],
+    ['exaone', ['ExaoneModel', ExaoneModel]],
+    ['olmo', ['OlmoModel', OlmoModel]],
+    ['olmo2', ['Olmo2Model', Olmo2Model]],
+    ['mobilellm', ['MobileLLMModel', MobileLLMModel]],
     ['granite', ['GraniteModel', GraniteModel]],
     ['cohere', ['CohereModel', CohereModel]],
     ['gemma', ['GemmaModel', GemmaModel]],
@@ -6139,6 +7110,7 @@ const MODEL_MAPPING_NAMES_DECODER_ONLY = new Map([
 const MODEL_FOR_SPEECH_SEQ_2_SEQ_MAPPING_NAMES = new Map([
     ['speecht5', ['SpeechT5ForSpeechToText', SpeechT5ForSpeechToText]],
     ['whisper', ['WhisperForConditionalGeneration', WhisperForConditionalGeneration]],
+    ['moonshine', ['MoonshineForConditionalGeneration', MoonshineForConditionalGeneration]],
 ]);
 
 const MODEL_FOR_TEXT_TO_SPECTROGRAM_MAPPING_NAMES = new Map([
@@ -6152,6 +7124,7 @@ const MODEL_FOR_TEXT_TO_WAVEFORM_MAPPING_NAMES = new Map([
 
 const MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING_NAMES = new Map([
     ['bert', ['BertForSequenceClassification', BertForSequenceClassification]],
+    ['modernbert', ['ModernBertForSequenceClassification', ModernBertForSequenceClassification]],
     ['roformer', ['RoFormerForSequenceClassification', RoFormerForSequenceClassification]],
     ['electra', ['ElectraForSequenceClassification', ElectraForSequenceClassification]],
     ['esm', ['EsmForSequenceClassification', EsmForSequenceClassification]],
@@ -6173,6 +7146,7 @@ const MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING_NAMES = new Map([
 
 const MODEL_FOR_TOKEN_CLASSIFICATION_MAPPING_NAMES = new Map([
     ['bert', ['BertForTokenClassification', BertForTokenClassification]],
+    ['modernbert', ['ModernBertForTokenClassification', ModernBertForTokenClassification]],
     ['roformer', ['RoFormerForTokenClassification', RoFormerForTokenClassification]],
     ['electra', ['ElectraForTokenClassification', ElectraForTokenClassification]],
     ['esm', ['EsmForTokenClassification', EsmForTokenClassification]],
@@ -6209,6 +7183,10 @@ const MODEL_FOR_CAUSAL_LM_MAPPING_NAMES = new Map([
     ['gpt_neox', ['GPTNeoXForCausalLM', GPTNeoXForCausalLM]],
     ['codegen', ['CodeGenForCausalLM', CodeGenForCausalLM]],
     ['llama', ['LlamaForCausalLM', LlamaForCausalLM]],
+    ['exaone', ['ExaoneForCausalLM', ExaoneForCausalLM]],
+    ['olmo', ['OlmoForCausalLM', OlmoForCausalLM]],
+    ['olmo2', ['Olmo2ForCausalLM', Olmo2ForCausalLM]],
+    ['mobilellm', ['MobileLLMForCausalLM', MobileLLMForCausalLM]],
     ['granite', ['GraniteForCausalLM', GraniteForCausalLM]],
     ['cohere', ['CohereForCausalLM', CohereForCausalLM]],
     ['gemma', ['GemmaForCausalLM', GemmaForCausalLM]],
@@ -6225,10 +7203,19 @@ const MODEL_FOR_CAUSAL_LM_MAPPING_NAMES = new Map([
     ['falcon', ['FalconForCausalLM', FalconForCausalLM]],
     ['trocr', ['TrOCRForCausalLM', TrOCRForCausalLM]],
     ['stablelm', ['StableLmForCausalLM', StableLmForCausalLM]],
+
+    // Also image-text-to-text
+    ['phi3_v', ['Phi3VForCausalLM', Phi3VForCausalLM]],
 ]);
+
+const MODEL_FOR_MULTIMODALITY_MAPPING_NAMES = new Map([
+    ['multi_modality', ['MultiModalityCausalLM', MultiModalityCausalLM]],
+]);
+
 
 const MODEL_FOR_MASKED_LM_MAPPING_NAMES = new Map([
     ['bert', ['BertForMaskedLM', BertForMaskedLM]],
+    ['modernbert', ['ModernBertForMaskedLM', ModernBertForMaskedLM]],
     ['roformer', ['RoFormerForMaskedLM', RoFormerForMaskedLM]],
     ['electra', ['ElectraForMaskedLM', ElectraForMaskedLM]],
     ['esm', ['EsmForMaskedLM', EsmForMaskedLM]],
@@ -6266,12 +7253,17 @@ const MODEL_FOR_QUESTION_ANSWERING_MAPPING_NAMES = new Map([
 
 const MODEL_FOR_VISION_2_SEQ_MAPPING_NAMES = new Map([
     ['vision-encoder-decoder', ['VisionEncoderDecoderModel', VisionEncoderDecoderModel]],
+    ['idefics3', ['Idefics3ForConditionalGeneration', Idefics3ForConditionalGeneration]],
 ]);
 
 const MODEL_FOR_IMAGE_TEXT_TO_TEXT_MAPPING_NAMES = new Map([
     ['llava', ['LlavaForConditionalGeneration', LlavaForConditionalGeneration]],
+    ['llava_onevision', ['LlavaOnevisionForConditionalGeneration', LlavaOnevisionForConditionalGeneration]],
     ['moondream1', ['Moondream1ForConditionalGeneration', Moondream1ForConditionalGeneration]],
     ['florence2', ['Florence2ForConditionalGeneration', Florence2ForConditionalGeneration]],
+    ['qwen2-vl', ['Qwen2VLForConditionalGeneration', Qwen2VLForConditionalGeneration]],
+    ['idefics3', ['Idefics3ForConditionalGeneration', Idefics3ForConditionalGeneration]],
+    ['paligemma', ['PaliGemmaForConditionalGeneration', PaliGemmaForConditionalGeneration]],
 ]);
 
 const MODEL_FOR_DOCUMENT_QUESTION_ANSWERING_MAPPING_NAMES = new Map([
@@ -6280,6 +7272,7 @@ const MODEL_FOR_DOCUMENT_QUESTION_ANSWERING_MAPPING_NAMES = new Map([
 
 const MODEL_FOR_IMAGE_CLASSIFICATION_MAPPING_NAMES = new Map([
     ['vit', ['ViTForImageClassification', ViTForImageClassification]],
+    ['ijepa', ['IJepaForImageClassification', IJepaForImageClassification]],
     ['pvt', ['PvtForImageClassification', PvtForImageClassification]],
     ['vit_msn', ['ViTMSNForImageClassification', ViTMSNForImageClassification]],
     ['fastvit', ['FastViTForImageClassification', FastViTForImageClassification]],
@@ -6291,6 +7284,7 @@ const MODEL_FOR_IMAGE_CLASSIFICATION_MAPPING_NAMES = new Map([
     ['convnext', ['ConvNextForImageClassification', ConvNextForImageClassification]],
     ['convnextv2', ['ConvNextV2ForImageClassification', ConvNextV2ForImageClassification]],
     ['dinov2', ['Dinov2ForImageClassification', Dinov2ForImageClassification]],
+    ['dinov2_with_registers', ['Dinov2WithRegistersForImageClassification', Dinov2WithRegistersForImageClassification]],
     ['resnet', ['ResNetForImageClassification', ResNetForImageClassification]],
     ['swin', ['SwinForImageClassification', SwinForImageClassification]],
     ['segformer', ['SegformerForImageClassification', SegformerForImageClassification]],
@@ -6367,6 +7361,11 @@ const MODEL_FOR_IMAGE_MATTING_MAPPING_NAMES = new Map([
     ['vitmatte', ['VitMatteForImageMatting', VitMatteForImageMatting]],
 ]);
 
+const MODEL_FOR_TIME_SERIES_PREDICTION_MAPPING_NAMES = new Map([
+    ['patchtst', ['PatchTSTForPrediction', PatchTSTForPrediction]],
+    ['patchtsmixer', ['PatchTSMixerForPrediction', PatchTSMixerForPrediction]],
+])
+
 const MODEL_FOR_IMAGE_TO_IMAGE_MAPPING_NAMES = new Map([
     ['swin2sr', ['Swin2SRForImageSuperResolution', Swin2SRForImageSuperResolution]],
 ])
@@ -6383,11 +7382,16 @@ const MODEL_FOR_NORMAL_ESTIMATION_MAPPING_NAMES = new Map([
     ['sapiens', ['SapiensForNormalEstimation', SapiensForNormalEstimation]],
 ])
 
+const MODEL_FOR_POSE_ESTIMATION_MAPPING_NAMES = new Map([
+    ['vitpose', ['VitPoseForPoseEstimation', VitPoseForPoseEstimation]],
+])
+
 // NOTE: This is custom to Transformers.js, and is necessary because certain models
 // (e.g., CLIP) are split into vision and text components
 const MODEL_FOR_IMAGE_FEATURE_EXTRACTION_MAPPING_NAMES = new Map([
     ['clip', ['CLIPVisionModelWithProjection', CLIPVisionModelWithProjection]],
     ['siglip', ['SiglipVisionModel', SiglipVisionModel]],
+    ['jina_clip', ['JinaCLIPVisionModel', JinaCLIPVisionModel]],
 ])
 
 const MODEL_CLASS_TYPE_MAPPING = [
@@ -6399,6 +7403,7 @@ const MODEL_CLASS_TYPE_MAPPING = [
     [MODEL_FOR_SEQ_TO_SEQ_CAUSAL_LM_MAPPING_NAMES, MODEL_TYPES.Seq2Seq],
     [MODEL_FOR_SPEECH_SEQ_2_SEQ_MAPPING_NAMES, MODEL_TYPES.Seq2Seq],
     [MODEL_FOR_CAUSAL_LM_MAPPING_NAMES, MODEL_TYPES.DecoderOnly],
+    [MODEL_FOR_MULTIMODALITY_MAPPING_NAMES, MODEL_TYPES.MultiModality],
     [MODEL_FOR_MASKED_LM_MAPPING_NAMES, MODEL_TYPES.EncoderOnly],
     [MODEL_FOR_QUESTION_ANSWERING_MAPPING_NAMES, MODEL_TYPES.EncoderOnly],
     [MODEL_FOR_VISION_2_SEQ_MAPPING_NAMES, MODEL_TYPES.Vision2Seq],
@@ -6408,9 +7413,11 @@ const MODEL_CLASS_TYPE_MAPPING = [
     [MODEL_FOR_UNIVERSAL_SEGMENTATION_MAPPING_NAMES, MODEL_TYPES.EncoderOnly],
     [MODEL_FOR_SEMANTIC_SEGMENTATION_MAPPING_NAMES, MODEL_TYPES.EncoderOnly],
     [MODEL_FOR_IMAGE_MATTING_MAPPING_NAMES, MODEL_TYPES.EncoderOnly],
+    [MODEL_FOR_TIME_SERIES_PREDICTION_MAPPING_NAMES, MODEL_TYPES.EncoderOnly],
     [MODEL_FOR_IMAGE_TO_IMAGE_MAPPING_NAMES, MODEL_TYPES.EncoderOnly],
     [MODEL_FOR_DEPTH_ESTIMATION_MAPPING_NAMES, MODEL_TYPES.EncoderOnly],
     [MODEL_FOR_NORMAL_ESTIMATION_MAPPING_NAMES, MODEL_TYPES.EncoderOnly],
+    [MODEL_FOR_POSE_ESTIMATION_MAPPING_NAMES, MODEL_TYPES.EncoderOnly],
     [MODEL_FOR_OBJECT_DETECTION_MAPPING_NAMES, MODEL_TYPES.EncoderOnly],
     [MODEL_FOR_ZERO_SHOT_OBJECT_DETECTION_MAPPING_NAMES, MODEL_TYPES.EncoderOnly],
     [MODEL_FOR_MASK_GENERATION_MAPPING_NAMES, MODEL_TYPES.MaskGeneration],
@@ -6438,9 +7445,11 @@ const CUSTOM_MAPPING = [
     // OVERRIDE:
     // TODO: Refactor to allow class to specify model
     ['MusicgenForConditionalGeneration', MusicgenForConditionalGeneration, MODEL_TYPES.Musicgen],
+    ['Phi3VForCausalLM', Phi3VForCausalLM, MODEL_TYPES.Phi3V],
 
     ['CLIPTextModelWithProjection', CLIPTextModelWithProjection, MODEL_TYPES.EncoderOnly],
     ['SiglipTextModel', SiglipTextModel, MODEL_TYPES.EncoderOnly],
+    ['JinaCLIPTextModel', JinaCLIPTextModel, MODEL_TYPES.EncoderOnly],
     ['ClapTextModelWithProjection', ClapTextModelWithProjection, MODEL_TYPES.EncoderOnly],
     ['ClapAudioModelWithProjection', ClapAudioModelWithProjection, MODEL_TYPES.EncoderOnly],
 ]
@@ -6680,6 +7689,10 @@ export class AutoModelForDepthEstimation extends PretrainedMixin {
 
 export class AutoModelForNormalEstimation extends PretrainedMixin {
     static MODEL_CLASS_MAPPINGS = [MODEL_FOR_NORMAL_ESTIMATION_MAPPING_NAMES];
+}
+
+export class AutoModelForPoseEstimation extends PretrainedMixin {
+    static MODEL_CLASS_MAPPINGS = [MODEL_FOR_POSE_ESTIMATION_MAPPING_NAMES];
 }
 
 export class AutoModelForImageFeatureExtraction extends PretrainedMixin {

@@ -2,7 +2,7 @@
  * A read-only object containing information about the APIs available in the current environment.
  */
 export const apis: Readonly<{
-    /** Whether we are running in a browser environment */
+    /** Whether we are running in a browser environment (and not a web worker) */
     IS_BROWSER_ENV: boolean;
     /** Whether we are running in a web worker environment */
     IS_WEBWORKER_ENV: boolean;
@@ -57,7 +57,7 @@ export type TransformersEnvironment = {
      * allowing users to set these variables if they want to.
      */
     backends: {
-        onnx: Partial<import('onnxruntime-common').Env>;
+        onnx: Partial<import("onnxruntime-common").Env>;
     };
     /**
      * Whether to allow loading of remote files, defaults to `true`.

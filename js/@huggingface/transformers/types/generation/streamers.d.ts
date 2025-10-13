@@ -16,18 +16,23 @@ export class TextStreamer extends BaseStreamer {
     /**
      *
      * @param {import('../tokenizers.js').PreTrainedTokenizer} tokenizer
+     * @param {Object} options
+     * @param {boolean} [options.skip_prompt=false] Whether to skip the prompt tokens
+     * @param {function(string): void} [options.callback_function=null] Function to call when a piece of text is ready to display
+     * @param {function(bigint[]): void} [options.token_callback_function=null] Function to call when a new token is generated
+     * @param {Object} [options.decode_kwargs={}] Additional keyword arguments to pass to the tokenizer's decode method
      */
-    constructor(tokenizer: import('../tokenizers.js').PreTrainedTokenizer, { skip_prompt, callback_function, token_callback_function, decode_kwargs, ...kwargs }?: {
+    constructor(tokenizer: import("../tokenizers.js").PreTrainedTokenizer, { skip_prompt, callback_function, token_callback_function, decode_kwargs, ...kwargs }?: {
         skip_prompt?: boolean;
-        callback_function?: any;
-        token_callback_function?: any;
-        decode_kwargs?: {};
+        callback_function?: (arg0: string) => void;
+        token_callback_function?: (arg0: bigint[]) => void;
+        decode_kwargs?: any;
     });
     tokenizer: import("../tokenizers.js").PreTrainedTokenizer;
     skip_prompt: boolean;
-    callback_function: any;
-    token_callback_function: any;
-    decode_kwargs: {};
+    callback_function: (x: any) => void;
+    token_callback_function: (arg0: bigint[]) => void;
+    decode_kwargs: any;
     token_cache: any[];
     print_len: number;
     next_tokens_are_prompt: boolean;
@@ -52,7 +57,7 @@ export class WhisperTextStreamer extends TextStreamer {
      * @param {Object} options
      * @param {boolean} [options.skip_prompt=false] Whether to skip the prompt tokens
      * @param {function(string): void} [options.callback_function=null] Function to call when a piece of text is ready to display
-     * @param {function(string): void} [options.token_callback_function=null] Function to call when a new token is generated
+     * @param {function(bigint[]): void} [options.token_callback_function=null] Function to call when a new token is generated
      * @param {function(number): void} [options.on_chunk_start=null] Function to call when a new chunk starts
      * @param {function(number): void} [options.on_chunk_end=null] Function to call when a chunk ends
      * @param {function(): void} [options.on_finalize=null] Function to call when the stream is finalized
@@ -60,10 +65,10 @@ export class WhisperTextStreamer extends TextStreamer {
      * @param {boolean} [options.skip_special_tokens=true] Whether to skip special tokens when decoding
      * @param {Object} [options.decode_kwargs={}] Additional keyword arguments to pass to the tokenizer's decode method
      */
-    constructor(tokenizer: import('../tokenizers.js').WhisperTokenizer, { skip_prompt, callback_function, token_callback_function, on_chunk_start, on_chunk_end, on_finalize, time_precision, skip_special_tokens, decode_kwargs, }?: {
+    constructor(tokenizer: import("../tokenizers.js").WhisperTokenizer, { skip_prompt, callback_function, token_callback_function, on_chunk_start, on_chunk_end, on_finalize, time_precision, skip_special_tokens, decode_kwargs, }?: {
         skip_prompt?: boolean;
         callback_function?: (arg0: string) => void;
-        token_callback_function?: (arg0: string) => void;
+        token_callback_function?: (arg0: bigint[]) => void;
         on_chunk_start?: (arg0: number) => void;
         on_chunk_end?: (arg0: number) => void;
         on_finalize?: () => void;

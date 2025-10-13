@@ -32,6 +32,8 @@ const DataTypeMap = Object.freeze({
     int64: BigInt64Array,
     uint64: BigUint64Array,
     bool: Uint8Array,
+    uint4: Uint8Array,
+    int4: Int8Array,
 });
 
 /**
@@ -340,10 +342,43 @@ export class Tensor {
         return this;
     }
 
+    /**
+     * Creates a deep copy of the current Tensor.
+     * @returns {Tensor} A new Tensor with the same type, data, and dimensions as the original.
+     */
     clone() {
         return new Tensor(this.type, this.data.slice(), this.dims.slice());
     }
 
+    /**
+     * Performs a slice operation on the Tensor along specified dimensions.
+     *
+     * Consider a Tensor that has a dimension of [4, 7]:
+     * ```
+     * [ 1,  2,  3,  4,  5,  6,  7]
+     * [ 8,  9, 10, 11, 12, 13, 14]
+     * [15, 16, 17, 18, 19, 20, 21]
+     * [22, 23, 24, 25, 26, 27, 28]
+     * ```
+     * We can slice against the two dims of row and column, for instance in this
+     * case we can start at the second element, and return to the second last,
+     * like this:
+     * ```
+     * tensor.slice([1, -1], [1, -1]);
+     * ```
+     * which would return:
+     * ```
+     * [  9, 10, 11, 12, 13 ]
+     * [ 16, 17, 18, 19, 20 ]
+     * ```
+     *
+     * @param {...(number|number[]|null)} slices The slice specifications for each dimension.
+     * - If a number is given, then a single element is selected.
+     * - If an array of two numbers is given, then a range of elements [start, end (exclusive)] is selected.
+     * - If null is given, then the entire dimension is selected.
+     * @returns {Tensor} A new Tensor containing the selected elements.
+     * @throws {Error} If the slice input is invalid.
+     */
     slice(...slices) {
         // This allows for slicing with ranges and numbers
         const newTensorDims = [];
@@ -413,7 +448,6 @@ export class Tensor {
             data[i] = this_data[originalIndex];
         }
         return new Tensor(this.type, data, newTensorDims);
-
     }
 
     /**
@@ -738,8 +772,21 @@ export class Tensor {
         if (!DataTypeMap.hasOwnProperty(type)) {
             throw new Error(`Unsupported type: ${type}`);
         }
+
+        // Handle special cases where a mapping function is needed (e.g., where one type is a bigint and the other is a number)
+        let map_fn;
+        const is_source_bigint = ['int64', 'uint64'].includes(this.type);
+        const is_dest_bigint = ['int64', 'uint64'].includes(type);
+        if (is_source_bigint && !is_dest_bigint) {
+            // TypeError: Cannot convert a BigInt value to a number
+            map_fn = Number;
+        } else if (!is_source_bigint && is_dest_bigint) {
+            // TypeError: Cannot convert [x] to a BigInt
+            map_fn = BigInt;
+        }
+
         // @ts-ignore
-        return new Tensor(type, DataTypeMap[type].from(this.data), this.dims);
+        return new Tensor(type, DataTypeMap[type].from(this.data, map_fn), this.dims);
     }
 }
 
@@ -936,6 +983,29 @@ export async function topk(x, k) {
         )
     });
 }
+
+
+const arrayToIndexTensor = (array) => new Tensor('int64', array, [array.length]);
+/**
+ * Slice a multidimensional float32 tensor.
+ * @param {Tensor} data: Tensor of data to extract slices from
+ * @param {number[]} starts: 1-D array of starting indices of corresponding axis in axes
+ * @param {number[]} ends: 1-D array of ending indices (exclusive) of corresponding axis in axes
+ * @param {number[]} axes: 1-D array of axes that starts and ends apply to
+ * @param {number[]} [steps]: 1-D array of slice step of corresponding axis in axes.
+ * @returns {Promise<Tensor>} Sliced data tensor.
+ */
+export async function slice(data, starts, ends, axes, steps) {
+    const op = await TensorOpRegistry.slice;
+    return await op({
+        x: data, 
+        s: arrayToIndexTensor(starts), 
+        e: arrayToIndexTensor(ends), 
+        a: arrayToIndexTensor(axes), 
+        t: arrayToIndexTensor(steps ?? new Array(axes.length).fill(1)),
+    });
+}
+
 
 /**
  * Perform mean pooling of the last hidden state followed by a normalization step.
@@ -1321,7 +1391,7 @@ function fullHelper(size, fill_value, dtype, cls) {
 /**
  * Creates a tensor of size size filled with fill_value. The tensor's dtype is inferred from fill_value.
  * @param {number[]} size A sequence of integers defining the shape of the output tensor.
- * @param {number|bigint} fill_value The value to fill the output tensor with.
+ * @param {number|bigint|boolean} fill_value The value to fill the output tensor with.
  * @returns {Tensor} The filled tensor.
  */
 export function full(size, fill_value) {
@@ -1333,6 +1403,9 @@ export function full(size, fill_value) {
     } else if (typeof fill_value === 'bigint') {
         dtype = 'int64';
         typedArrayCls = BigInt64Array;
+    } else if (typeof fill_value === 'boolean') {
+        dtype = 'bool';
+        typedArrayCls = Uint8Array;
     } else {
         // TODO: support other dtypes
         throw new Error(`Unsupported data type: ${typeof fill_value}`);
@@ -1378,6 +1451,20 @@ export function zeros(size) {
  */
 export function zeros_like(tensor) {
     return zeros(tensor.dims);
+}
+
+/**
+ * Returns a tensor filled with random numbers from a uniform distribution on the interval [0, 1)
+ * @param {number[]} size A sequence of integers defining the shape of the output tensor.
+ * @returns {Tensor} The random tensor.
+ */
+export function rand(size) {
+    const length = size.reduce((a, b) => a * b, 1);
+    return new Tensor(
+        "float32",
+        Float32Array.from({ length }, () => Math.random()),
+        size,
+    )
 }
 
 /**

@@ -1,4 +1,4 @@
-// (2024-10-14)
+// (2024-12-29)
 
 /*!
  * jThree JavaScript Library v2.1.2
@@ -12220,9 +12220,14 @@ THREE.ShaderChunk = {
 "#if defined( VERTEX_TEXTURES ) && ( defined( USE_DISPLACEMENTMAP ) || defined( USE_WAVE_TEXTURE ) )",
 	"vec4 worldPosition = modelMatrix * vec4( displacedPosition, 1.0 );",
 "#else",
+// AT: XRA_WALLPAPER_3D
+'#ifdef XRA_WALLPAPER_3D',
+  'vec4 worldPosition = modelMatrix * vec4( transformed, 1.0 );',
+"#else",
 
 				"vec4 worldPosition = modelMatrix * vec4( position, 1.0 );",
 
+"#endif",
 "#endif",
 
 			"#endif",
@@ -12280,6 +12285,18 @@ THREE.ShaderChunk = {
 "#endif",
 
 	].join("\n"),
+
+// AT: XRA_WALLPAPER_3D
+XRA_WALLPAPER_3D_pars_vertex: [
+  '#ifdef XRA_WALLPAPER_3D',
+  'uniform sampler2D Wallpaper3D_displacementMap;',
+  'uniform float Wallpaper3D_camera_factor;',
+  'uniform float Wallpaper3D_camera_distance_offset;',
+  'uniform float Wallpaper3D_scale_z;',
+  'uniform vec3 Wallpaper3D_pos_offset;',
+//  'uniform mat4 Wallpaper3D_modelViewMatrix;',
+  '#endif',
+].join("\n"),
 
 // AT: uniTexture
 uniTexture_pars_vertex: [
@@ -13580,9 +13597,21 @@ uniTexture_fragment: [
 "#if defined( VERTEX_TEXTURES ) && ( defined( USE_DISPLACEMENTMAP ) || defined( USE_WAVE_TEXTURE ) )",
 	"mvPosition = modelViewMatrix * vec4( displacedPosition, 1.0 );",
 "#else",
+// AT: XRA_WALLPAPER_3D
+'#ifdef XRA_WALLPAPER_3D',
+  'vec3 transformed = position;',
+  'float _depth = texture2D( Wallpaper3D_displacementMap, vUv ).x;',
+  'float _depth_factor = max((1.0 - _depth) * (1.0 - Wallpaper3D_pos_offset.z) * Wallpaper3D_scale_z + (Wallpaper3D_camera_distance_offset + Wallpaper3D_pos_offset.z * Wallpaper3D_scale_z), Wallpaper3D_camera_distance_offset) * Wallpaper3D_camera_factor;',
+  'transformed.xy += Wallpaper3D_pos_offset.xy;',
+  'transformed.xy *= _depth_factor;',
+  'transformed.z += _depth;',
+
+  'mvPosition = modelViewMatrix * vec4( transformed, 1.0 );',
+"#else",
 
 			"mvPosition = modelViewMatrix * vec4( position, 1.0 );",
 
+"#endif",
 "#endif",
 
 		"#endif",
@@ -14238,8 +14267,17 @@ THREE.ShaderLib = {
 			THREE.UniformsLib[ "fog" ],
 			THREE.UniformsLib[ "shadowmap" ]
 // AT: uniTexture
-,THREE.UniformsLib[ "uniTexture" ]
-
+,
+THREE.UniformsLib[ "uniTexture" ],
+/*
+// AT: XRA_WALLPAPER_3D
+{
+  'Wallpaper3D_displacementMap': { type:"t", value: null },
+  'Wallpaper3D_camera_factor': { type:"i", value: 0 },
+  'Wallpaper3D_camera_distance_offset': { type:"i", value: 0 },
+  'Wallpaper3D_scale_z': { type: "v3", value: new THREE.Vector3() },
+},
+*/
 		] ),
 
 		vertexShader: [
@@ -14251,6 +14289,10 @@ THREE.ShaderLib = {
 			THREE.ShaderChunk[ "morphtarget_pars_vertex" ],
 			THREE.ShaderChunk[ "skinning_pars_vertex" ],
 			THREE.ShaderChunk[ "shadowmap_pars_vertex" ],
+
+// AT: XRA_WALLPAPER_3D
+THREE.ShaderChunk['XRA_WALLPAPER_3D_pars_vertex'],
+
 // AT: uniTexture
 THREE.ShaderChunk[ "uniTexture_pars_vertex" ],
 
@@ -21179,6 +21221,11 @@ if ((object._model_index != null) && /^(\d+)/.test(g)) {
 
 		}
 
+// AT: XRA_WALLPAPER_3D
+if (material._uniforms_append) {
+  Object.assign(material.uniforms, material._uniforms_append);
+}
+
 		// heuristics to create shader parameters according to lights in the scene
 		// (not to blow over maxLights budget)
 
@@ -21208,6 +21255,9 @@ mirrorTexture: (material.mirrorTextureIndex != null),
 
 // AT: uniTexture
 uniTexture: !!(use_MatrixRain && (material.uniTexture || (( (object._model_index != null) || ( material instanceof THREE.MeshBasicMaterial ) || ( material instanceof THREE.MeshLambertMaterial ) || ( material instanceof THREE.MeshPhongMaterial ) ) && (material.uniTexture={state:(use_MatrixRain)?1:2}) ))),
+
+// AT: XRA_WALLPAPER_3D
+XRA_WALLPAPER_3D: material.XRA_WALLPAPER_3D,
 
 			normalMap: !!material.normalMap,
 			specularMap: !!material.specularMap,
@@ -22794,6 +22844,9 @@ parameters.mirrorTexture ? "#define USE_MIRROR_TEXTURE" : "",
 
 // AT: uniTexture
 parameters.uniTexture ? "#define USE_UNI_TEXTURE" : "",
+
+// AT: XRA_WALLPAPER_3D
+parameters.XRA_WALLPAPER_3D ? "#define XRA_WALLPAPER_3D" : "",
 
 			parameters.normalMap ? "#define USE_NORMALMAP" : "",
 			parameters.specularMap ? "#define USE_SPECULARMAP" : "",
@@ -32860,6 +32913,25 @@ THREE.ShaderChunk[ "AT_depth_render_mode_fragment" ],
 	}
 
 };
+
+// AT: GridHelper
+THREE.GridHelper = (()=>{
+  let m4 = new THREE.Matrix4();
+
+  return function (size, divisions, colorCenterLine, colorGrid) {
+const geometry = new THREE.PlaneGeometry( size, size, divisions, divisions );
+m4.makeRotationX(THREE.Math.degToRad(-90));
+geometry.applyMatrix(m4);
+
+const material = new THREE.MeshBasicMaterial( { color:colorGrid, wireframe:true, transparent:true } );
+
+THREE.Mesh.call( this, geometry, material );
+
+this.useQuaternion = true;
+  };
+})();
+
+THREE.GridHelper.prototype = Object.create( THREE.Mesh.prototype );
 
 /**
  * @author sroucheray / http://sroucheray.org/

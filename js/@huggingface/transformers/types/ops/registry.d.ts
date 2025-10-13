@@ -6,6 +6,7 @@ export class TensorOpRegistry {
     static get stft(): Promise<(arg0: Record<string, Tensor>) => Promise<Tensor>>;
     static get rfft(): Promise<(arg0: Record<string, Tensor>) => Promise<Tensor>>;
     static get top_k(): Promise<(arg0: Record<string, Tensor>) => Promise<[Tensor, Tensor]>>;
+    static get slice(): Promise<(arg0: Record<string, Tensor>) => Promise<Tensor>>;
 }
 import { Tensor } from "../utils/tensor.js";
 //# sourceMappingURL=registry.d.ts.map

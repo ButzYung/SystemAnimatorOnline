@@ -1,4 +1,4 @@
-// (2024-11-23)
+// (2024-12-29)
 
 var FacemeshAT = (function () {
 
@@ -260,6 +260,64 @@ var eyes_xy_last = [[0,0],[0,0]];
 var do_puploc;
 
 var TRIANGULATION;
+
+var object_detection_worker, object_detection_worker_ready;
+var object_detection_data;
+async function emotion_detection(rgba, bb, options) {
+  if (options.object_detection?.enabled) {
+    if (!object_detection_worker) {
+      await new Promise((resolve)=>{
+        object_detection_worker = new Worker('object_detection_worker.js');
+        object_detection_worker.onmessage = function (e) {
+let data = ((typeof e.data == "string") && (e.data.charAt(0) === "{")) ? JSON.parse(e.data) : e.data;
+
+if (typeof data === "string") {
+  if (data == 'OK') {
+    console.log('(Object Detection worker loaded)');
+    resolve();
+  }
+  object_detection_worker_ready = true;
+}
+else {
+  object_detection_data = data;
+//  console.log(Date.now(), object_detection_data);
+}
+        };
+      });
+    }
+    else if (object_detection_worker_ready) {
+object_detection_worker_ready = false;
+
+const scale = options.bb.scale;
+
+const sw = options.bb.w;
+const sh = options.bb.h
+
+let x = ~~Math.max(bb.topLeft[0] * scale, 0);
+let y = ~~Math.max(bb.topLeft[1] * scale, 0);
+let w = ~~Math.min(bb.bottomRight[0] * scale - x, sw);
+let h = ~~Math.min(bb.bottomRight[1] * scale - y, sh);
+//x=y=0; w=h=sw;
+//console.log(x,y,w,h, scale, sw,sh)
+let _rgba = await createImageBitmap(rgba, x,y,w,h);
+
+const od_options = options.object_detection;
+od_options.categoryAllowlist = ['sad','disgust','angry','neutral','fear','surprise','happy'];
+od_options.framework_classification = 'Transformers.js';
+od_options.model_classification = 'Xenova/facial_emotions_image_detection';
+//od_options.detection_interval = 500;
+
+let data_to_transfer = [_rgba];
+let data = { w:w, h:h, options:options, rgba:_rgba };
+object_detection_worker.postMessage(data, data_to_transfer);
+
+_rgba = undefined;
+    }
+  }
+  else {
+    object_detection_data = null;
+  }
+}
 
 function _onmessage(e) {
   let t = performance.now()
@@ -561,6 +619,9 @@ _t = _t_now
   let face = faces[0]
   let sm = face.scaledMesh;
 
+//console.log(face.boundingBox)
+  emotion_detection(rgba, face.boundingBox, options);
+
 _t_now = performance.now()
 _t_list[1] = _t_now-_t
 _t = _t_list.reduce((a,c)=>a+c)
@@ -571,12 +632,22 @@ _t = _t_list.reduce((a,c)=>a+c)
     fps_count = fps_ms = 0
   }
 
-  var bb_center = face.bb_center
+  let bb_center = face.bb_center;
+  let bb_scale = face.bb_scale;
 //console.log(bb_center)
 
   let draw_camera// = true;
 
-  postMessageAT(JSON.stringify({ faces:[{ faceInViewConfidence:face.faceScore||face.faceInViewConfidence||0, scaledMesh:(canvas)?{454:sm[454],234:sm[234]}:sm, mesh:face.mesh, eyes:eyes, bb_center:bb_center, emotion:face.emotion, rotation:face.rotation, faceBlendshapes:faceBlendshapes?.[0] }], _t:_t, fps:fps, recalculate_z_rotation_from_scaledMesh:recalculate_z_rotation_from_scaledMesh }));
+//console.log(object_detection_data)
+  face.emotion = object_detection_data?.detections.map(d=>{
+    const e = d.categories[0];
+    return { emotion:e.categoryName, score:e.score };
+  });
+  if (face.emotion)
+    face.emotion.push({ t:object_detection_data.t, detection_id:object_detection_data.detection_id });
+//console.log(face.emotion)
+
+  postMessageAT(JSON.stringify({ faces:[{ faceInViewConfidence:face.faceScore||face.faceInViewConfidence||0, scaledMesh:(canvas)?{454:sm[454],234:sm[234]}:sm, mesh:face.mesh, eyes:eyes, bb_center:bb_center, bb_scale:bb_scale, emotion:face.emotion, rotation:face.rotation, faceBlendshapes:faceBlendshapes?.[0] }], _t:_t, fps:fps, recalculate_z_rotation_from_scaledMesh:recalculate_z_rotation_from_scaledMesh }));
 
   if (draw_camera) {
     if (!canvas_camera) {
@@ -601,10 +672,12 @@ _t = _t_list.reduce((a,c)=>a+c)
 }
 
 function process_facemesh(faces, w,h, bb) {
-  let sx = bb.x * bb.scale
-  let sy = bb.y * bb.scale
+  let sx = bb.x
+  let sy = bb.y
   let cw = bb.w
   let ch = bb.h
+
+  let scale = 1/bb.scale;
 
   eyes = []
 
@@ -625,9 +698,9 @@ function process_facemesh(faces, w,h, bb) {
       max_y = Math.max(max_y, y)
 
       mesh.push([f.x, f.y, f.z])
-      scaledMesh.push([x, y, z])
+      scaledMesh.push([x*scale, y*scale, z*scale])
     });
-    face.boundingBox = { topLeft:[min_x,min_y], bottomRight:[max_x,max_y] }
+    face.boundingBox = { topLeft:[min_x*scale, min_y*scale], bottomRight:[max_x*scale, max_y*scale] }
     face.scaledMesh = scaledMesh
     face.mesh = mesh
     const size = Math.max(max_x-min_x, max_y-min_y);
@@ -640,6 +713,8 @@ function process_facemesh(faces, w,h, bb) {
 //console.log(face)
   }
   else {
+// obsolete
+// not yet considering scale
     face = faces[0]
     if (use_human_facemesh) {
       face.faceInViewConfidence = face.confidence
@@ -772,8 +847,11 @@ eyes.forEach((e)=>{e[2]=eye_x;e[3]=eye_y;})
     sm.forEach(xyz => {xyz[0]+=sx; xyz[1]+=sy;});
   }
 
-  faces[0].bb = bb
-  faces[0].bb_center = [(face.boundingBox.topLeft[0]+(face.boundingBox.bottomRight[0]-face.boundingBox.topLeft[0])/2+sx)/w, (face.boundingBox.topLeft[1]+(face.boundingBox.bottomRight[1]-face.boundingBox.topLeft[1])/2+sy)/h]
+  faces[0].bb = bb;
+
+  faces[0].bb_center = [(face.boundingBox.topLeft[0]+(face.boundingBox.bottomRight[0]-face.boundingBox.topLeft[0])/2+sx)/w /scale, (face.boundingBox.topLeft[1]+(face.boundingBox.bottomRight[1]-face.boundingBox.topLeft[1])/2+sy)/h /scale];
+
+  faces[0].bb_scale = Math.max((face.boundingBox.bottomRight[0]-face.boundingBox.topLeft[0]), (face.boundingBox.bottomRight[1]-face.boundingBox.topLeft[1])) / Math.min(cw,ch);
 
   return faces
 }

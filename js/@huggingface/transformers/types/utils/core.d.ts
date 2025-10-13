@@ -7,14 +7,56 @@
  * @module utils/core
  */
 /**
+ * @typedef {Object} InitiateProgressInfo
+ * @property {'initiate'} status
+ * @property {string} name The model id or directory path.
+ * @property {string} file The name of the file.
+ */
+/**
+ * @typedef {Object} DownloadProgressInfo
+ * @property {'download'} status
+ * @property {string} name The model id or directory path.
+ * @property {string} file The name of the file.
+ */
+/**
+ * @typedef {Object} ProgressStatusInfo
+ * @property {'progress'} status
+ * @property {string} name The model id or directory path.
+ * @property {string} file The name of the file.
+ * @property {number} progress A number between 0 and 100.
+ * @property {number} loaded The number of bytes loaded.
+ * @property {number} total The total number of bytes to be loaded.
+ */
+/**
+ * @typedef {Object} DoneProgressInfo
+ * @property {'done'} status
+ * @property {string} name The model id or directory path.
+ * @property {string} file The name of the file.
+ */
+/**
+ * @typedef {Object} ReadyProgressInfo
+ * @property {'ready'} status
+ * @property {string} task The loaded task.
+ * @property {string} model The loaded model.
+ */
+/**
+ * @typedef {InitiateProgressInfo | DownloadProgressInfo | ProgressStatusInfo | DoneProgressInfo | ReadyProgressInfo} ProgressInfo
+ */
+/**
+ * A callback function that is called with progress information.
+ * @callback ProgressCallback
+ * @param {ProgressInfo} progressInfo
+ * @returns {void}
+ */
+/**
  * Helper function to dispatch progress callbacks.
  *
- * @param {Function} progress_callback The progress callback function to dispatch.
- * @param {any} data The data to pass to the progress callback function.
+ * @param {ProgressCallback | null | undefined} progress_callback The progress callback function to dispatch.
+ * @param {ProgressInfo} data The data to pass to the progress callback function.
  * @returns {void}
  * @private
  */
-export function dispatchCallback(progress_callback: Function, data: any): void;
+export function dispatchCallback(progress_callback: ProgressCallback | null | undefined, data: ProgressInfo): void;
 /**
  * Reverses the keys and values of an object.
  *
@@ -44,6 +86,12 @@ export function isTypedArray(val: any): boolean;
  * @returns {boolean} True if the value is a string, false otherwise.
  */
 export function isIntegralNumber(x: any): boolean;
+/**
+ * Determine if a provided width or height is nullish.
+ * @param {*} x The value to check.
+ * @returns {boolean} True if the value is `null`, `undefined` or `-1`, false otherwise.
+ */
+export function isNullishDimension(x: any): boolean;
 /**
  * Calculates the dimensions of a nested array.
  *
@@ -95,4 +143,83 @@ export function pick(o: any, props: string[]): any;
  * @returns {number} The length of the string.
  */
 export function len(s: string): number;
+/**
+ * Count the occurrences of a value in an array or string.
+ * This mimics the behavior of Python's `count` method.
+ * @param {any[]|string} arr The array or string to search.
+ * @param {any} value The value to count.
+ */
+export function count(arr: any[] | string, value: any): number;
+export type InitiateProgressInfo = {
+    status: "initiate";
+    /**
+     * The model id or directory path.
+     */
+    name: string;
+    /**
+     * The name of the file.
+     */
+    file: string;
+};
+export type DownloadProgressInfo = {
+    status: "download";
+    /**
+     * The model id or directory path.
+     */
+    name: string;
+    /**
+     * The name of the file.
+     */
+    file: string;
+};
+export type ProgressStatusInfo = {
+    status: "progress";
+    /**
+     * The model id or directory path.
+     */
+    name: string;
+    /**
+     * The name of the file.
+     */
+    file: string;
+    /**
+     * A number between 0 and 100.
+     */
+    progress: number;
+    /**
+     * The number of bytes loaded.
+     */
+    loaded: number;
+    /**
+     * The total number of bytes to be loaded.
+     */
+    total: number;
+};
+export type DoneProgressInfo = {
+    status: "done";
+    /**
+     * The model id or directory path.
+     */
+    name: string;
+    /**
+     * The name of the file.
+     */
+    file: string;
+};
+export type ReadyProgressInfo = {
+    status: "ready";
+    /**
+     * The loaded task.
+     */
+    task: string;
+    /**
+     * The loaded model.
+     */
+    model: string;
+};
+export type ProgressInfo = InitiateProgressInfo | DownloadProgressInfo | ProgressStatusInfo | DoneProgressInfo | ReadyProgressInfo;
+/**
+ * A callback function that is called with progress information.
+ */
+export type ProgressCallback = (progressInfo: ProgressInfo) => void;
 //# sourceMappingURL=core.d.ts.map

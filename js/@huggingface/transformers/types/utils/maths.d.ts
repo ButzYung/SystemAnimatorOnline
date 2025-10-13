@@ -30,14 +30,14 @@ export function permute_data<T extends AnyTypedArray>(array: T, dims: number[], 
  * @param {T} arr The array of numbers to compute the softmax of.
  * @returns {T} The softmax array.
  */
-export function softmax<T extends number[] | TypedArray>(arr: T): T;
+export function softmax<T extends TypedArray | number[]>(arr: T): T;
 /**
  * Calculates the logarithm of the softmax function for the input array.
  * @template {TypedArray|number[]} T
  * @param {T} arr The input array to calculate the log_softmax function for.
  * @returns {T} The resulting log_softmax array.
  */
-export function log_softmax<T extends number[] | TypedArray>(arr: T): T;
+export function log_softmax<T extends TypedArray | number[]>(arr: T): T;
 /**
  * Calculates the dot product of two arrays.
  * @param {number[]} arr1 The first array.
@@ -129,9 +129,9 @@ declare class P2FFT {
     constructor(size: number);
     size: number;
     _csize: number;
-    table: Float64Array;
+    table: Float64Array<ArrayBuffer>;
     _width: number;
-    _bitrev: Int32Array;
+    _bitrev: Int32Array<ArrayBuffer>;
     /**
      * Create a complex number array with size `2 * size`
      *
@@ -265,12 +265,12 @@ declare class NP2FFT {
     constructor(fft_length: number);
     bufferSize: number;
     _a: number;
-    _chirpBuffer: Float64Array;
-    _buffer1: Float64Array;
-    _buffer2: Float64Array;
-    _outBuffer1: Float64Array;
-    _outBuffer2: Float64Array;
-    _slicedChirpBuffer: Float64Array;
+    _chirpBuffer: Float64Array<ArrayBuffer>;
+    _buffer1: Float64Array<ArrayBuffer>;
+    _buffer2: Float64Array<ArrayBuffer>;
+    _outBuffer1: Float64Array<ArrayBuffer>;
+    _outBuffer2: Float64Array<ArrayBuffer>;
+    _slicedChirpBuffer: Float64Array<ArrayBuffer>;
     _f: P2FFT;
     _transform(output: any, input: any, real: any): void;
     transform(output: any, input: any): void;

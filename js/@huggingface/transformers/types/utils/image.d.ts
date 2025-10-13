@@ -47,7 +47,7 @@ export class RawImage {
      * @param {1|2|3|4} channels The number of channels.
      */
     constructor(data: Uint8ClampedArray | Uint8Array, width: number, height: number, channels: 1 | 2 | 3 | 4);
-    data: Uint8Array | Uint8ClampedArray;
+    data: Uint8Array<ArrayBufferLike> | Uint8ClampedArray<ArrayBufferLike>;
     width: number;
     height: number;
     channels: 2 | 1 | 3 | 4;
@@ -72,9 +72,18 @@ export class RawImage {
      */
     rgba(): RawImage;
     /**
+     * Apply an alpha mask to the image. Operates in place.
+     * @param {RawImage} mask The mask to apply. It should have a single channel.
+     * @returns {RawImage} The masked image.
+     * @throws {Error} If the mask is not the same size as the image.
+     * @throws {Error} If the image does not have 4 channels.
+     * @throws {Error} If the mask is not a single channel.
+     */
+    putAlpha(mask: RawImage): RawImage;
+    /**
      * Resize the image to the given dimensions. This method uses the canvas API to perform the resizing.
-     * @param {number} width The width of the new image.
-     * @param {number} height The height of the new image.
+     * @param {number} width The width of the new image. `null` or `-1` will preserve the aspect ratio.
+     * @param {number} height The height of the new image. `null` or `-1` will preserve the aspect ratio.
      * @param {Object} options Additional options for resizing.
      * @param {0|1|2|3|4|5|string} [options.resample] The resampling method to use.
      * @returns {Promise<RawImage>} `this` to support chaining.
@@ -88,6 +97,14 @@ export class RawImage {
     toBlob(type?: string, quality?: number): Promise<any>;
     toTensor(channel_format?: string): Tensor;
     toCanvas(): any;
+    /**
+     * Split this image into individual bands. This method returns an array of individual image bands from an image.
+     * For example, splitting an "RGB" image creates three new images each containing a copy of one of the original bands (red, green, blue).
+     *
+     * Inspired by PIL's `Image.split()` [function](https://pillow.readthedocs.io/en/latest/reference/Image.html#PIL.Image.Image.split).
+     * @returns {RawImage[]} An array containing bands.
+     */
+    split(): RawImage[];
     /**
      * Helper method to update the image data.
      * @param {Uint8ClampedArray} data The new image data.
@@ -115,5 +132,9 @@ export class RawImage {
     save(path: string): Promise<any>;
     toSharp(): any;
 }
+/**
+ * Helper function to load an image from a URL, path, etc.
+ */
+export const load_image: any;
 import { Tensor } from './tensor.js';
 //# sourceMappingURL=image.d.ts.map

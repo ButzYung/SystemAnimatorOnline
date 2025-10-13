@@ -26,12 +26,12 @@ import fs from 'fs';
 import path from 'path';
 import url from 'url';
 
-const VERSION = '3.0.0';
+const VERSION = '3.2.3';
 
 // Check if various APIs are available (depends on environment)
-const IS_BROWSER_ENV = typeof self !== 'undefined';
-const IS_WEBWORKER_ENV = IS_BROWSER_ENV && self.constructor.name === 'DedicatedWorkerGlobalScope';
-const IS_WEB_CACHE_AVAILABLE = IS_BROWSER_ENV && 'caches' in self;
+const IS_BROWSER_ENV = typeof window !== "undefined" && typeof window.document !== "undefined";
+const IS_WEBWORKER_ENV = typeof self !== "undefined"  && self.constructor?.name === 'DedicatedWorkerGlobalScope';
+const IS_WEB_CACHE_AVAILABLE = typeof self !== "undefined" && 'caches' in self;
 const IS_WEBGPU_AVAILABLE = typeof navigator !== 'undefined' && 'gpu' in navigator;
 const IS_WEBNN_AVAILABLE = typeof navigator !== 'undefined' && 'ml' in navigator;
 
@@ -44,7 +44,7 @@ const IS_PATH_AVAILABLE = !isEmpty(path);
  * A read-only object containing information about the APIs available in the current environment.
  */
 export const apis = Object.freeze({
-    /** Whether we are running in a browser environment */
+    /** Whether we are running in a browser environment (and not a web worker) */
     IS_BROWSER_ENV,
 
     /** Whether we are running in a web worker environment */
@@ -73,9 +73,20 @@ export const apis = Object.freeze({
 });
 
 const RUNNING_LOCALLY = IS_FS_AVAILABLE && IS_PATH_AVAILABLE;
-const dirname__ = RUNNING_LOCALLY
-    ? path.dirname(path.dirname(url.fileURLToPath(import.meta.url)))
-    : './';
+
+let dirname__ = './';
+if (RUNNING_LOCALLY) {
+    // NOTE: We wrap `import.meta` in a call to `Object` to prevent Webpack from trying to bundle it in CommonJS.
+    // Although we get the warning: "Accessing import.meta directly is unsupported (only property access or destructuring is supported)",
+    // it is safe to ignore since the bundled value (`{}`) isn't used for CommonJS environments (we use __dirname instead).
+    const _import_meta_url = Object(import.meta).url;
+
+    if (_import_meta_url) {
+        dirname__ = path.dirname(path.dirname(url.fileURLToPath(_import_meta_url))) // ESM
+    } else if (typeof __dirname !== 'undefined') {
+        dirname__ = path.dirname(__dirname) // CommonJS
+    }
+}
 
 // Only used for environments with access to file system
 const DEFAULT_CACHE_DIR = RUNNING_LOCALLY
@@ -126,7 +137,7 @@ export const env = {
     remoteHost: 'https://huggingface.co/',
     remotePathTemplate: '{model}/resolve/{revision}/',
 
-    allowLocalModels: !IS_BROWSER_ENV,
+    allowLocalModels: !(IS_BROWSER_ENV || IS_WEBWORKER_ENV),
     localModelPath: localModelPath,
     useFS: IS_FS_AVAILABLE,
 

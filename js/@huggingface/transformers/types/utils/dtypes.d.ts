@@ -1,5 +1,6 @@
 export function isWebGpuFp16Supported(): Promise<boolean>;
 export const DATA_TYPES: Readonly<{
+    auto: "auto";
     fp32: "fp32";
     fp16: "fp16";
     q8: "q8";
@@ -13,7 +14,7 @@ export const DATA_TYPES: Readonly<{
 export const DEFAULT_DEVICE_DTYPE_MAPPING: Readonly<{
     wasm: "q8";
 }>;
-/** @type {Record<DataType, string>} */
-export const DEFAULT_DTYPE_SUFFIX_MAPPING: Record<DataType, string>;
+/** @type {Record<Exclude<DataType, "auto">, string>} */
+export const DEFAULT_DTYPE_SUFFIX_MAPPING: Record<Exclude<DataType, "auto">, string>;
 export type DataType = keyof typeof DATA_TYPES;
 //# sourceMappingURL=dtypes.d.ts.map

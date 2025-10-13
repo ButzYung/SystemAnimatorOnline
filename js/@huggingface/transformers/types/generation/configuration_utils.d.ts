@@ -6,7 +6,7 @@ export class GenerationConfig {
      *
      * @param {GenerationConfig|import('../configs.js').PretrainedConfig} config
      */
-    constructor(config: GenerationConfig | import('../configs.js').PretrainedConfig);
+    constructor(config: GenerationConfig | import("../configs.js").PretrainedConfig);
     /**
      * The maximum length the generated tokens can have.
      * Corresponds to the length of the input prompt + `max_new_tokens`.
@@ -223,6 +223,12 @@ export class GenerationConfig {
      * @default null
      */
     suppress_tokens: number[];
+    /**
+     * A streamer that will be used to stream the generation.
+     * @type {import('./streamers.js').TextStreamer}
+     * @default null
+     */
+    streamer: import("./streamers.js").TextStreamer;
     /**
      * A list of tokens that will be suppressed at the beginning of the generation.
      * The `SuppressBeginTokens` logit processor will set their log probs to `-inf` so that they are not sampled.

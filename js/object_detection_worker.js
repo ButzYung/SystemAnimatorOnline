@@ -1,4 +1,4 @@
-// 2024-12-15
+// 2024-12-29
 
 class Object_Detector {
   constructor(options) {
@@ -114,14 +114,14 @@ else {
 
     this.model = this.base_options.model = options.model;
 
+    if (/yolov10/.test(this.base_options.model)) {
 // https://huggingface.co/onnx-community/yolov10s
 // https://viso.ai/deep-learning/yolov10/
-    if (/yolov10/.test(this.base_options.model)) {
 this.detector_object = await this.module.AutoModel.from_pretrained(this.base_options.model, { dtype:undefined, device:webgpu });
 this._processor = await this.module.AutoProcessor.from_pretrained(this.base_options.model);
     }
     else {
-      this.detector_object = await this.module.pipeline('object-detection', this.base_options.model, { dtype:undefined, device:webgpu });
+      this.detector_object = await this.module.pipeline((this._detector_label == 'ObjectDetector') ? 'object-detection' : 'image-classification', this.base_options.model, { dtype:undefined, device:webgpu });
     }
   }
 }
@@ -136,7 +136,11 @@ if (this.framework == 'MediaPipe') {
   const detections = this.detector_object.classifyForVideo(data.rgba, data.options.vt);
 //console.log(detections);
   return {
-    detections:detections.classifications[0]?.categories?.map(d=>{
+    detections:detections.classifications[0]?.categories?.filter(d=>{
+      const label = this.base_options.categoryAllowlist.find(label=> d.categoryName.indexOf(label) != -1);
+      if (label) d.categoryName = label;
+      return !!label;
+    }).map(d=>{
       return {
         boundingBox: {
           originX: 0,
@@ -162,8 +166,8 @@ else {
   ctx.drawImage(data.rgba, 0,0);
 
   let output;
-// https://huggingface.co/onnx-community/yolov10s
   if (/yolov10/.test(this.base_options.model)) {
+// https://huggingface.co/onnx-community/yolov10s
 const image = await this.module.RawImage.fromCanvas(this.rgba_canvas);
 const { pixel_values, reshaped_input_sizes } = await this._processor(image);
 // Run object detection
@@ -182,25 +186,50 @@ for (const [xmin, ymin, xmax, ymax, score, id] of predictions) {
 //console.log(output)
   }
   else {
-    output = await this.detector_object(this.module.RawImage.fromCanvas(this.rgba_canvas), { threshold:0.2 });//new this.module.RawImage(ctx.getImageData(0,0,w,h).data, w,h, 4)
+    output = (this._detector_label == 'ObjectDetector') ? await this.detector_object(this.module.RawImage.fromCanvas(this.rgba_canvas), { threshold:0.2 }) : await this.detector_object(this.module.RawImage.fromCanvas(this.rgba_canvas));
   }
 
-  output = output.filter(d=>{
-    return this.base_options.categoryAllowlist.indexOf(d.label) != -1;
-  }).map(d=>{
-    return {
-      boundingBox: {
-        originX: d.box.xmin,
-        originY: d.box.ymin,
-        width:  d.box.xmax-d.box.xmin,
-        height: d.box.ymax-d.box.ymin,
-      },
-      categories: [{
-        score: d.score,
-        categoryName: d.label,
-      }],
-    };
-  });
+  if (/yolov10/.test(this.base_options.model)) {
+    output = output.filter(d=>{
+      const label = this.base_options.categoryAllowlist.find(label=> d.label.indexOf(label) != -1);
+      if (label) d.label = label;
+      return !!label;
+    }).map(d=>{
+      return {
+        boundingBox: {
+          originX: d.box.xmin,
+          originY: d.box.ymin,
+          width:  d.box.xmax-d.box.xmin,
+          height: d.box.ymax-d.box.ymin,
+        },
+        categories: [{
+          score: d.score,
+          categoryName: d.label,
+        }],
+      };
+    });
+  }
+  else {
+//console.log(output.slice())
+    output = output.filter(d=>{
+      const label = this.base_options.categoryAllowlist.find(label=> d.label.indexOf(label) != -1);
+      if (label) d.label = label;
+      return !!label;
+    }).map(d=>{
+      return {
+        boundingBox: {
+          originX: 0,
+          originY: 0,
+          width:  data.w,
+          height: data.h,
+        },
+        categories: [{
+          score: d.score,
+          categoryName: d.label,
+        }],
+      };
+    });
+  }
 
   return { detections: output };
 }
@@ -224,7 +253,7 @@ let object_detector = {
   'Transformers.js': null,
 };
 
-let is_classifier = /violin|flute/;
+let is_classifier = /violin|flute|guitar|sad|disgust|angry|neutral|fear|surprise|happy/;
 
 onmessage = async function (e) {
   let data = ((typeof e.data == "string") && (e.data.charAt(0) === "{")) ? JSON.parse(e.data) : e.data;
@@ -247,8 +276,8 @@ onmessage = async function (e) {
       options.categoryAllowlist = categoryAllowlist[label];
 
       if (label == 'ImageClassifier') {
-        options.framework = 'MediaPipe';
-        options.model = (/efficient.+lite(\d)/.test(options.model)) ? 'efficientnet_lite' + RegExp.$1 + '_INT8.tflite' : 'efficientnet_lite2_INT8.tflite';
+        options.framework = od_options.framework_classification;
+        options.model = od_options.model_classification;
       }
       framework_by_class[label] = options.framework;
 
@@ -283,29 +312,31 @@ onmessage = async function (e) {
     t = performance.now() - t;
 
     const hand_visible = data.options.hand_visible;
-    const pose = data.options.pose;
+    if (hand_visible) {
+      const pose = data.options.pose;
 //console.log(pose)
-    detections.detections.forEach(obj=>{
-      const bb = obj.boundingBox;
+      detections.detections.forEach(obj=>{
+        const bb = obj.boundingBox;
 
-      const center = [bb.originX + bb.width/2, bb.originY + bb.height/2];
-      const dis = { 'left':9999, 'right':9999 };
-      hand_visible.forEach(side=>{
-        const h = (side == 'left') ? 9 : 10;
-        const kp = pose.keypoints[h+6].position;
+        const center = [bb.originX + bb.width/2, bb.originY + bb.height/2];
+        const dis = { 'left':9999, 'right':9999 };
+        hand_visible.forEach(side=>{
+          const h = (side == 'left') ? 9 : 10;
+          const kp = pose.keypoints[h+6].position;
 //console.log(side,h+6,JSON.stringify(kp));
-        const x = kp.x - center[0];
-        const y = kp.y - center[1];
-        dis[side] = Math.sqrt(x*x + y*y);
-      });
+          const x = kp.x - center[0];
+          const y = kp.y - center[1];
+          dis[side] = Math.sqrt(x*x + y*y);
+        });
 // flipped (default)
-      obj._hand = (dis.left < dis.right) ? 'right' : 'left';
+        obj._hand = (dis.left < dis.right) ? 'right' : 'left';
 //console.log(JSON.stringify(dis));
 
-      bb.originX = data.w - (bb.originX + bb.width);
-    });
+        bb.originX = data.w - (bb.originX + bb.width);
+      });
+    }
 
-    postMessage({ detections:detections.detections, t:t, detection_id:Date.now(), hand_visible:hand_visible.map(h=>(h=='left')?'right':'left') });
+    postMessage({ detections:detections.detections, t:t, detection_id:Date.now(), hand_visible:hand_visible?.map(h=>(h=='left')?'right':'left') });
 
     setTimeout(()=>{ postMessage('READY'); }, od_options.detection_interval);
   }

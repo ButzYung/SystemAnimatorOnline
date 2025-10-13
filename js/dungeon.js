@@ -5063,8 +5063,8 @@ drop_item(index_source, _idx);
   var img_icon = d = document.createElement("img")
   ds = d.style
   d.id = "Ldungeon_inventory_item" + idx + "_icon"
-
-  ds.pointerEvents = 'none';
+// AFTER
+ds.pointerEvents = 'none';
 
   ds.position = "absolute"
   ds.posLeft = ds.posTop = 0
@@ -5073,8 +5073,8 @@ drop_item(index_source, _idx);
   var img_border = d = document.createElement("img")
   ds = d.style
   d.id = "Ldungeon_inventory_item" + idx + "_border"
-
-  ds.pointerEvents = 'none';
+// AFTER
+ds.pointerEvents = 'none';
 
   ds.position = "absolute"
   ds.posLeft = ds.posTop = 0

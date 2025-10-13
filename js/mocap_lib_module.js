@@ -1,4 +1,4 @@
-// 2024-12-15
+// 2024-12-29
 
 const is_worker = (typeof window !== "object");
 

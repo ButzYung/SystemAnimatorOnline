@@ -1110,7 +1110,8 @@ var Environment = class {
     ["string", (operand) => operand.type === "StringValue"],
     ["number", (operand) => operand.type === "NumericValue"],
     ["integer", (operand) => operand.type === "NumericValue" && Number.isInteger(operand.value)],
-    ["iterable", (operand) => operand instanceof ArrayValue || operand instanceof StringValue],
+    ["iterable", (operand) => operand.type === "ArrayValue" || operand.type === "StringValue"],
+    ["mapping", (operand) => operand.type === "ObjectValue"],
     [
       "lower",
       (operand) => {
@@ -1392,12 +1393,14 @@ var Interpreter = class {
       }
       if (operand instanceof ArrayValue) {
         switch (filterName) {
-          case "selectattr": {
+          case "selectattr":
+          case "rejectattr": {
+            const select = filterName === "selectattr";
             if (operand.value.some((x) => !(x instanceof ObjectValue))) {
-              throw new Error("`selectattr` can only be applied to array of objects");
+              throw new Error(`\`${filterName}\` can only be applied to array of objects`);
             }
             if (filter.args.some((x) => x.type !== "StringLiteral")) {
-              throw new Error("arguments of `selectattr` must be strings");
+              throw new Error(`arguments of \`${filterName}\` must be strings`);
             }
             const [attr, testName, value] = filter.args.map((x) => this.evaluate(x, environment));
             let testFunction;
@@ -1412,10 +1415,8 @@ var Interpreter = class {
             }
             const filtered = operand.value.filter((item) => {
               const a = item.value.get(attr.value);
-              if (a) {
-                return testFunction(a, value);
-              }
-              return false;
+              const result = a ? testFunction(a, value) : false;
+              return select ? result : !result;
             });
             return new ArrayValue(filtered);
           }

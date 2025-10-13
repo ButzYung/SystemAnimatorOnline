@@ -45,8 +45,10 @@ import {
 } from './models.js';
 import {
     AutoProcessor,
-    Processor
-} from './processors.js';
+} from './models/auto/processing_auto.js';
+import {
+    Processor,
+} from './base/processing_utils.js';
 
 import {
     Callable,
@@ -54,7 +56,6 @@ import {
 
 import {
     dispatchCallback,
-    pop,
     product,
 } from './utils/core.js';
 import {
@@ -158,7 +159,6 @@ function get_bounding_box(box, asInteger) {
 /**
  * The Pipeline class is the class from which all pipelines inherit.
  * Refer to this class for methods shared across different pipelines.
- * @extends Callable
  */
 export class Pipeline extends Callable {
     /**
@@ -688,7 +688,7 @@ export class FillMaskPipeline extends (/** @type {new (options: TextPipelineCons
                 return {
                     score: values[i],
                     token: Number(x),
-                    token_str: this.tokenizer.model.vocab[x],
+                    token_str: this.tokenizer.decode([x]),
                     sequence: this.tokenizer.decode(sequence, { skip_special_tokens: true }),
                 }
             }));
@@ -1729,6 +1729,8 @@ export class AutomaticSpeechRecognitionPipeline extends (/** @type {new (options
             case 'unispeech-sat':
             case 'hubert':
                 return this._call_wav2vec2(audio, kwargs)
+            case 'moonshine':
+                return this._call_moonshine(audio, kwargs)
             default:
                 throw new Error(`AutomaticSpeechRecognitionPipeline does not support model type '${this.model.config.model_type}'.`)
         }
@@ -1882,6 +1884,34 @@ export class AutomaticSpeechRecognitionPipeline extends (/** @type {new (options
         }
         return single ? toReturn[0] : toReturn;
     }
+
+    /**
+     * @type {AutomaticSpeechRecognitionPipelineCallback}
+     * @private
+     */
+    async _call_moonshine(audio, kwargs) {
+        const single = !Array.isArray(audio);
+        if (single) {
+            audio = [/** @type {AudioInput} */ (audio)];
+        }
+        const sampling_rate = this.processor.feature_extractor.config.sampling_rate;
+        const preparedAudios = await prepareAudios(audio, sampling_rate);
+        const toReturn = [];
+        for (const aud of preparedAudios) {
+            const inputs = await this.processor(aud);
+
+            // According to the [paper](https://arxiv.org/pdf/2410.15608):
+            // "We use greedy decoding, with a heuristic limit of 6 output tokens
+            // per second of audio to avoid repeated output sequences."
+            const max_new_tokens = Math.floor(aud.length / sampling_rate) * 6;
+            const outputs = await this.model.generate({ max_new_tokens, ...kwargs, ...inputs });
+
+            const text = this.processor.batch_decode(outputs, { skip_special_tokens: true })[0];
+            toReturn.push({ text });
+        }
+        return single ? toReturn[0] : toReturn;
+    }
+
 }
 
 /**
@@ -2131,8 +2161,8 @@ export class ImageSegmentationPipeline extends (/** @type {new (options: ImagePi
             fn = this.subtasks_mapping[subtask];
         } else {
             for (let [task, func] of Object.entries(this.subtasks_mapping)) {
-                if (func in this.processor.feature_extractor) {
-                    fn = this.processor.feature_extractor[func].bind(this.processor.feature_extractor);
+                if (func in this.processor.image_processor) {
+                    fn = this.processor.image_processor[func].bind(this.processor.image_processor);
                     subtask = task;
                     break;
                 }
@@ -2362,7 +2392,7 @@ export class ObjectDetectionPipeline extends (/** @type {new (options: ImagePipe
         const output = await this.model({ pixel_values, pixel_mask });
 
         // @ts-ignore
-        const processed = this.processor.feature_extractor.post_process_object_detection(output, threshold, imageSizes);
+        const processed = this.processor.image_processor.post_process_object_detection(output, threshold, imageSizes);
 
         // Add labels
         const id2label = this.model.config.id2label;
@@ -2510,7 +2540,7 @@ export class ZeroShotObjectDetectionPipeline extends (/** @type {new (options: T
             const output = await this.model({ ...text_inputs, pixel_values });
 
             // @ts-ignore
-            const processed = this.processor.feature_extractor.post_process_object_detection(output, threshold, imageSize, true)[0];
+            const processed = this.processor.image_processor.post_process_object_detection(output, threshold, imageSize, true)[0];
             let result = processed.boxes.map((box, i) => ({
                 score: processed.scores[i],
                 label: candidate_labels[processed.classes[i]],
@@ -2566,7 +2596,6 @@ export class DocumentQuestionAnsweringPipeline extends (/** @type {new (options:
 
     /** @type {DocumentQuestionAnsweringPipelineCallback} */
     async _call(image, question, generate_kwargs = {}) {
-        throw new Error('This pipeline is not yet supported in Transformers.js v3.'); // TODO: Remove when implemented
 
         // NOTE: For now, we only support a batch size of 1
 

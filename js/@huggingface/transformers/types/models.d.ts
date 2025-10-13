@@ -21,14 +21,14 @@ export class PreTrainedModel extends PreTrainedModel_base {
      *
      * @returns {Promise<PreTrainedModel>} A new instance of the `PreTrainedModel` class.
      */
-    static from_pretrained(pretrained_model_name_or_path: string, { progress_callback, config, cache_dir, local_files_only, revision, model_file_name, subfolder, device, dtype, use_external_data_format, session_options, }?: import('./utils/hub.js').PretrainedModelOptions): Promise<PreTrainedModel>;
+    static from_pretrained(pretrained_model_name_or_path: string, { progress_callback, config, cache_dir, local_files_only, revision, model_file_name, subfolder, device, dtype, use_external_data_format, session_options, }?: import("./utils/hub.js").PretrainedModelOptions): Promise<PreTrainedModel>;
     /**
      * Creates a new instance of the `PreTrainedModel` class.
      * @param {import('./configs.js').PretrainedConfig} config The model configuration.
      * @param {Record<string, any>} sessions The inference sessions for the model.
      * @param {Record<string, Object>} configs Additional configuration files (e.g., generation_config.json).
      */
-    constructor(config: import('./configs.js').PretrainedConfig, sessions: Record<string, any>, configs: Record<string, any>);
+    constructor(config: import("./configs.js").PretrainedConfig, sessions: Record<string, any>, configs: Record<string, any>);
     main_input_name: string;
     forward_params: string[];
     config: import("./configs.js").PretrainedConfig;
@@ -38,7 +38,7 @@ export class PreTrainedModel extends PreTrainedModel_base {
     _forward: typeof decoderForward;
     _prepare_inputs_for_generation: typeof image_text_to_text_prepare_inputs_for_generation;
     /** @type {import('./configs.js').TransformersJSConfig} */
-    custom_config: import('./configs.js').TransformersJSConfig;
+    custom_config: import("./configs.js").TransformersJSConfig;
     /**
     * Disposes of all the ONNX sessions that were created during inference.
     * @returns {Promise<unknown[]>} An array of promises, one for each ONNX session that is being disposed.
@@ -63,7 +63,7 @@ export class PreTrainedModel extends PreTrainedModel_base {
      * Get the model's generation config, if it exists.
      * @returns {GenerationConfig|null} The model's generation config if it exists, otherwise `null`.
      */
-    get generation_config(): GenerationConfig;
+    get generation_config(): GenerationConfig | null;
     /**
      * This function returns a [`LogitsProcessorList`] list object that contains all relevant [`LogitsWarper`]
      * instances used for multinomial sampling.
@@ -253,6 +253,37 @@ export class BertForQuestionAnswering extends BertPreTrainedModel {
      * @returns {Promise<QuestionAnsweringModelOutput>} An object containing the model's output logits for question answering.
      */
     _call(model_inputs: any): Promise<QuestionAnsweringModelOutput>;
+}
+export class ModernBertPreTrainedModel extends PreTrainedModel {
+}
+export class ModernBertModel extends ModernBertPreTrainedModel {
+}
+export class ModernBertForMaskedLM extends ModernBertPreTrainedModel {
+    /**
+     * Calls the model on new inputs.
+     *
+     * @param {Object} model_inputs The inputs to the model.
+     * @returns {Promise<MaskedLMOutput>} An object containing the model's output logits for masked language modeling.
+     */
+    _call(model_inputs: any): Promise<MaskedLMOutput>;
+}
+export class ModernBertForSequenceClassification extends ModernBertPreTrainedModel {
+    /**
+     * Calls the model on new inputs.
+     *
+     * @param {Object} model_inputs The inputs to the model.
+     * @returns {Promise<SequenceClassifierOutput>} An object containing the model's output logits for sequence classification.
+     */
+    _call(model_inputs: any): Promise<SequenceClassifierOutput>;
+}
+export class ModernBertForTokenClassification extends ModernBertPreTrainedModel {
+    /**
+     * Calls the model on new inputs.
+     *
+     * @param {Object} model_inputs The inputs to the model.
+     * @returns {Promise<TokenClassifierOutput>} An object containing the model's output logits for token classification.
+     */
+    _call(model_inputs: any): Promise<TokenClassifierOutput>;
 }
 export class NomicBertPreTrainedModel extends PreTrainedModel {
 }
@@ -1167,6 +1198,16 @@ export class WhisperForConditionalGeneration extends WhisperPreTrainedModel {
         sequences: Tensor;
     }, alignment_heads: number[][], num_frames?: number, time_precision?: number): Tensor;
 }
+export class MoonshinePreTrainedModel extends PreTrainedModel {
+    requires_attention_mask: boolean;
+}
+/**
+ * MoonshineModel class for training Moonshine models without a language model head.
+ */
+export class MoonshineModel extends MoonshinePreTrainedModel {
+}
+export class MoonshineForConditionalGeneration extends MoonshinePreTrainedModel {
+}
 /**
  * Vision Encoder-Decoder model based on OpenAI's GPT architecture for image captioning and other vision tasks
  */
@@ -1187,6 +1228,8 @@ export class LlavaForConditionalGeneration extends LlavaPreTrainedModel {
         inputs_embeds: any;
         attention_mask: any;
     };
+}
+export class LlavaOnevisionForConditionalGeneration extends LlavaForConditionalGeneration {
 }
 export class Moondream1ForConditionalGeneration extends LlavaForConditionalGeneration {
 }
@@ -1221,6 +1264,45 @@ export class Florence2ForConditionalGeneration extends Florence2PreTrainedModel 
         past_key_values: any;
         inputs_embeds: any;
         decoder_inputs_embeds: any;
+    }): Promise<any>;
+}
+export class PaliGemmaPreTrainedModel extends PreTrainedModel {
+}
+export class PaliGemmaForConditionalGeneration extends PaliGemmaPreTrainedModel {
+    _merge_input_ids_with_image_features(kwargs: any): {
+        inputs_embeds: any;
+        attention_mask: any;
+    };
+}
+export class Idefics3PreTrainedModel extends PreTrainedModel {
+}
+/**
+ * The LLAVA model which consists of a vision backbone and a language model.
+ */
+export class Idefics3ForConditionalGeneration extends Idefics3PreTrainedModel {
+    encode_image({ pixel_values, pixel_attention_mask }: {
+        pixel_values: any;
+        pixel_attention_mask: any;
+    }): Promise<any>;
+    _merge_input_ids_with_image_features(kwargs: any): {
+        inputs_embeds: any;
+        attention_mask: any;
+    };
+}
+export class Phi3VPreTrainedModel extends PreTrainedModel {
+}
+export class Phi3VForCausalLM extends Phi3VPreTrainedModel {
+    forward({ input_ids, attention_mask, pixel_values, image_sizes, position_ids, inputs_embeds, past_key_values, generation_config, logits_processor, ...kwargs }: {
+        [x: string]: any;
+        input_ids?: any;
+        attention_mask?: any;
+        pixel_values?: any;
+        image_sizes?: any;
+        position_ids?: any;
+        inputs_embeds?: any;
+        past_key_values?: any;
+        generation_config?: any;
+        logits_processor?: any;
     }): Promise<any>;
 }
 export class CLIPPreTrainedModel extends PreTrainedModel {
@@ -1443,6 +1525,20 @@ export class ChineseCLIPPreTrainedModel extends PreTrainedModel {
 }
 export class ChineseCLIPModel extends ChineseCLIPPreTrainedModel {
 }
+export class JinaCLIPPreTrainedModel extends PreTrainedModel {
+}
+export class JinaCLIPModel extends JinaCLIPPreTrainedModel {
+    forward(model_inputs: any): Promise<{
+        text_embeddings: any;
+        l2norm_text_embeddings: any;
+        image_embeddings: any;
+        l2norm_image_embeddings: any;
+    }>;
+}
+export class JinaCLIPTextModel extends JinaCLIPPreTrainedModel {
+}
+export class JinaCLIPVisionModel extends JinaCLIPPreTrainedModel {
+}
 export class CLIPSegPreTrainedModel extends PreTrainedModel {
 }
 export class CLIPSegModel extends CLIPSegPreTrainedModel {
@@ -1564,6 +1660,30 @@ export class LlamaModel extends LlamaPreTrainedModel {
 }
 export class LlamaForCausalLM extends LlamaPreTrainedModel {
 }
+export class ExaonePreTrainedModel extends PreTrainedModel {
+}
+export class ExaoneModel extends ExaonePreTrainedModel {
+}
+export class ExaoneForCausalLM extends ExaonePreTrainedModel {
+}
+export class MobileLLMPreTrainedModel extends PreTrainedModel {
+}
+export class MobileLLMModel extends MobileLLMPreTrainedModel {
+}
+export class MobileLLMForCausalLM extends MobileLLMPreTrainedModel {
+}
+export class OlmoPreTrainedModel extends PreTrainedModel {
+}
+export class OlmoModel extends OlmoPreTrainedModel {
+}
+export class OlmoForCausalLM extends OlmoPreTrainedModel {
+}
+export class Olmo2PreTrainedModel extends PreTrainedModel {
+}
+export class Olmo2Model extends Olmo2PreTrainedModel {
+}
+export class Olmo2ForCausalLM extends Olmo2PreTrainedModel {
+}
 export class GranitePreTrainedModel extends PreTrainedModel {
 }
 export class GraniteModel extends GranitePreTrainedModel {
@@ -1620,6 +1740,56 @@ export class Qwen2PreTrainedModel extends PreTrainedModel {
 export class Qwen2Model extends Qwen2PreTrainedModel {
 }
 export class Qwen2ForCausalLM extends Qwen2PreTrainedModel {
+}
+export class Qwen2VLPreTrainedModel extends PreTrainedModel {
+}
+export class Qwen2VLForConditionalGeneration extends Qwen2VLPreTrainedModel {
+    /**
+     * Calculate the 3D rope index based on image and video's temporal, height and width in LLM.
+     *
+     * Explanation:
+     *     Each embedding sequence contains vision embedding and text embedding or just contains text embedding.
+     *
+     *     For pure text embedding sequence, the rotary position embedding has no difference with mordern LLMs.
+     *     Examples:
+     *         input_ids: [T T T T T], here T is for text.
+     *         temporal position_ids: [0, 1, 2, 3, 4]
+     *         height position_ids: [0, 1, 2, 3, 4]
+     *         width position_ids: [0, 1, 2, 3, 4]
+     *
+     *     For vision and text embedding sequence, we calculate 3D rotary position embedding for vision part
+     *     and 1D rotary position embeddin for text part.
+     *     Examples:
+     *         Assume we have a video input with 3 temporal patches, 2 height patches and 2 width patches.
+     *         input_ids: [V V V V V V V V V V V V T T T T T], here V is for vision.
+     *         vision temporal position_ids: [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2]
+     *         vision height position_ids: [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
+     *         vision width position_ids: [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
+     *         text temporal position_ids: [3, 4, 5, 6, 7]
+     *         text height position_ids: [3, 4, 5, 6, 7]
+     *         text width position_ids: [3, 4, 5, 6, 7]
+     *         Here we calculate the text start position_ids as the max vision position_ids plus 1.
+     *
+     * @param {Tensor} input_ids Indices of input sequence tokens in the vocabulary. Tensor of shape `(batch_size, sequence_length)`.
+     * @param {Tensor} image_grid_thw (Optional) The temporal, height and width of feature shape of each image in LLM. Tensor of shape `(num_images, 3)`.
+     * @param {Tensor} video_grid_thw (Optional) The temporal, height and width of feature shape of each video in LLM. Tensor of shape `(num_videos, 3)`.
+     * @param {Tensor} attention_mask (Optional) Mask to avoid performing attention on padding token indices. Tensor of shape `(batch_size, sequence_length)`. Mask values selected in `[0, 1]`:
+     * - 1 for tokens that are **not masked**,
+     * - 0 for tokens that are **masked**.
+     * @returns {[Tensor, Tensor]} [position_ids, mrope_position_deltas] with:
+     * - position_ids: Tensor of shape `(3, batch_size, sequence_length)`.
+     * - mrope_position_deltas: Tensor of shape `(batch_size)`.
+     */
+    get_rope_index(input_ids: Tensor, image_grid_thw: Tensor, video_grid_thw: Tensor, attention_mask: Tensor): [Tensor, Tensor];
+    encode_image({ pixel_values, image_grid_thw }: {
+        pixel_values: any;
+        image_grid_thw: any;
+    }): Promise<any>;
+    _merge_input_ids_with_image_features(kwargs: any): {
+        inputs_embeds: any;
+        attention_mask: any;
+    };
+    prepare_inputs_for_generation(input_ids: any, model_inputs: any, generation_config: any): any;
 }
 export class PhiPreTrainedModel extends PreTrainedModel {
 }
@@ -1687,6 +1857,23 @@ export class ViTForImageClassification extends ViTPreTrainedModel {
      * @param {any} model_inputs
      */
     _call(model_inputs: any): Promise<SequenceClassifierOutput>;
+}
+export class IJepaPreTrainedModel extends PreTrainedModel {
+}
+export class IJepaModel extends IJepaPreTrainedModel {
+}
+export class IJepaForImageClassification extends IJepaPreTrainedModel {
+    /**
+     * @param {any} model_inputs
+     */
+    _call(model_inputs: any): Promise<SequenceClassifierOutput>;
+}
+export class VitPosePreTrainedModel extends PreTrainedModel {
+}
+/**
+ * The VitPose model with a pose estimation head on top.
+ */
+export class VitPoseForPoseEstimation extends VitPosePreTrainedModel {
 }
 export class PvtPreTrainedModel extends PreTrainedModel {
 }
@@ -2245,6 +2432,22 @@ export class Dinov2Model extends Dinov2PreTrainedModel {
  * Dinov2 Model transformer with an image classification head on top (a linear layer on top of the final hidden state of the [CLS] token) e.g. for ImageNet.
  */
 export class Dinov2ForImageClassification extends Dinov2PreTrainedModel {
+    /**
+     * @param {any} model_inputs
+     */
+    _call(model_inputs: any): Promise<SequenceClassifierOutput>;
+}
+export class Dinov2WithRegistersPreTrainedModel extends PreTrainedModel {
+}
+/**
+ * The bare Dinov2WithRegisters Model transformer outputting raw hidden-states without any specific head on top.
+ */
+export class Dinov2WithRegistersModel extends Dinov2WithRegistersPreTrainedModel {
+}
+/**
+ * Dinov2WithRegisters Model transformer with an image classification head on top (a linear layer on top of the final hidden state of the [CLS] token) e.g. for ImageNet.
+ */
+export class Dinov2WithRegistersForImageClassification extends Dinov2WithRegistersPreTrainedModel {
     /**
      * @param {any} model_inputs
      */
@@ -3270,6 +3473,64 @@ export class DecisionTransformerPreTrainedModel extends PreTrainedModel {
  */
 export class DecisionTransformerModel extends DecisionTransformerPreTrainedModel {
 }
+export class MultiModalityPreTrainedModel extends PreTrainedModel {
+}
+export class MultiModalityCausalLM extends MultiModalityPreTrainedModel {
+    constructor(...args: any[]);
+    _generation_mode: string;
+    forward(model_inputs: any): Promise<any>;
+    /**
+     * @param {import('./generation/parameters.js').GenerationFunctionParameters} options
+     */
+    generate_images(options: any): Promise<RawImage[]>;
+}
+export class MgpstrModelOutput extends ModelOutput {
+    constructor({ char_logits, bpe_logits, wp_logits }: {
+        char_logits: any;
+        bpe_logits: any;
+        wp_logits: any;
+    });
+    char_logits: any;
+    bpe_logits: any;
+    wp_logits: any;
+    get logits(): any[];
+}
+export class MgpstrPreTrainedModel extends PreTrainedModel {
+}
+/**
+ * MGP-STR Model transformer with three classification heads on top
+ * (three A^3 modules and three linear layer on top of the transformer encoder output) for scene text recognition (STR).
+ */
+export class MgpstrForSceneTextRecognition extends MgpstrPreTrainedModel {
+    /**
+     * @param {any} model_inputs
+     */
+    _call(model_inputs: any): Promise<MgpstrModelOutput>;
+}
+export class PatchTSTPreTrainedModel extends PreTrainedModel {
+}
+/**
+ * The bare PatchTST Model outputting raw hidden-states without any specific head.
+ */
+export class PatchTSTModel extends PatchTSTPreTrainedModel {
+}
+/**
+ * The PatchTST for prediction model.
+ */
+export class PatchTSTForPrediction extends PatchTSTPreTrainedModel {
+}
+export class PatchTSMixerPreTrainedModel extends PreTrainedModel {
+}
+/**
+ * The bare PatchTSMixer Model outputting raw hidden-states without any specific head.
+ */
+export class PatchTSMixerModel extends PatchTSMixerPreTrainedModel {
+}
+/**
+ * The PatchTSMixer for prediction model.
+ */
+export class PatchTSMixerForPrediction extends PatchTSMixerPreTrainedModel {
+}
 /**
  * Base class of all AutoModels. Contains the `from_pretrained` function
  * which is used to instantiate pretrained models.
@@ -3379,7 +3640,7 @@ export class AutoModelForTextToWaveform extends PretrainedMixin {
  * let model = await AutoModelForCausalLM.from_pretrained('Xenova/gpt2');
  */
 export class AutoModelForCausalLM extends PretrainedMixin {
-    static MODEL_CLASS_MAPPINGS: Map<string, (string | typeof BloomForCausalLM)[]>[];
+    static MODEL_CLASS_MAPPINGS: Map<string, (string | typeof Phi3VForCausalLM)[]>[];
 }
 /**
  * Helper class which is used to instantiate pretrained masked language models with the `from_pretrained` function.
@@ -3500,6 +3761,9 @@ export class AutoModelForDepthEstimation extends PretrainedMixin {
 }
 export class AutoModelForNormalEstimation extends PretrainedMixin {
     static MODEL_CLASS_MAPPINGS: Map<string, (string | typeof SapiensForNormalEstimation)[]>[];
+}
+export class AutoModelForPoseEstimation extends PretrainedMixin {
+    static MODEL_CLASS_MAPPINGS: Map<string, (string | typeof VitPoseForPoseEstimation)[]>[];
 }
 export class AutoModelForImageFeatureExtraction extends PretrainedMixin {
     static MODEL_CLASS_MAPPINGS: Map<string, (string | typeof CLIPVisionModelWithProjection)[]>[];
@@ -3668,5 +3932,6 @@ import { LogitsProcessorList } from './generation/logits_process.js';
 import { StoppingCriteriaList } from './generation/stopping_criteria.js';
 import { Tensor } from './utils/tensor.js';
 import { WhisperGenerationConfig } from './models/whisper/generation_whisper.js';
+import { RawImage } from './utils/image.js';
 export {};
 //# sourceMappingURL=models.d.ts.map

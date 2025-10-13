@@ -1,6 +1,6 @@
 {
   "name": "@huggingface/transformers",
-  "version": "3.0.0",
+  "version": "3.2.3",
   "description": "State-of-the-art Machine Learning for the web. Run 🤗 Transformers directly in your browser, with no need for a server!",
   "main": "./src/transformers.js",
   "types": "./types/transformers.d.ts",
@@ -19,12 +19,6 @@
     "default": {
       "types": "./types/transformers.d.ts",
       "default": "./dist/transformers.js"
-    }
-  },
-  "imports": {
-    "#onnxruntime-webgpu": {
-      "node": "onnxruntime-web",
-      "default": "onnxruntime-web/webgpu"
     }
   },
   "scripts": {
@@ -61,24 +55,25 @@
   },
   "homepage": "https://github.com/huggingface/transformers.js#readme",
   "dependencies": {
-    "@huggingface/jinja": "^0.3.0",
-    "onnxruntime-node": "1.19.2",
-    "onnxruntime-web": "1.20.0-dev.20241016-2b8fc5529b",
+    "@huggingface/jinja": "^0.3.2",
+    "onnxruntime-node": "1.20.1",
+    "onnxruntime-web": "1.21.0-dev.20241205-d27fecd3d3",
     "sharp": "^0.33.5"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.1",
-    "@webgpu/types": "^0.1.44",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.1",
+    "@webgpu/types": "^0.1.51",
     "catharsis": "github:xenova/catharsis",
-    "jest": "^29.5.0",
-    "jest-environment-node": "^29.5.0",
-    "jsdoc-to-markdown": "^8.0.1",
-    "prettier": "3.3.3",
-    "typescript": "^5.2.2",
-    "wavefile": "^11.0.0",
-    "webpack": "^5.80.0",
-    "webpack-cli": "^5.0.2",
-    "webpack-dev-server": "^4.13.3"
+    "jest": "^30.0.0-alpha.6",
+    "jest-environment-node": "^30.0.0-alpha.6",
+    "jsdoc-to-markdown": "^9.1.1",
+    "prettier": "3.4.2",
+    "typescript": "^5.7.2",
+    "wavefile": "11.0.0",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^5.1.0"
   },
   "files": [
     "src",

@@ -260,6 +260,13 @@ export class GenerationConfig {
     suppress_tokens = null;
 
     /**
+     * A streamer that will be used to stream the generation.
+     * @type {import('./streamers.js').TextStreamer}
+     * @default null
+     */
+    streamer = null;
+
+    /**
      * A list of tokens that will be suppressed at the beginning of the generation.
      * The `SuppressBeginTokens` logit processor will set their log probs to `-inf` so that they are not sampled.
      * @type {number[]}

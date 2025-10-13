@@ -1,5 +1,5 @@
 // BVH FileWriter
-// (2024-11-23)
+// (2025-05-01)
 
 var BVH_FileWriter = (()=>{
   let v1 = new THREE.Vector3();
@@ -146,7 +146,8 @@ for (const name in boneKeys_by_name) {
   const bk_keys_full = bk.keys_full;
   bk_keys.forEach((k,idx)=>{
     const _f = Math.round(k.time*30);
-    if (_f > f) {
+// skip case when the first frame doesn't start with time==0 (i.e. (_f > 0) && (idx == 0))
+    if ((_f > f) && (idx > 0)) {
       let k_last = bk_keys[idx-1];
       const _f_last = Math.round(k_last.time*30);
       const _f_diff = _f - _f_last;
@@ -174,13 +175,15 @@ for (const name in boneKeys_by_name) {
 
 const pos_scale = vrm_scale/MMD_SA.THREEX.VRM.vrm_scale;
 
+const leg_scale = modelX.para.left_leg_length / MMD_SA_options.model_para_obj.left_leg_length;
+
 let data_lines = [];
 for (let f = 0; f < f_max; f++) {
   let data = [];
   modelX.bvh_hierarchy.list.forEach(item=>{
     const name = item.name;
     let name_MMD = item.name_MMD;
-    if (!boneKeys_by_name[name_MMD] && (name_MMD.indexOf('足首') != -1))
+    if (name_MMD && !boneKeys_by_name[name_MMD] && (name_MMD.indexOf('足首') != -1))
       name_MMD = name_MMD.charAt(0) + '足ＩＫ';
 
     if (!name_MMD || !boneKeys_by_name[name_MMD]) {
@@ -202,6 +205,7 @@ for (let f = 0; f < f_max; f++) {
         }
 
         pos.multiplyScalar(pos_scale);
+        pos.multiplyScalar(leg_scale);
         pos.add(v2.fromArray(para.pos0['hips']).multiplyScalar(vrm_scale));
 
         v += pos.toArray().join(' ') + ' ';
@@ -244,6 +248,8 @@ const bvh_txt = [
   'Frame Time: ' + 1/30,
   data_lines.join('\n'),
 ].join('\n');
+
+if (!filename) return bvh_txt;
 
 System._browser.save_file(filename, bvh_txt, 'text/plain');
   };

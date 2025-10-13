@@ -64,7 +64,7 @@ export class LogitsProcessorList extends LogitsProcessorList_base {
      * @param {Tensor} logits
      */
     _call(input_ids: bigint[][], logits: Tensor): Tensor;
-    [Symbol.iterator](): IterableIterator<any>;
+    [Symbol.iterator](): ArrayIterator<any>;
 }
 /**
  * A LogitsProcessor that forces a BOS token at the beginning of the generated sequence.
@@ -80,9 +80,9 @@ export class ForcedBOSTokenLogitsProcessor extends LogitsProcessor {
      * Apply the BOS token forcing to the logits.
      * @param {bigint[][]} input_ids The input IDs.
      * @param {Tensor} logits The logits.
-     * @returns {Object} The logits with BOS token forcing.
+     * @returns {Tensor} The logits with BOS token forcing.
      */
-    _call(input_ids: bigint[][], logits: Tensor): any;
+    _call(input_ids: bigint[][], logits: Tensor): Tensor;
 }
 /**
  * A logits processor that enforces the specified token as the last generated token when `max_length` is reached.
@@ -122,9 +122,9 @@ export class SuppressTokensAtBeginLogitsProcessor extends LogitsProcessor {
      * Apply the BOS token forcing to the logits.
      * @param {bigint[][]} input_ids The input IDs.
      * @param {Tensor} logits The logits.
-     * @returns {Object} The logits with BOS token forcing.
+     * @returns {Tensor} The logits with BOS token forcing.
      */
-    _call(input_ids: bigint[][], logits: Tensor): any;
+    _call(input_ids: bigint[][], logits: Tensor): Tensor;
 }
 /**
  * A LogitsProcessor that handles adding timestamps to generated text.
@@ -135,7 +135,7 @@ export class WhisperTimeStampLogitsProcessor extends LogitsProcessor {
      * @param {import('../models/whisper/generation_whisper.js').WhisperGenerationConfig} generate_config The config object passed to the `generate()` method of a transformer model.
      * @param {number[]} init_tokens The initial tokens of the input sequence.
      */
-    constructor(generate_config: import('../models/whisper/generation_whisper.js').WhisperGenerationConfig, init_tokens: number[]);
+    constructor(generate_config: import("../models/whisper/generation_whisper.js").WhisperGenerationConfig, init_tokens: number[]);
     eos_token_id: number;
     no_timestamps_token_id: number;
     timestamp_begin: number;
@@ -182,17 +182,27 @@ export class NoRepeatNGramLogitsProcessor extends LogitsProcessor {
      * Apply the no-repeat-ngram processor to the logits.
      * @param {bigint[][]} input_ids The input IDs.
      * @param {Tensor} logits The logits.
-     * @returns {Object} The logits with no-repeat-ngram processing.
+     * @returns {Tensor} The logits with no-repeat-ngram processing.
      */
-    _call(input_ids: bigint[][], logits: Tensor): any;
+    _call(input_ids: bigint[][], logits: Tensor): Tensor;
 }
 /**
- * A logits processor that penalises repeated output tokens.
+ * A logits processor that prevents the repetition of previous tokens through a penalty.
+ * This penalty is applied at most once per token. Note that, for decoder-only models like most LLMs,
+ * the considered tokens include the prompt.
+ *
+ * In the original [paper](https://arxiv.org/pdf/1909.05858.pdf), the authors suggest the use of a
+ * penalty of around 1.2 to achieve a good balance between truthful generation and lack of repetition.
+ * To penalize and reduce repetition, use `penalty` values above 1.0, where a higher value penalizes
+ * more strongly. To reward and encourage repetition, use `penalty` values between 0.0 and 1.0, where
+ * a lower value rewards more strongly.
  */
 export class RepetitionPenaltyLogitsProcessor extends LogitsProcessor {
     /**
      * Create a RepetitionPenaltyLogitsProcessor.
-     * @param {number} penalty The penalty to apply for repeated tokens.
+     * @param {number} penalty The parameter for repetition penalty.
+     * - 1.0 means no penalty. Above 1.0 penalizes previously generated tokens.
+     * - Between 0.0 and 1.0 rewards previously generated tokens.
      */
     constructor(penalty: number);
     penalty: number;
@@ -200,9 +210,9 @@ export class RepetitionPenaltyLogitsProcessor extends LogitsProcessor {
      * Apply the repetition penalty to the logits.
      * @param {bigint[][]} input_ids The input IDs.
      * @param {Tensor} logits The logits.
-     * @returns {Object} The logits with repetition penalty processing.
+     * @returns {Tensor} The logits with repetition penalty processing.
      */
-    _call(input_ids: bigint[][], logits: Tensor): any;
+    _call(input_ids: bigint[][], logits: Tensor): Tensor;
 }
 /**
  * A logits processor that enforces a minimum number of tokens.
@@ -220,9 +230,9 @@ export class MinLengthLogitsProcessor extends LogitsProcessor {
      * Apply logit processor.
      * @param {bigint[][]} input_ids The input IDs.
      * @param {Tensor} logits The logits.
-     * @returns {Object} The processed logits.
+     * @returns {Tensor} The processed logits.
      */
-    _call(input_ids: bigint[][], logits: Tensor): any;
+    _call(input_ids: bigint[][], logits: Tensor): Tensor;
 }
 /**
  * A logits processor that enforces a minimum number of new tokens.
@@ -242,9 +252,9 @@ export class MinNewTokensLengthLogitsProcessor extends LogitsProcessor {
      * Apply logit processor.
      * @param {bigint[][]} input_ids The input IDs.
      * @param {Tensor} logits The logits.
-     * @returns {Object} The processed logits.
+     * @returns {Tensor} The processed logits.
      */
-    _call(input_ids: bigint[][], logits: Tensor): any;
+    _call(input_ids: bigint[][], logits: Tensor): Tensor;
 }
 export class NoBadWordsLogitsProcessor extends LogitsProcessor {
     /**
@@ -259,9 +269,9 @@ export class NoBadWordsLogitsProcessor extends LogitsProcessor {
      * Apply logit processor.
      * @param {bigint[][]} input_ids The input IDs.
      * @param {Tensor} logits The logits.
-     * @returns {Object} The processed logits.
+     * @returns {Tensor} The processed logits.
      */
-    _call(input_ids: bigint[][], logits: Tensor): any;
+    _call(input_ids: bigint[][], logits: Tensor): Tensor;
 }
 /**
  * [`LogitsProcessor`] for classifier free guidance (CFG). The scores are split over the batch dimension,
@@ -284,9 +294,9 @@ export class ClassifierFreeGuidanceLogitsProcessor extends LogitsProcessor {
      * Apply logit processor.
      * @param {bigint[][]} input_ids The input IDs.
      * @param {Tensor} logits The logits.
-     * @returns {Object} The processed logits.
+     * @returns {Tensor} The processed logits.
      */
-    _call(input_ids: bigint[][], logits: Tensor): any;
+    _call(input_ids: bigint[][], logits: Tensor): Tensor;
 }
 /**
  * [`LogitsWarper`] for temperature (exponential scaling output probability distribution), which effectively means
@@ -305,9 +315,9 @@ export class TemperatureLogitsWarper extends LogitsWarper {
      * Apply logit warper.
      * @param {bigint[][]} input_ids The input IDs.
      * @param {Tensor} logits The logits.
-     * @returns {Object} The processed logits.
+     * @returns {Tensor} The processed logits.
      */
-    _call(input_ids: bigint[][], logits: Tensor): any;
+    _call(input_ids: bigint[][], logits: Tensor): Tensor;
 }
 /**
  * [`LogitsWarper`] that performs top-p, i.e. restricting to top tokens summing to prob_cut_off <= prob_cut_off.

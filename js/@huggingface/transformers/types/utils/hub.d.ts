@@ -39,13 +39,13 @@ export type PretrainedOptions = {
     /**
      * If specified, this function will be called during model construction, to provide the user with progress updates.
      */
-    progress_callback?: Function;
+    progress_callback?: import("./core.js").ProgressCallback;
     /**
      * Configuration for the model to use instead of an automatically loaded configuration. Configuration can be automatically loaded when:
      * - The model is a model provided by the library (loaded with the *model id* string of a pretrained model).
      * - The model is loaded by supplying a local directory as `pretrained_model_name_or_path` and a configuration JSON file named *config.json* is found in the directory.
      */
-    config?: import('../configs.js').PretrainedConfig;
+    config?: import("../configs.js").PretrainedConfig;
     /**
      * Path to a directory in which a downloaded pretrained model configuration should be cached if the standard cache should not be used.
      */
@@ -89,7 +89,7 @@ export type ModelSpecificPretrainedOptions = {
     /**
      * (Optional) User-specified session options passed to the runtime. If not provided, suitable defaults will be chosen.
      */
-    session_options?: import('onnxruntime-common').InferenceSession.SessionOptions;
+    session_options?: import("onnxruntime-common").InferenceSession.SessionOptions;
 };
 /**
  * Options for loading a pretrained model.

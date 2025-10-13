@@ -38,7 +38,7 @@ export class StoppingCriteriaList extends StoppingCriteriaList_base {
      */
     extend(items: StoppingCriteria | StoppingCriteriaList | StoppingCriteria[]): void;
     _call(input_ids: any, scores: any): any[];
-    [Symbol.iterator](): IterableIterator<any>;
+    [Symbol.iterator](): ArrayIterator<any>;
 }
 /**
  * This class can be used to stop generation whenever the full generated number of tokens exceeds `max_length`.

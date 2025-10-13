@@ -1513,20 +1513,20 @@
 							"_translation_": {
 								"_default_": "Emotion tracking options",
 								"ja": "感情トラッキング設定",
-								"zh": "感情追蹤設定"
+								"zh": "情緒追蹤設定"
 							},
 							"tooltip": {
 								"_translation_": {
 									"_default_": "Emotion tracking options:\nBy default, face tracking reads your facial expressions and attempts to match some standard expressions from your avatar model, such as joy/fun, sorrow, angry, and optionally surprise and blush. Adjust the general weighting or weighting of each individual expression to suit your taste.",
 									"ja": "感情トラッキング設定\nデフォルトでは、フェイストラッキングはユーザーの表情を読み取り、喜び/楽しみ、悲しみ、怒り、驚きや赤面など、アバター モデルの標準的な表情と一致させようとします。 全体的な重み付け、または個々の式の重み付けを好みに合わせて調整します。",
-									"zh": "感情追蹤設定:\n面部追蹤預設會閱讀各種面部數據以適當啟動人物模型預設如喜怒哀樂等的表情。 你可以更改各樣表情比重以達至最佳效果。"
+									"zh": "情緒追蹤設定:\n面部追蹤預設會閱讀各種面部數據以適當啟動人物模型預設如喜怒哀樂等的表情。 你可以更改各樣表情比重以達至最佳效果。"
 								}
 							},
 							"emotion_tracking": {
 								"_translation_": {
 									"_default_": "Emotion tracking",
 									"ja": "感情トラッキング",
-									"zh": "感情追蹤"
+									"zh": "情緒追蹤"
 								}
 							},
 							"press_to_change_value": {
@@ -1635,6 +1635,62 @@
 										"zh": "部份人物模型可能有其他可被偵測的表情。 如出現經常誤發的情況，可降低數值。 預設是「100%」。"
 									}
 								}
+							},
+							"AI_detection": {
+								"_translation_": {
+									"_default_": "AI detection",
+									"ja": "AI検出",
+									"zh": "AI檢測"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "When non-zero, this option enables the use of AI to detect emotions, which is more accurate than the default emotion tracking, at the expense of extra system resource usage. Percentage value determines sensitivity. Percentage value for each individual emotion applies to this feature as well. Default is \"0%\".",
+										"ja": "このオプションがゼロ以外の場合、AI を使用して感情を検出できるようになります。 これは、システム リソースの追加使用を犠牲にして、デフォルトの感情追跡よりも正確になります。 パーセンテージ値によって感度が決まります。 個々の感情のパーセンテージ値もこの機能に適用されます。 デフォルトは「0%」です。",
+										"zh": "當非零時，此選項會使用 AI 來檢測情緒，這比預設情緒追蹤更準確，但會佔用額外的系統資源。 百分比值決定靈敏度。 每個個別情緒的百分比值也適用於此功能。 預設是「0%」。"
+									}
+								},
+								"interval": {
+									"_translation_": {
+										"_default_": "Interval",
+										"ja": "間隔",
+										"zh": "間隔"
+									},
+									"tooltip": {
+										"_translation_": {
+											"_default_": "Interval:\nThis setting determines the detection interval. Shorter interval increases the number of detections per second, at the expense of extra system resource usage. Default is \"500ms\".",
+											"ja": "間隔:\nこの設定は検出間隔を決定します。 間隔が短いほど、1 秒あたりの検出回数は増えますが、システム リソースの使用量が増えます。 デフォルトは「500ms」です。",
+											"zh": "間隔:\n此設定決定檢測間隔。 較短的間隔會增加每秒的偵測次數，但會佔用更多的系統資源。 預設值為「500ms」。"
+										}
+									}
+								},
+								"neutralness": {
+									"_translation_": {
+										"_default_": "Neutralness",
+										"ja": "中立性",
+										"zh": "中立性"
+									},
+									"tooltip": {
+										"_translation_": {
+											"_default_": "This setting determines how dominant \"Neutral\" should be over other emotions, and how much opposite emotions (e.g. happy vs sad) should cancel out each other. Lower value allows various emotions to coexist at the same time. Default is \"50%\".",
+											"ja": "この設定は、「中性」 が他の感情に対してどの程度優位であるか、また、反対の感情 (例: 楽しみと悲しみ) がどの程度互いに打ち消し合うかを決定します。 値を低くすると、さまざまな感情が同時に共存できるようになります。 デフォルトは「100%」です。",
+											"zh": "此設定決定了「中性」對其他情緒的主導程度，以及相反情緒（例如快樂與悲傷）應在多大程度上相互抵消。 較低的值允許多種情緒同時共存。 預設是「100%」。"
+										}
+									}
+								}
+							},
+							"vowel": {
+								"_translation_": {
+									"_default_": "Vowel",
+									"ja": "母音",
+									"zh": "元音"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "This setting determines the weighting of vowel blendshapes (a,i,u,e,o). Lower this setting if some emotion blendshapes distort the vowel blendshapes. Default is \"100%\".",
+										"ja": "この設定は、母音ブレンドシェイプ (a、i、u、e、o) の重みを決定します。 一部の感情ブレンドシェイプによって母音ブレンドシェイプが歪む場合は、この設定を下げてください。 デフォルトは「100%」です。",
+										"zh": "此設定決定元音混合形狀 (a,i,u,e,o) 的權重。 如果某些情緒混合形狀扭曲了元音混合形狀，請降低此設定。 預設是「100%」。"
+									}
+								}
 							}
 						},
 						"calibration_options": {
@@ -1674,17 +1730,31 @@
 								"zh": "按️⬅️➡️鍵更改數值"
 							}
 						},
-						"AI_framework": {
+						"detection_AI_framework": {
 							"_translation_": {
-								"_default_": "AI framework",
-								"ja": "AI フレームワーク",
-								"zh": "AI 框架"
+								"_default_": "Detection AI",
+								"ja": "検出AI",
+								"zh": "檢測AI"
 							},
 							"tooltip": {
 								"_translation_": {
-									"_default_": "AI framework:\nXR Animator supports object detection via AI model and props that support this feature. It supports either \"MediaPipe\" or \"Transformers.js\" AI framework, each with its own supported AI models. \"Transformers.js\" is generally more accurate, at the expense of extra system resource usage. Default is \"MediaPipe\".",
-									"ja": "AI フレームワーク:\nXR Animator は、AI モデルとこの機能をサポートするプロップによるオブジェクト検出をサポートします。 「MediaPipe」または「Transformers.js」AI フレームワークのいずれかをサポートし、それぞれ独自の AI モデルがサポートされています。 「Transformers.js」は一般的に精度が高くなりますが、システム資源の使用量が増えます。 デフォルトは「MediaPipe」。",
-									"zh": "AI 框架:\nXR Animator 支援透過 AI 模型和支援此功能的小道具進行物件偵測。 它支援「MediaPipe」或「Transformers.js」 AI 框架，每個框架都有自己支援的 AI 模型。 「Transformers.js」通常更準確，但會消耗額外的系統資源。 預設為「MediaPipe」。"
+									"_default_": "Detection AI:\nXR Animator supports object detection via AI model and props that support this feature. It supports either \"MediaPipe\" or \"Transformers.js\" AI framework, each with its own supported AI models. \"Transformers.js\" is generally more accurate, at the expense of extra system resource usage. Default is \"MediaPipe\".",
+									"ja": "検出AI:\nXR Animator は、AI モデルとこの機能をサポートするプロップによるオブジェクト検出をサポートします。 「MediaPipe」または「Transformers.js」AI フレームワークのいずれかをサポートし、それぞれ独自の AI モデルがサポートされています。 「Transformers.js」は一般的に精度が高くなりますが、システム資源の使用量が増えます。 デフォルトは「MediaPipe」。",
+									"zh": "檢測AI:\nXR Animator 支援透過 AI 模型和支援此功能的小道具進行物件偵測。 它支援「MediaPipe」或「Transformers.js」 AI 框架，每個框架都有自己支援的 AI 模型。 「Transformers.js」通常更準確，但會消耗額外的系統資源。 預設為「MediaPipe」。"
+								}
+							}
+						},
+						"classification_AI_framework": {
+							"_translation_": {
+								"_default_": "Classification AI",
+								"ja": "分類AI",
+								"zh": "分類AI"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Classification AI:\nSome props such as instruments uses object classification AI instead of object detection AI. Classification merely tracks the existence instead of position of the target, but it can detect a lot more object types. It supports either \"MediaPipe\" or \"Transformers.js\" AI framework, each with its own supported AI models. Default is \"MediaPipe\".",
+									"ja": "分類AI:\n楽器などの一部の小道具では、オブジェクト検出 AI ではなくオブジェクト分類 AI が使用されます。 分類はターゲットの位置ではなく存在を追跡するだけですが、より多くのオブジェクト タイプを検出できます。 「MediaPipe」または「Transformers.js」AI フレームワークのいずれかをサポートし、それぞれ独自の AI モデルがサポートされています。 デフォルトは「MediaPipe」。",
+									"zh": "分類AI:\n樂器等一些小道具使用物件分類AI而不是物件偵測AI。 分類僅追蹤目標的存在而不是位置，但它可以偵測更多的物件類型。 它支援「MediaPipe」或「Transformers.js」 AI 框架，每個框架都有自己支援的 AI 模型。 預設為「MediaPipe」。"
 								}
 							}
 						},
@@ -3206,7 +3276,7 @@
 							},
 							"list": {
 								"_translation_": {
-									"_default_": "NewruGuru, Kai, Nymph, KuraiNoOni, LouLi Lou, coffee-addict, skeh, Swoonifer, reitoi, Nyaarium, mirai, CoCoNo, Motoko Library,"
+									"_default_": "NewruGuru, Kai, Nymph, KuraiNoOni, LouLi Lou, coffee-addict, skeh, Swoonifer, Nyaarium, The Infamous Moistener, Kyonko_VT, CoCoNo, Motoko Library,"
 								}
 							}
 						}

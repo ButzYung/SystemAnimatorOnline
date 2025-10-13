@@ -1,5 +1,5 @@
 // auto fit
-// (2024-12-15)
+// (2024-12-29)
 
 const v1 = new THREE.Vector3();
 const v2 = new THREE.Vector3();
@@ -424,7 +424,8 @@ function morph_event() {
 }
 
 function process_gesture() {
-  function transform_property(para, obj, p) {
+  function transform_property(_para, obj, p_full) {
+    let p = p_full;
     if (p.indexOf('.') != -1) {
       const ps = p.split('.');
       p = ps.pop();
@@ -444,29 +445,41 @@ function process_gesture() {
 
     const p_offset = '_'+p+'_offset_';
 
-    if (para.mirror) {
+    let scale = 1;
+    if (_para.use_model_scale) {
+      const object3d = para.json.XR_Animator_scene.object3D_list.find(obj=>obj.id==_para.use_model_scale.id);
+      if (object3d) {
+        const x_object = MMD_SA.THREEX._object3d_list_.find(obj=>obj.uuid==object3d._object3d_uuid);
+        if (x_object) {
+          scale = 1/(_para.use_model_scale.base_scale||1) * x_object._mesh.scale.x;
+//DEBUG_show(scale+'/'+Date.now())
+        }
+      }
+    }
+
+    if (_para.mirror) {
       const _left = obj[p].left;
       obj[p].left  = obj[p].right;
       obj[p].right = _left;
     }
-    if ('assign' in para) {
-      if (typeof para.assign == 'number') {
-        obj[p] = para.assign;
+    if ('assign' in _para) {
+      if (typeof _para.assign == 'number') {
+        obj[p] = _para.assign;
       }
       else {
-        if (para.assign == 'default') {
+        if (_para.assign == 'default') {
           obj[p] = v_default;
         }
         else {
-          obj[p] = para.assign;
+          obj[p] = _para.assign;
         }
       }
     }
-    if (para.invert) {
+    if (_para.invert) {
       obj[p] = -obj[p];
     }
-    if (para.multiply != null) {
-      let multiply = para.multiply;
+    if (_para.multiply != null) {
+      let multiply = _para.multiply;
       if (typeof multiply == 'number') {
         if (multiply > 1) {
           if (obj[p_offset] < 0) {
@@ -495,8 +508,8 @@ function process_gesture() {
 
         if (multiply != 1) {
           obj[p] = (obj[p] + (obj[p_offset]||0)) * multiply;
-          if (para.limit != null) {
-            let limit = (typeof para.limit == 'number') ? para.limit : v_default;
+          if (_para.limit != null) {
+            let limit = (typeof _para.limit == 'number') ? _para.limit : v_default;
             if ((multiply > 1) ? obj[p] > limit : obj[p] < limit) {
               obj[p_offset] = obj[p] - limit;
               obj[p] = limit;
@@ -510,9 +523,10 @@ function process_gesture() {
         obj[p].z *= multiply.z;
       }
     }
-    if (para.add != null) {
-      let add = para.add;
+    if (_para.add != null) {
+      let add = _para.add;
       if (typeof add == 'number') {
+        add *= scale;
         if (add > 0) {
           if (obj[p_offset] < 0) {
             obj[p_offset] += add;
@@ -532,10 +546,10 @@ function process_gesture() {
           }
         }
 
-        obj[p] += para.add;
+        obj[p] += _para.add;
 
-        if (para.limit != null) {
-          let limit = (typeof para.limit == 'number') ? para.limit : v_default;
+        if (_para.limit != null) {
+          let limit = (typeof _para.limit == 'number') ? _para.limit * scale : v_default;
           if ((add > 0) ? obj[p] > limit : obj[p] < limit) {
             obj[p_offset] = (obj[p_offset]||0) + (obj[p] - limit);
             obj[p] = limit;
@@ -547,6 +561,64 @@ function process_gesture() {
         obj[p].y += add.y;
         obj[p].z += add.z;
       }
+    }
+
+    if (_para.helper) {
+      const helpers = [_para.helper];
+      for (let i = 0; i < 9; i++) {
+        if (_para['helper'+i])
+          helpers.push(_para['helper'+i]);
+      }
+
+      helpers.forEach((_helper,i)=>{
+        let helper_id, helper_parent;
+        let helper_para = {};
+        let path = (i==0) ? (p_full||_helper.path) : _helper.path;
+        if (/magnet\.(\d+)(\.?\w*)/.test(path)) {
+          const magnet = MMD_SA.MMD.motionManager.para_SA.motion_tracking.arm_tracking.transformation.position.magnet[RegExp.$1];
+
+          helper_id = 'magnet.' + RegExp.$1;
+
+          let _p;
+          if (RegExp.$2) {
+            helper_id += RegExp.$2;
+            _p = RegExp.$2.substring(1);
+          }
+          else {
+// i==0 assumed
+            helper_id += '.' + p;
+            _p = p;
+          }
+
+          if (magnet.type == 'object3D') {
+            const object3d = para.json.XR_Animator_scene.object3D_list.find(obj=>obj.id==magnet.id);
+            if (!object3d) return;
+            const x_object = MMD_SA.THREEX._object3d_list_.find(obj=>obj.uuid==object3d._object3d_uuid);
+            if (!x_object) return;
+
+            helper_parent = x_object._mesh;
+
+            if (magnet.magnet_type == 'plane') {
+              helper_para.type = 'plane';
+              helper_id += '-plane';
+              helper_para.pos = _helper.pos || magnet[_p];
+              helper_para.rot = _helper.rot || {x:0, y:0, z:(magnet.plane_normal.x==1)?90:0};
+            }
+            else if (magnet.magnet_type == 'line') {
+              helper_para.type = 'line';
+              helper_id += '-line';
+              helper_para.line = [magnet.reference_point, magnet.line_end];
+              helper_para.pos = _helper.pos || null;
+            }
+          }
+        }
+        else if (/arm_tracking/.test(path)) {
+          helper_id = p + 'Hand';
+          helper_parent = helper_id;
+        }
+
+        MMD_SA.THREEX.utils.display_helper(helper_id, helper_parent, helper_para);
+      });
     }
   }
 
@@ -586,17 +658,17 @@ function process_gesture() {
         if (!pressed) continue;
 
         let commands = [];
-        let timestamp_match;
+        let timestamp_match = 0;
         for (const type of ['Ctrl', 'Alt', 'Shift', 'raw']) {
 //if (pressed[type]) DEBUG_show(EV_sync_update.count_frame+'\n'+pressed[type])
           if (pressed[type] && (EV_sync_update.count_frame == pressed[type]+1)) {
-            timestamp_match = true;
             if (type != 'raw')
               commands.push(type);
+            timestamp_match++;
           }
         }
 
-        if (timestamp_match) {
+        if (timestamp_match && (timestamp_match >= commands.length)) {
           const k_name = 'key' + '|' + ((commands.length) ? commands.join('+') + '+' : '') + key;
 //DEBUG_show(k_name,0,1)
           if (g_event[k_name]) {
@@ -618,16 +690,19 @@ function process_gesture() {
         para.json.XR_Animator_scene.object3D_list.find(obj=>{
           obj.model_para.object_detection?.class_name_list.forEach(class_name=>{
             const data = od.data_by_class_name[class_name];
-            const k_name = (data) ? ((data.hand == ((d=='左')?'left':'right')) ? class_name+'|object_detection|visible' : '') : ((d == '右') ? class_name+'|object_detection|hidden' : '');
+            const ignore_hand = obj.model_para.object_detection.ignore_hand;
+// always initialize k_name when ignore_hand is true
+            const k_name = (data) ? (ignore_hand || ((data.hand == ((d=='左')?'left':'right'))) ? class_name+'|object_detection|visible' : '') : ((ignore_hand || (d == '右')) ? class_name+'|object_detection|hidden' : '');
             if (k_name && g_event[k_name]) {
-              if ((typeof g_event[k_name] == 'string') ? true : true) {
+// use the same direction as the event when ignore_hand is true
+              if ((typeof g_event[k_name] == 'string') ? ((ignore_hand) ? g_event[k_name].indexOf(dir) != -1 : true) : ((ignore_hand) ? d=='右' : true)) {
                 gestures.push(k_name);
 //System._browser.camera.DEBUG_show(k_name+'/'+d+'/'+Date.now());
               }
               for (let i = 0; i <= 3; i++) {
                 const name_ext = k_name + '#' + i;
                 if (g_event[name_ext]) {
-                  if ((typeof g_event[name_ext] == 'string') ? true : true)
+                  if ((typeof g_event[name_ext] == 'string') ? ((ignore_hand) ? g_event[name_ext].indexOf(dir) != -1 : true) : ((ignore_hand) ? d=='右' : true))
                     gestures.push(name_ext);
                 }
               }

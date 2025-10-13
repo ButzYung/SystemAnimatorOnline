@@ -123,6 +123,10 @@ export class PreTrainedTokenizer extends PreTrainedTokenizer_base {
     sep_token_id: number;
     unk_token: string;
     unk_token_id: number;
+    bos_token: string;
+    bos_token_id: number;
+    eos_token: string;
+    eos_token_id: number;
     model_max_length: any;
     /** @type {boolean} Whether or not to strip the text when tokenizing (removing excess spaces before and after the string). */
     remove_space: boolean;
@@ -162,7 +166,7 @@ export class PreTrainedTokenizer extends PreTrainedTokenizer_base {
      */
     _call(text: string | string[], { text_pair, add_special_tokens, padding, truncation, max_length, return_tensor, return_token_type_ids, }?: {
         text_pair?: string | string[];
-        padding?: boolean | 'max_length';
+        padding?: boolean | "max_length";
         add_special_tokens?: boolean;
         truncation?: boolean;
         max_length?: number;
@@ -370,7 +374,7 @@ export class PreTrainedTokenizer extends PreTrainedTokenizer_base {
         return_tensor?: boolean;
         return_dict?: boolean;
         tokenizer_kwargs?: any;
-    }): string | number[] | number[][] | Tensor | {
+    }): string | Tensor | number[] | number[][] | {
         /**
          * List of token ids to be fed to a model.
          */
@@ -535,13 +539,13 @@ export class WhisperTokenizer extends PreTrainedTokenizer {
         tokens: bigint[];
         token_timestamps?: number[];
         stride: number[];
-    }>, { return_timestamps, return_language, time_precision, force_full_sequences }?: any): (string | {
+    }>, { return_timestamps, return_language, time_precision, force_full_sequences }?: any): Array<string | {
         chunks?: undefined | Array<{
             language: string | null;
             timestamp: Array<number | null>;
             text: string;
         }>;
-    })[];
+    }>;
     /**
      * Finds the longest common sequence among the provided sequences.
      * @param {number[][]} sequences An array of sequences of token ids to compare.
@@ -631,6 +635,8 @@ export class VitsTokenizer extends PreTrainedTokenizer {
 }
 export class CohereTokenizer extends PreTrainedTokenizer {
 }
+export class MgpstrTokenizer extends PreTrainedTokenizer {
+}
 /**
  * Helper class which is used to instantiate pretrained tokenizers with the `from_pretrained` function.
  * The chosen tokenizer class is determined by the type specified in the tokenizer config.
@@ -684,6 +690,7 @@ export class AutoTokenizer {
         GemmaTokenizer: typeof GemmaTokenizer;
         Grok1Tokenizer: typeof Grok1Tokenizer;
         CohereTokenizer: typeof CohereTokenizer;
+        MgpstrTokenizer: typeof MgpstrTokenizer;
         PreTrainedTokenizer: typeof PreTrainedTokenizer;
     };
     /**
@@ -712,7 +719,7 @@ export type TokenizerProperties = {
      */
     legacy?: boolean;
 };
-export type PretrainedTokenizerOptions = import('./utils/hub.js').PretrainedOptions & TokenizerProperties;
+export type PretrainedTokenizerOptions = import("./utils/hub.js").PretrainedOptions & TokenizerProperties;
 export type BPENode = {
     /**
      * The token associated with the node
@@ -735,7 +742,7 @@ export type BPENode = {
      */
     next?: BPENode;
 };
-export type SplitDelimiterBehavior = 'removed' | 'isolated' | 'mergedWithPrevious' | 'mergedWithNext' | 'contiguous';
+export type SplitDelimiterBehavior = "removed" | "isolated" | "mergedWithPrevious" | "mergedWithNext" | "contiguous";
 export type PostProcessedOutput = {
     /**
      * List of token produced by the post-processor.
