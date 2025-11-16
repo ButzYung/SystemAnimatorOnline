@@ -5,6 +5,7 @@ declare const Processor_base: new () => {
 /**
  * @typedef {Object} ProcessorProperties Additional processor-specific properties.
  * @typedef {import('../utils/hub.js').PretrainedOptions & ProcessorProperties} PretrainedProcessorOptions
+ * @typedef {import('../tokenizers.js').PreTrainedTokenizer} PreTrainedTokenizer
  */
 /**
  * Represents a Processor that extracts features from an input.
@@ -15,8 +16,8 @@ export class Processor extends Processor_base {
     /**
      * Instantiate one of the processor classes of the library from a pretrained model.
      *
-     * The processor class to instantiate is selected based on the `feature_extractor_type` property of the config object
-     * (either passed as an argument or loaded from `pretrained_model_name_or_path` if possible)
+     * The processor class to instantiate is selected based on the `image_processor_type` (or `feature_extractor_type`; legacy)
+     * property of the config object (either passed as an argument or loaded from `pretrained_model_name_or_path` if possible)
      *
      * @param {string} pretrained_model_name_or_path The name or path of the pretrained model. Can be either:
      * - A string, the *model id* of a pretrained processor hosted inside a model repo on huggingface.co.
@@ -41,28 +42,24 @@ export class Processor extends Processor_base {
      */
     get image_processor(): import("./image_processors_utils.js").ImageProcessor | undefined;
     /**
-     * @returns {import('../tokenizers.js').PreTrainedTokenizer|undefined} The tokenizer of the processor, if it exists.
+     * @returns {PreTrainedTokenizer|undefined} The tokenizer of the processor, if it exists.
      */
-    get tokenizer(): import("../tokenizers.js").PreTrainedTokenizer | undefined;
+    get tokenizer(): PreTrainedTokenizer | undefined;
     /**
      * @returns {import('./feature_extraction_utils.js').FeatureExtractor|undefined} The feature extractor of the processor, if it exists.
      */
     get feature_extractor(): import("./feature_extraction_utils.js").FeatureExtractor | undefined;
-    apply_chat_template(messages: any, options?: {}): string | number[] | number[][] | import("../transformers.js").Tensor | {
-        /**
-         * List of token ids to be fed to a model.
-         */
-        input_ids: number[] | number[][] | import("../transformers.js").Tensor;
-        /**
-         * List of indices specifying which tokens should be attended to by the model.
-         */
-        attention_mask: number[] | number[][] | import("../transformers.js").Tensor;
-        /**
-         * List of token type ids to be fed to a model.
-         */
-        token_type_ids?: number[] | number[][] | import("../transformers.js").Tensor;
-    };
-    batch_decode(...args: any[]): string[];
+    /**
+     * @param {Parameters<PreTrainedTokenizer['apply_chat_template']>[0]} messages
+     * @param {Parameters<PreTrainedTokenizer['apply_chat_template']>[1]} options
+     * @returns {ReturnType<PreTrainedTokenizer['apply_chat_template']>}
+     */
+    apply_chat_template(messages: Parameters<PreTrainedTokenizer["apply_chat_template"]>[0], options?: Parameters<PreTrainedTokenizer["apply_chat_template"]>[1]): ReturnType<PreTrainedTokenizer["apply_chat_template"]>;
+    /**
+     * @param {Parameters<PreTrainedTokenizer['batch_decode']>} args
+     * @returns {ReturnType<PreTrainedTokenizer['batch_decode']>}
+     */
+    batch_decode(batch: number[][] | import("../transformers.js").Tensor, decode_args?: any): ReturnType<PreTrainedTokenizer["batch_decode"]>;
     /**
      * Calls the feature_extractor function with the given input.
      * @param {any} input The input to extract features from.
@@ -76,5 +73,6 @@ export class Processor extends Processor_base {
  */
 export type ProcessorProperties = any;
 export type PretrainedProcessorOptions = import("../utils/hub.js").PretrainedOptions & ProcessorProperties;
+export type PreTrainedTokenizer = import("../tokenizers.js").PreTrainedTokenizer;
 export {};
 //# sourceMappingURL=processing_utils.d.ts.map

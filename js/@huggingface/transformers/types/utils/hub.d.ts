@@ -103,7 +103,7 @@ declare class FileResponse {
     constructor(filePath: string | URL);
     filePath: string | URL;
     headers: Headers;
-    exists: any;
+    exists: boolean;
     status: number;
     statusText: string;
     body: ReadableStream<any>;

@@ -1,4 +1,4 @@
-// (2024-11-1)
+// (2025-01-19)
 
 MMD_SA.fn = {
 /*
@@ -656,7 +656,7 @@ if (p_bone.rotation) {
   const rot_adjust = p_bone.rotation.align_with_external_point;
   if (rot_adjust)
     x_object.user_data._rot_default_ = (x_object.user_data._rot_default_ || new THREE.Quaternion()).copy(obj.quaternion);
-  if (rot_adjust && !rot_adjust.disabled && (!rot_adjust.mocap_only || (System._browser.camera.poseNet.enabled && System._browser.camera.ML_warmed_up))) {
+  if (rot_adjust && !rot_adjust.disabled && (!rot_adjust.mocap_only || System._browser.camera.VMC_receiver.pose_enabled || (System._browser.camera.poseNet.enabled && System._browser.camera.ML_warmed_up))) {
     const rot_original = MMD_SA._q2.copy(obj.quaternion);
 
     transfer_to_parent_bone = rot_adjust.transfer_to_parent_bone && (System._browser.camera.poseNet.enabled && System._browser.camera.ML_warmed_up);
@@ -699,7 +699,7 @@ if (p_bone.rotation) {
       let bone_pos;
       let bone_ext;
       if (rot_adjust.external_point.name.indexOf('hand') != -1) {
-        if ((rot_adjust.mocap_only === false) || (System._browser.camera.poseNet.enabled && (!MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only || !System._browser.camera.poseNet.frames.get_blend_default_motion('skin', d+'腕ＩＫ')))) {
+        if ((rot_adjust.mocap_only === false) || ((System._browser.camera.poseNet.enabled || System._browser.camera.VMC_receiver.pose_enabled) && (!MMD_SA.MMD.motionManager.para_SA.motion_tracking_upper_body_only || !System._browser.camera.poseNet.frames.get_blend_default_motion('skin', d+'腕ＩＫ')))) {
           bone_pos = modelX.get_bone_position_by_MMD_name(d+'手首');
           bone_ext = MMD_SA.TEMP_v3.set(0,0,0);//((d=='左')?1:-1)*0.5, 0, 0);
           if (rot_adjust.external_point.offset)

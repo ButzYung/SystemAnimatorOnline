@@ -129,12 +129,13 @@ export class RawImage {
      * Save the image to the given path.
      * @param {string} path The path to save the image to.
      */
-    save(path: string): Promise<any>;
-    toSharp(): any;
+    save(path: string): Promise<sharp.OutputInfo>;
+    toSharp(): sharp.Sharp;
 }
 /**
  * Helper function to load an image from a URL, path, etc.
  */
 export const load_image: any;
 import { Tensor } from './tensor.js';
+import sharp from 'sharp';
 //# sourceMappingURL=image.d.ts.map

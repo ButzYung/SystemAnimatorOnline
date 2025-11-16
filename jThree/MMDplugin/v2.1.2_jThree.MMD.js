@@ -1,4 +1,4 @@
-// (2024-10-14)
+// (2025-01-19)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -3881,7 +3881,7 @@ if (self.MMD_SA) {
 let bones_for_pose_conversion;
 if (mm) {
   let use_default_IK_disabled;
-  if ((mesh._model_index == 0) && System._browser.camera.ML_enabled) {
+  if ((mesh._model_index == 0) && (System._browser.camera.ML_enabled || System._browser.camera.VMC_receiver.mocap_enabled)) {
     const IK_disabled = System._browser.camera.poseNet.IK_disabled_check(target.name);
     if (IK_disabled === null) {
       use_default_IK_disabled = true;
@@ -3955,7 +3955,7 @@ if (mm) {
     const frames = System._browser.camera.poseNet.frames;
     const bones_by_name = mesh.bones_by_name;
 
-    const mocap_IK = (System._browser.camera.poseNet.enabled || System._browser.camera.facemesh.enabled) && (frames.skin[d+'腕ＩＫ'] || (System._browser.camera.poseNet.IK_disabled_check(target.name) === false));
+    const mocap_IK = (System._browser.camera.ML_enabled || System._browser.camera.VMC_receiver.mocap_enabled) && (frames.skin[d+'腕ＩＫ'] || (System._browser.camera.poseNet.IK_disabled_check(target.name) === false));
 // save some headaches and discard any non-arm-IK motion when arm IK mocap is not used, as even when arm-IK is at default, any shoulder rotation will still affect the output
     if (!_vmd.use_armIK && !mocap_IK) {
       continue;
@@ -6845,7 +6845,7 @@ if (self.MMD_SA) {
 
 System._browser.camera.poseNet.frames.set_upper_body_rotation(this._model_index, 0);
 
-var look_at_screen
+var look_at_screen;
 if (self.MMD_SA && _head_pos && (mesh.bones_by_name[head_name]) && (look_at_screen_ratio != 0) && MMD_SA_options.look_at_screen_by_model(this) && (model_para.look_at_screen != false)) {
   var cam = MMD_SA.camera_position
 
@@ -6871,7 +6871,7 @@ if (self.MMD_SA && _head_pos && (mesh.bones_by_name[head_name]) && (look_at_scre
 
 if (look_at_screen || look_at_mouse) {
 // not using MMD_SA.get_bone_rotation_parent here as it includes the look-at-screen rotation from the previous frame
-  const p_rotation_inversed = (MMD_SA_options.look_at_screen_parent_rotation_by_model(this) || (System._browser.camera.facemesh.enabled && mesh.bones_by_name["全ての親"].quaternion) || MMD_SA.get_bone_rotation_parent(mesh, head_name)).conjugate();
+  const p_rotation_inversed = (MMD_SA_options.look_at_screen_parent_rotation_by_model(this) || ((System._browser.camera.ML_enabled || System._browser.camera.VMC_receiver.mocap_enabled) && mesh.bones_by_name["全ての親"].quaternion) || MMD_SA.get_bone_rotation_parent(mesh, head_name)).conjugate();
   let r = MMD_SA.face_camera(_head_pos, p_rotation_inversed);
 
   const angle_x_limit = para_SA.look_at_screen_angle_x_limit || [Math.PI*0.5, -Math.PI*0.5];

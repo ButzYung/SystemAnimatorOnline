@@ -61,18 +61,20 @@ export function cos_sim(arr1: number[], arr2: number[]): number;
 export function magnitude(arr: number[]): number;
 /**
  * Returns the value and index of the minimum element in an array.
- * @param {number[]|TypedArray} arr array of numbers.
- * @returns {[number, number]} the value and index of the minimum element, of the form: [valueOfMin, indexOfMin]
+ * @template {number[]|bigint[]|AnyTypedArray} T
+ * @param {T} arr array of numbers.
+ * @returns {T extends bigint[]|BigTypedArray ? [bigint, number] : [number, number]} the value and index of the minimum element, of the form: [valueOfMin, indexOfMin]
  * @throws {Error} If array is empty.
  */
-export function min(arr: number[] | TypedArray): [number, number];
+export function min<T extends number[] | bigint[] | AnyTypedArray>(arr: T): T extends bigint[] | BigTypedArray ? [bigint, number] : [number, number];
 /**
  * Returns the value and index of the maximum element in an array.
- * @param {number[]|AnyTypedArray} arr array of numbers.
- * @returns {[number, number]} the value and index of the maximum element, of the form: [valueOfMax, indexOfMax]
+ * @template {number[]|bigint[]|AnyTypedArray} T
+ * @param {T} arr array of numbers.
+ * @returns {T extends bigint[]|BigTypedArray ? [bigint, number] : [number, number]} the value and index of the maximum element, of the form: [valueOfMax, indexOfMax]
  * @throws {Error} If array is empty.
  */
-export function max(arr: number[] | AnyTypedArray): [number, number];
+export function max<T extends number[] | bigint[] | AnyTypedArray>(arr: T): T extends bigint[] | BigTypedArray ? [bigint, number] : [number, number];
 /**
  * Performs median filter on the provided data. Padding is done by mirroring the data.
  * @param {AnyTypedArray} data The input array

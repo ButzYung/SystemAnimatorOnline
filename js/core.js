@@ -565,7 +565,6 @@ if (browser_native_mode) {
   windows_mode = false
 }
 
-// AFTER (before v0.34.2)
 linux_mode = !browser_native_mode && linux_mode;
 var mac_mode = !browser_native_mode && /(macintosh|macintel|macppc|mac68k|macos)/i.test(navigator.userAgent);
 var save_settings_by_localStorage = WallpaperEngine_CEF_mode || mac_mode;

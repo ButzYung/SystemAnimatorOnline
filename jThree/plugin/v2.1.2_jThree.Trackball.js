@@ -30,7 +30,7 @@
  * Date: 2015-02-25
  */
 // AT: customizations
-// (2024-09-02)
+// (2025-01-19)
 
 THREE.TrackballControls = function ( object, domElement ) {
 
@@ -344,7 +344,7 @@ var min = limit.min
 
 var length = _eye.copy(eye).multiplyScalar( factor ).length();
 
-if ((max && (length > max.length)) || (min && (length < min.length)))
+if ((max && (length > max.length)) || (min && (length < min.length) && (factor < 1)))
   return
 
 if (limit.adjust && limit.adjust(eye))

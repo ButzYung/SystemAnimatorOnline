@@ -164,7 +164,7 @@
 							"_translation_": {
 								"_default_": "- The current pose does not support motion tracking.",
 								"ja": "- 現在のポーズはモーション トラッキングをサポートしていません。",
-								"zh": "- 現在的姿勢並不支援動態捕捉。"
+								"zh": "- 現在的姿勢並不支援動作捕捉。"
 							}
 						}
 					},
@@ -235,7 +235,7 @@
 						"_translation_": {
 							"_default_": "Hip adjustment set:\nThis option allows you to change the configuration set (Default, A-H) for \"Hip adjutsment\", which can be defined under mocap options. Configuration is applied on a per-pose basis (full body mocap uses an independent configuration). Press ⬅️➡️ key to change value.",
 							"ja": "腰の調整の設定セット:\nこのオプションを使用すると、モーションキャプチャ設定で定義できる「腰の調整」の設定セット (デフォルト、A ～ H) を変更できます。 設定はポーズごとに適用されます (全身モーキャプでは独立した構成が使用されます)。 ⬅️➡️キーを押して設定セットを変更します。",
-							"zh": "腰部調整設的設定集:\n此選項可讓您變更「腰部調整」的設定集 (預設，A-H)，可在「動態捕捉設定」下定義。 每個姿勢均可選用不同的設定集 (全身動捕使用獨立的設定集)。 按⬅️➡️鍵更改設定集。"
+							"zh": "腰部調整設的設定集:\n此選項可讓您變更「腰部調整」的設定集 (預設，A-H)，可在「動作捕捉設定」下定義。 每個姿勢均可選用不同的設定集 (全身動捕使用獨立的設定集)。 按⬅️➡️鍵更改設定集。"
 						}
 					}
 				},
@@ -515,7 +515,7 @@
 					"_translation_": {
 						"_default_": "Motion capture",
 						"ja": "モーションキャプチャ",
-						"zh": "動態捕捉"
+						"zh": "動作捕捉"
 					}
 				},
 				"info": {
@@ -537,7 +537,7 @@
 						"_translation_": {
 							"_default_": "- Double-click to enable motion capture to control the avatar.\n- You can track any combination of face, hands and body.\n- Use mouse or keys to pick a numbered option.",
 							"ja": "- ダブルクリックしてモーション キャプチャを有効にしてアバターを制御します。\n- 顔、手、体のあらゆる組み合わせを追跡できます。\n- マウスまたは英数字キーを使用してオプションを選択する。",
-							"zh": "- 按兩下啟動動態捕捉以控制你的人物。\n- 可選擇追蹤包括臉、手或身體的任何組合。\n- 以滑鼠或英數字鍵選擇選項。"
+							"zh": "- 按兩下啟動動作捕捉以控制你的人物。\n- 可選擇追蹤包括臉、手或身體的任何組合。\n- 以滑鼠或英數字鍵選擇選項。"
 						}
 					}
 				},
@@ -545,14 +545,14 @@
 					"_translation_": {
 						"_default_": "Enable motion capture?\n1. Face only\n2. Body only\n3. Body + Hands\n4. Face + Body\n5. Full body (MediaPipe Vision)\n6. Full body (Legacy Holistic)\n7. Mocap options\n8. Cancel",
 						"ja": "モーションキャプチャを有効にしますか?\n1. 顔だけ\n2. 体だけ\n3. 体と手\n4. 顔と体\n5. 全身 (MediaPipe Vision)\n6. 全身 (レガシー Holistic)\n7. モーションキャプチャ設定\n8. キャンセル",
-						"zh": "啟動動態捕捉?\n1. 面部\n2. 身體\n3. 身體 + 手部\n4. 面部 + 身體\n5. 全身 (MediaPipe Vision)\n6. 全身 (Legacy Holistic)\n7. 動態捕捉設定\n8. 取消"
+						"zh": "啟動動作捕捉?\n1. 面部\n2. 身體\n3. 身體 + 手部\n4. 面部 + 身體\n5. 全身 (MediaPipe Vision)\n6. 全身 (Legacy Holistic)\n7. 動作捕捉設定\n8. 取消"
 					},
 					"full_body_mediapipe_vision": {
 						"tooltip": {
 							"_translation_": {
 								"_default_": "Full body (MediaPipe Vision):\nMediaPipe Vision is the latest mocap AI suite from Google MediaPipe. This version of full body tracking uses face, body and hand tracking models at the same time.",
 								"ja": "全身 (MediaPipe Vision):\nMediaPipe Vision は、Google MediaPipe の最新のモーションキャプチャ AI スイートです。 このバージョンの全身追跡では、顔、体、手の追跡モデルを同時に使用します。",
-								"zh": "全身 (MediaPipe Vision):\nMediaPipe Vision 是 Google MediaPipe 最新版的動態捕捉 AI 組合。 此功能將同時使用臉、手和身體的動態捕捉模型。"
+								"zh": "全身 (MediaPipe Vision):\nMediaPipe Vision 是 Google MediaPipe 最新版的動作捕捉 AI 組合。 此功能將同時使用臉、手和身體的動作捕捉模型。"
 							}
 						}
 					},
@@ -561,7 +561,7 @@
 							"_translation_": {
 								"_default_": "Full body (Legacy Holistic):\nThis version of full body tracking uses the legacy MediaPipe Holistic AI model, which combines face, body and hand tracking into one model. This requires less system resource and makes it faster in some cases, but loses some mocap accuracy and features from the latest MediaPipe Vision.",
 								"ja": "全身 (Legacy Holistic):\nこのバージョンの全身追跡では、顔、体、手の追跡を 1 つのモデルに組み合わせた古い MediaPipe Holistic AI モデルを使用します。 これにより、必要なシステム リソースが減り、場合によっては高速になりますが、最新の MediaPipe Vision の一部のモーキャプの精度と機能が失われます。",
-								"zh": "全身 (Legacy Holistic):\n此乃舊版的 MediaPipe Holistic AI 模型, 將臉、手和身體的動態捕捉模型合而為一。 此版本系統要求比較低，一般而言速度亦較快，但缺少了最新版 MediaPipe Vision 的一些功能和精確度。"
+								"zh": "全身 (Legacy Holistic):\n此乃舊版的 MediaPipe Holistic AI 模型, 將臉、手和身體的動作捕捉模型合而為一。 此版本系統要求比較低，一般而言速度亦較快，但缺少了最新版 MediaPipe Vision 的一些功能和精確度。"
 							}
 						}
 					}
@@ -577,7 +577,7 @@
 							"_translation_": {
 								"_default_": "There is no motion to export. Enable motion capture and record the motion, or drop a FBX/BVH motion file.",
 								"ja": "エクスポートするモーションはありません。 モーション キャプチャを有効にしてモーションを記録するか、FBX/BVH モーション ファイルをドロップします。",
-								"zh": "現在沒有可匯出的動作。 啟動動態捕捉並紀錄動作, 或拖曳 FBX/BVH 動作檔案。"
+								"zh": "現在沒有可匯出的動作。 啟動動作捕捉並紀錄動作, 或拖曳 FBX/BVH 動作檔案。"
 							}
 						},
 						"choose_format": {
@@ -598,14 +598,14 @@
 							"_translation_": {
 								"_default_": "Choose a video input for motion capture first before you can record motion.",
 								"ja": "モーションを記録する前に、まずモーション キャプチャ用のビデオ入力を選択します。",
-								"zh": "請先為動態捕捉選擇影像輸入以作記録動作之用。"
+								"zh": "請先為動作捕捉選擇影像輸入以作記録動作之用。"
 							}
 						},
 						"model_warming_up": {
 							"_translation_": {
 								"_default_": "Mocap AI models are still warming up. Try again in a few seconds.",
 								"ja": "モーキャプ AI モデルはまだウォームアップ中です。 数秒後にもう一度試してください。",
-								"zh": "動態捕捉 AI 模型還在載入中, 請在幾秒後再嘗試。"
+								"zh": "動作捕捉 AI 模型還在載入中, 請在幾秒後再嘗試。"
 							}
 						},
 						"choose_speed": {
@@ -648,22 +648,22 @@
 						"_translation_": {
 							"_default_": "Mocap options",
 							"ja": "モーションキャプチャ設定",
-							"zh": "動態捕捉設定"
+							"zh": "動作捕捉設定"
 						}
 					},
 					"mocap_off": {
 						"_translation_": {
 							"_default_": "Mocap OFF",
 							"ja": "モーションキャプチャ OFF",
-							"zh": "關閉動態捕捉"
+							"zh": "關閉動作捕捉"
 						}
 					}
 				},
 				"mocap_options": {
 					"_translation_": {
-						"_default_": "1. Body tracking options\n2. Hand tracking options\n3. Face tracking options\n4. Object tracking options\n5. Mocap data smoothing: <smoothing>\n6. Webcam angle offset correction\n7. Clear bounding box",
-						"ja": "1. ボディトラッキング設定\n2. ハンドトラッキング設定\n3. フェイストラッキング設定\n4. オブジェクトトラッキング設定\n5. モーキャプデータ平滑化: <smoothing>\n6. Webカメラの角度オフセット補正\n7. 境界ボックスをクリアする",
-						"zh": "1. 身體追蹤設定\n2. 手部追蹤設定\n3. 面部追蹤設定\n4. 物體追蹤設定\n5. 動態捕捉數據平滑化: <smoothing>\n6. 攝影機角度偏移補正\n7. 清除邊界框"
+						"_default_": "1. Body tracking options\n2. Hand tracking options\n3. Face tracking options\n4. Object tracking optionsⓋ\n5. Mocap data smoothing: <smoothing>\n6. Webcam angle offset correction\n7. Clear bounding box",
+						"ja": "1. ボディトラッキング設定\n2. ハンドトラッキング設定\n3. フェイストラッキング設定\n4. オブジェクトトラッキング設定Ⓥ\n5. モーキャプデータ平滑化: <smoothing>\n6. Webカメラの角度オフセット補正\n7. 境界ボックスをクリアする",
+						"zh": "1. 身體追蹤設定\n2. 手部追蹤設定\n3. 面部追蹤設定\n4. 物體追蹤設定Ⓥ\n5. 動作捕捉數據平滑化: <smoothing>\n6. 攝影機角度偏移補正\n7. 清除邊界框"
 					},
 					"body_tracking_options": {
 						"AI_model_quality": {
@@ -920,9 +920,9 @@
 						},
 						"hip_adjustment": {
 							"_translation_": {
-								"_default_": "Hip adjustment",
-								"ja": "腰の調整",
-								"zh": "腰部調整"
+								"_default_": "Hip adjustmentⓋ",
+								"ja": "腰の調整Ⓥ",
+								"zh": "腰部調整Ⓥ"
 							},
 							"upper_body_mocap": {
 								"_translation_": {
@@ -1827,7 +1827,7 @@
 							"_translation_": {
 								"_default_": "Mocap data smoothing:\nThis option determines how much smoothing should be applied to real-time mocap and motion recording. Less smoothing preserves more motion details, but increases jitters during subtle motion. \"Min\" uses no extra smoothing other than the minimum required. Default is \"Normal\".",
 								"ja": "モーキャプデータ平滑化:\nこのオプションは、リアルタイムのモーションキャプチャとモーション記録にどの程度のスムージングを適用するかを決定します。 スムージングを少なくすると、より多くのモーションの詳細が保持されますが、微妙なモーションの際の不安定性が増します。 「最小」では、必要最小限以外の追加のスムージングは使用されません。 デフォルトは「普通」です。",
-								"zh": "動態捕捉數據平滑化:\n此選項決定應對實時動作捕捉和動作記錄應用多少平滑度。 較少的平滑可以保留更多的動作細節，但代價是細微的動作會增加不穩定性。 「最小」除了所需的最小值之外，不會使用額外的平滑。 預設為「普通」。"
+								"zh": "動作捕捉數據平滑化:\n此選項決定應對實時動作捕捉和動作記錄應用多少平滑度。 較少的平滑可以保留更多的動作細節，但代價是細微的動作會增加不穩定性。 「最小」除了所需的最小值之外，不會使用額外的平滑。 預設為「普通」。"
 							}
 						}
 					},
@@ -1901,9 +1901,9 @@
 				},
 				"info": {
 					"_translation_": {
-						"_default_": "- VMC-protocol allows sending 3D motion data in real time from XR Animator to other supported apps, such as VSeeFace, VNyan, Warudo, Unity and Unreal Engine. Double-click to configure.\n- Use mouse or keys to pick an alphanumeric option.",
-						"ja": "- VMCプロトコルを使用すると、XR Animatorから他のサポートされているアプリ (VSeeFace、VNyan、Warudo、Unity、Unreal Engine など) に 3D モーション データをリアルタイムで送信できます。 ダブルクリックして設定します。\n- マウスまたは英数字キーを使用してオプションを選択する。",
-						"zh": "- VMC協定容許 XR Animator 將 3D 動作數據實時傳送到其他應用程式，如VSeeFace、VNyan、Warudo、Unity 及 Unreal Engine 等。 按兩下更改設定。\n- 以滑鼠或英數字鍵選擇選項。"
+						"_default_": "- VMC sender sends motion data to other supported apps such as VSeeFace, VNyan, Warudo, Unity and Unreal.\n- VMC receiver receives motion data from external apps.\n- Double-click to configure.\n- Use mouse or keys to pick an alphanumeric option.",
+						"ja": "- VMC送信機はモーションデータを他のアプリに送信します (VSeeFace、VNyan、Warudo、Unity、Unrealなど)。\n- VMC受信機は外部モーション データを受信します。\n- ダブルクリックして設定します。\n- マウスまたは英数字キーを使用してオプションを選択する。",
+						"zh": "- VMC發送器將動作數據發送到其他支援的應用程式，如VSeeFace、VNyan、Warudo、Unity 及 Unreal Engine 等。\n- VMC接收器從外部應用程式接收動作數據。\n- 按兩下進行設定。\n- 以滑鼠或英數字鍵選擇選項。"
 					}
 				},
 				"tooltip": {
@@ -1915,9 +1915,9 @@
 				},
 				"parameters": {
 					"_translation_": {
-						"_default_": "VMC-protocol parameters",
-						"ja": "VMCプロトコルのパラメータ",
-						"zh": "VMC協定參數"
+						"_default_": "VMC sender parameters",
+						"ja": "VMC送信機のパラメータ",
+						"zh": "VMC發送器參數"
 					}
 				},
 				"not_supported": {
@@ -2043,6 +2043,209 @@
 							"_default_": "3D avatar display:\nThis option determines whether to show the 3D avatar on XR Animator. Hide your avatar display to save some CPU/GPU usage when using VMC-protocol. Default is \"ON\".",
 							"ja": "3Dアバター表示:\nこのオプションは、XR Animator で 3D アバターを表示にするかどうかを決定します。 VMCプロトコルを使用する場合、アバターを非表示にして CPU/GPU の使用量を節約します。 デフォルトは「ON」です。",
 							"zh": "3D人物顯示:\n此選項將決定是否顯示 3D 人物。 當使用 VMC協定時，隱藏 3D 人物顯示可節省 CPU/GPU 使用量。 預設是「ON」。"
+						}
+					}
+				},
+				"VMC_receiver_options": {
+					"_translation_": {
+						"_default_": "VMC receiver options",
+						"ja": "VMC受信機オプション",
+						"zh": "VMC接收器選項"
+					},
+					"tooltip": {
+						"_translation_": {
+							"_default_": "VMC receiver options:\nVMC receiver receives mocap data from external source via VMC protocol, allowing extra mocap options such as hardware VR trackers other than just webcam. Any apps that can send VMC data, such as Virtual Motion Capture (commonly used for VR trackers), are supported. Click to configure.",
+							"ja": "VMC受信機オプション:\nVMC受信機は、VMC プロトコルを介して外部ソースからモーキャプ データを受信し、Web カメラ以外のハードウェア VR トラッカーなどの追加のモーキャプ オプションを可能にします。 Virtual Motion Capture (VR トラッカーでよく使用される) など、VMC データを送信できるアプリはすべてサポートされています。 クリックして設定します。",
+							"zh": "VMC接收器選項:\nVMC接收器透過 VMC 協定從外部來源接收動作捕捉數據，從而允許除了網路攝影機之外的硬體 VR 追蹤器等額外的動作捕捉選項。 支援任何可以發送 VMC 資料的應用程序，例如 Virtual Motion Capture （通常用於 VR 追蹤器）。 按一下進行配置。"
+						}
+					},
+					"VMC_receiver": {
+						"_translation_": {
+							"_default_": "VMC receiver",
+							"ja": "VMC受信機",
+							"zh": "VMC接收器"
+						},
+						"tooltip": {
+							"_translation_": {
+								"_default_": "VMC receiver (press ⬅️➡️ key to switch receiver):\nXR animator supports up to 4 VMC receivers, each with a different port and independent settings which can be connected to different apps. For example, you can connect VR trackers to one receiver and iPhone face tracking to another receiver. Note that some in-app mocap options (marked with Ⓥ) also applies to external VMC mocap.",
+								"ja": "VMC受信機 (⬅️➡️キーで受信機を切り替える):\nXR Animatorは最大 4 つの VMC受信機をサポートします。 各受信機は異なるポートと独立した設定を持ち、異なるアプリに接続できます。 たとえば、VR トラッカーを 1 つの受信機に接続し、iPhone の顔トラッキングを別の受信機に接続できます。 一部のアプリ内モーキャプチャ設定 (Ⓥ でマーク) は外部 VMC モーキャプにも適用されることに注意してください。",
+								"zh": "VMC接收器 (按️⬅️➡️鍵切換接收器):\nXR Animator支援最多 4 個 VMC 接收器，每個接收器都有不同的連接埠和獨立的設定，可以連接到不同的應用程式。 例如，您可以將 VR 追蹤器連接到一個接收器，並將 iPhone 臉部追蹤器連接到另一個接收器。 請注意，有些程式內動作捕捉設定（標示為Ⓥ）也適用於外部 VMC 動作捕捉。"
+							}
+						}
+					},
+					"status": {
+						"_translation_": {
+							"_default_": "Status",
+							"ja": "状態",
+							"zh": "狀態"
+						},
+						"tooltip": {
+							"_translation_": {
+								"_default_": "Status:\nClick to turn this receiver on or off. \"⚫\" indicates this receiver is off. \"🔴\" indicates this receiver is on and waiting for external connection. \"🟢\" indicates this receiver is on and currently connected. Default is \"OFF\".",
+								"ja": "状態:\nクリックすると、この受信機のオン/オフが切り替わります。 「⚫」 は、この受信機がオフになっていることを示します。 「🔴」 は、この受信機がオンになっていて、外部接続を待機していることを示します。 「🟢」 は、この受信機がオンになっていて、現在接続されていることを示します。 デフォルトは「OFF」です。",
+								"zh": "狀態:\n按一下即可開啟或關閉此接收器。 「⚫」表示該接收器已關閉。 「🔴」表示該接收器已開啟並等待外部連線。 「🟢」表示該接收器已開啟且目前處於連線狀態。 預設是「OFF」。"
+							}
+						}
+					},
+					"face": {
+						"_translation_": {
+							"_default_": "Face",
+							"ja": "顔",
+							"zh": "臉"
+						},
+						"tooltip": {
+							"_translation_": {
+								"_default_": "Face:\nTurn on this setting if you are using independent face tracking. You can enable expression only, or with head rotation as well. \"Absolute\" means the head rotation is based on an independent orientation (e.g. screen for camera-based tracking) instead of relative to the avatar model. Default is \"OFF\".",
+								"ja": "顔:\n独立した顔トラッキングを使用している場合は、この設定をオンにします。表情のみを有効にすることも、頭の回転も有効にすることもできます。 「絶対」 は、頭の回転がアバター モデルに相対的ではなく、独立した方向 (カメラベースのトラッキングの場合は画面など) に基づいていることを意味します。 デフォルトは「OFF」です。",
+								"zh": "臉:\n如果您使用獨立面部追踪，請開啟此設定。 您可以僅啟用表情，或者也可以啟用頭部旋轉。 「絕對」意味著頭部旋轉基於獨立的方向（例如基於相機的追蹤的螢幕）而不是相對於人物模型。 預設是「OFF」。"
+							}
+						},
+						"expression_only": {
+							"_translation_": {
+								"_default_": "Expression only",
+								"ja": "表情のみ",
+								"zh": "僅限表情"
+							}
+						},
+						"expression_plus_head_absolute": {
+							"_translation_": {
+								"_default_": "Expression + Head (absolute)",
+								"ja": "表情＋頭（絶対）",
+								"zh": "表情＋頭（絕對）"
+							}
+						},
+						"expression_plus_head_relative": {
+							"_translation_": {
+								"_default_": "Expression + Head (relative)",
+								"ja": "表情＋頭（相対）",
+								"zh": "表情＋頭（相對）"
+							}
+						}
+					},
+					"pose": {
+						"_translation_": {
+							"_default_": "Pose",
+							"ja": "ポーズ",
+							"zh": "姿勢"
+						},
+						"tooltip": {
+							"_translation_": {
+								"_default_": "Pose:\nTurn on this setting if you are using any body tracking, such as VR trackers. Choose between \"Upper body\" or \"Full body\". This can be an all-in-one tracking, meaning face and hand tracking can be included as well. Default is \"OFF\".",
+								"ja": "ポーズ:\nVR トラッカーなどのボディ トラッキングを使用している場合は、この設定をオンにします。 「上半身」 または 「全身」 を選択します。 これはオールインワンのトラッキングであるため、顔と手のトラッキングも含めることができます。 デフォルトは「OFF」です。",
+								"zh": "姿勢:\n如果您使用任何身體追蹤器（例如 VR 追蹤器），請開啟此設定。 選擇「上半身」或「全身」。 這可以是一體化追踪，意味著也可以包括臉部和手部追踪。 預設是「OFF」。"
+							}
+						},
+						"upper_body": {
+							"_translation_": {
+								"_default_": "Upper body",
+								"ja": "上半身",
+								"zh": "上半身"
+							}
+						},
+						"full_body": {
+							"_translation_": {
+								"_default_": "Full body",
+								"ja": "全身",
+								"zh": "全身"
+							}
+						}
+					},
+					"hand": {
+						"_translation_": {
+							"_default_": "Hand",
+							"ja": "手",
+							"zh": "手"
+						},
+						"tooltip": {
+							"_translation_": {
+								"_default_": "Hand:\nTurn on this setting if you are using independent hand tracking. You can enable fingers only, or with wrist rotation as well. \"Absolute\" means the wrist rotation is based on an independent orientation (with front-facing palm being the default orientation) instead of relative to the avatar model. Default is \"OFF\".",
+								"ja": "手:\n独立したハンド トラッキングを使用している場合は、この設定をオンにします。 指のみを有効にすることも、手首の回転も有効にすることもできます。 「絶対」 は、手首の回転がアバター モデルに対する相対的な方向ではなく、独立した方向 (正面を向いた手のひらがデフォルトの方向) に基づいていることを意味します。 デフォルトは「OFF」です。",
+								"zh": "手:\n如果您使用獨立手部追踪，請開啟此設定。 您可以只啟用手指，或者也可以啟用手腕旋轉。 「絕對」意味著手腕旋轉是基於獨立方向（預設方向為手掌朝前），而不是相對於虛擬人物模型。 預設是「OFF」。"
+							}
+						},
+						"fingers_only": {
+							"_translation_": {
+								"_default_": "fingers_only",
+								"ja": "指のみ",
+								"zh": "僅限手指"
+							}
+						},
+						"fingers_plus_wrist_absolute": {
+							"_translation_": {
+								"_default_": "Fingers + Wrist (absolute)",
+								"ja": "指＋手首（絶対）",
+								"zh": "手指＋手腕（絕對）"
+							}
+						},
+						"fingers_plus_wrist_relative": {
+							"_translation_": {
+								"_default_": "Fingers + Wrist (relative)",
+								"ja": "指＋手首（相対）",
+								"zh": "手指＋手腕（相對）"
+							}
+						}
+					},
+					"mocap_expression_constraint": {
+						"_translation_": {
+							"_default_": "Mocap expression constraint",
+							"ja": "モーキャプ表情制約",
+							"zh": "動捕表情約束"
+						},
+						"tooltip": {
+							"_translation_": {
+								"_default_": "Mocap expression constraint:\nXR Animator allows using the in-app webcam face tracking on top of the external mocap from VMC. This setting determines whether there is any constraint on the in-app expression tracking. You can choose to restrict mouth tracking if for example VMC already provides lipsync tracking. Default is \"OFF\".",
+								"ja": "モーキャプ表情制約:\nXR Animator では、VMC からの外部モーキャプに加えて、アプリ内Webカメラの顔トラッキングを使用できます。 この設定は、アプリ内の表情トラッキングに制約があるかどうかを決定します。 たとえば、VMC がすでにリップシンク トラッキングを提供している場合は、口のトラッキングを制限することを選択できます。 デフォルトは「OFF」です。",
+								"zh": "動捕表情約束:\nXR Animator 允許在 VMC 的外部動作捕捉之上使用應用程式內網路攝影機臉部追蹤。 此設定決定應用程式內表情追蹤是否有任何限制。 如果 VMC 已經提供唇形同步追蹤，您可以選擇限制嘴部追蹤。 預設是「OFF」。"
+							}
+						},
+						"mouth": {
+							"_translation_": {
+								"_default_": "Mouth",
+								"ja": "口",
+								"zh": "嘴"
+							}
+						}
+					},
+					"mocap_head_constraint": {
+						"_translation_": {
+							"_default_": "Mocap head constraint",
+							"ja": "モーキャプ頭部制約",
+							"zh": "動捕頭部約束"
+						},
+						"tooltip": {
+							"_translation_": {
+								"_default_": "Mocap head constraint:\nXR Animator allows using the in-app webcam face tracking on top of the external mocap from VMC. Turn on this setting if you do not need the head rotation from in-app face tracking (i.e. expression tracking only). Default is \"OFF\".",
+								"ja": "モーキャプ頭部制約:\nXR Animator では、VMC からの外部モーキャプに加えて、アプリ内 Web カメラの顔トラッキングを使用できます。 アプリ内顔トラッキングからの頭の回転が必要ない場合 (つまり、表情トラッキングのみ) は、この設定をオンにします。 デフォルトは「OFF」です。",
+								"zh": "動捕頭部約束:\nXR Animator 允許在 VMC 的外部動作捕捉上使用應用程式內網路攝影機臉部追蹤。 如果您不需要套用應用程式內臉部追蹤的頭部旋轉（即僅表情追蹤），請開啟此設定。 預設是「OFF」。"
+							}
+						}
+					},
+					"mocap_wrist_constraint": {
+						"_translation_": {
+							"_default_": "Mocap wrist constraint",
+							"ja": "モーキャプ手首制約",
+							"zh": "動捕手腕約束"
+						},
+						"tooltip": {
+							"_translation_": {
+								"_default_": "Mocap wrist constraint:\nXR Animator allows using the in-app webcam hand tracking on top of the external mocap from VMC. Turn on this setting if you do not need the wrist rotation from in-app hand tracking (i.e. finger tracking only). Default is \"OFF\".",
+								"ja": "モーキャプ手首制約:\nXR Animator では、VMC からの外部モーキャプに加えて、アプリ内Webカメラのハンド トラッキングを使用できます。 アプリ内ハンド トラッキングによる手首の回転が必要ない場合 (つまり、指のトラッキングのみ) は、この設定をオンにします。 デフォルトは「OFF」です。",
+								"zh": "動捕手腕約束:\nXR Animator 允許在 VMC 的外部動作捕捉上使用應用程式內網路攝影機手部追蹤。 如果您不需要套用應用程式內手部追蹤中的手腕旋轉（即僅手指追蹤），請開啟此設定。 預設是「OFF」。"
+							}
+						}
+					},
+					"prop_mocap_factor": {
+						"_translation_": {
+							"_default_": "Prop mocap factor",
+							"ja": "小道具モーキャプ係数",
+							"zh": "小道具動捕因素"
+						},
+						"tooltip": {
+							"_translation_": {
+								"_default_": "Prop mocap factor (press ➕➖ key to change value):\nXR Animator supports various props such as musical instruments which are optimized for in-app webcam mocap. If you are using external mocap which is supposed to be more accurate, you can use smaller value and tune down these webcam-optimized mocap factors. Default is \"50%\".",
+								"ja": "小道具モーキャプ係数 (➕➖キーで値を変更する):\nXR Animator は、アプリ内Webカメラのモーキャプに最適化された楽器などのさまざまな小道具をサポートしています。 より正確であるはずの外部モーキャプを使用している場合は、より小さい値を使用して、これらのWebカメラに最適化されたモーキャプ係数を調整できます。 デフォルトは「OFF」です。",
+								"zh": "小道具動捕因素 (按️➕➖鍵更改數值):\nXR Animator 支援各種道具，例如針對應用程式內網路攝影機動作捕捉進行了最佳化的樂器。 如果您正在使用應該更準確的外部動作捕捉，則可以使用較小的值來調低這些針對網路攝影機最佳化的動作捕捉因素。 預設是「OFF」。"
+							}
 						}
 					}
 				}
@@ -3150,33 +3353,47 @@
 									"ja": "移動 Y",
 									"zh": "移動 Y"
 								}
+							}
+						},
+						"movement_z": {
+							"_translation_": {
+								"_default_": "Movement Z",
+								"ja": "移動 Z",
+								"zh": "移動 Z"
 							},
-							"movement_z": {
+							"tooltip": {
 								"_translation_": {
-									"_default_": "Movement Z",
-									"ja": "移動 Z",
-									"zh": "移動 Z"
+									"_default_": "Movement X/Y<press_to_change_value>:\nThis setting determines the movement of the camera in Z direction. Positive value means the camera moves in the same direction as the head. A large positive value stabilizes the visual size of the avatar due to Z movement during full body mocap/prerecorded motion. Default is \"0%\".",
+									"ja": "移動 X/Y<press_to_change_value>:\nこの設定は、Z 方向のカメラの動きを決定します。 正の値は、カメラが頭と同じ方向に移動することを意味します。 正の値が大きいと、全身モーキャプ/事前記録されたモーション中の Z 移動によるアバターの視覚的なサイズが安定します。 デフォルトは「0%」です。",
+									"zh": "移動 X/Y<press_to_change_value>:\n此設定決定相機在 Z 方向的移動量。 正值表示相機沿著與頭部相同的方向移動。 較大的正值可穩定由於全身動作捕捉/預先錄製的運動期間的 Z 軸移動而導致的人物的視覺尺寸變化。 預設是「0%」。"
+								}
+							},
+							"minimum_distance": {
+								"_translation_": {
+									"_default_": "Min distance",
+									"ja": "最小距離",
+									"zh": "最短距離"
 								},
 								"tooltip": {
 									"_translation_": {
-										"_default_": "Movement X/Y<press_to_change_value>:\nThis setting determines the movement of the camera in Z direction. Positive value means the camera moves in the same direction as the head. A large positive value stabilizes the visual size of the avatar due to Z movement during full body mocap/prerecorded motion. Default is \"0%\".",
-										"ja": "移動 X/Y<press_to_change_value>:\nこの設定は、Z 方向のカメラの動きを決定します。 正の値は、カメラが頭と同じ方向に移動することを意味します。 正の値が大きいと、全身モーキャプ/事前記録されたモーション中の Z 移動によるアバターの視覚的なサイズが安定します。 デフォルトは「0%」です。",
-										"zh": "移動 X/Y<press_to_change_value>:\n此設定決定相機在 Z 方向的移動量。 正值表示相機沿著與頭部相同的方向移動。 較大的正值可穩定由於全身動作捕捉/預先錄製的運動期間的 Z 軸移動而導致的人物的視覺尺寸變化。 預設是「0%」。"
+										"_default_": "Min distance<press_to_change_value>:\nWhen \"Movement Z\" is non-zero, this setting determines the minimum distance between avatar and camera (in meter) before the camera starts moving. This effectively prevents the camera from getting to close to the avatar, no matter how the avatar moves. Default is \"1\".",
+										"ja": "最小距離<press_to_change_value>:\n「移動 Z」がゼロ以外の場合、この設定は、カメラが動き始める前のアバターとカメラ間の最小距離 (メートル単位) を決定します。 これにより、アバターがどのように動いても、カメラがアバターに近づきすぎるのを効果的に防ぎます。 デフォルトは「1」です。",
+										"zh": "最短距離<press_to_change_value>:\n當「移動 Z」不為零時，此設定會決定相機開始移動之前人物和相機之間的最小距離（以公尺為單位）。 這有效地防止了相機過度靠近虛擬人物，無論虛擬人物如何移動。 預設是「1」。"
 									}
-								},
-								"minimum_distance": {
-									"_translation_": {
-										"_default_": "Min distance",
-										"ja": "最小距離",
-										"zh": "最短距離"
-									},
-									"tooltip": {
-										"_translation_": {
-											"_default_": "Min distance<press_to_change_value>:\nWhen \"Movement Z\" is non-zero, this setting determines the minimum distance between avatar and camera (in meter) before the camera starts moving. This effectively prevents the camera from getting to close to the avatar, no matter how the avatar moves. Default is \"1\".",
-											"ja": "最小距離<press_to_change_value>:\n「移動 Z」がゼロ以外の場合、この設定は、カメラが動き始める前のアバターとカメラ間の最小距離 (メートル単位) を決定します。 これにより、アバターがどのように動いても、カメラがアバターに近づきすぎるのを効果的に防ぎます。 デフォルトは「1」です。",
-											"zh": "最短距離<press_to_change_value>:\n當「移動 Z」不為零時，此設定會決定相機開始移動之前人物和相機之間的最小距離（以公尺為單位）。 這有效地防止了相機過度靠近虛擬人物，無論虛擬人物如何移動。 預設是「1」。"
-										}
-									}
+								}
+							}
+						},
+						"vertical_constraint": {
+							"_translation_": {
+								"_default_": "Vertical constraint",
+								"ja": "垂直制約",
+								"zh": "垂直約束"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Vertical constraint<press_to_change_value>:\nThis setting determines how much the camera position should be adjusted so that the vertical position of avatar's head is within the screen. At 100%, the vertical position of avatar's head will basically be fixed at the screen center. Default is \"0%\".",
+									"ja": "垂直制約<press_to_change_value>:\nこの設定は、アバターの頭の垂直位置が画面内に収まるようにカメラの位置をどの程度調整するかを決定します。 100% の場合、アバターの頭の垂直位置は基本的に画面の中央に固定されます。 デフォルトは「0%」です。",
+									"zh": "垂直約束<press_to_change_value>:\n此設定決定應調整多少相機位置以使人物頭部的垂直位置位於螢幕內。 在100%時，角色頭部的垂直位置將基本上固定在螢幕中心。 預設是「0%」。"
 								}
 							}
 						},
@@ -3189,7 +3406,7 @@
 							"tooltip": {
 								"_translation_": {
 									"_default_": "Smooth time<press_to_change_value>:\nThis setting determines the smoothing time of the camera motion. Larger value smooths the camera motion, especially when avatar's movement is vigorous, while smaller value makes the camera motion more responsive. Default is \"0.5\".",
-									"ja": "スムーズな時間<press_to_change_value>:\nこの設定は、カメラの動きのスムージング時間を決定します。 値が大きいほど、特にアバターの動きが激しい場合にカメラの動きがスムーズになり、値が小さいほどカメラの動きがより敏感になります。 デフォルトは「」0.5です。",
+									"ja": "スムーズな時間<press_to_change_value>:\nこの設定は、カメラの動きのスムージング時間を決定します。 値が大きいほど、特にアバターの動きが激しい場合にカメラの動きがスムーズになり、値が小さいほどカメラの動きがより敏感になります。 デフォルトは「0.5」です。",
 									"zh": "平滑時間<press_to_change_value>:\n此設定決定相機運動的平滑時間。 較大的值可以使相機運動更加平滑，尤其是當角色運動劇烈時，而較小的值可以使相機運動更加靈敏。 預設是「0.5」。"
 								}
 							}
@@ -3276,7 +3493,7 @@
 							},
 							"list": {
 								"_translation_": {
-									"_default_": "NewruGuru, Kai, Nymph, KuraiNoOni, LouLi Lou, coffee-addict, skeh, Swoonifer, Nyaarium, The Infamous Moistener, Kyonko_VT, CoCoNo, Motoko Library,"
+									"_default_": "NewruGuru, Kai, Nymph, KuraiNoOni, LouLi Lou, coffee-addict, skeh, Swoonifer, Nyaarium, The Infamous Moistener, Kyonko_VT, ObsidianMaker, CoCoNo,"
 								}
 							}
 						}
@@ -3420,7 +3637,7 @@
 					"_translation_": {
 						"_default_": "You can't enable Selfie Segmentation AI and motion capture at the same time.",
 						"ja": "Selfie Segmentation AI とモーション キャプチャを同時に有効にすることはできません。",
-						"zh": "Selfie Segmentation AI 不能和動態捕捉同時使用。"
+						"zh": "Selfie Segmentation AI 不能和動作捕捉同時使用。"
 					}
 				},
 				"camera_hidden": {
@@ -3467,7 +3684,7 @@
 				"_translation_": {
 					"_default_": "Enable motion capture to control the avatar with your body!",
 					"ja": "モーションキャプチャーを有効にしてアバターを体でコントロール！",
-					"zh": "啟動動態捕捉，\n並使用身體動作控制人物！"
+					"zh": "啟動動作捕捉，\n並使用身體動作控制人物！"
 				}
 			},
 			"webcam": {

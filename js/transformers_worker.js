@@ -1,4 +1,4 @@
-// 2025-06-15
+// 2025-11-05
 
 // https://huggingface.co/onnx-community/depth-anything-v2-small
 // https://github.com/xenova/transformers.js
@@ -9,13 +9,22 @@ import { pipeline, env, RawImage, AutoProcessor, AutoModelForDepthEstimation } f
 
 env.allowLocalModels = false;
 
-let webgpu;
+let webgpu, dtype;
 const webgpu_check = (()=>{
   let initialized;
   return async ()=>{
     if (!initialized) {
-      webgpu = (await navigator.gpu?.requestAdapter()) ? 'webgpu' : undefined;
-      console.log('WebGPU supported:' + !!webgpu);
+      const adapter = await navigator.gpu?.requestAdapter();
+      if (adapter) {
+        webgpu = 'webgpu';
+        if (adapter.features.has('shader-f16'))
+          dtype = 'fp16';
+        console.log('Use WebGPU(' + (dtype || 'fp32') + ') for Transformers.js');
+      }
+      else  {
+        console.log('Use WASM for Transformers.js');
+      }
+
       initialized = true;
     }
   };
@@ -26,10 +35,25 @@ const use_low_res_depth_map = !webgpu || /Android|webOS|iPhone|iPad|iPod|BlackBe
 console.log('Use low-res depth map:' + !!use_low_res_depth_map);
 
 class Transformers_pipeline {
-  constructor(task, model, para={ dtype:undefined, device:webgpu }, options={}) {
+  constructor(task, model, para, options={}) {
     this.task_default = task;
     this.model_default = model;
+
+    if (!para) {
+      let _dtype = dtype;
+      if (_dtype) {
+        if (task == 'image-to-image') {
+          _dtype = undefined;
+          console.log('WebGPU fp32 enforced(' + task + ')');
+        }
+        else {
+          console.log('WebGPU ' + _dtype + '(' + task + ')');
+        }
+      }
+      para = { dtype:_dtype, device:webgpu };
+    }
     this.para_default = para;
+
     this.options = options;
 
     this.model = null;
@@ -37,7 +61,7 @@ class Transformers_pipeline {
   }
 
   async init(model=this.model_default, para) {
-//model='onnx-community/depth-anything-v2-large';//'onnx-community/DepthPro-ONNX';
+//model='onnx-community/DepthPro-ONNX';//'onnx-community/depth-anything-v2-large';//
     if (this.model == model) return this.pipeline;
     this.model = model;
 

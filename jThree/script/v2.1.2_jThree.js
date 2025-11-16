@@ -1,4 +1,4 @@
-// (2024-12-29)
+// (2025-01-19)
 
 /*!
  * jThree JavaScript Library v2.1.2

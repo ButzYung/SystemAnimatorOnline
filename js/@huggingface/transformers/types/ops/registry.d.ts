@@ -1,5 +1,6 @@
 export class TensorOpRegistry {
     static session_options: {};
+    static get nearest_interpolate_4d(): Promise<(arg0: Record<string, Tensor>) => Promise<Tensor>>;
     static get bilinear_interpolate_4d(): Promise<(arg0: Record<string, Tensor>) => Promise<Tensor>>;
     static get bicubic_interpolate_4d(): Promise<(arg0: Record<string, Tensor>) => Promise<Tensor>>;
     static get matmul(): Promise<(arg0: Record<string, Tensor>) => Promise<Tensor>>;

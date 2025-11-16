@@ -20,12 +20,12 @@ export function interpolate(input: Tensor, [out_height, out_width]: number[], mo
  * @param {Tensor} input the input tensor
  * @param {Object} options the options for the interpolation
  * @param {[number, number]|[number, number, number]|[number, number, number, number]} [options.size=null] output spatial size.
- * @param {"bilinear"|"bicubic"} [options.mode='bilinear'] algorithm used for upsampling
+ * @param {"nearest"|"bilinear"|"bicubic"} [options.mode='bilinear'] algorithm used for upsampling
  * @returns {Promise<Tensor>} The interpolated tensor.
  */
 export function interpolate_4d(input: Tensor, { size, mode, }?: {
     size?: [number, number] | [number, number, number] | [number, number, number, number];
-    mode?: "bilinear" | "bicubic";
+    mode?: "nearest" | "bilinear" | "bicubic";
 }): Promise<Tensor>;
 /**
  * Matrix product of two tensors.
@@ -47,10 +47,10 @@ export function rfft(x: Tensor, a: Tensor): Promise<Tensor>;
  * Returns the k largest elements of the given input tensor.
  * Inspired by https://pytorch.org/docs/stable/generated/torch.topk.html
  * @param {Tensor} x the input tensor
- * @param {number} k the k in "top-k"
+ * @param {number} [k] the k in "top-k"
  * @returns {Promise<[Tensor, Tensor]>} the output tuple of (Tensor, LongTensor) of top-k elements and their indices.
  */
-export function topk(x: Tensor, k: number): Promise<[Tensor, Tensor]>;
+export function topk(x: Tensor, k?: number): Promise<[Tensor, Tensor]>;
 /**
  * Slice a multidimensional float32 tensor.
  * @param {Tensor} data: Tensor of data to extract slices from
@@ -428,6 +428,10 @@ export class Tensor {
      */
     round(): Tensor;
     mean(dim?: any, keepdim?: boolean): Tensor;
+    min(dim?: any, keepdim?: boolean): Tensor;
+    max(dim?: any, keepdim?: boolean): Tensor;
+    argmin(dim?: any, keepdim?: boolean): Tensor;
+    argmax(dim?: any, keepdim?: boolean): Tensor;
     /**
      * Performs Tensor dtype conversion.
      * @param {DataType} type The desired data type.

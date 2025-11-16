@@ -28,6 +28,7 @@ import { getModelJSON } from '../utils/hub.js';
 /**
  * @typedef {Object} ProcessorProperties Additional processor-specific properties.
  * @typedef {import('../utils/hub.js').PretrainedOptions & ProcessorProperties} PretrainedProcessorOptions
+ * @typedef {import('../tokenizers.js').PreTrainedTokenizer} PreTrainedTokenizer
  */
 
 
@@ -61,7 +62,7 @@ export class Processor extends Callable {
     }
 
     /**
-     * @returns {import('../tokenizers.js').PreTrainedTokenizer|undefined} The tokenizer of the processor, if it exists.
+     * @returns {PreTrainedTokenizer|undefined} The tokenizer of the processor, if it exists.
      */
     get tokenizer() {
         return this.components.tokenizer;
@@ -74,6 +75,11 @@ export class Processor extends Callable {
         return this.components.feature_extractor;
     }
 
+    /**
+     * @param {Parameters<PreTrainedTokenizer['apply_chat_template']>[0]} messages
+     * @param {Parameters<PreTrainedTokenizer['apply_chat_template']>[1]} options
+     * @returns {ReturnType<PreTrainedTokenizer['apply_chat_template']>}
+     */
     apply_chat_template(messages, options = {}) {
         if (!this.tokenizer) {
             throw new Error('Unable to apply chat template without a tokenizer.');
@@ -84,6 +90,10 @@ export class Processor extends Callable {
         });
     }
 
+    /**
+     * @param {Parameters<PreTrainedTokenizer['batch_decode']>} args
+     * @returns {ReturnType<PreTrainedTokenizer['batch_decode']>}
+     */
     batch_decode(...args) {
         if (!this.tokenizer) {
             throw new Error('Unable to decode without a tokenizer.');
@@ -111,8 +121,8 @@ export class Processor extends Callable {
     /**
      * Instantiate one of the processor classes of the library from a pretrained model.
      * 
-     * The processor class to instantiate is selected based on the `feature_extractor_type` property of the config object
-     * (either passed as an argument or loaded from `pretrained_model_name_or_path` if possible)
+     * The processor class to instantiate is selected based on the `image_processor_type` (or `feature_extractor_type`; legacy)
+     * property of the config object (either passed as an argument or loaded from `pretrained_model_name_or_path` if possible)
      * 
      * @param {string} pretrained_model_name_or_path The name or path of the pretrained model. Can be either:
      * - A string, the *model id* of a pretrained processor hosted inside a model repo on huggingface.co.

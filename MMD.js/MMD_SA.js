@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2024-12-29)
+// (2025-01-19)
 
 var use_full_spectrum = true
 
@@ -2793,7 +2793,7 @@ else {
 // http://stackoverflow.com/questions/1366068/whats-the-complete-range-for-chinese-characters-in-unicode
 // http://kourge.net/projects/regexp-unicode-block
 
-var use_ascii = !/^(ja|zh)/.test(System._browser.translation.language) && (/^[\x00-\x7F]+$/.test(msg) || !/[^\x00-\x7F]{5}.*[^\x00-\x7F]{5}/.test(msg));
+var use_ascii = !/^(ja|zh)/.test(System._browser.translation.language) && (/^[\x00-\x7F]+$/.test(msg) || !/[^\x00-\x7F]{6}.*[^\x00-\x7F]{6}/.test(msg));
 //DEBUG_show((!b.column_max_unicode && !para.column_max_unicode)+'/'+use_ascii+"",0,1)
 var font = para.font || b.font
 var font_size = para.font_size || b.font_size
@@ -6301,7 +6301,7 @@ return Promise.all([
     let camera_mod;
 
     let vp, vt;
-    let v1, v2, v3, v4;
+    let v1, v2, v3, v4, v5;
     window.addEventListener('jThree_ready', ()=>{
       vp = new THREE.Vector3();
       vt = new THREE.Vector3();
@@ -8385,6 +8385,8 @@ m4 = new THREE.Matrix4();
 p1 = new THREE.Plane();
 l1 = new THREE.Line3();
 
+r1 = new THREE.Ray();
+
 // 37.4224, 35
 rot_arm_axis[ 1] = new THREE.Quaternion().setFromEuler(e1.set(0,0,37.4224/180*Math.PI));
 rot_arm_axis[-1] = rot_arm_axis[ 1].clone().conjugate();
@@ -9110,6 +9112,8 @@ para.left_arm_length = v1.fromArray(para.pos0['leftUpperArm']).distanceTo(v2.fro
 para.left_palm_length = v1.fromArray(para.pos0['leftHand']).distanceTo(v2.fromArray(para.pos0['leftMiddleProximal'])) * vrm_scale;
 //para.eye_width = v1.fromArray(para.pos0['leftEye']).distanceTo(v2.fromArray(para.pos0['rightEye'])) * vrm_scale;
 para.left_leg_length = ((para.pos0['leftUpperLeg'][1] - para.pos0['leftLowerLeg'][1]) + (para.pos0['leftLowerLeg'][1] - para.pos0['leftFoot'][1])) * vrm_scale;
+//para.left_leg_IK = [(para.pos0['leftUpperLeg'][0]-para.pos0['leftFoot'][0]) * vrm_scale, (para.pos0['leftUpperLeg'][1]-para.pos0['leftFoot'][1]) * vrm_scale, (para.pos0['leftUpperLeg'][2]-para.pos0['leftFoot'][2]) * vrm_scale];
+//para.left_leg_IK_length = MMD_SA.TEMP_v3.fromArray(para.left_leg_IK).length();
 para.spine_length = (para.pos0['neck'][1] - para.pos0['leftUpperLeg'][1]) * vrm_scale;
 
 const b3 = new THREE.Box3().setFromObject(vrm.scene);
@@ -9636,8 +9640,8 @@ for (const name in MMD_morph_weight) {
 // three-vrm
 const expressionManager = (use_VRM1) ? vrm.expressionManager : vrm.blendShapeProxy;
 
-let use_faceBlendshapes;
 const facemesh = System._browser.camera.facemesh;
+let use_faceBlendshapes;
 if (this.use_faceBlendshapes && facemesh.enabled) {
   use_faceBlendshapes = facemesh.use_faceBlendshapes && System._browser.camera.initialized;
   if (use_faceBlendshapes) {
@@ -9655,6 +9659,7 @@ if (this.use_faceBlendshapes && facemesh.enabled) {
 
     for (const name in blendshape_weight) {
       if (this.emotion_list.indexOf(name) == -1) {
+//System._browser.camera.DEBUG_show(name+':'+blendshape_weight[name])
         blendshape_weight[name] = 0;
       }
     }
@@ -9676,11 +9681,25 @@ if (this.use_faceBlendshapes && facemesh.enabled) {
     }
 
     facemesh.faceBlendshapes_list.forEach(b=>{
-      blendshape_weight[this.faceBlendshapes_map[b]] = (use_faceBlendshapes && f.morph[b]) ? f.morph[b][0].weight : 0;
+      const m = f.morph[b];
+      let weight = 0;
+      if (m) {
+        let ratio = Math.max(Math.min(m[0].t_delta/m[0].t_delta_frame,1),0);
+        weight = m[0].weight * ratio + m[1].weight * (1-ratio);
+      }
+      blendshape_weight[this.faceBlendshapes_map[b]] = weight;
     });
 //this.getBoneNode('leftEye' ).quaternion.set(0,0,0,1);
 //this.getBoneNode('rightEye').quaternion.set(0,0,0,1);
 //vrm.lookAt.autoUpdate = false;
+  }
+}
+else if (System._browser.camera.VMC_receiver.expression_active) {
+  const f = facemesh.frames;
+  for (const b in f.morph) {
+    const m = f.morph[b];
+    let ratio = Math.max(Math.min(m[0].t_delta/m[0].t_delta_frame,1),0);
+    blendshape_weight[this.faceBlendshapes_map[b]||b] = m[0].weight * ratio + m[1].weight * (1-ratio);
   }
 }
 
@@ -9759,7 +9778,7 @@ if (MMD_SA.OSC.VMC.sender_enabled && MMD_SA.OSC.VMC.ready) {
     }
 
     bone_msgs.push([
-(this.is_VRM1 && !VNyan_mode)?name_VMC:bone_map_VRM0[name_VMC],
+(this.is_VRM1 && !VNyan_mode)?name_VMC:bone_map_VRM1_to_VRM0[name_VMC],
 b_pos.x, b_pos.y, -b_pos.z,
 -b_rot.x, -b_rot.y, b_rot.z, b_rot.w,
     ]);
@@ -9918,7 +9937,8 @@ if (!mesh.matrixAutoUpdate) {
     const is_MMD_bone_motion_face = new RegExp(toRegExp(['頭','目'],'|'));
 
     let bone_map_MMD_to_VRM, bone_map_VRM_to_MMD;
-    const bone_map_VRM0 = {};
+    const bone_map_VRM1_to_VRM0 = {};
+    const bone_map_VRM0_to_VRM1 = {};
 
     let MMD_bone_list = [];
     window.addEventListener('jThree_ready', ()=>{
@@ -9985,7 +10005,8 @@ if (!mesh.matrixAutoUpdate) {
       MMD_bone_list = Object.keys(bone_map_MMD_to_VRM);
 
       for (let name_VMC in VRM.VRMSchema.HumanoidBoneName) {
-        bone_map_VRM0[name_VMC] = name_VMC.replace(/ThumbProximal/, 'ThumbIntermediate').replace(/ThumbMetacarpal/, 'ThumbProximal');
+        bone_map_VRM1_to_VRM0[name_VMC] = name_VMC.replace(/ThumbProximal/, 'ThumbIntermediate').replace(/ThumbMetacarpal/, 'ThumbProximal');
+        bone_map_VRM0_to_VRM1[bone_map_VRM1_to_VRM0[name_VMC]] = name_VMC;
       }
     });
 
@@ -10080,6 +10101,9 @@ if (MMD_SA_options.Dungeon.started) {//(MMD_SA.MMD_started) {//
 
       get bone_map_MMD_to_VRM() { return bone_map_MMD_to_VRM; },
       get bone_map_VRM_to_MMD() { return bone_map_VRM_to_MMD; },
+
+      get bone_map_VRM1_to_VRM0() { return bone_map_VRM1_to_VRM0; },
+      get bone_map_VRM0_to_VRM1() { return bone_map_VRM0_to_VRM1; },
 
       get blendshape_map_by_MMD_name_VRM0() { return blendshape_map_by_MMD_name_VRM1; },
       get blendshape_map_by_MMD_name_VRM1() { return blendshape_map_by_MMD_name_VRM1; },
@@ -10461,6 +10485,7 @@ System._browser.on_animation_update.add(()=>{
 
   var p1, p2;
   var l1, l2;
+  var r1;
 
   var rot_arm_axis = {};
   var rot_shoulder_axis = {};
@@ -10480,6 +10505,8 @@ System._browser.on_animation_update.add(()=>{
 
     get p1(){return p1},
     get l1(){return l1},
+
+    get r1(){return r1},
 
     get enabled() { return MMD_SA_options.use_THREEX && enabled; },
     set enabled(v) {
@@ -13915,7 +13942,8 @@ setTimeout(()=>{
       })(),
 
       camera_auto_targeting: (()=>{
-        let target_data;
+        let target_data, target_data2;
+        let c_rot_data;
         window.addEventListener('load', ()=>{
 Object.defineProperty(MMD_SA_options, 'camera_face_locking_percent', (()=>{
   let camera_face_locking_percent;
@@ -13959,6 +13987,13 @@ Object.defineProperty(MMD_SA_options, 'camera_face_locking_z_min', (()=>{
     set: function (v) { camera_face_locking_z_min = Math.round(v*10)/10; }
   };
 })());
+Object.defineProperty(MMD_SA_options, 'camera_face_locking_vertical_constraint_percent', (()=>{
+  let camera_face_locking_vertical_constraint_percent;
+  return {
+    get: function () { return (camera_face_locking_vertical_constraint_percent == null) ? 0 : camera_face_locking_vertical_constraint_percent; },
+    set: function (v) { camera_face_locking_vertical_constraint_percent = v; }
+  };
+})());
 Object.defineProperty(MMD_SA_options, 'camera_face_locking_smooth_time', (()=>{
   let camera_face_locking_smooth_time;
   return {
@@ -13966,12 +14001,22 @@ Object.defineProperty(MMD_SA_options, 'camera_face_locking_smooth_time', (()=>{
     set: function (v) {
       camera_face_locking_smooth_time = Math.round(v*10)/10;
       target_data.filters[0].filter.minCutOff = System._browser.data_filter.calculate_one_euro_minCutoff_from_transition_time(camera_face_locking_smooth_time);
-console.log(target_data.filters[0].filter, camera_face_locking_smooth_time);
+      target_data2.filters[0].filter.minCutOff = target_data.filters[0].filter.minCutOff;
+//console.log(target_data.filters[0].filter, camera_face_locking_smooth_time);
     }
   };
 })());
 
 target_data = new System._browser.data_filter([{ type:'one_euro', id:'camera_face_locking', transition_time:0.5, para:[30, 1,0.1/5,1, 3] }]);
+target_data2 = new System._browser.data_filter([{ type:'one_euro', id:'camera_face_locking2', transition_time:0.5, para:[30, 1,0.1/5,1, 3] }]);
+
+c_rot_data = new System._browser.data_filter([{ type:'one_euro', id:'c_rot', para:[30, 0.5,0.5,1, 4] }]);
+        });
+
+        let head_pos_absolute, cam_height_offset;
+        window.addEventListener('jThree_ready', ()=>{
+head_pos_absolute = new THREE.Vector3();
+cam_height_offset = new THREE.Vector3();
         });
 
         function targeting() {
@@ -13980,24 +14025,91 @@ if (!target_current.enabled && ((target_current.enabled === false) || (target_cu
   return;
 }
 
-var target_pos = v4.fromArray(target_data.filter(target_current.get_target_position().toArray()));//target_current.get_target_position();//
-//System._browser.camera.DEBUG_show(target_pos.toArray().join('\n') + '\n' + Date.now());
+// filter to prevent camera distortion when avatar is extremely close
+const c_rot = q1.fromArray(c_rot_data.filter(MMD_SA._trackball_camera.object.quaternion.toArray()));
 
-const cam_base = v2.fromArray(MMD_SA_options.camera_position_base).add(MMD_SA.TEMP_v3.fromArray(MMD_SA.center_view));
+const target_pos = v4.copy(target_current.get_target_position());
+const target_pos_z0 = target_pos.z;
+
+const target_pos_cancel_z = MMD_SA.TEMP_v3.set(1,1,0);
+target_pos_cancel_z.applyQuaternion(c_rot);
+target_pos.multiply(target_pos_cancel_z);
+
+target_pos.fromArray(target_data.filter(target_pos.toArray()));
+//DEBUG_show(target_pos.toArray().join('\n'))
 
 const cam_pos = v1.copy(target_pos);
-cam_pos.x *= MMD_SA_options.camera_face_locking_movement_x_percent/100;
-cam_pos.y *= MMD_SA_options.camera_face_locking_movement_y_percent/100;
+const cam_pos_mul = MMD_SA.TEMP_v3.set(MMD_SA_options.camera_face_locking_movement_x_percent/100, MMD_SA_options.camera_face_locking_movement_y_percent/100, 1);
+cam_pos_mul.applyQuaternion(c_rot);
+cam_pos.multiply(cam_pos_mul);
+//DEBUG_show(cam_pos.toArray().map(v=>v.toFixed(2)).join('\n'))
 
+const cam_base = v2.fromArray(MMD_SA_options.camera_position_base).add(MMD_SA.TEMP_v3.fromArray(MMD_SA.center_view)).setX(0).setY(0);
 const model_scale = MMD_SA.THREEX.get_model(0).para.spine_length / 4.97462;
 const z_base = cam_base.z;
-let z = z_base - target_pos.z;
-z = (System._browser.camera.ML_enabled) ? Math.max(z - Math.min(MMD_SA_options.camera_face_locking_z_min*10 * model_scale, z_base), 0) : z - Math.min(MMD_SA_options.camera_face_locking_z_min*10 * model_scale, z_base);
-cam_pos.z = (z < 0) ? -z : -z * MMD_SA_options.camera_face_locking_movement_z_percent/100;
+let z = z_base - target_pos_z0;
+//DEBUG_show(z);
 
-target_pos.multiplyScalar(MMD_SA_options.camera_face_locking_look_at_target_percent/100);
+z = (z - Math.min(MMD_SA_options.camera_face_locking_z_min*10 * model_scale, z_base));
+z = -z * MMD_SA_options.camera_face_locking_movement_z_percent/100;
+cam_base.z = z;
+cam_base.applyQuaternion(c_rot);
+
+cam_pos.add(cam_base);
+
+target_pos_mul = MMD_SA.TEMP_v3.set(MMD_SA_options.camera_face_locking_look_at_target_percent/100, MMD_SA_options.camera_face_locking_look_at_target_percent/100, 1);
+target_pos_mul.applyQuaternion(c_rot);
+target_pos.multiply(target_pos_mul);
+
+const target_pos_z = MMD_SA.TEMP_v3.set(0, 0, head_pos_absolute.z - threeX.get_model(0).mesh.position.z);
+//DEBUG_show(z+'\n'+target_pos_z.z+'\n'+Math.min(MMD_SA_options.camera_face_locking_z_min*10 * model_scale, z_base));
+target_pos_z.applyQuaternion(c_rot);
+target_pos.add(target_pos_z);
 
 MMD_SA.Camera_MOD.adjust_camera(target_current.id, cam_pos, target_pos);
+//DEBUG_show(MMD_SA._trackball_camera.object.position.toArray().join('\n')+'\n\n'+MMD_SA._trackball_camera.target.toArray().join('\n')+'\n\n'+z);
+
+cam_height_offset.set(0,0,0);
+const camera = MMD_SA._trackball_camera.object;
+let matrix_updated;
+if (MMD_SA_options.camera_face_locking_vertical_constraint_percent) {
+  m1.copy(camera.matrix);
+  m2.copy(camera.matrixWorld);
+  camera.updateMatrixWorld();
+  matrix_updated = true;
+
+  const c_pos = MMD_SA._v3b_.copy(head_pos_absolute).project(camera);
+  const height_limit = 1 - MMD_SA_options.camera_face_locking_vertical_constraint_percent/100;
+  if (Math.abs(c_pos.y) > height_limit) {
+    c_pos.y = Math.sign(c_pos.y) * height_limit;
+    c_pos.z = 0.5;
+
+    const ray_direction = c_pos.unproject(camera).sub(camera.position).normalize();
+
+    const plane = p1.setFromNormalAndCoplanarPoint(ray_direction, head_pos_absolute);
+
+    const ray = r1.set(camera.position, ray_direction);
+
+    const intersectionPoint = v2;
+    if (ray.intersectPlane(plane, intersectionPoint)) {
+      intersectionPoint.sub(head_pos_absolute);
+      cam_height_offset.copy(intersectionPoint).negate();
+    }
+  }
+}
+
+cam_height_offset.fromArray(target_data2.filter(cam_height_offset.toArray()));
+
+cam_pos.add(cam_height_offset);
+target_pos.add(cam_height_offset);
+
+MMD_SA.Camera_MOD.adjust_camera(target_current.id, cam_pos, target_pos);
+
+// restore updated matrix to make things like speech bubble mouseover to work
+if (matrix_updated) {
+  camera.matrix.copy(m1);
+  camera.matrixWorld.copy(m2);
+}
         }
 
         var target_current;
@@ -14008,12 +14120,13 @@ MMD_SA.Camera_MOD.adjust_camera(target_current.id, cam_pos, target_pos);
 const model = threeX.get_model(0);
 const model_MMD = MMD_SA.THREEX._THREE.MMD.getModels()[0];
 
-var head_pos;
-var pos = v3.set(0,0,0);
+let head_pos;
+let pos = v3.set(0,0,0);
 
 const head_pos_ref = v1.fromArray(model.get_bone_origin_by_MMD_name('頭')).sub(v2.fromArray(model.get_bone_origin_by_MMD_name('上半身')));
 const neck_y = model.get_bone_origin_by_MMD_name('頭')[1] - model.get_bone_origin_by_MMD_name('首')[1];
 head_pos_ref.y += neck_y;
+//DEBUG_show(head_pos_ref.toArray().join('\n'))
 
 const camera_lookAt = v4.fromArray(MMD_SA_options.camera_lookAt).add(v2.fromArray(MMD_SA.center_view_lookAt));
 
@@ -14021,20 +14134,26 @@ pos.add(model_MMD.mesh.position);
 pos.add(camera_lookAt);
 pos.add(model.get_bone_position_by_MMD_name('センター',true).setY(0).applyQuaternion(model_MMD.mesh.quaternion));
 
-head_pos = model.get_bone_position_by_MMD_name('頭').sub(model.get_bone_position_by_MMD_name('上半身')).add(v2.set(0,neck_y,0).applyQuaternion(model.get_bone_rotation_by_MMD_name('頭')));
+head_pos = model.get_bone_position_by_MMD_name('頭').add(v2.set(0,neck_y,0).applyQuaternion(model.get_bone_rotation_by_MMD_name('頭')));
+head_pos_absolute.copy(head_pos);
+
+head_pos.sub(model.get_bone_position_by_MMD_name('上半身'));
 head_pos.sub(head_pos_ref);
+//DEBUG_show(head_pos.toArray().join('\n'))
 
 const c_base = MMD_SA.Camera_MOD.get_camera_base();//['camera_lock']);//,'face']);
-//DEBUG_show(c_base.target.toArray().join('\n'))
 pos.sub(c_base.target);
+//DEBUG_show(pos.toArray().join('\n'))
 
 head_pos.add(pos).multiplyScalar(MMD_SA_options.camera_face_locking_percent/100);
+//DEBUG_show(head_pos.toArray().join('\n'))
 
 if (MMD_SA_options.Dungeon.started) {
   const camera_raw = MMD_SA.Camera_MOD.get_camera_raw(false, true);
   head_pos.add(MMD_SA.TEMP_v3.copy(camera_raw.pos).setZ(0));
 }
 
+//DEBUG_show(head_pos.toArray().join('\n'))
 return head_pos;
   },
         };
@@ -14470,16 +14589,10 @@ this.#VMC_enabled = !!v;
 if (this.#VMC_enabled) {
   _OSC.enabled = true;
   this.init();
-  DEBUG_show('(OSC/VMC client:ON/Port:' + this.options.plugin.send.port + ')', 5)
 }
 else {
   this.#VMC_sender_enabled = this.#VMC_receiver_enabled = false;
-  DEBUG_show('(OSC/VMC client:OFF)', 3)
 }
-
-// Warudo mode
-_OSC.VMC_camera.sender_enabled = v;
-_OSC.VMC_misc.sender_enabled = v;
     }
 
     get sender_enabled() { return this.#VMC_sender_enabled; }
@@ -14490,9 +14603,41 @@ this.#VMC_sender_enabled = !!v;
 
 if (this.#VMC_sender_enabled) {
   this.enabled = true;
+  DEBUG_show('(OSC/VMC sender:ON/Port:' + this.options.plugin.send.port + ')', 5);
 }
 else {
-  if (!this.#VMC_receiver_enabled) this.enabled = false;
+  if (!this.#VMC_receiver_enabled)
+    this.enabled = false;
+  DEBUG_show('(OSC/VMC sender:OFF)', 3)
+}
+
+// Warudo mode
+_OSC.VMC_camera.sender_enabled = v;
+_OSC.VMC_misc.sender_enabled = v;
+    }
+
+    get receiver_enabled() { return this.#VMC_receiver_enabled; }
+    set receiver_enabled(v) {
+if (this.#VMC_receiver_enabled == !!v) return;
+
+this.#VMC_receiver_enabled = !!v;
+
+if (this.#VMC_receiver_enabled) {
+// socket has to be recreated
+// https://stackoverflow.com/questions/56003679/check-if-udp-socket-is-runing-on-a-certain-port-close-it-then-run-it-again
+  if (!this.vmc) {
+    this.enabled = false;
+    this.#VMC_initialized = false;
+  }
+
+  this.enabled = true;
+  this.vmc.open();
+}
+else {
+  if (!this.#VMC_sender_enabled) this.enabled = false;
+  this.vmc.close();
+
+  this.vmc = null;
 }
     }
 
@@ -14509,15 +14654,10 @@ this.plugin = new OSC.DatagramPlugin(this.options.plugin);
 this.vmc = new OSC({ plugin:this.plugin });
 
 this.vmc.on('open', () => {
-  this.#VMC_ready = true;
-//  console.log(this.#vmc);
+//  this.#VMC_ready = true;
+  DEBUG_show('(OSC/VMC receiver:ON/Port:' + this.options.plugin.open.port + ')', 5);
 });
 
-this.vmc.on('*', (msg) => {
-  if (!this.#VMC_receiver_enabled) return;
-});
-
-//this.vmc.open();
 this.#VMC_ready = true;
     }
 
@@ -14528,7 +14668,7 @@ return msg;
     }
 
     Bundle(...args) {
-return new OSC.Bundle(...args);
+return new OSC.Bundle([...args], 0);
     }
 
     send(...args) {
@@ -14598,7 +14738,9 @@ return VMC_warudo();
     });
   })();
 
-  _OSC.VMC = new VMC();
+  window.addEventListener('load', ()=>{
+    _OSC.VMC = new VMC();//{ plugin:{ send:MMD_SA_options.OSC?.VMC.send } });
+  });
 
   return _OSC;
 
@@ -17387,6 +17529,8 @@ this._look_at_screen_parent_rotation = v;
 
   MMD_SA_options._look_at_screen = MMD_SA_options.look_at_screen;
   MMD_SA_options.look_at_screen_by_model = function (model) {
+if (System._browser.camera.VMC_receiver.pose_full_body) return false;
+
 var music_mode = MMD_SA.music_mode && (this.look_at_screen_music_mode != true)
 
 var mm = (model && (model._model_index > 0)) ? MMD_SA.motion[model.skin._motion_index] : MMD_SA.MMD.motionManager
@@ -17462,7 +17606,7 @@ this._look_at_mouse = v
 const mm = (model && (model._model_index > 0)) ? MMD_SA.motion[model.skin._motion_index] : MMD_SA.MMD.motionManager;
 const para_SA = mm.para_SA;
 
-if (System._browser.camera.ML_enabled && ((MMD_SA_options.user_camera.ML_models.look_at_screen === false) || (!para_SA.motion_tracking?.look_at_screen && !MMD_SA.WebXR.session))) return 0;
+if ((System._browser.camera.ML_enabled || System._browser.camera.VMC_receiver.mocap_enabled) && ((MMD_SA_options.user_camera.ML_models.look_at_screen === false) || (!para_SA.motion_tracking?.look_at_screen && !MMD_SA.WebXR.session))) return 0;
 
 // cache the return value for better performance in case of getter functions
 var v

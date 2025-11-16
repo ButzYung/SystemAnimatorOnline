@@ -149,7 +149,7 @@ export class PreTrainedModel extends PreTrainedModel_base {
      * @param {import('./generation/parameters.js').GenerationFunctionParameters} options
      * @returns {Promise<ModelOutput|Tensor>} The output of the model, which can contain the generated token ids, attentions, and scores.
      */
-    generate({ inputs, generation_config, logits_processor, stopping_criteria, streamer, ...kwargs }: any): Promise<ModelOutput | Tensor>;
+    generate({ inputs, generation_config, logits_processor, stopping_criteria, streamer, ...kwargs }: import("./generation/parameters.js").GenerationFunctionParameters): Promise<ModelOutput | Tensor>;
     /**
      * Returns an object containing past key values from the given decoder results object.
      *
@@ -1182,6 +1182,12 @@ export class WhisperForConditionalGeneration extends WhisperPreTrainedModel {
      */
     _retrieve_init_tokens(generation_config: WhisperGenerationConfig): number[];
     /**
+     * Transcribes or translates log-mel input features to a sequence of auto-regressively generated token ids.
+     * @param {import('./models/whisper/generation_whisper.js').WhisperGenerationFunctionParameters} options
+     * @returns {Promise<ModelOutput|Tensor>} The output of the model, which can contain the generated token ids, attentions, and scores.
+     */
+    generate({ inputs, generation_config, logits_processor, stopping_criteria, ...kwargs }: import("./models/whisper/generation_whisper.js").WhisperGenerationFunctionParameters): Promise<ModelOutput | Tensor>;
+    /**
      * Calculates token-level timestamps using the encoder-decoder cross-attentions and
      * dynamic time-warping (DTW) to map each output token to a position in the input audio.
      * If `num_frames` is specified, the encoder-decoder cross-attentions will be cropped before applying DTW.
@@ -2208,7 +2214,7 @@ export class DPTModel extends DPTPreTrainedModel {
  *
  * **Example:** Depth estimation w/ `Xenova/dpt-hybrid-midas`.
  * ```javascript
- * import { DPTForDepthEstimation, AutoProcessor, RawImage, interpolate, max } from '@huggingface/transformers';
+ * import { DPTForDepthEstimation, AutoProcessor, RawImage, interpolate_4d } from '@huggingface/transformers';
  *
  * // Load model and processor
  * const model_id = 'Xenova/dpt-hybrid-midas';
@@ -2217,7 +2223,7 @@ export class DPTModel extends DPTPreTrainedModel {
  *
  * // Load image from URL
  * const url = 'http://images.cocodataset.org/val2017/000000039769.jpg';
- * const image = await RawImage.fromURL(url);
+ * const image = await RawImage.read(url);
  *
  * // Prepare image for the model
  * const inputs = await processor(image);
@@ -2226,10 +2232,15 @@ export class DPTModel extends DPTPreTrainedModel {
  * const { predicted_depth } = await model(inputs);
  *
  * // Interpolate to original size
- * const prediction = interpolate(predicted_depth, image.size.reverse(), 'bilinear', false);
+ * const prediction = (await interpolate_4d(predicted_depth.unsqueeze(1), {
+     * size: image.size.reverse(),
+     * mode: 'bilinear',
+ * })).squeeze(1);
  *
  * // Visualize the prediction
- * const formatted = prediction.mul_(255 / max(prediction.data)[0]).to('uint8');
+ * const min = prediction.min().item();
+ * const max = prediction.max().item();
+ * const formatted = prediction.sub_(min).div_(max - min).mul_(255).to('uint8');
  * const depth = RawImage.fromTensor(formatted);
  * // RawImage {
  * //   data: Uint8Array(307200) [ 85, 85, 84, ... ],
@@ -2274,11 +2285,7 @@ export class GLPNPreTrainedModel extends PreTrainedModel {
 export class GLPNModel extends GLPNPreTrainedModel {
 }
 /**
- * GLPN Model transformer with a lightweight depth estimation head on top e.g. for KITTI, NYUv2.
- *
- * **Example:** Depth estimation w/ `Xenova/glpn-kitti`.
- * ```javascript
- * import { GLPNForDepthEstimation, AutoProcessor, RawImage, interpolate, max } from '@huggingface/transformers';
+ * import { GLPNForDepthEstimation, AutoProcessor, RawImage, interpolate_4d } from '@huggingface/transformers';
  *
  * // Load model and processor
  * const model_id = 'Xenova/glpn-kitti';
@@ -2287,7 +2294,7 @@ export class GLPNModel extends GLPNPreTrainedModel {
  *
  * // Load image from URL
  * const url = 'http://images.cocodataset.org/val2017/000000039769.jpg';
- * const image = await RawImage.fromURL(url);
+ * const image = await RawImage.read(url);
  *
  * // Prepare image for the model
  * const inputs = await processor(image);
@@ -2296,13 +2303,18 @@ export class GLPNModel extends GLPNPreTrainedModel {
  * const { predicted_depth } = await model(inputs);
  *
  * // Interpolate to original size
- * const prediction = interpolate(predicted_depth, image.size.reverse(), 'bilinear', false);
+ * const prediction = (await interpolate_4d(predicted_depth.unsqueeze(1), {
+     * size: image.size.reverse(),
+     * mode: 'bilinear',
+ * })).squeeze(1);
  *
  * // Visualize the prediction
- * const formatted = prediction.mul_(255 / max(prediction.data)[0]).to('uint8');
+ * const min = prediction.min().item();
+ * const max = prediction.max().item();
+ * const formatted = prediction.sub_(min).div_(max - min).mul_(255).to('uint8');
  * const depth = RawImage.fromTensor(formatted);
  * // RawImage {
- * //   data: Uint8Array(307200) [ 207, 169, 154, ... ],
+ * //   data: Uint8Array(307200) [ 85, 85, 84, ... ],
  * //   width: 640,
  * //   height: 480,
  * //   channels: 1
@@ -3476,13 +3488,12 @@ export class DecisionTransformerModel extends DecisionTransformerPreTrainedModel
 export class MultiModalityPreTrainedModel extends PreTrainedModel {
 }
 export class MultiModalityCausalLM extends MultiModalityPreTrainedModel {
-    constructor(...args: any[]);
     _generation_mode: string;
     forward(model_inputs: any): Promise<any>;
     /**
      * @param {import('./generation/parameters.js').GenerationFunctionParameters} options
      */
-    generate_images(options: any): Promise<RawImage[]>;
+    generate_images(options: import("./generation/parameters.js").GenerationFunctionParameters): Promise<RawImage[]>;
 }
 export class MgpstrModelOutput extends ModelOutput {
     constructor({ char_logits, bpe_logits, wp_logits }: {
@@ -3797,11 +3808,15 @@ export class SequenceClassifierOutput extends ModelOutput {
     /**
      * @param {Object} output The output of the model.
      * @param {Tensor} output.logits classification (or regression if config.num_labels==1) scores (before SoftMax).
+     * @param {Record<string, Tensor>} [output.attentions] Object of `torch.FloatTensor` (one for each layer) of shape `(batch_size, num_heads, sequence_length, sequence_length)`.
+     * Attentions weights after the attention softmax, used to compute the weighted average in the self-attention heads.
      */
-    constructor({ logits }: {
+    constructor({ logits, ...attentions }: {
         logits: Tensor;
+        attentions?: Record<string, Tensor>;
     });
     logits: Tensor;
+    attentions: Record<string, Tensor>[];
 }
 /**
  * Base class for outputs of XVector models.

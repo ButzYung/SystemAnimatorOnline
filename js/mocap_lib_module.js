@@ -1,4 +1,4 @@
-// 2024-12-29
+// 2025-01-19
 
 const is_worker = (typeof window !== "object");
 
@@ -491,7 +491,7 @@ else {
 
 }
 
-use_hands_worker = options.use_hands_worker;// = true;
+use_hands_worker = options.pose_enabled && options.use_hands_worker;// = true;
 use_hands_worker_parallel = (use_hands_worker == 2);
 
 if (use_hands_worker) {
@@ -640,6 +640,10 @@ vision,
 set_score: (()=>{
   let timestamp = 0;
   return function (w,h, options) {
+    if (!options.pose_enabled) {
+      f_index = 1;
+      return;
+    }
 //f_index=1;return;
 //    let s = Math.min(Math.max(Math.max(w,h)/shoulder_width-5, 0)/5, 2);
     let s = Math.min(Math.max(Math.max(w,h)/shoulder_width-7.5, 0), 1);
@@ -1051,7 +1055,7 @@ return h_list.some(_h=>(_h[0] >= clip[0]) && (_h[1] >= clip[1]) && (_h[0] <= cli
     const adjust_handedness = [];
     let discard_wrong_handedness = true;
 
-    if (options.use_holistic) {}
+    if (!pose || options.use_holistic) {}
     else if (canvas_hands) {
       if (hands.multiHandedness.length == 1) {
         if (!clipped(0)) {
@@ -1113,17 +1117,19 @@ return h_list.some(_h=>(_h[0] >= clip[0]) && (_h[1] >= clip[1]) && (_h[0] <= cli
       }
     }
 
-    const _multiHandedness = [];
-    const _multiHandLandmarks = [];
-    const dis_to_palm = shoulder_width*shoulder_width*0.25;
-    palm_distance_squared().forEach((dis,i)=>{
-      if (dis < dis_to_palm) {
-        _multiHandedness.push(hands.multiHandedness[i]);
-        _multiHandLandmarks.push(hands.multiHandLandmarks[i]);
-      }
-    });
-    hands.multiHandedness = _multiHandedness;
-    hands.multiHandLandmarks = _multiHandLandmarks;
+    if (pose) {
+      const _multiHandedness = [];
+      const _multiHandLandmarks = [];
+      const dis_to_palm = shoulder_width*shoulder_width*0.25;
+      palm_distance_squared().forEach((dis,i)=>{
+        if (dis < dis_to_palm) {
+          _multiHandedness.push(hands.multiHandedness[i]);
+          _multiHandLandmarks.push(hands.multiHandLandmarks[i]);
+        }
+      });
+      hands.multiHandedness = _multiHandedness;
+      hands.multiHandLandmarks = _multiHandLandmarks;
+    }
 
     for (let i = 0; i < hands.multiHandedness.length; i++) {
       const label = hands.multiHandedness[i].label || hands.multiHandedness[i].categoryName;
@@ -1652,8 +1658,11 @@ hands_worker_ready = false;
       await process_hands_worker(pose_last);
     }
 
-    const result = await ((use_human_pose) ? human.detect(rgba) : ((use_movenet) ? posenet.estimatePoses(rgba, {}, vt) : posenet_model.estimateSinglePose(rgba, {})));
-    pose = pose_adjust((use_human_pose) ? result.body[0] : result);
+    let result;
+    if (options.pose_enabled) {
+      result = await ((use_human_pose) ? human.detect(rgba) : ((use_movenet) ? posenet.estimatePoses(rgba, {}, vt) : posenet_model.estimateSinglePose(rgba, {})));
+      pose = pose_adjust((use_human_pose) ? result.body[0] : result);
+    }
 
     if (use_hands_worker_parallel) pose_last = pose;
 
@@ -1719,7 +1728,7 @@ else {
     }
     else if (options.use_handpose && (use_hands_worker || ((handpose_model || use_human_hands) && (use_hands_worker || (skip_hand_countdown-- <= 0))))) {
       skip_hand_countdown = options.skip_hand_countdown_max||0;
-      if (is_hand_visible(pose)) {
+      if (!options.pose_enabled || is_hand_visible(pose)) {
         if (use_hands_worker_parallel) {
           if (_use_hands_worker_parallel && !hands_worker_data) await new Promise((resolve)=>{ resolve_hands_worker_parallel = resolve; });
           resolve_hands_worker_parallel = null;

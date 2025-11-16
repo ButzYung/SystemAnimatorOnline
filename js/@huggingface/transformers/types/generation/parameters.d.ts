@@ -1,4 +1,4 @@
-type GenerationFunctionParameters = {
+export type GenerationFunctionParameters = {
     /**
      * (`Tensor` of varying shape depending on the modality, *optional*):
      * The sequence used as a prompt for the generation or as model inputs to the encoder. If `null` the

@@ -2238,7 +2238,7 @@ declare const SUPPORTED_TASKS: Readonly<{
     "text-to-audio": {
         tokenizer: typeof AutoTokenizer;
         pipeline: typeof TextToAudioPipeline;
-        model: (typeof AutoModelForTextToSpectrogram | typeof AutoModelForTextToWaveform)[];
+        model: (typeof AutoModelForTextToWaveform | typeof AutoModelForTextToSpectrogram)[];
         processor: (typeof AutoProcessor)[];
         default: {
             model: string;
@@ -2367,8 +2367,8 @@ import { AutoModelForAudioClassification } from './models.js';
 import { AutoProcessor } from './models/auto/processing_auto.js';
 import { AutoModel } from './models.js';
 import { AutoModelForSpeechSeq2Seq } from './models.js';
-import { AutoModelForTextToSpectrogram } from './models.js';
 import { AutoModelForTextToWaveform } from './models.js';
+import { AutoModelForTextToSpectrogram } from './models.js';
 import { AutoModelForVision2Seq } from './models.js';
 import { AutoModelForImageClassification } from './models.js';
 import { AutoModelForImageSegmentation } from './models.js';

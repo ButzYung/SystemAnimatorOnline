@@ -4132,23 +4132,23 @@ class FeatureExtractor extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_1__.Ca
     }
 
     /**
-     * Instantiate one of the processor classes of the library from a pretrained model.
+     * Instantiate one of the feature extractor classes of the library from a pretrained model.
      * 
-     * The processor class to instantiate is selected based on the `image_processor_type` (or `feature_extractor_type`; legacy)
-     * property of the config object (either passed as an argument or loaded from `pretrained_model_name_or_path` if possible)
+     * The feature extractor class to instantiate is selected based on the `feature_extractor_type` property of
+     * the config object (either passed as an argument or loaded from `pretrained_model_name_or_path` if possible)
      * 
      * @param {string} pretrained_model_name_or_path The name or path of the pretrained model. Can be either:
-     * - A string, the *model id* of a pretrained processor hosted inside a model repo on huggingface.co.
+     * - A string, the *model id* of a pretrained feature_extractor hosted inside a model repo on huggingface.co.
      *   Valid model ids can be located at the root-level, like `bert-base-uncased`, or namespaced under a
      *   user or organization name, like `dbmdz/bert-base-german-cased`.
-     * - A path to a *directory* containing processor files, e.g., `./my_model_directory/`.
-     * @param {import('../utils/hub.js').PretrainedOptions} options Additional options for loading the processor.
+     * - A path to a *directory* containing feature_extractor files, e.g., `./my_model_directory/`.
+     * @param {import('../utils/hub.js').PretrainedOptions} options Additional options for loading the feature_extractor.
      * 
-     * @returns {Promise<FeatureExtractor>} A new instance of the Processor class.
+     * @returns {Promise<FeatureExtractor>} A new instance of the Feature Extractor class.
      */
     static async from_pretrained(pretrained_model_name_or_path, options) {
-        const preprocessorConfig = await (0,_utils_hub_js__WEBPACK_IMPORTED_MODULE_2__.getModelJSON)(pretrained_model_name_or_path, _utils_constants_js__WEBPACK_IMPORTED_MODULE_0__.FEATURE_EXTRACTOR_NAME, true, options);
-        return new this(preprocessorConfig);
+        const config = await (0,_utils_hub_js__WEBPACK_IMPORTED_MODULE_2__.getModelJSON)(pretrained_model_name_or_path, _utils_constants_js__WEBPACK_IMPORTED_MODULE_0__.FEATURE_EXTRACTOR_NAME, true, options);
+        return new this(config);
     }
 }
 
@@ -4798,14 +4798,20 @@ class ImageProcessor extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_0__.Call
         this.do_thumbnail = config.do_thumbnail;
         this.size = config.size ?? config.image_size;
         this.do_resize = config.do_resize ?? (this.size !== undefined);
+        // @ts-expect-error TS2339
         this.size_divisibility = config.size_divisibility ?? config.size_divisor;
 
         this.do_center_crop = config.do_center_crop;
+        // @ts-expect-error TS2339
         this.crop_size = config.crop_size;
+        // @ts-expect-error TS2339
         this.do_convert_rgb = config.do_convert_rgb ?? true;
+        // @ts-expect-error TS2339
         this.do_crop_margin = config.do_crop_margin;
 
+        // @ts-expect-error TS2339
         this.pad_size = config.pad_size;
+        // @ts-expect-error TS2339
         this.do_pad = config.do_pad;
 
         if (this.do_pad && !this.pad_size && this.size && this.size.width !== undefined && this.size.height !== undefined) {
@@ -5014,6 +5020,7 @@ class ImageProcessor extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_0__.Call
         // Support both formats for backwards compatibility
         else if (Number.isInteger(size)) {
             shortest_edge = size;
+            // @ts-expect-error TS2339
             longest_edge = this.config.max_size ?? shortest_edge;
 
         } else if (size !== undefined) {
@@ -5082,6 +5089,7 @@ class ImageProcessor extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_0__.Call
         } else if (size.min_pixels !== undefined && size.max_pixels !== undefined) {
             // Custom resize logic for Qwen2-VL models
             const { min_pixels, max_pixels } = size;
+            // @ts-expect-error TS2339
             const factor = this.config.patch_size * this.config.merge_size;
             return smart_resize(srcHeight, srcWidth, factor, min_pixels, max_pixels);
         } else {
@@ -5097,6 +5105,7 @@ class ImageProcessor extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_0__.Call
     async resize(image) {
         const [newWidth, newHeight] = this.get_resize_output_image_size(image, this.size);
         return await image.resize(newWidth, newHeight, {
+            // @ts-expect-error TS2322
             resample: this.resample,
         });
     }
@@ -5147,6 +5156,7 @@ class ImageProcessor extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_0__.Call
 
         // Resize the image using thumbnail method.
         if (this.do_thumbnail) {
+            // @ts-expect-error TS2345
             image = await this.thumbnail(image, this.size, this.resample);
         }
 
@@ -5171,6 +5181,7 @@ class ImageProcessor extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_0__.Call
         // NOTE: All pixel-level manipulation (i.e., modifying `pixelData`)
         // occurs with data in the hwc format (height, width, channels), 
         // to emulate the behavior of the original Python code (w/ numpy).
+        /** @type {Float32Array} */
         let pixelData = Float32Array.from(image.data);
         let imgDims = [image.height, image.width, image.channels];
 
@@ -5328,6 +5339,7 @@ __webpack_require__.r(__webpack_exports__);
 /**
  * @typedef {Object} ProcessorProperties Additional processor-specific properties.
  * @typedef {import('../utils/hub.js').PretrainedOptions & ProcessorProperties} PretrainedProcessorOptions
+ * @typedef {import('../tokenizers.js').PreTrainedTokenizer} PreTrainedTokenizer
  */
 
 
@@ -5361,7 +5373,7 @@ class Processor extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_1__.Callable 
     }
 
     /**
-     * @returns {import('../tokenizers.js').PreTrainedTokenizer|undefined} The tokenizer of the processor, if it exists.
+     * @returns {PreTrainedTokenizer|undefined} The tokenizer of the processor, if it exists.
      */
     get tokenizer() {
         return this.components.tokenizer;
@@ -5374,6 +5386,11 @@ class Processor extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_1__.Callable 
         return this.components.feature_extractor;
     }
 
+    /**
+     * @param {Parameters<PreTrainedTokenizer['apply_chat_template']>[0]} messages
+     * @param {Parameters<PreTrainedTokenizer['apply_chat_template']>[1]} options
+     * @returns {ReturnType<PreTrainedTokenizer['apply_chat_template']>}
+     */
     apply_chat_template(messages, options = {}) {
         if (!this.tokenizer) {
             throw new Error('Unable to apply chat template without a tokenizer.');
@@ -5384,6 +5401,10 @@ class Processor extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_1__.Callable 
         });
     }
 
+    /**
+     * @param {Parameters<PreTrainedTokenizer['batch_decode']>} args
+     * @returns {ReturnType<PreTrainedTokenizer['batch_decode']>}
+     */
     batch_decode(...args) {
         if (!this.tokenizer) {
             throw new Error('Unable to decode without a tokenizer.');
@@ -5411,8 +5432,8 @@ class Processor extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_1__.Callable 
     /**
      * Instantiate one of the processor classes of the library from a pretrained model.
      * 
-     * The processor class to instantiate is selected based on the `feature_extractor_type` property of the config object
-     * (either passed as an argument or loaded from `pretrained_model_name_or_path` if possible)
+     * The processor class to instantiate is selected based on the `image_processor_type` (or `feature_extractor_type`; legacy)
+     * property of the config object (either passed as an argument or loaded from `pretrained_model_name_or_path` if possible)
      * 
      * @param {string} pretrained_model_name_or_path The name or path of the pretrained model. Can be either:
      * - A string, the *model id* of a pretrained processor hosted inside a model repo on huggingface.co.
@@ -5531,15 +5552,19 @@ function getNormalizedConfig(config) {
         case 'florence2':
         case 'llava_onevision':
         case 'idefics3':
+            // @ts-expect-error TS2339
             init_normalized_config = getNormalizedConfig(config.text_config);
             break;
         case 'moondream1':
+            // @ts-expect-error TS2339
             init_normalized_config = getNormalizedConfig(config.phi_config);
             break;
         case 'musicgen':
+            // @ts-expect-error TS2339
             init_normalized_config = getNormalizedConfig(config.decoder);
             break;
         case 'multi_modality':
+            // @ts-expect-error TS2339
             init_normalized_config = getNormalizedConfig(config.language_config);
             break;
 
@@ -5660,6 +5685,7 @@ function getNormalizedConfig(config) {
             break;
 
         case 'vision-encoder-decoder':
+            // @ts-expect-error TS2339
             const decoderConfig = getNormalizedConfig(config.decoder);
 
             const add_encoder_pkv = 'num_decoder_layers' in decoderConfig;
@@ -5902,7 +5928,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-const VERSION = '3.2.3';
+const VERSION = '3.2.4';
 
 // Check if various APIs are available (depends on environment)
 const IS_BROWSER_ENV = typeof window !== "undefined" && typeof window.document !== "undefined";
@@ -8558,8 +8584,11 @@ async function getSession(pretrained_model_name_or_path, fileName, options) {
     } else if (session_options.externalData !== undefined) {
         externalDataPromises = session_options.externalData.map(async (ext) => {
             // if the external data is a string, fetch the file and replace the string with its content
+            // @ts-expect-error TS2339
             if (typeof ext.data === "string") {
+                // @ts-expect-error TS2339
                 const ext_buffer = await (0,_utils_hub_js__WEBPACK_IMPORTED_MODULE_5__.getModelFile)(pretrained_model_name_or_path, ext.data, true, options);
+                // @ts-expect-error TS2698
                 return { ...ext, data: ext_buffer };
             }
             return ext;
@@ -9807,6 +9836,7 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
                 if (this.config.model_type === 'musicgen') {
                     // Custom logic (TODO: move to Musicgen class)
                     decoder_input_ids = Array.from({
+                        // @ts-expect-error TS2339
                         length: batch_size * this.config.decoder.num_codebooks
                     }, () => [decoder_start_token_id]);
 
@@ -10136,11 +10166,13 @@ class PreTrainedModel extends _utils_generic_js__WEBPACK_IMPORTED_MODULE_3__.Cal
     async encode_image({ pixel_values }) {
         // image_inputs === { pixel_values }
         const features = (await sessionRun(this.sessions['vision_encoder'], { pixel_values })).image_features;
+        // @ts-expect-error TS2339
         if (!this.config.num_image_tokens) {
             console.warn(
                 'The number of image tokens was not set in the model configuration. ' +
                 `Setting it to the number of features detected by the vision encoder (${features.dims[1]}).`
             )
+            // @ts-expect-error TS2339
             this.config.num_image_tokens = features.dims[1];
         }
         return features;
@@ -11568,6 +11600,7 @@ class WhisperForConditionalGeneration extends WhisperPreTrainedModel {
 
         if (generation_config.return_token_timestamps) {
             outputs["token_timestamps"] = this._extract_token_timestamps(
+                // @ts-expect-error TS2345
                 outputs,
                 generation_config.alignment_heads,
                 generation_config.num_frames,
@@ -11603,6 +11636,7 @@ class WhisperForConditionalGeneration extends WhisperPreTrainedModel {
             );
         }
 
+        // @ts-expect-error TS2339
         let median_filter_width = this.config.median_filter_width;
         if (median_filter_width === undefined) {
             console.warn("Model config has no `median_filter_width`, using default value of 7.")
@@ -11613,6 +11647,7 @@ class WhisperForConditionalGeneration extends WhisperPreTrainedModel {
         const batch = generate_outputs.cross_attentions;
         // Create a list with `decoder_layers` elements, each a tensor of shape
         // (batch size, attention_heads, output length, input length).
+        // @ts-expect-error TS2339
         const cross_attentions = Array.from({ length: this.config.decoder_layers },
             // Concatenate the cross attentions for each layer across sequence length dimension.
             (_, i) => (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_9__.cat)(batch.map(x => x[i]), 2)
@@ -11756,6 +11791,7 @@ class LlavaForConditionalGeneration extends LlavaPreTrainedModel {
         attention_mask,
     }) {
 
+        // @ts-expect-error TS2339
         const image_token_index = this.config.image_token_index;
 
         const idsList = input_ids.tolist();
@@ -12741,6 +12777,7 @@ class Qwen2VLForConditionalGeneration extends Qwen2VLPreTrainedModel {
                 const image_nums = vision_tokens.filter(x => x == image_token_id).length;
                 const video_nums = vision_tokens.filter(x => x == video_token_id).length;
 
+                /** @type {number[][]} */
                 let llm_pos_ids_list = [];
                 let st = 0;
                 let remain_images = image_nums;
@@ -12810,6 +12847,7 @@ class Qwen2VLForConditionalGeneration extends Qwen2VLPreTrainedModel {
                 // NOTE: Each item in llm_pos_ids_list is an array of shape (3, text_len),
                 // meaning to perform concatenation along dim=1, we can do the following:
                 const num_items = llm_pos_ids_list.reduce((acc, x) => acc + x.length, 0);
+                /** @type {number[]} */
                 const llm_positions = new Array(num_items);
                 let index = 0;
                 for (let x = 0; x < 3; ++x) {
@@ -12850,9 +12888,10 @@ class Qwen2VLForConditionalGeneration extends Qwen2VLPreTrainedModel {
                     { length: 3 * data.length },
                     (_, i) => data[i % data.length]
                 );
+                /** @type {bigint[]} */
                 const mrope_position_deltas = Array.from(
                     { length: dims[0] },
-                    (_, i) => (0,_utils_maths_js__WEBPACK_IMPORTED_MODULE_11__.max)(data.subarray(dims[1] * i, dims[1] * (i + 1)))[0] + 1 + dims[1]
+                    (_, i) => (0,_utils_maths_js__WEBPACK_IMPORTED_MODULE_11__.max)(data.subarray(dims[1] * i, dims[1] * (i + 1)))[0] + 1n + BigInt(dims[1])
                 );
 
                 return [
@@ -13423,7 +13462,7 @@ class DPTModel extends DPTPreTrainedModel { }
  * 
  * **Example:** Depth estimation w/ `Xenova/dpt-hybrid-midas`.
  * ```javascript
- * import { DPTForDepthEstimation, AutoProcessor, RawImage, interpolate, max } from '@huggingface/transformers';
+ * import { DPTForDepthEstimation, AutoProcessor, RawImage, interpolate_4d } from '@huggingface/transformers';
  * 
  * // Load model and processor
  * const model_id = 'Xenova/dpt-hybrid-midas';
@@ -13432,7 +13471,7 @@ class DPTModel extends DPTPreTrainedModel { }
  * 
  * // Load image from URL
  * const url = 'http://images.cocodataset.org/val2017/000000039769.jpg';
- * const image = await RawImage.fromURL(url);
+ * const image = await RawImage.read(url);
  * 
  * // Prepare image for the model
  * const inputs = await processor(image);
@@ -13441,10 +13480,15 @@ class DPTModel extends DPTPreTrainedModel { }
  * const { predicted_depth } = await model(inputs);
  * 
  * // Interpolate to original size
- * const prediction = interpolate(predicted_depth, image.size.reverse(), 'bilinear', false);
+ * const prediction = (await interpolate_4d(predicted_depth.unsqueeze(1), {
+     * size: image.size.reverse(),
+     * mode: 'bilinear',
+ * })).squeeze(1);
  * 
  * // Visualize the prediction
- * const formatted = prediction.mul_(255 / max(prediction.data)[0]).to('uint8');
+ * const min = prediction.min().item();
+ * const max = prediction.max().item();
+ * const formatted = prediction.sub_(min).div_(max - min).mul_(255).to('uint8');
  * const depth = RawImage.fromTensor(formatted);
  * // RawImage {
  * //   data: Uint8Array(307200) [ 85, 85, 84, ... ],
@@ -13494,11 +13538,7 @@ class GLPNPreTrainedModel extends PreTrainedModel { }
 class GLPNModel extends GLPNPreTrainedModel { }
 
 /**
- * GLPN Model transformer with a lightweight depth estimation head on top e.g. for KITTI, NYUv2.
- * 
- * **Example:** Depth estimation w/ `Xenova/glpn-kitti`.
- * ```javascript
- * import { GLPNForDepthEstimation, AutoProcessor, RawImage, interpolate, max } from '@huggingface/transformers';
+ * import { GLPNForDepthEstimation, AutoProcessor, RawImage, interpolate_4d } from '@huggingface/transformers';
  * 
  * // Load model and processor
  * const model_id = 'Xenova/glpn-kitti';
@@ -13507,7 +13547,7 @@ class GLPNModel extends GLPNPreTrainedModel { }
  * 
  * // Load image from URL
  * const url = 'http://images.cocodataset.org/val2017/000000039769.jpg';
- * const image = await RawImage.fromURL(url);
+ * const image = await RawImage.read(url);
  * 
  * // Prepare image for the model
  * const inputs = await processor(image);
@@ -13516,13 +13556,18 @@ class GLPNModel extends GLPNPreTrainedModel { }
  * const { predicted_depth } = await model(inputs);
  * 
  * // Interpolate to original size
- * const prediction = interpolate(predicted_depth, image.size.reverse(), 'bilinear', false);
+ * const prediction = (await interpolate_4d(predicted_depth.unsqueeze(1), {
+     * size: image.size.reverse(),
+     * mode: 'bilinear',
+ * })).squeeze(1);
  * 
  * // Visualize the prediction
- * const formatted = prediction.mul_(255 / max(prediction.data)[0]).to('uint8');
+ * const min = prediction.min().item();
+ * const max = prediction.max().item();
+ * const formatted = prediction.sub_(min).div_(max - min).mul_(255).to('uint8');
  * const depth = RawImage.fromTensor(formatted);
  * // RawImage {
- * //   data: Uint8Array(307200) [ 207, 169, 154, ... ],
+ * //   data: Uint8Array(307200) [ 85, 85, 84, ... ],
  * //   width: 640,
  * //   height: 480,
  * //   channels: 1
@@ -14489,10 +14534,12 @@ class SpeechT5ForTextToSpeech extends SpeechT5PreTrainedModel {
 
         const { encoder_outputs, encoder_attention_mask } = await encoderForward(this, model_inputs);
 
+        // @ts-expect-error TS2339
         const r = encoder_outputs.dims[1] / this.config.reduction_factor;
         const maxlen = Math.floor(r * maxlenratio);
         const minlen = Math.floor(r * minlenratio);
 
+        // @ts-expect-error TS2339
         const num_mel_bins = this.config.num_mel_bins;
 
         let spectrogramParts = [];
@@ -14857,11 +14904,13 @@ class MusicgenForConditionalGeneration extends PreTrainedModel { // NOTE: not Mu
      */
     _apply_and_filter_by_delay_pattern_mask(outputs) {
         const [bs_x_codebooks, seqLength] = outputs.dims;
+        // @ts-expect-error TS2339
         const num_codebooks = this.config.decoder.num_codebooks;
         const upperBound = (seqLength - num_codebooks);
 
         let newDataSize = 0;
         for (let i = 0; i < outputs.size; ++i) {
+            // @ts-expect-error TS2339
             if (outputs.data[i] === this.config.decoder.pad_token_id) {
                 continue;
             }
@@ -14891,7 +14940,9 @@ class MusicgenForConditionalGeneration extends PreTrainedModel { // NOTE: not Mu
         let clonedInputIds = structuredClone(input_ids);
         for (let i = 0; i < clonedInputIds.length; ++i) {
             for (let j = 0; j < clonedInputIds[i].length; ++j) {
+                // @ts-expect-error TS2339
                 if ((i % this.config.decoder.num_codebooks) >= j) {
+                    // @ts-expect-error TS2339
                     clonedInputIds[i][j] = BigInt(this.config.decoder.pad_token_id);
                 }
             }
@@ -15048,6 +15099,9 @@ class MultiModalityCausalLM extends MultiModalityPreTrainedModel {
         'past_key_values',
     ];
 
+    /**
+     * @param {ConstructorParameters<typeof MultiModalityPreTrainedModel>} args
+     */
     constructor(...args) {
         super(...args);
 
@@ -16016,10 +16070,17 @@ class SequenceClassifierOutput extends ModelOutput {
     /**
      * @param {Object} output The output of the model.
      * @param {Tensor} output.logits classification (or regression if config.num_labels==1) scores (before SoftMax).
+     * @param {Record<string, Tensor>} [output.attentions] Object of `torch.FloatTensor` (one for each layer) of shape `(batch_size, num_heads, sequence_length, sequence_length)`.
+     * Attentions weights after the attention softmax, used to compute the weighted average in the self-attention heads.
      */
-    constructor({ logits }) {
+    constructor({ logits, ...attentions }) {
         super();
         this.logits = logits;
+        const attentions_list = Object.values(attentions);
+        if (attentions_list.length > 0) {
+            // Only set attentions if they are not empty
+            this.attentions = attentions_list;
+        }
     }
 }
 
@@ -16275,22 +16336,6 @@ __webpack_require__.r(__webpack_exports__);
 
 class AutoFeatureExtractor {
 
-    /**
-     * Instantiate one of the feature extractor classes of the library from a pretrained model.
-     * 
-     * The processor class to instantiate is selected based on the `feature_extractor_type` property of
-     * the config object (either passed as an argument or loaded from `pretrained_model_name_or_path` if possible)
-     * 
-     * @param {string} pretrained_model_name_or_path The name or path of the pretrained model. Can be either:
-     * - A string, the *model id* of a pretrained processor hosted inside a model repo on huggingface.co.
-     *   Valid model ids can be located at the root-level, like `bert-base-uncased`, or namespaced under a
-     *   user or organization name, like `dbmdz/bert-base-german-cased`.
-     * - A path to a *directory* containing processor files, e.g., `./my_model_directory/`.
-     * @param {import('../../utils/hub.js').PretrainedOptions} options Additional options for loading the processor.
-     * 
-     * @returns {Promise<AllFeatureExtractors.ImageProcessor>} A new instance of the Processor class.
-     */
-
     /** @type {typeof FeatureExtractor.from_pretrained} */
     static async from_pretrained(pretrained_model_name_or_path, options={}) {
 
@@ -16416,22 +16461,6 @@ __webpack_require__.r(__webpack_exports__);
  * ```
  */
 class AutoProcessor {
-
-    /**
-     * Instantiate one of the processor classes of the library from a pretrained model.
-     * 
-     * The processor class to instantiate is selected based on the `image_processor_type` (or `feature_extractor_type`; legacy)
-     * property of the config object (either passed as an argument or loaded from `pretrained_model_name_or_path` if possible)
-     * 
-     * @param {string} pretrained_model_name_or_path The name or path of the pretrained model. Can be either:
-     * - A string, the *model id* of a pretrained processor hosted inside a model repo on huggingface.co.
-     *   Valid model ids can be located at the root-level, like `bert-base-uncased`, or namespaced under a
-     *   user or organization name, like `dbmdz/bert-base-german-cased`.
-     * - A path to a *directory* containing processor files, e.g., `./my_model_directory/`.
-     * @param {import('../../utils/hub.js').PretrainedOptions} options Additional options for loading the processor.
-     * 
-     * @returns {Promise<Processor>} A new instance of the Processor class.
-     */
 
     /** @type {typeof Processor.from_pretrained} */
     static async from_pretrained(pretrained_model_name_or_path, options={}) {
@@ -16750,6 +16779,7 @@ class ConvNextImageProcessor extends _base_image_processors_utils_js__WEBPACK_IM
         /**
          * Percentage of the image to crop. Only has an effect if this.size < 384.
          */
+        // @ts-expect-error TS2339
         this.crop_pct = this.config.crop_pct ?? (224 / 256);
     }
 
@@ -16952,6 +16982,7 @@ __webpack_require__.r(__webpack_exports__);
 class EfficientNetImageProcessor extends _base_image_processors_utils_js__WEBPACK_IMPORTED_MODULE_0__.ImageProcessor {
     constructor(config) {
         super(config);
+        // @ts-expect-error TS2339
         this.include_top = this.config.include_top ?? true;
         if (this.include_top) {
             this.image_std = this.image_std.map(x => x * x);
@@ -17033,8 +17064,11 @@ class Florence2Processor extends _base_processing_utils_js__WEBPACK_IMPORTED_MOD
         super(config, components);
 
         const {
+            // @ts-expect-error TS2339
             tasks_answer_post_processing_type,
+            // @ts-expect-error TS2339
             task_prompts_without_inputs,
+            // @ts-expect-error TS2339
             task_prompts_with_input,
         } = this.image_processor.config;
 
@@ -17329,6 +17363,8 @@ class Idefics3ImageProcessor extends _base_image_processors_utils_js__WEBPACK_IM
 
                     const start_offset = i * pixel_attention_mask_stride + num_patches * h * w;
                     const end_offset = (i + 1) * pixel_attention_mask_stride;
+
+                    // @ts-expect-error
                     pixel_attention_mask_data.fill(false, start_offset, end_offset);
                 }
             }
@@ -17735,6 +17771,7 @@ class VLMImageProcessor extends _base_image_processors_utils_js__WEBPACK_IMPORTE
             },
             ...config,
         });
+        // @ts-expect-error TS2339
         this.constant_values = this.config.background_color.map(x => x * this.rescale_factor)
     }
 
@@ -18176,6 +18213,8 @@ class MgpstrProcessor extends _base_processing_utils_js__WEBPACK_IMPORTED_MODULE
      * - bpe_preds: The list of BPE decoded sentences.
      * - wp_preds: The list of wp decoded sentences.
      */
+    // @ts-expect-error The type of this method is not compatible with the one
+    // in the base class. It might be a good idea to fix this.
     batch_decode([char_logits, bpe_logits, wp_logits]) {
         const [char_preds, char_scores] = this._decode_helper(char_logits, 'char');
         const [bpe_preds, bpe_scores] = this._decode_helper(bpe_logits, 'bpe');
@@ -18557,6 +18596,7 @@ class PaliGemmaProcessor extends _base_processing_utils_js__WEBPACK_IMPORTED_MOD
         }
 
         const bos_token = this.tokenizer.bos_token;
+        // @ts-expect-error TS2339
         const image_seq_length = this.image_processor.config.image_seq_length;
         let input_strings;
         if (text.some((t) => t.includes(IMAGE_TOKEN))) {
@@ -18807,7 +18847,7 @@ class Phi3VProcessor extends _base_processing_utils_js__WEBPACK_IMPORTED_MODULE_
      * 
      * @param {string|string[]} text 
      * @param {RawImage|RawImage[]} images 
-     * @param  {...any} args 
+     * @param  { { padding?: boolean, truncation?: boolean, num_crops?: number } | undefined } options
      * @returns {Promise<any>}
      */
     async _call(text, images = null, {
@@ -18991,6 +19031,7 @@ class PyAnnoteFeatureExtractor extends _base_feature_extraction_utils_js__WEBPAC
 
             let current_speaker = -1;
             for (let i = 0; i < scores.length; ++i) {
+                /** @type {number[]} */
                 const probabilities = (0,_utils_maths_js__WEBPACK_IMPORTED_MODULE_2__.softmax)(scores[i]);
                 const [score, id] = (0,_utils_maths_js__WEBPACK_IMPORTED_MODULE_2__.max)(probabilities);
                 const [start, end] = [i, i + 1];
@@ -19175,6 +19216,7 @@ class Qwen2VLProcessor extends _base_processing_utils_js__WEBPACK_IMPORTED_MODUL
         }
 
         if (image_grid_thw) {
+            // @ts-expect-error TS2551
             let merge_length = this.image_processor.config.merge_size ** 2;
             let index = 0;
 
@@ -19662,8 +19704,8 @@ class SeamlessM4TFeatureExtractor extends _base_feature_extraction_utils_js__WEB
                         'int64',
                         new BigInt64Array(numPaddedFrames),
                         [1, numPaddedFrames],
-                    )
-                    padded_attention_mask.data.fill(1n, 0, num_frames);
+                    );
+                    /** @type {BigInt64Array} */ (padded_attention_mask.data).fill(1n, 0, num_frames);
                 }
             }
         }
@@ -20463,7 +20505,7 @@ class WhisperFeatureExtractor extends _base_feature_extraction_utils_js__WEBPACK
         )
 
         const data = features.data;
-        const maxValue = (0,_utils_maths_js__WEBPACK_IMPORTED_MODULE_3__.max)(data)[0];
+        const maxValue = (0,_utils_maths_js__WEBPACK_IMPORTED_MODULE_3__.max)(/** @type {Float32Array} */(data))[0];
 
         for (let i = 0; i < data.length; ++i) {
             data[i] = (Math.max(data[i], maxValue - 8.0) + 4.0) / 4.0;
@@ -20722,6 +20764,16 @@ class TensorOpRegistry {
         // executionProviders: ['webgpu'],
     };
 
+    static get nearest_interpolate_4d() {
+        if (!this._nearest_interpolate_4d) {
+            this._nearest_interpolate_4d = wrap(
+                [8, 10, 18, 0, 58, 129, 1, 10, 41, 10, 1, 120, 10, 0, 10, 0, 10, 1, 115, 18, 1, 121, 34, 6, 82, 101, 115, 105, 122, 101, 42, 18, 10, 4, 109, 111, 100, 101, 34, 7, 110, 101, 97, 114, 101, 115, 116, 160, 1, 3, 18, 1, 114, 90, 31, 10, 1, 120, 18, 26, 10, 24, 8, 1, 18, 20, 10, 3, 18, 1, 98, 10, 3, 18, 1, 99, 10, 3, 18, 1, 104, 10, 3, 18, 1, 119, 90, 15, 10, 1, 115, 18, 10, 10, 8, 8, 7, 18, 4, 10, 2, 8, 4, 98, 31, 10, 1, 121, 18, 26, 10, 24, 8, 1, 18, 20, 10, 3, 18, 1, 98, 10, 3, 18, 1, 99, 10, 3, 18, 1, 104, 10, 3, 18, 1, 119, 66, 2, 16, 21],
+                this.session_options,
+                'y',
+            );
+        }
+        return this._nearest_interpolate_4d;
+    }
     static get bilinear_interpolate_4d() {
         if (!this._bilinear_interpolate_4d) {
             this._bilinear_interpolate_4d = wrap(
@@ -21095,6 +21147,7 @@ class TextClassificationPipeline extends (/** @type {new (options: TextPipelineC
 
         // TODO: Use softmax tensor function
         const function_to_apply =
+            // @ts-expect-error TS2339
             this.model.config.problem_type === 'multi_label_classification'
                 ? batch => batch.sigmoid()
                 : batch => new _utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.Tensor(
@@ -21103,6 +21156,7 @@ class TextClassificationPipeline extends (/** @type {new (options: TextPipelineC
                     batch.dims,
                 ); // single_label_classification (default)
 
+        // @ts-expect-error TS2339
         const id2label = this.model.config.id2label;
 
         const toReturn = [];
@@ -21205,6 +21259,7 @@ class TokenClassificationPipeline extends (/** @type {new (options: TextPipeline
         const outputs = await this.model(model_inputs)
 
         const logits = outputs.logits;
+        // @ts-expect-error TS2339
         const id2label = this.model.config.id2label;
 
         const toReturn = [];
@@ -21544,11 +21599,14 @@ class Text2TextGenerationPipeline extends (/** @type {new (options: TextPipeline
 
 
         // Add global prefix, if present
+        // @ts-expect-error TS2339
         if (this.model.config.prefix) {
+            // @ts-expect-error TS2339
             texts = texts.map(x => this.model.config.prefix + x)
         }
 
         // Handle task specific params:
+        // @ts-expect-error TS2339
         const task_specific_params = this.model.config.task_specific_params
         if (task_specific_params && task_specific_params[this.task]) {
             // Add prefixes, if present
@@ -22287,6 +22345,7 @@ class AudioClassificationPipeline extends (/** @type {new (options: AudioPipelin
         const sampling_rate = this.processor.feature_extractor.config.sampling_rate;
         const preparedAudios = await prepareAudios(audio, sampling_rate);
 
+        // @ts-expect-error TS2339
         const id2label = this.model.config.id2label;
 
         const toReturn = [];
@@ -22597,6 +22656,7 @@ class AutomaticSpeechRecognitionPipeline extends (/** @type {new (options: TextA
             audio = [/** @type {AudioInput} */ (audio)];
         }
 
+        // @ts-expect-error TS2339
         const time_precision = this.processor.feature_extractor.config.chunk_length / this.model.config.max_source_positions;
         const hop_length = this.processor.feature_extractor.config.hop_length;
 
@@ -22662,7 +22722,9 @@ class AutomaticSpeechRecognitionPipeline extends (/** @type {new (options: TextA
 
                 // TODO: Right now we only get top beam
                 if (return_timestamps === 'word') {
+                    // @ts-expect-error TS2339
                     chunk.tokens = data.sequences.tolist()[0];
+                    // @ts-expect-error TS2339
                     chunk.token_timestamps = data.token_timestamps.tolist()[0].map(
                         (/** @type {number} */ x) => (0,_utils_maths_js__WEBPACK_IMPORTED_MODULE_6__.round)(x, 2)
                     );
@@ -22707,7 +22769,7 @@ class AutomaticSpeechRecognitionPipeline extends (/** @type {new (options: TextA
             const max_new_tokens = Math.floor(aud.length / sampling_rate) * 6;
             const outputs = await this.model.generate({ max_new_tokens, ...kwargs, ...inputs });
 
-            const text = this.processor.batch_decode(outputs, { skip_special_tokens: true })[0];
+            const text = this.processor.batch_decode(/** @type {Tensor} */(outputs), { skip_special_tokens: true })[0];
             toReturn.push({ text });
         }
         return single ? toReturn[0] : toReturn;
@@ -22856,6 +22918,7 @@ class ImageClassificationPipeline extends (/** @type {new (options: ImagePipelin
         const { pixel_values } = await this.processor(preparedImages);
         const output = await this.model({ pixel_values });
 
+        // @ts-expect-error TS2339
         const id2label = this.model.config.id2label;
 
         /** @type {ImageClassificationOutput[]} */
@@ -22970,6 +23033,7 @@ class ImageSegmentationPipeline extends (/** @type {new (options: ImagePipelineC
             }
         }
 
+        // @ts-expect-error TS2339
         const id2label = this.model.config.id2label;
 
         /** @type {ImageSegmentationPipelineOutput[]} */
@@ -23196,6 +23260,7 @@ class ObjectDetectionPipeline extends (/** @type {new (options: ImagePipelineCon
         const processed = this.processor.image_processor.post_process_object_detection(output, threshold, imageSizes);
 
         // Add labels
+        // @ts-expect-error TS2339
         const id2label = this.model.config.id2label;
 
         // Format output
@@ -23415,6 +23480,7 @@ class DocumentQuestionAnsweringPipeline extends (/** @type {new (options: TextIm
         // Run model
         const output = await this.model.generate({
             inputs: pixel_values,
+            // @ts-expect-error TS2339
             max_length: this.model.config.decoder.max_position_embeddings,
             decoder_input_ids,
             ...generate_kwargs,
@@ -23530,6 +23596,7 @@ class TextToAudioPipeline extends (/** @type {new (options: TextToAudioPipelineC
         // Generate waveform
         const { waveform } = await this.model(inputs);
 
+        // @ts-expect-error TS2339
         const sampling_rate = this.model.config.sampling_rate;
         return {
             audio: waveform.data,
@@ -23687,11 +23754,23 @@ class DepthEstimationPipeline extends (/** @type {new (options: ImagePipelineCon
 
         const toReturn = [];
         for (let i = 0; i < preparedImages.length; ++i) {
-            const prediction = (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.interpolate)(predicted_depth[i], preparedImages[i].size.reverse(), 'bilinear', false);
-            const formatted = prediction.mul_(255 / (0,_utils_maths_js__WEBPACK_IMPORTED_MODULE_6__.max)(prediction.data)[0]).to('uint8');
+            const batch = predicted_depth[i];
+            const [height, width] = batch.dims.slice(-2);
+            const [new_width, new_height] = preparedImages[i].size;
+
+            // Interpolate to original size
+            const prediction = (await (0,_utils_tensor_js__WEBPACK_IMPORTED_MODULE_8__.interpolate_4d)(batch.view(1, 1, height, width), {
+                size: [new_height, new_width],
+                mode: 'bilinear',
+            })).view(new_height, new_width);
+
+            const minval = /** @type {number} */(prediction.min().item());
+            const maxval = /** @type {number} */(prediction.max().item());
+            const formatted = prediction.sub(minval).div_(maxval - minval).mul_(255).to('uint8').unsqueeze(0);
+            const depth = _utils_image_js__WEBPACK_IMPORTED_MODULE_9__.RawImage.fromTensor(formatted);
             toReturn.push({
-                predicted_depth: predicted_depth[i],
-                depth: _utils_image_js__WEBPACK_IMPORTED_MODULE_9__.RawImage.fromTensor(formatted),
+                predicted_depth: prediction,
+                depth,
             });
         }
 
@@ -24171,6 +24250,7 @@ async function loadItems(mapping, model, pretrainedOptions) {
     return result;
 }
 
+
 /***/ }),
 
 /***/ "./src/tokenizers.js":
@@ -24239,7 +24319,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _utils_data_structures_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./utils/data-structures.js */ "./src/utils/data-structures.js");
 /* harmony import */ var _huggingface_jinja__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @huggingface/jinja */ "./node_modules/@huggingface/jinja/dist/index.js");
 /* harmony import */ var _models_whisper_common_whisper_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./models/whisper/common_whisper.js */ "./src/models/whisper/common_whisper.js");
-/* harmony import */ var _utils_constants_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./utils/constants.js */ "./src/utils/constants.js");
 
 /**
  * @file Tokenizers are used to prepare textual inputs for a model.
@@ -24261,7 +24340,6 @@ __webpack_require__.r(__webpack_exports__);
  * 
  * @module tokenizers
  */
-
 
 
 
@@ -24760,7 +24838,7 @@ class Unigram extends TokenizerModel {
      * Create a new Unigram tokenizer model.
      * @param {Object} config The configuration object for the Unigram model.
      * @param {number} config.unk_id The ID of the unknown token
-     * @param {any[][]} config.vocab A 2D array representing a mapping of tokens to scores.
+     * @param {[string, number][]} config.vocab A 2D array representing a mapping of tokens to scores.
      * @param {Object} moreConfig Additional configuration object for the Unigram model.
      */
     constructor(config, moreConfig) {
@@ -24768,11 +24846,10 @@ class Unigram extends TokenizerModel {
 
         const vocabSize = config.vocab.length;
         this.vocab = new Array(vocabSize);
+        /** @type {number[]} */
         this.scores = new Array(vocabSize);
         for (let i = 0; i < vocabSize; ++i) {
-            const piece = config.vocab[i];
-            this.vocab[i] = piece[0];
-            this.scores[i] = piece[1];
+            [this.vocab[i], this.scores[i]] = config.vocab[i];
         }
 
         this.unk_token_id = config.unk_id;
@@ -30129,6 +30206,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _env_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../env.js */ "./src/env.js");
 /* harmony import */ var _devices_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./devices.js */ "./src/utils/devices.js");
+/// <reference types="@webgpu/types" />
+
 
 
 
@@ -30382,7 +30461,7 @@ class FileResponse {
      */
     async arrayBuffer() {
         const data = await fs__WEBPACK_IMPORTED_MODULE_0__["default"].promises.readFile(this.filePath);
-        return data.buffer;
+        return /** @type {ArrayBuffer} */ (data.buffer);
     }
 
     /**
@@ -32041,8 +32120,9 @@ function magnitude(arr) {
 
 /**
  * Returns the value and index of the minimum element in an array.
- * @param {number[]|TypedArray} arr array of numbers.
- * @returns {[number, number]} the value and index of the minimum element, of the form: [valueOfMin, indexOfMin]
+ * @template {number[]|bigint[]|AnyTypedArray} T
+ * @param {T} arr array of numbers.
+ * @returns {T extends bigint[]|BigTypedArray ? [bigint, number] : [number, number]} the value and index of the minimum element, of the form: [valueOfMin, indexOfMin]
  * @throws {Error} If array is empty.
  */
 function min(arr) {
@@ -32055,14 +32135,15 @@ function min(arr) {
             indexOfMin = i;
         }
     }
-    return [min, indexOfMin];
+    return /** @type {T extends bigint[]|BigTypedArray ? [bigint, number] : [number, number]} */([min, indexOfMin]);
 }
 
 
 /**
  * Returns the value and index of the maximum element in an array.
- * @param {number[]|AnyTypedArray} arr array of numbers.
- * @returns {[number, number]} the value and index of the maximum element, of the form: [valueOfMax, indexOfMax]
+ * @template {number[]|bigint[]|AnyTypedArray} T
+ * @param {T} arr array of numbers.
+ * @returns {T extends bigint[]|BigTypedArray ? [bigint, number] : [number, number]} the value and index of the maximum element, of the form: [valueOfMax, indexOfMax]
  * @throws {Error} If array is empty.
  */
 function max(arr) {
@@ -32075,7 +32156,7 @@ function max(arr) {
             indexOfMax = i;
         }
     }
-    return [Number(max), indexOfMax];
+    return /** @type {T extends bigint[]|BigTypedArray ? [bigint, number] : [number, number]} */([max, indexOfMax]);
 }
 
 function isPowerOfTwo(number) {
@@ -33372,8 +33453,6 @@ class Tensor {
         return this.permute(...dims);
     }
 
-    // TODO add .max() and .min() methods
-
     /**
      * Returns the sum of each row of the input tensor in the given dimension dim.
      *
@@ -33667,6 +33746,36 @@ class Tensor {
         return mean(this, dim, keepdim);
     }
 
+    min(dim = null, keepdim = false) {
+        if (dim !== null) {
+            throw new Error("`dim !== null` not yet implemented.");
+        }
+        const value = (0,_maths_js__WEBPACK_IMPORTED_MODULE_0__.min)(this.data)[0];
+        return new Tensor(this.type, [value], []);
+    }
+    max(dim = null, keepdim = false) {
+        if (dim !== null) {
+            throw new Error("`dim !== null` not yet implemented.");
+        }
+        const value = (0,_maths_js__WEBPACK_IMPORTED_MODULE_0__.max)(this.data)[0];
+        return new Tensor(this.type, [value], []);
+    }
+
+    argmin(dim = null, keepdim = false) {
+        if (dim !== null) {
+            throw new Error("`dim !== null` not yet implemented.");
+        }
+        const index = (0,_maths_js__WEBPACK_IMPORTED_MODULE_0__.min)(this.data)[1];
+        return new Tensor('int64', [BigInt(index)], []);
+    }
+    argmax(dim = null, keepdim = false) {
+        if (dim !== null) {
+            throw new Error("`dim !== null` not yet implemented.");
+        }
+        const index = (0,_maths_js__WEBPACK_IMPORTED_MODULE_0__.max)(this.data)[1];
+        return new Tensor('int64', [BigInt(index)], []);
+    }
+
     /**
      * Performs Tensor dtype conversion.
      * @param {DataType} type The desired data type.
@@ -33800,7 +33909,7 @@ function interpolate(input, [out_height, out_width], mode = 'bilinear', align_co
  * @param {Tensor} input the input tensor
  * @param {Object} options the options for the interpolation
  * @param {[number, number]|[number, number, number]|[number, number, number, number]} [options.size=null] output spatial size.
- * @param {"bilinear"|"bicubic"} [options.mode='bilinear'] algorithm used for upsampling
+ * @param {"nearest"|"bilinear"|"bicubic"} [options.mode='bilinear'] algorithm used for upsampling
  * @returns {Promise<Tensor>} The interpolated tensor.
  */
 async function interpolate_4d(input, {
@@ -33830,7 +33939,9 @@ async function interpolate_4d(input, {
     }
 
     let op;
-    if (mode === 'bilinear') {
+    if (mode === 'nearest') {
+        op = await _ops_registry_js__WEBPACK_IMPORTED_MODULE_2__.TensorOpRegistry.nearest_interpolate_4d;
+    } else if (mode === 'bilinear') {
         op = await _ops_registry_js__WEBPACK_IMPORTED_MODULE_2__.TensorOpRegistry.bilinear_interpolate_4d;
     } else if (mode === 'bicubic') {
         op = await _ops_registry_js__WEBPACK_IMPORTED_MODULE_2__.TensorOpRegistry.bicubic_interpolate_4d;
@@ -33871,13 +33982,13 @@ async function rfft(x, a) {
  * Returns the k largest elements of the given input tensor.
  * Inspired by https://pytorch.org/docs/stable/generated/torch.topk.html
  * @param {Tensor} x the input tensor
- * @param {number} k the k in "top-k"
+ * @param {number} [k] the k in "top-k"
  * @returns {Promise<[Tensor, Tensor]>} the output tuple of (Tensor, LongTensor) of top-k elements and their indices.
  */
 async function topk(x, k) {
     const op = await _ops_registry_js__WEBPACK_IMPORTED_MODULE_2__.TensorOpRegistry.top_k;
 
-    if (k === null) {
+    if (k == null) {
         k = x.dims.at(-1);
     } else {
         k = Math.min(k, x.dims.at(-1));
@@ -33906,10 +34017,10 @@ const arrayToIndexTensor = (array) => new Tensor('int64', array, [array.length])
 async function slice(data, starts, ends, axes, steps) {
     const op = await _ops_registry_js__WEBPACK_IMPORTED_MODULE_2__.TensorOpRegistry.slice;
     return await op({
-        x: data, 
-        s: arrayToIndexTensor(starts), 
-        e: arrayToIndexTensor(ends), 
-        a: arrayToIndexTensor(axes), 
+        x: data,
+        s: arrayToIndexTensor(starts),
+        e: arrayToIndexTensor(ends),
+        a: arrayToIndexTensor(axes),
         t: arrayToIndexTensor(steps ?? new Array(axes.length).fill(1)),
     });
 }

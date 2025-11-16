@@ -69,7 +69,7 @@ export class WhisperGenerationConfig extends GenerationConfig {
      */
     max_initial_timestamp_index: number;
 }
-export type WhisperGenerationFunctionParameters = any & {
+export type WhisperGenerationFunctionParameters = import("../../generation/parameters.js").GenerationFunctionParameters & {
     generation_config: WhisperGenerationConfig;
 } & WhisperGenerationConfig;
 import { GenerationConfig } from "../../generation/configuration_utils.js";

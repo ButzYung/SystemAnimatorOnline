@@ -69,7 +69,7 @@ import {
 import {
     Tensor,
     mean_pooling,
-    interpolate,
+    interpolate_4d,
     quantize_embeddings,
     topk,
 } from './utils/tensor.js';
@@ -294,6 +294,7 @@ export class TextClassificationPipeline extends (/** @type {new (options: TextPi
 
         // TODO: Use softmax tensor function
         const function_to_apply =
+            // @ts-expect-error TS2339
             this.model.config.problem_type === 'multi_label_classification'
                 ? batch => batch.sigmoid()
                 : batch => new Tensor(
@@ -302,6 +303,7 @@ export class TextClassificationPipeline extends (/** @type {new (options: TextPi
                     batch.dims,
                 ); // single_label_classification (default)
 
+        // @ts-expect-error TS2339
         const id2label = this.model.config.id2label;
 
         const toReturn = [];
@@ -404,6 +406,7 @@ export class TokenClassificationPipeline extends (/** @type {new (options: TextP
         const outputs = await this.model(model_inputs)
 
         const logits = outputs.logits;
+        // @ts-expect-error TS2339
         const id2label = this.model.config.id2label;
 
         const toReturn = [];
@@ -743,11 +746,14 @@ export class Text2TextGenerationPipeline extends (/** @type {new (options: TextP
 
 
         // Add global prefix, if present
+        // @ts-expect-error TS2339
         if (this.model.config.prefix) {
+            // @ts-expect-error TS2339
             texts = texts.map(x => this.model.config.prefix + x)
         }
 
         // Handle task specific params:
+        // @ts-expect-error TS2339
         const task_specific_params = this.model.config.task_specific_params
         if (task_specific_params && task_specific_params[this.task]) {
             // Add prefixes, if present
@@ -1486,6 +1492,7 @@ export class AudioClassificationPipeline extends (/** @type {new (options: Audio
         const sampling_rate = this.processor.feature_extractor.config.sampling_rate;
         const preparedAudios = await prepareAudios(audio, sampling_rate);
 
+        // @ts-expect-error TS2339
         const id2label = this.model.config.id2label;
 
         const toReturn = [];
@@ -1796,6 +1803,7 @@ export class AutomaticSpeechRecognitionPipeline extends (/** @type {new (options
             audio = [/** @type {AudioInput} */ (audio)];
         }
 
+        // @ts-expect-error TS2339
         const time_precision = this.processor.feature_extractor.config.chunk_length / this.model.config.max_source_positions;
         const hop_length = this.processor.feature_extractor.config.hop_length;
 
@@ -1861,7 +1869,9 @@ export class AutomaticSpeechRecognitionPipeline extends (/** @type {new (options
 
                 // TODO: Right now we only get top beam
                 if (return_timestamps === 'word') {
+                    // @ts-expect-error TS2339
                     chunk.tokens = data.sequences.tolist()[0];
+                    // @ts-expect-error TS2339
                     chunk.token_timestamps = data.token_timestamps.tolist()[0].map(
                         (/** @type {number} */ x) => round(x, 2)
                     );
@@ -1906,7 +1916,7 @@ export class AutomaticSpeechRecognitionPipeline extends (/** @type {new (options
             const max_new_tokens = Math.floor(aud.length / sampling_rate) * 6;
             const outputs = await this.model.generate({ max_new_tokens, ...kwargs, ...inputs });
 
-            const text = this.processor.batch_decode(outputs, { skip_special_tokens: true })[0];
+            const text = this.processor.batch_decode(/** @type {Tensor} */(outputs), { skip_special_tokens: true })[0];
             toReturn.push({ text });
         }
         return single ? toReturn[0] : toReturn;
@@ -2055,6 +2065,7 @@ export class ImageClassificationPipeline extends (/** @type {new (options: Image
         const { pixel_values } = await this.processor(preparedImages);
         const output = await this.model({ pixel_values });
 
+        // @ts-expect-error TS2339
         const id2label = this.model.config.id2label;
 
         /** @type {ImageClassificationOutput[]} */
@@ -2169,6 +2180,7 @@ export class ImageSegmentationPipeline extends (/** @type {new (options: ImagePi
             }
         }
 
+        // @ts-expect-error TS2339
         const id2label = this.model.config.id2label;
 
         /** @type {ImageSegmentationPipelineOutput[]} */
@@ -2395,6 +2407,7 @@ export class ObjectDetectionPipeline extends (/** @type {new (options: ImagePipe
         const processed = this.processor.image_processor.post_process_object_detection(output, threshold, imageSizes);
 
         // Add labels
+        // @ts-expect-error TS2339
         const id2label = this.model.config.id2label;
 
         // Format output
@@ -2614,6 +2627,7 @@ export class DocumentQuestionAnsweringPipeline extends (/** @type {new (options:
         // Run model
         const output = await this.model.generate({
             inputs: pixel_values,
+            // @ts-expect-error TS2339
             max_length: this.model.config.decoder.max_position_embeddings,
             decoder_input_ids,
             ...generate_kwargs,
@@ -2729,6 +2743,7 @@ export class TextToAudioPipeline extends (/** @type {new (options: TextToAudioPi
         // Generate waveform
         const { waveform } = await this.model(inputs);
 
+        // @ts-expect-error TS2339
         const sampling_rate = this.model.config.sampling_rate;
         return {
             audio: waveform.data,
@@ -2886,11 +2901,23 @@ export class DepthEstimationPipeline extends (/** @type {new (options: ImagePipe
 
         const toReturn = [];
         for (let i = 0; i < preparedImages.length; ++i) {
-            const prediction = interpolate(predicted_depth[i], preparedImages[i].size.reverse(), 'bilinear', false);
-            const formatted = prediction.mul_(255 / max(prediction.data)[0]).to('uint8');
+            const batch = predicted_depth[i];
+            const [height, width] = batch.dims.slice(-2);
+            const [new_width, new_height] = preparedImages[i].size;
+
+            // Interpolate to original size
+            const prediction = (await interpolate_4d(batch.view(1, 1, height, width), {
+                size: [new_height, new_width],
+                mode: 'bilinear',
+            })).view(new_height, new_width);
+
+            const minval = /** @type {number} */(prediction.min().item());
+            const maxval = /** @type {number} */(prediction.max().item());
+            const formatted = prediction.sub(minval).div_(maxval - minval).mul_(255).to('uint8').unsqueeze(0);
+            const depth = RawImage.fromTensor(formatted);
             toReturn.push({
-                predicted_depth: predicted_depth[i],
-                depth: RawImage.fromTensor(formatted),
+                predicted_depth: prediction,
+                depth,
             });
         }
 

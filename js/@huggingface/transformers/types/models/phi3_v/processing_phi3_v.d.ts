@@ -5,10 +5,14 @@ export class Phi3VProcessor extends Processor {
      *
      * @param {string|string[]} text
      * @param {RawImage|RawImage[]} images
-     * @param  {...any} args
+     * @param  { { padding?: boolean, truncation?: boolean, num_crops?: number } | undefined } options
      * @returns {Promise<any>}
      */
-    _call(text: string | string[], images?: RawImage | RawImage[], { padding, truncation, num_crops, }?: any[]): Promise<any>;
+    _call(text: string | string[], images?: RawImage | RawImage[], { padding, truncation, num_crops, }?: {
+        padding?: boolean;
+        truncation?: boolean;
+        num_crops?: number;
+    } | undefined): Promise<any>;
 }
 import { Processor } from "../../base/processing_utils.js";
 import { RawImage } from "../../utils/image.js";
