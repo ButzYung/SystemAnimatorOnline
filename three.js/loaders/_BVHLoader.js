@@ -204,7 +204,7 @@ class BVHLoader extends Loader {
 		}
 
 		/*
-		 Recursively parses the HIERACHY section of the BVH file
+		 Recursively parses the HIERARCHY section of the BVH file
 
 		 - lines: all lines of the file. lines are consumed as we go along.
 		 - firstline: line containing the node type and name e.g. 'JOINT hip'
@@ -385,13 +385,13 @@ class BVHLoader extends Loader {
 
 				if ( scope.animateBonePositions ) {
 
-					tracks.push( new VectorKeyframeTrack( '.bones[' + bone.name + '].position', times, positions ) );
+					tracks.push( new VectorKeyframeTrack( bone.name + '.position', times, positions ) );
 
 				}
 
 				if ( scope.animateBoneRotations ) {
 
-					tracks.push( new QuaternionKeyframeTrack( '.bones[' + bone.name + '].quaternion', times, rotations ) );
+					tracks.push( new QuaternionKeyframeTrack( bone.name + '.quaternion', times, rotations ) );
 
 				}
 

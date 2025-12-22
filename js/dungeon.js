@@ -1,4 +1,4 @@
-// (2024-09-15)
+// (2025-02-09)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -3481,6 +3481,13 @@ System._browser.translation.dictionary = {
 									"ja": "ユーザーインターフェースはオフになりました。 Esc キーを押すと、下部のメニュー表示が切り替わります。",
 									"zh": "使用者介面現已關閉。 按 Esc 鍵切換下方介面的顯示。"
 								},
+								"mobile": {
+									"_translation_": {
+										"_default_": "User interface is now OFF. Touch and hold for 1 second, and press / key to toggle the bottom menu display.",
+										"ja": "ユーザーインターフェースはオフになりました。 1 秒間タッチしたままにして、/ キーを押すと、下部のメニュー表示が切り替わります。",
+										"zh": "使用者介面現已關閉。 點擊螢幕並按住 1 秒鐘，然後按 / 鍵切換下方介面的顯示。"
+									}
+								},
 								"green_screen": {
 									"_translation_": {
 										"_default_": "green screen",
@@ -5063,7 +5070,7 @@ drop_item(index_source, _idx);
   var img_icon = d = document.createElement("img")
   ds = d.style
   d.id = "Ldungeon_inventory_item" + idx + "_icon"
-
+// AFTER
 ds.pointerEvents = 'none';
 
   ds.position = "absolute"
@@ -5073,7 +5080,7 @@ ds.pointerEvents = 'none';
   var img_border = d = document.createElement("img")
   ds = d.style
   d.id = "Ldungeon_inventory_item" + idx + "_border"
-
+// AFTER
 ds.pointerEvents = 'none';
 
   ds.position = "absolute"
@@ -6773,6 +6780,9 @@ if (msg_branch_list) {
     const sb = MMD_SA.SpeechBubble.list[sb_index];
 
     if (branch.key == 'any') {
+      if ((_e.keyCode >= 96) && (_e.keyCode <= 96+9)) {
+        _e.key = (_e.keyCode - 96).toString();
+      }
       const result = branch.func(e.detail.e);
       if (result) {
         e.detail.result.return_value = true;
@@ -11568,7 +11578,7 @@ DEBUG_show("3D Resolution:" + (((is_default_res) && (Math.round(MMD_SA._renderer
           message: {
   get content() {
 if (System._browser.overlay_mode)
-  return System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.user_interface.UI_off') + '\n1. ' + ((System._browser.overlay_mode == 2) ? 'UI: OFF + ' + System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.user_interface.UI_off.green_screen') : System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.user_interface') + ': OFF') + '\n2. ' + System._browser.translation.get('Misc.done');
+  return System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.user_interface.UI_off' + ((is_mobile) ? '.mobile' : '')) + '\n1. ' + ((System._browser.overlay_mode == 2) ? 'UI: OFF + ' + System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.user_interface.UI_off.green_screen') : System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.user_interface') + ': OFF') + '\n2. ' + System._browser.translation.get('Misc.done');
 return '1. ' + System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.user_interface') + ': ON' + ((MMD_SA_options.user_camera.ML_models.enabled && (System._browser.overlay_mode == 0)) ? '\n2. ' + System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.camera_display') + ': ' + ((MMD_SA_options.user_camera.display.video.hidden) ? 'OFF' : ((MMD_SA_options.user_camera.display.video.hidden == null) ? System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.camera_display.non_webcam') : 'ON')) + '\n3. ' + System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.wireframe_display') + ': ' + ((MMD_SA_options.user_camera.display.wireframe.hidden) ? 'OFF' : 'ON') + '\n4. ' + System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.mocap_debug_display') + ': ' + ((MMD_SA_options.user_camera.ML_models.debug_hidden) ? 'OFF' : 'ON') + '\n5. ' + System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.UI_sound_effects') + ': ' + ((MMD_SA_options.Dungeon.inventory.UI.muted)?'OFF':'ON') + '\n6. ' + System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.UI_language') + ': ' + System._browser.translation.language_info + '\n7. ' + System._browser.translation.get('Misc.done') : '\n2. ' + System._browser.translation.get('Misc.done'));
   }
  ,para: { no_word_break:true }

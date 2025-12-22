@@ -411,6 +411,7 @@ var use_config_local = webkit_mode && cf_full && (cf != cf_full)
 
 if (saved_settings) {
 
+// AFTER
   if (save_settings_by_localStorage) {
     let Settings_by_path = JSON.parse(localStorage.Settings_by_path);
     if (Settings_by_path[SA_HTA_folder]) {

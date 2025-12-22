@@ -1,6 +1,6 @@
 /*
 
-_SA.js (2025-01-19)
+_SA.js (2025-02-09)
 
 System Animator
 (c) Butz Yung / Anime Theme. All rights reserved.

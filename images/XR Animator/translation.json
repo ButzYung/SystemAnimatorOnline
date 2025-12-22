@@ -318,9 +318,9 @@
 					},
 					"tooltip": {
 						"_translation_": {
-							"_default_": "Clear all custom poses:\nXR Animator saves custom poses/motions (VMD/FBX/BVH) you have dropped to the app, which can be mixed with upper body mocap just like those preset poses. However, the number of custom poses you can save is limited. This option clears all saved custom poses and motions.",
-							"ja": "すべてのカスタムポーズをクリアする:\nXR Animator は、アプリにドロップしたカスタム ポーズ/モーション (VMD/FBX/BVH) を保存し、プリセット ポーズと同様に上半身のモーション キャプチャと混合できます。 ただし、保存できるカスタム ポーズの数には制限があります。 このオプションは、保存されているカスタム ポーズとモーションをすべてクリアします。",
-							"zh": "清空所有自訂動作:\nXR Animator 會將使用者拖曳的動作檔案 (VMD/FBX/BVH) 的位置儲存，而這些自訂動作均可用於上半身動捕。 不過要注意可儲存的自訂動作數目是有上限的。 此選項會清空所有自訂動作。"
+							"_default_": "Clear all custom poses:\nXR Animator saves custom poses/motions (VMD/FBX/BVH/VRMA) you have dropped to the app, which can be mixed with upper body mocap just like those preset poses. However, the number of custom poses you can save is limited. This option clears all saved custom poses and motions.",
+							"ja": "すべてのカスタムポーズをクリアする:\nXR Animator は、アプリにドロップしたカスタム ポーズ/モーション (VMD/FBX/BVH/VRMA) を保存し、プリセット ポーズと同様に上半身のモーション キャプチャと混合できます。 ただし、保存できるカスタム ポーズの数には制限があります。 このオプションは、保存されているカスタム ポーズとモーションをすべてクリアします。",
+							"zh": "清空所有自訂動作:\nXR Animator 會將使用者拖曳的動作檔案 (VMD/FBX/BVH/VRMA) 的位置儲存，而這些自訂動作均可用於上半身動捕。 不過要注意可儲存的自訂動作數目是有上限的。 此選項會清空所有自訂動作。"
 						}
 					}
 				},
@@ -430,6 +430,13 @@
 						"zh": "影像媒體檔案"
 					}
 				},
+				"next_6_webcams": {
+					"_translation_": {
+						"_default_": "Next 6 webcams",
+						"ja": "次の 6 つのWebカメラ",
+						"zh": "接下來的 6 個網路攝影機"
+					}
+				},
 				"options": {
 					"resolution_limit": {
 						"_translation_": {
@@ -535,7 +542,7 @@
 					},
 					"ML_off": {
 						"_translation_": {
-							"_default_": "- Double-click to enable motion capture to control the avatar.\n- You can track any combination of face, hands and body.\n- Use mouse or keys to pick a numbered option.",
+							"_default_": "- Double-click to enable motion capture to control the avatar.\n- You can track any combination of face, hands and body.\n- Use mouse or keys to pick an alphanumeric option.",
 							"ja": "- ダブルクリックしてモーション キャプチャを有効にしてアバターを制御します。\n- 顔、手、体のあらゆる組み合わせを追跡できます。\n- マウスまたは英数字キーを使用してオプションを選択する。",
 							"zh": "- 按兩下啟動動作捕捉以控制你的人物。\n- 可選擇追蹤包括臉、手或身體的任何組合。\n- 以滑鼠或英數字鍵選擇選項。"
 						}
@@ -575,9 +582,9 @@
 						},
 						"no_motion": {
 							"_translation_": {
-								"_default_": "There is no motion to export. Enable motion capture and record the motion, or drop a FBX/BVH motion file.",
-								"ja": "エクスポートするモーションはありません。 モーション キャプチャを有効にしてモーションを記録するか、FBX/BVH モーション ファイルをドロップします。",
-								"zh": "現在沒有可匯出的動作。 啟動動作捕捉並紀錄動作, 或拖曳 FBX/BVH 動作檔案。"
+								"_default_": "There is no motion to export. Enable motion capture and record the motion, or drop a FBX/BVH/VRMA motion file.",
+								"ja": "エクスポートするモーションはありません。 モーション キャプチャを有効にしてモーションを記録するか、FBX/BVH/VRMA モーション ファイルをドロップします。",
+								"zh": "現在沒有可匯出的動作。 啟動動作捕捉並紀錄動作, 或拖曳 FBX/BVH/VRMA 動作檔案。"
 							}
 						},
 						"choose_format": {
@@ -636,9 +643,9 @@
 								},
 								"recording_stopped": {
 									"_translation_": {
-										"_default_": "Motion recording has stopped. Double-click and you can export the motion to a file in VMD or BVH format.",
-										"ja": "モーション録画が停止されました。 ダブルクリックすると、モーションを VMD または BVH 形式のファイルにエクスポートできます。",
-										"zh": "動作記録已停止。 你可以按此兩下並選擇將動作匯出成 VMD 或 BVH 格式的動作檔案。"
+										"_default_": "Motion recording has stopped. Double-click and you can export the motion to a file in various format.",
+										"ja": "モーション録画が停止されました。 ダブルクリックすると、モーションをさまざまな形式のファイルにエクスポートできます。",
+										"zh": "動作記録已停止。 你可以按兩下並選擇將動作匯出為各種格式的檔案。"
 									}
 								}
 							}
@@ -3493,7 +3500,7 @@
 							},
 							"list": {
 								"_translation_": {
-									"_default_": "NewruGuru, Kai, Nymph, KuraiNoOni, LouLi Lou, coffee-addict, skeh, Swoonifer, Nyaarium, The Infamous Moistener, Kyonko_VT, ObsidianMaker, CoCoNo,"
+									"_default_": "NewruGuru, Kai, Nymph, KuraiNoOni, LouLi Lou, skeh, Swoonifer, Nyaarium, Kyonko_VT, ObsidianMaker, Catt, CoCoNo,"
 								}
 							}
 						}
@@ -3540,7 +3547,7 @@
 				},
 				"info": {
 					"_translation_": {
-						"_default_": "- Press F12 to capture a still image of the 3D content.\n- Press F9 to capture a video of the 3D content. Press F10 to stop and return the recorded MP4 file.\n- Double-click for settings.\n- Use mouse or keys to pick a numbered option.",
+						"_default_": "- Press F12 to capture a still image of the 3D content.\n- Press F9 to capture a video of the 3D content. Press F10 to stop and return the recorded MP4 file.\n- Double-click for settings.\n- Use mouse or keys to pick an alphanumeric option.",
 						"ja": "- F12を押して3Dコンテンツの静止画像をキャプチャします。\n- F9を押して3Dコンテンツのビデオをキャプチャします。 F10を押して停止し、記録された MP4ファイルを戻します。\n- ダブルクリックして設定を行います。\n- マウスまたは英数字キーを使用してオプションを選択する。",
 						"zh": "- 按 F12 擷取現在的 3D 畫面。\n- 按 F9 開始錄製現在的 3D 畫面。 按 F10 結束並匯出成 MP4 影像檔案。\n- 按兩下進入設定。\n- 以滑鼠或英數字鍵選擇選項。"
 					}
@@ -3696,9 +3703,9 @@
 			},
 			"motion": {
 				"_translation_": {
-					"_default_": "Drop a VMD/FBX/BVH motion, and animate your avatar!",
-					"ja": "VMD/FBX/BVH モーションをドロップしてアバターを動かしましょう！",
-					"zh": "你亦可以拖曳 VMD/FBX/BVH 動作檔案使你的人物動起來！"
+					"_default_": "Drop a VMD/FBX/BVH/VRMA motion, and animate your avatar!",
+					"ja": "VMD/FBX/BVH/VRMA モーションをドロップしてアバターを動かしましょう！",
+					"zh": "你亦可以拖曳 VMD/FBX/BVH/VRMA 動作檔案使你的人物動起來！"
 				}
 			},
 			"AR": {

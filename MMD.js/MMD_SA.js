@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2025-01-19)
+// (2025-02-09)
 
 var use_full_spectrum = true
 
@@ -332,7 +332,7 @@ vo.audio_onended = function (e) {
 
 Audio_BPM.checkWinamp(vo)
 
-DragDrop_RE = eval('/\\.(' + DragDrop_RE_default_array.concat(["vmd", "bvh", "mp3", "wav", "aac", "zip", "json", "vrm", "fbx", "gltf", "glb", "exr", "hdr"]).join("|") + ')$/i')
+DragDrop_RE = eval('/\\.(' + DragDrop_RE_default_array.concat(["vmd", "bvh", "mp3", "wav", "aac", "zip", "json", "vrm", "vrma", "fbx", "gltf", "glb", "exr", "hdr"]).join("|") + ')$/i')
 
 DragDrop.onDrop_finish = async function (item) {
   function load_motion(func) {
@@ -372,7 +372,8 @@ DEBUG_show('(Startup motion added)', 2);
   const results = await Promise.all(promises_to_return);
   if (results.some(r=>r)) return;
 
-  var src = item.path
+  let src = item.path;
+//DEBUG_show(src,0,1)
   if (item.isFileSystem && /([^\/\\]+)\.zip$/i.test(src)) {
 //DEBUG_show(toFileProtocol(src))
 //    if (!MMD_SA.jThree_ready) return;
@@ -550,6 +551,8 @@ console.log("(model.json updated)");
     ].join("\n");
     DEBUG_show(sb._msg_mouseover, -1);
 
+    if (MMD_SA._click_to_reset)
+      Ldebug.removeEventListener("click", MMD_SA._click_to_reset);
     MMD_SA._click_to_reset = function () {
 MMD_SA._init_my_model = null;
 SystemAnimator_caches.delete(["/user-defined-local/my_model.zip", "/user-defined-local/my_model.vrm"]);
@@ -561,7 +564,7 @@ DEBUG_show(sb._msg_mouseover, -1);
 Ldebug.style.cursor = "default";
 Ldebug.removeEventListener("click", MMD_SA._click_to_reset);
 MMD_SA._click_to_reset = null;
-};
+    };
     Ldebug.style.cursor = "pointer";
     Ldebug.addEventListener("click", MMD_SA._click_to_reset);
   }
@@ -601,6 +604,8 @@ console.log("(model.json updated)");
     ].join("\n");
     DEBUG_show(sb._msg_mouseover, -1);
 
+    if (MMD_SA._click_to_reset)
+      Ldebug.removeEventListener("click", MMD_SA._click_to_reset);
     MMD_SA._click_to_reset = function () {
 SystemAnimator_caches.delete(["/user-defined-local/my_model.zip", "/user-defined-local/my_model.vrm"]);
 System.Gadget.Settings.writeString("LABEL_3D_model_path", "");
@@ -610,7 +615,7 @@ DEBUG_show(sb._msg_mouseover, -1);
 Ldebug.style.cursor = "default";
 Ldebug.removeEventListener("click", MMD_SA._click_to_reset);
 MMD_SA._click_to_reset = null;
-};
+    };
     Ldebug.style.cursor = "pointer";
     Ldebug.addEventListener("click", MMD_SA._click_to_reset);
   }
@@ -650,6 +655,8 @@ MMD_SA._click_to_reset = null;
       ].join("\n");
       DEBUG_show(sb._msg_mouseover, -1);
 
+      if (MMD_SA._click_to_reset)
+        Ldebug.removeEventListener("click", MMD_SA._click_to_reset);
       MMD_SA._click_to_reset = function () {
 SystemAnimator_caches.delete(["/user-defined-local/my_model.zip", "/user-defined-local/my_model.vrm"]);
 System.Gadget.Settings.writeString("LABEL_3D_model_path", "");
@@ -659,7 +666,7 @@ DEBUG_show(sb._msg_mouseover, -1);
 Ldebug.style.cursor = "default";
 Ldebug.removeEventListener("click", MMD_SA._click_to_reset);
 MMD_SA._click_to_reset = null;
-};
+      };
       Ldebug.style.cursor = "pointer";
       Ldebug.addEventListener("click", MMD_SA._click_to_reset);
     }
@@ -669,11 +676,16 @@ MMD_SA._click_to_reset = null;
     if (webkit_electron_mode)
       System.Gadget.Settings.writeString("LABEL_3D_model_path", src);
   }
-  else if (item.isFileSystem && /([^\/\\]+)\.(vmd|bvh)$/i.test(src) || (item.isFileSystem && /([^\/\\]+)\.(fbx|glb)$/i.test(src) && (!MMD_SA.THREEX.enabled || MMD_SA.THREEX.utils.convert_THREEX_motion_to_VMD))) {
+  else if (item.isFileSystem && /([^\/\\]+)\.(vmd|bvh)$/i.test(src) || (item.isFileSystem && /([^\/\\]+)\.(fbx|glb|vrma)$/i.test(src) && (!MMD_SA.THREEX.enabled || MMD_SA.THREEX.utils.convert_THREEX_motion_to_VMD))) {
     const filename = RegExp.$1;
 
+    if (/\.vrma$/i.test(src) && !MMD_SA.THREEX.enabled) {
+      DEBUG_show("(VRMA is for VRM model only.)", 3);
+      return;
+    }
+
     if (MMD_SA.music_mode) {
-      DEBUG_show("(no external motion while music is still playing)", 2)
+      DEBUG_show("(no external motion while music is still playing)", 3);
       return
     }
     if (MMD_SA._busy_mode1_) {
@@ -9397,7 +9409,7 @@ if (this.reset_pose) {
 }
 this.scale(vrm_scale);
 
-if (!is_VRM1) mesh.quaternion.multiplyQuaternions(q1.set(0,1,0,0), mesh.quaternion);
+if (!is_VRM1) mesh.quaternion.premultiply(q1.set(0,1,0,0));
 
 if (animation_enabled) {
   this.animation.mixer.update(time_delta);
@@ -11889,8 +11901,6 @@ Object.assign(self.THREE, GLTFLoader_module);
 //const GLTFExporter_module = await import(System.Gadget.path + '/three.js/exporters/GLTFExporter.js');
 //Object.assign(self.THREE, GLTFExporter_module);
 
-//const BVHLoader_module = await import(System.Gadget.path + '/three.js/BVHLoader.js'); Object.assign(self.THREE, BVHLoader_module);
-
 // three-vrm 1.0
 if (use_VRM1) {
 //  await System._browser.load_script('./three.js/three-vrm.min_OLD.js');
@@ -12391,7 +12401,7 @@ if (MMD_SA.hide_3D_avatar) {
   const obj_check_list = [models[0].mesh];
   if (MMD_SA_options.Dungeon) {
     obj_check_list.push(MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj);
-    if (MMD_SA.THREEX._object3d_list_)
+    if (MMD_SA.THREEX._object3d_list_ && !MMD_SA.THREEX._XR_Animator_scene_?.settings?.avatar_replacement_mode)
       obj_check_list.push(...MMD_SA.THREEX._object3d_list_.map(obj=>obj._obj));
   }
   obj_check_list.forEach(obj=>{
@@ -12574,6 +12584,8 @@ else if (c.type == 'AmbientLight') {
     })(),
 
     VRM: VRM,
+
+    get GLTF_loader() { return GLTF_loader; },
 
     utils: {
 
@@ -12787,48 +12799,6 @@ if (VMD) {
 }
         }
 
-        function get_sub_track_value(track_main, track_sub, time_index, para) {
-function frame_id(t) {
-  return Math.round(t*600);
-}
-
-if (time_index == 0)
-  para.time_index = 0;
-
-const f = frame_id(track_main.times[time_index]);
-while ((para.time_index < track_sub.times.length) && (f > frame_id(track_sub.times[para.time_index]))) {
-  para.time_index++;
-}
-para.time_index = Math.min(para.time_index, track_sub.times.length-1);
-
-const dim = (track_main instanceof THREE.QuaternionKeyframeTrack) ? 4 : 3;
-const k1 = para.time_index * dim;
-const value = (dim == 4) ? q1 : v1;
-value.fromArray(track_sub.values.slice(k1, k1+dim));
-
-if ((para.time_index > 0) && (f != frame_id(track_sub.times[para.time_index]))) {
-  const time_max = Math.max(track_main.times[time_index], track_sub.times[para.time_index]);
-  const time_delta = time_max - track_main.times[time_index];
-  const time_range = time_max - track_sub.times[para.time_index-1];
-  if ((time_delta > 0) && (time_range > 0)) {
-    const k0 = (para.time_index-1) * dim;
-    if (dim == 4) {
-//if (q1.toArray().some(v=>isNaN(v))) console.log(track_sub, para.time_index+'/'+(track_sub.times.length-1), k1);
-      q2.fromArray(track_sub.values.slice(k0, k0+4));
-      q1.slerp(q2, time_delta/time_range);
-    }
-    else if (dim == 3) {
-      v2.fromArray(track_sub.values.slice(k0, k0+3));
-      v1.lerp(v2, time_delta/time_range);
-    }
-  }
-}
-
-para.time_index++;
-
-return value.toArray();
-        }
-
         const build_rig_map = (()=>{
 function MMD_LR(name) {
   var dir;
@@ -12898,20 +12868,29 @@ function is_armature(obj) {
 
 const bone_map = [];
 let has_armature;
-asset.traverse((obj)=>{
-  if (obj.name == 'Armature') {
-    has_armature = true;
-  }
-  else if (obj.isBone || is_armature(obj)) {
-    if (bone_map.findIndex(name=>name==obj.name) == -1)
-      bone_map.push(obj.name);
-  }
+if (Array.isArray(asset)) {
+  asset.forEach(t=>{
+    const [name, property] = t.name.split('.');
+    if (/position|quaternion/.test(property))
+      bone_map.push(name);
+  });
+}
+else {
+  asset.traverse((obj)=>{
+    if (obj.name == 'Armature') {
+      has_armature = true;
+    }
+    else if (obj.isBone || is_armature(obj)) {
+      if (bone_map.findIndex(name=>name==obj.name) == -1)
+        bone_map.push(obj.name);
+    }
 // fingersbase
-  else if (is_XRA_rig && /^(left|right)hand$/i.test(obj.name)) {
-    bone_map.push(obj.name);
-    console.log('XRA-rig-fix', obj.name);
-  }
-});
+    else if (is_XRA_rig && /^(left|right)hand$/i.test(obj.name)) {
+      bone_map.push(obj.name);
+      console.log('XRA-rig-fix', obj.name);
+    }
+  });
+}
 
 const _rig_map = {};
 
@@ -12932,7 +12911,7 @@ bone_map.forEach(name=>{
   else if (/head/i.test(name)) {
     rig('頭', name);
   }
-  else if (/(thumb|index|mid\D*|ring|pinky|little|finger)(\d+)$/i.test(name)) {
+  else if (/(thumb|index|mid\D*|ring|pinky|little|finger)(\d+)($|_[LR]$)/i.test(name)) {
     const name_MMD = MMD_finger(name);
     if (!/twist|share/i.test(name))
       rig(name_MMD, name);
@@ -12970,18 +12949,298 @@ return rig_map;
           };
         })();
 
-//"肩","腕","ひじ","手首"
+        function convert_AnimationClip_to_VMD(clip, tracks, para) {
+  const { url, rig_map, hips_height, morphKeys } = para;
+
+  const boneKeys = {};
+  for (const name in rig_map.MMD) {
+    let name_MMD = rig_map.MMD[name];
+    if (!name_MMD) continue;
+
+    const tracks_by_name = tracks.filter(t=>t.name.split('.')[0]==name_MMD);
+    if (!tracks_by_name.length) continue;
+
+    let track_pos, track_rot;
+    tracks_by_name.forEach(t=>{
+      if (t instanceof THREE.QuaternionKeyframeTrack) {
+        track_rot = t;
+      }
+      else {
+        track_pos = t;
+      }
+    });
+
+    let pos_index = 0;
+    let rot_index = 0;
+    let f_last = -1;
+    let keys;
+
+    const time_max = Math.max(clip.duration, 1/30);
+
+    if (name_MMD == 'センター') {
+      pos_index = 0;
+      f_last = -1;
+      keys = [];
+
+// offset the adjustment when applying VMD center position to VRM (.update_model())
+      const leg_scale = threeX.get_model(0).para.left_leg_length / MMD_SA_options.model_para_obj.left_leg_length;
+
+      while (track_pos && (pos_index < track_pos.times.length)) {
+        const f = Math.round(track_pos.times[pos_index]*30);
+        if (f > f_last) {
+          const pos = [track_pos.values[pos_index*3]/leg_scale, (track_pos.values[pos_index*3+1]-hips_height)/leg_scale, track_pos.values[pos_index*3+2]/leg_scale];
+          const key = new BoneKey('センター', f/30, pos, [0,0,0,1]);
+          keys.push(key);
+          f_last = f;
+        }
+        pos_index++;
+      }
+      if (keys.length) {
+        if (time_max - track_pos.times[track_pos.times.length-1] > 1/1000)
+          keys.push(Object.assign({}, keys[keys.length-1], { time:time_max }));
+        boneKeys['センター'] = keys;
+      }
+
+      name_MMD = '下半身';
+    }
+
+    rot_index = 0;
+    f_last = -1;
+    keys = [];
+    while (track_rot && (rot_index < track_rot.times.length)) {
+      const f = Math.round(track_rot.times[rot_index]*30);
+      if (f > f_last) {
+        let rot = [track_rot.values[rot_index*4], track_rot.values[rot_index*4+1], track_rot.values[rot_index*4+2], track_rot.values[rot_index*4+3]];
+        const key = new BoneKey(name_MMD, f/30, [0,0,0], rot);
+        keys.push(key);
+        f_last = f;
+      }
+      rot_index++;
+    }
+    if (keys.length) {
+      if (time_max - track_rot.times[track_rot.times.length-1] > 1/1000)
+        keys.push(Object.assign({}, keys[keys.length-1], { time:time_max }));
+      boneKeys[name_MMD] = keys;
+    }
+  }
+
+  for (const _combo of [['上半身', '下半身','上半身'], ['上半身2', '上半身2','上半身3']]) {
+    const bone_name = _combo[0];
+    const combo = _combo.slice(1);
+
+    const tracks_combo = combo.map(name=>boneKeys[name]);
+    const rot_index = combo.map(name=>0);
+
+    let f_last = -1;
+    const keys = [];
+    while (tracks_combo.some((t,i)=>t && (rot_index[i] < t.length))) {
+      const f_rot = tracks_combo.map((t,i)=>(t) ? Math.round(t[rot_index[i]].time*30) : Infinity);
+
+      let key;
+// nearest next key
+      const f = Math.min(...f_rot);
+      if (f > f_last) {
+        key = new BoneKey(bone_name, f/30, [0,0,0]);
+        key._rot = {};
+        keys.push(key);
+        f_last = f;
+      }
+      else {
+        key = keys[keys.length-1];
+      }
+
+// add rot if only there is no existing rot and the frame index is the same as the current key
+      tracks_combo.forEach((t,i)=>{
+        if (t && (f == f_rot[i])) {
+          if (!key._rot[i])
+            key._rot[i] = t[rot_index[i]].rot.slice();
+          rot_index[i]++;
+        }
+      });
+    }
+
+    const key_next = combo.map(name=>null);
+    keys.forEach((k, idx)=>{
+      const rots = [];
+      for (let i = 0, i_max = combo.length; i < i_max; i++) {
+        if (!tracks_combo[i]) continue;
+
+        if (k._rot[i]) {
+          rots[i] = k._rot[i];
+          continue;
+        }
+
+        const k_last = keys[idx-1];
+
+        k_next = key_next[i];
+        if (!k_next) {
+          for (let n = idx+1, n_max = keys.length; n < n_max; n++) {
+            if (keys[n]._rot[i]) {
+              k_next = key_next[i] = keys[n];
+              break;
+            }
+          }
+        }
+        if (!k_next) {
+          rots[i] = k_last._rot[i];
+          continue
+        }
+//if (!k_last._rot) { console.log(k_last.name); continue; }
+        const q_last = q1.fromArray(k_last._rot[i]);
+        const q_next = q2.fromArray(k_next._rot[i]);
+        rots[i] = q_last.slerp(q_next, (k.time-k_last.time)/(k_next.time-k_last.time)).toArray();
+      }
+
+      const rot_final = q1.set(0,0,0,1);
+      for (let i = 0, i_max = combo.length; i < i_max; i++) {
+        if (rots[i])
+          rot_final.multiply(q2.fromArray(rots[i]));
+      }
+      k.rot = rot_final.toArray();
+
+      delete k._rot;
+    });
+
+    if (keys.length) boneKeys[bone_name] = keys;
+  }
+
+  delete boneKeys['上半身3'];
+//console.log(boneKeys);
+
+  const key_names = Object.keys(boneKeys);
+  const vmd = new THREEX_VMD(
+[...key_names.map(name=>boneKeys[name]).flat()],
+[...Object.keys(morphKeys).map(name=>morphKeys[name]).flat()],
+Math.max(...key_names.map(name=>boneKeys[name][boneKeys[name].length-1].time))
+  );
+
+  vmd.url = url;
+  MMD_SA.vmd_by_filename[decodeURIComponent(vmd.url.replace(/^.+[\/\\]/, "").replace(/\.(fbx|glb|vrma)$/i, ""))] = vmd;
+
+console.log(vmd);
+  return vmd;
+        }
+
+        function get_sub_track_value(track_main, track_sub, time_index, para) {
+function frame_id(t) {
+  return Math.round(t*600);
+}
+
+if (time_index == 0)
+  para.time_index = 0;
+
+const f = frame_id(track_main.times[time_index]);
+while ((para.time_index < track_sub.times.length) && (f > frame_id(track_sub.times[para.time_index]))) {
+  para.time_index++;
+}
+para.time_index = Math.min(para.time_index, track_sub.times.length-1);
+
+const dim = (track_main instanceof THREE.QuaternionKeyframeTrack) ? 4 : 3;
+const k1 = para.time_index * dim;
+const value = (dim == 4) ? q1 : v1;
+value.fromArray(track_sub.values.slice(k1, k1+dim));
+
+if ((para.time_index > 0) && (f != frame_id(track_sub.times[para.time_index]))) {
+  const time_max = Math.max(track_main.times[time_index], track_sub.times[para.time_index]);
+  const time_delta = time_max - track_main.times[time_index];
+  const time_range = time_max - track_sub.times[para.time_index-1];
+  if ((time_delta > 0) && (time_range > 0)) {
+    const k0 = (para.time_index-1) * dim;
+    if (dim == 4) {
+//if (q1.toArray().some(v=>isNaN(v))) console.log(track_sub, para.time_index+'/'+(track_sub.times.length-1), k1);
+      q2.fromArray(track_sub.values.slice(k0, k0+4));
+      q1.slerp(q2, time_delta/time_range);
+    }
+    else if (dim == 3) {
+      v2.fromArray(track_sub.values.slice(k0, k0+3));
+      v1.lerp(v2, time_delta/time_range);
+    }
+  }
+}
+
+para.time_index++;
+
+return value.toArray();
+        }
+
+        window.addEventListener('jThree_ready', ()=>{
+threeX.utils.convert_AnimationClip_to_VMD = convert_AnimationClip_to_VMD;
+        });
 
         let motion_format, rig_name, is_XRA_rig, is_XRA_rig_VRM0, is_XRA_rig_VRM1;
 
         let initialized;
 
         return async function ( url, model, VMD ) {
+          init(VMD);
+
+if (/\.vrma$/i.test(url)) {
+// three-vrm-animation
+// https://github.com/pixiv/three-vrm/tree/dev/packages/three-vrm-animation
+
+// https://pixiv.github.io/three-vrm/packages/three-vrm-animation/lib/three-vrm-animation.module.js
+  if (!THREEX.createVRMAnimationClip) {
+    const three_vrma_module = await System._browser.load_script(System.Gadget.path + '/three.js/three-vrm-animation.module.js', true);
+//console.log(three_vrma_module)
+    Object.assign(THREEX, three_vrma_module);
+
+    GLTF_loader.register((parser) => {
+      return new THREEX.VRMAnimationLoaderPlugin( parser );
+    });
+  }
+
+  const modelX = threeX.get_model(0);
+  const model_scale = modelX.model_scale;
+
+  const gltfVrma = await GLTF_loader.loadAsync( url );
+  const vrmAnimation = gltfVrma.userData.vrmAnimations[ 0 ];
+// create animation clip
+  const clip = THREEX.createVRMAnimationClip( vrmAnimation, modelX.model );
+//console.log(clip);
+
+  const rig_map = build_rig_map(clip.tracks);
+
+  clip.tracks.forEach(t=>{
+    const [ name, property ] = t.name.split('.');
+    if (rig_map.MMD[name])
+      t.name = rig_map.MMD[name] + '.' + property;
+
+    if (property == 'position') {
+      const values = t.values;
+      for (let i = 0, i_max = values.length/3; i < i_max; i++) {
+        const _i = i*3;
+        v1.set(values[_i], values[_i+1], values[_i+2]);
+        modelX.process_position(v1).multiplyScalar(model_scale);
+        values[_i]   = v1.x;
+        values[_i+1] = v1.y;
+        values[_i+2] = v1.z;
+      }
+    }
+    else if (property == 'quaternion') {
+      const values = t.values;
+      for (let i = 0, i_max = values.length/4; i < i_max; i++) {
+        const _i = i*4;
+        q1.set(values[_i], values[_i+1], values[_i+2], values[_i+3]);
+        modelX.process_rotation(q1);
+        values[_i]   = q1.x;
+        values[_i+1] = q1.y;
+        values[_i+2] = q1.z;
+        values[_i+3] = q1.w;
+      }
+    }
+  });
+//console.log(clip.tracks)
+
+  const hips_height = modelX.para.pos0['hips'][1] * model_scale;
+//console.log(hips_height)
+  const vmd = convert_AnimationClip_to_VMD(clip, clip.tracks, { url, rig_map, hips_height, morphKeys:{} });
+
+  return vmd;
+}
+
           motion_format = (/\.fbx$/i.test(url)) ? 'FBX' : 'GLTF';
 
           await load_THREEX_scripts();
-
-          init(VMD);
 
           const THREEX_enabled = MMD_SA.THREEX.enabled;
 
@@ -13497,169 +13756,7 @@ tracks = tracks.map(track=>{
 //console.log(tracks)
 
 if (!VRM_mode) {
-  const boneKeys = {};
-  for (const name in rig_map.MMD) {
-    let name_MMD = rig_map.MMD[name];
-    if (!name_MMD) continue;
-
-    const tracks_by_name = tracks.filter(t=>t.name.split('.')[0]==name_MMD);
-    if (!tracks_by_name.length) continue;
-
-    let track_pos, track_rot;
-    tracks_by_name.forEach(t=>{
-      if (t instanceof THREE.QuaternionKeyframeTrack) {
-        track_rot = t;
-      }
-      else {
-        track_pos = t;
-      }
-    });
-
-    let pos_index = 0;
-    let rot_index = 0;
-    let f_last = -1;
-    let keys;
-
-    const time_max = Math.max(clip.duration, 1/30);
-
-    if (name_MMD == 'センター') {
-      pos_index = 0;
-      f_last = -1;
-      keys = [];
-      while (track_pos && (pos_index < track_pos.times.length)) {
-        const f = Math.round(track_pos.times[pos_index]*30);
-        if (f > f_last) {
-          const pos = [track_pos.values[pos_index*3], track_pos.values[pos_index*3+1]-hips_height, track_pos.values[pos_index*3+2]];
-          const key = new BoneKey('センター', f/30, pos, [0,0,0,1]);
-          keys.push(key);
-          f_last = f;
-        }
-        pos_index++;
-      }
-      if (keys.length) {
-        if (time_max - track_pos.times[track_pos.times.length-1] > 1/1000)
-          keys.push(Object.assign({}, keys[keys.length-1], { time:time_max }));
-        boneKeys['センター'] = keys;
-      }
-
-      name_MMD = '下半身';
-    }
-
-    rot_index = 0;
-    f_last = -1;
-    keys = [];
-    while (track_rot && (rot_index < track_rot.times.length)) {
-      const f = Math.round(track_rot.times[rot_index]*30);
-      if (f > f_last) {
-        let rot = [track_rot.values[rot_index*4], track_rot.values[rot_index*4+1], track_rot.values[rot_index*4+2], track_rot.values[rot_index*4+3]];
-        const key = new BoneKey(name_MMD, f/30, [0,0,0], rot);
-        keys.push(key);
-        f_last = f;
-      }
-      rot_index++;
-    }
-    if (keys.length) {
-      if (time_max - track_rot.times[track_rot.times.length-1] > 1/1000)
-        keys.push(Object.assign({}, keys[keys.length-1], { time:time_max }));
-      boneKeys[name_MMD] = keys;
-    }
-  }
-
-  for (const _combo of [['上半身', '下半身','上半身'], ['上半身2', '上半身2','上半身3']]) {
-    const bone_name = _combo[0];
-    const combo = _combo.slice(1);
-
-    const tracks_combo = combo.map(name=>boneKeys[name]);
-    const rot_index = combo.map(name=>0);
-
-    let f_last = -1;
-    const keys = [];
-    while (tracks_combo.some((t,i)=>t && (rot_index[i] < t.length))) {
-      const f_rot = tracks_combo.map((t,i)=>(t) ? Math.round(t[rot_index[i]].time*30) : Infinity);
-
-      let key;
-// nearest next key
-      const f = Math.min(...f_rot);
-      if (f > f_last) {
-        key = new BoneKey(bone_name, f/30, [0,0,0]);
-        key._rot = {};
-        keys.push(key);
-        f_last = f;
-      }
-      else {
-        key = keys[keys.length-1];
-      }
-
-// add rot if only there is no existing rot and the frame index is the same as the current key
-      tracks_combo.forEach((t,i)=>{
-        if (t && (f == f_rot[i])) {
-          if (!key._rot[i])
-            key._rot[i] = t[rot_index[i]].rot.slice();
-          rot_index[i]++;
-        }
-      });
-    }
-
-    const key_next = combo.map(name=>null);
-    keys.forEach((k, idx)=>{
-      const rots = [];
-      for (let i = 0, i_max = combo.length; i < i_max; i++) {
-        if (!tracks_combo[i]) continue;
-
-        if (k._rot[i]) {
-          rots[i] = k._rot[i];
-          continue;
-        }
-
-        const k_last = keys[idx-1];
-
-        k_next = key_next[i];
-        if (!k_next) {
-          for (let n = idx+1, n_max = keys.length; n < n_max; n++) {
-            if (keys[n]._rot[i]) {
-              k_next = key_next[i] = keys[n];
-              break;
-            }
-          }
-        }
-        if (!k_next) {
-          rots[i] = k_last._rot[i];
-          continue
-        }
-//if (!k_last._rot) { console.log(k_last.name); continue; }
-        const q_last = q1.fromArray(k_last._rot[i]);
-        const q_next = q2.fromArray(k_next._rot[i]);
-        rots[i] = q_last.slerp(q_next, (k.time-k_last.time)/(k_next.time-k_last.time)).toArray();
-      }
-
-      const rot_final = q1.set(0,0,0,1);
-      for (let i = 0, i_max = combo.length; i < i_max; i++) {
-        if (rots[i])
-          rot_final.multiply(q2.fromArray(rots[i]));
-      }
-      k.rot = rot_final.toArray();
-
-      delete k._rot;
-    });
-
-    if (keys.length) boneKeys[bone_name] = keys;
-  }
-
-  delete boneKeys['上半身3'];
-//console.log(boneKeys);
-
-  const key_names = Object.keys(boneKeys);
-  const vmd = new THREEX_VMD(
-[...key_names.map(name=>boneKeys[name]).flat()],
-[...Object.keys(morphKeys).map(name=>morphKeys[name]).flat()],
-Math.max(...key_names.map(name=>boneKeys[name][boneKeys[name].length-1].time))
-  );
-
-  vmd.url = url;
-  MMD_SA.vmd_by_filename[decodeURIComponent(vmd.url.replace(/^.+[\/\\]/, "").replace(/\.(fbx|glb)$/i, ""))] = vmd;
-
-console.log(vmd);
-  return vmd;
+  return convert_AnimationClip_to_VMD(clip, tracks, { url, rig_map, hips_height, morphKeys });
 }
 
 return new THREE.AnimationClip( decodeURIComponent(url.replace(/^.+[\/\\]/, "").replace(/\.(fbx|glb)$/i, "")), clip.duration, tracks );
@@ -13801,6 +13898,8 @@ for (const name_MMD in boneKeys_by_name) {
     let q_values = [];
     let v_values = [];
 
+    const leg_scale = model.para.left_leg_length / MMD_SA_options.model_para_obj.left_leg_length;
+
     keys.forEach((k,f)=>{
       let q_multiply, q_premultiply;
 
@@ -13812,7 +13911,9 @@ for (const name_MMD in boneKeys_by_name) {
         }
 
         pos.multiplyScalar(1/VRM.vrm_scale);
-        pos.y += model.para.pos0['hips'][1];
+        pos.multiplyScalar(leg_scale);
+        pos.add(v2.fromArray(model.para.pos0['hips']));
+
         v_values.push(...model.process_position(pos).toArray());
 
         const bone_lower_body = boneKeys_by_name['下半身'];
@@ -13941,6 +14042,48 @@ setTimeout(()=>{
         };
       })(),
 
+      export_VRMA: (()=>{
+        let convertBVHToVRMAnimation, BVHLoader;
+
+        let initialized;
+        async function init() {
+if (initialized) return;
+initialized = true;
+
+const module_bvh2vrma = await System._browser.load_script(System.Gadget.path+'/three.js/bvh2vrma/convertBVHToVRMAnimation.js',true);
+convertBVHToVRMAnimation = module_bvh2vrma.convertBVHToVRMAnimation;
+
+// change BVHLoader.js to _BVHLoader.js to prevent XRA module name conflict
+const module_bvh = await System._browser.load_script(System.Gadget.path+'/three.js/loaders/_BVHLoader.js',true);
+BVHLoader = new module_bvh.BVHLoader();
+        }
+
+        return async function () {
+await init();
+
+let filename;
+let vmd = System._browser.camera.motion_recorder.vmd;
+if (vmd) {
+  filename = 'motion_' + Date.now();
+}
+else {
+  filename = MMD_SA.MMD.motionManager.filename;
+  vmd = MMD_SA.vmd_by_filename[filename];
+}
+
+await System._browser.load_script(toFileProtocol(System.Gadget.path + '/js/BVH_filewriter.js'));
+const bvh_txt = BVH_FileWriter(null, vmd.boneKeys);
+
+// https://github.com/vrm-c/bvh2vrma/blob/main/src/components/LoadBVH.tsx#L43
+const bvh = BVHLoader.parse(bvh_txt);
+const vrmaBuffer = await convertBVHToVRMAnimation(bvh, {
+        scale: 0.01
+});
+
+System._browser.save_file(filename+'.vrma', vrmaBuffer, 'application/octet-stream');
+        };
+      })(),
+
       camera_auto_targeting: (()=>{
         let target_data, target_data2;
         let c_rot_data;
@@ -14048,10 +14191,12 @@ const cam_base = v2.fromArray(MMD_SA_options.camera_position_base).add(MMD_SA.TE
 const model_scale = MMD_SA.THREEX.get_model(0).para.spine_length / 4.97462;
 const z_base = cam_base.z;
 let z = z_base - target_pos_z0;
-//DEBUG_show(z);
+//System._browser.camera.DEBUG_show(z+'=\n'+z_base+'-\n'+target_pos_z0)
 
-z = (z - Math.min(MMD_SA_options.camera_face_locking_z_min*10 * model_scale, z_base));
+z = Math.max(z - Math.min(MMD_SA_options.camera_face_locking_z_min*10 * model_scale, z_base), 0);
+//System._browser.camera.DEBUG_show(z)
 z = -z * MMD_SA_options.camera_face_locking_movement_z_percent/100;
+
 cam_base.z = z;
 cam_base.applyQuaternion(c_rot);
 

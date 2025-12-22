@@ -1,5 +1,5 @@
 // XR Animator
-// (2025-01-19)
+// (2025-02-09)
 
 var MMD_SA_options = {
 
@@ -4910,7 +4910,7 @@ switch (ev.code) {
             mocap_pause_timerID = null;
 
             camera.video.pause();
-            camera.DEBUG_show('⏸️PAUSED');
+            System._browser.on_animation_update.add(()=>{DEBUG_show('⏸️PAUSED', 3);}, 0,1);
           }
           else {
             camera.DEBUG_show('⏸️Pausing in...' + mocap_pause_countdown);
@@ -5220,7 +5220,9 @@ hand_camera_active = false;
 
 if (!hand_camera_enabled) return;
 
-if (!System._browser.camera.poseNet.enabled) {
+const c = System._browser.camera;
+// checking ._motion_path, in case frames.reset is triggered
+if (!c.poseNet.frames._motion_path || (!c.poseNet.pose_enabled && !c.VMC_receiver.pose_enabled)) {
   disable_hand_camera();
   return;
 }
@@ -5235,7 +5237,7 @@ const hand_pos = modelX.get_bone_position_by_MMD_name(d+'手首');//MMD_SA.get_b
 
 let selfie_mode = _hand_camera.selfie_mode;
 
-let camera_off = !System._browser.camera.poseNet.data_detected || !motion_para.motion_tracking_enabled || motion_para.motion_tracking?.hand_camera_disabled || (motion_para.motion_tracking?.arm_as_leg?.enabled && (motion_para.motion_tracking.arm_as_leg.linked_side != ((d=='左')?'right':'left')));
+let camera_off = (!c.poseNet.data_detected && !c.VMC_receiver.pose_enabled) || !motion_para.motion_tracking_enabled || motion_para.motion_tracking?.hand_camera_disabled || (motion_para.motion_tracking?.arm_as_leg?.enabled && (motion_para.motion_tracking.arm_as_leg.linked_side != ((d=='左')?'right':'left')));
 if (motion_para.motion_tracking_upper_body_only) {
   camera_off = camera_off || (System._browser.camera.poseNet.frames.get_blend_default_motion('skin', d+'手首') > 0.5);
 }
@@ -5244,7 +5246,7 @@ else {
 //  if (System._browser.camera.poseNet._upper_body_only_mode && !selfie_mode) camera_off = camera_off || ((System._browser.camera.handpose.hand_visible_session[d]||0) < 1000);
 }
 
-if (!motion_para.motion_tracking_upper_body_only && System._browser.camera.poseNet.data_detected && !(_hand_camera_active ^ camera_off)) {
+if (!motion_para.motion_tracking_upper_body_only && (c.poseNet.data_detected || c.VMC_receiver.pose_enabled) && !(_hand_camera_active ^ camera_off)) {
   if (RAF_timestamp > camera_toggle_timestamp + 500) {
     camera_toggle_timestamp = RAF_timestamp;
   }
@@ -5254,7 +5256,7 @@ if (!motion_para.motion_tracking_upper_body_only && System._browser.camera.poseN
 }
 
 if (camera_off) {
-  System._browser.camera.poseNet._arm_IK_adjust[hand_camera_side] = null;
+  c.poseNet._arm_IK_adjust[hand_camera_side] = null;
   MMD_SA.Camera_MOD.adjust_camera('hand_camera', v1.set(0,0,0), v2.set(0,0,0), null);
 
   restore_camera();
@@ -5267,7 +5269,8 @@ if (camera_off) {
 
 hand_camera_active = true;
 
-System._browser.camera.poseNet.frames._reset_disabled = true;
+//if (c.poseNet.pose_enabled)
+  c.poseNet.frames._reset_disabled = true;
 
 if (MMD_SA.THREEX.enabled) {
   const camera = MMD_SA.THREEX.data.camera;
@@ -5288,8 +5291,8 @@ if (MMD_SA.THREEX.enabled) {
 if (!fov_last) fov_last = MMD_SA._trackball_camera.object.fov;
 update_fov(_hand_camera.fov);
 
-const frames = System._browser.camera.poseNet.frames;
-if (System._browser.camera.handpose.enabled) {
+const frames = c.poseNet.frames;
+if (c.handpose.enabled || c.VMC_receiver.hand_enabled) {
   window.addEventListener('SA_camera_poseNet_process_bones_onended', ()=>{
     finger_list.forEach((f,i)=>{
       let ini = (i == 0) ? 0 : 1;
@@ -5303,7 +5306,8 @@ if (System._browser.camera.handpose.enabled) {
 
 const sign_LR = (d=='左')?1:-1;
 
-System._browser.camera.poseNet._arm_IK_adjust[hand_camera_side] = { add:{x:-0.08*sign_LR}, min:{z:0.5}, scale:{x:1.25,y:1,z:1.5} };
+const mod = (c.poseNet.pose_enabled) ? 1 : 0.5;
+c.poseNet._arm_IK_adjust[hand_camera_side] = { add:{x:-0.08*sign_LR*mod}, min:{z:0.5}, scale:{x:1+0.25*mod, y:1, z:1+0.5*mod} };
 if (frames.skin[d+'腕ＩＫ']) frames.skin[d+'腕ＩＫ'][0].data_filter = {};
 
 let target = v1;
@@ -5357,7 +5361,7 @@ target.fromArray(target_filter[d].filter(target.toArray()));
 
 target.multiplyScalar(30).add(hand_pos);
 
-const c_base = MMD_SA.Camera_MOD.get_camera_base(['camera_lock','hip_camera','auto_zoom']);
+const c_base = MMD_SA.Camera_MOD.get_camera_base(['camera_lock','hip_camera','auto_zoom','face']);
 hand_pos.sub(c_base.pos);
 target.sub(c_base.target);
 
@@ -5454,7 +5458,7 @@ window.addEventListener('SA_MMD_before_render', ()=>{
  ,action: {
     func: function (item) {
 const c = System._browser.camera;
-if (!c.poseNet.enabled) {
+if (!c.poseNet.pose_enabled && !c.VMC_receiver.pose_enabled) {
   DEBUG_show('(For mocap mode only)', 3);
   return true;
 }
@@ -7250,6 +7254,8 @@ object3d.user_data.obj_all = obj_all;
 object3d.user_data._rotation_ = new THREE.Euler();
 if (placement.rotation)
   object3d.user_data._rotation_.copy(placement.rotation).multiplyScalar(Math.PI/180);
+// AFTER
+if (placement.rotation.is_billboard) object3d.user_data.is_billboard = true;
 
 object3d.user_data._default_state_ = {
   position: (object3d.parent_bone) ? new THREE.Vector3() : mesh.position.clone(),
@@ -7490,7 +7496,7 @@ else {
   }
 
   geometry = new THREE.PlaneGeometry( (img.videoWidth||img.width)/100, (img.videoHeight||img.height)/100 );
-  const material = new THREE.MeshBasicMaterial( {map:texture, side:THREE.DoubleSide} );
+  const material = new THREE.MeshBasicMaterial( {map:texture, side:THREE.DoubleSide, transparent:true} );
 
   mesh = new THREE.Mesh( geometry, material );
 }
@@ -7529,8 +7535,20 @@ function animate_object3D() {
       canvas.getContext('2d').drawImage(d.video, 0,0,canvas.width,canvas.height);
       obj._obj.material.map.needsUpdate = true;
     }
+// v0.37.3
+    if (d.is_billboard) {
+      const mesh = obj._obj;
+      if (d._rotation_) {
+        mesh.quaternion.setFromEuler(d._rotation_);
+      }
+      const camera = MMD_SA._trackball_camera.object;
+      const y = Math.atan2(camera.position.x - mesh.position.x, camera.position.z - mesh.position.z);
+      mesh.quaternion.premultiply(MMD_SA.TEMP_q.set(0,Math.sin(y/2),0, Math.cos(y/2)));
+    }
   });
 }
+// v0.37.3
+window.addEventListener('SA_MMD_before_render', animate_object3D);
 
 const adjust_object3D = (function () {
   const parent_bone_list = ['ROOT', '頭','首', '上半身2','上半身','左腕','左ひじ','左手首','右腕','右ひじ','右手首', '左足','左ひざ','左足首','右足','右ひざ','右足首'];
@@ -10301,7 +10319,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  get content() { return 'XR Animator (v0.33.0)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
+  get content() { return 'XR Animator (v0.33.2)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -10421,7 +10439,7 @@ bubble_index: 3,
      ,[
         {
           func: function () {
-if (/\.(bvh|fbx)$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd) return true;
+if (/\.(bvh|fbx|glb|vrma)$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename].url) || System._browser.camera.motion_recorder.vmd) return true;
           }
          ,message: {
   get content() { return System._browser.translation.get('XR_Animator.UI.motion_capture.ML_on.export_motion_to_file.no_motion'); },
@@ -10435,13 +10453,15 @@ if (/\.(bvh|fbx)$/i.test(MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filenam
           }
          ,message: {
   get content() {
-return System._browser.translation.get('XR_Animator.UI.motion_capture.ML_on.export_motion_to_file.choose_format') + '\n1. VMD' + ((MMD_SA.THREEX.enabled) ? '\n2. glTF\n3. BVH' : '') + '\nX. ' + System._browser.translation.get('Misc.cancel');
+const vmd = System._browser.camera.motion_recorder.vmd || MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename];
+const plus_expressions = (vmd.morphKeys.length) ? ' (+expressions)' : '';
+return System._browser.translation.get('XR_Animator.UI.motion_capture.ML_on.export_motion_to_file.choose_format') + '\n1. VMD' + plus_expressions + ((MMD_SA.THREEX.enabled) ? '\n2. glTF' + plus_expressions + '\n3. BVH\n4. VRMA' : '') + '\nX. ' + System._browser.translation.get('Misc.cancel');
   } 
  ,bubble_index: 3
  ,get branch_list() {
 return [
   { key:1, event_index:2 },
-  ...((MMD_SA.THREEX.enabled) ? [{ key:2, event_index:3 },{ key:3, event_index:4 }] : []),
+  ...((MMD_SA.THREEX.enabled) ? [{ key:2, event_index:3 },{ key:3, event_index:4 },{ key:4, event_index:5 }] : []),
   { key:'X', is_closing_event:true, event_index:99 },
 ];
   }
@@ -10452,7 +10472,7 @@ return [
 var filename;
 var vmd = System._browser.camera.motion_recorder.vmd;
 if (vmd) {
-  filename = 'motion.vmd'
+  filename = 'motion_' + Date.now() + '.vmd';
 }
 else {
   vmd = System._browser.camera.motion_recorder.vmd || MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename];
@@ -10477,7 +10497,7 @@ setTimeout(()=>{
 var filename;
 var vmd = System._browser.camera.motion_recorder.vmd;
 if (vmd) {
-  filename = 'motion.glb'
+  filename = 'motion_' + Date.now() + '.glb';
 }
 else {
   vmd = System._browser.camera.motion_recorder.vmd || MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename];
@@ -10499,7 +10519,7 @@ setTimeout(()=>{
 var filename;
 var vmd = System._browser.camera.motion_recorder.vmd;
 if (vmd) {
-  filename = 'motion.bvh'
+  filename = 'motion_' + Date.now() + '.bvh';
 }
 else {
   vmd = System._browser.camera.motion_recorder.vmd || MMD_SA.vmd_by_filename[MMD_SA.MMD.motionManager.filename];
@@ -10519,7 +10539,16 @@ setTimeout(()=>{
           }
          ,ended: true
         },
-
+        {
+          func: function () {
+setTimeout(()=>{MMD_SA.THREEX.utils.export_VRMA();}, 0);
+          }
+         ,message: {
+  content: 'Please wait while the file is being generated for saving.'
+ ,duration: 3
+          }
+         ,ended: true
+        },
       ]
 // 23
      ,[
@@ -10578,7 +10607,7 @@ else if (/Arrow(Left|Right)/.test(e.code)) {
       MMD_SA_options[p] = v;
     }
     else if (LR_option_active == 'z_min') {
-      let v = THREE.Math.clamp(MMD_SA_options.camera_face_locking_z_min + step/10, 1,5);
+      let v = THREE.Math.clamp(MMD_SA_options.camera_face_locking_z_min + step/10, 0.5,5);
       MMD_SA_options.camera_face_locking_z_min = v;
     }
     if (LR_option_active == 'vertical_constraint') {
@@ -14625,7 +14654,7 @@ try {
           });
 
           if (MMD_SA_options.Dungeon.started) {
-            const r_off = System._browser.camera.VMC_receiver.receiver.every(r=>!r.config.enabled);
+            const r_off = System._browser.camera.VMC_receiver.options.receiver.every(r=>!r.enabled);
             if (System._browser.camera.VMC_receiver.enabled) {
               if (r_off) {
                 System._browser.camera.VMC_receiver.enabled = false;
@@ -14703,7 +14732,7 @@ return this.skip_background_rendering && this.hidden;
     Object.defineProperty(MMD_SA, 'hide_3D_avatar', (()=>{
       let hide_3D_avatar = false;
       return {
-        get: function () { return hide_3D_avatar || System._browser.skipping_rendering; },
+        get: function () { return hide_3D_avatar || System._browser.skipping_rendering || MMD_SA.THREEX._XR_Animator_scene_?.settings?.avatar_replacement_mode; },
         set: function (v) { hide_3D_avatar = v; }
       };
     })());

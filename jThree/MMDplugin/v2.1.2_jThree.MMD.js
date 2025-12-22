@@ -1,4 +1,4 @@
-// (2025-01-19)
+// (2025-02-09)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -2468,8 +2468,8 @@ if (/\.bvh$/i.test(url_raw)) {
   return
 }
 
-// AT: FBX/GLTF
-if (/\.(fbx|glb)$/i.test(url_raw)) {
+// AT: FBX/GLTF/VRMA
+if (/\.(fbx|glb|vrma)$/i.test(url_raw)) {
   new Promise((resolve)=>{
     if (THREE.MMD.getModels().length) {
       resolve();
@@ -2480,7 +2480,7 @@ if (/\.(fbx|glb)$/i.test(url_raw)) {
   }).then(()=>{
     MMD_SA.THREEX.utils.load_THREEX_motion( url_raw, THREE.MMD.getModels()[0], VMD ).then(vmd=>{ onload(vmd); });
   });
-  return
+  return;
 }
 
 	var that = this;
@@ -6443,7 +6443,7 @@ Model.prototype.setupMotion_MMD_SA = function( vmd, match, use_dummy ) {
   return obj
 }
 // a trick to export VMD for outside use
-Model.prototype._VMD = function (url, onload) { (new VMD()).load(url, onload) }
+Model.prototype._VMD = function (url, onload) { (new VMD()).load(url, onload) };
 
 // AT: Ignore physics reset, mainly for looping motion
 Model.prototype.resetMotion = function(ignore_physics_reset) {
