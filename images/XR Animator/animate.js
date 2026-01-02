@@ -7255,7 +7255,7 @@ object3d.user_data._rotation_ = new THREE.Euler();
 if (placement.rotation)
   object3d.user_data._rotation_.copy(placement.rotation).multiplyScalar(Math.PI/180);
 // AFTER
-if (placement.rotation.is_billboard) object3d.user_data.is_billboard = true;
+if (placement.rotation?.is_billboard) object3d.user_data.is_billboard = true;
 
 object3d.user_data._default_state_ = {
   position: (object3d.parent_bone) ? new THREE.Vector3() : mesh.position.clone(),
