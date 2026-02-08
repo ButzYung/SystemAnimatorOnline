@@ -1,5 +1,5 @@
 // XR Animator
-// (2025-02-09)
+// (2025-02-22)
 
 var MMD_SA_options = {
 
@@ -7083,7 +7083,7 @@ xhr.send();
 
       update_model_para(model_path);
 
-      await add_object3D(model_path);
+      await add_object3D(model_path, item);
 
       DEBUG_show('✅PMX/X model (' + model_filename + ')');
     }
@@ -7133,7 +7133,7 @@ xhr.send();
 
     update_model_para(src);
 
-    await add_object3D(src);
+    await add_object3D(src, item);
 
     DEBUG_show('✅GLTF model (' + model_filename + ')');
   }
@@ -7217,6 +7217,12 @@ if (placement.rotation)
   mesh.quaternion.setFromEuler(e1.copy(placement.rotation).multiplyScalar(Math.PI/180));
 mesh.scale.setScalar(placement.scale||((is_X_model) ? 10 : 1));
 
+if (obj_all._update_para_only) {
+  object3D0 = object3d_list.find(obj=>obj.user_data.id == model_filename);
+  Object.assign(object3D0, model_para);
+  return;
+}
+
 var object3d = Object.assign({}, model_para);
 object3d.uuid = THREE.Math.generateUUID();
 if (!object3d.user_data) object3d.user_data = {};
@@ -7295,8 +7301,15 @@ if (placement.hidden) {
     return new Promise((resolve)=>{
       const obj_cached = object3d_cache.get(url);
       if (obj_cached) {
-const obj_cloned = { scene:obj_cached.user_data.obj_all.scene.clone(), animations:obj_cached.user_data.obj_all.animations };
-console.log('object3D cloned', url);
+const obj_cloned = { scene:obj_cached.user_data.obj_all.scene, animations:obj_cached.user_data.obj_all.animations };
+if (!para._no_clone) {
+  obj_cloned.scene = obj_cloned.scene.clone();
+  console.log('object3D CLONED', url);
+}
+else {
+  obj_cloned._update_para_only = true;
+  console.log('object3D UPDATED', url);
+}
 
 onload_common(url, obj_cloned);
 resolve();
@@ -7927,6 +7940,7 @@ function add_grid() {
 }
 
 window.addEventListener('SA_Dungeon_onrestart', ()=>{remove_object3D()});
+
 function remove_object3D(index) {
   ((index == null) ? object3d_list : [object3d_list[index]]).forEach(object3d => {
     MMD_SA.THREEX.scene.remove(object3d._obj);
@@ -7948,6 +7962,11 @@ function remove_object3D(index) {
 
     delete object3d._obj;
     delete object3d._mesh;
+
+    if (MMD_SA.THREEX._XR_Animator_scene_?.object3D_list) {
+      MMD_SA.THREEX._XR_Animator_scene_.object3D_list = MMD_SA.THREEX._XR_Animator_scene_.object3D_list.filter(v=>v._object3d_uuid != object3d.uuid);
+//console.log(MMD_SA.THREEX._XR_Animator_scene_.object3D_list.length)
+    }
   });
 
   if (index == null) {
@@ -8450,6 +8469,29 @@ MMD_SA._force_motion_shuffle = true;
 
     const zip = (zip_path) ? XMLHttpRequestZIP.zip_by_url(zip_path) : null;
 
+    let scene_needs_reset, update_scene_only;
+    const object3D_list = json.XR_Animator_scene.object3D_list;
+    if (MMD_SA.THREEX._XR_Animator_scene_?.object3D_list && object3D_list) {
+      update_scene_only = object3D_list.every(obj=>{
+        if (obj.type == 'object3D') {
+          const filename = obj.path.replace(/^.+[\/\\]/, '').replace(/\.[^\.]+$/, '');
+// a simple trick to allow simple object scene to just update para instead of adding duplicated objects, probably won't work well for complicated cases when the existing scene has object clones.
+          const _no_clone = MMD_SA.THREEX._XR_Animator_scene_.object3D_list.filter(v=>v.path.replace(/^.+[\/\\]/, '').replace(/\.[^\.]+$/, '')==filename).length == 1;
+          return _no_clone;
+        }
+      });
+//console.log('update_scene_only',update_scene_only)
+      scene_needs_reset = !update_scene_only;
+    }
+
+    if (scene_needs_reset) {
+      await new Promise((resolve)=>{
+        reset_scene(true);
+        System._browser.on_animation_update.add(()=>{ resolve(); }, 2,1);
+      });
+      show_status('✅(Scene reset)');
+    }
+
     let loaded_count = 0;
     let loaded_count_max = 0;
     let loaded_counting = true;
@@ -8572,14 +8614,13 @@ MMD_SA._force_motion_shuffle = true;
       check_loaded(1);
     }
 
-    const object3D_list = json.XR_Animator_scene.object3D_list;
     if (object3D_list) {
       const is_T_pose = MMD_SA.THREEX.get_model(0).is_T_pose;
       for (const obj of object3D_list) {
         if (obj.type == 'object3D') {
           if (!await locate_file(zip, obj)) continue;
 
-          const filename = obj.path.replace(/^.+[\/\\]/, '');
+          const filename = obj.path.replace(/^.+[\/\\]/, '').replace(/\.[^\.]+$/, '');
           if (typeof obj.model_para.parent_bone == 'number') obj.model_para.parent_bone = obj.model_para.parent_bone_list[obj.model_para.parent_bone];
           const pb_list = [obj.model_para.parent_bone, ...(obj.model_para.parent_bone_list||[])];
           pb_list.forEach(p_bone=>{
@@ -8588,15 +8629,46 @@ MMD_SA._force_motion_shuffle = true;
             }
           });
 
-          if (!obj.id) obj.id = filename.replace(/\.([a-z0-9]{1,4})$/i, '');
+          if (!obj.id) obj.id = filename;
+
+// a simple trick to allow simple object scene to just update para instead of adding duplicated objects, probably won't work well for complicated cases when the existing scene has object clones.
+          const _no_clone = MMD_SA.THREEX._XR_Animator_scene_?.object3D_list?.filter(v=>v.path.replace(/^.+[\/\\]/, '').replace(/\.[^\.]+$/, '')==filename).length == 1;
+//console.log('no clone', _no_clone)
+          let obj_old;
+          if (_no_clone) {
+            if (MMD_SA.THREEX._XR_Animator_scene_?.object3D_list) {
+              obj_old = MMD_SA.THREEX._XR_Animator_scene_.object3D_list.find(v=>v.path.replace(/^.+[\/\\]/, '').replace(/\.[^\.]+$/, '')==filename);
+              if (obj_old) {
+                MMD_SA.THREEX._XR_Animator_scene_.object3D_list = MMD_SA.THREEX._XR_Animator_scene_.object3D_list.filter(v=>v!=obj_old);
+              }
+            }
+            if (MMD_SA.THREEX._XR_Animator_scene_?.auto_fit_list) {
+              const auto_fit_list = [];
+              MMD_SA.THREEX._XR_Animator_scene_.auto_fit_list = MMD_SA.THREEX._XR_Animator_scene_.auto_fit_list.forEach((v_list,i)=>{
+                const list = v_list.filter(v=>v.object_id!=filename);
+                if (list.length)
+                  auto_fit_list.push(list);
+              });
+              MMD_SA.THREEX._XR_Animator_scene_.auto_fit_list = auto_fit_list;
+            }
+          }
 
           loaded_count_max++;
 // need to use await (i.e. loading in order) to work with cloned objects
-          await onDrop_add_object3D({ isFileSystem:true, path:obj.path, _obj_json:obj });
+          await onDrop_add_object3D({ isFileSystem:true, path:obj.path, _obj_json:obj, _no_clone:_no_clone });
 
-          obj._object3d_uuid = object3d_list[object3d_list.length-1].uuid;
+          if (obj_old) {
+            obj._object3d_uuid = obj_old._object3d_uuid;
+            const x_object = object3d_list.find(_obj=>_obj.uuid==obj._object3d_uuid);
+            if (x_object && (x_object.parent_bone_list?.length == 1)) {
+              x_object.parent_bone_list = [x_object.parent_bone];
+            }
+          }
+          else {
+            obj._object3d_uuid = object3d_list[object3d_list.length-1].uuid;
+          }
 
-          show_status('✅"' + filename + '"');
+          show_status('✅"' + filename + '"' + ((_no_clone) ? ' (updated)' : ''));
           check_loaded(1);
         }
       }
@@ -8624,12 +8696,15 @@ if (MMD_SA.THREEX._XR_Animator_scene_) {
   if (!json.XR_Animator_scene.on) {
     json.XR_Animator_scene.on = MMD_SA.THREEX._XR_Animator_scene_.on;
   }
-  else if (!json.XR_Animator_scene.on?.gesture) {
-    if (MMD_SA.THREEX._XR_Animator_scene_.on?.gesture)
-      json.XR_Animator_scene.on.gesture = MMD_SA.THREEX._XR_Animator_scene_.on.gesture;
-  }
   else {
-    json.XR_Animator_scene.on.gesture = Object.assign(json.XR_Animator_scene.on.gesture||{}, MMD_SA.THREEX._XR_Animator_scene_.on?.gesture);
+    const p_list = {};
+    for (const p in json.XR_Animator_scene.on)
+      p_list[p] = true;
+    for (const p in MMD_SA.THREEX._XR_Animator_scene_.on)
+      p_list[p] = true;
+
+    for (const p in p_list)
+      json.XR_Animator_scene.on[p] = Object.assign({}, MMD_SA.THREEX._XR_Animator_scene_.on?.[p], json.XR_Animator_scene.on[p]);
   }
 
   if (!json.XR_Animator_scene.object3D_list) {
@@ -8774,6 +8849,33 @@ function export_scene_JSON(para) {
         if (parent_bone.disabled)
           pb.disabled = true;
         parent_bone_list.push(pb);
+
+        const accessory = parent_bone.accessory_data;
+
+        if (accessory) {
+          const transform = accessory.transform = {};
+
+          if (accessory.scale_base)
+            transform.scale_percent = placement.scale / accessory.scale_base * 100;
+
+          const pos = MMD_SA.TEMP_v3.copy(parent_bone.position).multiplyScalar(1/MMD_SA.THREEX.VRM.vrm_scale);
+          transform.position = { x:-pos.x, y:pos.y, z:-pos.z };
+
+          const rot = MMD_SA.TEMP_v3.copy(parent_bone.rotation);
+          if (accessory.euler_order && (accessory.euler_order != 'YXZ')) {
+            rot.multiplyScalar(Math.PI/180);
+            const q = MMD_SA.TEMP_q.setFromEuler(rot, accessory.euler_order);
+            rot.setEulerFromQuaternion(q, 'YXZ');
+            rot.multiplyScalar(180/Math.PI);
+          }
+          transform.rotation = { x:-rot.x, y:rot.y, z:-rot.z };
+          for (const p of ['x','y','z']) {
+            if (transform.rotation[p] < 0)
+              transform.rotation[p] += 360;
+          }
+
+          pb.accessory_data = accessory;
+        }
       });
 
       model_para.parent_bone = parent_bone_list[0];
@@ -8990,29 +9092,31 @@ function reset_scene_UI() {
   }
 }
 
-function reset_scene() {
-  const v_bg = document.getElementById("VdesktopBG");
-  if (v_bg) {
-    v_bg.pause();
-    v_bg.style.visibility = 'hidden';
+function reset_scene(keep_background) {
+  if (!keep_background) {
+    const v_bg = document.getElementById("VdesktopBG");
+    if (v_bg) {
+      v_bg.pause();
+      v_bg.style.visibility = 'hidden';
+    }
+
+    MMD_SA.Wallpaper3D.visible = false;
+
+    LdesktopBG_host.style.display = bg_state_default;
+    document.body.style.backgroundColor = bg_color_default;
+    LdesktopBG.style.backgroundImage = bg_wallpaper_default;
+    MMD_SA_options.user_camera.display.webcam_as_bg = webcam_as_bg_default;
+
+    remove_skybox();
+    remove_HDRI();
   }
-
-  MMD_SA.Wallpaper3D.visible = false;
-
-  LdesktopBG_host.style.display = bg_state_default;
-  document.body.style.backgroundColor = bg_color_default;
-  LdesktopBG.style.backgroundImage = bg_wallpaper_default;
-  MMD_SA_options.user_camera.display.webcam_as_bg = webcam_as_bg_default;
-
-  remove_skybox();
-  remove_HDRI();
 
   remove_object3D();
 
   scene_json_for_export.XR_Animator_scene = {};
   MMD_SA.THREEX._XR_Animator_scene_ = null;
 
-  System._browser.camera.display_floating = false
+  System._browser.camera.update_display_floating();
 
   window.dispatchEvent(new CustomEvent("SA_XR_Animator_scene_onunload"));
 }
@@ -10319,7 +10423,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  get content() { return 'XR Animator (v0.33.2)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
+  get content() { return 'XR Animator (v0.33.3)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -13327,7 +13431,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
   },
   { key:'K', event_id: {
       func:()=>{
-option_active = 'vowel';
+option_active = 'Vowel';
       },
       goto_event: { branch_index:facemesh_options_branch, step:2 },
     },

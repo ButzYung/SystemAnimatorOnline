@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2025-02-09)
+// (2025-02-22)
 
 var use_full_spectrum = true
 
@@ -1763,7 +1763,8 @@ this.fading = fading && (!xr.session || (xr.use_dummy_webgl && (!xr.user_camera.
 if (!fading)
   return motion_changed
 
-this.fadeout_opacity = 1;
+if (!MMD_SA.OSC.VMC.sender_enabled)
+  this.fadeout_opacity = 1;
 return motion_changed
   }
 
@@ -9316,29 +9317,15 @@ vrm.materials.forEach((m,i)=>{
         }
       },
 
-      process_rotation: (function () {
-// three-vrm 1.0 normalized
-/*
-        var _q;
-        window.addEventListener('jThree_ready', ()=>{
-const THREE = MMD_SA.THREEX.THREE;
-_q = new THREE.Quaternion();
-        });
-*/
-        return {
-          value: function (rot, name) {
+      process_rotation: {
+        value: function (rot, name) {
 if (!this.is_VRM1) {
   rot.x *= -1;
   rot.z *= -1;
 }
-else if (use_VRM1) {
-// three-vrm 1.0 normalized
-//  rot.premultiply(_q.fromArray(this.para.q0[name]));
-}
 return rot;
-          }
-        };
-      })(),
+        }
+      },
 
       process_position: {
         value: function (pos) {
@@ -9745,6 +9732,9 @@ vrm.update(time_delta);
 
 
 if (MMD_SA.OSC.VMC.sender_enabled && MMD_SA.OSC.VMC.ready) {
+  MMD_SA.OSC.VMC.ready = false;
+
+// NOTE: Some VMC messages need to be processed outside of timeout (i.e. before model/matrix update)
   const model_pos_scale = 1/vrm_scale;
 
   const model_position0 = MMD_SA_options.Dungeon_options.options_by_area_id[MMD_SA_options.Dungeon.area_id]._startup_position_;
@@ -9767,6 +9757,31 @@ if (MMD_SA.OSC.VMC.sender_enabled && MMD_SA.OSC.VMC.ready) {
 -model_rot.x, -model_rot.y, model_rot.z, model_rot.w,
   ];
   if (System._browser.camera.poseNet.no_pose_data && (System._browser.camera.poseNet.hide_avatar_on_tracking_loss > 1)) pos_msgs[2] -= 999;
+
+  let camera_msgs;
+  if (MMD_SA.OSC.VMC.send_camera_data && !VSeeFace_mode) {
+    const camera = MMD_SA.THREEX.camera.obj;
+    const camera_pos = v1.copy(camera.position).sub(mesh.position).multiplyScalar(model_pos_scale);
+
+    const camera_rot = q1.copy(camera.quaternion);
+    if (!model_turned_around) camera_rot.premultiply(q2.set(0,1,0,0));
+
+    camera_pos.add(model_position_offset);
+
+    camera_msgs = [
+'Camera',
+camera_pos.x*((!model_turned_around)?-1:1), camera_pos.y, -camera_pos.z*((!model_turned_around)?-1:1),
+-camera_rot.x, -camera_rot.y, camera_rot.z, camera_rot.w,
+//0,0,0,
+//0,1,0,0,
+camera.fov,
+    ];
+//DEBUG_show(camera_rot.toArray().join('\n')+'\n'+camera.fov);
+  }
+
+
+setTimeout(()=>{
+//let _t=performance.now()
 
   const bone_msgs = [];
   for (let name_VMC in VRMSchema.HumanoidBoneName) {
@@ -9814,27 +9829,6 @@ blendshape_weight[name],
   }
 
 
-  let camera_msgs;
-  if (MMD_SA.OSC.VMC.send_camera_data && !VSeeFace_mode) {
-    const camera = MMD_SA.THREEX.camera.obj;
-    const camera_pos = v1.copy(camera.position).sub(mesh.position).multiplyScalar(model_pos_scale);
-
-    const camera_rot = q1.copy(camera.quaternion);
-    if (!model_turned_around) camera_rot.premultiply(q2.set(0,1,0,0));
-
-    camera_pos.add(model_position_offset);
-
-    camera_msgs = [
-'Camera',
-camera_pos.x*((!model_turned_around)?-1:1), camera_pos.y, -camera_pos.z*((!model_turned_around)?-1:1),
--camera_rot.x, -camera_rot.y, camera_rot.z, camera_rot.w,
-//0,0,0,
-//0,1,0,0,
-camera.fov,
-    ];
-//DEBUG_show(camera_rot.toArray().join('\n')+'\n'+camera.fov);
-  }
-
   let tracker_msgs = [];
   let tracker_index = 0;
   MMD_SA.THREEX._object3d_list_?.forEach(x_object=>{
@@ -9875,9 +9869,6 @@ obj_pos.x*sign, obj_pos.y, -obj_pos.z*sign,
     }
   });
 
-setTimeout(()=>{
-//let _t=performance.now()
-  MMD_SA.OSC.VMC.ready = false;
 
   MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/Root/Pos",
     pos_msgs,
@@ -15742,7 +15733,7 @@ return new Promise((resolve)=>{
 
   try {
     cp = spawn(
-      (linux_mode) ? toLocalPath(path + '/ffmpeg') : 'ffmpeg',
+      toLocalPath(path + '/ffmpeg'),//(linux_mode) ? toLocalPath(path + '/ffmpeg') : 'ffmpeg',
       args,
       {
         cwd: path

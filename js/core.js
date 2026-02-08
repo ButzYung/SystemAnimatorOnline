@@ -1,5 +1,5 @@
 // System Animator core basics
-// (2024-10-10)
+// (2025-02-22)
 
 var use_SA_browser_mode
 
@@ -565,9 +565,10 @@ if (browser_native_mode) {
   windows_mode = false
 }
 
-// AFTER (before v0.34.2)
+// BEFORE
 linux_mode = !browser_native_mode && linux_mode;
-var mac_mode = !browser_native_mode && /(macintosh|macintel|macppc|mac68k|macos)/i.test(navigator.userAgent);
+
+var mac_mode = /(macintosh|macintel|macppc|mac68k|macos)/i.test(navigator.userAgent);
 var save_settings_by_localStorage = WallpaperEngine_CEF_mode || mac_mode;
 
 // Silverlight 5 64-bit is supported only on Windows 7 and above

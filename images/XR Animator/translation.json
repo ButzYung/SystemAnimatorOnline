@@ -1929,9 +1929,9 @@
 				},
 				"not_supported": {
 					"_translation_": {
-						"_default_": "This feature is available only for Windows app version using VRM model.",
-						"ja": "この機能はVRMモデルを使用したWindowsアプリ版でのみ利用可能です。",
-						"zh": "此功能僅適用於使用 VRM 模型的 Windows 應用程式版本。"
+						"_default_": "This feature is available only for Windows/Linux app version using VRM model.",
+						"ja": "この機能はVRMモデルを使用したWindows/Linuxアプリ版でのみ利用可能です。",
+						"zh": "此功能僅適用於使用 VRM 模型的 Windows/Linux 應用程式版本。"
 					}
 				},
 				"port": {

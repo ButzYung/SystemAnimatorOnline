@@ -810,10 +810,36 @@ if (p_bone.rotation) {
 
       if (transfer_to_parent_bone) {
 //        obj.quaternion.copy(obj_rot_aligned.multiply(rot_base));
+//if (x_object._rot_aligned_) System._browser.camera.DEBUG_show(x_object._rot_aligned_.clone().conjugate().multiply(obj_rot_aligned).toAxisAngle()[1]*180/Math.PI);
         x_object._rot_aligned_ = obj_rot_aligned.clone();
-        x_object._rot_aligned_weight_ = weight;
+//System._browser.camera.DEBUG_show(new THREE.Vector3().setEulerFromQuaternion(x_object._rot_aligned_).multiplyScalar(180/Math.PI).toArray().join('\n'));
+// use weight_absolute to ensure that weight is a fixed value (NOTE: may need to monitor if using a fixed 1 for weight is a good idea, especially in edge case when axis_ext_length is very small)
+        x_object._rot_aligned_weight_ = rot_adjust.weight_absolute || weight;
+        x_object._rot_aligned_weight_absolute_ = rot_adjust.weight_absolute;
+
         obj.quaternion.copy(rot_original);
 
+        if (x_object._rot_aligned_weight_absolute_ == 1) {
+          const rot_base = System._browser.camera.poseNet.frames.skin[p_bone.name]?.[0]._rot_base;
+          if (rot_base) {
+const d = p_bone.name.charAt(0);
+const sign_LR = (d=="左")?1:-1;
+const rot_delta = MMD_SA.TEMP_q.copy(rot_base).conjugate().multiply(x_object._rot_aligned_);
+
+const _d = (d=="左")?'left':'right';
+const rot_offset = MMD_SA.MMD.motionManager.para_SA.motion_tracking?.hand_tracking?.rotation_reference?.[_d].offset;
+if (rot_offset) {
+  rot_delta.multiply(MMD_SA._q2.copy(rot_offset));
+}
+
+rot_delta.multiply(MMD_SA_options.model_para_obj.rot_hand_adjust[sign_LR]);
+//System._browser.camera.DEBUG_show(d+':'+rot_delta.toAxisAngle()[1]*180/Math.PI);
+
+obj.quaternion.multiply(obj_rot.conjugate()).multiply(rot_delta).multiply(obj_rot.conjugate());
+
+modelX.get_bone_by_MMD_name(p_bone.name).quaternion.multiply(modelX.process_rotation(rot_delta));
+          }
+        }
       }
     }
   }
