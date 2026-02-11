@@ -564,11 +564,9 @@ if (browser_native_mode) {
   WallpaperEngine_CEF_mode = true
   windows_mode = false
 }
-
-// BEFORE
+// AFTER
 linux_mode = !browser_native_mode && linux_mode;
-
-var mac_mode = /(macintosh|macintel|macppc|mac68k|macos)/i.test(navigator.userAgent);
+var mac_mode = !browser_native_mode && /(macintosh|macintel|macppc|mac68k|macos)/i.test(navigator.userAgent);
 var save_settings_by_localStorage = WallpaperEngine_CEF_mode || mac_mode;
 
 // Silverlight 5 64-bit is supported only on Windows 7 and above
