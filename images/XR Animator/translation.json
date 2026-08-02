@@ -11,9 +11,9 @@
 				},
 				"info": {
 					"_translation_": {
-						"_default_": "Double-click to start \"Streamer mode\", a one-take shortcut that automatically enables everything you need to start your mocap session, including selecting a webcam, changing your avatar's pose, loading the mocap AI, and turning on VMC protocol (if enabled in last session). Your preferences in webcam, pose, mocap and VMC will be saved and applied automatically.",
-						"ja": "ダブルクリックして「ストリーマー モード」を開始します。 Webカメラの選択、アバターのポーズの変更、モーキャプ AI のロード、VMC プロトコルのオンなど、モーキャプ セッションの開始に必要なすべての操作を 1 回の操作で自動的に有効にするショートカットです。 Webカメラ、ポーズ、モーキャプ、VMC の設定は保存され、自動的に適用されます。",
-						"zh": "按兩下啟動「直播主模式」，一次過將攝影機選擇、人物姿勢轉換、動捕AI載入、VMC協定等全數啟動。 所有相關的設定亦會自動保存及適用。"
+						"_default_": "Double-click (or press Ctrl+Pause) to start \"Streamer mode\", a shortcut to automatically start your mocap session, including selecting webcam, changing avatar's pose, loading mocap AI, and turning on VMC protocol (if enabled in last session). Your preferences in webcam, pose, mocap and VMC will be saved and applied automatically.",
+						"ja": "ダブルクリック（または Ctrl+Pause キーを押す）して \"ストリーマーモード\" を開始します。 これは、Web カメラの選択、アバターのポーズの変更、モーキャプ AI の読み込み、VMC プロトコルのオン（前回のセッションで有効になっていた場合）など、モーキャプ セッションを自動的に開始するショートカットです。 Webカメラ、ポーズ、モーキャプ、VMC の設定は保存され、自動的に適用されます。",
+						"zh": "按兩下(或按 Ctrl+Pause 鍵)啟動「直播主模式」，一次過將攝影機選擇、人物姿勢轉換、動捕AI載入、VMC協定等全數啟動。 所有相關的設定亦會自動保存及適用。"
 					}
 				},
 				"press_x_to_abort": {
@@ -528,14 +528,14 @@
 				"info": {
 					"ML_on": {
 						"_translation_": {
-							"_default_": "- To record motion during mocap, change options or turn mocap off, double-click this item.\n- Press Pause to pause/resume mocap.",
-							"ja": "- モーションを記録したり、オプションを変更したり、モーキャプをオフにしたりするには、ここをダブルクリックします。\n- モーキャプを一時停止/再開するには、Pauseを押します。",
-							"zh": "- 要記錄動作、更改設定或關閉動捕，按此兩下。\n- 按Pause鍵暫停/恢復動捕。"
+							"_default_": "- To record motion during mocap, change options or turn mocap off, double-click this item.\n- Press Pause key to pause (delayed)/resume mocap, Ctrl+Pause to toggle mocap on/off.",
+							"ja": "- モーションを記録したり、オプションを変更したり、モーキャプをオフにしたりするには、ここをダブルクリックします。\n- モーキャプを一時停止(遅延あり)/再開するには Pause キーを押し、オン/オフを切り替えるには Ctrl+Pause を押します。",
+							"zh": "- 要記錄動作、更改設定或關閉動捕，按此兩下。\n- 按Pause鍵暫停(數秒延遲)/恢復動捕，按「Ctrl+Pause」鍵開啟/關閉動捕。"
 						},
 						"camera_off": {
 							"_translation_": {
 								"_default_": "- To choose a video input, double-click the \"Webcam/Media\" item. You can use a webcam, or drop a local video/picture file.",
-								"ja": "- 入力を選択するには、「Webカメラ/メディア」項目をダブルクリックします。 Web カメラ、またはローカルのビデオ/画像ファイルを使用できます。",
+								"ja": "- 入力を選択するには、「Webカメラ/メディア」項目をダブルクリックし、カメラまたはビデオ/画像ファイルを選択",
 								"zh": "- 要選擇影像輸入，按「網路攝影機/影像媒體」兩下。 你可選擇以攝影機或影像媒體作動捕輸入。"
 							}
 						}
@@ -3068,9 +3068,9 @@
 						},
 						"extra": {
 							"_translation_": {
-								"_default_": "・✔️Ctrl+L to toggle 3D camera lock\n・✔️Ctrl+M to mirror the current pose\n・✔️Pause to pause/resume mocap\n・✔️F9 to start video capture\n・✔️F10 to stop video capture\n・✔️F12 to capture still shot\nA. ✔️<switch_avatar_model> to switch avatar model",
-								"ja": "・✔️Ctrl+Lで3Dカメラのロックを切り替える\n・✔️Ctrl+Mで現在のポーズをミラーリングする\n・✔️Pauseでモーキャプを一時停止/再開する\n・✔️F9でビデオキャプチャを開始する\n・✔️F10でビデオキャプチャを停止する\n・✔️F12で静止画をキャプチャする\nA. ✔️<switch_avatar_model>でアバターモデルを切り替える",
-								"zh": "・✔️Ctrl+L 切換鎖定3D鏡頭模式\n・✔️Ctrl+M 鏡像化現在的姿勢\n・✔️Pause 暫停/重開動捕\n・✔️F9 開始螢幕錄影\n・✔️F10 停止螢幕錄影\n・✔️F12 截圖\nA. ✔️<switch_avatar_model> 切換人物模型"
+								"_default_": "・✔️Ctrl+L to toggle 3D camera lock\n・✔️Ctrl+M to mirror the current pose\n・✔️Pause to pause (delayed)/resume mocap\n・✔️Ctrl+Pause to toggle mocap on/off\n・✔️F9 to start video capture\n・✔️F10 to stop video capture\n・✔️F12 to capture still shot\nA. ✔️<switch_avatar_model> to switch avatar model",
+								"ja": "・✔️Ctrl+Lで3Dカメラのロックを切り替える\n・✔️Ctrl+Mで現在のポーズをミラーリングする\n・✔️Pauseでモーキャプを一時停止(遅延あり)/再開する\n・✔️Ctrl+Pauseでモーキャプのオン/オフを切り替る\n・✔️F9でビデオキャプチャを開始する\n・✔️F10でビデオキャプチャを停止する\n・✔️F12で静止画をキャプチャする\nA. ✔️<switch_avatar_model>でアバターモデルを切り替える",
+								"zh": "・✔️Ctrl+L 切換鎖定3D鏡頭模式\n・✔️Ctrl+M 鏡像化現在的姿勢\n・✔️Pause 暫停(數秒延遲)/重開動作捕捉\n・✔️Ctrl+Pause 開啟/關閉動作捕捉\n・✔️F9 開始螢幕錄影\n・✔️F10 停止螢幕錄影\n・✔️F12 截圖\nA. ✔️<switch_avatar_model> 切換人物模型"
 							},
 							"switch_avatar_model": {
 								"tooltip": {

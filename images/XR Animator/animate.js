@@ -1,5 +1,5 @@
 // XR Animator
-// (2025-06-15)
+// (2025-06-30)
 
 var MMD_SA_options = {
 
@@ -3428,7 +3428,7 @@ video:{
 //  hidden:true,
 //  hidden_on_webcam: true,
   scale:0.4, top:-0.5,
-//left:(-0.5*-0.5), top:-1,
+//left:(-0.5*-1), top:-1,
 //scale:0.4*1,top:0,left:-3,
 //scale:0.4*2,top:0,left:-1,
 },
@@ -3436,7 +3436,7 @@ wireframe:{
 //  hidden:true,
 //  align_with_video:true,
   top:0.5,
-//left:(0.5*1),top:-1,
+//left:(0.5*-1),top:-1,
 //left:1,
 //top:0.8,left:0.4,
 //top:0,left:3,
@@ -3474,7 +3474,7 @@ wireframe:{
  ,light_position: [0,1,0]
 
  ,use_shadowMap: true
- ,shadow_darkness: 0.1
+// ,shadow_darkness: 0.1
  ,ground_shadow_only: true
 
  ,make_armIK: {
@@ -4885,6 +4885,7 @@ return info;
     }
 
    ,"facemesh" : (()=>{
+      let mocap_initialized;
       function mocap_hotkeys(e) {
 if (System._browser.hotkeys.disabled) return;
 
@@ -4892,32 +4893,54 @@ const ev = e.detail.e;
 switch (ev.code) {
   case 'Pause':
     const camera = System._browser.camera;
-    if (camera.initialized && camera.ML_enabled) {
-      if (mocap_pause_timerID) {
-        clearInterval(mocap_pause_timerID);
-        mocap_pause_timerID = null;
-      }
+    if (ev.ctrlKey) {
+      if (MMD_SA_options.Dungeon.event_mode)
+        document.dispatchEvent(new KeyboardEvent('keydown', { code:'Escape' }));
 
-      if (camera.video.paused) {
-        camera.video.play();
-        camera.DEBUG_show('');
+      if (camera.ML_enabled) {
+        mocap_initialized = true;
+        MMD_SA.WebXR.user_camera.facemesh.enabled = false;
+        MMD_SA.WebXR.user_camera.poseNet.enabled = false;
+        MMD_SA.WebXR.user_camera.handpose.enabled = false;
       }
       else {
-        mocap_pause_countdown = 3;
-        mocap_pause_timerID = setInterval(()=>{
-          if (--mocap_pause_countdown == 0) {
-            clearInterval(mocap_pause_timerID);
-            mocap_pause_timerID = null;
+        if (!mocap_initialized) {
+          mocap_initialized = true;
+          System._browser.camera.streamer_mode.start();
+        }
+        else {
+          System._browser.camera.streamer_mode.init_mocap(MMD_SA_options.user_camera.streamer_mode.mocap_type);
+        }
+      }
+    }
+    else {
+      if (camera.initialized && camera.ML_enabled) {
+        if (mocap_pause_timerID) {
+          clearInterval(mocap_pause_timerID);
+          mocap_pause_timerID = null;
+        }
 
-            camera.video.pause();
-            System._browser.on_animation_update.add(()=>{DEBUG_show('⏸️PAUSED', 3);}, 0,1);
-          }
-          else {
-            camera.DEBUG_show('⏸️Pausing in...' + mocap_pause_countdown);
-          }
-        }, 1000);
+        if (camera.video.paused) {
+          camera.video.play();
+          camera.DEBUG_show('');
+        }
+        else {
+          mocap_pause_countdown = 3;
+          mocap_pause_timerID = setInterval(()=>{
+            if (--mocap_pause_countdown == 0) {
+              clearInterval(mocap_pause_timerID);
+              mocap_pause_timerID = null;
 
-        camera.DEBUG_show('⏸️Pausing in...' + mocap_pause_countdown);
+              camera.video.pause();
+              System._browser.on_animation_update.add(()=>{DEBUG_show('⏸️PAUSED', 3);}, 0,1);
+            }
+            else {
+              camera.DEBUG_show('⏸️Pausing in...' + mocap_pause_countdown);
+            }
+          }, 1000);
+
+          camera.DEBUG_show('⏸️Pausing in...' + mocap_pause_countdown);
+        }
       }
     }
     break
@@ -7578,7 +7601,6 @@ function animate_object3D() {
 }
 // v0.37.3
 window.addEventListener('SA_MMD_before_render', animate_object3D);
-
 
 const adjust_object3D = (function () {
   const parent_bone_list = ['ROOT', '頭','首', '上半身2','上半身','左腕','左ひじ','左手首','右腕','右ひじ','右手首', '左足','左ひざ','左足首','右足','右ひざ','右足首'];
@@ -10457,7 +10479,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  get content() { return 'XR Animator (v0.34.2)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
+  get content() { return 'XR Animator (v0.34.3)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -10978,6 +11000,7 @@ MMD_SA_options.use_CircularSpectrum = !MMD_SA_options.use_CircularSpectrum;
 message: {
   index: 1,
   bubble_index: 3,
+  para: { font_scale:0.95 },
   get content() { return System._browser.translation.get('XR_Animator.UI.UI_options.miscellaneous_options.hotkey.extra').replace(/\<switch_avatar_model\>/, (System._browser.hotkeys.config_by_id['switch_avatar_model'].accelerator[0] == 'Alt+1')?'Alt+1-4':'Ctrl+1-4'); }
 },
 next_step: {},
@@ -14006,7 +14029,7 @@ MMD_SA.THREEX.scene.add(wall)
 window.addEventListener("SA_MMD_toggle_shadowMap", function () {
   ground.receiveShadow = wall.receiveShadow = MMD_SA_options.use_shadowMap;
   if (!use_THREEX) ground.receiveShadowAlpha = wall.receiveShadowAlpha = MMD_SA_options.use_shadowMap;
-  material.opacity = (MMD_SA_options.use_shadowMap) ? 0.5 : 0
+  material.opacity = (MMD_SA_options.use_shadowMap) ? MMD_SA_options.shadow_darkness : 0;
   material.needsUpdate = true
 });
 

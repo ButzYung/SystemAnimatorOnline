@@ -1,5 +1,5 @@
 // auto fit
-// (2025-05-24)
+// (2025-06-30)
 
 const v1 = new THREE.Vector3();
 const v2 = new THREE.Vector3();
@@ -1377,8 +1377,11 @@ initialized = true;
 [ 'finger2_up' ],
   ];
 
+  let enabled;
+
   return {
-    enabled: false,
+    get enabled() { return enabled; },
+    set enabled(v) { enabled = v; this.user_data = {}; },
 
     gesture: { '左':{}, '右':{} },
 

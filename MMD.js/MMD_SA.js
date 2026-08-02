@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2025-06-15)
+// (2025-06-30)
 
 var use_full_spectrum = true
 
@@ -4563,7 +4563,7 @@ switch (para[0]) {
         catch (err) {}
         break
       case "reset":
-        if (!confirm("This will reset all visual effect settings to the original defaults (i.e. model-based effects enabled with default parameters, post-processing effects disabled)."))
+        if (!confirm("This will reset all MMD visual effect settings to defaults (i.e. model-based effects enabled with default parameters, post-processing effects disabled)."))
           return
         MMD_SA_options.MME.self_overlay = { enabled:true }
         MMD_SA_options.MME.HDR = { enabled:true }
@@ -4577,7 +4577,7 @@ switch (para[0]) {
         System._browser.update_tray()
         break
       case "OFF":
-        if (!confirm("This will disable all visual effects, and reset lighting/shadow to its default state."))
+        if (!confirm("This will disable all MMD visual effects, and reset lighting/shadow to its default state."))
           return
         MMD_SA_options.MME.self_overlay = { enabled:false }
         MMD_SA_options.MME.HDR = { enabled:false }
@@ -4602,15 +4602,23 @@ switch (para[0]) {
         if (shadow < 0)
           return
         if (shadow == 0) {
-          MMD_SA_options.use_shadowMap = false
-          System.Gadget.Settings.writeString('MMDShadow', '')
+          if (MMD_SA_options.is_XR_Animator) {
+            shadow = 0.001;
+            MMD_SA_options.use_shadowMap = true;
+            MMD_SA_options.shadow_darkness = shadow;
+            System.Gadget.Settings.writeString('MMDShadow', shadow);
+          }
+          else {
+            MMD_SA_options.use_shadowMap = false;
+            System.Gadget.Settings.writeString('MMDShadow', '');
+          }
         }
         else {
-          MMD_SA_options.use_shadowMap = true
-          MMD_SA_options.shadow_darkness = shadow
-          System.Gadget.Settings.writeString('MMDShadow', shadow)
+          MMD_SA_options.use_shadowMap = true;
+          MMD_SA_options.shadow_darkness = shadow;
+          System.Gadget.Settings.writeString('MMDShadow', shadow);
         }
-        MMD_SA.toggle_shadowMap()
+        MMD_SA.toggle_shadowMap();
 //        System._browser.update_tray()
         break
       case "Light":
@@ -9767,7 +9775,7 @@ if (MMD_SA.OSC.VMC.sender_enabled && MMD_SA.OSC.VMC.ready) {
 // NOTE: Some VMC messages need to be processed outside of timeout (i.e. before model/matrix update)
   const model_pos_scale = 1/vrm_scale;
 
-  const model_position0 = MMD_SA_options.Dungeon_options.options_by_area_id[MMD_SA_options.Dungeon.area_id]._startup_position_;
+  const model_position0 = MMD_SA_options.Dungeon_options?.options_by_area_id[MMD_SA_options.Dungeon.area_id]._startup_position_ || MMD_SA.TEMP_v3.set(0,0,0);
   const model_position_offset = v4.copy(mesh.position).sub(model_position0).multiplyScalar(model_pos_scale);
 
   const warudo_mode = MMD_SA.OSC.app_mode == 'Warudo';
@@ -10682,16 +10690,16 @@ PPE['UnrealBloom'].setup_rim_light();
 if (PPE_initialized) return;
 PPE_initializing = true;
 
-// Oct 11, 2023
+// May 5, 2025
 const _Pass = await import(System.Gadget.path + '/three.js/postprocessing/Pass.js');
 Pass = _Pass.Pass;
 
 const EffectComposer = await import(System.Gadget.path + '/three.js/postprocessing/EffectComposer.js');
 
-// not using commit from Aug 23, 2023 as it breaks MSAA
+// not using commit from Aug 23, 2023 as it breaks MSAA/DoF
 const RenderPass = await import(System.Gadget.path + '/three.js/postprocessing/RenderPass.js');
 
-// May 24, 2023
+// Apr 4, 2025
 const ShaderPass = await import(System.Gadget.path + '/three.js/postprocessing/ShaderPass.js');
 
 THREE.EffectComposer = EffectComposer.EffectComposer;
@@ -10700,7 +10708,7 @@ THREE.ShaderPass = ShaderPass.ShaderPass;
 
 //THREE.SMAAPass = (await import(System.Gadget.path + '/three.js/postprocessing/SMAAPass.js')).SMAAPass;
 
-// Dec 19, 2023
+// Apr 4, 2025
 THREE.OutputPass = (await import(System.Gadget.path + '/three.js/postprocessing/OutputPass.js')).OutputPass;
 
 PPE_options_default = {
@@ -11921,7 +11929,7 @@ if (MMD_SA_options.THREEX_options.use_MMD) {
   }
 }
 
-// Apr 3, 2024
+// May 14, 2025
 const GLTFLoader_module = await import(System.Gadget.path + '/three.js/loaders/GLTFLoader.js');
 Object.assign(self.THREE, GLTFLoader_module);
 
@@ -12787,7 +12795,7 @@ else {
   });
 }
 
-// Mar 14, 2024
+// May 24, 2025
 const FBXLoader_module = await System._browser.load_script(System.Gadget.path + '/three.js/loaders/FBXLoader.js', true);
 for (const name in FBXLoader_module) THREE[name] = FBXLoader_module[name];
         }
@@ -13205,9 +13213,10 @@ if (/\.(vrma|bvh)$/i.test(url)) {
 // three-vrm-animation
 // https://github.com/pixiv/three-vrm/tree/dev/packages/three-vrm-animation
 
-// https://pixiv.github.io/three-vrm/packages/three-vrm-animation/lib/three-vrm-animation.module.js
+// https://pixiv.github.io/three-vrm/packages/three-vrm-animation/lib/three-vrm-animation.module.min.js
+// https://www.npmjs.com/package/@pixiv/three-vrm-animation?activeTab=code
   if (!THREEX.createVRMAnimationClip) {
-    const three_vrma_module = await System._browser.load_script(System.Gadget.path + '/three.js/three-vrm-animation.module.js', true);
+    const three_vrma_module = await System._browser.load_script(System.Gadget.path + '/three.js/three-vrm-animation.module.min.js', true);
 //console.log(three_vrma_module)
     Object.assign(THREEX, three_vrma_module);
 
@@ -14044,7 +14053,7 @@ System._browser.on_animation_update.add(async ()=>{
         async function init() {
 if (THREE.GLTFExporter) return;
 
-// April 27, 2024
+// May 18, 2025
 const GLTFExporter_module = await System._browser.load_script(System.Gadget.path + '/three.js/exporters/GLTFExporter.js', true);
 for (const name in GLTFExporter_module) THREE[name] = GLTFExporter_module[name];
 
@@ -14969,7 +14978,7 @@ colliders = (this.children||[]).map(c=>{
 "peak_barrier": true,
 "is_parent": c.is_parent,
 "z_push": c.z_push,
-//"use_reference_point_filter": true,
+//"reference_point_filter": {},
 on_hit: colliders_for_hands.record_hit
   };
 });

@@ -1,8 +1,10 @@
-// (2025-02-22)
+// (2025-08-24)
 
 var IPC
 
 (function () {
+  document.addEventListener( "contextmenu", function ( event ) { event.preventDefault(); }, false );
+
   if (!webkit_electron_mode)
     return
 

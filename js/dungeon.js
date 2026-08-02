@@ -1,4 +1,4 @@
-// (2025-05-01)
+// (2025-06-30)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -4761,7 +4761,7 @@ ss.sheet.insertRule([
  ,'z-index: 999;'
  ,'width: 80px;'
  ,'height: ' + (5+5+12*1) + 'px;'
- ,'font-size:10px;'
+ ,'font-size: 10px;'
  ,'content: attr(data-info_short);'
  ,'}'
 ].join('\n'), 0);
@@ -4779,7 +4779,7 @@ ss.sheet.insertRule([
  ,'z-index: 999;'
  ,'width: 280px;'
  ,'height: ' + (5+5+12*7) + 'px;'
- ,'font-size: 10px;'
+ ,'font-size: 9px;'
  ,'content: attr(data-info);'//"' + this.item.info + '";'//
 // https://www.digitalocean.com/community/tutorials/css-line-break-content-property
 // https://developer.mozilla.org/en-US/docs/Web/CSS/white-space
@@ -5072,7 +5072,6 @@ drop_item(index_source, _idx);
   d.id = "Ldungeon_inventory_item" + idx + "_icon"
 // AFTER
 ds.pointerEvents = 'none';
-
   ds.position = "absolute"
   ds.posLeft = ds.posTop = 0
   ds.zIndex = 1
@@ -5082,7 +5081,6 @@ ds.pointerEvents = 'none';
   d.id = "Ldungeon_inventory_item" + idx + "_border"
 // AFTER
 ds.pointerEvents = 'none';
-
   ds.position = "absolute"
   ds.posLeft = ds.posTop = 0
   ds.zIndex = 2
