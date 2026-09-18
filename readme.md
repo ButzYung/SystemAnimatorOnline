@@ -6,7 +6,7 @@
   <img width="640" height="360" title="XR Animator" src="https://github.com/ButzYung/SystemAnimatorOnline/raw/master/images/XR_Animator_thumbnail01.png">
 </p>
 
-***XR Animator***, inherited from my previous desktop gadget project known as System Animator, is a video/webcam-based AI motion capture application designed for VTubing and the metaverse era. It uses the machine learning (ML) solution from [Google MediaPipe](https://github.com/google/mediapipe) to detect the 3D poses from a live webcam video, which is then used to drive the 3D avatar (VRM/MMD model) as if you are controlling it with your body. It can be used for VTubing and various XR/3D purposes.
+<ins>***XR Animator***</ins>, inherited from my previous desktop gadget project known as System Animator, is a video/webcam-based AI motion capture application designed for VTubing and the metaverse era. It uses the machine learning (ML) solution from [Google MediaPipe](https://github.com/google/mediapipe) to detect the 3D poses from a live webcam video, which is then used to drive the 3D avatar (VRM/MMD model) as if you are controlling it with your body. It can be used for VTubing and various XR/3D purposes.
 
 It has a variety of motion tracking options. You can choose to track the face, full body, or something in between (any combination of face/body/hands).
 
@@ -127,7 +127,7 @@ All demos support the use of custom MMD (MikuMikuDance) model. Drop a zip of you
 - License (CC BY-NC-SA 4.0) - http://creativecommons.org/licenses/by-nc-sa/4.0/
   - This license applies if you are adapting XR Animator's source code for your own purpose, such as building another software or service.
   - This license does not cover any third-party assets which may have incompatible licenses of their own.
-  - This license does not apply to content generated from the functionality of XR Animator, such as video content generated from the motion capture feature of System Animator using your own assets. XR Animator claims no right or responsibility over such content.
+  - This license does not apply to content generated from the functionality of XR Animator, such as video content generated from the motion capture feature of XR Animator using your own assets. <ins>***XR Animator claims no right or responsibility over such content.***</ins>
 
 ### Core apps/libraries:
 
