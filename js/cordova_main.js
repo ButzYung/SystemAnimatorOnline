@@ -28,7 +28,7 @@ document.addEventListener('deviceready', ()=>{
       state_check_countdown = 0;
 
       if (!insomnia_busy) {
-        let keep_awake = !!(System._browser.camera.mocap_enabled || MMD_SA.OSC.VMC.sender_enabled || MMD_SA_options.Dungeon?.item_base.hand_camera?._mobile_hand_camera_enabled);
+        let keep_awake = !!(System._browser.camera.mocap_enabled || MMD_SA.OSC.VMC.sender_enabled || MMD_SA_options.Dungeon?.item_base.hand_camera?._mobile_hand_camera.enabled);
         if (insomnia_state != keep_awake) {
           insomnia_state = keep_awake;
 

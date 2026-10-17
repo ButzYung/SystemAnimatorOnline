@@ -69,6 +69,7 @@ const contentType = {
     '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 
   '.mjs': 'text/javascript',
+  '.wasm': 'application/wasm',
 };
 
 const server = http.createServer(async (req, res) => {

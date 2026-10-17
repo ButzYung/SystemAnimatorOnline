@@ -1,4 +1,4 @@
-// (2025-08-24)
+// (2025-09-07)
 
 /*!
  * jThree.MMD.js JavaScript Library v1.6.1
@@ -6887,7 +6887,7 @@ if (self.MMD_SA && _head_pos && (mesh.bones_by_name[head_name]) && (look_at_scre
 
 if (look_at_screen || look_at_mouse) {
 // not using MMD_SA.get_bone_rotation_parent here as it includes the look-at-screen rotation from the previous frame
-  const p_rotation_inversed = (MMD_SA_options.look_at_screen_parent_rotation_by_model(this) || ((System._browser.camera.ML_enabled || System._browser.camera.VMC_receiver.mocap_enabled) && MMD_SA.THREEX.q4.copy(mesh.bones_by_name["全ての親"].quaternion).multiply((MMD_SA._trackball_camera.selfie_mode) ? MMD_SA.TEMP_q.copy(MMD_SA._trackball_camera.selfie_rotation_offset) : MMD_SA.TEMP_q.set(0,0,0,1))) || MMD_SA.get_bone_rotation_parent(mesh, head_name)).conjugate();
+  const p_rotation_inversed = (MMD_SA_options.look_at_screen_parent_rotation_by_model(this) || (!MMD_SA.WebXR.session && (System._browser.camera.ML_enabled || System._browser.camera.VMC_receiver.mocap_enabled) && MMD_SA.THREEX.q4.copy(mesh.bones_by_name["全ての親"].quaternion).multiply((MMD_SA._trackball_camera.selfie_mode) ? MMD_SA.TEMP_q.copy(MMD_SA._trackball_camera.selfie_rotation_offset) : MMD_SA.TEMP_q.set(0,0,0,1))) || MMD_SA.get_bone_rotation_parent(mesh, head_name)).conjugate();
 
   let r = MMD_SA.face_camera(_head_pos, p_rotation_inversed);
 

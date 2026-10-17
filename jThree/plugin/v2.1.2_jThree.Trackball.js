@@ -30,7 +30,7 @@
  * Date: 2015-02-25
  */
 // AT: customizations
-// (2025-08-24)
+// (2025-09-07)
 
 THREE.TrackballControls = function ( object, domElement ) {
 
@@ -242,7 +242,10 @@ _selfie_mode = v;
   })(),
 
   selfie_simple_mode: {
-    get: ()=> { return (is_mobile) ? (MMD_SA.OSC.VMC.send_camera_data && !MMD_SA.OSC.VMC.send_avatar_data) : System._browser.camera.VMC_receiver.mocap_enabled; }
+    get: ()=> {
+// use simple mode on desktop app if only remote mocap and camera data come to the same VMC channel
+return (is_mobile) ? (MMD_SA.OSC.VMC.send_camera_data && !MMD_SA.OSC.VMC.send_avatar_data) : (System._browser.camera.VMC_receiver.initialized && System._browser.camera.VMC_receiver.receiver.find(r=>r.active && r.pose_enabled)?.camera_active);
+    }
   },
 
   selfie_standing_rotation_mode: (()=>{
@@ -285,7 +288,7 @@ _selfie_center_view_lookAt = v;
     let _rotation_disabled = false;
     return {
       get: ()=>{
-return _rotation_disabled || System._browser.camera.VMC_receiver.camera_active;
+return _rotation_disabled || System._browser.camera.VMC_receiver.camera_active || (System._browser.camera.poseNet.enabled && MMD_SA.Camera_MOD.get_mod('face')?.pos_last.lengthSq() && (MMD_SA.MMD.motionManager.filename == 'stand_simple') && !MMD_SA.MMD.motionManager.para_SA.center_view_enforced);
       },
       set: (v)=>{
 _rotation_disabled = v;
@@ -1392,7 +1395,7 @@ else {
 
 //  this.object.lookAt( this.target );
 
-  if (!simple_mode && System._browser.camera.poseNet.enabled) {
+  if (!simple_mode && System._browser.camera.poseNet.enabled && !System._browser.camera.VMC_receiver.mocap_enabled) {
 // enforce upper body mocap
     const mm = MMD_SA.MMD.motionManager;
     if ((mm.filename == 'stand_simple') && !mm.para_SA.center_view_enforced) {

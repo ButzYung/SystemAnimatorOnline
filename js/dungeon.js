@@ -1,4 +1,4 @@
-// (2025-08-24)
+// (2025-09-07)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -3691,6 +3691,13 @@ System._browser.translation.dictionary = {
 				"ja": "大",
 				"zh": "大"
 			}
+		},
+		"Lightweight": {
+			"_translation_": {
+				"_default_": "Lightweight",
+				"ja": "軽量",
+				"zh": "輕量"
+			}
 		}
 	}
 };
@@ -4273,7 +4280,7 @@ if (sd) {
   });
 
   if (!sd.texture_setup) {
-    sd.texture_setup = (function () {
+    sd.texture_setup = (()=>{
 // https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
 function hexToRgb(hex) {
     // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
@@ -4289,35 +4296,33 @@ parseInt(result[2], 16),
 parseInt(result[3], 16)
     ] : [0,0,0];
 }
-      return function () {
-const THREE = MMD_SA.THREEX.THREE;
 
-var dome_tex = MMD_SA.THREEX.mesh_obj.get_three('DomeMESH').material.map;
-if (MMD_SA.THREEX.enabled && MMD_SA.THREEX.use_sRGBEncoding) dome_tex.colorSpace = THREE.SRGBColorSpace;
-dome_tex.needsUpdate = true
+      function texture_update() {
+const is_video = img.readyState != null;
 
-var img = MMD_SA_options.Dungeon_options.skydome.texture_cache_list[this.texture_index||0]
-var canvas = dome_tex.image;
-// Note: After the initial use of a texture, its dimensions, format, and type cannot be changed. (r135)
-// https://threejs.org/docs/index.html#api/en/textures/Texture
-// https://discourse.threejs.org/t/gl-invalid-value-offset-overflows-texture-dimensions/35561
-var cw = (is_mobile) ? 2048 : 4096;
-var ch = 2048;
-if ((canvas.width != cw) || (canvas.height != ch)) {
-  canvas.width  = cw
-  canvas.height = ch
+if (is_video) {
+  if (!MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.visible) {
+    img.pause();
+    return;
+  }
+  img.requestVideoFrameCallback(texture_update);
 }
 
-var context = canvas.getContext("2d")
-context.globalAlpha = 1
-context.clearRect(0,0,cw,ch)
-context.drawImage(img, 0,0,img.width,img.height, 0,0,cw,ch)
+const context = canvas.getContext("2d");
+context.globalAlpha = 1;
+context.clearRect(0,0,cw,ch);
 
-MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.visible = true
+if (is_video) {
+  context.drawImage(img, 0,0,img.videoWidth,img.videoHeight, 0,0,cw,ch);
+}
+else {
+  context.drawImage(img, 0,0,img.width,img.height, 0,0,cw,ch);
+}
 
-var fog = this.fog
-if (!fog)
-  return
+dome_tex.needsUpdate = true;
+
+var fog = this.fog;
+if (!fog) return;
 
 context.globalAlpha = fog.opacity || 1
 var fill_color = fog.color || (MMD_SA_options.Dungeon.fog && MMD_SA_options.Dungeon.fog.color) || "#000000"
@@ -4331,6 +4336,33 @@ gradient.addColorStop(0,"rgba(" + hexToRgb(fill_color).join(",") + ",0)");
 gradient.addColorStop(1,fill_color);
 context.fillStyle = gradient
 context.fillRect(0,(ch-h-h_gradient), cw,h_gradient)
+      }
+
+      let THREE;
+      let dome_tex, img, canvas, cw, ch;
+      return function () {
+THREE = MMD_SA.THREEX.THREE;
+
+dome_tex = MMD_SA.THREEX.mesh_obj.get_three('DomeMESH').material.map;
+
+// NOTE: Updating sRGB texture is very slow on some devices. Use inline shader to convert sRGB instead
+//if (MMD_SA.THREEX.enabled && MMD_SA.THREEX.use_sRGBEncoding) dome_tex.colorSpace = THREE.SRGBColorSpace;
+
+img = MMD_SA_options.Dungeon_options.skydome.texture_cache_list[this.texture_index||0];
+canvas = dome_tex.image;
+// Note: After the initial use of a texture, its dimensions, format, and type cannot be changed. (r135)
+// https://threejs.org/docs/index.html#api/en/textures/Texture
+// https://discourse.threejs.org/t/gl-invalid-value-offset-overflows-texture-dimensions/35561
+cw = (is_mobile) ? 2048 : 4096;
+ch = 2048;
+if ((canvas.width != cw) || (canvas.height != ch)) {
+  canvas.width  = cw;
+  canvas.height = ch;
+}
+
+MMD_SA_options.mesh_obj_by_id["DomeMESH"]._obj.visible = true;
+
+texture_update();
       };
     })();
   }
@@ -4338,9 +4370,20 @@ context.fillRect(0,(ch-h-h_gradient), cw,h_gradient)
   MMD_SA_options.mesh_obj_preload_list.push({ id:"DomeMESH", create:function () {
 const THREE = MMD_SA.THREEX.THREE;
 
+const material = new THREE.MeshBasicMaterial( { map:new THREE.Texture(document.createElement('canvas')), fog:false } );
+MMD_SA.THREEX.utils.enable_inline_sRGB_decode(material);
+
+const geometry = new THREE.SphereGeometry( 64*4, 64,64 );
+if (MMD_SA.THREEX.enabled) {
+  geometry.scale(-1, 1, 1);
+}
+else {
+  geometry.applyMatrix(MMD_SA.TEMP_m4.identity().makeScale(-1,1,1));
+}
+
 return new THREE.Mesh(
-  new THREE.SphereGeometry( 64*4, 64,64 ),
-  new THREE.MeshBasicMaterial( { map:new THREE.Texture(document.createElement('canvas')), side:THREE.BackSide, fog:false } )
+  geometry,
+  material
 );
   } });
 
@@ -6821,6 +6864,12 @@ return k_code == 'Key'+branch.key;
         else
           d.run_event()
       }
+
+      if (branch.is_closing_event && !webkit_electron_mode) {
+        window.dispatchEvent(new CustomEvent('SA_writeSettings'));
+        System.Gadget.Settings._writeSettings();
+      }
+
       break
     }
   }
@@ -6839,7 +6888,10 @@ else {
       System._browser.overlay_mode = System._browser.overlay_mode_TEMP = 0;
     }
     else {
-      document.getElementById('Ldungeon_inventory').style.visibility = (document.getElementById('Ldungeon_inventory').style.visibility == 'hidden') ? 'inherit' : 'hidden';
+      const menu_off = document.getElementById('Ldungeon_inventory').style.visibility == 'hidden';
+      document.getElementById('Ldungeon_inventory').style.visibility = (menu_off) ? 'inherit' : 'hidden';
+      if (is_mobile)
+        Lnumpad.style.visibility = (menu_off) ? 'inherit' : 'hidden';
     }
     e.detail.result.return_value = true;
     return;
@@ -11580,7 +11632,7 @@ DEBUG_show("3D Resolution:" + (((is_default_res) && (Math.round(MMD_SA._renderer
           message: {
   get content() {
 if (System._browser.overlay_mode)
-  return System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.user_interface.UI_off' + ((is_mobile) ? '.mobile' : '')).replace(/\<Esc\>/, (is_mobile)?'/':'Esc') + '\n1. ' + ((System._browser.overlay_mode == 2) ? 'UI: OFF + ' + System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.user_interface.UI_off.green_screen') : System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.user_interface') + ': OFF') + '\n2. ' + System._browser.translation.get('Misc.done');
+  return System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.user_interface.UI_off' + ((is_mobile) ? '.mobile' : '')) + '\n1. ' + ((System._browser.overlay_mode == 2) ? 'UI: OFF + ' + System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.user_interface.UI_off.green_screen') : System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.user_interface') + ': OFF') + '\n2. ' + System._browser.translation.get('Misc.done');
 return '1. ' + System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.user_interface') + ': ON' + ((MMD_SA_options.user_camera.ML_models.enabled && (System._browser.overlay_mode == 0)) ? '\n2. ' + System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.camera_display') + ': ' + ((MMD_SA_options.user_camera.display.video.hidden) ? 'OFF' : ((MMD_SA_options.user_camera.display.video.hidden == null) ? System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.camera_display.non_webcam') : 'ON')) + '\n3. ' + System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.wireframe_display') + ': ' + ((MMD_SA_options.user_camera.display.wireframe.hidden) ? 'OFF' : 'ON') + '\n4. ' + System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.mocap_debug_display') + ': ' + ((MMD_SA_options.user_camera.ML_models.debug_hidden) ? 'OFF' : 'ON') + '\n5. ' + System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.UI_sound_effects') + ': ' + ((MMD_SA_options.Dungeon.inventory.UI.muted)?'OFF':'ON') + '\n6. ' + System._browser.translation.get('Dungeon.UI.tome.settings.UI_and_overlays.UI_language') + ': ' + System._browser.translation.language_info + '\n7. ' + System._browser.translation.get('Misc.done') : '\n2. ' + System._browser.translation.get('Misc.done'));
   }
  ,para: { no_word_break:true }

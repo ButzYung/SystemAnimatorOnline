@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2025-08-24)
+// (2025-09-07)
 
 var use_full_spectrum = true
 
@@ -1026,6 +1026,9 @@ if (!ao.ontimeupdate)
           MMD_SA_options.motion_para[name] = Object.assign(MMD_SA_options.motion_para[name]||{}, json.System_Animator_motion_para[name]);
         }
         DEBUG_show('✅Motion config imported', 3);
+      }
+      else if (json.facemesh_calibration_type) {
+        System._browser.camera.facemesh.import_calibration(json);
       }
       else {
         if (!result.return_value)
@@ -3318,7 +3321,14 @@ MMD_SA.THREEX.mesh_obj.get( "SpeechBubbleMESH" + this.index ).hide();
 
     SB.prototype.get_fov_factor = function (enforced=MMD_SA.THREEX.enabled) {
 // https://github.com/mrdoob/three.js/issues/12150
-      return (enforced) ? 1 / (Math.tan(MMD_SA.THREEX.camera.obj.fov/2 * Math.PI/180)*2) : 1;
+      if (enforced) {
+        const camera = MMD_SA.THREEX.camera.obj;
+        const fov = (MMD_SA.WebXR.session) ? 2 * Math.atan(1 / camera.projectionMatrix.elements[5]) * 180/Math.PI : camera.fov;
+        return 1 / (Math.tan(fov/2 * Math.PI/180)*2);
+      }
+      else {
+        return 1;
+      }
     };
 
     window.addEventListener('SA_MMD_model0_onmotionchange', (e)=>{
@@ -3379,7 +3389,7 @@ window.addEventListener('MMDStarted', ()=>{
       pos.x += w/2;
       pos.y += h/2;
 
-//DEBUG_show('scale:'+scale.x+'\n'+mouse_x+','+mouse_y+'\n'+ (~~pos.x) +','+ (~~pos.y)+'\n\n'+sb.msg_obj.map((o,i)=>i+':'+ ~~o.x + 'x' + ~~o.y + '/' + ~~o.w + 'x' + ~~o.h).join('\n'))
+//DEBUG_show('scale:'+scale.x+'/'+(2 * Math.atan(1 / MMD_SA.THREEX.camera.obj.projectionMatrix.elements[5]) * 180/Math.PI)+','+MMD_SA.THREEX.camera.obj.fov+'\n'+mouse_x+','+mouse_y+'\n\n\n'+ (~~pos.x) +','+ (~~pos.y)+'\n\n'+sb.msg_obj.map((o,i)=>i+':'+ ~~o.x + 'x' + ~~o.y + '/' + ~~o.w + 'x' + ~~o.h).join('\n'))
 
       const sb_drag = get_target_sb('_drag_key_');
       if (sb == sb_drag) {
@@ -3503,7 +3513,8 @@ window.addEventListener('MMDStarted', ()=>{
   let cursor;
   let outside_menu;
 
-  const d_target = document.getElementById('SL_Host');
+// WebXR compatibility
+  const d_target = (!is_mobile) ? document.getElementById('SL_Host') : ((returnBoolean("CSSTransform3DDisabledForContent")) ? document.getElementById("Lbody_host") : document.getElementById("Lbody"));
 
   const ev_mouse_move = (!is_mobile) ? 'mousemove' : 'touchmove';
   d_target.addEventListener(ev_mouse_move, (e)=>{
@@ -3562,11 +3573,14 @@ window.addEventListener('MMDStarted', ()=>{
     }
   });
 
+  let camera_enabled = null;
+
   const ev_mouse_down = (!is_mobile) ? 'mousedown' : 'touchstart';
   d_target.addEventListener(ev_mouse_down, (e)=>{
     if (is_mobile) {
       mouse_x = (e.touches[0]?.clientX||0) * window.devicePixelRatio;
       mouse_y = (e.touches[0]?.clientY||0) * window.devicePixelRatio;
+//DEBUG_show(mouse_x+','+mouse_y)
     }
 
     let sb = get_target_sb();
@@ -3583,6 +3597,7 @@ window.addEventListener('MMDStarted', ()=>{
         return;
     }
 
+    camera_enabled = !!MMD_SA._trackball_camera.enabled;
     MMD_SA._trackball_camera.enabled = false;
     e.stopPropagation();
 
@@ -3599,10 +3614,11 @@ window.addEventListener('MMDStarted', ()=>{
   d_target.addEventListener(ev_mouse_up, (e)=>{
     mouse_down = null;
 
-    if (MMD_SA._trackball_camera.enabled != !!returnBoolean("MMDTrackballCamera")) {
-      MMD_SA._trackball_camera.enabled = !!returnBoolean("MMDTrackballCamera");
+    if ((camera_enabled != null) && (!!MMD_SA._trackball_camera.enabled != camera_enabled)) {
+      MMD_SA._trackball_camera.enabled = camera_enabled;
       e.stopPropagation();
     }
+    camera_enabled = null;
 
 // AFTER resetting _trackball_camera.enabled
     if (ignore_click) {
@@ -3667,6 +3683,8 @@ window.addEventListener('MMDStarted', ()=>{
     }
 
     SA_OnKeyDown(ev);
+
+    e.preventDefault();
   });
 
   d_target.addEventListener('dblclick', (e)=>{
@@ -3982,7 +4000,6 @@ return mipmap_render_target_list
   }
 
  ,render: function (renderer) {
-
 window.dispatchEvent(new CustomEvent("SA_MMD_before_render"));
 
 if (!MMD_SA_options.MMD_disabled && MMD_SA_options.use_THREEX && MMD_SA.MMD_started) {
@@ -5328,6 +5345,8 @@ return drop_list
 
     var createAnchor_compatibility_mode;
 
+    var c_host;
+
     window.addEventListener("MMDStarted", function () {
       _camera = MMD_SA._trackball_camera.object.clone()
 
@@ -5418,6 +5437,10 @@ if (ao && ao.paused) {
 if (MMD_SA_options.Dungeon) {
   MMD_SA_options.Dungeon.object_click_disabled = false
 }
+
+check_sitting();
+window.removeEventListener('SA_MMD_model0_onmotionchange', onmotionchange);
+window.addEventListener('SA_MMD_model0_onmotionchange', onmotionchange);
       }
 
       return function (e) {
@@ -5472,6 +5495,64 @@ else if (xr.hit_found) {
       };
     })());
 
+    let y_sitting = 0;
+    function check_sitting() {
+motion_change_timerID = null;
+if (!xr.session) return;
+
+const motion_para = MMD_SA.MMD.motionManager.para_SA;
+
+    if (!motion_para.motion_tracking_upper_body_only) return false;
+
+const model = MMD_SA.THREEX.get_model(0);
+const v1 = MMD_SA._v3b_;
+const q1 = MMD_SA.TEMP_q;
+
+    const legL = model.get_bone_position_by_MMD_name('左足', true);
+    const hip = legL;//v1.copy(legL).add(model.get_bone_position_by_MMD_name('右足', true).sub(legL).multiplyScalar(0.5));
+
+    const legL0 = model.get_bone_origin_by_MMD_name('左足');
+    const af_motion_para = motion_para.auto_fit?.chair;
+    if (!af_motion_para) {
+// use dummy q1 as a workaround for multiple three.js instance issue when URL contains parentheses
+      const leg_angle = Math.min(Math.abs(q1.copy(model.get_bone_by_MMD_name('左足').quaternion).toAxisAngle()[1]), Math.abs(q1.copy(model.get_bone_by_MMD_name('右足').quaternion).toAxisAngle()[1]));
+//      const leg_angle = Math.min(Math.abs(model.get_bone_by_MMD_name('左足').quaternion.toAxisAngle()[1]), Math.abs(model.get_bone_by_MMD_name('右足').quaternion.toAxisAngle()[1]));
+      if (leg_angle < Math.PI/4) return false;
+      if ((hip.y > legL0[1]*2/3) || (hip.y < legL0[1]*0.4)) return false;
+    }
+
+    const thigh_thickness = legL0[1]/10;
+
+y_sitting = (hip.y - thigh_thickness) - legL0[1];
+//DEBUG_show(y_sitting+'/'+Date.now());
+
+THREE.MMD.getModels()[0].mesh.position.y += y_sitting;
+
+// a trick to set ground_plane visibility
+xr.reticle.visible = xr.reticle.visible;
+    }
+
+    let motion_change_timerID;
+    function onmotionchange(e) {
+if (e.detail.motion_new == e.detail.motion_old) return;
+
+THREE.MMD.getModels()[0].mesh.position.y -= y_sitting;
+y_sitting = 0;
+
+// a trick to set ground_plane visibility
+xr.reticle.visible = xr.reticle.visible;
+
+// skip motion blending
+const motion_new = e.detail.motion_new;
+System._browser.on_animation_update.add(()=>{
+  if (motion_change_timerID) clearTimeout(motion_change_timerID);
+  motion_change_timerID = setTimeout(()=>{
+    if (motion_new == MMD_SA.MMD.motionManager)
+      check_sitting();
+  }, 500);
+}, 0,0);
+    }
+
     var zoom_scale = 1
     var _zoom_distance_last
 
@@ -5483,6 +5564,7 @@ else if (xr.hit_found) {
     };
 
     function touchstart(e) {
+//DEBUG_show(e.touches[0].pageX+'\n'+e.touches[0].pageY)
 if (e.touches.length != 2) return
 
 var dx = e.touches[0].pageX - e.touches[1].pageX;
@@ -5546,7 +5628,7 @@ try {
   let options = (xr.can_requestHitTestSource) ? {requiredFeatures:["hit-test"]} : {};
   if (AR_options.dom_overlay && (AR_options.dom_overlay.enabled !== false)) {
     options.domOverlay = {root:AR_options.dom_overlay.root};
-    options.optionalFeatures = ["dom-overlay","dom-overlay-for-handheld-ar"];
+    options.optionalFeatures = ["dom-overlay"];
   }
   if (AR_options.light_estimation_enabled !== false) {
     if (!options.optionalFeatures)
@@ -5680,7 +5762,7 @@ session.addEventListener('select', function (e) {
         });
 */
 
-let c_host = (returnBoolean("CSSTransform3DDisabledForContent")) ? document.getElementById("Lbody_host") : document.getElementById("Lbody");
+c_host = (returnBoolean("CSSTransform3DDisabledForContent")) ? document.getElementById("Lbody_host") : document.getElementById("Lbody");
 xr.zoom_scale = 1;
 c_host.addEventListener( 'touchstart', touchstart, false );
 c_host.addEventListener( 'touchmove', touchmove, false );
@@ -5695,7 +5777,7 @@ this.gl = this.renderer.obj.getContext();
 
 this.use_dummy_webgl = session.domOverlayState && AR_options.dom_overlay && AR_options.dom_overlay.use_dummy_webgl;
 if (this.use_dummy_webgl) {
-  DEBUG_show("Use dummy WebGL (AR)",5)
+  console.log('Use dummy WebGL (AR)');
   if (!this.user_camera.initialized)
     this.gl = document.createElement("canvas").getContext("webgl2");
 }
@@ -5768,7 +5850,7 @@ return this._visible_;
    ,set: function (v) {
 this._visible_ = reticle0.visible = v
 if (xr.ground_plane)
-  xr.ground_plane.visible = !v
+  xr.ground_plane.visible = (y_sitting) ? false : !v;
     }
   });
 
@@ -5848,16 +5930,19 @@ this._update_anchor = null
 this.hit_ground_y = null
 this.hit_ground_y_lowest = null
 
-this.reticle.visible = false
-
 this.lightProbe = null
+
+window.removeEventListener('SA_MMD_model0_onmotionchange', onmotionchange);
+// BEFORE setting reticle.visible
+y_sitting = 0;
+
+this.reticle.visible = false;
 
 for (const anchor of this.anchors) {
   anchor._data.obj._anchor = null
 }
 this.anchors.clear()
 
-let c_host = (returnBoolean("CSSTransform3DDisabledForContent")) ? document.getElementById("Lbody_host") : document.getElementById("Lbody");
 xr.zoom_scale = 1;
 c_host.removeEventListener( 'touchstart', touchstart, false );
 c_host.removeEventListener( 'touchmove', touchmove, false );
@@ -6025,13 +6110,27 @@ else {
       }
       if (lightEstimate) {
 //DEBUG_show([ld.x, ld.y, ld.z, ld.w])
-        let L = jThree("#MMD_DirLight").three(0)
-//        L.position.copy(ld).multiplyScalar(MMD_SA_options.light_position_scale)
-        let c = L.color
-        c.copy(this.light_color_base)
-        c.r *= Math.min(1.5, 0.75 * Math.sqrt(li.x))
-        c.g *= Math.min(1.5, 0.75 * Math.sqrt(li.y))
-        c.b *= Math.min(1.5, 0.75 * Math.sqrt(li.z))
+        let L = jThree("#MMD_DirLight").three(0);
+
+        if (this._wall.visible) {
+          const q_mesh = THREE.MMD.getModels()[0].mesh.quaternion;
+          const ld_wall = MMD_SA.TEMP_v3.copy(ld).applyQuaternion(q_mesh);
+//DEBUG_show(ld_wall.toArray().join('\n'))
+          ld_wall.z = 0;
+          const z_limit = ld_wall.length() * 0.5;
+          if (ld_wall.z < z_limit) {
+            ld_wall.z = z_limit;
+            ld_wall.normalize().applyQuaternion(MMD_SA.TEMP_q.copy(q_mesh).conjugate());
+            ld = ld_wall;
+          }
+        }
+        L.position.copy(ld).multiplyScalar(MMD_SA_options.light_position_scale).add(THREE.MMD.getModels()[0].mesh.position);
+
+        let c = L.color;
+        c.copy(this.light_color_base);
+        c.r *= Math.min(1.5, 0.75 * Math.sqrt(li.x));
+        c.g *= Math.min(1.5, 0.75 * Math.sqrt(li.y));
+        c.b *= Math.min(1.5, 0.75 * Math.sqrt(li.z));
       }
     }
   }
@@ -6100,9 +6199,10 @@ anchor._data.update(anchor._data.obj);
     this.camera.position.getPositionFromMatrix(this.camera.matrix)
   }
 
-//const pqs = this.camera.matrix.decompose();
-//this.camera.position.copy(pqs[0]);
-//this.camera.quaternion.copy(pqs[1]);
+const pqs = this.camera.matrix.decompose();
+this.camera.position.copy(pqs[0]);
+this.camera.quaternion.copy(pqs[1]);
+//DEBUG_show(this.camera.quaternion.toArray().join('\n'))
 
   this.camera.updateMatrixWorld(true);
 }
@@ -9927,27 +10027,29 @@ obj_pos.x*sign, obj_pos.y, -obj_pos.z*sign,
 
   const msg_obj = MMD_SA.OSC.VMC.time_control({ pos_msgs, bone_msgs, morph_msgs, camera_msgs, tracker_msgs });
 
-  MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/Root/Pos",
-    msg_obj.pos_msgs,
-    'sfffffff'
-  ));
+  if (MMD_SA.OSC.VMC.send_avatar_data) {
+    MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/VMC/Ext/Root/Pos",
+      msg_obj.pos_msgs,
+      'sfffffff'
+    ));
 
-  MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Bundle(
-    ...msg_obj.bone_msgs.map(msg=>MMD_SA.OSC.VMC.Message(
+    MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Bundle(
+      ...msg_obj.bone_msgs.map(msg=>MMD_SA.OSC.VMC.Message(
 "/VMC/Ext/Bone/Pos",
 msg,
 'sfffffff'
-    ))
-  ));
+      ))
+    ));
 
-  MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Bundle(
-    ...msg_obj.morph_msgs.map(msg=>MMD_SA.OSC.VMC.Message(
+    MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Bundle(
+      ...msg_obj.morph_msgs.map(msg=>MMD_SA.OSC.VMC.Message(
 "/VMC/Ext/Blend/Val",
 msg,
 'sf'
-    )),
-    MMD_SA.OSC.VMC.Message("/VMC/Ext/Blend/Apply")
-  ));
+      )),
+      MMD_SA.OSC.VMC.Message("/VMC/Ext/Blend/Apply")
+    ));
+  }
 
   if (msg_obj.camera_msgs) {
     MMD_SA.OSC.VMC_camera.send(MMD_SA.OSC.VMC_camera.Message("/VMC/Ext/Cam",
@@ -12050,8 +12152,8 @@ THREE.Quaternion.prototype.setFromEuler = (function () {
   };
 })();
 
-THREE.Matrix4.decompose = (function () {
-  const decompose = THREE.Matrix4.decompose;
+THREE.Matrix4.prototype.decompose = (function () {
+  const decompose = THREE.Matrix4.prototype.decompose;
 
   return function (position, quaternion, scale) {
     if (position) return decompose.call(this, position, quaternion, scale);
@@ -14531,6 +14633,30 @@ return load_promise;
         };
       })(),
 
+      enable_inline_sRGB_decode: function (material) {
+if (!threeX.enabled) return;
+
+// https://stackoverflow.com/questions/77534730/the-fps-reduced-to-half-when-i-set-the-encoding-of-a-realtime-updated-texture-to
+material.onBeforeCompile = function ( shader ) {
+  shader.fragmentShader = shader.fragmentShader.replace(
+                        '#include <map_fragment>',
+                            `
+              #ifdef USE_MAP
+              
+                 vec4 sampledDiffuseColor = texture2D( map, vMapUv );
+              
+                 // inline sRGB decode
+                 sampledDiffuseColor = vec4( mix( pow( sampledDiffuseColor.rgb * 0.9478672986 + vec3( 0.0521327014 ), vec3( 2.4 ) ), sampledDiffuseColor.rgb * 0.0773993808, vec3( lessThanEqual( sampledDiffuseColor.rgb, vec3( 0.04045 ) ) ) ), sampledDiffuseColor.a );
+
+                diffuseColor *= sampledDiffuseColor;
+
+              #endif
+
+                            `
+  );
+};
+      },
+
       dispose: function (obj) {
 if (!threeX.enabled && (obj.children.length == 1) && (obj.children[0]._model_index != null)) {
   _THREE.MMD.removeModel(_THREE.MMD.getModels()[obj.children[0]._model_index]);
@@ -16404,25 +16530,7 @@ return pos;
     material.color = new THREE.Color( 0xffffff );
     material.isMeshBasicMaterial = true;
 
-// https://stackoverflow.com/questions/77534730/the-fps-reduced-to-half-when-i-set-the-encoding-of-a-realtime-updated-texture-to
-    material.onBeforeCompile = function ( shader ) {
-      shader.fragmentShader = shader.fragmentShader.replace(
-                        '#include <map_fragment>',
-                            `
-              #ifdef USE_MAP
-              
-                 vec4 sampledDiffuseColor = texture2D( map, vMapUv );
-              
-                 // inline sRGB decode
-                 sampledDiffuseColor = vec4( mix( pow( sampledDiffuseColor.rgb * 0.9478672986 + vec3( 0.0521327014 ), vec3( 2.4 ) ), sampledDiffuseColor.rgb * 0.0773993808, vec3( lessThanEqual( sampledDiffuseColor.rgb, vec3( 0.04045 ) ) ) ), sampledDiffuseColor.a );
-
-                diffuseColor *= sampledDiffuseColor;
-
-              #endif
-
-                            `
-      );
-    };
+    MMD_SA.THREEX.utils.enable_inline_sRGB_decode(material);
   }
   else {
     material = new THREE.MeshBasicMaterial({});

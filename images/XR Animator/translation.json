@@ -688,9 +688,9 @@
 							},
 							"tooltip": {
 								"_translation_": {
-									"_default_": "AI model quality:\nThis option determines the weight of the mocap AI model. \"Best\" is the heavier version, which provides better mocap accuracy and quality, at the expense of extra GPU usage. Default is \"Normal\".",
-									"ja": "AIモデルの品質:\nこのオプションは、モーションキャプチャ AI モデルのウェイトを決定します。 「最高」はより重いバージョンで、追加の GPU 使用率を犠牲にして、モーションキャプチャの精度と品質が向上します。 デフォルトは「普通」です。",
-									"zh": "AI模型品質:\n此設定決定 AI 模型的質量。 「最佳」是最大版本的模型，有較佳的動捕準確度及質素，但 GPU 使用率也較高。 預設是「一般」。"
+									"_default_": "AI model quality:\nThis option determines the weight (quality) of the mocap AI model. \"Lightweight\" runs faster at the expense of accuracy. \"Best\" provides better mocap accuracy and quality, at the expense of extra GPU usage. Default is \"Normal\".",
+									"ja": "AIモデルの品質:\nこのオプションは、モーキャプ AI モデルの重み（品質）を決定します。 「軽量」は精度を犠牲にして実行速度が速くなります。 「最高」は、GPU の使用量を犠牲にして、モーキャプの精度と品質が向上します。 デフォルトは「普通」です。",
+									"zh": "AI模型品質:\n此選項決定動作捕捉 AI 模型的權重（品質）。 「輕量」模式運作速度更快，但精度會降低。 「最佳」模式提供更佳的動作捕捉精度和質量，但會額外佔用 GPU 資源。 預設是「普通」。"
 								}
 							},
 							"z_depth_scale": {
@@ -704,6 +704,20 @@
 										"_default_": "Z-depth scale:\nThis option determines the z-depth scale when AI model quality is set to \"Best\". \"Min\" gives you less sense of depth, while \"Max\" boosts it. Default is \"Medium\".",
 										"ja": "Z-奥行きスケール:\nこのオプションは、AI モデルの品質が「最高」に設定されている場合の Z-奥行きスケールを決定します。 「最小」にすると奥行き感が減りますが、「最大」にすると奥行き感が増します。 デフォルトは「中」です。",
 										"zh": "Z-深度比例:\n此設定在 AI 模型質素為「最佳」時決定Z-深度比例。 「最小」減少深度感，「最大」增加深度感。 預設是「中」。"
+									}
+								}
+							},
+							"inference_device": {
+								"_translation_": {
+									"_default_": "Inference device",
+									"ja": "推論装置",
+									"zh": "推理裝置"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "Inference device:\nThis option determines whether to use GPU or CPU to run the AI model. In most cases, especially on desktop PC, GPU is recommended as it is faster. However, in some specific cases, especially on mobile where GPU resource is limited, you may want to use CPU instead. Default is \"GPU\".",
+										"ja": "推論装置:\nこのオプションは、AIモデルの実行にGPUを使用するかCPUを使用するかを決定します。 ほとんどの場合、特にデスクトップPCでは、より高速なGPUの使用が推奨されます。 ただし、GPUリソ​​ースが限られているモバイルなど、特定のケースではCPUを使用する方がよい場合があります。 デフォルトは「GPU」です。",
+										"zh": "推論装置:\n此選項決定使用 GPU 還是 CPU 來運行 AI 模型。 在大多數情況下，尤其是在桌上型電腦上，建議使用 GPU，因為速度比較快。 但是，在某些特定情況下，尤其是在 GPU 資源有限的行動裝置上，您可能需要使用 CPU。 預設是「GPU」。"
 									}
 								}
 							}
@@ -1745,21 +1759,28 @@
 								"_translation_": {
 									"_default_": "Calibration options:\nWhenever face tracking starts, mocap data from the first few seconds will be analyzed and calibrated to better fit the user's face. These options allow you to reset the calibration, export the current calibration to an external JSON file, or import a previously exported calibration.",
 									"ja": "キャリブレーション設定:\nフェイストラッキングが開始されるたびに、最初の数秒間のモーキャプ データが分析され、ユーザーの顔によりよくフィットするように調整されます。 これらのオプションを使用すると、キャリブレーションをリセットしたり、キャリブレーションを外部 JSON ファイルにエクスポートしたり、以前にエクスポートしたキャリブレーションをインポートしたりできます。",
-									"zh": "當面部追蹤啟動時，系統會花約數秒時間分析你的面部數據以校準追蹤的準確度。 相關可用選項包括重置校準、匯出校準成 JSON 檔案、及匯入被匯出的校準檔案。"
-								}
-							},
-							"import_calibration": {
-								"_translation_": {
-									"_default_": "Drop a JSON file containing face calibration data.\n1. Cancel",
-									"ja": "顔のキャリブレーション データを含む JSON ファイルをドロップします。\n1. キャンセル",
-									"zh": "拖曳包含面部校準數據的 JSON 檔案檔案到此。\n1. 取消"
+									"zh": "校準選項:\n當面部追蹤啟動時，系統會花約數秒時間分析你的面部數據以校準追蹤的準確度。 相關可用選項包括重置校準、匯出校準成 JSON 檔案、及匯入被匯出的校準檔案。"
 								}
 							},
 							"message": {
 								"_translation_": {
-									"_default_": "A. Reset calibration\nB. Import calibration\nC. Export calibration",
-									"ja": "A. キャリブレーションをリセットする\nB. キャリブレーションをインポートする\nC. キャリブレーションをエクスポートする",
-									"zh": "A. 重置校準\nB. 匯入校準\nC. 匯出校準"
+									"_default_": "To import a previously exported calibration file, drop it to the app at any time.\nA. Reset calibration\nB. Export calibration\nC. Load on app start: <autoload>",
+									"ja": "以前にエクスポートしたキャリブレーション ファイルをインポートするには、いつでもアプリにドロップします。\nA. キャリブレーションをリセットする\nB. キャリブレーションをエクスポートする\nC. アプリ起動時に読み込む: <autoload>",
+									"zh": "若要匯入先前匯出的校準檔案，可隨時將其拖放到應用程式中。\nA. 重置校準\nB. 匯出校準\nC. 應用程式啟動時載入: <autoload>"
+								}
+							},
+							"load_on_app_start": {
+								"_translation_": {
+									"_default_": "Load on app start",
+									"ja": "アプリ起動時に読み込む",
+									"zh": "應用程式啟動時載入"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "Load on app start:\nWhen enabled, the last completed/imported webcam-based calibration will be saved and loaded on app start without repeated calibration, suitable for cases when the mocap setup is the same most of the time. Default is \"OFF\".",
+										"ja": "アプリ起動時に読み込む:\n有効にすると、最後に完了/インポートされたウェブカメラベースのキャリブレーションが保存され、アプリの起動時に読み込まれるため、キャリブレーションを繰り返す必要がなくなります。 モーキャプの設定がほとんど同じ場合に適しています。 デフォルトは「OFF」です。",
+										"zh": "應用程式啟動時載入:\n啟用後，上次完成/導入的基於網路攝影機的校準將被保存，並在應用啟動時加載，無需重複校準，適用於動捕設定大部分時間相同的情況。 預設為「OFF」。"
+									}
 								}
 							}
 						}
@@ -2786,9 +2807,9 @@
 					},
 					"skybox": {
 						"_translation_": {
-							"_default_": "Choose a 3D skybox, or drop an equirectangular image/zipped skybox file.\n1. Default\n2. Blue sky\n3. Angel's staircase\n4. Stars & Milky Way\n5. 🔄Rotation speed: <rotation_speed>\n6. 🔄Rotation axis angle: <rotation_axis_angle>\nX. Done",
-							"ja": "3D スカイボックスを選択するか、「正距円筒図法」画像/圧縮されたスカイボックスをドロップします。\n1. デフォルト\n2. 青空\n3. 天使の階梯\n4. 星と天の川\n5. 🔄回転速度: <rotation_speed>\n6. 🔄回転軸角度: <rotation_axis_angle>\nX. 終了",
-							"zh": "選擇以下的預設天空盒，或拖曳「等距柱狀投影」圖像/ZIP壓縮的天空盒檔案。\n1. 預設\n2. 藍天\n3. 天使的階梯\n4. 繁星與銀河\n5. 🔄旋轉速度: <rotation_speed>\n6. 🔄旋轉軸角度: <rotation_axis_angle>\nX. 結束"
+							"_default_": "Choose a 3D skybox, or drop an equirectangular image/video/zipped file.\n1. Default\n2. Blue sky\n3. Angel's staircase\n4. Stars & Milky Way\n5. 🔄Rotation speed: <rotation_speed>\n6. 🔄Rotation axis angle: <rotation_axis_angle>\nX. Done",
+							"ja": "3D スカイボックスを選択するか、「正距円筒図法」画像/ビデオ/圧縮ファイルドロップします。\n1. デフォルト\n2. 青空\n3. 天使の階梯\n4. 星と天の川\n5. 🔄回転速度: <rotation_speed>\n6. 🔄回転軸角度: <rotation_axis_angle>\nX. 終了",
+							"zh": "選擇以下的預設天空盒，或拖曳「等距柱狀投影」圖像/影片/ZIP壓縮檔案。\n1. 預設\n2. 藍天\n3. 天使的階梯\n4. 繁星與銀河\n5. 🔄旋轉速度: <rotation_speed>\n6. 🔄旋轉軸角度: <rotation_axis_angle>\nX. 結束"
 						},
 						"press_to_change_value": {
 							"_translation_": {

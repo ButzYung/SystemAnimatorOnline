@@ -363,18 +363,23 @@ MMD_SA.WebXR._wall.visible = true
 
 // update every frame
  ,process_bones: function (model) {
-if (!MMD_SA_options.WebXR.AR._adult_mode) return
+if (!MMD_SA_options.WebXR.AR._adult_mode) return;
 
-var xr = MMD_SA.WebXR
-var zoom_scale = xr.zoom_scale
+const xr = MMD_SA.WebXR;
+let zoom_scale = xr.zoom_scale;
 
-var model_mesh = model.mesh
-model_mesh.position.y = -11.5 + (xr.hitMatrix_anchor._hit_wall_y_ - xr.hit_ground_y)*10*zoom_scale;
+const modelX = MMD_SA.THREEX.get_model(0);
+const model_scale = modelX.para.spine_length / 4.97462;
 
-xr._wall.position.copy(model_mesh.position)
-xr._wall.quaternion.copy(model_mesh.quaternion)
-xr._wall.scale.set(zoom_scale,zoom_scale,zoom_scale)
-xr._wall.visible = true
+const model_mesh = model.mesh;
+model_mesh.position.y = -11.5*model_scale + (xr.hitMatrix_anchor._hit_wall_y_ - xr.hit_ground_y)*10*zoom_scale;
+
+zoom_scale *= model_scale;
+
+xr._wall.position.copy(model_mesh.position);
+xr._wall.quaternion.copy(model_mesh.quaternion);
+xr._wall.scale.set(zoom_scale, zoom_scale, zoom_scale);
+xr._wall.visible = true;
   }
 
  ,_cover_undies: false
@@ -3926,12 +3931,12 @@ return [
   icon_path: Settings.f_path + '/assets/assets.zip#/icon/yellow-target_64x64.png'
  ,info_short: "AR reticle"
 
- ,is_base_inventory: is_mobile && !SA_topmost_window.is_cordova
+ ,is_base_inventory: is_localhost_mobile || (is_mobile && !SA_topmost_window.is_cordova)
 // NOTE: use undefined for index_default ((null >= 0) is true...)
  ,index_default: undefined
 // ,get index_default() { return (is_mobile) ? undefined : MMD_SA_options.Dungeon.inventory.max_base+1; }
 
- ,stock_default: (is_mobile && !SA_topmost_window.is_cordova) ? 1 : 0
+ ,stock_default: (is_localhost_mobile || (is_mobile && !SA_topmost_window.is_cordova)) ? 1 : 0
  ,stock_max: 1
  ,action: {
     func: function (item) {
@@ -3954,7 +3959,7 @@ else {
  ,get info_short() { return System._browser.translation.get('XR_Animator.UI.streamer_mode.info_short'); }
 // ,is_base_inventory: true
 
- ,index_default: (is_mobile && !SA_topmost_window.is_cordova) ? undefined : 0
+ ,index_default: (is_localhost_mobile) ? 9 : ((is_mobile && !SA_topmost_window.is_cordova) ? undefined : 0)
 
  ,stock_max: 1
  ,stock_default: 1
@@ -5033,7 +5038,7 @@ v3b = new THREE.Vector3()
  ,info_short: "Baseball catcher"
 // ,is_base_inventory: true
 
- ,get index_default() { return (is_mobile && !SA_topmost_window.is_cordova) ? 5 : (MMD_SA_options.Dungeon.inventory.max_base+MMD_SA_options.Dungeon.inventory.max_base*(MMD_SA_options.Dungeon.inventory.max_row-1))+1; }
+ ,get index_default() { return (is_mobile && !SA_topmost_window.is_cordova && !is_localhost_mobile) ? 5 : (MMD_SA_options.Dungeon.inventory.max_base+MMD_SA_options.Dungeon.inventory.max_base*(MMD_SA_options.Dungeon.inventory.max_row-1))+1; }
 // ,get index_default() { return (is_mobile) ? undefined : MMD_SA_options.Dungeon.inventory.max_base+1; }
 
  ,stock_max: 1
@@ -5588,8 +5593,8 @@ else {
 */
 
         function update_VMC_selfie_mode() {
-if (MMD_SA.OSC.VMC.send_camera_data)
-  MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/XRA/Ext/Cam/selfie_mode", [((MMD_SA._trackball_camera.selfie_mode) ? ((standing_rotation_mode)?2:1) : 0), ...[MMD_SA.center_view[0], MMD_SA.center_view[1], MMD_SA._trackball_camera.object.position.distanceTo(MMD_SA._trackball_camera.target) - MMD_SA_options.camera_position_base[2]], ...MMD_SA.center_view_lookAt], 'iffffff'));
+if (MMD_SA.OSC.VMC.send_camera_data && (MMD_SA.OSC.VMC.options.protocol == 'WebSocket'))
+  MMD_SA.OSC.VMC.send(MMD_SA.OSC.VMC.Message("/XRA/Ext/Cam/selfie_mode", [((MMD_SA._trackball_camera.selfie_mode && !MMD_SA.WebXR.session) ? ((standing_rotation_mode)?2:1) : 0), ...[MMD_SA.center_view[0], MMD_SA.center_view[1], MMD_SA._trackball_camera.object.position.distanceTo(MMD_SA._trackball_camera.target) - MMD_SA_options.camera_position_base[2]], ...MMD_SA.center_view_lookAt], 'iffffff'));
         }
 
         let rotation_ini, rotation_ini_countdown;
@@ -5934,7 +5939,7 @@ MMD_SA_options.Dungeon.run_event('_MEDIA_RECORDER_OPTIONS_', 0);
  ,get info_short() { return System._browser.translation.get('XR_Animator.UI.UI_options.info_short');}
 // ,is_base_inventory: true
 
- ,index_default: (is_mobile && !SA_topmost_window.is_cordova) ? 4 : 5
+ ,index_default: (is_mobile && !SA_topmost_window.is_cordova && !is_localhost_mobile) ? 4 : 5
 
  ,stock_max: 1
  ,stock_default: 1
@@ -5955,8 +5960,8 @@ MMD_SA_options.Dungeon.run_event("_FACEMESH_OPTIONS_",0);
  ,get info_short() { return System._browser.translation.get('XR_Animator.UI.VMC_protocol.info_short'); }
 // ,is_base_inventory: true
 
- ,index_default: (is_mobile && !SA_topmost_window.is_cordova) ? undefined : 4
- ,stock_default: (is_mobile && !SA_topmost_window.is_cordova) ? 0 : 1
+ ,index_default: (is_mobile && !SA_topmost_window.is_cordova && !is_localhost_mobile) ? undefined : 4
+ ,stock_default: (is_mobile && !SA_topmost_window.is_cordova && !is_localhost_mobile) ? 0 : 1
 
  ,stock_max: 1
  ,action: {
@@ -7297,22 +7302,12 @@ xhr.send();
 
     await change_panorama(0, panorama_path, { full_path:src, depth:panorama_depth_path, json:json });
   }
-  else if (item.isFileSystem && /([^\/\\]+)\.(png|jpg|jpeg|bmp)$/i.test(src)) {
+  else if (item.isFileSystem && /([^\/\\]+)\.(png|jpg|jpeg|bmp|mp4|mkv|webm)$/i.test(src)) {
     await change_panorama(0, src)
   }
   else {
     _onDrop_finish.call(DragDrop, item)
   }
-}
-
-function onDrop_JSON_change_facemesh_calibration(e) {
-  const json = e.detail.json;  
-  if (json.facemesh_calibration_type) {
-    e.detail.result.return_value = true;
-    speech_bubble2('✅Facemesh calibration', 3, { no_word_break:true });
-    System._browser.camera.facemesh.import_calibration(json);
-  }
-  MMD_SA_options.Dungeon.run_event(null,done_branch,0);
 }
 
 var object3d_list = [];
@@ -7773,12 +7768,18 @@ if (para.panorama) {
 
   texture = new THREE.Texture(canvas);
 //THREE.BackSide,THREE.DoubleSide
-  const material = new THREE.MeshBasicMaterial( { map:texture, side:THREE.BackSide, fog:false, transparent:true } );
+  const material = new THREE.MeshBasicMaterial( { map:texture, fog:false, transparent:true } );
 
   const sd = MMD_SA_options.Dungeon_options.skydome;
   let dw = para.panorama.json?.width_segments  || sd.width_segments;
   let dh = para.panorama.json?.height_segments || sd.height_segments;
   geometry = new THREE.SphereGeometry( 64*4, dw, dh );
+  if (MMD_SA.THREEX.enabled) {
+    geometry.scale(-1, 1, 1);
+  }
+  else {
+    geometry.applyMatrix(MMD_SA.TEMP_m4.identity().makeScale(-1,1,1));
+  }
 
   mesh = new THREE.Mesh(
     geometry,
@@ -7871,7 +7872,6 @@ function animate_object3D() {
 }
 // v0.37.3
 window.addEventListener('SA_MMD_before_render', animate_object3D);
-
 
 const adjust_object3D = (function () {
   const parent_bone_list = ['ROOT', '頭','首', '上半身2','上半身','左腕','左ひじ','左手首','右腕','右ひじ','右手首', '左足','左ひざ','左足首','右足','右ひざ','右足首'];
@@ -8477,9 +8477,9 @@ async function change_panorama(index, src, para={}) {
     DEBUG_show('(panorama still loading)', 2)
     return
   }
-  if (index && sd.texture_cache_list[index] && sd.texture_cache_list[index].complete) {
-    show()
-    return
+  if (index && sd.texture_cache_list[index] && (sd.texture_cache_list[index].complete || (sd.texture_cache_list[index].readyState >= 2))) {
+    show();
+    return;
   }
 
   if (!src) src = panorama_list[index];
@@ -8487,14 +8487,39 @@ async function change_panorama(index, src, para={}) {
   panorama_loading = true;
 
   await new Promise((resolve)=>{
-    const image = sd.texture_cache_list[index] = sd.texture_cache_list[index] || new Image();
-    image.onload = ()=>{
-      resolve();
-    };
-    image.onerror = ()=>{
-      panorama_loading = false;
-      resolve();
-    };
+    sd.texture_cache_list.forEach((img)=>{
+      img?.pause?.();
+    });
+
+    let image;
+    if (/\.(mp4|mkv|webm)$/i.test(src)) {
+// for simplicity, always create a new video object
+      image = sd.texture_cache_list[index] = document.createElement('video');
+      image.loop = true;
+
+      image.addEventListener('canplaythrough', ()=>{
+        image.play();
+        resolve();
+      });
+      image.addEventListener('error', ()=>{
+        panorama_loading = false;
+        resolve();
+      });
+    }
+    else {
+      image = sd.texture_cache_list[index];
+      if (!image?.complete) {
+        image = sd.texture_cache_list[index] = new Image();
+      }
+
+      image.onload = ()=>{
+        resolve();
+      };
+      image.onerror = ()=>{
+        panorama_loading = false;
+        resolve();
+      };
+    }
     image.src = toFileProtocol(src);
   });
 
@@ -9408,8 +9433,7 @@ function reset_scene_UI() {
   MMD_SA.THREEX.use_OutlineEffect = false;
 
   DragDrop.onDrop_finish = _onDrop_finish;
-  for (const json_func of [onDrop_JSON_change_facemesh_calibration])
-    window.removeEventListener('SA_dragdrop_JSON', json_func);
+
   window.removeEventListener('SA_keydown', adjust_object3D);
 
   System._browser.camera._info = '';
@@ -10752,7 +10776,7 @@ MMD_SA_options.Dungeon.para_by_grid_id[2].ground_y = explorer_ground_y;
      ,[
         {
           message: {
-  get content() { return 'XR Animator (v0.35.0)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
+  get content() { return 'XR Animator (v0.36.0)\n' + System._browser.translation.get('XR_Animator.UI.UI_options.about_XR_Animator.message'); }
  ,bubble_index: 3
  ,branch_list: [
     { key:1, event_id: {
@@ -12130,7 +12154,7 @@ MMD_SA_options.Dungeon.run_event(null,mocap_options_branch,hip_adjustment_index)
   get content() {
     return [
 '1. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.AI_model_quality') + ': ' + System._browser.translation.get('Misc.' + (MMD_SA_options.user_camera.ML_models.pose.model_quality || 'Normal')),
-'2. ┗ ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.AI_model_quality.z_depth_scale') + ': ' + ((MMD_SA_options.user_camera.ML_models.pose.model_quality == 'Best') ? System._browser.translation.get('Misc.' + ((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale) ? ((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale<3)?'Max':'Min'):'Medium')) : 'N/A'),
+'2. ┗ ' + ((MMD_SA_options.user_camera.ML_models.pose.model_quality == 'Best') ? System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.AI_model_quality.z_depth_scale') + ': ' + System._browser.translation.get('Misc.' + ((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale) ? ((MMD_SA_options.user_camera.ML_models.pose.z_depth_scale<3)?'Max':'Min'):'Medium')) : (System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.AI_model_quality.inference_device') + ': ' + System._browser.camera.poseNet.model_inference_device)),
 '3. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.arm_horizontal_offset') + ': ' + (System._browser.camera.poseNet.arm_horizontal_offset_percent||0) + '%' + ((option_plus_minus == 'arm_horizontal_offset') ? '➕➖' : '  　　'),
 '4. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.arm_vertical_offset') + ': ' + (System._browser.camera.poseNet.arm_vertical_offset_percent||0) + '%' + ((option_plus_minus == 'arm_vertical_offset') ? '➕➖' : '  　　'),
 '5. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.hip_depth_scale') + ': ' + System._browser.camera.poseNet.hip_depth_scale_percent + '%' + ((option_plus_minus == 'hip_depth_scale') ? '➕➖' : ''),
@@ -12325,7 +12349,7 @@ return true;
 
   { key:1, event_id: {
       func: function () {
-MMD_SA_options.user_camera.ML_models.pose.model_quality = (!MMD_SA_options.user_camera.ML_models.pose.model_quality) ? 'Best' : undefined;
+MMD_SA_options.user_camera.ML_models.pose.model_quality = (!MMD_SA_options.user_camera.ML_models.pose.model_quality) ? 'Best' : ((MMD_SA_options.user_camera.ML_models.pose.model_quality == 'Best') ? 'Lightweight' : undefined);
       },
       goto_event: { branch_index:mocap_options_branch, step:1 },
     },
@@ -12340,7 +12364,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
     onmouseover: function (e) {
 MMD_SA_options.Dungeon.utils.tooltip(
   e.clientX, e.clientY,
-  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.AI_model_quality.z_depth_scale.tooltip')
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.body_tracking_options.AI_model_quality.' + ((MMD_SA_options.user_camera.ML_models.pose.model_quality == 'Best') ? 'z_depth_scale' : 'inference_device') + '.tooltip')
 );
     }
   },
@@ -12939,14 +12963,17 @@ MMD_SA_options.Dungeon.utils.tooltip(
 // 5
         {
           func: function () {
-if (MMD_SA_options.user_camera.ML_models.pose.model_quality != 'Best') return;
-
-if (MMD_SA_options.user_camera.ML_models.pose.z_depth_scale && (MMD_SA_options.user_camera.ML_models.pose.z_depth_scale < 3))
-  MMD_SA_options.user_camera.ML_models.pose.z_depth_scale = undefined;
-else if (MMD_SA_options.user_camera.ML_models.pose.z_depth_scale > 3)
-  MMD_SA_options.user_camera.ML_models.pose.z_depth_scale = 2;
-else
-  MMD_SA_options.user_camera.ML_models.pose.z_depth_scale = 4.5;
+if (MMD_SA_options.user_camera.ML_models.pose.model_quality == 'Best') {
+  if (MMD_SA_options.user_camera.ML_models.pose.z_depth_scale && (MMD_SA_options.user_camera.ML_models.pose.z_depth_scale < 3))
+    MMD_SA_options.user_camera.ML_models.pose.z_depth_scale = undefined;
+  else if (MMD_SA_options.user_camera.ML_models.pose.z_depth_scale > 3)
+    MMD_SA_options.user_camera.ML_models.pose.z_depth_scale = 2;
+  else
+    MMD_SA_options.user_camera.ML_models.pose.z_depth_scale = 4.5;
+}
+else {
+  System._browser.camera.poseNet.model_inference_device = (System._browser.camera.poseNet.model_inference_device == 'GPU') ? 'CPU' : 'GPU';
+}
           },
           goto_event: { branch_index:mocap_options_branch, step:1 },
         },
@@ -13595,9 +13622,7 @@ MMD_SA_options.Dungeon.utils.tooltip(
       }
     },
     { key:7, event_id:{ func:()=>{
-if (System._browser.camera.facemesh.enabled && System._browser.camera.video) {
-  page_index = (page_index == 1) ? 3 : 1;
-}
+page_index = (page_index == 1) ? 3 : 1;
         },
         goto_branch:facemesh_options_branch,
       },
@@ -13638,7 +13663,7 @@ return [
   '4. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.auto_blink') + ': ' + ((!System._browser.camera.facemesh.auto_blink)?'OFF':'ON'),
   '5. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.eye_bone_rotation') + ': ' + (System._browser.camera.facemesh.eye_bone_rotation_percent + '%') + '➕➖',
   '6. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.emotion_tracking_options') + ((page_index == 2) ? '📖' : ' ▶️'),
-  ...((System._browser.camera.facemesh.enabled && System._browser.camera.video) ? ['7. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.calibration_options') + ((page_index == 1) ? '📖' : ' ▶️')] : []),
+  '7. ' + System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.calibration_options') + ((page_index == 1) ? '📖' : ' ▶️'),
   'X. ' + System._browser.translation.get('Misc.done'),
 ].join('\n');
   }
@@ -13651,13 +13676,31 @@ return [
 // 1
         {
           message: {
-get content() { return System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.calibration_options.message'); },
+get content() { return System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.calibration_options.message').replace(/\<autoload\>/, (System._browser.camera.facemesh.autoload_calibration) ? 'ON' : 'OFF'); },
 index: 1,
 bubble_index: 3,
+para: { font_scale:1 },
 branch_list: [
   { key:'A', sb_index: 1, branch_index:facemesh_options_branch+3 },
-  { key:'B', sb_index: 1, branch_index:facemesh_options_branch+4 },
-  { key:'C', sb_index: 1, branch_index:facemesh_options_branch+5 },
+  { key:'B', sb_index: 1, branch_index:facemesh_options_branch+5 },
+  { key:'C', event_id: {
+      func:()=>{
+const facemesh = System._browser.camera.facemesh;
+facemesh.autoload_calibration = !facemesh.autoload_calibration;
+
+if (!facemesh.autoload_calibration)
+  facemesh.calibration_saved = null;
+      },
+      goto_event: { branch_index:facemesh_options_branch, get step() { return page_index; } },
+    },
+    sb_index: 1,
+    onmouseover: function (e) {
+MMD_SA_options.Dungeon.utils.tooltip(
+  e.clientX, e.clientY,
+  System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.calibration_options.load_on_app_start.tooltip')
+);
+    }
+  },
 ],
           }
         },
@@ -14007,6 +14050,12 @@ else {
             }
 
             return function () {
+if (!System._browser.camera.facemesh.enabled || !System._browser.camera.video) {
+  DEBUG_show('(There is no active face tracking calibration to reset.)', 5);
+  MMD_SA_options.Dungeon.run_event(null, facemesh_options_branch, 1);
+  return;
+}
+
 System._browser.camera.facemesh.reset_calibration(true);
 MMD_SA_options.Dungeon.run_event(null,done_branch,0);
 
@@ -14016,21 +14065,7 @@ window.addEventListener('SA_camera_facemesh_calibrating', check_calibration);
         }
       ]
 // 38
-     ,[
-        {
-          func: function () {
-MMD_SA.SpeechBubble.list[1].hide();
-window.addEventListener('SA_dragdrop_JSON', onDrop_JSON_change_facemesh_calibration);
-          }
-         ,message: {
-  get content() { return System._browser.translation.get('XR_Animator.UI.motion_capture.mocap_options.face_tracking_options.calibration_options.import_calibration'); }
- ,bubble_index: 3
- ,branch_list: [
-    { key:1, is_closing_event:true, branch_index:done_branch }
-  ]
-          }
-        }
-      ]
+     ,[]
 // 39
      ,[
         {
@@ -14042,9 +14077,9 @@ if (!facemesh.calibrated) {
   System._browser.camera.DEBUG_show('(Calibration needs to be complete before it can be exported.)', 5); MMD_SA_options.Dungeon.run_event(null, facemesh_options_branch, 0); return;
 }
 else {
-  facemesh.export_calibration();
+  facemesh.export_calibration(true);
 }
-MMD_SA_options.Dungeon.run_event(null,done_branch,0);
+MMD_SA_options.Dungeon.run_event(null, facemesh_options_branch, 1);
           }
         }
       ]
@@ -14305,23 +14340,31 @@ geometry.applyMatrix(new THREE.Matrix4().makeRotationX(THREE.Math.degToRad(-90))
 let ground = MMD_SA.WebXR.ground_plane = new THREE.Mesh(geometry, material);
 ground.receiveShadow = true;
 if (!use_THREEX) ground.receiveShadowAlpha = true;
-MMD_SA.THREEX.scene.add(ground)
+MMD_SA.THREEX.scene.add(ground);
 
 let wall_geo = new THREE.BoxGeometry(30,30,30);
 wall_geo.applyMatrix(new THREE.Matrix4().makeTranslation(0,10,-15));
-let wall = MMD_SA.WebXR._wall = new THREE.Mesh(wall_geo, material);
+let wall_material = (use_THREEX) ? new THREE.ShadowMaterial({ blending:THREE.NoBlending }) : new THREE.MeshBasicMaterial({ color: 0x000000, transparent:false });
+let wall = MMD_SA.WebXR._wall = new THREE.Mesh(wall_geo, wall_material);
 wall.receiveShadow = true;
 if (!use_THREEX) {
   wall.useQuaternion = true;
   wall.receiveShadowAlpha = true;
 }
-MMD_SA.THREEX.scene.add(wall)
+MMD_SA.THREEX.scene.add(wall);
 
 window.addEventListener("SA_MMD_toggle_shadowMap", function () {
   ground.receiveShadow = wall.receiveShadow = MMD_SA_options.use_shadowMap;
-  if (!use_THREEX) ground.receiveShadowAlpha = wall.receiveShadowAlpha = MMD_SA_options.use_shadowMap;
-  material.opacity = (MMD_SA_options.use_shadowMap) ? MMD_SA_options.shadow_darkness : 0;
-  material.needsUpdate = true
+  if (!use_THREEX) {
+    ground.receiveShadowAlpha = wall.receiveShadowAlpha = MMD_SA_options.use_shadowMap;
+  }
+  material.opacity = wall_material.opacity = (MMD_SA_options.use_shadowMap) ? MMD_SA_options.shadow_darkness : 0;
+/*
+// save some headaches
+  wall.receiveShadow = false;
+  wall_material.opacity = 0;
+*/
+  material.needsUpdate = true;
 });
 
 // can be updated only AFTER scene.add
@@ -14369,6 +14412,9 @@ window.addEventListener("SA_MMD_model0_onmotionplaying", function (e) {
     return
 
   if (!MMD_SA.WebXR.session)
+    return;
+
+  if (MMD_SA.OSC.VMC.send_camera_data && !MMD_SA.OSC.VMC.send_avatar_data)
     return;
 
   var AR_options = MMD_SA_options.WebXR.AR
@@ -14452,7 +14498,29 @@ window.addEventListener("SA_AR_onARFrame", (function () {
   return function (e) {
 //    if (!MMD_SA.WebXR.session.domOverlayState) return
     if (!timerID)
-      timerID = requestAnimationFrame(item_reticle_flash)
+      timerID = requestAnimationFrame(item_reticle_flash);
+
+// prevent screen flickering when GPU load is heavy
+// https://discussions.unity.com/t/irregular-rare-screen-flickering-when-binding-opaque-framebuffer-in-pipeline-xrwebgllayer/779642/2
+    if (System._browser.camera.ML_enabled) {
+      System._browser.on_animation_update.add(()=>{
+        const gl = MMD_SA.THREEX.renderer.obj.getContext();
+// gl.finish() didn't seem to work
+//        gl.finish();
+
+        const pixels = new Uint8Array(4);
+        gl.readPixels(
+  0,
+  0,
+  1,
+  1,
+  gl.RGBA,
+  gl.UNSIGNED_BYTE,
+  pixels,
+        );
+
+      }, 0,1);
+    }
   };
 })());
 
@@ -14718,6 +14786,8 @@ config.user_camera = {
       body_bend_reduction_power: System._browser.camera.poseNet.body_bend_reduction_power,
       hip_camera: System._browser.camera.poseNet.hip_camera,
 
+      model_inference_device: System._browser.camera.poseNet.model_inference_device,
+
       hip_adjustment: System._browser.camera.poseNet.hip_adjustment,
       hip_adjustment_set_by_motion_name: (()=>{
         Object.keys(System._browser.camera.poseNet.hip_adjustment_set_by_motion_name).forEach(name=>{
@@ -14779,6 +14849,8 @@ config.user_camera = {
       emotion_AI_detection_interval: System._browser.camera.facemesh.emotion_AI_detection_interval,
       emotion_AI_detection_neutralness_percent: System._browser.camera.facemesh.emotion_AI_detection_neutralness_percent,
       emotion_vowel_percent: System._browser.camera.facemesh.emotion_vowel_percent,
+      autoload_calibration: System._browser.camera.facemesh.autoload_calibration,
+      calibration_saved: (System._browser.camera.facemesh.autoload_calibration && System._browser.camera.facemesh.calibration_saved) || undefined,
     },
     object_detection: {
       framework: System._browser.camera.object_detection.framework,
@@ -14983,6 +15055,8 @@ try {
         System._browser.camera.poseNet.limb_return_duration_percent = config[p].ML_models.pose.limb_return_duration_percent;
         System._browser.camera.poseNet.hide_avatar_on_tracking_loss = config[p].ML_models.pose.hide_avatar_on_tracking_loss;
 
+        System._browser.camera.poseNet.model_inference_device = config[p].ML_models.pose.model_inference_device;
+
         System._browser.camera.poseNet.hip_adjustment_set_by_motion_name = Object.assign({}, config[p].ML_models.pose.hip_adjustment_set_by_motion_name);
         System._browser.camera.poseNet.hip_adjustment = Object.assign({ _default_:{} }, config[p].ML_models.pose.hip_adjustment);
         System._browser.camera.poseNet.hip_adjustment_set = null;
@@ -15037,6 +15111,11 @@ try {
         System._browser.camera.facemesh.emotion_AI_detection_interval = config[p].ML_models.facemesh.emotion_AI_detection_interval;
         System._browser.camera.facemesh.emotion_AI_detection_neutralness_percent = config[p].ML_models.facemesh.emotion_AI_detection_neutralness_percent;
         System._browser.camera.facemesh.emotion_vowel_percent = config[p].ML_models.facemesh.emotion_vowel_percent;
+
+        System._browser.camera.facemesh.autoload_calibration = config[p].ML_models.facemesh.autoload_calibration;
+        System._browser.camera.facemesh.calibration_saved = (System._browser.camera.facemesh.autoload_calibration) ? config[p].ML_models.facemesh.calibration_saved : null;
+        if (System._browser.camera.facemesh.calibration_saved)
+          System._browser.camera.facemesh.import_calibration(System._browser.camera.facemesh.calibration_saved);
 
         System._browser.camera.object_detection.framework = config[p].ML_models.object_detection?.framework;
         System._browser.camera.object_detection.model = config[p].ML_models.object_detection?.model;
@@ -15817,6 +15896,43 @@ d.result.return_value = true;
 // reset it to false for XRA v0.35.0+
       MMD_SA.OSC.VMC._send_avatar_data = false;
     }, 0,0);
+
+    if (webkit_electron_mode || SA_topmost_window.is_cordova || !('wakeLock' in navigator)) return;
+
+    System._browser.on_animation_update.add((()=>{
+      let state_check_countdown = 0;
+
+      let insomnia_state = false;
+
+      let wakeLock;
+
+      return async ()=>{
+        if (++state_check_countdown < 60) return;
+        state_check_countdown = 0;
+
+        let keep_awake = !!(System._browser.camera.mocap_enabled || MMD_SA.OSC.VMC.sender_enabled || MMD_SA_options.Dungeon?.item_base.hand_camera?._mobile_hand_camera.enabled);
+
+        if (insomnia_state == keep_awake) return;
+        insomnia_state = keep_awake;
+
+        if (keep_awake) {
+try {
+  wakeLock = await navigator.wakeLock.request("screen");
+  console.log('(Wake lock: ON)');
+} catch (err) {
+  // The Wake Lock request has failed - usually system related, such as battery.
+    console.log('(Wake lock: FAILED)', err);
+}
+        }
+        else {
+if (wakeLock) {
+  wakeLock.release();
+  wakeLock = null;
+  console.log('(Wake lock: OFF)');
+}
+        }
+      };
+    })(), 0,0,-1);
   });
 
   EV_sync_update.fps_control = (function () {

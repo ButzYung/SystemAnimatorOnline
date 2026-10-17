@@ -1,4 +1,4 @@
-// 2025-05-24
+// 2025-09-07
 
 const is_worker = (typeof window !== "object");
 
@@ -332,19 +332,20 @@ vision,
     }
     else {
       pose_model_quality = options.model_quality || '';
+      pose_model_inference_device = options.model_inference_device || 'GPU';
       pose_landmarker = await PoseLandmarker.createFromOptions(
 vision,
 {
   baseOptions: {
-    modelAssetPath: path_adjusted('@mediapipe/tasks/' + 'pose_landmarker_' + ((pose_model_quality == 'Best') ? 'heavy' : 'full') + '.task'),
-    delegate: "GPU"
+    modelAssetPath: path_adjusted('@mediapipe/tasks/' + 'pose_landmarker_' + ((pose_model_quality == 'Best') ? 'heavy' : ((pose_model_quality == 'Lightweight') ? 'lite' : 'full')) + '.task'),
+    delegate: options.model_inference_device
   },
   runningMode: 'VIDEO',
 //minPoseDetectionConfidence:0.8, minPosePresenceConfidence:0.8, minTrackingConfidence:0.8,
   numPoses: 1
 }
       );
-      console.log('Pose model quality:' + (pose_model_quality||'Normal'));
+      console.log('Pose model quality:' + (pose_model_quality||'Normal') + '/' + options.model_inference_device);
     }
 
     data_filter[0] = {
@@ -477,15 +478,18 @@ estimatePoses: function (video, dummy, nowInMs) {
   }
 }
 else {
-  if (!options.use_holistic_landmarker && use_mediapipe_pose_landmarker && (options.model_quality != null) && (pose_model_quality != options.model_quality)) {
-    pose_model_quality = options.model_quality;
+  if (!options.use_holistic_landmarker && use_mediapipe_pose_landmarker && (((options.model_quality != null) && (pose_model_quality != options.model_quality)) || ((options.model_inference_device != null) && (pose_model_inference_device != options.model_inference_device)))) {
+    if (options.model_quality != null)
+      pose_model_quality = options.model_quality;
+    if (options.model_inference_device != null)
+      pose_model_inference_device = options.model_inference_device;
     pose_landmarker.setOptions({
       baseOptions: {
-        modelAssetPath: path_adjusted('@mediapipe/tasks/pose_landmarker_' + ((pose_model_quality == 'Best') ? 'heavy' : 'full') + '.task'),
-        delegate: "GPU"
+        modelAssetPath: path_adjusted('@mediapipe/tasks/' + 'pose_landmarker_' + ((pose_model_quality == 'Best') ? 'heavy' : ((pose_model_quality == 'Lightweight') ? 'lite' : 'full')) + '.task'),
+        delegate: options.model_inference_device
       },
     });
-    console.log('Pose model quality:' + (pose_model_quality||'Normal'));
+    console.log('Pose model quality:' + (pose_model_quality||'Normal') + '/' + pose_model_inference_device);
   }
 }
 
@@ -716,7 +720,7 @@ var use_tfjs, use_tfjs_posenet, use_mediapipe, use_blazepose, use_movenet, use_h
 
 var use_mediapipe_hand_landmarker, use_mediapipe_pose_landmarker;
 var pose_landmarker;
-var pose_model_quality, pose_model_z_depth_scale;
+var pose_model_quality, pose_model_inference_device, pose_model_z_depth_scale;
 
 var holistic_landmarker;
 
