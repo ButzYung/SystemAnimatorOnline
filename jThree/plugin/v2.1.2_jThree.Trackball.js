@@ -30,7 +30,7 @@
  * Date: 2015-02-25
  */
 // AT: customizations
-// (2025-09-07)
+// (2025-10-05)
 
 THREE.TrackballControls = function ( object, domElement ) {
 
@@ -106,6 +106,8 @@ var _zoom_min
 
 this._zoom_offset = 0;
 
+//this._object_quaternion = new THREE.Quaternion();
+
 this.reset_camera_relayed = false;
 this.reset_camera_relay = ()=>{
   this.reset_camera_relayed = true;
@@ -169,6 +171,9 @@ if (isParallel) {
 }
   };
 })();
+
+const eye_pos_offset = new THREE.Vector3();
+const eye_target_offset = new THREE.Vector3();
 
 Object.defineProperties(this, {
 // v0.25.0
@@ -288,13 +293,35 @@ _selfie_center_view_lookAt = v;
     let _rotation_disabled = false;
     return {
       get: ()=>{
-return _rotation_disabled || System._browser.camera.VMC_receiver.camera_active || (System._browser.camera.poseNet.enabled && MMD_SA.Camera_MOD.get_mod('face')?.pos_last.lengthSq() && (MMD_SA.MMD.motionManager.filename == 'stand_simple') && !MMD_SA.MMD.motionManager.para_SA.center_view_enforced);
+return _rotation_disabled || System._browser.camera.VMC_receiver.camera_active;// || (System._browser.camera.poseNet.enabled && MMD_SA.Camera_MOD.get_mod('face')?.pos_last.lengthSq() && (MMD_SA.MMD.motionManager.filename == 'stand_simple') && !MMD_SA.MMD.motionManager.para_SA.center_view_enforced);
       },
       set: (v)=>{
 _rotation_disabled = v;
       }
     }
   })(),
+
+  update_eye: {
+    value: ()=>{
+// TODO: need to consider .up if it's ever used in Camera_MOD.adjust_camera() (besides camera lock)
+// need to include 'face' for MMD model as a workaround, when "Movement Z" is non-zero
+const c_raw = MMD_SA.Camera_MOD.get_camera_base(null, null, ['auto_zoom', ...((MMD_SA.THREEX.enabled)?[]:['face'])]);
+eye_pos_offset.copy(this.object.position).sub(c_raw.pos);
+eye_target_offset.copy(this.target).sub(c_raw.target);
+
+this.object.position.sub(eye_pos_offset);
+this.target.sub(eye_target_offset);
+
+//DEBUG_show(eye_pos_offset.toArray().join('\n'))
+    }
+  },
+
+  restore_eye: {
+    value: ()=>{
+this.object.position.add(eye_pos_offset);
+this.target.add(eye_target_offset);
+    }
+  },
 
   _rotateStart: {
     get: ()=>_rotateStart
@@ -386,14 +413,6 @@ function camera_limit1() {
 
 if (this.rotate_with_up_fixed) {
   if ((_rotateStart_fixed_up.distanceToSquared(_rotateEnd_fixed_up) > this.EPS) || this._eye_rotation_offset) {//(true) {//
-// AT: Camera_MOD
-let pos_offset;
-if (MMD_SA_options.is_XR_Animator) {
-  const pos_raw = MMD_SA._v3a.copy(MMD_SA.Camera_MOD.get_camera_base(true).pos);
-  pos_offset = MMD_SA.THREEX.v4.copy(MMD_SA.Camera_MOD.get_camera_base((this.selfie_mode) ? ['selfie_mode_offset','VMC_camera'] : ['VMC_camera']).pos).sub(pos_raw);
-//DEBUG_show(pos_offset.toArray().join('\n'))
-  this._eye.add(pos_offset);
-}
 
 // v0.25.0 (scale _eye to consider zoom distance)
     _eye.subVectors( this.position0, this.target ).normalize().multiplyScalar(this._eye.length());
@@ -457,8 +476,6 @@ if (this._eye_rotation_offset) {
       _rotateStart_fixed_up.add(_v3.copy(_rotateEnd_fixed_up).sub(_rotateStart_fixed_up).multiplyScalar(this.damping));
     }
 
-// AT: Camera_MOD
-if (pos_offset) this._eye.sub(pos_offset);
   }
   return
 }
@@ -469,15 +486,6 @@ if (pos_offset) this._eye.sub(pos_offset);
 			var angle = _rotateStart.angleTo(_rotateEnd);//Math.acos( _rotateStart.dot( _rotateEnd ) / _rotateStart.length() / _rotateEnd.length() );
 
 			if ( angle ) {
-
-// AT: Camera_MOD
-let pos_offset;
-if (MMD_SA_options.is_XR_Animator) {
-  const pos_raw = MMD_SA._v3a.copy(MMD_SA.Camera_MOD.get_camera_base(true).pos);
-  pos_offset = MMD_SA.THREEX.v4.copy(MMD_SA.Camera_MOD.get_camera_base((this.selfie_mode) ? ['selfie_mode_offset','VMC_camera'] : ['VMC_camera']).pos).sub(pos_raw);
-//DEBUG_show(pos_offset.toArray().join('\n'))
-  this._eye.add(pos_offset);
-}
 
 				axis.crossVectors( _rotateStart, _rotateEnd ).normalize();
 //DEBUG_show(axis.toArray().join("\n"))
@@ -517,8 +525,7 @@ if (camera_limit1.call(this)) {
 }
 
 }
-// AT: Camera_MOD
-if (pos_offset) this._eye.sub(pos_offset);
+
 			}
 		};
 
@@ -674,10 +681,6 @@ var para = {
 };
 
 return function (_pos_delta, rot_delta) {
-// AT: Camera_MOD
-//const pos_raw = MMD_SA._v3a.copy(MMD_SA.Camera_MOD.get_camera_base(true).pos);
-//const pos_offset = MMD_SA.THREEX.v4.copy(MMD_SA.Camera_MOD.get_camera_base().pos).sub(pos_raw);
-//this.object.position.sub(pos_offset);
 
   pos0.copy(this.object.position)
 
@@ -1140,12 +1143,17 @@ if (System._browser.camera.mirror_3D) pageX = this.screen.width - ( pageX - this
 
 		}
 
+this.update_eye();
+
 		this._eye.copy( this.object.position ).sub( this.target );
 
 		projection.copy( this.object.up ).setLength( mouseOnBall.y );
 		projection.add( this.objectUp.copy( this.object.up ).cross( this._eye ).setLength( mouseOnBall.x ) );
 		projection.add( this._eye.setLength( mouseOnBall.z ) );
 //DEBUG_show(projection.toArray().join("\n"))//var _len=projection.length();projection.y*=0.25;projection.setLength(_len);
+
+this.restore_eye();
+
 		return projection;
 
 	},
@@ -1178,6 +1186,8 @@ EPS: 0.000001,
 
 // AT: getter/setter for .enabled
 		if ( ! this._enabled ) return;
+
+this.update_eye();
 
 		this._eye.subVectors( this.object.position, this.target );
 
@@ -1269,11 +1279,15 @@ if (this._calculate_up_fixed_) {// || this.rotate_with_up_fixed) {
 
 		this.object.lookAt( this.target );
 
+//this._object_quaternion.copy(this.object.quaternion);
+
 		if ( this.lastPosition.distanceToSquared( this.object.position ) > this.EPS ) {
 
 			this.lastPosition.copy( this.object.position );
 
 		}
+
+this.restore_eye();
 
 // AT: rotation offset
 if (this._rotation_offset) this.object.quaternion.multiply(this._rotation_offset);

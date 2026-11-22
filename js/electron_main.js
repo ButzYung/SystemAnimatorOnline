@@ -17,6 +17,8 @@ if (windows_mode == undefined) {
   };
 }
 
+const is_wayland = linux_mode && (process.env.XDG_SESSION_TYPE === 'wayland' || !!process.env.WAYLAND_DISPLAY);
+
 
 // https://stackoverflow.com/questions/54464276/how-to-force-discrete-gpu-in-electron-js
 const { spawn } = require('child_process');
@@ -250,7 +252,7 @@ if (c_json) {
   const {width, height} = (global.WallpaperEngine_mode) ? electron.screen.getPrimaryDisplay().size : {width:160,height:160}
 
   if (1) {
-    mainWindow = new BrowserWindow({icon:__dirname + toLocalPath("\\") + icon_name, width:width, height:height, resizable:false, frame:false, transparent:global.is_transparent, show:false,
+    mainWindow = new BrowserWindow({icon:__dirname + toLocalPath("\\") + icon_name, width:width, height:height, resizable:is_wayland, frame:false, transparent:global.is_transparent, show:false,
 webPreferences: webPreferences_default,
     });
     mainWindow.setIgnoreMouseEvents(true)

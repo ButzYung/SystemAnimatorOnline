@@ -552,7 +552,7 @@ var non_windows_native_mode
 //https://coderwall.com/p/i817wa/one-line-function-to-detect-mobile-devices-with-javascript
 var is_mobile = (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
 
-var is_localhost_mobile = is_mobile && /localhost/.test(self.location.hostname);
+var is_localhost_mobile = is_mobile && /localhost/.test(self.location.hostname) && !(parent.is_cordova || self.is_cordova);
 
 var WallpaperEngine_mode
 var WallpaperEngine_CEF_mode// = true

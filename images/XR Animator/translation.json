@@ -411,9 +411,9 @@
 				},
 				"finding_camera": {
 					"_translation_": {
-						"_default_": "(finding camera...)",
-						"ja": "(カメラを探しています...)",
-						"zh": "(正在尋找攝影機...)"
+						"_default_": "(finding devices...)",
+						"ja": "(デバイスを探しています...)",
+						"zh": "(正在尋找裝置...)"
 					}
 				},
 				"choose_an_input": {
@@ -1562,6 +1562,55 @@
 									"_default_": "Body leaning tracking:\nThis option compares your head size with the size data collected during the calibration process to determine how much the body of the avatar should lean forward. This option applies when you are close to the camera. Default is \"Normal\".",
 									"ja": "体の傾きの追跡:\nこのオプションでは、頭のサイズとキャリブレーション プロセス中に収集されたサイズ データを比較して、アバターの体をどの程度前傾させるかを決定します。 このオプションは、カメラに近づいたときに適用されます。 デフォルトは「普通」です。",
 									"zh": "身體傾前追蹤:\n此選項透過比較目前頭部的大小及較準過程中收集的的大小資料以決定人物身體前傾的幅度。 此選項在你接近鏡頭時適用。 預設是「普通」。"
+								}
+							}
+						},
+						"lipsync": {
+							"_translation_": {
+								"_default_": "Lip sync",
+								"ja": "リップシンク",
+								"zh": "唇形同步"
+							},
+							"tooltip": {
+								"_translation_": {
+									"_default_": "Lip sync:\nEnable lip sync to match avatar's lip movements to spoken words through an audio input (mic or video file with audio), suitable for cases when the mouth movement detected by face tracking is too subtle. It can be used with or without face tracking, as long as mocap is enabled. Default is \"OFF\".",
+									"ja": "リップシンク:\nリップシンクを有効にすると、音声入力（マイクまたは音声付き動画ファイル）を介してアバターの唇の動きを音声に同期させることができます。 フェイストラッキングで検出された口の動きが微妙すぎる場合に適しています。 モーキャプが有効であれば、フェイストラッキングの有無にかかわらず使用できます。 デフォルトは「OFF」です。",
+									"zh": "唇形同步:\n啟用唇形同步功能，透過音訊輸入（麥克風或有音訊的視訊檔案）將虛擬角色的唇形動作與語音進行匹配，適用於臉部追蹤偵測到的嘴部動作過於細微的情況。 只要啟用了動捕功能，無論是否啟用臉部追踪，都可以使用此功能。 預設為「OFF」。"
+								}
+							},
+							"profile": {
+								"_translation_": {
+									"_default_": "Profile",
+									"ja": "プロフィール",
+									"zh": "設定檔"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "Profile:\nXR Animator's lipsync library, \"wLipSync\", is based on \"uLipSync\", which allows customized profile based on your own voice. Such JSON profile can be created in other uLipSync-capable apps such as Warudo, or Unity itself with uLipSync installed. To install a JSON profile, simply drop it to XR Animator.",
+										"ja": "プロフィール:\nXR Animator のリップシンク ライブラリ「wLipSync」は、「uLipSync」をベースにしており、自分の声に合わせてプロファイルをカスタマイズできます。 この JSON プロファイルは、Warudo などの uLipSync 対応アプリ、または uLipSync がインストールされた Unity 本体で作成できます。 JSON プロファイルをインストールするには、XR Animatorにドロップするだけです。",
+										"zh": "設定檔:\nXR Animator 的唇形同步程式庫「wLipSync」基於「uLipSync」，它允許根據您自己的聲音自訂設定檔。 此類 JSON 設定檔可以在其他支援 uLipSync 的應用程式（例如 Warudo）或安裝了 uLipSync 的 Unity 中建立。 要安裝 JSON 設定文件，只需將其拖放到XR Animator中即可。"
+									}
+								}
+							},
+							"weight": {
+								"_translation_": {
+									"_default_": "Weight",
+									"ja": "重み付け",
+									"zh": "權重"
+								},
+								"tooltip": {
+									"_translation_": {
+										"_default_": "Weight:\nUse this setting to scale down the weight of detected blendshapes. Default is \"100%\".",
+										"ja": "重み付け:\nこの設定を使用して、検出されたブレンドシェイプの重みを縮小します。 デフォルトは「100%」です。",
+										"zh": "比重:\n使用此設定可降低偵測到的混合形狀的權重。 預設值為「100%」。"
+									}
+								}
+							},
+							"choose_an_audio_input": {
+								"_translation_": {
+									"_default_": "Choose an audio input.",
+									"ja": "オーディオ入力を選択します。",
+									"zh": "選擇音頻輸入。"
 								}
 							}
 						},
@@ -3623,7 +3672,7 @@
 							},
 							"list": {
 								"_translation_": {
-									"_default_": "NewruGuru, Kai, Nymph, KuraiNoOni, LouLi Lou, skeh, Swoonifer, Nyaarium, Kyonko_VT, ObsidianMaker, Catt, ARON, Stimmchen, CoCoNo,"
+									"_default_": "NewruGuru, Kai, Nymph, KuraiNoOni, LouLi Lou, skeh, Swoonifer, Nyaarium, Kyonko_VT, ObsidianMaker, Catt, ARON, Stimmchen, xKageYarax, CoCoNo, PhotoCat,"
 								}
 							}
 						}

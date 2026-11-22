@@ -3,7 +3,7 @@
 
 // modified by Butz Yung - https://github.com/ButzYung
 // THREE.Quaternion required
-// (2024-05-08)
+// (2024-10-05)
 
 class LowPassFilter {
   constructor(alpha, type) {
@@ -42,7 +42,8 @@ if (self.THREE) {
       this.setAlpha(alpha);
     }
     let s;
-    if (!this.y) {
+// v0.37.0
+    if (this.y == null) {
       s = value;
     } else {
       if (Array.isArray(value)) {
@@ -182,6 +183,7 @@ if (self.THREE) {
 
     const cutOff = this.minCutOff + this.beta * edx;
 //if (!this._cutOff_max_) this._cutOff_max_=[]; this._cutOff_max_.unshift(cutOff); this._cutOff_max_.length=Math.min(this._cutOff_max_.length,100); System._browser.camera.DEBUG_show(((this.id && (this.id+'-'))||'')+'cutOff(' + cutOff+'/'+Math.max(...this._cutOff_max_) + '/freq:' + this.freq);
+//if (this.type==1 && this.x.y==0) System._browser.camera.DEBUG_show(this.id+'/'+Date.now())
     return this.x.filter(x, timestamp, this.alpha(cutOff));
   }
 }

@@ -1,5 +1,5 @@
 // MMD for System Animator
-// (2025-09-07)
+// (2025-10-05)
 
 var use_full_spectrum = true
 
@@ -1029,6 +1029,12 @@ if (!ao.ontimeupdate)
       }
       else if (json.facemesh_calibration_type) {
         System._browser.camera.facemesh.import_calibration(json);
+      }
+      else if (json.mfccs) {
+        const lipsync = System._browser.camera.lipsync;
+        lipsync.is_custom_profile = true;
+        lipsync.profile_src = (webkit_electron_mode) ? src : json;
+        lipsync.load_profile(json);
       }
       else {
         if (!result.return_value)
@@ -6568,7 +6574,7 @@ return camera_mod.get_mod(id);
 camera_mod.delete_mod(id);
       },
 
-      get_camera_base: function (ignore_list, update_camera_base) {
+      get_camera_base: function (ignore_list, update_camera_base, include_list) {
 if (update_camera_base !== false)
   camera_mod.update_camera_base();
 
@@ -6576,7 +6582,7 @@ const pos = vp.copy(camera_mod.c_pos);
 const target = vt.copy(camera_mod.c_target);
 let up_z = camera_mod.up_z_last;
 
-((ignore_list === true) ? Object.keys(camera_mod.mod_list) : ignore_list)?.forEach(id=>{
+((ignore_list === true) ? Object.keys(camera_mod.mod_list) : ((include_list) ? Object.keys(camera_mod.mod_list).filter(id=>include_list.indexOf(id)==-1) : ignore_list))?.forEach(id=>{
   const c = camera_mod.mod_list[id];
   if (c) {
     pos.add(c.pos_last);
@@ -9212,7 +9218,7 @@ return v.fromArray(mesh.geometry.bones[bone._index].pos).negate().add(bone.posit
 this.is_VRM1 = (parseInt(vrm.meta.metaVersion) > 0);
 
 var para = Object.assign({ pos0:{}, q0:{}, name_parent0:{} }, para);
-var humanBones = vrm.humanoid.humanBones;
+var humanBones = vrm.humanoid.normalizedHumanBones;//.humanBones;
 var bone_three_to_vrm_name = this.bone_three_to_vrm_name = {};
 var bone_vrm_to_three_name = this.bone_vrm_to_three_name = {};
 for (const name in humanBones) {
@@ -9228,7 +9234,7 @@ for (const name in humanBones) {
   const pos = v1.set(0,0,0);
   const q = q1.set(0,0,0,1);
 
-  while (bone.type == 'Bone') {
+  while (bone.name != 'VRMHumanoidRig') {
     q.premultiply(bone.quaternion);
 // three-vrm 1.0 normalized
 //    if (use_VRM1 && this.is_VRM1) q.premultiply(bone.quaternion);
@@ -9237,7 +9243,7 @@ for (const name in humanBones) {
   para.q0[name] = para.q0[bone_array.node.name] = q.toArray();
 
   bone =  bone_array.node;
-  while (bone.type == 'Bone') {
+  while (bone.name != 'VRMHumanoidRig') {
     if (para.q0[bone.name]) q2.fromArray(para.q0[bone.name]);
     pos.add(v2.copy(bone.position).applyQuaternion(q2));
 
@@ -9255,7 +9261,7 @@ for (const name in humanBones) {
   if (!bone_array) continue;
 
   let bone =  bone_array.node;
-  while (bone.type == 'Bone') {
+  while (bone.name != 'VRMHumanoidRig') {
     const name_parent = bone_three_to_vrm_name[bone.parent.name];
     if (!name_parent) {
       bone = bone.parent;
@@ -9287,6 +9293,8 @@ para.head_height_absolute = (b3.max.y - para.pos0['head'][1]) * vrm_scale;
 para.left_heel_height = para.pos0['leftFoot'][1] * vrm_scale;
 para.hip_center = new THREE.Vector3().fromArray(para.pos0['leftUpperLeg']).setX(0).multiplyScalar(vrm_scale);
 para.hip_center_offset = new THREE.Vector3().fromArray(para.pos0['hips']).multiplyScalar(vrm_scale).sub(para.hip_center);
+// AFTER
+if (para.head_height_absolute < 0) para.head_height_absolute = para.hip_center.y / 3;
 
 para.lower_arm_fixedAxis = {};
 for (const d of ['左','右']) {
@@ -9811,7 +9819,7 @@ if (this.use_faceBlendshapes && facemesh.enabled) {
     }
 
     for (const name in blendshape_weight) {
-      if (this.emotion_list.indexOf(name) == -1) {
+      if ((this.emotion_list.indexOf(name) == -1) && (this.vowel_list.indexOf(name) == -1)) {
 //System._browser.camera.DEBUG_show(name+':'+blendshape_weight[name])
         blendshape_weight[name] = 0;
       }
@@ -9915,10 +9923,16 @@ if (MMD_SA.OSC.VMC.sender_enabled && MMD_SA.OSC.VMC.ready) {
   let camera_msgs;
   if (MMD_SA.OSC.VMC.send_camera_data && !VSeeFace_mode) {
     const camera = MMD_SA.THREEX.camera.obj;
-    const camera_pos = v1.copy(camera.position).sub(mesh.position).multiplyScalar(model_pos_scale);
+// v0.41.2
+    const camera_rot_offset = (MMD_SA.WebXR.session) ? MMD_SA.TEMP_q.copy(model_rot).conjugate() : MMD_SA.TEMP_q.set(0,0,0,1);
+    const camera_pos = v1.copy(camera.position).sub(mesh.position).multiplyScalar(model_pos_scale).applyQuaternion(camera_rot_offset);
+    if (MMD_SA.WebXR.session)
+      camera_pos.y -= mesh.position.y * model_pos_scale;
 
     const camera_rot = q1.copy(camera.quaternion);
     if (!model_turned_around) camera_rot.premultiply(q2.set(0,1,0,0));
+// AFTER
+    camera_rot.premultiply(camera_rot_offset);
 
     camera_pos.add(model_position_offset);
 
@@ -10459,6 +10473,9 @@ const blendshape_map_by_MMD_name = (use_VRM1) ? blendshape_map_by_MMD_name_VRM1 
 vrm_obj.blendshape_map_by_MMD_name = Object.assign({}, blendshape_map_by_MMD_name, _blendshape_map_by_MMD_name);
 vrm_obj.MMD_morph_list = Object.keys(vrm_obj.blendshape_map_by_MMD_name);
 vrm_obj.build_blendshape_map_name(Object.assign({}, blendshape_map_by_MMD_name_VRM0, _blendshape_map_by_MMD_name), Object.assign({}, blendshape_map_by_MMD_name_VRM1, _blendshape_map_by_MMD_name));
+
+vrm_obj.vowel_list = ['a','i','u','e','o'].map(v=>vrm_obj.blendshape_map_name(v, use_VRM1));
+
 console.log(vrm_obj.emotion_list, vrm_obj.MMD_morph_list);
 
 if (!vrm_obj.is_VRM1) mesh_obj.quaternion.set(0,1,0,0);

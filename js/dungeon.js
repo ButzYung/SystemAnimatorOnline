@@ -1,4 +1,4 @@
-// (2025-09-07)
+// (2025-10-05)
 
 MMD_SA_options.Dungeon = (function () {
 
@@ -3571,6 +3571,13 @@ System._browser.translation.dictionary = {
 				"_default_": "Default",
 				"ja": "デフォルト",
 				"zh": "預設"
+			}
+		},
+		"custom": {
+			"_translation_": {
+				"_default_": "Custom",
+				"ja": "カスタム",
+				"zh": "自訂"
 			}
 		},
 		"none": {

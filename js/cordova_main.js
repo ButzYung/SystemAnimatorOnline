@@ -1,4 +1,4 @@
-// (2025-08-24)
+// (2025-10-05)
 
 System._browser.cordova = (()=>{
   let insomnia_state = false;
@@ -125,6 +125,29 @@ return new Promise((resolve)=>{
     resolve();
   });
 });
+    },
+
+    request_mic: function () {
+// https://www.npmjs.com/package/cordova-plugin-android-permissions
+const permissions = cordova.plugins.permissions;
+
+const requiredPermissions = [
+  'RECORD_AUDIO',
+  'MODIFY_AUDIO_SETTINGS'
+];
+
+return Promise.all(requiredPermissions.map(p=>{
+  return new Promise((resolve)=>{
+    permissions.requestPermission(permissions[p], (status)=>{
+      console.log(p, status);
+      resolve();
+    }, ()=>{
+      console.error(p);
+      DEBUG_show('ERROR: ' + p + ' access failed', 5);
+      resolve();
+    });
+  });
+}));
     },
 
     save_file: function (blob, fileName) {
